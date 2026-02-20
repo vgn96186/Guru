@@ -1,0 +1,4 @@
+Starting project at /data/data/com.termux/files/home/neet_study
+Starting Metro Bundler
+CommandError: TypeError [ERR_INVALID_ARG_TYPE]: The "file" argument must be of type string. Received null
+Check the Ngrok status page for outages: https://status.ngrok.com/

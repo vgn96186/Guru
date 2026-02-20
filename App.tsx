@@ -33,7 +33,7 @@ export default function App() {
         setDbReady(true);
       } catch (e) {
         console.error('App initialization failed:', e);
-        setDbError(e?.message ?? 'Application initialization failed');
+        setDbError(e instanceof Error ? e.message : 'Application initialization failed');
       } finally {
         await SplashScreen.hideAsync();
       }

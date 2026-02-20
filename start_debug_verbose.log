@@ -1,0 +1,121 @@
+2026-02-19T18:49:05.121Z expo:telemetry Switching strategy from detached to instant
+2026-02-19T18:49:05.161Z expo:telemetry Recording 1 event(s)
+2026-02-19T18:49:05.170Z expo:env /data/data/com.termux/files/home/neet_study/.env does not exist, skipping this env file
+2026-02-19T18:49:05.170Z expo:env /data/data/com.termux/files/home/neet_study/.env.development does not exist, skipping this env file
+2026-02-19T18:49:05.170Z expo:env /data/data/com.termux/files/home/neet_study/.env.local does not exist, skipping this env file
+2026-02-19T18:49:05.170Z expo:env /data/data/com.termux/files/home/neet_study/.env.development.local does not exist, skipping this env file
+Starting project at /data/data/com.termux/files/home/neet_study
+2026-02-19T18:49:05.390Z expo:start:server:devServer Stopping dev server (bundler: metro)
+2026-02-19T18:49:05.390Z expo:start:server:devServer Stopped dev server (bundler: metro)
+2026-02-19T18:49:05.403Z expo:start:server:metro:router Using app as the root directory for Expo Router.
+2026-02-19T18:49:05.626Z expo:metro:config react-native-reanimated package.json: /data/data/com.termux/files/home/neet_study/node_modules/react-native-reanimated/package.json
+2026-02-19T18:49:05.626Z expo:metro:config react-native-worklets package.json: /data/data/com.termux/files/home/neet_study/node_modules/react-native-worklets/package.json
+
+2026-02-19T18:49:05.632Z expo:metro:config react-native-reanimated package.json: /data/data/com.termux/files/home/neet_study/node_modules/react-native-reanimated/package.json
+2026-02-19T18:49:05.632Z expo:metro:config react-native-worklets package.json: /data/data/com.termux/files/home/neet_study/node_modules/react-native-worklets/package.json
+Expo Metro config:
+- Version: 54.0.14
+- Extensions: ts, tsx, mjs, js, jsx, json, cjs, scss, sass, css
+- React Native: /data/data/com.termux/files/home/neet_study/node_modules/react-native
+- Watch Folders: 
+- Node Module Paths: 
+- Sass: null
+- Reanimated: 4.1.6
+- Worklets: 0.7.4
+- Babel Runtime: null
+
+
+Expo Metro config:
+- Version: 54.0.14
+- Extensions: ts, tsx, mjs, js, jsx, json, cjs, scss, sass, css
+- React Native: /data/data/com.termux/files/home/neet_study/node_modules/react-native
+- Watch Folders: 
+- Node Module Paths: 
+- Sass: null
+- Reanimated: 4.1.6
+- Worklets: 0.7.4
+- Babel Runtime: null
+
+2026-02-19T18:49:05.825Z expo:metro:withMetroResolvers Appending 8 custom resolvers to Metro config. (has custom resolver: false)
+2026-02-19T18:49:05.835Z expo:start:server:urlCreator URL: http://127.0.0.1:8081
+Starting Metro Bundler
+2026-02-19T18:49:05.937Z expo:start:server:middleware:serveStatic Serving static files from: /data/data/com.termux/files/home/neet_study/public
+2026-02-19T18:49:06.081Z expo:start:server:urlCreator URL: exp://192.168.29.131:8081
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+2026-02-19T18:49:06.115Z expo:start:server:developmentSession Development session will not ping because the user is not authenticated and there are no devices.
+2026-02-19T18:49:06.116Z expo:utils:fileNotifier Observing /data/data/com.termux/files/home/neet_study/metro.config.js
+2026-02-19T18:49:06.117Z expo:start:server:metro:waitForTypescript Watching file changes: [
+  '/data/data/com.termux/files/home/neet_study/.env.development.local',
+  '/data/data/com.termux/files/home/neet_study/.env.local',
+  '/data/data/com.termux/files/home/neet_study/.env.development',
+  '/data/data/com.termux/files/home/neet_study/.env'
+]
+2026-02-19T18:49:06.120Z expo:doctor:typescriptSupport Ensuring TypeScript support is setup
+2026-02-19T18:49:06.128Z expo:doctor:dependencies:getMissingPackages Required package "typescript" found (no version constraint specified).
+2026-02-19T18:49:06.128Z expo:doctor:dependencies:getMissingPackages Required package "@types/react" found (no version constraint specified).
+2026-02-19T18:49:06.134Z expo:typed-routes Removing typed routes side-effects (experiments.typedRoutes: false)
+2026-02-19T18:49:06.147Z expo:doctor:dependencies:bundledNativeModules Fetching bundled native modules from the server...
+2026-02-19T18:49:06.171Z expo:doctor:dependencies:validate Checking dependencies for 54.0.0: {
+  '@expo/vector-icons': '^15.0.3',
+  '@react-navigation/bottom-tabs': '^7.14.0',
+  '@react-navigation/native': '^7.1.28',
+  '@react-navigation/native-stack': '^7.13.0',
+  expo: '~54.0.33',
+  'expo-document-picker': '~14.0.8',
+  'expo-file-system': '~19.0.21',
+  'expo-notifications': '~0.32.16',
+  'expo-sharing': '~14.0.8',
+  'expo-sqlite': '~16.0.10',
+  'expo-status-bar': '~3.0.9',
+  react: '19.1.0',
+  'react-native': '0.81.5',
+  'react-native-reanimated': '~4.1.1',
+  'react-native-safe-area-context': '~5.6.0',
+  'react-native-screens': '~4.16.0',
+  zustand: '^5.0.11',
+  '@types/react': '~19.1.0',
+  typescript: '~5.9.2'
+}
+2026-02-19T18:49:06.172Z expo:doctor:dependencies:validate Comparing known versions: [
+  '@expo/vector-icons',
+  'expo',
+  'expo-document-picker',
+  'expo-file-system',
+  'expo-notifications',
+  'expo-sharing',
+  'expo-sqlite',
+  'expo-status-bar',
+  'react',
+  'react-native',
+  'react-native-reanimated',
+  'react-native-safe-area-context',
+  'react-native-screens',
+  '@types/react',
+  'typescript'
+]
+2026-02-19T18:49:06.172Z expo:doctor:dependencies:validate Skipping packages that cannot be versioned automatically: [
+  '@react-navigation/bottom-tabs',
+  '@react-navigation/native',
+  '@react-navigation/native-stack',
+  'zustand'
+]
+2026-02-19T18:49:06.176Z expo:doctor:dependencies:validate Package versions: {
+  '@expo/vector-icons': '15.0.3',
+  expo: '54.0.33',
+  'expo-document-picker': '14.0.8',
+  'expo-file-system': '19.0.21',
+  'expo-notifications': '0.32.16',
+  'expo-sharing': '14.0.8',
+  'expo-sqlite': '16.0.10',
+  'expo-status-bar': '3.0.9',
+  react: '19.1.0',
+  'react-native': '0.81.5',
+  'react-native-reanimated': '4.1.6',
+  'react-native-safe-area-context': '5.6.2',
+  'react-native-screens': '4.16.0',
+  '@types/react': '19.1.17',
+  typescript: '5.9.3'
+}
+2026-02-19T18:49:06.182Z expo:doctor:dependencies:validate Incorrect dependencies: []
+Waiting on http://localhost:8081
+Logs for your project will appear below.

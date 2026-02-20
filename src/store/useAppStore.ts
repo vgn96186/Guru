@@ -1,0 +1,56 @@
+import { create } from 'zustand';
+import type { UserProfile, LevelInfo } from '../types';
+import { getUserProfile, updateUserProfile, getDailyLog } from '../db/queries/progress';
+import { getLevelInfo } from '../services/xpService';
+
+interface AppState {
+  profile: UserProfile | null;
+  levelInfo: LevelInfo | null;
+  hasCheckedInToday: boolean;
+  dailyAvailability: number | null; // minutes available today (user stated)
+  // Actions
+  loadProfile: () => void;
+  refreshProfile: () => void;
+  setApiKey: (key: string) => void;
+  setDailyAvailability: (mins: number) => void;
+}
+
+export const useAppStore = create<AppState>((set) => ({
+  profile: null,
+  levelInfo: null,
+  hasCheckedInToday: false,
+  dailyAvailability: null,
+
+  loadProfile: () => {
+    const profile = getUserProfile();
+    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+    const todayLog = getDailyLog();
+    set({
+      profile,
+      levelInfo,
+      hasCheckedInToday: todayLog?.checkedIn ?? false,
+    });
+  },
+
+  refreshProfile: () => {
+    const profile = getUserProfile();
+    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+    const todayLog = getDailyLog();
+    set({
+      profile,
+      levelInfo,
+      hasCheckedInToday: todayLog?.checkedIn ?? false,
+    });
+  },
+
+  setApiKey: (key: string) => {
+    updateUserProfile({ openrouterApiKey: key });
+    set(state => ({
+      profile: state.profile ? { ...state.profile, openrouterApiKey: key } : null,
+    }));
+  },
+
+  setDailyAvailability: (mins: number) => {
+    set({ dailyAvailability: mins });
+  },
+}));

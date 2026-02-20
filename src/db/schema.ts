@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   openrouter_api_key TEXT NOT NULL DEFAULT '',
   notifications_enabled INTEGER NOT NULL DEFAULT 1,
   strict_mode_enabled INTEGER NOT NULL DEFAULT 0,
+  always_ask_mood_on_launch INTEGER NOT NULL DEFAULT 1,
   focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
   visual_timers_enabled INTEGER NOT NULL DEFAULT 1,
   last_active_date TEXT

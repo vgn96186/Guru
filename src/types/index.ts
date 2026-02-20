@@ -99,6 +99,7 @@ export interface UserProfile {
   transcriptionEngine: 'gemini' | 'openai';
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
+  alwaysAskMoodOnLaunch: boolean;
   focusAudioEnabled: boolean;
   visualTimersEnabled: boolean;
 }

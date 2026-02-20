@@ -13,6 +13,7 @@ export function getUserProfile(): UserProfile {
     openrouter_api_key: string; openai_key: string; transcription_engine: string;
     notifications_enabled: number; last_active_date: string | null;
     strict_mode_enabled: number;
+    always_ask_mood_on_launch: number;
     focus_audio_enabled: number;
     visual_timers_enabled: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
@@ -25,6 +26,7 @@ export function getUserProfile(): UserProfile {
       preferredSessionLength: 45, openrouterApiKey: '', openaiKey: '', transcriptionEngine: 'gemini',
       notificationsEnabled: true, lastActiveDate: null,
       strictModeEnabled: false,
+      alwaysAskMoodOnLaunch: true,
       focusAudioEnabled: false,
       visualTimersEnabled: false,
     };
@@ -46,6 +48,7 @@ export function getUserProfile(): UserProfile {
     notificationsEnabled: r.notifications_enabled === 1,
     lastActiveDate: r.last_active_date,
     strictModeEnabled: r.strict_mode_enabled === 1,
+    alwaysAskMoodOnLaunch: (r.always_ask_mood_on_launch ?? 1) === 1,
     focusAudioEnabled: r.focus_audio_enabled === 1,
     visualTimersEnabled: r.visual_timers_enabled === 1,
   };
@@ -69,6 +72,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     notificationsEnabled: 'notifications_enabled',
     lastActiveDate: 'last_active_date',
     strictModeEnabled: 'strict_mode_enabled',
+    alwaysAskMoodOnLaunch: 'always_ask_mood_on_launch',
     focusAudioEnabled: 'focus_audio_enabled',
     visualTimersEnabled: 'visual_timers_enabled',
   };

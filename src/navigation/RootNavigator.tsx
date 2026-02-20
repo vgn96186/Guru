@@ -10,10 +10,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const hasCheckedInToday = useAppStore(s => s.hasCheckedInToday);
+  const alwaysAskMoodOnLaunch = useAppStore(s => s.profile?.alwaysAskMoodOnLaunch ?? true);
 
   return (
     <Stack.Navigator
-      initialRouteName={hasCheckedInToday ? 'Tabs' : 'CheckIn'}
+      initialRouteName={alwaysAskMoodOnLaunch || !hasCheckedInToday ? 'CheckIn' : 'Tabs'}
       screenOptions={{ headerShown: false, animation: 'fade' }}
     >
       <Stack.Screen name="CheckIn" component={CheckInScreen} />

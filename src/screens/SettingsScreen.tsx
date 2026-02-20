@@ -160,6 +160,7 @@ export default function SettingsScreen() {
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
   const [strictMode, setStrictMode] = useState(false);
+  const [alwaysAskMoodOnLaunch, setAlwaysAskMoodOnLaunch] = useState(true);
   const [openaiKey, setOpenaiKey] = useState('');
   const [transcriptionEngine, setTranscriptionEngine] = useState<'gemini' | 'openai'>('gemini');
   const [saving, setSaving] = useState(false);
@@ -190,6 +191,7 @@ export default function SettingsScreen() {
       setDailyGoal(profile.dailyGoalMinutes.toString());
       setNotifs(profile.notificationsEnabled);
       setStrictMode(profile.strictModeEnabled);
+      setAlwaysAskMoodOnLaunch(profile.alwaysAskMoodOnLaunch ?? true);
       setOpenaiKey(profile.openaiKey ?? '');
       setTranscriptionEngine(profile.transcriptionEngine ?? 'gemini');
       if (profile.openrouterApiKey) setValidation('success');
@@ -266,6 +268,7 @@ export default function SettingsScreen() {
         dailyGoalMinutes: parsedDailyGoal,
         notificationsEnabled: notifs,
         strictModeEnabled: strictMode,
+        alwaysAskMoodOnLaunch,
       });
 
       if (!notifs) {
@@ -479,6 +482,18 @@ export default function SettingsScreen() {
               value={strictMode}
               onValueChange={setStrictMode}
               trackColor={{ true: '#F44336', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
+          <View style={[styles.switchRow, { marginTop: 16 }]}> 
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Always ask mood on app open</Text>
+              <Text style={styles.hint}>Show the check-in screen every launch to tailor session style to your current state.</Text>
+            </View>
+            <Switch
+              value={alwaysAskMoodOnLaunch}
+              onValueChange={setAlwaysAskMoodOnLaunch}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
               thumbColor="#fff"
             />
           </View>

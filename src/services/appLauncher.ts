@@ -1,6 +1,9 @@
 import { Linking, Platform, PermissionsAndroid } from 'react-native';
 import { startExternalAppSession } from '../db/queries/externalLogs';
-import { launchApp, isAppInstalled, startRecording, requestMediaProjection } from '../../modules/app-launcher';
+import {
+    launchApp, isAppInstalled, startRecording, requestMediaProjection,
+    canDrawOverlays, requestOverlayPermission, showOverlay,
+} from '../../modules/app-launcher';
 
 export type SupportedMedicalApp = 'marrow' | 'dbmci' | 'cerebellum' | 'prepladder' | 'bhatia';
 
@@ -90,6 +93,23 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp): Promise<boo
             await launchApp(app.androidStore);
             console.log('[AppLauncher] ✅ Native launch succeeded');
             startExternalAppSession(app.name, recordingPath);
+
+            // Show floating timer bubble if overlay permission is granted
+            try {
+                const hasOverlay = await canDrawOverlays();
+                if (hasOverlay) {
+                    await showOverlay(app.name);
+                    console.log('[AppLauncher] ✅ Overlay shown');
+                } else {
+                    // First launch: request permission (opens settings)
+                    // The overlay will work on next launch after user grants it
+                    requestOverlayPermission().catch(() => {});
+                    console.log('[AppLauncher] Overlay permission requested');
+                }
+            } catch (e) {
+                console.warn('[AppLauncher] Overlay failed:', e);
+            }
+
             return true;
         } catch (err: any) {
             console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);

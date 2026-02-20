@@ -54,14 +54,21 @@ function withAppLauncher(config) {
     if (app) {
       const services = app.service ?? [];
       const svcName = 'expo.modules.applauncher.RecordingService';
-      // Remove existing entry if present (to update)
-      const filtered = services.filter(
-        (s) => s.$?.['android:name'] !== svcName
+      const overlaySvcName = 'expo.modules.applauncher.OverlayService';
+      // Remove existing entries if present (to update)
+      let filtered = services.filter(
+        (s) => s.$?.['android:name'] !== svcName && s.$?.['android:name'] !== overlaySvcName
       );
       filtered.push({
         $: {
           'android:name': svcName,
           'android:foregroundServiceType': 'microphone|mediaProjection',
+          'android:exported': 'false',
+        },
+      });
+      filtered.push({
+        $: {
+          'android:name': overlaySvcName,
           'android:exported': 'false',
         },
       });

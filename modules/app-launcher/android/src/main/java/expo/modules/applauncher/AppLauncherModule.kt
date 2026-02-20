@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjectionManager
 import android.os.Build
+import android.provider.Settings
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CompletableDeferred
@@ -165,6 +166,63 @@ class AppLauncherModule : Module() {
          */
         AsyncFunction("deleteRecording") { path: String ->
             return@AsyncFunction try { File(path).delete() } catch (e: Exception) { false }
+        }
+
+        /**
+         * Checks whether the app has SYSTEM_ALERT_WINDOW ("draw over other apps") permission.
+         */
+        AsyncFunction("canDrawOverlays") { ->
+            val context = appContext.reactContext ?: return@AsyncFunction false
+            return@AsyncFunction if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                Settings.canDrawOverlays(context)
+            } else true
+        }
+
+        /**
+         * Opens system settings to grant SYSTEM_ALERT_WINDOW permission.
+         */
+        AsyncFunction("requestOverlayPermission") { ->
+            val context = appContext.reactContext ?: throw Exception("No context")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    android.net.Uri.parse("package:${context.packageName}")
+                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            }
+            return@AsyncFunction true
+        }
+
+        /**
+         * Shows the floating timer bubble on screen.
+         */
+        AsyncFunction("showOverlay") { appName: String ->
+            val context = appContext.reactContext ?: throw Exception("No context")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
+                throw Exception("Overlay permission not granted")
+            }
+            val intent = Intent(context, OverlayService::class.java).apply {
+                action = OverlayService.ACTION_SHOW
+                putExtra(OverlayService.EXTRA_APP_NAME, appName)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+            return@AsyncFunction true
+        }
+
+        /**
+         * Hides the floating timer bubble.
+         */
+        AsyncFunction("hideOverlay") { ->
+            val context = appContext.reactContext ?: return@AsyncFunction true
+            val intent = Intent(context, OverlayService::class.java).apply {
+                action = OverlayService.ACTION_HIDE
+            }
+            context.startService(intent)
+            return@AsyncFunction true
         }
     }
 }

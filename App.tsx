@@ -10,7 +10,7 @@ import { useAppStore } from './src/store/useAppStore';
 import LoadingOrb from './src/components/LoadingOrb';
 import { getIncompleteExternalSession, finishExternalAppSession } from './src/db/queries/externalLogs';
 import { addXp, getUserProfile } from './src/db/queries/progress';
-import { stopRecording } from './modules/app-launcher';
+import { stopRecording, hideOverlay } from './modules/app-launcher';
 import LectureReturnSheet from './src/components/LectureReturnSheet';
 
 interface ReturnSession {
@@ -28,6 +28,9 @@ function AppContent() {
 
     const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
+        // Hide the floating timer bubble immediately
+        try { await hideOverlay(); } catch (_) {}
+
         const session = getIncompleteExternalSession();
         if (!session) return;
 

@@ -43,3 +43,25 @@ export async function stopRecording(): Promise<string | null> {
 export async function deleteRecording(path: string): Promise<boolean> {
     return GuruAppLauncher.deleteRecording(path);
 }
+
+// ── Floating overlay ──────────────────────────────────────────────
+
+/** Checks if the app has "draw over other apps" permission. */
+export async function canDrawOverlays(): Promise<boolean> {
+    return GuruAppLauncher.canDrawOverlays();
+}
+
+/** Opens system settings to grant overlay permission. */
+export async function requestOverlayPermission(): Promise<boolean> {
+    return GuruAppLauncher.requestOverlayPermission();
+}
+
+/** Shows a floating timer bubble on screen while user is in another app. */
+export async function showOverlay(appName: string): Promise<boolean> {
+    return GuruAppLauncher.showOverlay(appName);
+}
+
+/** Hides the floating timer bubble. */
+export async function hideOverlay(): Promise<boolean> {
+    return GuruAppLauncher.hideOverlay();
+}

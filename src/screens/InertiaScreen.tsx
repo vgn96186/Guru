@@ -1,212 +1,380 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, Linking, Platform, Dimensions } from 'react-native';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated,
+  Dimensions, Vibration, Easing,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { fetchContent } from '../services/aiService';
-import { getWeakestTopics } from '../db/queries/topics';
+import { addXp } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
-import type { StoryContent } from '../types';
-import LoadingOrb from '../components/LoadingOrb';
-
-const STEPS = [
-  "Breathe in...",
-  "Just one cool fact...",
-  "Okay, one more...",
-  "You're doing great. Last one!",
-];
+import { launchMedicalApp, SupportedMedicalApp } from '../services/appLauncher';
+import { EXTERNAL_APPS } from '../constants/externalApps';
 
 const { width } = Dimensions.get('window');
 
+// ─── Step definitions ───────────────────────────────────────────
+interface RitualStep {
+  emoji: string;
+  title: string;
+  subtitle: string;
+  action: string;        // Button label
+  durationSec?: number;  // Auto-advance after N seconds (for breathing)
+  xp: number;
+}
+
+const STEPS: RitualStep[] = [
+  {
+    emoji: '🪑',
+    title: 'Clear your space',
+    subtitle: 'Put your phone on the table.\nPush away clutter. Just the phone & a glass of water.',
+    action: 'Done ✓',
+    xp: 5,
+  },
+  {
+    emoji: '🧍',
+    title: 'Move your body',
+    subtitle: 'Stand up. Stretch your arms above your head.\nRoll your shoulders back 3 times.',
+    action: 'Done ✓',
+    xp: 5,
+  },
+  {
+    emoji: '📖',
+    title: 'Open your tools',
+    subtitle: 'Open your notebook or a blank page.\nGet a pen ready. You\'re almost there.',
+    action: 'Done ✓',
+    xp: 5,
+  },
+  {
+    emoji: '🌬️',
+    title: 'Box Breathing',
+    subtitle: 'Follow the circle.\nBreathe in 4s → Hold 4s → Out 4s → Hold 4s',
+    action: '',
+    durationSec: 48, // 3 full box-breath cycles (4 phases × 4s × 3)
+    xp: 10,
+  },
+  {
+    emoji: '🚀',
+    title: 'You\'re set up.',
+    subtitle: 'The hardest part is literally over.\nYou just have to press one button.',
+    action: '',
+    xp: 0,
+  },
+];
+
+const BREATH_PHASES = ['Breathe in', 'Hold', 'Breathe out', 'Hold'] as const;
+const BREATH_PHASE_SEC = 4;
+
+// ─── Component ──────────────────────────────────────────────────
 export default function InertiaScreen() {
   const navigation = useNavigation();
-  const profile = useAppStore(s => s.profile);
+  const loadProfile = useAppStore(s => s.loadProfile);
   const [step, setStep] = useState(0);
-  const [content, setContent] = useState<StoryContent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [facts, setFacts] = useState<string[]>([]);
+  const [totalXp, setTotalXp] = useState(0);
+  const [launching, setLaunching] = useState(false);
+
+  // Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
-  useEffect(() => {
-    loadContent();
-  }, []);
+  // Breathing state
+  const [breathPhase, setBreathPhase] = useState(0);
+  const [breathTimer, setBreathTimer] = useState(BREATH_PHASE_SEC);
+  const [breathDone, setBreathDone] = useState(false);
+  const breathCircle = useRef(new Animated.Value(0.5)).current;
 
+  // ── Animate step transitions ─────────────────────
   useEffect(() => {
-    animateIn();
+    fadeAnim.setValue(0);
+    scaleAnim.setValue(0.9);
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 8, useNativeDriver: true }),
+    ]).start();
   }, [step]);
 
-  async function loadContent() {
-    if (!profile?.openrouterApiKey) {
-      setLoading(false); // No key
-      return;
-    }
-    
-    // Pick a random weak topic
-    const weak = getWeakestTopics(5);
-    const topic = weak.length > 0 ? weak[Math.floor(Math.random() * weak.length)] : null;
-    
-    if (!topic) {
-        // Fallback or handle no weak topics
-        setLoading(false);
-        return;
-    }
+  // ── Breathing animation ──────────────────────────
+  useEffect(() => {
+    if (step !== 3) return;
+    setBreathPhase(0);
+    setBreathTimer(BREATH_PHASE_SEC);
+    setBreathDone(false);
+    breathCircle.setValue(0.5);
+  }, [step]);
 
-    try {
-      const res = await fetchContent(topic, 'story', profile.openrouterApiKey);
-      if (res.type === 'story') {
-        setContent(res);
-        // Extract bite-sized facts
-        const extracted = res.keyConceptHighlights && res.keyConceptHighlights.length >= 3 
-            ? res.keyConceptHighlights.slice(0, 3) 
-            : [res.story.slice(0, 100), "Key fact 2 placeholder", "Key fact 3 placeholder"];
-        setFacts(extracted);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
+  useEffect(() => {
+    if (step !== 3 || breathDone) return;
 
-  function animateIn() {
-    fadeAnim.setValue(0);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 500,
+    const interval = setInterval(() => {
+      setBreathTimer(prev => {
+        if (prev <= 1) {
+          // Advance to next phase
+          setBreathPhase(prevPhase => {
+            const next = prevPhase + 1;
+            if (next >= BREATH_PHASES.length * 3) { // 3 full cycles
+              setBreathDone(true);
+              Vibration.vibrate(100);
+              return prevPhase;
+            }
+            // Pulse vibration at each phase change
+            Vibration.vibrate(30);
+            return next;
+          });
+          return BREATH_PHASE_SEC;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [step, breathDone]);
+
+  // Animate breathing circle size
+  useEffect(() => {
+    if (step !== 3) return;
+    const phase = breathPhase % BREATH_PHASES.length;
+    const toValue = phase === 0 ? 1.0 : phase === 2 ? 0.5 : phase === 1 ? 1.0 : 0.5;
+    Animated.timing(breathCircle, {
+      toValue,
+      duration: BREATH_PHASE_SEC * 1000,
+      easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start();
-  }
+  }, [breathPhase, step]);
 
-  function handleNext() {
-    if (step < 3) {
+  // ── Handlers ─────────────────────────────────────
+  const handleStepComplete = useCallback(() => {
+    const current = STEPS[step];
+    if (current.xp > 0) {
+      addXp(current.xp);
+      setTotalXp(t => t + current.xp);
+    }
+    if (step < STEPS.length - 1) {
       setStep(s => s + 1);
-    } else {
-        // Done with inertia, go to final screen or action
-        setStep(4);
     }
-  }
-  
-  function handleClose() {
-      navigation.goBack();
-  }
+  }, [step]);
 
-  async function openCerebellum() {
-    const packageName = 'com.cerebellummobileapp';
-    const intentUrl = `intent://#Intent;package=${packageName};end`;
-    const webUrl = 'https://www.cerebellumacademy.com/';
+  const handleSurpriseMe = useCallback(async () => {
+    // Zero cognitive load: pick a random installed app and launch directly
+    setLaunching(true);
+    const appKeys: SupportedMedicalApp[] = ['cerebellum', 'marrow', 'dbmci', 'prepladder'];
+    // Shuffle and try each
+    const shuffled = appKeys.sort(() => Math.random() - 0.5);
+    for (const key of shuffled) {
+      try {
+        const launched = await launchMedicalApp(key);
+        if (launched) {
+          // Award all remaining XP
+          const remaining = STEPS.reduce((sum, s) => sum + s.xp, 0) - totalXp;
+          if (remaining > 0) addXp(remaining);
+          loadProfile();
+          navigation.goBack();
+          return;
+        }
+      } catch (_) {}
+    }
+    // If nothing installed, navigate to session
+    addXp(10);
+    loadProfile();
+    (navigation as any).navigate('Session', { mood: 'determined', mode: 'surprise' });
+  }, [totalXp, navigation, loadProfile]);
 
+  const handleLaunchApp = useCallback(async (appKey: SupportedMedicalApp) => {
+    setLaunching(true);
     try {
-      // Try Android intent first to force app open
-      await Linking.openURL(intentUrl);
+      await launchMedicalApp(appKey);
+      loadProfile();
+      navigation.goBack();
     } catch (e) {
-      // Fallback to web
-      Linking.openURL(webUrl).catch(() => {});
+      console.warn('[Inertia] Launch failed:', e);
+      setLaunching(false);
     }
-    navigation.goBack();
-  }
+  }, [navigation, loadProfile]);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <LoadingOrb message="Finding something cool..." />
-      </SafeAreaView>
-    );
-  }
+  const handleSkipToLaunch = () => {
+    // Award any un-earned XP up to current step
+    const earned = STEPS.slice(0, step).reduce((sum, s) => sum + s.xp, 0);
+    const diff = earned - totalXp;
+    if (diff > 0) { addXp(diff); setTotalXp(t => t + diff); }
+    setStep(STEPS.length - 1);
+  };
 
-  if (!content && !loading) {
-     // Handle error state gracefully
-     return (
-        <SafeAreaView style={styles.safe}>
-            <View style={styles.center}>
-                <Text style={styles.text}>Could not load content. Check connection or API key.</Text>
-                <TouchableOpacity onPress={handleClose} style={styles.btn}><Text style={styles.btnText}>Close</Text></TouchableOpacity>
-            </View>
-        </SafeAreaView>
-     );
-  }
-
-  // Phase 4: The Push (Final Screen)
-  if (step === 4) {
-    return (
-      <SafeAreaView style={[styles.safe, styles.finalSafe]}>
-        <View style={styles.center}>
-          <Text style={styles.emoji}>🧠</Text>
-          <Text style={styles.finalTitle}>You're In The Zone.</Text>
-          <Text style={styles.finalSub}>
-            You've already started. The hardest part is over.
-            Now, switch to Cerebellum and watch just **one** BTR video.
-          </Text>
-          <Text style={styles.finalSub}>
-            Come back afterwards to log your progress.
-          </Text>
-          
-          <TouchableOpacity style={styles.cerebellumBtn} onPress={openCerebellum}>
-            <Text style={styles.cerebellumBtnText}>🚀 Open Cerebellum</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.secondaryBtn} onPress={handleClose}>
-            <Text style={styles.secondaryText}>I'll stay here</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Phases 1-3: The Facts
-  // Step 0 is just "Breathe in..."
-  // Steps 1-3 show facts index 0-2
-  const currentFact = step === 0 ? "Take a deep breath." : (facts[step - 1] || "Stay focused.");
-
-  const stepLabel = step < STEPS.length ? STEPS[step] : "Keep going...";
+  // ── Render ───────────────────────────────────────
+  const current = STEPS[step];
+  const progress = (step + 1) / STEPS.length;
+  const isBreathing = step === 3;
+  const isFinal = step === STEPS.length - 1;
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+
+      {/* Progress bar */}
       <View style={styles.progressContainer}>
-        <View style={[styles.progressBar, { width: `${((step + 1) / 5) * 100}%` }]} />
-      </View>
-      
-      <View style={styles.contentContainer}>
-        <Text style={styles.stepLabel}>{stepLabel}</Text>
-        <Animated.View style={{ opacity: fadeAnim, width: '100%', alignItems: 'center' }}>
-          {content && <Text style={styles.topicName}>{content.topicName}</Text>}
-          <View style={styles.card}>
-            <Text style={styles.factText}>{currentFact}</Text>
-          </View>
-        </Animated.View>
+        <Animated.View style={[styles.progressBar, { width: `${progress * 100}%` }]} />
       </View>
 
-      <TouchableOpacity style={styles.nextBtn} onPress={handleNext} activeOpacity={0.8}>
-        <Text style={styles.nextBtnText}>Next →</Text>
-      </TouchableOpacity>
+      {/* XP badge */}
+      {totalXp > 0 && (
+        <View style={styles.xpBadge}>
+          <Text style={styles.xpText}>+{totalXp} XP</Text>
+        </View>
+      )}
+
+      {/* Skip link */}
+      {!isFinal && (
+        <TouchableOpacity style={styles.skipBtn} onPress={handleSkipToLaunch}>
+          <Text style={styles.skipText}>Skip to launch →</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Main content */}
+      <Animated.View style={[styles.contentContainer, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+        <Text style={styles.emoji}>{current.emoji}</Text>
+        <Text style={styles.title}>{current.title}</Text>
+        <Text style={styles.subtitle}>{current.subtitle}</Text>
+
+        {/* Breathing circle (step 3 only) */}
+        {isBreathing && (
+          <View style={styles.breathContainer}>
+            <Animated.View style={[styles.breathCircle, { transform: [{ scale: breathCircle }] }]}>
+              <Text style={styles.breathPhaseText}>
+                {breathDone ? '✓ Done' : BREATH_PHASES[breathPhase % BREATH_PHASES.length]}
+              </Text>
+              {!breathDone && (
+                <Text style={styles.breathTimerText}>{breathTimer}</Text>
+              )}
+            </Animated.View>
+          </View>
+        )}
+
+        {/* Action button for non-breathing steps */}
+        {!isBreathing && !isFinal && (
+          <TouchableOpacity style={styles.actionBtn} onPress={handleStepComplete} activeOpacity={0.8}>
+            <Text style={styles.actionBtnText}>{current.action}</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Breathing done → advance */}
+        {isBreathing && breathDone && (
+          <TouchableOpacity style={styles.actionBtn} onPress={handleStepComplete} activeOpacity={0.8}>
+            <Text style={styles.actionBtnText}>I feel calmer ✓</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Final step: app launch buttons */}
+        {isFinal && (
+          <View style={styles.launchContainer}>
+            <Text style={styles.launchTitle}>Launch your study app</Text>
+            
+            {/* Surprise Me — zero cognitive load */}
+            <TouchableOpacity
+              style={[styles.surpriseBtn, launching && styles.disabled]}
+              onPress={handleSurpriseMe}
+              disabled={launching}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.surpriseBtnText}>
+                {launching ? 'Launching...' : '🎲 Surprise Me — Just start'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Individual app buttons */}
+            <View style={styles.appGrid}>
+              {EXTERNAL_APPS.slice(0, 4).map(app => (
+                <TouchableOpacity
+                  key={app.id}
+                  style={[styles.appBtn, { borderColor: app.color }, launching && styles.disabled]}
+                  onPress={() => handleLaunchApp(app.id as SupportedMedicalApp)}
+                  disabled={launching}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.appEmoji}>{app.iconEmoji}</Text>
+                  <Text style={styles.appName}>{app.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.stayBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.stayText}>I'll study in-app instead</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </Animated.View>
+
+      {/* Step counter */}
+      <Text style={styles.stepCounter}>
+        {step + 1} / {STEPS.length}
+      </Text>
     </SafeAreaView>
   );
 }
 
+// ─── Styles ────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
-  finalSafe: { backgroundColor: '#0A1A1A' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  text: { color: '#fff', textAlign: 'center', marginBottom: 20 },
-  btn: { backgroundColor: '#333', padding: 16, borderRadius: 12 },
-  btnText: { color: '#fff' },
-  
-  progressContainer: { height: 4, backgroundColor: '#222', width: '100%', position: 'absolute', top: 0 },
-  progressBar: { height: '100%', backgroundColor: '#6C63FF' },
-  
-  contentContainer: { flex: 1, justifyContent: 'center', padding: 24, alignItems: 'center' },
-  stepLabel: { color: '#666', fontSize: 14, fontWeight: '700', textTransform: 'uppercase', marginBottom: 20, letterSpacing: 1 },
-  topicName: { color: '#6C63FF', fontSize: 24, fontWeight: '900', marginBottom: 16, textAlign: 'center' },
-  card: { backgroundColor: '#1A1A24', padding: 32, borderRadius: 24, borderWidth: 1, borderColor: '#333', width: '100%', alignItems: 'center' },
-  factText: { color: '#E0E0E0', fontSize: 20, lineHeight: 32, fontWeight: '500', textAlign: 'center' },
-  
-  nextBtn: { backgroundColor: '#6C63FF', margin: 24, padding: 20, borderRadius: 16, alignItems: 'center' },
-  nextBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
 
-  emoji: { fontSize: 64, marginBottom: 24 },
-  finalTitle: { color: '#fff', fontSize: 32, fontWeight: '900', marginBottom: 16, textAlign: 'center' },
-  finalSub: { color: '#ccc', fontSize: 16, lineHeight: 24, textAlign: 'center', marginBottom: 16 },
-  cerebellumBtn: { backgroundColor: '#00BCD4', paddingHorizontal: 32, paddingVertical: 18, borderRadius: 16, marginTop: 16, width: '100%', alignItems: 'center' },
-  cerebellumBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
-  secondaryBtn: { padding: 16, marginTop: 8 },
-  secondaryText: { color: '#666', fontWeight: '600' },
+  progressContainer: { height: 4, backgroundColor: '#1A1A24', width: '100%' },
+  progressBar: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 2 },
+
+  xpBadge: {
+    position: 'absolute', top: 56, right: 16, backgroundColor: '#2E7D32',
+    paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, zIndex: 10,
+  },
+  xpText: { color: '#fff', fontWeight: '800', fontSize: 13 },
+
+  skipBtn: { position: 'absolute', top: 56, left: 16, zIndex: 10 },
+  skipText: { color: '#555', fontSize: 13, fontWeight: '600' },
+
+  contentContainer: {
+    flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32,
+  },
+
+  emoji: { fontSize: 56, marginBottom: 16 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 12 },
+  subtitle: { color: '#999', fontSize: 16, lineHeight: 24, textAlign: 'center', marginBottom: 32 },
+
+  // Breathing
+  breathContainer: { alignItems: 'center', justifyContent: 'center', marginVertical: 24 },
+  breathCircle: {
+    width: 160, height: 160, borderRadius: 80,
+    backgroundColor: '#1A1A3E', borderWidth: 3, borderColor: '#6C63FF',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  breathPhaseText: { color: '#B8B0FF', fontSize: 18, fontWeight: '700' },
+  breathTimerText: { color: '#6C63FF', fontSize: 36, fontWeight: '900', marginTop: 4 },
+
+  // Action
+  actionBtn: {
+    backgroundColor: '#6C63FF', paddingHorizontal: 40, paddingVertical: 18,
+    borderRadius: 16, width: '100%', alignItems: 'center',
+  },
+  actionBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+
+  // Final launch
+  launchContainer: { width: '100%', alignItems: 'center' },
+  launchTitle: { color: '#666', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 },
+
+  surpriseBtn: {
+    backgroundColor: '#6C63FF', paddingVertical: 18, borderRadius: 16,
+    width: '100%', alignItems: 'center', marginBottom: 16,
+  },
+  surpriseBtnText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+
+  appGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, width: '100%', marginBottom: 16 },
+  appBtn: {
+    flex: 1, minWidth: (width - 74) / 2, backgroundColor: '#1A1A24',
+    padding: 16, borderRadius: 14, alignItems: 'center',
+    borderWidth: 1.5,
+  },
+  appEmoji: { fontSize: 28, marginBottom: 4 },
+  appName: { color: '#ccc', fontSize: 13, fontWeight: '700' },
+
+  stayBtn: { padding: 12, marginTop: 4 },
+  stayText: { color: '#555', fontWeight: '600', fontSize: 14 },
+
+  disabled: { opacity: 0.5 },
+
+  stepCounter: {
+    color: '#333', textAlign: 'center', paddingBottom: 12, fontSize: 13, fontWeight: '600',
+  },
 });

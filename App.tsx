@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { initDatabase } from './src/db/database';
@@ -25,12 +26,20 @@ export default function App() {
   const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
-    initDatabase()
-      .then(() => setDbReady(true))
-      .catch(e => {
-        console.error('DB init failed:', e);
-        setDbError(e?.message ?? 'Database initialization failed');
-      });
+    async function initializeApp() {
+      try {
+        await SplashScreen.preventAutoHideAsync();
+        await initDatabase();
+        setDbReady(true);
+      } catch (e) {
+        console.error('App initialization failed:', e);
+        setDbError(e?.message ?? 'Application initialization failed');
+      } finally {
+        await SplashScreen.hideAsync();
+      }
+    }
+    
+    initializeApp();
   }, []);
 
   if (dbError) {

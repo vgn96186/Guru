@@ -12,7 +12,7 @@
  * strictly better for quality. On-device can be added as v3 when needed.
  */
 
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 export interface LectureAnalysis {
   subject: string;
@@ -64,9 +64,10 @@ export async function transcribeWithGemini(
   audioFilePath: string,
   geminiKey: string,
 ): Promise<LectureAnalysis> {
-  // Read audio file as base64
-  const base64 = await FileSystem.readAsStringAsync(audioFilePath, {
-    encoding: 'base64' as any,
+  // Read audio file as base64 — ensure file:// URI prefix for expo-file-system
+  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+  const base64 = await FileSystem.readAsStringAsync(fileUri, {
+    encoding: FileSystem.EncodingType.Base64,
   });
 
   // Gemini 1.5 Flash supports inline audio up to 20MB

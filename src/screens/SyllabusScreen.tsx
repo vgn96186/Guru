@@ -73,9 +73,6 @@ export default function SyllabusScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <View style={styles.header}>
-        <TouchableOpacity onPress={runDiagnostics} style={styles.diagBtn}>
-          <Text style={styles.diagBtnText}>⚙️</Text>
-        </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Syllabus</Text>
           <View style={styles.overallBadge}>
@@ -114,8 +111,6 @@ export default function SyllabusScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 20 },
-  diagBtn: { marginRight: 12, padding: 8, backgroundColor: '#1A1A24', borderRadius: 10 },
-  diagBtnText: { fontSize: 16 },
   title: { color: '#fff', fontSize: 26, fontWeight: '900' },
   overallBadge: { flexDirection: 'row', alignItems: 'baseline', backgroundColor: '#1A1A24', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6 },
   overallPct: { color: '#6C63FF', fontWeight: '900', fontSize: 20 },

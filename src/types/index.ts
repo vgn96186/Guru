@@ -36,6 +36,8 @@ export interface TopicProgress {
   xpEarned: number;
   nextReviewDate: string | null;
   userNotes: string;
+  wrongCount?: number;
+  isNemesis?: boolean;
 }
 
 export interface TopicWithProgress extends Topic {
@@ -93,8 +95,18 @@ export interface UserProfile {
   preferredSessionLength: number;
   lastActiveDate: string | null;
   openrouterApiKey: string;
+  openaiKey: string;
+  transcriptionEngine: 'gemini' | 'openai';
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
+  focusAudioEnabled: boolean;
+  visualTimersEnabled: boolean;
+}
+
+export interface BrainDump {
+  id: number;
+  note: string;
+  createdAt: number;
 }
 
 // AI Content shapes

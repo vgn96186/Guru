@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { generateAccountabilityMessages } from './aiService';
 import { getUserProfile, getDaysToExam, getLast30DaysLog } from '../db/queries/progress';
-import { getWeakestTopics, getTopicsDueForReview } from '../db/queries/topics';
+import { getWeakestTopics, getTopicsDueForReview, getNemesisTopics } from '../db/queries/topics';
 import type { Mood } from '../types';
 
 let areNotificationsSupported = true;
@@ -11,7 +11,7 @@ try {
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
-      shouldSetBadge: false,
+      shouldSetBadge: true, // enabled badge
       shouldShowBanner: true,
       shouldShowList: true,
     }),
@@ -85,6 +85,27 @@ export async function scheduleEveningNudge(title: string, body: string): Promise
   }
 }
 
+export async function scheduleBossFightTarget(nemesisName: string): Promise<void> {
+  if (!areNotificationsSupported) return;
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '⚔️ Daily Boss Fight',
+        body: `You've failed on ${nemesisName} enough times. Defeat it today.`,
+        sound: true,
+        badge: 1,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: 12, // Mid-day shame/reminder
+        minute: 0,
+      },
+    });
+  } catch (error) {
+    console.warn('Failed to schedule boss fight:', error);
+  }
+}
+
 export async function sendImmediateNag(title: string, body: string): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
@@ -111,6 +132,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
   const profile = getUserProfile();
   if (!profile.notificationsEnabled || !profile.openrouterApiKey) return;
 
+  const nemesisTopics = getNemesisTopics();
   const weakTopics = getWeakestTopics(3).map(t => t.name);
   const dueTopics = getTopicsDueForReview(1); // Check if any topic is due
   const logs = getLast30DaysLog();
@@ -121,6 +143,12 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
   const lastMood = logs[0]?.mood ?? null;
 
   try {
+
+    // BADGE UPDATE: Badge = Nemesis Topics + (1 if studied 0 mins today) to cause native anxiety
+    const streakDanger = (studiedDays === 0 || (logs[0]?.totalMinutes < 20)) ? 1 : 0;
+    const badgeCount = nemesisTopics.length + streakDanger;
+    await Notifications.setBadgeCountAsync(badgeCount);
+
     // 1. Forced SRS Alarm: Check if strictly due
     if (dueTopics.length > 0) {
       await cancelAllNotifications();
@@ -128,6 +156,10 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
         '🚨 CRITICAL REVIEW DUE',
         `Topic "${dueTopics[0].name}" is fading! Quiz now to save your mastery level. Only correct answers count.`
       );
+
+      if (nemesisTopics.length > 0) {
+        await scheduleBossFightTarget(nemesisTopics[0].name);
+      }
       return; // Stop here, SRS priority
     }
 
@@ -144,6 +176,11 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     );
 
     await cancelAllNotifications();
+
+    if (nemesisTopics.length > 0) {
+      // High priority intrusive notification
+      await scheduleBossFightTarget(nemesisTopics[0].name);
+    }
 
     for (const msg of messages) {
       if (msg.scheduledFor === 'morning') {

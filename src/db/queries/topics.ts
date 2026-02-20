@@ -14,6 +14,7 @@ type TopicRow = {
   id: number; subject_id: number; name: string; estimated_minutes: number; inicet_priority: number;
   status: string; confidence: number; last_studied_at: number | null; times_studied: number; xp_earned: number;
   next_review_date: string | null; user_notes: string;
+  wrong_count: number; is_nemesis: number;
   subject_name: string; short_code: string; color_hex: string;
 };
 
@@ -56,7 +57,7 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
   if (isNaN(id)) return [];
 
   console.log(`[DB] Fetching topics for subject_id: ${id}`);
-  
+
   const rows = db.getAllSync<any>(`
     SELECT 
       t.id, 
@@ -116,23 +117,46 @@ export function getTopicById(id: number): TopicWithProgress | null {
 export function updateTopicProgress(
   topicId: number,
   status: TopicProgress['status'],
-  confidence: number,
-  xpToAdd: number,
+  confidence: number
 ): void {
   const db = getDb();
   const now = Date.now();
   const nextReview = srsNextDate(confidence);
+
+  // Get current progress to calculate nemesis logic
+  const current = db.getFirstSync<{ wrong_count: number; times_studied: number; is_nemesis: number }>(
+    'SELECT wrong_count, times_studied, is_nemesis FROM topic_progress WHERE topic_id = ?',
+    [topicId]
+  );
+
+  let newWrongCount = current?.wrong_count ?? 0;
+  let newTimesStudied = (current?.times_studied ?? 0) + 1;
+  let newIsNemesis = current?.is_nemesis ?? 0;
+
+  if (confidence <= 1) {
+    newWrongCount += 1;
+  }
+
+  if (confidence >= 4 && newTimesStudied >= 2) {
+    // Clear nemesis flag after consecutive corrects
+    newWrongCount = 0;
+    newIsNemesis = 0;
+  } else if (newWrongCount >= 2 || (confidence <= 1 && newTimesStudied >= 2)) {
+    newIsNemesis = 1;
+  }
+
   db.runSync(
-    `INSERT INTO topic_progress (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date)
-     VALUES (?, ?, ?, ?, 1, ?, ?)
+    `INSERT INTO topic_progress (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, wrong_count, is_nemesis)
+     VALUES (?, ?, ?, ?, 1, 0, ?, ?, ?)
      ON CONFLICT(topic_id) DO UPDATE SET
        status = excluded.status,
        confidence = excluded.confidence,
        last_studied_at = excluded.last_studied_at,
        times_studied = times_studied + 1,
-       xp_earned = xp_earned + excluded.xp_earned,
-       next_review_date = excluded.next_review_date`,
-    [topicId, status, confidence, now, xpToAdd, nextReview],
+       next_review_date = excluded.next_review_date,
+       wrong_count = excluded.wrong_count,
+       is_nemesis = excluded.is_nemesis`,
+    [topicId, status, confidence, now, nextReview, newWrongCount, newIsNemesis],
   );
 }
 
@@ -144,6 +168,18 @@ export function updateTopicNotes(topicId: number, notes: string): void {
      ON CONFLICT(topic_id) DO UPDATE SET user_notes = excluded.user_notes`,
     [topicId, notes],
   );
+}
+
+export function getDueReviewCount(): number {
+  const db = getDb();
+  const today = todayStr();
+  const r = db.getFirstSync<{ cnt: number }>(
+    `SELECT COUNT(*) as cnt FROM topic_progress
+     WHERE status != 'unseen'
+       AND (next_review_date IS NULL OR next_review_date <= ?)`,
+    [today],
+  );
+  return r?.cnt ?? 0;
 }
 
 export function getTopicsDueForReview(limit = 10): TopicWithProgress[] {
@@ -200,13 +236,26 @@ export function getWeakestTopics(limit = 5): TopicWithProgress[] {
   return rows.map(mapTopicRow);
 }
 
+export function getNemesisTopics(): TopicWithProgress[] {
+  const db = getDb();
+  const rows = db.getAllSync<TopicRow>(
+    `${TOPIC_SELECT}
+     FROM topics t
+     JOIN subjects s ON t.subject_id = s.id
+     JOIN topic_progress p ON t.id = p.topic_id
+     WHERE p.is_nemesis = 1
+     ORDER BY p.wrong_count DESC`
+  );
+  return rows.map(mapTopicRow);
+}
+
 function mapTopicRow(r: any): TopicWithProgress {
   const tid = r.id;
   const tname = r.name || 'Unnamed Topic';
   const sname = r.subject_name || 'Unknown';
   const scode = r.short_code || '???';
   const scolor = r.color_hex || '#555';
-  
+
   return {
     id: tid,
     subjectId: r.subject_id,
@@ -227,6 +276,34 @@ function mapTopicRow(r: any): TopicWithProgress {
       xpEarned: r.xp_earned ?? 0,
       nextReviewDate: r.next_review_date ?? null,
       userNotes: r.user_notes ?? '',
+      wrongCount: r.wrong_count ?? 0,
+      isNemesis: (r.is_nemesis ?? 0) === 1,
     },
   };
+}
+
+export function createTopicWithCatalyst(subjectId: number, aiData: any): number {
+  const db = getDb();
+
+  // 1. Insert Topic
+  const result = db.runSync(
+    'INSERT INTO topics (subject_id, name, estimated_minutes, inicet_priority) VALUES (?, ?, 15, 8)', // Automatically give catalyst topics high priority
+    [subjectId, aiData.topicName]
+  );
+  const newTopicId = result.lastInsertRowId;
+
+  // 2. Initialize Progress
+  db.runSync(
+    `INSERT INTO topic_progress (topic_id, status, confidence, times_studied, xp_earned, wrong_count, is_nemesis)
+     VALUES (?, 'unseen', 0, 0, 0, 0, 0)`,
+    [newTopicId]
+  );
+
+  // 3. Import cached content directly to bypass future loading screens
+  const { setCachedContent } = require('./aiCache');
+  setCachedContent(newTopicId, 'keypoints', aiData.keypoints, 'catalyst-pipeline');
+  setCachedContent(newTopicId, 'mnemonic', aiData.mnemonic, 'catalyst-pipeline');
+  setCachedContent(newTopicId, 'quiz', aiData.quiz, 'catalyst-pipeline');
+
+  return newTopicId;
 }

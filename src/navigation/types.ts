@@ -1,20 +1,19 @@
 export type RootStackParamList = {
   CheckIn: undefined;
   Tabs: undefined;
+  BrainDumpReview: undefined;
 };
 
 export type HomeStackParamList = {
   Home: undefined;
   Session: { mood: string; mode?: string };
   LectureMode: { subjectId?: number };
-  QuizBreak: { topicId: number; sessionId: number };
   MockTest: undefined;
   Review: undefined;
   NotesSearch: undefined;
   BossBattle: undefined;
   Inertia: undefined;
   ManualLog: { appId?: string };
-  StudyPlan: undefined;
 };
 
 export type SyllabusStackParamList = {
@@ -24,6 +23,7 @@ export type SyllabusStackParamList = {
 
 export type TabParamList = {
   HomeTab: undefined;
+  PlanTab: undefined;
   SyllabusTab: undefined;
   StatsTab: undefined;
   SettingsTab: undefined;

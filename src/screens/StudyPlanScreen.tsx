@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import { generateStudyPlan, type DailyPlan, type StudyPlanSummary } from '../services/studyPlanner';
 import { useAppStore } from '../store/useAppStore';
 
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'StudyPlan'>;
-
 export default function StudyPlanScreen() {
-  const navigation = useNavigation<Nav>();
   const [plan, setPlan] = useState<DailyPlan[]>([]);
   const [summary, setSummary] = useState<StudyPlanSummary | null>(null);
   const { profile } = useAppStore();
@@ -32,9 +26,6 @@ export default function StudyPlanScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
           <Text style={styles.title}>Dynamic Plan</Text>
           <Text style={styles.subtitle}>
             {summary.daysRemaining} days to INICET · {summary.totalHoursLeft}h content left
@@ -117,8 +108,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   content: { padding: 20, paddingBottom: 60 },
   header: { marginBottom: 24 },
-  backBtn: { marginBottom: 12 },
-  backText: { color: '#666', fontSize: 16 },
   title: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 4 },
   subtitle: { color: '#9E9E9E', fontSize: 14 },
   

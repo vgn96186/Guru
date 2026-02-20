@@ -25,6 +25,9 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+expo*.log
+serve.log
+start_debug*.log
 
 # macOS
 .DS_Store
@@ -40,3 +43,22 @@ yarn-error.*
 /ios
 /android
 .aider*
+
+# local copilot/agent metadata
+.zencoder/
+.zenflow/
+.agents/
+
+# Build artifacts
+modules/*/android/build/
+modules/*/android/.gradle/
+android/app/build/
+android/build/
+android/.gradle/
+
+# Large binary files
+*.xapk
+*.apk
+
+# UI dumps
+window_dump.xml

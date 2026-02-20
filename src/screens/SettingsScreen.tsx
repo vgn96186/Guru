@@ -9,7 +9,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
 import { updateUserProfile, getUserProfile } from '../db/queries/progress';
-import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
+import { requestNotificationPermissions, refreshAccountabilityNotifications, cancelAllNotifications } from '../services/notificationService';
 import { getDb } from '../db/database';
 
 const BACKUP_VERSION = 1;
@@ -148,7 +148,7 @@ async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: st
 }
 
 export default function SettingsScreen() {
-  const { profile, refreshProfile } = useAppStore();
+  const { profile, refreshProfile, toggleFocusAudio, toggleVisualTimers } = useAppStore();
   const [apiKey, setApiKey] = useState('');
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
   const [availableModels, setAvailableModels] = useState<string[]>(KNOWN_MODELS);
@@ -160,11 +160,19 @@ export default function SettingsScreen() {
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
   const [strictMode, setStrictMode] = useState(false);
+  const [openaiKey, setOpenaiKey] = useState('');
+  const [transcriptionEngine, setTranscriptionEngine] = useState<'gemini' | 'openai'>('gemini');
   const [saving, setSaving] = useState(false);
   const [validation, setValidation] = useState<ValidationState>('idle');
   const [validationMsg, setValidationMsg] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function isValidDate(value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const d = new Date(value);
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+  }
 
   useEffect(() => {
     if (profile) {
@@ -182,6 +190,8 @@ export default function SettingsScreen() {
       setDailyGoal(profile.dailyGoalMinutes.toString());
       setNotifs(profile.notificationsEnabled);
       setStrictMode(profile.strictModeEnabled);
+      setOpenaiKey(profile.openaiKey ?? '');
+      setTranscriptionEngine(profile.transcriptionEngine ?? 'gemini');
       if (profile.openrouterApiKey) setValidation('success');
     }
   }, [profile]);
@@ -223,6 +233,23 @@ export default function SettingsScreen() {
   }
 
   async function save() {
+    const trimmedName = name.trim() || 'Doctor';
+    const parsedSessionLength = parseInt(sessionLength, 10);
+    const parsedDailyGoal = parseInt(dailyGoal, 10);
+
+    if (!isValidDate(inicetDate) || !isValidDate(neetDate)) {
+      Alert.alert('Invalid date', 'Use valid dates in YYYY-MM-DD format.');
+      return;
+    }
+    if (!Number.isFinite(parsedSessionLength) || parsedSessionLength < 10 || parsedSessionLength > 240) {
+      Alert.alert('Invalid session length', 'Session length must be between 10 and 240 minutes.');
+      return;
+    }
+    if (!Number.isFinite(parsedDailyGoal) || parsedDailyGoal < 10 || parsedDailyGoal > 1440) {
+      Alert.alert('Invalid daily goal', 'Daily goal must be between 10 and 1440 minutes.');
+      return;
+    }
+
     setSaving(true);
     try {
       // Store model name WITH key (hacky but saves migration)
@@ -230,16 +257,20 @@ export default function SettingsScreen() {
       
       updateUserProfile({
         openrouterApiKey: keyToStore,
-        displayName: name.trim() || 'Doctor',
+        openaiKey: openaiKey.trim(),
+        transcriptionEngine,
+        displayName: trimmedName,
         inicetDate,
         neetDate,
-        preferredSessionLength: parseInt(sessionLength) || 45,
-        dailyGoalMinutes: parseInt(dailyGoal) || 120,
+        preferredSessionLength: parsedSessionLength,
+        dailyGoalMinutes: parsedDailyGoal,
         notificationsEnabled: notifs,
         strictModeEnabled: strictMode,
       });
 
-      if (notifs) {
+      if (!notifs) {
+        await cancelAllNotifications();
+      } else {
         const granted = await requestNotificationPermissions();
         if (granted && apiKey.trim()) {
           await refreshAccountabilityNotifications();
@@ -254,8 +285,12 @@ export default function SettingsScreen() {
   }
 
   async function testNotification() {
+    if (!notifs) {
+      Alert.alert('Notifications disabled', 'Enable reminders first, then schedule notifications.');
+      return;
+    }
     if (!apiKey.trim()) {
-      Alert.alert('No API key', 'Add your OpenRouter API key first.');
+      Alert.alert('No API key', 'Add your Gemini API key first.');
       return;
     }
     try {
@@ -327,6 +362,47 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>
             Get your free key at aistudio.google.com
           </Text>
+
+          <View style={styles.divider} />
+          <Label text="Lecture Transcription Engine" />
+          <View style={styles.engineToggleRow}>
+            <TouchableOpacity
+              style={[styles.engineOption, transcriptionEngine === 'gemini' && styles.engineOptionActive]}
+              onPress={() => setTranscriptionEngine('gemini')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.engineOptionText, transcriptionEngine === 'gemini' && styles.engineOptionTextActive]}>
+                ✨ Gemini Audio
+              </Text>
+              <Text style={styles.engineOptionSub}>Free · uses Gemini key</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.engineOption, transcriptionEngine === 'openai' && styles.engineOptionActive]}
+              onPress={() => setTranscriptionEngine('openai')}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.engineOptionText, transcriptionEngine === 'openai' && styles.engineOptionTextActive]}>
+                🧠 Whisper (OpenAI)
+              </Text>
+              <Text style={styles.engineOptionSub}>$0.006/min</Text>
+            </TouchableOpacity>
+          </View>
+
+          {transcriptionEngine === 'openai' && (
+            <>
+              <Label text="OpenAI API Key" />
+              <TextInput
+                style={styles.input}
+                placeholder="sk-..."
+                placeholderTextColor="#444"
+                value={openaiKey}
+                onChangeText={setOpenaiKey}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <Text style={styles.hint}>Get at platform.openai.com • ~$0.27 per 45-min lecture</Text>
+            </>
+          )}
         </Section>
 
         {/* Model Picker Modal */}
@@ -424,6 +500,46 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
             <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.testBtn, { borderColor: '#F4433644' }]}
+            onPress={async () => {
+              await cancelAllNotifications();
+              Alert.alert('Done', 'Cleared all scheduled notifications.');
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.testBtnText, { color: '#F44336' }]}>Clear Scheduled Notifications</Text>
+          </TouchableOpacity>
+        </Section>
+
+        <Section title="🎧 Focus Audio">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Enable Focus Audio</Text>
+              <Text style={styles.hint}>Show and control ambient study audio in session header.</Text>
+            </View>
+            <Switch
+              value={profile?.focusAudioEnabled ?? false}
+              onValueChange={toggleFocusAudio}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
+        </Section>
+
+        <Section title="⏳ Visual Timer">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Enable Circular Timer</Text>
+              <Text style={styles.hint}>Replace the numeric timer with a visual countdown ring in sessions.</Text>
+            </View>
+            <Switch
+              value={profile?.visualTimersEnabled ?? false}
+              onValueChange={toggleVisualTimers}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
         </Section>
 
         <Section title="💾 Backup & Restore">
@@ -534,6 +650,16 @@ const styles = StyleSheet.create({
   validationSuccess: { color: '#4CAF50' },
   validationError: { color: '#F44336' },
   hint: { color: '#555', fontSize: 12, marginBottom: 4 },
+  divider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 14 },
+  engineToggleRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  engineOption: {
+    flex: 1, borderWidth: 1, borderColor: '#2A2A38', borderRadius: 10,
+    padding: 10, backgroundColor: '#14141D',
+  },
+  engineOptionActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
+  engineOptionText: { color: '#777', fontSize: 12, fontWeight: '700' },
+  engineOptionTextActive: { color: '#6C63FF' },
+  engineOptionSub: { color: '#555', fontSize: 10, marginTop: 2 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   switchLabel: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 2 },
   testBtn: { marginTop: 12, backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },

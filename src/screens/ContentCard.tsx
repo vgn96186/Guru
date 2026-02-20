@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Animated,
 } from 'react-native';
 import type {
   AIContent, KeyPointsContent, QuizContent, StoryContent,
@@ -15,12 +15,14 @@ interface Props {
   content: AIContent;
   onDone: (confidence: number) => void;
   onSkip: () => void;
+  timePerQuestion?: number; // seconds — enables per-question countdown (sprint mode)
+  onQuizComplete?: (correct: number, total: number) => void;
 }
 
-export default function ContentCard({ content, onDone, onSkip }: Props) {
+export default function ContentCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: Props) {
   switch (content.type) {
     case 'keypoints': return <KeyPointsCard content={content} onDone={onDone} onSkip={onSkip} />;
-    case 'quiz':      return <QuizCard content={content} onDone={onDone} onSkip={onSkip} />;
+    case 'quiz':      return <QuizCard content={content} onDone={onDone} onSkip={onSkip} timePerQuestion={timePerQuestion} onQuizComplete={onQuizComplete} />;
     case 'story':     return <StoryCard content={content} onDone={onDone} onSkip={onSkip} />;
     case 'mnemonic':  return <MnemonicCard content={content} onDone={onDone} onSkip={onSkip} />;
     case 'teach_back':return <TeachBackCard content={content} onDone={onDone} onSkip={onSkip} />;
@@ -86,44 +88,118 @@ function KeyPointsCard({ content, onDone, onSkip }: { content: KeyPointsContent 
 
 // ── Quiz ──────────────────────────────────────────────────────────
 
-function QuizCard({ content, onDone, onSkip }: { content: QuizContent } & Omit<Props, 'content'>) {
+function QuizCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: { content: QuizContent } & Omit<Props, 'content'>) {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExpl, setShowExpl] = useState(false);
   const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(timePerQuestion ?? 0);
+  const [timedOut, setTimedOut] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerAnim = useRef(new Animated.Value(1)).current;
 
   const q = content.questions[currentQ];
+
+  // Reset timer on each new question
+  useEffect(() => {
+    if (!timePerQuestion) return;
+    setTimeLeft(timePerQuestion);
+    setTimedOut(false);
+    timerAnim.setValue(1);
+    timerRef.current = setInterval(() => {
+      setTimeLeft(t => {
+        if (t <= 1) {
+          clearInterval(timerRef.current!);
+          setTimedOut(true);
+          setShowExpl(true);
+          // auto-advance after 1.5s
+          setTimeout(() => advanceQuestion(false), 1500);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    // Animate timer bar
+    Animated.timing(timerAnim, {
+      toValue: 0,
+      duration: timePerQuestion * 1000,
+      useNativeDriver: false,
+    }).start();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [currentQ]);
+
   if (!q) return null;
 
+  function advanceQuestion(wasCorrect: boolean) {
+    const newScore = wasCorrect ? score + 1 : score;
+    if (currentQ < content.questions.length - 1) {
+      setCurrentQ(c => c + 1);
+      setSelected(null);
+      setShowExpl(false);
+      setTimedOut(false);
+      if (wasCorrect) setScore(newScore);
+    } else {
+      const finalScore = wasCorrect ? score + 1 : score;
+      if (wasCorrect) setScore(finalScore);
+      onQuizComplete?.(finalScore, content.questions.length);
+      const confidence = Math.round((finalScore / content.questions.length) * 4) + 1;
+      onDone(Math.min(5, confidence));
+    }
+  }
+
   function handleSelect(idx: number) {
-    if (selected !== null) return;
+    if (selected !== null || timedOut) return;
+    if (timerRef.current) clearInterval(timerRef.current);
     setSelected(idx);
     setShowExpl(true);
     if (idx === q.correctIndex) setScore(s => s + 1);
   }
 
   function handleNext() {
+    const isCorrect = selected === q.correctIndex;
     if (currentQ < content.questions.length - 1) {
       setCurrentQ(c => c + 1);
       setSelected(null);
       setShowExpl(false);
+      setTimedOut(false);
     } else {
-      // Quiz done
+      onQuizComplete?.(score, content.questions.length);
       const confidence = Math.round((score / content.questions.length) * 4) + 1;
       onDone(Math.min(5, confidence));
     }
   }
 
+  const timerColor = timeLeft > 30 ? '#4CAF50' : timeLeft > 10 ? '#FF9800' : '#F44336';
+
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🎯 QUIZ  {currentQ + 1}/{content.questions.length}</Text>
+
+      {/* Per-question countdown timer bar */}
+      {!!timePerQuestion && (
+        <View style={s.timerBarTrack}>
+          <Animated.View
+            style={[
+              s.timerBarFill,
+              {
+                backgroundColor: timerColor,
+                width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+              },
+            ]}
+          />
+          <Text style={[s.timerBarText, { color: timerColor }]}>
+            {timedOut ? 'Time up!' : `${timeLeft}s`}
+          </Text>
+        </View>
+      )}
+
       <Text style={s.cardTitle}>{content.topicName}</Text>
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
           let bgColor = '#1A1A24';
           let borderColor = '#2A2A38';
-          if (selected !== null) {
+          if (selected !== null || timedOut) {
             if (idx === q.correctIndex) { bgColor = '#1A2A1A'; borderColor = '#4CAF50'; }
             else if (idx === selected) { bgColor = '#2A0A0A'; borderColor = '#F44336'; }
           }
@@ -139,9 +215,15 @@ function QuizCard({ content, onDone, onSkip }: { content: QuizContent } & Omit<P
           );
         })}
       </View>
-      {showExpl && (
+      {(showExpl && !timedOut) && (
         <View style={s.explBox}>
           <Text style={s.explLabel}>{selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}</Text>
+          <Text style={s.explText}>{q.explanation}</Text>
+        </View>
+      )}
+      {timedOut && (
+        <View style={[s.explBox, { borderColor: '#FF9800' }]}>
+          <Text style={[s.explLabel, { color: '#FF9800' }]}>⏰ Time's up — marked wrong</Text>
           <Text style={s.explText}>{q.explanation}</Text>
         </View>
       )}
@@ -152,9 +234,11 @@ function QuizCard({ content, onDone, onSkip }: { content: QuizContent } & Omit<P
           </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
-        <Text style={s.skipText}>Skip quiz</Text>
-      </TouchableOpacity>
+      {!timePerQuestion && (
+        <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+          <Text style={s.skipText}>Skip quiz</Text>
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 }
@@ -446,4 +530,7 @@ const s = StyleSheet.create({
   missedBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2A2A38' },
   missedLabel: { color: '#F44336', fontSize: 11, fontWeight: '700', marginBottom: 4 },
   missedText: { color: '#9E9E9E', fontSize: 13, fontStyle: 'italic' },
+  timerBarTrack: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, marginBottom: 14, overflow: 'hidden', position: 'relative' },
+  timerBarFill: { height: 6, borderRadius: 3 },
+  timerBarText: { position: 'absolute', right: 0, top: -18, fontSize: 11, fontWeight: '700' },
 });

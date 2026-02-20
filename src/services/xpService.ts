@@ -41,7 +41,14 @@ export function calculateAndAwardSessionXp(
     breakdown.push({ label: 'Session complete', amount: XP_REWARDS.SESSION_COMPLETE });
   }
 
-  const total = breakdown.reduce((s, b) => s + b.amount, 0);
+  let total = breakdown.reduce((s, b) => s + b.amount, 0);
+
+  // 15% chance for a Lucky Day 2x multiplier
+  if (Math.random() < 0.15) {
+    total *= 2;
+    breakdown.push({ label: '🎰 Lucky Day! 2x Multiplier', amount: total / 2 });
+  }
+
   const { newTotal, leveledUp, newLevel } = addXp(total);
 
   const levelInfo = LEVELS.find(l => l.level === newLevel) ?? LEVELS[0];

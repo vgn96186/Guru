@@ -10,8 +10,11 @@ export function getUserProfile(): UserProfile {
     display_name: string; total_xp: number; current_level: number;
     streak_current: number; streak_best: number; daily_goal_minutes: number;
     inicet_date: string; neet_date: string; preferred_session_length: number;
-    openrouter_api_key: string; notifications_enabled: number; last_active_date: string | null;
+    openrouter_api_key: string; openai_key: string; transcription_engine: string;
+    notifications_enabled: number; last_active_date: string | null;
     strict_mode_enabled: number;
+    focus_audio_enabled: number;
+    visual_timers_enabled: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -19,9 +22,11 @@ export function getUserProfile(): UserProfile {
       displayName: 'Doctor', totalXp: 0, currentLevel: 1,
       streakCurrent: 0, streakBest: 0, dailyGoalMinutes: 120,
       inicetDate: '2026-05-01', neetDate: '2026-08-01',
-      preferredSessionLength: 45, openrouterApiKey: '',
+      preferredSessionLength: 45, openrouterApiKey: '', openaiKey: '', transcriptionEngine: 'gemini',
       notificationsEnabled: true, lastActiveDate: null,
       strictModeEnabled: false,
+      focusAudioEnabled: false,
+      visualTimersEnabled: false,
     };
   }
 
@@ -36,9 +41,13 @@ export function getUserProfile(): UserProfile {
     neetDate: r.neet_date,
     preferredSessionLength: r.preferred_session_length,
     openrouterApiKey: r.openrouter_api_key,
+    openaiKey: r.openai_key ?? '',
+    transcriptionEngine: (r.transcription_engine ?? 'gemini') as 'gemini' | 'openai',
     notificationsEnabled: r.notifications_enabled === 1,
     lastActiveDate: r.last_active_date,
     strictModeEnabled: r.strict_mode_enabled === 1,
+    focusAudioEnabled: r.focus_audio_enabled === 1,
+    visualTimersEnabled: r.visual_timers_enabled === 1,
   };
 }
 
@@ -55,9 +64,13 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     neetDate: 'neet_date',
     preferredSessionLength: 'preferred_session_length',
     openrouterApiKey: 'openrouter_api_key',
+    openaiKey: 'openai_key',
+    transcriptionEngine: 'transcription_engine',
     notificationsEnabled: 'notifications_enabled',
     lastActiveDate: 'last_active_date',
     strictModeEnabled: 'strict_mode_enabled',
+    focusAudioEnabled: 'focus_audio_enabled',
+    visualTimersEnabled: 'visual_timers_enabled',
   };
 
   const setClauses: string[] = [];

@@ -16,6 +16,29 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'CheckIn'>;
 
 const MOODS: Mood[] = ['energetic', 'good', 'okay', 'tired', 'stressed', 'distracted'];
 
+const MOTIVATIONAL_MESSAGES = [
+  "Every question you solve today is one less surprise on exam day.",
+  "INICET toppers weren't born ready — they showed up daily.",
+  "Your future patients are counting on this version of you.",
+  "Small steps, Doctor. Consistency beats intensity.",
+  "The only bad study session is the one that didn't happen.",
+  "You don't have to be motivated. You just have to begin.",
+  "Last week's you would be proud of today's effort.",
+  "One more topic today = one step closer to your rank.",
+  "Think of this as training, not studying. Athletes don't skip practice.",
+  "Your competition is studying right now. But so are you. 💪",
+  "Discipline is choosing between what you want now and what you want most.",
+  "You chose medicine for a reason. Today, honor that reason.",
+];
+
+function getMotivationalMessage(): string {
+  // Use day of year to cycle through messages (same message all day, changes next day)
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
+  return MOTIVATIONAL_MESSAGES[dayOfYear % MOTIVATIONAL_MESSAGES.length];
+}
+
 export default function CheckInScreen() {
   const navigation = useNavigation<Nav>();
   const refreshProfile = useAppStore(s => s.refreshProfile);
@@ -65,6 +88,7 @@ export default function CheckInScreen() {
             {profile.streakCurrent > 0 && (
               <Text style={styles.streak}>🔥 {profile.streakCurrent}-day streak</Text>
             )}
+            <Text style={styles.motivation}>{getMotivationalMessage()}</Text>
           </View>
 
           <Text style={styles.question}>How are you feeling right now?</Text>
@@ -154,6 +178,7 @@ const styles = StyleSheet.create({
   greeting: { color: '#fff', fontSize: 26, fontWeight: '800', marginBottom: 8 },
   countdown: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 4 },
   streak: { color: '#FF9800', fontSize: 14 },
+  motivation: { color: '#555', fontSize: 13, fontStyle: 'italic', marginTop: 10, lineHeight: 18 },
   question: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 20 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   moodBtn: {

@@ -10,16 +10,20 @@ import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { useSessionStore, getCurrentAgendaItem, getCurrentContentType } from '../store/useSessionStore';
 import { useAppStore } from '../store/useAppStore';
-import { buildSession } from '../services/sessionPlanner';
+import { buildSession, buildPYQSprint } from '../services/sessionPlanner';
 import { fetchContent, prefetchTopicContent } from '../services/aiService';
 import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession } from '../db/queries/sessions';
 import { updateTopicProgress } from '../db/queries/topics';
 import { checkinToday, getDailyLog, updateStreak } from '../db/queries/progress';
-import { calculateAndAwardSessionXp } from '../services/xpService';
+import { getBrainDumps } from '../db/queries/brainDumps';
+import { calculateAndAwardSessionXp, type SessionXpResult } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
 import ContentCard from './ContentCard';
 import BreakScreen from './BreakScreen';
+import FocusAudioPlayer from '../components/FocusAudioPlayer';
+import VisualTimer from '../components/VisualTimer';
+import BrainDumpFab from '../components/BrainDumpFab';
 import type { Mood, SessionMode } from '../types';
 import { XP_REWARDS } from '../constants/gamification';
 import { useIdleTimer } from '../hooks/useIdleTimer';
@@ -42,7 +46,14 @@ export default function SessionScreen() {
   const xpAnim = useRef(new Animated.Value(0)).current;
   const [showXp, setShowXp] = useState(0);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [showStruggle, setShowStruggle] = useState(false); // To show emergency button? No, just put it in header
+  const [sessionXpResult, setSessionXpResult] = useState<SessionXpResult | null>(null);
+  const [streakUpdated, setStreakUpdated] = useState(false);
+  const agendaRevealTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // PYQ Sprint score tracking (cumulative across all topics)
+  const sprintCorrectRef = useRef(0);
+  const sprintTotalRef = useRef(0);
+  const [sprintResult, setSprintResult] = useState<{ correct: number; total: number } | null>(null);
 
   const idleTimeout = 1 * 60 * 1000; // 1 minute of inactivity
 
@@ -95,7 +106,10 @@ export default function SessionScreen() {
   useEffect(() => {
     store.resetSession();
     startPlanning();
+  }, []); // Only run once on mount
 
+  // Timer loop
+  useEffect(() => {
     timerRef.current = setInterval(() => {
       setElapsedSeconds(s => s + 1); // Total time since session started
       if (!store.isPaused) {
@@ -103,7 +117,7 @@ export default function SessionScreen() {
       }
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [store.isPaused]); // Re-run effect if paused state changes to adjust timer
+  }, [store.isPaused]); // Adjust timer when pause state changes
 
   // Break countdown
   useEffect(() => {
@@ -147,17 +161,25 @@ export default function SessionScreen() {
     store.setSessionState('planning');
 
     try {
-      const sessionLength = forcedMode === 'sprint' ? 10 : (profile.preferredSessionLength ?? 45);
-      const agenda = await buildSession(mood, sessionLength, profile.openrouterApiKey);
+      let agenda;
+      if (forcedMode === 'sprint') {
+        agenda = buildPYQSprint();
+        sprintCorrectRef.current = 0;
+        sprintTotalRef.current = 0;
+      } else {
+        const dailyAvailability = useAppStore.getState().dailyAvailability;
+        const baseLength = dailyAvailability && dailyAvailability > 0 ? dailyAvailability : (profile.preferredSessionLength ?? 45);
+        agenda = await buildSession(mood, baseLength, profile.openrouterApiKey);
+      }
       const sessionId = createSession(agenda.items.map(i => i.topic.id), mood, agenda.mode);
       store.setSessionId(sessionId);
       store.setAgenda(agenda);
       store.setSessionState('agenda_reveal');
 
-      // Auto-advance agenda reveal after 3s
-      setTimeout(() => {
+      // Auto-advance agenda reveal after 4s (but user can tap to skip)
+      agendaRevealTimeout.current = setTimeout(() => {
         store.setSessionState('studying');
-      }, 3000);
+      }, 4000);
     } catch (e: any) {
       setAiError(e?.message ?? 'Could not plan session');
     }
@@ -177,6 +199,10 @@ export default function SessionScreen() {
       const isLast = store.currentItemIndex >= (store.agenda?.items.length ?? 1) - 1;
       if (isLast) {
         store.nextTopic(); // triggers session_done
+      } else if (forcedMode === 'sprint') {
+        // Sprint mode: no breaks, go directly to next topic
+        store.nextTopic();
+        store.setSessionState('studying');
       } else {
         store.startBreak(300); // 5-min active break
       }
@@ -194,7 +220,9 @@ export default function SessionScreen() {
     if (!item) return;
     const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
     const xp = item.topic.progress.status === 'unseen' ? XP_REWARDS.TOPIC_UNSEEN : XP_REWARDS.TOPIC_REVIEW;
-    updateTopicProgress(item.topic.id, status, confidence, xp);
+
+    // Write progress to DB without XP. XP is now handled exclusively at session end to avoid double-counting.
+    updateTopicProgress(item.topic.id, status, confidence);
 
     // Show XP pop
     setShowXp(xp);
@@ -213,8 +241,8 @@ export default function SessionScreen() {
       'It happens. We can switch to "Sprint Mode" — shorter, easier content to help you finish.',
       [
         { text: 'Keep Pushing', style: 'cancel' },
-        { 
-          text: 'Downgrade Session', 
+        {
+          text: 'Downgrade Session',
           style: 'default',
           onPress: () => {
             store.downgradeSession();
@@ -225,12 +253,12 @@ export default function SessionScreen() {
             const item = getCurrentAgendaItem(store);
             const contentType = getCurrentContentType(store);
             if (item && contentType && profile?.openrouterApiKey) {
-               fetchContent(item.topic, contentType, profile.openrouterApiKey)
-               .then(c => {
-                 store.setCurrentContent(c);
-                 store.setLoadingContent(false);
-               })
-               .catch(() => store.setLoadingContent(false));
+              fetchContent(item.topic, contentType, profile.openrouterApiKey)
+                .then(c => {
+                  store.setCurrentContent(c);
+                  store.setLoadingContent(false);
+                })
+                .catch(() => store.setLoadingContent(false));
             }
           }
         }
@@ -251,10 +279,18 @@ export default function SessionScreen() {
 
     const isFirstToday = (getDailyLog()?.sessionCount ?? 0) === 0;
     const xpResult = calculateAndAwardSessionXp(completedTopics, quizResults, isFirstToday);
+    setSessionXpResult(xpResult);
 
+    const didStreakUpdate = durationMin >= 20;
+    setStreakUpdated(didStreakUpdate);
     endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
-    updateStreak(durationMin >= 20);
+    updateStreak(didStreakUpdate);
     refreshProfile();
+
+    // Capture sprint score before transitioning to session_done
+    if (forcedMode === 'sprint') {
+      setSprintResult({ correct: sprintCorrectRef.current, total: sprintTotalRef.current });
+    }
 
     store.setSessionState('session_done');
   }
@@ -317,11 +353,18 @@ export default function SessionScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.revealContainer}>
+        <TouchableOpacity
+          style={styles.revealContainer}
+          activeOpacity={1}
+          onPress={() => {
+            if (agendaRevealTimeout.current) clearTimeout(agendaRevealTimeout.current);
+            store.setSessionState('studying');
+          }}
+        >
           <Text style={styles.revealEmoji}>🎯</Text>
           <Text style={styles.revealFocus}>{store.agenda.focusNote}</Text>
           <Text style={styles.revealGuru}>"{store.agenda.guruMessage}"</Text>
-          <Text style={styles.revealSub}>Starting in a moment...</Text>
+          <Text style={styles.revealSub}>Tap anywhere to begin...</Text>
           {store.agenda.items.map(item => (
             <View key={item.topic.id} style={styles.revealTopic}>
               <View style={[styles.revealDot, { backgroundColor: item.topic.subjectColor }]} />
@@ -329,7 +372,7 @@ export default function SessionScreen() {
               <Text style={styles.revealTopicSub}>{item.topic.subjectCode}</Text>
             </View>
           ))}
-        </View>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -347,7 +390,35 @@ export default function SessionScreen() {
   }
 
   if (store.sessionState === 'session_done') {
-    return <SessionDoneScreen completedCount={store.completedTopicIds.length} elapsedSeconds={elapsedSeconds} onClose={() => navigation.popToTop()} />;
+    if (forcedMode === 'sprint' && sprintResult) {
+      return <PYQDoneScreen
+        correct={sprintResult.correct}
+        total={sprintResult.total}
+        topicsCount={store.completedTopicIds.length}
+        elapsedSeconds={elapsedSeconds}
+        onClose={() => {
+          const dumps = getBrainDumps();
+          if (dumps.length > 0) {
+            (navigation as any).navigate('BrainDumpReview');
+          } else {
+            navigation.popToTop();
+          }
+        }}
+      />;
+    }
+    return <SessionDoneScreen
+      completedCount={store.completedTopicIds.length}
+      elapsedSeconds={elapsedSeconds}
+      xpResult={sessionXpResult}
+      streakUpdated={streakUpdated}
+      onClose={() => {
+        const dumps = getBrainDumps();
+        if (dumps.length > 0) {
+          (navigation as any).navigate('BrainDumpReview');
+        } else {
+          navigation.popToTop();
+        }
+    }} />;
   }
 
   if (store.sessionState === 'topic_done') {
@@ -388,10 +459,24 @@ export default function SessionScreen() {
           <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
         </View>
         <View style={styles.headerRight}>
+          <View style={styles.audioWrapper}>
+            <FocusAudioPlayer />
+          </View>
           <TouchableOpacity onPress={handleDowngrade} style={styles.sosBtn}>
             <Text style={styles.sosBtnText}>🆘</Text>
           </TouchableOpacity>
-          <Text style={styles.timer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
+          {profile?.visualTimersEnabled ? (
+            <View style={styles.visualTimerWrap}>
+              <VisualTimer
+                totalSeconds={Math.max(1, profile.preferredSessionLength * 60)}
+                remainingSeconds={Math.max(0, profile.preferredSessionLength * 60 - activeElapsedSeconds)}
+                size={52}
+                strokeWidth={6}
+              />
+            </View>
+          ) : (
+            <Text style={styles.timer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
+          )}
           <TouchableOpacity onPress={finishSession} style={styles.endBtn}>
             <Text style={styles.endBtnText}>End</Text>
           </TouchableOpacity>
@@ -422,6 +507,11 @@ export default function SessionScreen() {
           content={store.currentContent}
           onDone={handleConfidenceRating}
           onSkip={handleContentDone}
+          timePerQuestion={forcedMode === 'sprint' ? 90 : undefined}
+          onQuizComplete={(correct, total) => {
+            sprintCorrectRef.current += correct;
+            sprintTotalRef.current += total;
+          }}
         />
       ) : (
         <LoadingOrb message="Loading..." />
@@ -436,7 +526,7 @@ export default function SessionScreen() {
       >
         <Text style={styles.xpPopText}>+{showXp} XP</Text>
       </Animated.View>
-      
+
       {showPausedOverlay && (
         <View style={styles.pausedOverlay}>
           <Text style={styles.pausedText}>Session Paused</Text>
@@ -446,6 +536,8 @@ export default function SessionScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      <BrainDumpFab />
     </SafeAreaView>
   );
 }
@@ -460,23 +552,169 @@ const CONTENT_LABELS: Record<string, string> = {
 interface SessionDoneProps {
   completedCount: number;
   elapsedSeconds: number;
+  xpResult: SessionXpResult | null;
+  streakUpdated: boolean;
   onClose: () => void;
 }
-function SessionDoneScreen({ completedCount, elapsedSeconds, onClose }: SessionDoneProps) {
+function SessionDoneScreen({ completedCount, elapsedSeconds, xpResult, streakUpdated, onClose }: SessionDoneProps) {
   const mins = Math.round(elapsedSeconds / 60);
+  const profile = useAppStore(s => s.profile);
+  const levelInfo = useAppStore(s => s.levelInfo);
+
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.doneContainer}>
-        <Text style={styles.doneEmoji}>🎉</Text>
-        <Text style={styles.doneTitle}>Session Complete!</Text>
-        <Text style={styles.doneStat}>{completedCount} topics covered · {mins} min</Text>
+      <ScrollView contentContainerStyle={styles.doneContainer}>
+        <Text style={styles.doneEmoji}>{xpResult?.leveledUp ? '🏆' : '🎉'}</Text>
+        <Text style={styles.doneTitle}>
+          {xpResult?.leveledUp ? 'Level Up!' : 'Session Complete!'}
+        </Text>
+        {xpResult?.leveledUp && (
+          <Text style={styles.doneLevelUp}>
+            You're now {xpResult.newLevelName}!
+          </Text>
+        )}
+        <Text style={styles.doneStat}>
+          {completedCount} topic{completedCount !== 1 ? 's' : ''} covered · {mins} min
+        </Text>
+
+        {/* Streak update */}
+        {streakUpdated && profile && (
+          <View style={styles.doneStreakBadge}>
+            <Text style={styles.doneStreakText}>🔥 {profile.streakCurrent}-day streak!</Text>
+          </View>
+        )}
+
+        {/* XP Breakdown */}
+        {xpResult && xpResult.breakdown.length > 0 && (
+          <View style={styles.xpBreakdownContainer}>
+            <Text style={styles.xpBreakdownTitle}>XP Earned</Text>
+            {xpResult.breakdown.map((item, i) => (
+              <View key={i} style={styles.xpBreakdownRow}>
+                <Text style={styles.xpBreakdownLabel} numberOfLines={1}>{item.label}</Text>
+                <Text style={styles.xpBreakdownAmount}>+{item.amount}</Text>
+              </View>
+            ))}
+            <View style={styles.xpBreakdownDivider} />
+            <View style={styles.xpBreakdownRow}>
+              <Text style={styles.xpBreakdownTotalLabel}>Total</Text>
+              <Text style={styles.xpBreakdownTotal}>+{xpResult.total} XP</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Level progress */}
+        {levelInfo && (
+          <View style={styles.doneLevelProgress}>
+            <Text style={styles.doneLevelLabel}>Level {levelInfo.level} · {levelInfo.name}</Text>
+            <View style={styles.doneLevelBarTrack}>
+              <View style={[styles.doneLevelBarFill, { width: `${Math.round(levelInfo.progress * 100)}%` }]} />
+            </View>
+            <Text style={styles.doneLevelSub}>
+              {Math.round(levelInfo.progress * 100)}% to next level
+            </Text>
+          </View>
+        )}
+
         <TouchableOpacity style={styles.doneBtn} onPress={onClose}>
-          <Text style={styles.doneBtnText}>Back to Home</Text>
+          <Text style={styles.doneBtnText}>Continue</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
+
+// ── PYQ Sprint Done Screen ────────────────────────────────────────
+
+interface PYQDoneProps {
+  correct: number;
+  total: number;
+  topicsCount: number;
+  elapsedSeconds: number;
+  onClose: () => void;
+}
+function PYQDoneScreen({ correct, total, topicsCount, elapsedSeconds, onClose }: PYQDoneProps) {
+  const mins = Math.round(elapsedSeconds / 60);
+  const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const grade = percent >= 80 ? '🏆 Excellent' : percent >= 60 ? '👍 Good' : percent >= 40 ? '📈 Improving' : '📚 Keep Practicing';
+  const gradeColor = percent >= 80 ? '#4CAF50' : percent >= 60 ? '#8BC34A' : percent >= 40 ? '#FF9800' : '#F44336';
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.doneContainer}>
+        <Text style={styles.doneEmoji}>🎯</Text>
+        <Text style={styles.doneTitle}>PYQ Sprint Done!</Text>
+
+        {/* Big score */}
+        <View style={pyqStyles.scoreBox}>
+          <Text style={pyqStyles.scoreMain}>{correct}</Text>
+          <Text style={pyqStyles.scoreSlash}>/{total}</Text>
+        </View>
+        <Text style={[pyqStyles.gradeText, { color: gradeColor }]}>{grade}</Text>
+
+        {/* Stats row */}
+        <View style={pyqStyles.statsRow}>
+          <View style={pyqStyles.statItem}>
+            <Text style={pyqStyles.statValue}>{percent}%</Text>
+            <Text style={pyqStyles.statLabel}>Accuracy</Text>
+          </View>
+          <View style={pyqStyles.statDivider} />
+          <View style={pyqStyles.statItem}>
+            <Text style={pyqStyles.statValue}>{topicsCount}</Text>
+            <Text style={pyqStyles.statLabel}>Topics</Text>
+          </View>
+          <View style={pyqStyles.statDivider} />
+          <View style={pyqStyles.statItem}>
+            <Text style={pyqStyles.statValue}>{mins}m</Text>
+            <Text style={pyqStyles.statLabel}>Time</Text>
+          </View>
+        </View>
+
+        {/* NEET-PG style mark breakdown */}
+        <View style={pyqStyles.marksBox}>
+          <Text style={pyqStyles.marksTitle}>NEET-PG Marks Estimate</Text>
+          <View style={pyqStyles.marksRow}>
+            <Text style={pyqStyles.marksLabel}>Correct  (+1 each)</Text>
+            <Text style={[pyqStyles.marksValue, { color: '#4CAF50' }]}>+{correct}</Text>
+          </View>
+          <View style={pyqStyles.marksRow}>
+            <Text style={pyqStyles.marksLabel}>Wrong  (−⅓ each)</Text>
+            <Text style={[pyqStyles.marksValue, { color: '#F44336' }]}>−{((total - correct) * 0.33).toFixed(1)}</Text>
+          </View>
+          <View style={[pyqStyles.marksRow, pyqStyles.marksTotalRow]}>
+            <Text style={pyqStyles.marksTotalLabel}>Net Score</Text>
+            <Text style={[pyqStyles.marksTotalValue, { color: gradeColor }]}>
+              {(correct - (total - correct) * 0.33).toFixed(1)}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity style={styles.doneBtn} onPress={onClose}>
+          <Text style={styles.doneBtnText}>Back to Home</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+const pyqStyles = StyleSheet.create({
+  scoreBox: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', marginBottom: 8 },
+  scoreMain: { color: '#fff', fontWeight: '900', fontSize: 72, lineHeight: 80 },
+  scoreSlash: { color: '#9E9E9E', fontWeight: '700', fontSize: 32, marginBottom: 12 },
+  gradeText: { fontSize: 18, fontWeight: '800', textAlign: 'center', marginBottom: 24 },
+  statsRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginBottom: 20, width: '100%' },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { color: '#fff', fontWeight: '800', fontSize: 22 },
+  statLabel: { color: '#9E9E9E', fontSize: 11, marginTop: 2 },
+  statDivider: { width: 1, height: 32, backgroundColor: '#2A2A38' },
+  marksBox: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, width: '100%', marginBottom: 24 },
+  marksTitle: { color: '#9E9E9E', fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12 },
+  marksRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  marksLabel: { color: '#E0E0E0', fontSize: 14 },
+  marksValue: { fontWeight: '700', fontSize: 14 },
+  marksTotalRow: { borderTopWidth: 1, borderTopColor: '#2A2A38', paddingTop: 8, marginTop: 4 },
+  marksTotalLabel: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  marksTotalValue: { fontWeight: '900', fontSize: 18 },
+});
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
@@ -489,7 +727,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A24',
   },
   headerLeft: { flex: 1 },
-  headerRight: { alignItems: 'flex-end' },
+  headerRight: { alignItems: 'flex-end', flexDirection: 'row' },
+  audioWrapper: { marginRight: 12 },
+  visualTimerWrap: { marginRight: 12 },
   topicProgress: { color: '#9E9E9E', fontSize: 11, marginBottom: 2 },
   topicName: { color: '#fff', fontWeight: '800', fontSize: 18 },
   subjectTag: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
@@ -531,10 +771,42 @@ const styles = StyleSheet.create({
   topicDoneSub: { color: '#9E9E9E', fontSize: 14 },
   xpPop: { position: 'absolute', bottom: 100, right: 24, backgroundColor: '#6C63FF', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
   xpPopText: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  doneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  doneContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 24, paddingBottom: 60 },
   doneEmoji: { fontSize: 64, marginBottom: 16 },
-  doneTitle: { color: '#fff', fontWeight: '900', fontSize: 28, marginBottom: 8 },
-  doneStat: { color: '#9E9E9E', fontSize: 16, marginBottom: 32 },
+  doneTitle: { color: '#fff', fontWeight: '900', fontSize: 28, marginBottom: 4 },
+  doneLevelUp: { color: '#FFD700', fontSize: 18, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
+  doneStat: { color: '#9E9E9E', fontSize: 16, marginBottom: 16 },
+  doneStreakBadge: {
+    backgroundColor: '#2A1A0A',
+    borderWidth: 1,
+    borderColor: '#FF980055',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    marginBottom: 20,
+  },
+  doneStreakText: { color: '#FF9800', fontSize: 15, fontWeight: '700' },
+  xpBreakdownContainer: {
+    backgroundColor: '#1A1A24',
+    borderRadius: 16,
+    padding: 16,
+    width: '100%',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
+  xpBreakdownTitle: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
+  xpBreakdownRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 4 },
+  xpBreakdownLabel: { color: '#ccc', fontSize: 14, flex: 1, marginRight: 8 },
+  xpBreakdownAmount: { color: '#6C63FF', fontSize: 14, fontWeight: '700' },
+  xpBreakdownDivider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 8 },
+  xpBreakdownTotalLabel: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  xpBreakdownTotal: { color: '#6C63FF', fontSize: 18, fontWeight: '900' },
+  doneLevelProgress: { width: '100%', marginBottom: 24 },
+  doneLevelLabel: { color: '#9E9E9E', fontSize: 13, fontWeight: '600', marginBottom: 6, textAlign: 'center' },
+  doneLevelBarTrack: { height: 8, backgroundColor: '#2A2A38', borderRadius: 4, overflow: 'hidden' },
+  doneLevelBarFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 4 },
+  doneLevelSub: { color: '#555', fontSize: 11, textAlign: 'center', marginTop: 4 },
   doneBtn: { backgroundColor: '#6C63FF', borderRadius: 16, paddingHorizontal: 40, paddingVertical: 16 },
   doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
@@ -547,7 +819,7 @@ const styles = StyleSheet.create({
   skipBtnText: { color: '#FF9800', fontWeight: '700', fontSize: 16 },
   leaveBtn: { paddingVertical: 12 },
   leaveBtnText: { color: '#555', fontSize: 14 },
-  
+
   pausedOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.8)',

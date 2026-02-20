@@ -13,6 +13,8 @@ interface AppState {
   refreshProfile: () => void;
   setApiKey: (key: string) => void;
   setDailyAvailability: (mins: number) => void;
+  toggleFocusAudio: () => void;
+  toggleVisualTimers: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -52,5 +54,23 @@ export const useAppStore = create<AppState>((set) => ({
 
   setDailyAvailability: (mins: number) => {
     set({ dailyAvailability: mins });
+  },
+
+  toggleFocusAudio: () => {
+    set(state => {
+      if (!state.profile) return state;
+      const newValue = !state.profile.focusAudioEnabled;
+      updateUserProfile({ focusAudioEnabled: newValue });
+      return { profile: { ...state.profile, focusAudioEnabled: newValue } };
+    });
+  },
+
+  toggleVisualTimers: () => {
+    set(state => {
+      if (!state.profile) return state;
+      const newValue = !state.profile.visualTimersEnabled;
+      updateUserProfile({ visualTimersEnabled: newValue });
+      return { profile: { ...state.profile, visualTimersEnabled: newValue } };
+    });
   },
 }));

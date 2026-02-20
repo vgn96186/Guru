@@ -47,7 +47,7 @@ export default function BreakScreen({ countdown, topicId, apiKey, onDone }: Prop
           });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const mins = Math.floor(countdown / 60);
@@ -106,10 +106,14 @@ export default function BreakScreen({ countdown, topicId, apiKey, onDone }: Prop
           </View>
         )}
 
-        {/* Emergency continue */}
+        {/* Emergency continue / Hyperfocus Leverage */}
         {countdown > 0 && (
-          <TouchableOpacity style={styles.forceBtn} onPress={onDone} activeOpacity={0.8}>
-            <Text style={styles.forceBtnText}>I'm ready now ({mins}:{secs.toString().padStart(2,'0')} left)</Text>
+          <TouchableOpacity style={styles.hyperfocusBtn} onPress={onDone} activeOpacity={0.8}>
+            <Text style={styles.hyperfocusBtnEmoji}>🔥</Text>
+            <View>
+              <Text style={styles.hyperfocusBtnTitle}>I'm in the zone!</Text>
+              <Text style={styles.hyperfocusBtnSub}>Skip the break. Keep the momentum.</Text>
+            </View>
           </TouchableOpacity>
         )}
       </View>
@@ -136,6 +140,17 @@ const styles = StyleSheet.create({
   idleEmoji: { fontSize: 48, marginBottom: 12 },
   idleText: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 },
   idleText2: { color: '#9E9E9E', fontSize: 14 },
-  forceBtn: { padding: 16, alignItems: 'center' },
-  forceBtnText: { color: '#555', fontSize: 13 },
+  hyperfocusBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF572222',
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FF5722'
+  },
+  hyperfocusBtnEmoji: { fontSize: 24, marginRight: 12 },
+  hyperfocusBtnTitle: { color: '#FF5722', fontSize: 16, fontWeight: 'bold' },
+  hyperfocusBtnSub: { color: '#FF5722aa', fontSize: 12, marginTop: 2 }
 });

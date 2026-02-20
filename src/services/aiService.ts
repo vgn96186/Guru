@@ -17,7 +17,7 @@ async function callGemini(
 ): Promise<string> {
   // Allow model override if it's stored in user profile (passed via apiKey string hack or distinct param)
   // For now, we assume the caller handles the model name selection if needed.
-  
+
   // Convert OpenAI-style messages to Gemini `contents` format
   const systemMsg = messages.find(m => m.role === 'system')?.content || '';
   const userMsg = messages.find(m => m.role === 'user')?.content || '';
@@ -26,7 +26,7 @@ async function callGemini(
   // Check if model name is embedded in API key string (Format: "KEY|MODEL")
   let activeModel = model;
   let activeKey = apiKey;
-  
+
   if (apiKey.includes('|')) {
     const parts = apiKey.split('|');
     activeKey = parts[0];
@@ -177,4 +177,30 @@ export async function askGuru(
     apiKey,
   );
   return raw.replace(/```json|```/g, '');
+}
+
+export interface CatalystResponse {
+  topicName: string;
+  keypoints: any;
+  mnemonic: any;
+  quiz: any;
+}
+
+export async function catalyzeTranscript(
+  transcript: string,
+  apiKey: string,
+): Promise<CatalystResponse> {
+  // Use buildCatalystPrompt from prompts map
+  const { buildCatalystPrompt } = await import('../constants/prompts');
+  const userPrompt = buildCatalystPrompt(transcript);
+
+  const raw = await callGemini(
+    [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    apiKey,
+  );
+
+  return JSON.parse(raw.replace(/```json|```/g, '')) as CatalystResponse;
 }

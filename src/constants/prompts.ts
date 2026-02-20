@@ -123,11 +123,11 @@ export function buildAgendaPrompt(
   recentTopics: string[],
 ): string {
   const moodInstructions: Record<Mood, string> = {
-    energetic:  'User is energized. Pick high-priority, challenging topics. 3 topics.',
-    good:       'User is in good shape. Normal selection. 2-3 topics.',
-    okay:       'User is okay. Mix 1 easy familiar topic + 1-2 harder ones. 2-3 topics.',
-    tired:      'User is tired. Pick only topics they have seen before (status: seen/reviewed). 1-2 short topics max.',
-    stressed:   'User is stressed. Pick 1 easy, familiar topic. Short session. 1 topic only.',
+    energetic: 'User is energized. Pick high-priority, challenging topics. 3 topics.',
+    good: 'User is in good shape. Normal selection. 2-3 topics.',
+    okay: 'User is okay. Mix 1 easy familiar topic + 1-2 harder ones. 2-3 topics.',
+    tired: 'User is tired. Pick only topics they have seen before (status: seen/reviewed). 1-2 short topics max.',
+    stressed: 'User is stressed. Pick 1 easy, familiar topic. Short session. 1 topic only.',
     distracted: 'User is distracted. Sprint mode: pick 1 topic with high-yield keypoints only. 1 topic.',
   };
 
@@ -182,24 +182,67 @@ Reference actual data (streak count, specific weak topics, INICET countdown).
 Morning: energizing. Evening: nudge. Streak warning: urgent but not mean.`;
 }
 
+export function buildCatalystPrompt(transcript: string): string {
+  return `Act as an expert medical education synthesizer for NEET-PG.
+Given the following raw lecture dictation/transcript, extract the core concept and auto-generate a complete study deck.
+
+Transcript:
+"${transcript}"
+
+Return exactly one JSON object with the following structure:
+{
+  "topicName": "A concise, specific title for this concept (max 5 words)",
+  "keypoints": {
+    "type": "keypoints",
+    "topicName": "...",
+    "points": ["fact1", "fact2", "fact3", "fact4", "fact5", "fact6"],
+    "memoryHook": "one catchy sentence to anchor this topic"
+  },
+  "mnemonic": {
+    "type": "mnemonic",
+    "topicName": "...",
+    "mnemonic": "ACRONYM or visual",
+    "expansion": ["A=...", "B=...", "C=..."],
+    "tip": "exam context"
+  },
+  "quiz": {
+    "type": "quiz",
+    "topicName": "...",
+    "questions": [
+      {
+        "question": "clinical vignette based on transcript...",
+        "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+        "correctIndex": 0,
+        "explanation": "why correct + why others wrong"
+      },
+      // generate exactly 3 questions
+    ]
+  }
+}
+
+Rules:
+- High-yield facts only.
+- Strict JSON, no markdown fences.`;
+}
+
 export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: string) => string> = {
-  keypoints:   buildKeyPointsPrompt,
-  quiz:        buildQuizPrompt,
-  story:       buildStoryPrompt,
-  mnemonic:    buildMnemonicPrompt,
-  teach_back:  buildTeachBackPrompt,
-  error_hunt:  buildErrorHuntPrompt,
-  detective:   buildDetectivePrompt,
+  keypoints: buildKeyPointsPrompt,
+  quiz: buildQuizPrompt,
+  story: buildStoryPrompt,
+  mnemonic: buildMnemonicPrompt,
+  teach_back: buildTeachBackPrompt,
+  error_hunt: buildErrorHuntPrompt,
+  detective: buildDetectivePrompt,
 };
 
 export function getMoodContentTypes(mood: Mood): ContentType[] {
   switch (mood) {
-    case 'energetic':  return ['quiz', 'error_hunt', 'detective', 'keypoints'];
-    case 'good':       return ['keypoints', 'story', 'quiz', 'mnemonic'];
-    case 'okay':       return ['keypoints', 'mnemonic', 'quiz', 'story'];
-    case 'tired':      return ['mnemonic', 'story', 'keypoints'];
-    case 'stressed':   return ['story', 'keypoints', 'mnemonic'];
+    case 'energetic': return ['quiz', 'error_hunt', 'detective', 'keypoints'];
+    case 'good': return ['keypoints', 'story', 'quiz', 'mnemonic'];
+    case 'okay': return ['keypoints', 'mnemonic', 'quiz', 'story'];
+    case 'tired': return ['mnemonic', 'story', 'keypoints'];
+    case 'stressed': return ['story', 'keypoints', 'mnemonic'];
     case 'distracted': return ['keypoints', 'detective'];
-    default:           return ['keypoints', 'story', 'mnemonic', 'quiz'];
+    default: return ['keypoints', 'story', 'mnemonic', 'quiz'];
   }
 }

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated } from 'r
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
+import { addXp } from '../db/queries/progress';
 import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, AIContent } from '../types';
@@ -18,13 +19,13 @@ const RATINGS = [
 
 export default function ReviewScreen() {
   const navigation = useNavigation();
-  const profile = useAppStore(s => s.profile);
+  const { profile, refreshProfile } = useAppStore();
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [content, setContent] = useState<AIContent | null>(null);
   const [loading, setLoading] = useState(false);
-  
+
   const flipAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -63,26 +64,28 @@ export default function ReviewScreen() {
 
   function handleRate(rating: typeof RATINGS[0]) {
     if (!currentTopic) return;
-    
+
     // Update DB
     // logic similar to updateTopicProgress but using explicit 'days' if needed, 
     // or just mapping confidence. Our existing updateTopicProgress uses confidence.
     // For now, we map confidence to our SRS intervals in db/queries/topics
     // so we just pass the new confidence.
-    
+
     // 5 = Mastered (for Easy if already high), but let's stick to 1-4 scale for cards
     let newConf = rating.confidence;
     if (rating.label === 'Easy' && currentTopic.progress.confidence >= 4) newConf = 5;
 
     // Use a simplified XP reward for flashcards (lower than full study)
-    const xp = 10 * newConf; 
-    
+    const xp = 10 * newConf;
+
     updateTopicProgress(
       currentTopic.id,
       newConf >= 4 ? 'mastered' : newConf >= 2 ? 'reviewed' : 'seen',
-      newConf,
-      xp
+      newConf
     );
+
+    addXp(xp);
+    refreshProfile();
 
     // Next card
     if (currentIdx < queue.length - 1) {
@@ -111,19 +114,19 @@ export default function ReviewScreen() {
 
   const frontAnimatedStyle = {
     transform: [{ rotateY: flipAnim.interpolate({ inputRange: [0, 180], outputRange: ['0deg', '180deg'] }) }],
-    backfaceVisibility: 'hidden' as const, 
-    position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 
+    backfaceVisibility: 'hidden' as const,
+    position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0
   };
   const backAnimatedStyle = {
     transform: [{ rotateY: flipAnim.interpolate({ inputRange: [0, 180], outputRange: ['180deg', '360deg'] }) }],
     backfaceVisibility: 'hidden' as const,
-    position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0 
+    position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      
+
       <View style={styles.header}>
         <Text style={styles.progress}>Card {currentIdx + 1} / {queue.length}</Text>
         <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.close}>✕</Text></TouchableOpacity>

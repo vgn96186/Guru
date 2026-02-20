@@ -72,6 +72,9 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE topic_progress ADD COLUMN next_review_date TEXT`,
     `ALTER TABLE topic_progress ADD COLUMN user_notes TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE user_profile ADD COLUMN strict_mode_enabled INTEGER DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN openai_key TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE user_profile ADD COLUMN transcription_engine TEXT NOT NULL DEFAULT 'gemini'`,
+    `ALTER TABLE external_app_logs ADD COLUMN recording_path TEXT`,
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }
@@ -178,6 +181,25 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
     await db.runAsync(
       `UPDATE topic_progress SET confidence = 1 WHERE topic_id IN (${placeholders}) AND confidence = 0`,
       vaultTopicIds
+    );
+
+    // 3. Ensure "watched once" baseline is reflected in study counts
+    await db.runAsync(
+      `UPDATE topic_progress SET times_studied = 1 WHERE topic_id IN (${placeholders}) AND times_studied = 0`,
+      vaultTopicIds
+    );
+
+    // 4. Set SRS-based review date: vault topics (seen once) should be reviewed in 3 days
+    const reviewDate = dateStr(new Date(Date.now() + 3 * 86400000));
+    await db.runAsync(
+      `UPDATE topic_progress SET next_review_date = ? WHERE topic_id IN (${placeholders}) AND next_review_date IS NULL`,
+      [reviewDate, ...vaultTopicIds]
+    );
+
+    // 5. Set last_studied_at timestamp if not already set (so progress stats pick them up)
+    await db.runAsync(
+      `UPDATE topic_progress SET last_studied_at = ? WHERE topic_id IN (${placeholders}) AND last_studied_at IS NULL`,
+      [Date.now(), ...vaultTopicIds]
     );
   }
   console.log(`[DB] Vault Seed: ${inserted} inserted, ${ignored} ignored`);

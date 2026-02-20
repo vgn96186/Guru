@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS topic_progress (
   times_studied INTEGER NOT NULL DEFAULT 0,
   xp_earned INTEGER NOT NULL DEFAULT 0,
   next_review_date TEXT,
-  user_notes TEXT NOT NULL DEFAULT ''
+  user_notes TEXT NOT NULL DEFAULT '',
+  wrong_count INTEGER NOT NULL DEFAULT 0,
+  is_nemesis INTEGER NOT NULL DEFAULT 0
 )`;
 
 export const CREATE_SESSIONS = `
@@ -91,7 +93,27 @@ CREATE TABLE IF NOT EXISTS user_profile (
   preferred_session_length INTEGER NOT NULL DEFAULT 45,
   openrouter_api_key TEXT NOT NULL DEFAULT '',
   notifications_enabled INTEGER NOT NULL DEFAULT 1,
+  strict_mode_enabled INTEGER NOT NULL DEFAULT 0,
+  focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
+  visual_timers_enabled INTEGER NOT NULL DEFAULT 1,
   last_active_date TEXT
+)`;
+
+export const CREATE_BRAIN_DUMPS = `
+CREATE TABLE IF NOT EXISTS brain_dumps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  note TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`;
+
+export const CREATE_EXTERNAL_APP_LOGS = `
+CREATE TABLE IF NOT EXISTS external_app_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  app_name TEXT NOT NULL,
+  launched_at INTEGER NOT NULL,
+  returned_at INTEGER,
+  duration_minutes INTEGER,
+  notes TEXT
 )`;
 
 export const ALL_SCHEMAS = [
@@ -103,4 +125,6 @@ export const ALL_SCHEMAS = [
   CREATE_DAILY_LOG,
   CREATE_AI_CACHE,
   CREATE_USER_PROFILE,
+  CREATE_BRAIN_DUMPS,
+  CREATE_EXTERNAL_APP_LOGS
 ];

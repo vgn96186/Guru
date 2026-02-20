@@ -1,26 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, StatusBar, Dimensions, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAppStore } from '../store/useAppStore';
-import { getLast30DaysLog, getActivityHistory, getUserProfile, getDaysToExam } from '../db/queries/progress';
-import { getSubjectCoverage, getAllSubjects, getWeakestTopics } from '../db/queries/topics';
-import { getRecentSessions, getTotalStudyMinutes } from '../db/queries/sessions';
+import { getActivityHistory, getDaysToExam } from '../db/queries/progress';
+import { getSubjectCoverage, getAllSubjects, getNemesisTopics } from '../db/queries/topics';
+import { getTotalStudyMinutes } from '../db/queries/sessions';
+import { getTotalExternalStudyMinutes } from '../db/queries/externalLogs';
 import type { DailyLog, TopicWithProgress } from '../types';
 
 export default function StatsScreen() {
   const { profile, levelInfo, refreshProfile } = useAppStore();
   const [logs, setLogs] = useState<DailyLog[]>([]);
-  const [weakTopics, setWeakTopics] = useState<TopicWithProgress[]>([]);
+  const [nemesisTopics, setNemesisTopics] = useState<TopicWithProgress[]>([]);
   const [totalMinutes, setTotalMinutes] = useState(0);
   const [subjectCoverage, setSubjectCoverage] = useState<Map<number, { total: number; seen: number }>>(new Map());
   const [subjects, setSubjects] = useState(getAllSubjects);
   const [showAllSubjects, setShowAllSubjects] = useState(false);
 
-  useEffect(() => {
+  const loadStatsData = useCallback(() => {
     refreshProfile();
     setLogs(getActivityHistory(90)); // Fetch 90 days for 12-week heatmap
-    setWeakTopics(getWeakestTopics(5));
-    setTotalMinutes(getTotalStudyMinutes());
+    setNemesisTopics(getNemesisTopics().slice(0, 5));
+    setTotalMinutes(getTotalStudyMinutes() + getTotalExternalStudyMinutes());
     
     const cov = getSubjectCoverage();
     const covMap = new Map(cov.map(c => [c.subjectId, { total: c.total, seen: c.seen }]));
@@ -35,7 +37,13 @@ export default function StatsScreen() {
       return pctA - pctB;
     });
     setSubjects(sorted);
-  }, []);
+  }, [refreshProfile]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadStatsData();
+    }, [loadStatsData])
+  );
 
   if (!profile || !levelInfo) return null;
 
@@ -112,11 +120,11 @@ export default function StatsScreen() {
           })}
         </View>
 
-        {/* Weak topics */}
-        {weakTopics.length > 0 && (
+        {/* Nemesis topics */}
+        {nemesisTopics.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>⚔️ Nemesis Topics</Text>
-            {weakTopics.map(t => (
+            {nemesisTopics.map(t => (
               <View key={t.id} style={styles.weakRow}>
                 <View style={[styles.weakDot, { backgroundColor: t.subjectColor }]} />
                 <View style={styles.weakInfo}>
@@ -135,6 +143,13 @@ export default function StatsScreen() {
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function toLocalDateStr(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 const HEAT_COLORS = ['#1A1A24', '#162B2C', '#1A4A4A', '#1A6F6F', '#00BCD4'];
@@ -169,7 +184,7 @@ function Heatmap({ logs }: { logs: import('../types').DailyLog[] }) {
     for (let d = 0; d < 7; d++) {
       const cell = new Date(gridEnd);
       cell.setDate(gridEnd.getDate() - w * 7 - (6 - d));
-      const dateStr = cell.toISOString().slice(0, 10);
+      const dateStr = toLocalDateStr(cell);
       const isFuture = cell > today;
       week.push({ date: dateStr, mins: isFuture ? -1 : (logMap.get(dateStr) ?? 0) });
     }

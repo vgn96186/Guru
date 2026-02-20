@@ -1,6 +1,6 @@
 import { Linking, Platform, PermissionsAndroid } from 'react-native';
 import { startExternalAppSession } from '../db/queries/externalLogs';
-import { launchApp, isAppInstalled, startRecording } from '../../modules/app-launcher';
+import { launchApp, isAppInstalled, startRecording, requestMediaProjection } from '../../modules/app-launcher';
 
 export type SupportedMedicalApp = 'marrow' | 'dbmci' | 'cerebellum' | 'prepladder' | 'bhatia';
 
@@ -52,23 +52,39 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp): Promise<boo
 
     if (installed) {
         try {
-            // Request mic permission before recording (required on Android 6+)
             let recordingPath: string | undefined;
             try {
-                const micGranted = await PermissionsAndroid.request(
-                    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-                    {
-                        title: 'Microphone Permission',
-                        message: 'Guru needs microphone access to record your lecture for automatic topic detection.',
-                        buttonPositive: 'Allow',
-                        buttonNegative: 'Deny',
-                    },
-                );
-                if (micGranted === PermissionsAndroid.RESULTS.GRANTED) {
-                    recordingPath = await startRecording();
-                } else {
-                    console.warn('[AppLauncher] Mic permission denied — launching without recording');
+                // 1. Try to get MediaProjection for internal audio capture (no mic noise)
+                //    This shows a one-time system dialog: "Start recording or casting?"
+                let projectionGranted = false;
+                try {
+                    projectionGranted = await requestMediaProjection();
+                    console.log(`[AppLauncher] MediaProjection granted: ${projectionGranted}`);
+                } catch (e) {
+                    console.warn('[AppLauncher] MediaProjection request failed:', e);
                 }
+
+                // 2. If projection denied, fall back to mic — still need mic permission
+                if (!projectionGranted) {
+                    const micGranted = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+                        {
+                            title: 'Microphone Permission',
+                            message: 'Guru needs microphone access to record your lecture for automatic topic detection.',
+                            buttonPositive: 'Allow',
+                            buttonNegative: 'Deny',
+                        },
+                    );
+                    if (micGranted !== PermissionsAndroid.RESULTS.GRANTED) {
+                        console.warn('[AppLauncher] Mic permission denied — launching without recording');
+                    }
+                }
+
+                // 3. Start recording — passes package name so internal capture
+                //    filters to only that app's audio output
+                recordingPath = await startRecording(
+                    projectionGranted ? app.androidStore : ''
+                );
             } catch (e) { console.warn('[AppLauncher] Recording start failed:', e); }
 
             await launchApp(app.androidStore);

@@ -173,6 +173,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
         lastMood: lastMood as Mood | null,
       },
       profile.openrouterApiKey,
+      profile.openrouterKey || undefined,
     );
 
     await cancelAllNotifications();

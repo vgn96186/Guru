@@ -9,7 +9,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
 import { updateUserProfile, getUserProfile } from '../db/queries/progress';
-import { requestNotificationPermissions, refreshAccountabilityNotifications, cancelAllNotifications } from '../services/notificationService';
+import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
 import { getDb } from '../db/database';
 
 const BACKUP_VERSION = 1;
@@ -148,9 +148,10 @@ async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: st
 }
 
 export default function SettingsScreen() {
-  const { profile, refreshProfile, toggleFocusAudio, toggleVisualTimers, toggleFaceTracking } = useAppStore();
+  const { profile, refreshProfile } = useAppStore();
   const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gemini-3.0-flash-preview');
+  const [orKey, setOrKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
   const [availableModels, setAvailableModels] = useState<string[]>(KNOWN_MODELS);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [name, setName] = useState('');
@@ -160,20 +161,11 @@ export default function SettingsScreen() {
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
   const [strictMode, setStrictMode] = useState(false);
-  const [alwaysAskMoodOnLaunch, setAlwaysAskMoodOnLaunch] = useState(true);
-  const [openaiKey, setOpenaiKey] = useState('');
-  const [transcriptionEngine, setTranscriptionEngine] = useState<'gemini' | 'openai'>('gemini');
   const [saving, setSaving] = useState(false);
   const [validation, setValidation] = useState<ValidationState>('idle');
   const [validationMsg, setValidationMsg] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function isValidDate(value: string): boolean {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-    const d = new Date(value);
-    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
-  }
 
   useEffect(() => {
     if (profile) {
@@ -184,6 +176,7 @@ export default function SettingsScreen() {
       } else {
         setApiKey(profile.openrouterApiKey);
       }
+      setOrKey(profile.openrouterKey ?? '');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
       setNeetDate(profile.neetDate);
@@ -191,9 +184,6 @@ export default function SettingsScreen() {
       setDailyGoal(profile.dailyGoalMinutes.toString());
       setNotifs(profile.notificationsEnabled);
       setStrictMode(profile.strictModeEnabled);
-      setAlwaysAskMoodOnLaunch(profile.alwaysAskMoodOnLaunch ?? true);
-      setOpenaiKey(profile.openaiKey ?? '');
-      setTranscriptionEngine(profile.transcriptionEngine ?? 'gemini');
       if (profile.openrouterApiKey) setValidation('success');
     }
   }, [profile]);
@@ -235,23 +225,6 @@ export default function SettingsScreen() {
   }
 
   async function save() {
-    const trimmedName = name.trim() || 'Doctor';
-    const parsedSessionLength = parseInt(sessionLength, 10);
-    const parsedDailyGoal = parseInt(dailyGoal, 10);
-
-    if (!isValidDate(inicetDate) || !isValidDate(neetDate)) {
-      Alert.alert('Invalid date', 'Use valid dates in YYYY-MM-DD format.');
-      return;
-    }
-    if (!Number.isFinite(parsedSessionLength) || parsedSessionLength < 10 || parsedSessionLength > 240) {
-      Alert.alert('Invalid session length', 'Session length must be between 10 and 240 minutes.');
-      return;
-    }
-    if (!Number.isFinite(parsedDailyGoal) || parsedDailyGoal < 10 || parsedDailyGoal > 1440) {
-      Alert.alert('Invalid daily goal', 'Daily goal must be between 10 and 1440 minutes.');
-      return;
-    }
-
     setSaving(true);
     try {
       // Store model name WITH key (hacky but saves migration)
@@ -259,21 +232,17 @@ export default function SettingsScreen() {
       
       updateUserProfile({
         openrouterApiKey: keyToStore,
-        openaiKey: openaiKey.trim(),
-        transcriptionEngine,
-        displayName: trimmedName,
+        openrouterKey: orKey.trim(),
+        displayName: name.trim() || 'Doctor',
         inicetDate,
         neetDate,
-        preferredSessionLength: parsedSessionLength,
-        dailyGoalMinutes: parsedDailyGoal,
+        preferredSessionLength: parseInt(sessionLength) || 45,
+        dailyGoalMinutes: parseInt(dailyGoal) || 120,
         notificationsEnabled: notifs,
         strictModeEnabled: strictMode,
-        alwaysAskMoodOnLaunch,
       });
 
-      if (!notifs) {
-        await cancelAllNotifications();
-      } else {
+      if (notifs) {
         const granted = await requestNotificationPermissions();
         if (granted && apiKey.trim()) {
           await refreshAccountabilityNotifications();
@@ -288,12 +257,8 @@ export default function SettingsScreen() {
   }
 
   async function testNotification() {
-    if (!notifs) {
-      Alert.alert('Notifications disabled', 'Enable reminders first, then schedule notifications.');
-      return;
-    }
     if (!apiKey.trim()) {
-      Alert.alert('No API key', 'Add your Gemini API key first.');
+      Alert.alert('No API key', 'Add your OpenRouter API key first.');
       return;
     }
     try {
@@ -366,46 +331,20 @@ export default function SettingsScreen() {
             Get your free key at aistudio.google.com
           </Text>
 
-          <View style={styles.divider} />
-          <Label text="Lecture Transcription Engine" />
-          <View style={styles.engineToggleRow}>
-            <TouchableOpacity
-              style={[styles.engineOption, transcriptionEngine === 'gemini' && styles.engineOptionActive]}
-              onPress={() => setTranscriptionEngine('gemini')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.engineOptionText, transcriptionEngine === 'gemini' && styles.engineOptionTextActive]}>
-                ✨ Gemini Audio
-              </Text>
-              <Text style={styles.engineOptionSub}>Free · uses Gemini key</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.engineOption, transcriptionEngine === 'openai' && styles.engineOptionActive]}
-              onPress={() => setTranscriptionEngine('openai')}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.engineOptionText, transcriptionEngine === 'openai' && styles.engineOptionTextActive]}>
-                🧠 Whisper (OpenAI)
-              </Text>
-              <Text style={styles.engineOptionSub}>$0.006/min</Text>
-            </TouchableOpacity>
-          </View>
-
-          {transcriptionEngine === 'openai' && (
-            <>
-              <Label text="OpenAI API Key" />
-              <TextInput
-                style={styles.input}
-                placeholder="sk-..."
-                placeholderTextColor="#444"
-                value={openaiKey}
-                onChangeText={setOpenaiKey}
-                secureTextEntry
-                autoCapitalize="none"
-              />
-              <Text style={styles.hint}>Get at platform.openai.com • ~$0.27 per 45-min lecture</Text>
-            </>
-          )}
+          <Label text="OpenRouter API Key (openrouter.ai) — for free model fallbacks" />
+          <TextInput
+            style={styles.input}
+            placeholder="sk-or-..."
+            placeholderTextColor="#444"
+            value={orKey}
+            onChangeText={setOrKey}
+            secureTextEntry
+            autoCapitalize="none"
+          />
+          <Text style={styles.hint}>
+            Optional. When Gemini hits rate limits, Guru auto-retries with free OpenRouter models (Gemini 2.0 Flash, Llama 3.3, Qwen 2.5, etc.).
+            Get a free key at openrouter.ai
+          </Text>
         </Section>
 
         {/* Model Picker Modal */}
@@ -485,18 +424,6 @@ export default function SettingsScreen() {
               thumbColor="#fff"
             />
           </View>
-          <View style={[styles.switchRow, { marginTop: 16 }]}> 
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.switchLabel}>Always ask mood on app open</Text>
-              <Text style={styles.hint}>Show the check-in screen every launch to tailor session style to your current state.</Text>
-            </View>
-            <Switch
-              value={alwaysAskMoodOnLaunch}
-              onValueChange={setAlwaysAskMoodOnLaunch}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
-            />
-          </View>
         </Section>
 
         <Section title="🔔 Notifications">
@@ -515,61 +442,6 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
             <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.testBtn, { borderColor: '#F4433644' }]}
-            onPress={async () => {
-              await cancelAllNotifications();
-              Alert.alert('Done', 'Cleared all scheduled notifications.');
-            }}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.testBtnText, { color: '#F44336' }]}>Clear Scheduled Notifications</Text>
-          </TouchableOpacity>
-        </Section>
-
-        <Section title="🎧 Focus Audio">
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.switchLabel}>Enable Focus Audio</Text>
-              <Text style={styles.hint}>Show and control ambient study audio in session header.</Text>
-            </View>
-            <Switch
-              value={profile?.focusAudioEnabled ?? false}
-              onValueChange={toggleFocusAudio}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
-            />
-          </View>
-        </Section>
-
-        <Section title="👁️ Face Tracking">
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.switchLabel}>Concentration Tracking</Text>
-              <Text style={styles.hint}>Uses front camera to detect if you're looking away, drowsy, or absent. Pauses session automatically. Runs fully on-device — no data is sent anywhere.</Text>
-            </View>
-            <Switch
-              value={profile?.faceTrackingEnabled ?? false}
-              onValueChange={toggleFaceTracking}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
-            />
-          </View>
-        </Section>
-
-        <Section title="⏳ Visual Timer">
-          <View style={styles.switchRow}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={styles.switchLabel}>Enable Circular Timer</Text>
-              <Text style={styles.hint}>Replace the numeric timer with a visual countdown ring in sessions.</Text>
-            </View>
-            <Switch
-              value={profile?.visualTimersEnabled ?? false}
-              onValueChange={toggleVisualTimers}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
-            />
-          </View>
         </Section>
 
         <Section title="💾 Backup & Restore">
@@ -680,16 +552,6 @@ const styles = StyleSheet.create({
   validationSuccess: { color: '#4CAF50' },
   validationError: { color: '#F44336' },
   hint: { color: '#555', fontSize: 12, marginBottom: 4 },
-  divider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 14 },
-  engineToggleRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  engineOption: {
-    flex: 1, borderWidth: 1, borderColor: '#2A2A38', borderRadius: 10,
-    padding: 10, backgroundColor: '#14141D',
-  },
-  engineOptionActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
-  engineOptionText: { color: '#777', fontSize: 12, fontWeight: '700' },
-  engineOptionTextActive: { color: '#6C63FF' },
-  engineOptionSub: { color: '#555', fontSize: 10, marginTop: 2 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   switchLabel: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 2 },
   testBtn: { marginTop: 12, backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },

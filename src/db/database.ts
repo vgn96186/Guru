@@ -41,25 +41,27 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
 
-  // Seed topics if empty or forced
+  // Seed topics — always run (INSERT OR IGNORE is idempotent; adds new topics without wiping progress)
   const subjectCountRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM subjects');
   const subjectCount = subjectCountRes?.count ?? 0;
 
+  if (actualForce) {
+    console.log('[DB] Force-seeding: wiping topics & progress');
+    await db.execAsync('DELETE FROM topic_progress');
+    await db.execAsync('DELETE FROM topics');
+    await db.execAsync('DELETE FROM subjects');
+    await seedSubjects(db);
+  }
+
   if (subjectCount === 0 || actualForce) {
-    console.log(`[DB] Seeding topics (force: ${actualForce})`);
-    if (actualForce) {
-      await db.execAsync('DELETE FROM topic_progress');
-      await db.execAsync('DELETE FROM topics');
-      await db.execAsync('DELETE FROM subjects');
-      await seedSubjects(db);
-    }
-    await seedTopics(db);
     await seedUserProfile(db);
   } else {
-    // Ensure user_profile row exists
     const profile = await db.getFirstAsync<{ id: number }>('SELECT id FROM user_profile WHERE id = 1');
     if (!profile) await seedUserProfile(db);
   }
+
+  // Always seed topics so new subtopics added to syllabus reach existing users
+  await seedTopics(db);
 
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
   await seedVaultTopics(db);
@@ -76,6 +78,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE user_profile ADD COLUMN openai_key TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE user_profile ADD COLUMN transcription_engine TEXT NOT NULL DEFAULT 'gemini'`,
     `ALTER TABLE external_app_logs ADD COLUMN recording_path TEXT`,
+    `ALTER TABLE user_profile ADD COLUMN face_tracking_enabled INTEGER NOT NULL DEFAULT 0`,
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }

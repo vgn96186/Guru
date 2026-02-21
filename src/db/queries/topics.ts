@@ -44,11 +44,10 @@ export function getSubjectById(id: number): Subject | null {
   };
 }
 
-const TOPIC_SELECT = `SELECT 
+const TOPIC_SELECT = `SELECT
   t.id, t.subject_id, t.parent_topic_id, t.name, t.estimated_minutes, t.inicet_priority,
   p.status, p.confidence, p.last_studied_at, p.times_studied, p.xp_earned,
-  p.next_review_date,
-  p.user_notes,
+  p.next_review_date, p.user_notes, p.wrong_count, p.is_nemesis,
   s.name as subject_name, s.short_code, s.color_hex`;
 
 export function getTopicsBySubject(subjectId: number | string): TopicWithProgress[] {
@@ -59,23 +58,11 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
   console.log(`[DB] Fetching topics for subject_id: ${id}`);
 
   const rows = db.getAllSync<any>(`
-    SELECT 
-      t.id, 
-      t.subject_id, 
-      t.parent_topic_id,
-      t.name, 
-      t.estimated_minutes, 
-      t.inicet_priority,
-      p.status, 
-      p.confidence, 
-      p.last_studied_at, 
-      p.times_studied, 
-      p.xp_earned,
-      p.next_review_date,
-      p.user_notes,
-      s.name as subject_name,
-      s.short_code,
-      s.color_hex
+    SELECT
+      t.id, t.subject_id, t.parent_topic_id, t.name, t.estimated_minutes, t.inicet_priority,
+      p.status, p.confidence, p.last_studied_at, p.times_studied, p.xp_earned,
+      p.next_review_date, p.user_notes, p.wrong_count, p.is_nemesis,
+      s.name as subject_name, s.short_code, s.color_hex
     FROM topics t
     JOIN subjects s ON t.subject_id = s.id
     LEFT JOIN topic_progress p ON t.id = p.topic_id
@@ -147,16 +134,16 @@ export function updateTopicProgress(
 
   db.runSync(
     `INSERT INTO topic_progress (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, wrong_count, is_nemesis)
-     VALUES (?, ?, ?, ?, 1, 0, ?, ?, ?)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?, ?)
      ON CONFLICT(topic_id) DO UPDATE SET
        status = excluded.status,
        confidence = excluded.confidence,
        last_studied_at = excluded.last_studied_at,
-       times_studied = times_studied + 1,
+       times_studied = excluded.times_studied,
        next_review_date = excluded.next_review_date,
        wrong_count = excluded.wrong_count,
        is_nemesis = excluded.is_nemesis`,
-    [topicId, status, confidence, now, nextReview, newWrongCount, newIsNemesis],
+    [topicId, status, confidence, now, newTimesStudied, nextReview, newWrongCount, newIsNemesis],
   );
 }
 
@@ -185,21 +172,17 @@ export function getDueReviewCount(): number {
 export function getTopicsDueForReview(limit = 10): TopicWithProgress[] {
   const db = getDb();
   const today = todayStr();
-  const rows = db.getAllSync<{
-    id: number; subject_id: number; name: string; estimated_minutes: number; inicet_priority: number;
-    status: string; confidence: number; last_studied_at: number | null; times_studied: number; xp_earned: number;
-    next_review_date: string | null; user_notes: string;
-    subject_name: string; short_code: string; color_hex: string;
-  }>(
-    `SELECT t.*, p.status, p.confidence, p.last_studied_at, p.times_studied, p.xp_earned,
-            p.next_review_date, p.user_notes,
+  const rows = db.getAllSync<any>(
+    `SELECT t.id, t.subject_id, t.parent_topic_id, t.name, t.estimated_minutes, t.inicet_priority,
+            p.status, p.confidence, p.last_studied_at, p.times_studied, p.xp_earned,
+            p.next_review_date, p.user_notes, p.wrong_count, p.is_nemesis,
             s.name as subject_name, s.short_code, s.color_hex
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
      JOIN topic_progress p ON t.id = p.topic_id
      WHERE p.status != 'unseen'
        AND (p.next_review_date IS NULL OR p.next_review_date <= ?)
-     ORDER BY p.confidence ASC, p.last_studied_at ASC
+     ORDER BY p.is_nemesis DESC, p.confidence ASC, p.last_studied_at ASC
      LIMIT ?`,
     [today, limit],
   );

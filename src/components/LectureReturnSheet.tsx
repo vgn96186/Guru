@@ -6,16 +6,18 @@
  *   1. "Back from Marrow! 47 min recorded"
  *   2. Transcribing... (spinner)
  *   3. Results: subject chip, topic pills, 2-line summary
- *   4. [Mark as Studied] [Skip]
- *   On confirm → marks topics in DB, deletes recording file, awards tap XP
+ *   4. [Mark as Studied] [Mark + Take Quiz] [Skip]
+ *   5. Quiz: 3 MCQs generated from lecture content
+ *   6. Score + bonus XP
  */
 
 import React, { useEffect, useState } from 'react';
 import {
   Modal, View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, ActivityIndicator, Alert,
+  StyleSheet, ActivityIndicator,
 } from 'react-native';
 import { transcribeWithGemini, transcribeWithOpenAI, markTopicsFromLecture, type LectureAnalysis } from '../services/transcriptionService';
+import { catalyzeTranscript } from '../services/aiService';
 import { deleteRecording } from '../../modules/app-launcher';
 import { getDb } from '../db/database';
 import { addXp } from '../db/queries/progress';
@@ -31,7 +33,14 @@ interface Props {
   onDone: () => void;
 }
 
-type Phase = 'intro' | 'transcribing' | 'results' | 'error';
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+type Phase = 'intro' | 'transcribing' | 'results' | 'quiz' | 'quiz_done' | 'error';
 
 export default function LectureReturnSheet({
   visible, appName, durationMinutes, recordingPath,
@@ -40,6 +49,14 @@ export default function LectureReturnSheet({
   const [phase, setPhase] = useState<Phase>('intro');
   const [analysis, setAnalysis] = useState<LectureAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Quiz state
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [currentQ, setCurrentQ] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [showExpl, setShowExpl] = useState(false);
+  const [score, setScore] = useState(0);
 
   // Auto-start transcription when sheet opens with a recording
   useEffect(() => {
@@ -55,6 +72,12 @@ export default function LectureReturnSheet({
       setPhase('intro');
       setAnalysis(null);
       setErrorMsg('');
+      setQuizQuestions([]);
+      setQuizLoading(false);
+      setCurrentQ(0);
+      setSelected(null);
+      setShowExpl(false);
+      setScore(0);
     }
   }, [visible]);
 
@@ -69,6 +92,10 @@ export default function LectureReturnSheet({
       }
       setAnalysis(result);
       setPhase('results');
+      // Fire quiz generation in background while user reads results
+      if (result.topics.length > 0) {
+        generateQuiz(result);
+      }
     } catch (e: any) {
       console.error('[Transcription] Error:', e);
       setErrorMsg(e?.message ?? 'Transcription failed');
@@ -76,17 +103,69 @@ export default function LectureReturnSheet({
     }
   }
 
-  function handleMarkStudied() {
+  async function generateQuiz(result: LectureAnalysis) {
+    setQuizLoading(true);
+    try {
+      const pseudoTranscript = `Subject: ${result.subject}
+Topics: ${result.topics.join(', ')}
+Key concepts:
+${result.keyConcepts.map(c => `- ${c}`).join('\n')}
+Summary: ${result.lectureSummary}`;
+      const catalyst = await catalyzeTranscript(pseudoTranscript, geminiKey);
+      if (Array.isArray(catalyst.quiz?.questions) && catalyst.quiz.questions.length > 0) {
+        setQuizQuestions(catalyst.quiz.questions);
+      }
+    } catch (e) {
+      console.warn('[LectureReturn] Quiz generation failed:', e);
+    } finally {
+      setQuizLoading(false);
+    }
+  }
+
+  function doMarkTopics() {
     if (!analysis) return;
     try {
       const db = getDb();
       markTopicsFromLecture(db, analysis.topics, analysis.estimatedConfidence, analysis.subject);
-      // Bonus XP: 8 XP per detected topic
       if (analysis.topics.length > 0) addXp(analysis.topics.length * 8);
     } catch (e) {
       console.warn('[LectureReturn] markTopics error:', e);
     }
+  }
+
+  function handleMarkStudied() {
+    doMarkTopics();
     cleanupAndClose();
+  }
+
+  function handleMarkAndQuiz() {
+    doMarkTopics();
+    setCurrentQ(0);
+    setSelected(null);
+    setShowExpl(false);
+    setScore(0);
+    setPhase('quiz');
+  }
+
+  function handleSelectAnswer(idx: number) {
+    if (selected !== null) return;
+    setSelected(idx);
+    setShowExpl(true);
+    if (idx === quizQuestions[currentQ].correctIndex) {
+      setScore(s => s + 1);
+    }
+  }
+
+  function handleNextQuestion() {
+    if (currentQ < quizQuestions.length - 1) {
+      setCurrentQ(c => c + 1);
+      setSelected(null);
+      setShowExpl(false);
+    } else {
+      const bonusXp = score * 15;
+      if (bonusXp > 0) addXp(bonusXp);
+      setPhase('quiz_done');
+    }
   }
 
   function cleanupAndClose() {
@@ -109,6 +188,8 @@ export default function LectureReturnSheet({
     Dermatology: '#CDDC39', Orthopedics: '#FF5722', 'Forensic Medicine': '#455A64', SPM: '#388E3C',
   };
   const subjectColor = SUBJECT_COLORS[analysis?.subject ?? ''] ?? '#6C63FF';
+
+  const q = quizQuestions[currentQ];
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleSkip}>
@@ -182,6 +263,82 @@ export default function LectureReturnSheet({
             </ScrollView>
           )}
 
+          {/* Phase: quiz */}
+          {phase === 'quiz' && (
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {quizLoading && !q ? (
+                <View style={styles.centeredBlock}>
+                  <ActivityIndicator color="#6C63FF" size="large" />
+                  <Text style={[styles.spinnerText, { marginTop: 12 }]}>Generating quiz…</Text>
+                </View>
+              ) : q ? (
+                <View>
+                  <Text style={styles.quizProgress}>Q {currentQ + 1} / {quizQuestions.length}</Text>
+                  <Text style={styles.questionText}>{q.question}</Text>
+                  <View style={styles.optionsContainer}>
+                    {q.options.map((opt, idx) => {
+                      let bgColor = '#12121A';
+                      let borderColor = '#2A2A38';
+                      if (selected !== null) {
+                        if (idx === q.correctIndex) { bgColor = '#0A1F0A'; borderColor = '#4CAF50'; }
+                        else if (idx === selected) { bgColor = '#1F0A0A'; borderColor = '#F44336'; }
+                      }
+                      return (
+                        <TouchableOpacity
+                          key={idx}
+                          style={[styles.optionBtn, { backgroundColor: bgColor, borderColor }]}
+                          onPress={() => handleSelectAnswer(idx)}
+                          activeOpacity={0.8}
+                          disabled={selected !== null}
+                        >
+                          <Text style={styles.optionText}>{opt}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                  {showExpl && (
+                    <View style={[styles.explBox, { borderColor: selected === q.correctIndex ? '#4CAF50' : '#F44336' }]}>
+                      <Text style={[styles.explLabel, { color: selected === q.correctIndex ? '#4CAF50' : '#F44336' }]}>
+                        {selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}
+                      </Text>
+                      <Text style={styles.explText}>{q.explanation}</Text>
+                    </View>
+                  )}
+                </View>
+              ) : (
+                <View style={styles.centeredBlock}>
+                  <Text style={styles.returnEmoji}>😅</Text>
+                  <Text style={styles.returnTitle}>No quiz available</Text>
+                  <Text style={styles.returnSub}>Not enough content to generate questions.</Text>
+                </View>
+              )}
+            </ScrollView>
+          )}
+
+          {/* Phase: quiz_done */}
+          {phase === 'quiz_done' && (
+            <View style={styles.centeredBlock}>
+              <Text style={styles.returnEmoji}>
+                {score === quizQuestions.length ? '🏆' : score >= quizQuestions.length / 2 ? '🎯' : '📚'}
+              </Text>
+              <Text style={styles.returnTitle}>
+                {score} / {quizQuestions.length} correct
+              </Text>
+              <Text style={styles.returnSub}>
+                {score === quizQuestions.length
+                  ? 'Perfect! You nailed it.'
+                  : score >= quizQuestions.length / 2
+                  ? 'Good effort. Review the misses.'
+                  : 'Rewatch this section soon.'}
+              </Text>
+              {score > 0 && (
+                <View style={styles.xpBonusBox}>
+                  <Text style={styles.xpBonusText}>+{score * 15} XP bonus earned 🎉</Text>
+                </View>
+              )}
+            </View>
+          )}
+
           {/* Phase: error */}
           {phase === 'error' && (
             <View style={styles.centeredBlock}>
@@ -196,22 +353,66 @@ export default function LectureReturnSheet({
 
           {/* Actions */}
           <View style={styles.actions}>
-            {phase === 'results' && analysis && analysis.topics.length > 0 ? (
-              <TouchableOpacity style={styles.primaryBtn} onPress={handleMarkStudied} activeOpacity={0.85}>
-                <Text style={styles.primaryBtnText}>✓ Mark as Studied (+{analysis.topics.length * 8} XP)</Text>
-              </TouchableOpacity>
-            ) : null}
 
-            <TouchableOpacity
-              style={[styles.secondaryBtn, (phase === 'transcribing') && { opacity: 0.4 }]}
-              onPress={handleSkip}
-              disabled={phase === 'transcribing'}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.secondaryBtnText}>
-                {phase === 'results' ? 'Skip' : 'Dismiss'}
-              </Text>
-            </TouchableOpacity>
+            {/* Results phase: mark + quiz / mark only */}
+            {phase === 'results' && analysis && analysis.topics.length > 0 && (
+              <>
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={handleMarkAndQuiz}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.primaryBtnText}>
+                    {quizLoading ? '⏳ Test Yourself (loading…)' : '🧠 Mark + Test Yourself'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.outlineBtn}
+                  onPress={handleMarkStudied}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.outlineBtnText}>✓ Mark as Studied (+{analysis.topics.length * 8} XP)</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {/* Quiz phase: next / finish */}
+            {phase === 'quiz' && selected !== null && q && (
+              <TouchableOpacity style={styles.primaryBtn} onPress={handleNextQuestion} activeOpacity={0.85}>
+                <Text style={styles.primaryBtnText}>
+                  {currentQ < quizQuestions.length - 1 ? 'Next Question →' : 'See My Score'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Quiz phase: skip if no questions or stuck loading */}
+            {phase === 'quiz' && !quizLoading && !q && (
+              <TouchableOpacity style={styles.primaryBtn} onPress={cleanupAndClose} activeOpacity={0.85}>
+                <Text style={styles.primaryBtnText}>Close</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Quiz done */}
+            {phase === 'quiz_done' && (
+              <TouchableOpacity style={styles.primaryBtn} onPress={cleanupAndClose} activeOpacity={0.85}>
+                <Text style={styles.primaryBtnText}>Done</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Dismiss / Skip always available (except quiz_done which has its own Done) */}
+            {phase !== 'quiz_done' && (
+              <TouchableOpacity
+                style={[styles.secondaryBtn, phase === 'transcribing' && { opacity: 0.4 }]}
+                onPress={handleSkip}
+                disabled={phase === 'transcribing'}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.secondaryBtnText}>
+                  {phase === 'results' ? 'Skip' : phase === 'quiz' ? 'End Quiz' : 'Dismiss'}
+                </Text>
+              </TouchableOpacity>
+            )}
+
           </View>
 
         </View>
@@ -239,7 +440,7 @@ const styles = StyleSheet.create({
   centeredBlock: { alignItems: 'center', paddingVertical: 12 },
   returnEmoji: { fontSize: 44, marginBottom: 10 },
   returnTitle: { color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'center' },
-  returnSub: { color: '#9E9E9E', fontSize: 14, marginTop: 4 },
+  returnSub: { color: '#9E9E9E', fontSize: 14, marginTop: 4, textAlign: 'center' },
   spinnerRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20 },
   spinnerText: { color: '#6C63FF', fontSize: 13 },
   resultsHeader: { marginBottom: 14 },
@@ -270,12 +471,43 @@ const styles = StyleSheet.create({
     borderRadius: 10, paddingVertical: 10, paddingHorizontal: 20, marginTop: 8,
   },
   retryBtnText: { color: '#6C63FF', fontWeight: '700' },
+
+  // Quiz
+  quizProgress: { color: '#555', fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  questionText: { color: '#fff', fontSize: 15, lineHeight: 22, fontWeight: '600', marginBottom: 14 },
+  optionsContainer: { gap: 8, marginBottom: 8 },
+  optionBtn: {
+    borderWidth: 1.5, borderRadius: 10, padding: 12,
+  },
+  optionText: { color: '#C5C5D2', fontSize: 14, lineHeight: 20 },
+  explBox: {
+    borderWidth: 1, borderRadius: 10,
+    padding: 12, marginTop: 8, marginBottom: 4,
+    backgroundColor: '#12121A',
+  },
+  explLabel: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
+  explText: { color: '#9E9E9E', fontSize: 12, lineHeight: 18 },
+
+  // XP bonus
+  xpBonusBox: {
+    marginTop: 16, backgroundColor: '#2E7D3222',
+    borderWidth: 1, borderColor: '#4CAF5055',
+    borderRadius: 12, paddingHorizontal: 20, paddingVertical: 10,
+  },
+  xpBonusText: { color: '#4CAF50', fontWeight: '800', fontSize: 15 },
+
+  // Actions
   actions: { marginTop: 12, gap: 8 },
   primaryBtn: {
     backgroundColor: '#6C63FF', borderRadius: 12,
     paddingVertical: 14, alignItems: 'center',
   },
   primaryBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  outlineBtn: {
+    borderWidth: 1.5, borderColor: '#6C63FF', borderRadius: 12,
+    paddingVertical: 12, alignItems: 'center',
+  },
+  outlineBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   secondaryBtn: { alignItems: 'center', paddingVertical: 12 },
   secondaryBtnText: { color: '#777', fontSize: 14, fontWeight: '600' },
 });

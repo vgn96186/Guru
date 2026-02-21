@@ -32,6 +32,8 @@ export default function MockTestScreen() {
     const all = getAllCachedQuestions();
     setQuestions(all); // Store ALL initially
     setAvailableCount(all.length);
+    // Auto-select max available if default 20 > available
+    setSelectedCount(all.length >= 20 ? 20 : all.length);
     setPhase('setup');
   }, []);
 
@@ -125,14 +127,14 @@ export default function MockTestScreen() {
                   c > availableCount && styles.countBtnDisabled
                 ]}
                 disabled={c > availableCount}
-                onPress={() => setSelectedCount(c)}
+                onPress={() => setSelectedCount(c > availableCount ? availableCount : c)}
               >
                 <Text style={[
                   styles.countBtnText, 
                   selectedCount === c && styles.countBtnTextActive,
                   c > availableCount && styles.countBtnTextDisabled
                 ]}>
-                  {c}
+                  {c > availableCount ? availableCount : c}
                 </Text>
               </TouchableOpacity>
             ))}

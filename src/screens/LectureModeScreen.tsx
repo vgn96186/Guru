@@ -39,6 +39,13 @@ export default function LectureModeScreen() {
   const [resumeCountdown, setResumeCountdown] = useState(-1);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Wait for profile to be loaded
+  useEffect(() => {
+    if (!profile) {
+      refreshProfile();
+    }
+  }, [profile]);
+
   useEffect(() => {
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };

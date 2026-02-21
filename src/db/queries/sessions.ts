@@ -105,14 +105,24 @@ export function getPreferredStudyHours(): number[] {
     hourCounts[hour] = (hourCounts[hour] || 0) + 1;
   }
 
-  // Find top 3 hours
+  // Find top 3 hours, ensuring no duplicates
   const sorted = Object.entries(hourCounts)
     .sort(([, a], [, b]) => b - a)
     .map(([h]) => parseInt(h, 10));
     
-  // If we have enough history, return top 3. Otherwise mix with defaults.
+  // If we have enough history, return top 3 unique hours
   if (sorted.length >= 3) return sorted.slice(0, 3);
   
+  // Otherwise mix with defaults, ensuring uniqueness
   const defaults = [9, 19, 21];
-  return Array.from(new Set([...sorted, ...defaults])).slice(0, 3).sort((a, b) => a - b);
+  const uniqueHours: number[] = [];
+  
+  for (const hour of [...sorted, ...defaults]) {
+    if (!uniqueHours.includes(hour)) {
+      uniqueHours.push(hour);
+    }
+    if (uniqueHours.length >= 3) break;
+  }
+  
+  return uniqueHours.sort((a, b) => a - b);
 }

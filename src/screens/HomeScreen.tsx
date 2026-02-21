@@ -1,56 +1,58 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  StatusBar, Alert, Modal, Pressable, RefreshControl,
+  StatusBar, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
-import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
+import ExternalToolsRow from '../components/ExternalToolsRow';
 import StartButton from '../components/StartButton';
 import StreakBadge from '../components/StreakBadge';
-import ExternalToolsRow from '../components/ExternalToolsRow';
+import XPBar from '../components/XPBar';
+import LoadingOrb from '../components/LoadingOrb';
 import { getDailyLog, getDaysToExam } from '../db/queries/progress';
-import { getDueReviewCount } from '../db/queries/topics';
+import { getWeakestTopics, getTopicsDueForReview } from '../db/queries/topics';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
+import type { TopicWithProgress } from '../types';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { profile, levelInfo, refreshProfile } = useAppStore();
+  const [weakTopics, setWeakTopics] = useState<TopicWithProgress[]>([]);
+  const [dueTopics, setDueTopics] = useState<TopicWithProgress[]>([]);
   const [todayTasks, setTodayTasks] = useState<TodayTask[]>([]);
   const [todayMinutes, setTodayMinutes] = useState(0);
-  const [showMore, setShowMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [dueReviewCount, setDueReviewCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const loadData = useCallback(() => {
-    refreshProfile();
-    setTodayTasks(getTodaysAgendaWithTimes().slice(0, 4));
-    const log = getDailyLog();
-    setTodayMinutes(log?.totalMinutes ?? 0);
-    setDueReviewCount(getDueReviewCount());
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await refreshProfile();
+      setWeakTopics(getWeakestTopics(3));
+      setDueTopics(getTopicsDueForReview(5));
+      setTodayTasks(getTodaysAgendaWithTimes().slice(0, 4));
+      const log = getDailyLog();
+      setTodayMinutes(log?.totalMinutes ?? 0);
+      setIsLoading(false);
+    };
+    loadData();
   }, []);
 
-  // Refresh data when screen comes into focus (e.g. returning from session)
-  useFocusEffect(
-    useCallback(() => { loadData(); }, [loadData])
-  );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    loadData();
-    // Small delay so the spinner feels tangible
-    setTimeout(() => setRefreshing(false), 400);
-  }, [loadData]);
-
-  if (!profile || !levelInfo) return null;
+  if (isLoading || !profile || !levelInfo) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+        <LoadingOrb message="Loading your progress..." />
+      </SafeAreaView>
+    );
+  }
 
   const daysToInicet = getDaysToExam(profile.inicetDate);
-  const daysToNeet = getDaysToExam(profile.neetDate);
   const hasApiKey = profile.openrouterApiKey.length > 0;
   const mood = getDailyLog()?.mood ?? 'good';
 
@@ -74,243 +76,178 @@ export default function HomeScreen() {
     navigation.navigate('ManualLog', { appId });
   }
 
-  const nextTask = todayTasks[0];
-  const dailyAvailability = useAppStore(s => s.dailyAvailability);
-  const effectiveSessionLength = dailyAvailability && dailyAvailability > 0 ? dailyAvailability : profile.preferredSessionLength;
+  const nemesisCount = weakTopics.length;
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#6C63FF"
-            colors={['#6C63FF']}
-            progressBackgroundColor="#1A1A24"
-          />
-        }
-      >
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Header row */}
         <View style={styles.headerRow}>
           <StreakBadge streak={profile.streakCurrent} />
           <View style={styles.headerRight}>
-            <View style={styles.examBadgesRow}>
-              <View style={styles.examBadge}>
-                <Text style={styles.examBadgeLabel}>INICET</Text>
-                <Text style={styles.examBadgeDays}>{daysToInicet}d</Text>
-              </View>
-              <View style={[styles.examBadge, { borderColor: '#FF980055' }]}>
-                <Text style={[styles.examBadgeLabel, { color: '#FF9800' }]}>NEET-PG</Text>
-                <Text style={[styles.examBadgeDays, { color: '#FF9800' }]}>{daysToNeet}d</Text>
-              </View>
-            </View>
+            <Text style={styles.countdown}>⚡ {daysToInicet}d to INICET</Text>
             <Text style={styles.todayMin}>{todayMinutes}min today</Text>
           </View>
         </View>
 
-        <Text style={styles.levelLine}>Level {levelInfo.level} · {levelInfo.name}</Text>
+        {/* XP bar */}
+        <XPBar levelInfo={levelInfo} totalXp={profile.totalXp} />
 
-        {/* Streak at risk warning */}
-        {(() => {
-          const hour = new Date().getHours();
-          const streakActive = profile.streakCurrent > 0;
-          const notEnoughToday = todayMinutes < 20;
-          const isAfternoon = hour >= 14;
-          if (streakActive && notEnoughToday && isAfternoon) {
-            return (
-              <View style={styles.streakWarning}>
-                <Text style={styles.streakWarningText}>
-                  ⚠️ {20 - todayMinutes} min to keep your {profile.streakCurrent}-day streak!
-                </Text>
-              </View>
-            );
-          }
-          return null;
-        })()}
-
-        {/* Daily Goal Progress */}
-        {(() => {
-          const goalMin = profile.dailyGoalMinutes || 120;
-          const pct = Math.min(100, Math.round((todayMinutes / goalMin) * 100));
-          const goalMet = todayMinutes >= goalMin;
-          return (
-            <View style={styles.goalContainer}>
-              <View style={styles.goalHeader}>
-                <Text style={styles.goalLabel}>
-                  {goalMet ? '🎉 Daily goal reached!' : `${todayMinutes}/${goalMin} min today`}
-                </Text>
-                <Text style={[styles.goalPct, goalMet && { color: '#4CAF50' }]}>{pct}%</Text>
-              </View>
-              <View style={styles.goalBarTrack}>
-                <View style={[
-                  styles.goalBarFill,
-                  { width: `${pct}%` },
-                  goalMet && { backgroundColor: '#4CAF50' },
-                ]} />
-              </View>
-            </View>
-          );
-        })()}
-
-        {/* PRIMARY CTA — lecture launchers */}
+        {/* External Apps Row */}
         <ExternalToolsRow onLogSession={handleLogExternal} />
 
-        {/* Divider */}
-        <View style={styles.orRow}>
-          <View style={styles.orLine} />
-          <Text style={styles.orText}>or start a session</Text>
-          <View style={styles.orLine} />
-        </View>
+        {/* Today's Schedule (New) */}
+        {todayTasks.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📅 Today's Agenda</Text>
+            {todayTasks.map((task, i) => (
+              <View key={i} style={styles.taskRow}>
+                <View style={styles.timeBox}>
+                  <Text style={styles.timeText}>{task.timeLabel.split(' - ')[0]}</Text>
+                </View>
+                <View style={[styles.taskCard, task.type === 'review' && styles.taskReview, task.type === 'deep_dive' && styles.taskDeep]}>
+                  <Text style={styles.taskTitle} numberOfLines={1}>{task.topic.name}</Text>
+                  <Text style={styles.taskSub}>
+                    {task.type === 'review' ? 'REL' : task.type === 'deep_dive' ? 'DEEP' : 'NEW'} · {task.topic.subjectName}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
+        {/* Nemesis warning */}
+        {nemesisCount > 0 && (
+          <TouchableOpacity style={styles.nemesisBar} activeOpacity={0.8}>
+            <Text style={styles.nemesisText}>
+              ⚔️ {nemesisCount} nemesis topic{nemesisCount > 1 ? 's' : ''} still own you — session will target them
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Big START button */}
         <View style={styles.startArea}>
           <StartButton
             onPress={handleStartSession}
-            label="START NOW"
-            sublabel={`~${effectiveSessionLength} min · ${mood}`}
+            label="START SESSION"
+            sublabel={`~${profile.preferredSessionLength} min · ${mood}`}
             disabled={!hasApiKey}
           />
           {!hasApiKey && (
             <Text style={styles.noKeyWarning}>⚠️ Add API key in Settings</Text>
           )}
-        </View>
+          
+          <TouchableOpacity onPress={() => navigation.navigate('Inertia')}>
+            <Text style={styles.cantStartText}>Can't start? 🐢 Tap here.</Text>
+          </TouchableOpacity>
 
-        <View style={styles.miniRow}>
-          <TouchableOpacity
-            style={[styles.miniBtn, { flex: 1, marginBottom: 0, borderColor: '#FF980044' }]}
-            onPress={() => hasApiKey && navigation.navigate('Session', { mood, mode: 'sprint' })}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.miniBtnText, { color: '#FF9800' }]}>🎯 PYQ Sprint</Text>
+          <TouchableOpacity style={styles.planBtn} onPress={() => navigation.navigate('StudyPlan')}>
+            <Text style={styles.planBtnText}>📅 View Dynamic Plan</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Review Due Banner */}
-        {dueReviewCount > 0 && (
-          <TouchableOpacity
-            style={styles.reviewBanner}
-            onPress={() => navigation.navigate('Review')}
+        {/* Review Due Button (New) */}
+        {dueTopics.length > 0 && (
+          <TouchableOpacity 
+            style={styles.reviewBtn} 
+            onPress={() => navigation.navigate('Review')} 
             activeOpacity={0.8}
           >
-            <Text style={styles.reviewBannerText}>
-              🔥 {dueReviewCount} review{dueReviewCount !== 1 ? 's' : ''} due — tap to revise
-            </Text>
+            <Text style={styles.reviewBtnText}>🔥 Review {dueTopics.length} Due Cards</Text>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity
-          style={styles.timetableCard}
-          onPress={() => navigation.getParent()?.navigate('PlanTab' as never)}
-          activeOpacity={0.8}
+        {/* Lecture mode button */}
+        <TouchableOpacity style={styles.lectureBtn} onPress={handleLectureMode} activeOpacity={0.8}>
+          <Text style={styles.lectureBtnText}>📺  Watching a Lecture</Text>
+        </TouchableOpacity>
+
+        <View style={styles.miniRow}>
+          <TouchableOpacity
+            style={[styles.miniBtn, { flex: 1, marginBottom: 0 }]}
+            onPress={() => hasApiKey && navigation.navigate('Session', { mood, mode: 'sprint' })}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.miniBtnText}>⚡ 10m Sprint</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.miniBtn, { flex: 1, marginBottom: 0, borderColor: '#FF980044' }]}
+            onPress={() => navigation.navigate('MockTest')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.miniBtnText, { color: '#FF9800' }]}>📝 Mock Test</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity 
+          style={styles.searchBtn} 
+          onPress={() => navigation.navigate('NotesSearch')}
         >
-          <View style={styles.timetableHeader}>
-            <Text style={styles.timetableEmoji}>🎯</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.timetableTitle}>Today's Focus</Text>
-              {nextTask ? (
-                <Text style={styles.timetableSub}>
-                  {nextTask.topic.name} · {nextTask.duration}m {nextTask.type === 'review' ? 'review' : 'study'}
-                </Text>
-              ) : (
-                <Text style={styles.timetableSub}>Open Plan tab to generate your first task</Text>
-              )}
-            </View>
-            <Text style={styles.timetableArrow}>→</Text>
+          <Text style={styles.searchBtnText}>🔍 Search My Notes</Text>
+        </TouchableOpacity>
+
+        {/* Boss Battle Entry */}
+        <TouchableOpacity 
+          style={styles.bossBtn} 
+          onPress={() => navigation.navigate('BossBattle')}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.bossBtnEmoji}>👹</Text>
+          <View>
+            <Text style={styles.bossBtnTitle}>BOSS BATTLES</Text>
+            <Text style={styles.bossBtnSub}>Challenge a subject boss to earn epic XP</Text>
           </View>
         </TouchableOpacity>
 
-        {/* Bottom actions row */}
-        <View style={styles.bottomActionsRow}>
-          <TouchableOpacity
-            style={[styles.cantStartBtn, { flex: 1 }]}
-            onPress={() => navigation.push('Inertia')}
-            activeOpacity={0.8}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={styles.cantStartText}>Can't start? 🐢</Text>
-          </TouchableOpacity>
+        {/* Due for review list (keep existing) */}
+        {dueTopics.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>📅 Due for Review ({dueTopics.length})</Text>
+            {dueTopics.map(t => (
+              <View key={t.id} style={[styles.weakRow, { borderLeftWidth: 3, borderLeftColor: '#6C63FF' }]}>
+                <View style={[styles.weakDot, { backgroundColor: t.subjectColor }]} />
+                <View style={styles.weakInfo}>
+                  <Text style={styles.weakName}>{t.name}</Text>
+                  <Text style={styles.weakSub}>{t.subjectCode} · {t.progress.timesStudied}× studied</Text>
+                </View>
+                <View style={styles.confidenceRow}>
+                  {[1,2,3,4,5].map(i => (
+                    <View key={i} style={[styles.star, { backgroundColor: i <= t.progress.confidence ? '#6C63FF' : '#333' }]} />
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
-          <TouchableOpacity
-            style={[styles.moreBtn, { flex: 1, alignSelf: 'stretch', justifyContent: 'center', alignItems: 'center', marginTop: 0, marginBottom: 0, borderRadius: 12, paddingVertical: 12 }]}
-            onPress={() => setShowMore(true)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.moreBtnText}>More ···</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Weak topics */}
+        {weakTopics.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>🎯 Your Weak Spots</Text>
+            {weakTopics.map(t => (
+              <View key={t.id} style={styles.weakRow}>
+                <View style={[styles.weakDot, { backgroundColor: t.subjectColor }]} />
+                <View style={styles.weakInfo}>
+                  <Text style={styles.weakName}>{t.name}</Text>
+                  <Text style={styles.weakSub}>{t.subjectName}</Text>
+                </View>
+                <View style={styles.confidenceRow}>
+                  {[1,2,3,4,5].map(i => (
+                    <View
+                      key={i}
+                      style={[styles.star, { backgroundColor: i <= t.progress.confidence ? '#FF9800' : '#333' }]}
+                    />
+                  ))}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
 
       </ScrollView>
-
-      <Modal
-        visible={showMore}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowMore(false)}
-      >
-        <Pressable style={styles.sheetOverlay} onPress={() => setShowMore(false)} />
-        <View style={styles.sheetContainer}>
-          <Text style={styles.sheetTitle}>More Actions</Text>
-
-          <TouchableOpacity
-            style={styles.sheetAction}
-            onPress={() => {
-              setShowMore(false);
-              navigation.navigate('Review');
-            }}
-          >
-            <Text style={styles.sheetActionText}>🔥 Review Due Cards</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sheetAction}
-            onPress={() => {
-              setShowMore(false);
-              navigation.navigate('NotesSearch');
-            }}
-          >
-            <Text style={styles.sheetActionText}>🔍 Search Notes</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sheetAction}
-            onPress={() => {
-              setShowMore(false);
-              navigation.navigate('MockTest');
-            }}
-          >
-            <Text style={styles.sheetActionText}>📝 Mock Test</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sheetAction}
-            onPress={() => {
-              setShowMore(false);
-              navigation.navigate('BossBattle');
-            }}
-          >
-            <Text style={styles.sheetActionText}>👹 Boss Battle</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.sheetAction}
-            onPress={() => {
-              setShowMore(false);
-              navigation.navigate('ManualLog', {});
-            }}
-          >
-            <Text style={styles.sheetActionText}>📌 Manual Log</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.sheetCloseBtn} onPress={() => setShowMore(false)}>
-            <Text style={styles.sheetCloseText}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -318,7 +255,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   scroll: { flex: 1 },
-  content: { paddingBottom: 40, paddingTop: 8 },
+  content: { paddingBottom: 40 },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -328,174 +265,93 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   headerRight: { alignItems: 'flex-end' },
-  examBadgesRow: { flexDirection: 'row', gap: 8 },
-  examBadge: {
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#6C63FF55',
+  countdown: { color: '#6C63FF', fontWeight: '700', fontSize: 15 },
+  todayMin: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
+  nemesisBar: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    backgroundColor: '#2A0A0A',
     borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: '#12121C',
-  },
-  examBadgeLabel: { color: '#6C63FF', fontSize: 9, fontWeight: '800', letterSpacing: 0.8 },
-  examBadgeDays: { color: '#6C63FF', fontSize: 15, fontWeight: '900', lineHeight: 19 },
-  todayMin: { color: '#9E9E9E', fontSize: 12, marginTop: 6, textAlign: 'right' },
-  goalContainer: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-    marginTop: -4,
-  },
-  goalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  goalLabel: { color: '#9E9E9E', fontSize: 12, fontWeight: '600' },
-  goalPct: { color: '#6C63FF', fontSize: 12, fontWeight: '800' },
-  goalBarTrack: {
-    height: 6,
-    backgroundColor: '#2A2A38',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  goalBarFill: {
-    height: '100%',
-    backgroundColor: '#6C63FF',
-    borderRadius: 3,
-  },
-  reviewBanner: {
-    marginHorizontal: 16,
-    marginTop: 10,
-    backgroundColor: '#2A1A0A',
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#FF980044',
-    alignItems: 'center',
+    borderColor: '#F44336',
   },
-  reviewBannerText: {
-    color: '#FF9800',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  levelLine: {
-    color: '#777',
-    fontSize: 12,
-    textAlign: 'center',
-    marginBottom: 20,
-    marginTop: 2,
-  },
-  streakWarning: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    backgroundColor: '#2A1A0A',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: '#F4433644',
-  },
-  streakWarningText: {
-    color: '#F44336',
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  startArea: { alignItems: 'center', paddingVertical: 18 },
+  nemesisText: { color: '#F44336', fontWeight: '600', fontSize: 13 },
+  startArea: { alignItems: 'center', paddingVertical: 32 },
   noKeyWarning: { color: '#FF9800', fontSize: 12, marginTop: 12 },
-  bottomActionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    paddingHorizontal: 16,
-    marginTop: 16,
-  },
-  cantStartBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    backgroundColor: '#14141D',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cantStartText: { color: '#8E8E8E', fontSize: 13, textAlign: 'center', fontWeight: '600' },
-  timetableCard: {
+  cantStartText: { color: '#555', fontSize: 13, marginTop: 16, textDecorationLine: 'underline' },
+  planBtn: { marginTop: 16, padding: 10 },
+  planBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
+  lectureBtn: {
     marginHorizontal: 16,
-    marginTop: 18,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#1A1A24',
     borderRadius: 14,
     padding: 16,
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: '#2A2A38',
+    marginBottom: 10,
   },
-  timetableHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  timetableEmoji: { fontSize: 28 },
-  timetableTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  timetableSub: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
-  timetableArrow: { color: '#6C63FF', fontSize: 20, fontWeight: '700' },
-  miniRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, marginTop: 10, marginBottom: 8 },
-  orRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 20, marginBottom: 4 },
-  orLine: { flex: 1, height: 1, backgroundColor: '#2A2A38' },
-  orText: { color: '#555', fontSize: 11, fontWeight: '600', marginHorizontal: 10, letterSpacing: 0.5 },
+  lectureBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
+  miniRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, marginBottom: 12 },
   miniBtn: {
     backgroundColor: '#0F1A2E',
     borderRadius: 14,
-    paddingVertical: 14,
+    padding: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#6C63FF44',
   },
   miniBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
-  moreBtn: {
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    backgroundColor: '#14141D',
-  },
-  moreBtnText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
-  sheetOverlay: {
-    flex: 1,
-    backgroundColor: '#00000088',
-  },
-  sheetContainer: {
-    backgroundColor: '#1A1A24',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
+  reviewBtn: {
+    marginHorizontal: 16,
+    backgroundColor: '#F44336',
+    borderRadius: 14,
     padding: 16,
-    borderTopWidth: 1,
-    borderColor: '#2A2A38',
+    alignItems: 'center',
+    marginBottom: 16,
+    elevation: 4,
   },
-  sheetTitle: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
+  reviewBtnText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
+  searchBtn: { alignItems: 'center', marginBottom: 24, padding: 10 },
+  searchBtnText: { color: '#666', fontWeight: '600', fontSize: 13 },
+  bossBtn: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    backgroundColor: '#2A0505',
+    borderWidth: 2,
+    borderColor: '#F44336',
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  sheetAction: {
-    backgroundColor: '#14141D',
-    borderWidth: 1,
-    borderColor: '#2A2A38',
+  bossBtnEmoji: { fontSize: 32, marginRight: 16 },
+  bossBtnTitle: { color: '#F44336', fontWeight: '900', fontSize: 18, letterSpacing: 1 },
+  bossBtnSub: { color: '#9E9E9E', fontSize: 12 },
+  section: { paddingHorizontal: 16 },
+  sectionTitle: { color: '#9E9E9E', fontWeight: '700', fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
+  weakRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1A24',
     borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    padding: 12,
     marginBottom: 8,
   },
-  sheetActionText: {
-    color: '#E0E0E0',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  sheetCloseBtn: {
-    alignItems: 'center',
-    marginTop: 4,
-    paddingVertical: 12,
-  },
-  sheetCloseText: {
-    color: '#9E9E9E',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  weakDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
+  weakInfo: { flex: 1 },
+  weakName: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  weakSub: { color: '#9E9E9E', fontSize: 11, marginTop: 2 },
+  confidenceRow: { flexDirection: 'row', gap: 3 },
+  star: { width: 8, height: 8, borderRadius: 2 },
+  
+  taskRow: { flexDirection: 'row', marginBottom: 10, alignItems: 'center' },
+  timeBox: { width: 50, alignItems: 'flex-end', marginRight: 12 },
+  timeText: { color: '#666', fontSize: 12, fontWeight: '700' },
+  taskCard: { flex: 1, backgroundColor: '#1A1A24', padding: 12, borderRadius: 10, borderLeftWidth: 3, borderLeftColor: '#6C63FF' },
+  taskReview: { borderLeftColor: '#4CAF50' },
+  taskDeep: { borderLeftColor: '#F44336' },
+  taskTitle: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  taskSub: { color: '#9E9E9E', fontSize: 10, marginTop: 2, textTransform: 'uppercase' },
 });

@@ -39,7 +39,7 @@ export async function scheduleStreakWarning(): Promise<void> {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: '🔥 Streak Alert!',
-        body: 'You haven\'t studied today. 3 hours left to keep your streak.',
+        body: "You haven't studied today. 3 hours left to keep your streak.",
         sound: true,
       },
       trigger: {
@@ -163,18 +163,30 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
       return; // Stop here, SRS priority
     }
 
-    const messages = await generateAccountabilityMessages(
-      {
-        streak: profile.streakCurrent,
-        weakestTopics: weakTopics,
-        lastStudied,
-        daysToInicet,
-        coveragePercent,
-        lastMood: lastMood as Mood | null,
-      },
-      profile.openrouterApiKey,
-      profile.openrouterKey || undefined,
-    );
+    // Wrap AI call in try/catch to prevent crashes
+    let messages: Array<{ title: string; body: string; scheduledFor: string }> = [];
+    try {
+      messages = await generateAccountabilityMessages(
+        {
+          streak: profile.streakCurrent,
+          weakestTopics: weakTopics,
+          lastStudied,
+          daysToInicet,
+          coveragePercent,
+          lastMood: lastMood as Mood | null,
+        },
+        profile.openrouterApiKey,
+        profile.openrouterKey || undefined,
+      );
+    } catch (aiError) {
+      console.warn('Failed to generate accountability messages:', aiError);
+      // Use default messages if AI fails
+      messages = [
+        { title: '📚 Time to Study!', body: 'Keep your streak going!', scheduledFor: 'morning' },
+        { title: '📖 Last chance today', body: 'Complete one topic before bed.', scheduledFor: 'evening' },
+        { title: '🔥 Don\'t break your streak!', body: 'Study for at least 20 minutes.', scheduledFor: 'streak_warning' },
+      ];
+    }
 
     await cancelAllNotifications();
 

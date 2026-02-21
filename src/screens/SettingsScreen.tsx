@@ -91,23 +91,44 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   }
 
   const db = getDb();
-  // Restore topic_progress (most important)
+  let restoredTopics = 0;
+  let restoredLogs = 0;
+
+  // Restore topic_progress with validation
   for (const row of backup.topic_progress as Record<string, any>[]) {
+    // Validate required fields exist
+    if (!row.topic_id || typeof row.status === 'undefined') {
+      console.warn('Skipping invalid topic_progress row:', row);
+      continue;
+    }
+    // Validate status is valid
+    const validStatuses = ['unseen', 'seen', 'reviewed', 'mastered'];
+    const status = validStatuses.includes(row.status) ? row.status : 'unseen';
+    // Validate confidence is number 0-5
+    const confidence = typeof row.confidence === 'number' ? Math.min(5, Math.max(0, row.confidence)) : 0;
+
     db.runSync(
       `INSERT OR REPLACE INTO topic_progress
        (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [row.topic_id, row.status, row.confidence, row.last_studied_at,
-       row.times_studied, row.xp_earned, row.next_review_date ?? null, row.user_notes ?? ''],
+      [row.topic_id, status, confidence, row.last_studied_at,
+       row.times_studied ?? 0, row.xp_earned ?? 0, row.next_review_date ?? null, row.user_notes ?? ''],
     );
+    restoredTopics++;
   }
-  // Restore daily_log
+  
+  // Restore daily_log with validation
   for (const row of (backup.daily_log ?? []) as Record<string, any>[]) {
+    if (!row.date) {
+      console.warn('Skipping invalid daily_log row:', row);
+      continue;
+    }
     db.runSync(
       `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [row.date, row.checked_in, row.mood, row.total_minutes, row.xp_earned, row.session_count],
+      [row.date, row.checked_in ?? 0, row.mood ?? null, row.total_minutes ?? 0, row.xp_earned ?? 0, row.session_count ?? 0],
     );
+    restoredLogs++;
   }
   // Restore key profile fields (keep api key from current settings)
   const p = backup.user_profile as Record<string, any>;
@@ -124,7 +145,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
     );
   }
 
-  return { ok: true, message: `Restored ${backup.topic_progress.length} topics, ${(backup.daily_log ?? []).length} log entries` };
+  return { ok: true, message: `Restored ${restoredTopics} topics, ${restoredLogs} log entries` };
 }
 
 type ValidationState = 'idle' | 'testing' | 'success' | 'error';

@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { PanResponder, PanResponderGestureState } from 'react-native';
+import { AppState, AppStateStatus } from 'react-native';
 
 interface UseIdleTimerProps {
   onIdle: () => void;
@@ -11,6 +11,7 @@ interface UseIdleTimerProps {
 export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTimerProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isIdle, setIsIdle] = useState(false);
+  const appState = useRef<AppStateStatus>(AppState.currentState);
 
   const resetTimer = useCallback(() => {
     if (disabled) return;
@@ -25,26 +26,30 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
     }, timeout);
   }, [disabled, isIdle, onIdle, onActive, timeout]);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => {
+  // Handle app state changes (background/foreground)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (
+        appState.current.match(/active/) &&
+        nextAppState.match(/inactive|background/)
+      ) {
+        // App going to background - treat as idle
         resetTimer();
-        return false; // Don't capture, let children handle touch
-      },
-      onMoveShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponderCapture: () => {
+      } else if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App coming to foreground - reset timer
         resetTimer();
-        return false;
-      },
-      onPanResponderGrant: () => resetTimer(),
-      onPanResponderMove: () => resetTimer(),
-      onPanResponderRelease: () => resetTimer(),
-      onPanResponderTerminate: () => resetTimer(),
-    })
-  ).current;
+      }
+      appState.current = nextAppState;
+    };
 
-  // Initial start
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription.remove();
+  }, [resetTimer]);
+
+  // Initial start and cleanup
   useEffect(() => {
     resetTimer();
     return () => {
@@ -52,5 +57,9 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
     };
   }, [resetTimer]);
 
-  return { panResponder, isIdle };
+  // Return empty panHandlers to maintain compatibility
+  return { 
+    panHandlers: {},
+    isIdle 
+  };
 }

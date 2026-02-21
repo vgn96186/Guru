@@ -130,6 +130,12 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
   const daysToExam = getDaysToExam(profile.inicetDate);
   const dailyGoal = profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 120;
   
+  // Get exam dates to mark as rest days
+  const examDates = new Set([
+    profile.inicetDate,
+    profile.neetDate,
+  ]);
+  
   // Pending actions queue
   const pendingActions: PlanItem[] = [];
 
@@ -199,13 +205,29 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
     currentDate.setDate(today.getDate() + i);
     const dateStr = currentDate.toISOString().slice(0, 10);
     
+    // Check if this is an exam day - mark as rest day
+    const isExamDay = examDates.has(dateStr);
+    
     let label = dateStr;
     if (i === 0) label = "Today";
     else if (i === 1) label = "Tomorrow";
+    else if (isExamDay) label = `🎯 ${currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} (EXAM)`;
     else label = currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
     const dayItems: PlanItem[] = [];
     let dayMinutes = 0;
+
+    // If exam day, don't schedule any topics - rest day
+    if (isExamDay) {
+      plan.push({
+        date: dateStr,
+        dayLabel: label,
+        items: [],
+        totalMinutes: 0,
+        isRestDay: true
+      });
+      continue;
+    }
 
     // 1. Must-do: Future Scheduled Reviews (SRS simulation)
     const scheduledToday = futureReviews.get(i) || [];

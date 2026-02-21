@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  Vibration, ScrollView, Modal, KeyboardAvoidingView, Platform, Alert
+  Vibration, ScrollView, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -30,6 +30,7 @@ export default function LectureModeScreen() {
 
   const [transcript, setTranscript] = useState('');
   const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [catalystResult, setCatalystResult] = useState<{ topicName: string; subjectName: string } | null>(null);
 
   const { profile } = useAppStore();
 
@@ -120,7 +121,7 @@ export default function LectureModeScreen() {
 
   async function handleSynthesize() {
     if (!profile?.openrouterApiKey) {
-      Alert.alert('Missing API Key', 'Add your key in Settings first.');
+      Alert.alert('Missing API Key', 'Add your Gemini API key in Settings first.');
       return;
     }
     if (!selectedSubject || !transcript.trim()) return;
@@ -129,8 +130,8 @@ export default function LectureModeScreen() {
     try {
       const aiData = await catalyzeTranscript(transcript, profile.openrouterApiKey);
       createTopicWithCatalyst(selectedSubject.id, aiData);
-      Alert.alert('Catalyst Success! ⚡️', `Created new flashcards and quiz for: ${aiData.topicName}`);
       setTranscript('');
+      setCatalystResult({ topicName: aiData.topicName, subjectName: selectedSubject.name });
     } catch (e: any) {
       Alert.alert('Catalyst Failed', e.message);
     } finally {
@@ -149,88 +150,123 @@ export default function LectureModeScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.container}>
-        {/* Subject Selector */}
-        <TouchableOpacity
-          style={styles.subjectSelector}
-          onPress={() => setShowSubjectPicker(true)}
-          disabled={isActive || isBreak}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.subjectLabel}>Subject: </Text>
-          <Text style={[styles.subjectValue, { color: selectedSubject?.colorHex || '#6C63FF' }]}>
-            {selectedSubject?.name || 'Select Subject'}
-          </Text>
-          <Ionicons name="chevron-down" size={16} color="#9E9E9E" style={{ marginLeft: 8 }} />
-        </TouchableOpacity>
-
-        {/* Main Timer Display */}
-        <View style={styles.timerCircle}>
-          {isBreak ? (
-            <>
-              <Text style={styles.timerModeText}>BREAK</Text>
-              <Text style={[styles.timerText, { color: '#4CAF50' }]}>{formatTime(breakSecondsLeft)}</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.timerModeText}>FOCUSED</Text>
-              <Text style={styles.timerText}>{formatTime(secondsElapsed)}</Text>
-            </>
-          )}
-        </View>
-
-        {/* Controls */}
-        <View style={styles.controlsRow}>
-          {!isBreak ? (
+          {/* Timer section */}
+          <View style={styles.container}>
+            {/* Subject Selector */}
             <TouchableOpacity
-              style={[styles.mainBtn, isActive ? styles.stopBtn : styles.startBtn]}
-              onPress={handleStartStop}
+              style={styles.subjectSelector}
+              onPress={() => setShowSubjectPicker(true)}
+              disabled={isActive || isBreak}
             >
-              <Ionicons name={isActive ? "pause" : "play"} size={28} color="#fff" />
-              <Text style={styles.btnText}>{isActive ? 'PAUSE' : 'START'}</Text>
+              <Text style={styles.subjectLabel}>Subject: </Text>
+              <Text style={[styles.subjectValue, { color: selectedSubject?.colorHex || '#6C63FF' }]}>
+                {selectedSubject?.name || 'Select Subject'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color="#9E9E9E" style={{ marginLeft: 8 }} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[styles.mainBtn, styles.stopBtn]}
-              onPress={() => setIsBreak(false)}
-            >
-              <Ionicons name="play" size={28} color="#fff" />
-              <Text style={styles.btnText}>RESUME</Text>
-            </TouchableOpacity>
-          )}
 
+            {/* Main Timer Display */}
+            <View style={styles.timerCircle}>
+              {isBreak ? (
+                <>
+                  <Text style={styles.timerModeText}>BREAK</Text>
+                  <Text style={[styles.timerText, { color: '#4CAF50' }]}>{formatTime(breakSecondsLeft)}</Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.timerModeText}>FOCUSED</Text>
+                  <Text style={styles.timerText}>{formatTime(secondsElapsed)}</Text>
+                </>
+              )}
+            </View>
+
+            {/* Controls */}
+            <View style={styles.controlsRow}>
+              {!isBreak ? (
+                <TouchableOpacity
+                  style={[styles.mainBtn, isActive ? styles.stopBtn : styles.startBtn]}
+                  onPress={handleStartStop}
+                >
+                  <Ionicons name={isActive ? "pause" : "play"} size={28} color="#fff" />
+                  <Text style={styles.btnText}>{isActive ? 'PAUSE' : 'START'}</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.mainBtn, styles.stopBtn]}
+                  onPress={() => setIsBreak(false)}
+                >
+                  <Ionicons name="play" size={28} color="#fff" />
+                  <Text style={styles.btnText}>RESUME</Text>
+                </TouchableOpacity>
+              )}
+
+              {!isBreak && (
+                <TouchableOpacity style={styles.breakBtn} onPress={handleTakeBreak}>
+                  <Ionicons name="cafe" size={24} color="#fff" />
+                  <Text style={styles.btnText}>BREAK</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          {/* Auto-Card Catalyst UI */}
           {!isBreak && (
-            <TouchableOpacity style={styles.breakBtn} onPress={handleTakeBreak}>
-              <Ionicons name="cafe" size={24} color="#fff" />
-              <Text style={styles.btnText}>BREAK</Text>
-            </TouchableOpacity>
+            <View style={styles.catalystContainer}>
+              <Text style={styles.catalystTitle}>Auto-Card Catalyst ⚡️</Text>
+
+              {catalystResult ? (
+                /* Success state */
+                <View style={styles.catalystSuccess}>
+                  <Text style={styles.catalystSuccessEmoji}>⚡️</Text>
+                  <Text style={styles.catalystSuccessTitle}>{catalystResult.topicName}</Text>
+                  <Text style={styles.catalystSuccessSub}>
+                    Flashcards + quiz saved to {catalystResult.subjectName}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.catalystSuccessBtn}
+                    onPress={() => setCatalystResult(null)}
+                  >
+                    <Text style={styles.catalystSuccessBtnText}>Create Another</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                /* Input state */
+                <>
+                  <TextInput
+                    style={styles.transcriptInput}
+                    placeholder="Paste or dictate lecture notes here..."
+                    placeholderTextColor="#666"
+                    value={transcript}
+                    onChangeText={setTranscript}
+                    multiline
+                  />
+                  <TouchableOpacity
+                    style={[styles.synthesizeBtn, (!transcript.trim() || !selectedSubject || isSynthesizing) && { opacity: 0.5 }]}
+                    onPress={handleSynthesize}
+                    disabled={!transcript.trim() || !selectedSubject || isSynthesizing}
+                  >
+                    {isSynthesizing ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.synthesizeText}>Guru, Synthesize This</Text>
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
           )}
-        </View>
-
-      </View>
-
-      {/* Auto-Card Catalyst UI */}
-      {!isBreak && (
-        <View style={styles.catalystContainer}>
-          <Text style={styles.catalystTitle}>Auto-Card Catalyst ⚡️</Text>
-          <TextInput
-            style={styles.transcriptInput}
-            placeholder="Tap the mic to dictate the lecture, or paste notes here..."
-            placeholderTextColor="#666"
-            value={transcript}
-            onChangeText={setTranscript}
-            multiline
-          />
-          <TouchableOpacity
-            style={[styles.synthesizeBtn, (!transcript.trim() || !selectedSubject) && { opacity: 0.5 }]}
-            onPress={handleSynthesize}
-            disabled={!transcript.trim() || !selectedSubject || isSynthesizing}
-          >
-            <Text style={styles.synthesizeText}>
-              {isSynthesizing ? '🔮 Synthesizing...' : 'Guru, Synthesize This'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Note Prompt Modal */}
       <Modal visible={showNotePrompt} animationType="slide" transparent>
@@ -315,7 +351,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   backBtn: { padding: 4, width: 40 },
   headerTitle: { flex: 1, color: '#fff', fontSize: 18, fontWeight: '700', textAlign: 'center' },
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
+  scrollContent: { flexGrow: 1, paddingBottom: 32 },
+  container: { justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, paddingVertical: 40 },
 
   subjectSelector: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A24',
@@ -366,9 +403,15 @@ const styles = StyleSheet.create({
   pickerClose: { marginTop: 16, padding: 16, alignItems: 'center' },
   pickerCloseText: { color: '#F44336', fontWeight: '700', fontSize: 16 },
 
-  catalystContainer: { width: '100%', marginTop: 32, backgroundColor: '#1A1A24', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#2A2A38' },
+  catalystContainer: { marginHorizontal: 16, marginTop: 8, backgroundColor: '#1A1A24', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#2A2A38' },
   catalystTitle: { color: '#FF9800', fontWeight: '800', marginBottom: 12, letterSpacing: 1 },
   transcriptInput: { backgroundColor: '#0F0F14', color: '#fff', padding: 16, borderRadius: 12, height: 100, textAlignVertical: 'top', marginBottom: 16 },
-  synthesizeBtn: { backgroundColor: '#FF9800', padding: 14, borderRadius: 12, alignItems: 'center' },
-  synthesizeText: { color: '#fff', fontWeight: '800', fontSize: 15 }
+  synthesizeBtn: { backgroundColor: '#FF9800', padding: 14, borderRadius: 12, alignItems: 'center', justifyContent: 'center', minHeight: 50 },
+  synthesizeText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  catalystSuccess: { alignItems: 'center', paddingVertical: 12 },
+  catalystSuccessEmoji: { fontSize: 36, marginBottom: 8 },
+  catalystSuccessTitle: { color: '#fff', fontSize: 17, fontWeight: '800', textAlign: 'center', marginBottom: 4 },
+  catalystSuccessSub: { color: '#9E9E9E', fontSize: 13, textAlign: 'center', marginBottom: 16 },
+  catalystSuccessBtn: { borderWidth: 1, borderColor: '#FF9800', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+  catalystSuccessBtnText: { color: '#FF9800', fontWeight: '700' },
 });

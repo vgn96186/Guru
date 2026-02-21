@@ -185,7 +185,7 @@ Summary: ${result.lectureSummary}`;
     Medicine: '#2196F3', Surgery: '#795548', OBG: '#E91E63',
     Pediatrics: '#4CAF50', Ophthalmology: '#00BCD4', ENT: '#8BC34A',
     Psychiatry: '#673AB7', Radiology: '#607D8B', Anesthesia: '#FF5722',
-    Dermatology: '#CDDC39', Orthopedics: '#FF5722', 'Forensic Medicine': '#455A64', SPM: '#388E3C',
+    Dermatology: '#CDDC39', Orthopedics: '#FF5722', 'Forensic Medicine': '#455A64', SPM: '#388E3C', 'Community Medicine': '#388E3C',
   };
   const subjectColor = SUBJECT_COLORS[analysis?.subject ?? ''] ?? '#6C63FF';
 

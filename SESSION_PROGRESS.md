@@ -1,5 +1,5 @@
 # Guru App — Session Progress Log
-Last updated: 2026-02-21
+Last updated: 2026-02-21 (Session 2)
 
 ---
 
@@ -73,6 +73,7 @@ Every topic is now split into focused 12–20 min subtopics (ADHD-friendly).
 | 16 | Dermatology | ✅ Full 3-level |
 | 17 | Radiology | ✅ Full 3-level |
 | 18 | Anesthesia | ✅ Full 3-level |
+| 19 | Community Medicine / PSM | ✅ Full 3-level (added Session 2) |
 
 ---
 
@@ -107,14 +108,32 @@ Every topic is now split into focused 12–20 min subtopics (ADHD-friendly).
 
 ---
 
-## Things That Could Be Worked On Next
+### 6. Community Medicine / PSM Added as Subject 19 ✅
+**File:** `src/constants/syllabus.ts`, `src/components/LectureReturnSheet.tsx`
 
-1. **Community Medicine / PSM (subject?)** — not currently in SUBJECTS_SEED. May need to be added as subject 19 if INICET coverage is needed.
-2. **Review screen UX** — ensure nemesis boost (+50 score) is visible to user
-3. **AI Catalyst pipeline** — `createTopicWithCatalyst()` in topics.ts already supports it; wire up UI
-4. **Session planner tuning** — review `src/db/queries/sessionPlanner.ts` for nemesis rotation logic
-5. **Vault re-import** — if Obsidian vault has new notes, re-run `scripts/importVault.py` and update `vaultTopics.ts`
-6. **Performance** — syllabus now has ~500+ topics; check if initial seed is slow on first install
+Added PSM as subject 19 with full 3-level hierarchy:
+- inicetWeight: 7, neetWeight: 8, colorHex: '#388E3C'
+- 11 parent topics covering: Epidemiology, Biostatistics, Communicable Disease Control, Nutrition & PEM, Environmental Health, Occupational Health, Demography & Vital Statistics, Family Planning, Health Administration, National Health Programmes, Immunization Programme, Disease Surveillance
+- ~60 subtopics, all INICET/NEET-PG high-yield
+- Also added 'Community Medicine' to SUBJECT_COLORS in LectureReturnSheet.tsx
+
+### 7. Catalyst Pipeline UI Fixed ✅
+**File:** `src/screens/LectureModeScreen.tsx`
+
+The catalyst section was hidden below the fold (parent `View` had `flex: 1`):
+- Wrapped content in `KeyboardAvoidingView` + `ScrollView` so catalyst is always reachable
+- Replaced bare `Alert` success with inline success card showing topic name + subject
+- Added `ActivityIndicator` spinner during synthesis instead of text-only loading state
+- Added "Create Another" button to reset after success
+
+---
+
+
+1. **Review screen UX** — ensure nemesis boost (+50 score) is visible to user
+2. **Session planner tuning** — review `src/db/queries/sessionPlanner.ts` for nemesis rotation logic
+3. **Vault re-import** — if Obsidian vault has new notes, re-run `scripts/importVault.py` and update `vaultTopics.ts`
+4. **Performance** — syllabus now has ~600+ topics; check if initial seed is slow on first install
+5. **Catalyst "Study Now" navigation** — after synthesis, add a button to jump directly to SyllabusTab for the relevant subject (`navigation.getParent()?.navigate('SyllabusTab')`)
 
 ---
 

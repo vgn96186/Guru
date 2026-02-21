@@ -16,6 +16,7 @@ export function getUserProfile(): UserProfile {
     always_ask_mood_on_launch: number;
     focus_audio_enabled: number;
     visual_timers_enabled: number;
+    face_tracking_enabled: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -29,6 +30,7 @@ export function getUserProfile(): UserProfile {
       alwaysAskMoodOnLaunch: true,
       focusAudioEnabled: false,
       visualTimersEnabled: false,
+      faceTrackingEnabled: false,
     };
   }
 
@@ -51,6 +53,7 @@ export function getUserProfile(): UserProfile {
     alwaysAskMoodOnLaunch: (r.always_ask_mood_on_launch ?? 1) === 1,
     focusAudioEnabled: r.focus_audio_enabled === 1,
     visualTimersEnabled: r.visual_timers_enabled === 1,
+    faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
   };
 }
 
@@ -75,6 +78,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     alwaysAskMoodOnLaunch: 'always_ask_mood_on_launch',
     focusAudioEnabled: 'focus_audio_enabled',
     visualTimersEnabled: 'visual_timers_enabled',
+    faceTrackingEnabled: 'face_tracking_enabled',
   };
 
   const setClauses: string[] = [];

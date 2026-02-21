@@ -2,15 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { EXTERNAL_APPS, type ExternalApp } from '../constants/externalApps';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
+import { useAppStore } from '../store/useAppStore';
 
 interface Props {
   onLogSession: (appId: string) => void;
 }
 
 export default function ExternalToolsRow({ onLogSession }: Props) {
+  const faceTrackingEnabled = useAppStore(s => s.profile?.faceTrackingEnabled ?? false);
 
   async function launchApp(app: ExternalApp) {
-    await launchMedicalApp(app.id as SupportedMedicalApp);
+    await launchMedicalApp(app.id as SupportedMedicalApp, faceTrackingEnabled);
   }
 
   return (

@@ -56,9 +56,13 @@ export async function requestOverlayPermission(): Promise<boolean> {
     return GuruAppLauncher.requestOverlayPermission();
 }
 
-/** Shows a floating timer bubble on screen while user is in another app. */
-export async function showOverlay(appName: string): Promise<boolean> {
-    return GuruAppLauncher.showOverlay(appName);
+/**
+ * Shows a floating timer bubble on screen while user is in another app.
+ * @param faceTracking If true, opens the front camera and runs ML Kit face
+ *   detection — the bubble ring turns green/orange/red based on focus state.
+ */
+export async function showOverlay(appName: string, faceTracking = false): Promise<boolean> {
+    return GuruAppLauncher.showOverlay(appName, faceTracking);
 }
 
 /** Hides the floating timer bubble. */

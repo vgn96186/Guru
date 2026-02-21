@@ -1,8 +1,10 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   StatusBar, BackHandler, Alert, Animated, AppState
 } from 'react-native';
+import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
+import { useFaceTracking } from '../hooks/useFaceTracking';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -71,6 +73,50 @@ export default function SessionScreen() {
       }
     },
     disabled: store.sessionState !== 'studying' || store.isOnBreak,
+  });
+
+  // ── Face Tracking ─────────────────────────────────────────────
+  const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
+  const { hasPermission, requestPermission } = useCameraPermission();
+  const frontCamera = useCameraDevice('front');
+  const isFaceTrackingActive = faceTrackingEnabled &&
+    hasPermission &&
+    !!frontCamera &&
+    store.sessionState === 'studying' &&
+    !store.isOnBreak &&
+    !store.isPaused;
+
+  // Request camera permission when face tracking is first enabled
+  useEffect(() => {
+    if (faceTrackingEnabled && !hasPermission) {
+      requestPermission();
+    }
+  }, [faceTrackingEnabled]);
+
+  const { focusState, frameProcessor } = useFaceTracking({
+    onAbsent: useCallback(() => {
+      if (store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused) {
+        store.setPaused(true);
+        sendImmediateNag("Where are you, Doctor? 👀", "Your session is paused — face not detected. Come back!");
+      }
+    }, [store.sessionState, store.isOnBreak, store.isPaused]),
+    onDrowsy: useCallback(() => {
+      if (store.sessionState === 'studying' && !store.isPaused) {
+        Alert.alert('😴 Drowsy Alert', "You look sleepy, Doctor. Take a quick 2-min break or splash water on your face!", [
+          { text: 'I\'m Fine', style: 'cancel' },
+          { text: 'Take a Break', onPress: () => store.startBreak(120) },
+        ]);
+      }
+    }, [store.sessionState, store.isPaused]),
+    onDistracted: useCallback(() => {
+      if (store.sessionState === 'studying' && !store.isPaused) {
+        sendImmediateNag("Eyes on the screen! 📱", "You've been looking away. Stay focused, Doctor!");
+      }
+    }, [store.sessionState, store.isPaused]),
+    onFocused: useCallback(() => {
+      // Auto-resume if paused by face tracking
+      if (store.isPaused) store.setPaused(false);
+    }, [store.isPaused]),
   });
 
   // Block hardware back during session
@@ -477,6 +523,9 @@ export default function SessionScreen() {
           ) : (
             <Text style={styles.timer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
           )}
+          {faceTrackingEnabled && hasPermission && (
+            <View style={[styles.focusDot, { backgroundColor: FOCUS_DOT_COLOR[focusState] }]} />
+          )}
           <TouchableOpacity onPress={finishSession} style={styles.endBtn}>
             <Text style={styles.endBtnText}>End</Text>
           </TouchableOpacity>
@@ -537,10 +586,28 @@ export default function SessionScreen() {
         </View>
       )}
 
+      {/* Hidden camera for face tracking — 1x1, invisible */}
+      {isFaceTrackingActive && frontCamera && (
+        <Camera
+          style={styles.faceCamera}
+          device={frontCamera}
+          isActive={isFaceTrackingActive}
+          frameProcessor={frameProcessor}
+          pixelFormat="yuv"
+        />
+      )}
+
       <BrainDumpFab />
     </SafeAreaView>
   );
 }
+
+const FOCUS_DOT_COLOR: Record<string, string> = {
+  focused: '#4CAF50',
+  distracted: '#FF9800',
+  drowsy: '#FF9800',
+  absent: '#F44336',
+};
 
 const CONTENT_LABELS: Record<string, string> = {
   keypoints: 'Key Points', quiz: 'Quiz', story: 'Story',
@@ -820,6 +887,20 @@ const styles = StyleSheet.create({
   leaveBtn: { paddingVertical: 12 },
   leaveBtnText: { color: '#555', fontSize: 14 },
 
+  faceCamera: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
+  },
+  focusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+    marginBottom: 4,
+    alignSelf: 'center',
+  },
   pausedOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.8)',

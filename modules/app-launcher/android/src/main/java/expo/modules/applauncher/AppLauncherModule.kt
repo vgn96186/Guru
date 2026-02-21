@@ -195,8 +195,10 @@ class AppLauncherModule : Module() {
 
         /**
          * Shows the floating timer bubble on screen.
+         * @param appName Display name of the app being watched.
+         * @param faceTracking If true, opens front camera and runs face detection.
          */
-        AsyncFunction("showOverlay") { appName: String ->
+        AsyncFunction("showOverlay") { appName: String, faceTracking: Boolean ->
             val context = appContext.reactContext ?: throw Exception("No context")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
                 throw Exception("Overlay permission not granted")
@@ -204,6 +206,7 @@ class AppLauncherModule : Module() {
             val intent = Intent(context, OverlayService::class.java).apply {
                 action = OverlayService.ACTION_SHOW
                 putExtra(OverlayService.EXTRA_APP_NAME, appName)
+                putExtra(OverlayService.EXTRA_FACE_TRACKING, faceTracking)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)

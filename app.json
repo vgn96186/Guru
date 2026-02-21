@@ -31,7 +31,15 @@
     "plugins": [
       "expo-sqlite",
       "expo-notifications",
-      "./modules/app-launcher/withAppLauncher"
+      "./modules/app-launcher/withAppLauncher",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "Guru uses your camera to track concentration during study sessions. No video is recorded or sent anywhere.",
+          "enableCodeScanner": false,
+          "enableLocation": false
+        }
+      ]
     ]
   }
 }

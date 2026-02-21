@@ -148,9 +148,9 @@ async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: st
 }
 
 export default function SettingsScreen() {
-  const { profile, refreshProfile, toggleFocusAudio, toggleVisualTimers } = useAppStore();
+  const { profile, refreshProfile, toggleFocusAudio, toggleVisualTimers, toggleFaceTracking } = useAppStore();
   const [apiKey, setApiKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-3.0-flash-preview');
   const [availableModels, setAvailableModels] = useState<string[]>(KNOWN_MODELS);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [name, setName] = useState('');
@@ -536,6 +536,21 @@ export default function SettingsScreen() {
             <Switch
               value={profile?.focusAudioEnabled ?? false}
               onValueChange={toggleFocusAudio}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
+        </Section>
+
+        <Section title="👁️ Face Tracking">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Concentration Tracking</Text>
+              <Text style={styles.hint}>Uses front camera to detect if you're looking away, drowsy, or absent. Pauses session automatically. Runs fully on-device — no data is sent anywhere.</Text>
+            </View>
+            <Switch
+              value={profile?.faceTrackingEnabled ?? false}
+              onValueChange={toggleFaceTracking}
               trackColor={{ true: '#6C63FF', false: '#333' }}
               thumbColor="#fff"
             />

@@ -102,6 +102,7 @@ export interface UserProfile {
   alwaysAskMoodOnLaunch: boolean;
   focusAudioEnabled: boolean;
   visualTimersEnabled: boolean;
+  faceTrackingEnabled: boolean;
 }
 
 export interface BrainDump {

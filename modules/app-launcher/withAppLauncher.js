@@ -21,6 +21,7 @@ function withAppLauncher(config) {
       'android.permission.FOREGROUND_SERVICE',
       'android.permission.FOREGROUND_SERVICE_MICROPHONE',
       'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
+      'android.permission.FOREGROUND_SERVICE_CAMERA',
     ];
     for (const perm of needed) {
       if (!perms.some((p) => p.$?.['android:name'] === perm)) {
@@ -69,6 +70,7 @@ function withAppLauncher(config) {
       filtered.push({
         $: {
           'android:name': overlaySvcName,
+          'android:foregroundServiceType': 'camera',
           'android:exported': 'false',
         },
       });

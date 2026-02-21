@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   always_ask_mood_on_launch INTEGER NOT NULL DEFAULT 1,
   focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
   visual_timers_enabled INTEGER NOT NULL DEFAULT 1,
+  face_tracking_enabled INTEGER NOT NULL DEFAULT 0,
   last_active_date TEXT
 )`;
 

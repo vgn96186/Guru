@@ -21,21 +21,55 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import androidx.annotation.OptIn
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.face.FaceDetection
+import com.google.mlkit.vision.face.FaceDetector
+import com.google.mlkit.vision.face.FaceDetectorOptions
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.math.abs
+
+enum class FocusState { NEUTRAL, FOCUSED, DISTRACTED, DROWSY, ABSENT }
 
 /**
  * Floating overlay bubble that shows a pulsing timer while the user
- * watches a lecture in another app. Tapping it returns to Guru.
+ * watches a lecture in another app.
  *
- * Requires SYSTEM_ALERT_WINDOW permission (Settings.canDrawOverlays).
+ * When faceTracking=true is passed via ACTION_SHOW, it also opens the
+ * front camera and runs ML Kit face detection to detect concentration.
+ * The bubble ring colour reflects the user's focus state:
+ *   Purple  = timer only (no face tracking)
+ *   Green   = face detected, focused
+ *   Orange  = drowsy or looking away
+ *   Red     = face absent (sends a notification after 15s)
  */
-class OverlayService : Service() {
+class OverlayService : Service(), LifecycleOwner {
+
+    private val lifecycleRegistry = LifecycleRegistry(this)
+    override val lifecycle: Lifecycle get() = lifecycleRegistry
 
     private var windowManager: WindowManager? = null
     private var overlayView: TimerBubbleView? = null
     private val handler = Handler(Looper.getMainLooper())
     private var elapsedSeconds = 0
     private var appName = "Lecture"
+
+    // Face tracking
+    private var faceTrackingEnabled = false
+    private var cameraExecutor: ExecutorService? = null
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var faceDetector: FaceDetector? = null
+    private var noFaceSince = 0L
+    private var lastAbsentNotifAt = 0L
 
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -49,8 +83,17 @@ class OverlayService : Service() {
         const val ACTION_SHOW = "guru.overlay.SHOW"
         const val ACTION_HIDE = "guru.overlay.HIDE"
         const val EXTRA_APP_NAME = "appName"
+        const val EXTRA_FACE_TRACKING = "faceTracking"
         const val CHANNEL_ID = "guru_overlay_channel"
         const val NOTIF_ID = 9002
+        const val ABSENT_NOTIF_ID = 9003
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -59,11 +102,14 @@ class OverlayService : Service() {
         when (intent?.action) {
             ACTION_SHOW -> {
                 appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "Lecture"
+                faceTrackingEnabled = intent.getBooleanExtra(EXTRA_FACE_TRACKING, false)
                 startForeground(NOTIF_ID, buildNotification())
                 showOverlay()
                 startTimer()
+                if (faceTrackingEnabled) startCamera()
             }
             ACTION_HIDE -> {
+                stopCamera()
                 hideOverlay()
                 stopTimer()
                 stopForeground(STOP_FOREGROUND_REMOVE)
@@ -72,6 +118,134 @@ class OverlayService : Service() {
         }
         return START_NOT_STICKY
     }
+
+    // ── Camera + Face Detection ───────────────────────────────────
+
+    private fun startCamera() {
+        cameraExecutor = Executors.newSingleThreadExecutor()
+
+        val options = FaceDetectorOptions.Builder()
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL)
+            .build()
+        faceDetector = FaceDetection.getClient(options)
+
+        val future = ProcessCameraProvider.getInstance(this)
+        future.addListener({
+            cameraProvider = future.get()
+            bindCamera()
+        }, ContextCompat.getMainExecutor(this))
+    }
+
+    @OptIn(ExperimentalGetImage::class)
+    private fun bindCamera() {
+        val provider = cameraProvider ?: return
+        val detector = faceDetector ?: return
+        val executor = cameraExecutor ?: return
+
+        val analysis = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
+
+        analysis.setAnalyzer(executor) { imageProxy ->
+            val mediaImage = imageProxy.image
+            if (mediaImage != null) {
+                val image = InputImage.fromMediaImage(
+                    mediaImage, imageProxy.imageInfo.rotationDegrees
+                )
+                detector.process(image)
+                    .addOnSuccessListener { faces -> handleFaces(faces) }
+                    .addOnCompleteListener { imageProxy.close() }
+            } else {
+                imageProxy.close()
+            }
+        }
+
+        try {
+            provider.unbindAll()
+            provider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, analysis)
+        } catch (e: Exception) {
+            // Camera unavailable — degrade gracefully
+        }
+    }
+
+    private fun handleFaces(faces: List<com.google.mlkit.vision.face.Face>) {
+        val now = System.currentTimeMillis()
+
+        if (faces.isEmpty()) {
+            if (noFaceSince == 0L) noFaceSince = now
+            val absentMs = now - noFaceSince
+
+            if (absentMs > 15_000) {
+                handler.post { overlayView?.updateFocusState(FocusState.ABSENT) }
+                if (now - lastAbsentNotifAt > 30_000) {
+                    lastAbsentNotifAt = now
+                    sendAbsentNotification()
+                }
+            } else if (absentMs > 5_000) {
+                handler.post { overlayView?.updateFocusState(FocusState.ABSENT) }
+            }
+            return
+        }
+
+        noFaceSince = 0L
+        val face = faces[0]
+        val leftEye = face.leftEyeOpenProbability ?: 1f
+        val rightEye = face.rightEyeOpenProbability ?: 1f
+        val avgEyeOpen = (leftEye + rightEye) / 2f
+        val yaw = abs(face.headEulerAngleY)
+        val pitch = abs(face.headEulerAngleX)
+
+        val state = when {
+            avgEyeOpen < 0.3f             -> FocusState.DROWSY
+            yaw > 35f || pitch > 35f      -> FocusState.DISTRACTED
+            else                          -> FocusState.FOCUSED
+        }
+        handler.post { overlayView?.updateFocusState(state) }
+    }
+
+    private fun sendAbsentNotification() {
+        val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val ch = NotificationChannel(
+                CHANNEL_ID, "Study Timer Overlay",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            manager.createNotificationChannel(ch)
+        }
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val pi = if (launchIntent != null) PendingIntent.getActivity(
+            this, 1, launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        ) else null
+
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            Notification.Builder(this, CHANNEL_ID)
+        else @Suppress("DEPRECATION") Notification.Builder(this)
+
+        val notif = builder
+            .setContentTitle("👀 Where are you, Doctor?")
+            .setContentText("Your face hasn't been detected for 15 seconds. Still studying?")
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .apply { if (pi != null) setContentIntent(pi) }
+            .setAutoCancel(true)
+            .build()
+
+        manager.notify(ABSENT_NOTIF_ID, notif)
+    }
+
+    private fun stopCamera() {
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+        try { cameraProvider?.unbindAll() } catch (_: Exception) {}
+        cameraProvider = null
+        faceDetector?.close()
+        faceDetector = null
+        cameraExecutor?.shutdown()
+        cameraExecutor = null
+    }
+
+    // ── Notification ──────────────────────────────────────────────
 
     private fun buildNotification(): Notification {
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -82,52 +256,46 @@ class OverlayService : Service() {
             ).apply { description = "Shows floating timer while watching lectures" }
             manager.createNotificationChannel(ch)
         }
-
-        // Tapping notification opens Guru
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-        val pendingIntent = if (launchIntent != null) {
-            PendingIntent.getActivity(
-                this, 0, launchIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        } else null
+        val pi = if (launchIntent != null) PendingIntent.getActivity(
+            this, 0, launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        ) else null
 
-        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             Notification.Builder(this, CHANNEL_ID)
-        } else {
-            @Suppress("DEPRECATION")
-            Notification.Builder(this)
-        }
+        else @Suppress("DEPRECATION") Notification.Builder(this)
+
+        val title = if (faceTrackingEnabled) "Studying: $appName · Face tracking ON"
+                    else "Studying: $appName"
+
         return builder
-            .setContentTitle("Studying: $appName")
+            .setContentTitle(title)
             .setContentText("Tap to return to Guru")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
-            .apply { if (pendingIntent != null) setContentIntent(pendingIntent) }
+            .apply { if (pi != null) setContentIntent(pi) }
             .build()
     }
 
+    // ── Overlay window ────────────────────────────────────────────
+
     private fun showOverlay() {
         if (overlayView != null) return
-
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        overlayView = TimerBubbleView(this, appName) {
-            // On tap → return to Guru
+        overlayView = TimerBubbleView(this, appName, faceTrackingEnabled) {
             val intent = packageManager.getLaunchIntentForPackage(packageName)
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 startActivity(intent)
             }
         }
-
-        val size = dpToPx(56)
+        val size = dpToPx(72)
         val params = WindowManager.LayoutParams(
             size, size,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                @Suppress("DEPRECATION")
-                WindowManager.LayoutParams.TYPE_PHONE,
+            else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
@@ -136,8 +304,6 @@ class OverlayService : Service() {
             x = dpToPx(8)
             y = dpToPx(120)
         }
-
-        // Make draggable
         overlayView!!.setOnTouchListener(DragTouchListener(params, windowManager!!))
         windowManager!!.addView(overlayView, params)
     }
@@ -160,45 +326,47 @@ class OverlayService : Service() {
 
     private fun dpToPx(dp: Int): Int =
         TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(),
-            resources.displayMetrics
+            TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), resources.displayMetrics
         ).toInt()
 
     override fun onDestroy() {
+        stopCamera()
         hideOverlay()
         stopTimer()
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         super.onDestroy()
     }
 
     // ════════════════════════════════════════════════════════════════
-    // Custom drawn timer bubble
+    // Bubble view — ring colour reflects focus state
     // ════════════════════════════════════════════════════════════════
 
     class TimerBubbleView(
         context: Context,
         private val appLabel: String,
+        private val faceTracking: Boolean,
         val onTap: () -> Unit
     ) : View(context) {
 
         private var seconds = 0
+        private var focusState = FocusState.NEUTRAL
+
         private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#CC6C63FF") // Semi-transparent purple
+            color = Color.parseColor("#CC1A1A2E")
             style = Paint.Style.FILL
         }
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#FF6C63FF")
             style = Paint.Style.STROKE
-            strokeWidth = 4f
+            strokeWidth = 5f
         }
         private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = 28f
+            textSize = 26f
             textAlign = Paint.Align.CENTER
             isFakeBoldText = true
         }
-        private val subPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#CCCCCC")
-            textSize = 16f
+        private val iconPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 18f
             textAlign = Paint.Align.CENTER
         }
 
@@ -207,16 +375,36 @@ class OverlayService : Service() {
             invalidate()
         }
 
+        fun updateFocusState(state: FocusState) {
+            focusState = state
+            invalidate()
+        }
+
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
             val cx = width / 2f
             val cy = height / 2f
-            val r = (width / 2f) - 4f
+            val r = (width / 2f) - 6f
+
+            // Ring colour based on focus state
+            val ringColor = when (focusState) {
+                FocusState.FOCUSED    -> Color.parseColor("#4CAF50") // green
+                FocusState.DISTRACTED -> Color.parseColor("#FF9800") // orange
+                FocusState.DROWSY     -> Color.parseColor("#FF9800") // orange
+                FocusState.ABSENT     -> Color.parseColor("#F44336") // red
+                FocusState.NEUTRAL    -> Color.parseColor("#6C63FF") // purple (default)
+            }
 
             // Background circle
+            bgPaint.color = Color.parseColor(when (focusState) {
+                FocusState.ABSENT  -> "#CC2A0A0A"
+                FocusState.FOCUSED -> "#CC0A2A0A"
+                else               -> "#CC1A1A2E"
+            })
             canvas.drawCircle(cx, cy, r, bgPaint)
 
-            // Animated ring (pulses every 60 seconds)
+            // Progress ring (arc fills as each minute ticks by)
+            ringPaint.color = ringColor
             val sweep = (seconds % 60) / 60f * 360f
             val oval = RectF(cx - r, cy - r, cx + r, cy + r)
             canvas.drawArc(oval, -90f, sweep, false, ringPaint)
@@ -224,14 +412,22 @@ class OverlayService : Service() {
             // Time text
             val mins = seconds / 60
             val secs = seconds % 60
-            val timeStr = "${mins}:${secs.toString().padStart(2, '0')}"
-            canvas.drawText(timeStr, cx, cy + 4f, textPaint)
+            canvas.drawText(
+                "${mins}:${secs.toString().padStart(2, '0')}",
+                cx, cy + 8f, textPaint
+            )
 
-            // Small dot at bottom to indicate "tap to return"
-            val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = Color.parseColor("#4CAF50")
+            // Focus icon (only when face tracking active)
+            if (faceTracking) {
+                val icon = when (focusState) {
+                    FocusState.FOCUSED    -> "👁"
+                    FocusState.DISTRACTED -> "👀"
+                    FocusState.DROWSY     -> "😴"
+                    FocusState.ABSENT     -> "❗"
+                    FocusState.NEUTRAL    -> "👁"
+                }
+                canvas.drawText(icon, cx, cy - r + 20f, iconPaint)
             }
-            canvas.drawCircle(cx, cy + r - 8f, 3f, dotPaint)
         }
     }
 
@@ -252,12 +448,9 @@ class OverlayService : Service() {
         override fun onTouch(v: View, event: MotionEvent): Boolean {
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    initialX = params.x
-                    initialY = params.y
-                    initialTouchX = event.rawX
-                    initialTouchY = event.rawY
-                    isTap = true
-                    return true
+                    initialX = params.x; initialY = params.y
+                    initialTouchX = event.rawX; initialTouchY = event.rawY
+                    isTap = true; return true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - initialTouchX
@@ -269,10 +462,7 @@ class OverlayService : Service() {
                     return true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (isTap) {
-                        (v as? TimerBubbleView)?.onTap?.invoke()
-                        v.performClick()
-                    }
+                    if (isTap) { (v as? TimerBubbleView)?.onTap?.invoke(); v.performClick() }
                     return true
                 }
             }

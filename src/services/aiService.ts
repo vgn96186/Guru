@@ -3,7 +3,7 @@ import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildAgendaPrompt, buildAccountabili
 import { getCachedContent, setCachedContent } from '../db/queries/aiCache';
 
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
-const PRIMARY_MODEL = 'gemini-1.5-flash'; // Fallback to stable
+const PRIMARY_MODEL = 'gemini-3.0-flash-preview';
 
 interface Message {
   role: 'system' | 'user' | 'assistant';
@@ -90,7 +90,7 @@ export async function fetchContent(
     parsed = JSON.parse(clean);
   }
 
-  const modelUsed = PRIMARY_MODEL;
+  const modelUsed = apiKey.includes('|') ? apiKey.split('|')[1] : PRIMARY_MODEL;
   setCachedContent(topic.id, contentType, parsed, modelUsed);
   return parsed;
 }

@@ -68,6 +68,7 @@ const BREATH_PHASE_SEC = 4;
 export default function InertiaScreen() {
   const navigation = useNavigation();
   const loadProfile = useAppStore(s => s.loadProfile);
+  const faceTrackingEnabled = useAppStore(s => s.profile?.faceTrackingEnabled ?? false);
   const [step, setStep] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
   const [launching, setLaunching] = useState(false);
@@ -161,7 +162,7 @@ export default function InertiaScreen() {
     const shuffled = appKeys.sort(() => Math.random() - 0.5);
     for (const key of shuffled) {
       try {
-        const launched = await launchMedicalApp(key);
+        const launched = await launchMedicalApp(key, faceTrackingEnabled);
         if (launched) {
           // Award all remaining XP
           const remaining = STEPS.reduce((sum, s) => sum + s.xp, 0) - totalXp;
@@ -181,7 +182,7 @@ export default function InertiaScreen() {
   const handleLaunchApp = useCallback(async (appKey: SupportedMedicalApp) => {
     setLaunching(true);
     try {
-      await launchMedicalApp(appKey);
+      await launchMedicalApp(appKey, faceTrackingEnabled);
       loadProfile();
       navigation.goBack();
     } catch (e) {

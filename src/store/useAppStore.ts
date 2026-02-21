@@ -15,6 +15,7 @@ interface AppState {
   setDailyAvailability: (mins: number) => void;
   toggleFocusAudio: () => void;
   toggleVisualTimers: () => void;
+  toggleFaceTracking: () => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -71,6 +72,15 @@ export const useAppStore = create<AppState>((set) => ({
       const newValue = !state.profile.visualTimersEnabled;
       updateUserProfile({ visualTimersEnabled: newValue });
       return { profile: { ...state.profile, visualTimersEnabled: newValue } };
+    });
+  },
+
+  toggleFaceTracking: () => {
+    set(state => {
+      if (!state.profile) return state;
+      const newValue = !state.profile.faceTrackingEnabled;
+      updateUserProfile({ faceTrackingEnabled: newValue });
+      return { profile: { ...state.profile, faceTrackingEnabled: newValue } };
     });
   },
 }));

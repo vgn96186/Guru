@@ -39,7 +39,7 @@ export const MEDICAL_APP_SCHEMES: Record<SupportedMedicalApp, { androidStore: st
  * Launches a 3rd-party medical app using native Android getLaunchIntentForPackage.
  * Falls back to Play Store if not installed.
  */
-export async function launchMedicalApp(appKey: SupportedMedicalApp): Promise<boolean> {
+export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking = false): Promise<boolean> {
     const app = MEDICAL_APP_SCHEMES[appKey];
 
     if (Platform.OS !== 'android') {
@@ -98,7 +98,7 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp): Promise<boo
             try {
                 const hasOverlay = await canDrawOverlays();
                 if (hasOverlay) {
-                    await showOverlay(app.name);
+                    await showOverlay(app.name, faceTracking);
                     console.log('[AppLauncher] ✅ Overlay shown');
                 } else {
                     // First launch: request permission (opens settings)

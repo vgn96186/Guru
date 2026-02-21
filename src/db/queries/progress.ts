@@ -10,13 +10,8 @@ export function getUserProfile(): UserProfile {
     display_name: string; total_xp: number; current_level: number;
     streak_current: number; streak_best: number; daily_goal_minutes: number;
     inicet_date: string; neet_date: string; preferred_session_length: number;
-    openrouter_api_key: string; openai_key: string; transcription_engine: string;
-    notifications_enabled: number; last_active_date: string | null;
+    openrouter_api_key: string; openrouter_key: string; notifications_enabled: number; last_active_date: string | null;
     strict_mode_enabled: number;
-    always_ask_mood_on_launch: number;
-    focus_audio_enabled: number;
-    visual_timers_enabled: number;
-    face_tracking_enabled: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -24,13 +19,9 @@ export function getUserProfile(): UserProfile {
       displayName: 'Doctor', totalXp: 0, currentLevel: 1,
       streakCurrent: 0, streakBest: 0, dailyGoalMinutes: 120,
       inicetDate: '2026-05-01', neetDate: '2026-08-01',
-      preferredSessionLength: 45, openrouterApiKey: '', openaiKey: '', transcriptionEngine: 'gemini',
+      preferredSessionLength: 45, openrouterApiKey: '', openrouterKey: '',
       notificationsEnabled: true, lastActiveDate: null,
       strictModeEnabled: false,
-      alwaysAskMoodOnLaunch: true,
-      focusAudioEnabled: false,
-      visualTimersEnabled: false,
-      faceTrackingEnabled: false,
     };
   }
 
@@ -45,15 +36,10 @@ export function getUserProfile(): UserProfile {
     neetDate: r.neet_date,
     preferredSessionLength: r.preferred_session_length,
     openrouterApiKey: r.openrouter_api_key,
-    openaiKey: r.openai_key ?? '',
-    transcriptionEngine: (r.transcription_engine ?? 'gemini') as 'gemini' | 'openai',
+    openrouterKey: r.openrouter_key ?? '',
     notificationsEnabled: r.notifications_enabled === 1,
     lastActiveDate: r.last_active_date,
     strictModeEnabled: r.strict_mode_enabled === 1,
-    alwaysAskMoodOnLaunch: (r.always_ask_mood_on_launch ?? 1) === 1,
-    focusAudioEnabled: r.focus_audio_enabled === 1,
-    visualTimersEnabled: r.visual_timers_enabled === 1,
-    faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
   };
 }
 
@@ -70,15 +56,10 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     neetDate: 'neet_date',
     preferredSessionLength: 'preferred_session_length',
     openrouterApiKey: 'openrouter_api_key',
-    openaiKey: 'openai_key',
-    transcriptionEngine: 'transcription_engine',
+    openrouterKey: 'openrouter_key',
     notificationsEnabled: 'notifications_enabled',
     lastActiveDate: 'last_active_date',
     strictModeEnabled: 'strict_mode_enabled',
-    alwaysAskMoodOnLaunch: 'always_ask_mood_on_launch',
-    focusAudioEnabled: 'focus_audio_enabled',
-    visualTimersEnabled: 'visual_timers_enabled',
-    faceTrackingEnabled: 'face_tracking_enabled',
   };
 
   const setClauses: string[] = [];

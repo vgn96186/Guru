@@ -1,3 +1,6 @@
+import { getDb, nowTs, todayStr } from '../database';
+import type { StudySession, Mood, SessionMode } from '../../types';
+
 export function getTotalStudyMinutes(): number {
   const db = getDb();
   const r = db.getFirstSync<{ total: number }>(
@@ -5,8 +8,6 @@ export function getTotalStudyMinutes(): number {
   );
   return r?.total ?? 0;
 }
-import { getDb, nowTs, todayStr } from '../database';
-import type { StudySession, Mood, SessionMode } from '../../types';
 
 export function createSession(
   plannedTopics: number[],

@@ -5,7 +5,7 @@ interface Props {
   message?: string;
 }
 
-export default function LoadingOrb({ message = 'Guru is thinking...' }: Props) {
+export default function LoadingOrb({ message = 'Hey there! Let me think...' }: Props) {
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0.4)).current;
 

@@ -81,7 +81,8 @@ export default function ReviewScreen() {
     updateTopicProgress(
       currentTopic.id,
       newConf >= 4 ? 'mastered' : newConf >= 2 ? 'reviewed' : 'seen',
-      newConf
+      newConf,
+      xp
     );
 
     addXp(xp);

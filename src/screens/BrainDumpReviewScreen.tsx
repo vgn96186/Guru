@@ -17,11 +17,11 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
     const handleClear = () => {
         clearBrainDumps();
         setDumps([]);
-        navigation.popToTop(); // Head home after clearing
+        navigation.goBack(); // Head home after clearing
     };
 
     const handleDone = () => {
-        navigation.popToTop();
+        navigation.goBack();
     };
 
     return (

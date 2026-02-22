@@ -72,6 +72,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE topic_progress ADD COLUMN next_review_date TEXT`,
     `ALTER TABLE topic_progress ADD COLUMN user_notes TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE user_profile ADD COLUMN strict_mode_enabled INTEGER DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN streak_shield_available INTEGER DEFAULT 1`,
     `ALTER TABLE user_profile ADD COLUMN openrouter_key TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE user_profile ADD COLUMN body_doubling_enabled INTEGER NOT NULL DEFAULT 1`,
     `ALTER TABLE user_profile ADD COLUMN blocked_content_types TEXT NOT NULL DEFAULT '[]'`,

@@ -104,7 +104,33 @@ CREATE TABLE IF NOT EXISTS user_profile (
   openrouter_key TEXT NOT NULL DEFAULT '',
   notifications_enabled INTEGER NOT NULL DEFAULT 1,
   last_active_date TEXT,
-  sync_code TEXT
+  sync_code TEXT,
+  strict_mode_enabled INTEGER NOT NULL DEFAULT 0,
+  streak_shield_available INTEGER NOT NULL DEFAULT 1,
+  body_doubling_enabled INTEGER NOT NULL DEFAULT 1,
+  blocked_content_types TEXT NOT NULL DEFAULT '[]',
+  idle_timeout_minutes INTEGER NOT NULL DEFAULT 2,
+  break_duration_minutes INTEGER NOT NULL DEFAULT 5,
+  notification_hour INTEGER NOT NULL DEFAULT 7,
+  focus_subject_ids TEXT NOT NULL DEFAULT '[]'
+)`;
+
+export const CREATE_BRAIN_DUMPS = `
+CREATE TABLE IF NOT EXISTS brain_dumps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  note TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`;
+
+export const CREATE_EXTERNAL_APP_LOGS = `
+CREATE TABLE IF NOT EXISTS external_app_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  app_name TEXT NOT NULL,
+  launched_at INTEGER NOT NULL,
+  returned_at INTEGER,
+  duration_minutes REAL,
+  notes TEXT,
+  recording_path TEXT
 )`;
 
 export const ALL_SCHEMAS = [
@@ -116,4 +142,6 @@ export const ALL_SCHEMAS = [
   CREATE_DAILY_LOG,
   CREATE_AI_CACHE,
   CREATE_USER_PROFILE,
+  CREATE_BRAIN_DUMPS,
+  CREATE_EXTERNAL_APP_LOGS,
 ];

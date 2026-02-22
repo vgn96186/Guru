@@ -7,23 +7,25 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0F0F14"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.gurustudy"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#0F0F14"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.gurustudy"
+      "package": "com.anonymous.gurustudy",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,15 +33,13 @@
     "plugins": [
       "expo-sqlite",
       "expo-notifications",
-      "./modules/app-launcher/withAppLauncher",
-      [
-        "react-native-vision-camera",
-        {
-          "cameraPermissionText": "Guru uses your camera to track concentration during study sessions. No video is recorded or sent anywhere.",
-          "enableCodeScanner": false,
-          "enableLocation": false
-        }
-      ]
-    ]
+      "./modules/app-launcher/withAppLauncher"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9bd98d16-0bbc-4416-8f97-a5ac65e0dc56"
+      }
+    },
+    "owner": "vgn9618"
   }
 }

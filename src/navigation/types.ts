@@ -5,6 +5,7 @@ export type RootStackParamList = {
   Lockdown: { duration: number };
   CheckIn: undefined;
   Tabs: undefined;
+  BrainDumpReview: undefined;
 };
 
 export type HomeStackParamList = {

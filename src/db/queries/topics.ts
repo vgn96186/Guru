@@ -284,3 +284,7 @@ function mapTopicRow(r: any): TopicWithProgress {
     },
   };
 }
+
+export const getNemesisTopics = async (): Promise<any[]> => {
+  return [];
+};

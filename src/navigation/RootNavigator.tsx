@@ -7,6 +7,7 @@ import LockdownScreen from '../screens/LockdownScreen';
 import DoomscrollGuideScreen from '../screens/DoomscrollGuideScreen';
 import DeviceLinkScreen from '../screens/DeviceLinkScreen';
 import BreakEnforcerScreen from '../screens/BreakEnforcerScreen';
+import BrainDumpReviewScreen from '../screens/BrainDumpReviewScreen';
 import { useAppStore } from '../store/useAppStore';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -25,6 +26,7 @@ export default function RootNavigator() {
       <Stack.Screen name="DoomscrollGuide" component={DoomscrollGuideScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="DeviceLink" component={DeviceLinkScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="BreakEnforcer" component={BreakEnforcerScreen} options={{ gestureEnabled: false, presentation: 'fullScreenModal' }} />
+      <Stack.Screen name="BrainDumpReview" component={BrainDumpReviewScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

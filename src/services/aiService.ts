@@ -428,3 +428,63 @@ export async function transcribeAndSummarizeAudio(
   if (!text) throw new Error('Empty audio response from Gemini');
   return text.trim();
 }
+
+const CatalystSchema = z.object({
+  subject: z.string(),
+  topics: z.array(z.string()),
+  summary: z.string(),
+  keyConcepts: z.array(z.string()),
+  quiz: z.object({
+    questions: z.array(z.object({
+      question: z.string(),
+      options: z.array(z.string()),
+      correctIndex: z.number(),
+      explanation: z.string()
+    }))
+  })
+});
+
+export async function catalyzeTranscript(
+  transcript: string,
+  apiKey: string,
+  orKey?: string
+): Promise<z.infer<typeof CatalystSchema>> {
+  const userPrompt = `
+You are a medical lecture analyst. Below is a raw transcript or summary of a lecture.
+Your task is to:
+1. Identify the primary medical subject.
+2. Extract specific topic names mentioned.
+3. Provide a 2-line high-level summary.
+4. Extract 5 high-yield key concepts.
+5. Generate a 3-question MCQ quiz based on the content.
+
+TRANSCRIPT:
+${transcript}
+
+Return ONLY a JSON object matching this structure:
+{
+  "subject": "string",
+  "topics": ["string", "string"],
+  "summary": "string",
+  "keyConcepts": ["string", "string"],
+  "quiz": {
+    "questions": [
+      { "question": "...", "options": ["...", "...", "...", "..."], "correctIndex": 0, "explanation": "..." }
+    ]
+  }
+}
+`;
+
+  const { text } = await callWithFallbacks(
+    [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
+    apiKey,
+    orKey
+  );
+
+  const clean = text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+  return CatalystSchema.parse(parsed);
+}

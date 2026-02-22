@@ -209,7 +209,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
   const profile = getUserProfile();
   if (!profile.notificationsEnabled || !profile.openrouterApiKey) return;
 
-  const nemesisTopics = getNemesisTopics();
+  const nemesisTopics = await getNemesisTopics();
   const weakTopics = getWeakestTopics(3).map(t => t.name);
   const dueTopics = getTopicsDueForReview(1); // Check if any topic is due
   const logs = getLast30DaysLog();

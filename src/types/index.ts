@@ -103,6 +103,9 @@ export interface UserProfile {
   neetDate: string;
   preferredSessionLength: number;
   lastActiveDate: string | null;
+  focusAudioEnabled?: boolean;
+  visualTimersEnabled?: boolean;
+  faceTrackingEnabled?: boolean;
   syncCode: string | null;
   openrouterApiKey: string;  // Gemini API key (confusingly named for historical reasons)
   openrouterKey: string;     // Actual OpenRouter key for free model fallbacks

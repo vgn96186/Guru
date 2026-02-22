@@ -41,27 +41,25 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
 
-  // Seed topics — always run (INSERT OR IGNORE is idempotent; adds new topics without wiping progress)
+  // Seed topics if empty or forced
   const subjectCountRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM subjects');
   const subjectCount = subjectCountRes?.count ?? 0;
 
-  if (actualForce) {
-    console.log('[DB] Force-seeding: wiping topics & progress');
-    await db.execAsync('DELETE FROM topic_progress');
-    await db.execAsync('DELETE FROM topics');
-    await db.execAsync('DELETE FROM subjects');
-    await seedSubjects(db);
-  }
-
   if (subjectCount === 0 || actualForce) {
+    console.log(`[DB] Seeding topics (force: ${actualForce})`);
+    if (actualForce) {
+      await db.execAsync('DELETE FROM topic_progress');
+      await db.execAsync('DELETE FROM topics');
+      await db.execAsync('DELETE FROM subjects');
+      await seedSubjects(db);
+    }
+    await seedTopics(db);
     await seedUserProfile(db);
   } else {
+    // Ensure user_profile row exists
     const profile = await db.getFirstAsync<{ id: number }>('SELECT id FROM user_profile WHERE id = 1');
     if (!profile) await seedUserProfile(db);
   }
-
-  // Always seed topics so new subtopics added to syllabus reach existing users
-  await seedTopics(db);
 
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
   await seedVaultTopics(db);
@@ -74,11 +72,13 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE topic_progress ADD COLUMN next_review_date TEXT`,
     `ALTER TABLE topic_progress ADD COLUMN user_notes TEXT NOT NULL DEFAULT ''`,
     `ALTER TABLE user_profile ADD COLUMN strict_mode_enabled INTEGER DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN always_ask_mood_on_launch INTEGER DEFAULT 1`,
-    `ALTER TABLE user_profile ADD COLUMN openai_key TEXT NOT NULL DEFAULT ''`,
-    `ALTER TABLE user_profile ADD COLUMN transcription_engine TEXT NOT NULL DEFAULT 'gemini'`,
-    `ALTER TABLE external_app_logs ADD COLUMN recording_path TEXT`,
-    `ALTER TABLE user_profile ADD COLUMN face_tracking_enabled INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN openrouter_key TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE user_profile ADD COLUMN body_doubling_enabled INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE user_profile ADD COLUMN blocked_content_types TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE user_profile ADD COLUMN idle_timeout_minutes INTEGER NOT NULL DEFAULT 2`,
+    `ALTER TABLE user_profile ADD COLUMN break_duration_minutes INTEGER NOT NULL DEFAULT 5`,
+    `ALTER TABLE user_profile ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 7`,
+    `ALTER TABLE user_profile ADD COLUMN focus_subject_ids TEXT NOT NULL DEFAULT '[]'`,
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }
@@ -185,25 +185,6 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
     await db.runAsync(
       `UPDATE topic_progress SET confidence = 1 WHERE topic_id IN (${placeholders}) AND confidence = 0`,
       vaultTopicIds
-    );
-
-    // 3. Ensure "watched once" baseline is reflected in study counts
-    await db.runAsync(
-      `UPDATE topic_progress SET times_studied = 1 WHERE topic_id IN (${placeholders}) AND times_studied = 0`,
-      vaultTopicIds
-    );
-
-    // 4. Set SRS-based review date: vault topics (seen once) should be reviewed in 3 days
-    const reviewDate = dateStr(new Date(Date.now() + 3 * 86400000));
-    await db.runAsync(
-      `UPDATE topic_progress SET next_review_date = ? WHERE topic_id IN (${placeholders}) AND next_review_date IS NULL`,
-      [reviewDate, ...vaultTopicIds]
-    );
-
-    // 5. Set last_studied_at timestamp if not already set (so progress stats pick them up)
-    await db.runAsync(
-      `UPDATE topic_progress SET last_studied_at = ? WHERE topic_id IN (${placeholders}) AND last_studied_at IS NULL`,
-      [Date.now(), ...vaultTopicIds]
     );
   }
   console.log(`[DB] Vault Seed: ${inserted} inserted, ${ignored} ignored`);

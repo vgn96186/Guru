@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SyllabusStackParamList } from '../navigation/types';
+import type { SyllabusStackParamList, TabParamList } from '../navigation/types';
 import { getTopicsBySubject, updateTopicNotes } from '../db/queries/topics';
 import type { TopicWithProgress, TopicStatus } from '../types';
 
@@ -182,6 +182,13 @@ export default function TopicDetailScreen() {
               </TouchableOpacity>
               {expandedId === item.id && (
                 <View style={styles.notesExpanded}>
+                  <TouchableOpacity
+                    style={styles.studyNowBtn}
+                    onPress={() => (navigation as any).getParent()?.navigate('HomeTab')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.studyNowText}>Study this now →</Text>
+                  </TouchableOpacity>
                   <Text style={styles.notesLabel}>Your Notes / Mnemonic</Text>
                   <TextInput
                     style={styles.notesInput}
@@ -257,4 +264,6 @@ const styles = StyleSheet.create({
   notesSaveText: { color: '#fff', fontWeight: '700', fontSize: 13 },
   notesCancel: { flex: 1, backgroundColor: '#2A2A38', borderRadius: 10, padding: 10, alignItems: 'center' },
   notesCancelText: { color: '#9E9E9E', fontWeight: '600', fontSize: 13 },
+  studyNowBtn: { backgroundColor: '#6C63FF', borderRadius: 10, padding: 12, alignItems: 'center', marginBottom: 12 },
+  studyNowText: { color: '#fff', fontWeight: '800', fontSize: 14 },
 });

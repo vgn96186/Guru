@@ -1,5 +1,5 @@
 import { getDb, todayStr, dateStr } from '../database';
-import type { UserProfile, DailyLog, Mood } from '../../types';
+import type { UserProfile, DailyLog, Mood, ContentType } from '../../types';
 import { LEVELS } from '../../constants/gamification';
 
 export function getUserProfile(): UserProfile {
@@ -8,8 +8,11 @@ export function getUserProfile(): UserProfile {
     display_name: string; total_xp: number; current_level: number;
     streak_current: number; streak_best: number; daily_goal_minutes: number;
     inicet_date: string; neet_date: string; preferred_session_length: number;
-    openrouter_api_key: string; openrouter_key: string; notifications_enabled: number; last_active_date: string | null;
+    openrouter_api_key: string; openrouter_key: string; notifications_enabled: number; last_active_date: string | null; sync_code: string | null;
     strict_mode_enabled: number; streak_shield_available: number;
+    body_doubling_enabled: number; blocked_content_types: string;
+    idle_timeout_minutes: number; break_duration_minutes: number;
+    notification_hour: number; focus_subject_ids: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -18,8 +21,10 @@ export function getUserProfile(): UserProfile {
       streakCurrent: 0, streakBest: 0, dailyGoalMinutes: 120,
       inicetDate: '2026-05-01', neetDate: '2026-08-01',
       preferredSessionLength: 45, openrouterApiKey: '', openrouterKey: '',
-      notificationsEnabled: true, lastActiveDate: null,
-      strictModeEnabled: false,
+      notificationsEnabled: true, lastActiveDate: null, syncCode: null,
+      strictModeEnabled: false, bodyDoublingEnabled: true,
+      blockedContentTypes: [], idleTimeoutMinutes: 2,
+      breakDurationMinutes: 5, notificationHour: 7, focusSubjectIds: [],
     };
   }
 
@@ -37,7 +42,14 @@ export function getUserProfile(): UserProfile {
     openrouterKey: r.openrouter_key ?? '',
     notificationsEnabled: r.notifications_enabled === 1,
     lastActiveDate: r.last_active_date,
+    syncCode: r.sync_code,
     strictModeEnabled: r.strict_mode_enabled === 1,
+    bodyDoublingEnabled: (r.body_doubling_enabled ?? 1) === 1,
+    blockedContentTypes: (() => { try { return JSON.parse(r.blocked_content_types ?? '[]'); } catch { return []; } })() as ContentType[],
+    idleTimeoutMinutes: r.idle_timeout_minutes ?? 2,
+    breakDurationMinutes: r.break_duration_minutes ?? 5,
+    notificationHour: r.notification_hour ?? 7,
+    focusSubjectIds: (() => { try { return JSON.parse(r.focus_subject_ids ?? '[]'); } catch { return []; } })() as number[],
   };
 }
 
@@ -48,7 +60,9 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     streakCurrent: 'streak_current', streakBest: 'streak_best', dailyGoalMinutes: 'daily_goal_minutes',
     inicetDate: 'inicet_date', neetDate: 'neet_date', preferredSessionLength: 'preferred_session_length',
     openrouterApiKey: 'openrouter_api_key', openrouterKey: 'openrouter_key',
-    notificationsEnabled: 'notifications_enabled', lastActiveDate: 'last_active_date', strictModeEnabled: 'strict_mode_enabled',
+    notificationsEnabled: 'notifications_enabled', lastActiveDate: 'last_active_date', syncCode: 'sync_code', strictModeEnabled: 'strict_mode_enabled',
+    bodyDoublingEnabled: 'body_doubling_enabled', idleTimeoutMinutes: 'idle_timeout_minutes',
+    breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
   };
 
   const setClauses: string[] = [];
@@ -60,6 +74,16 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
       const val = (updates as Record<string, unknown>)[key];
       values.push(typeof val === 'boolean' ? (val ? 1 : 0) : (val as string | number | null));
     }
+  }
+
+  // Array fields stored as JSON
+  if ('blockedContentTypes' in updates) {
+    setClauses.push('blocked_content_types = ?');
+    values.push(JSON.stringify(updates.blockedContentTypes ?? []));
+  }
+  if ('focusSubjectIds' in updates) {
+    setClauses.push('focus_subject_ids = ?');
+    values.push(JSON.stringify(updates.focusSubjectIds ?? []));
   }
 
   if (setClauses.length === 0) return;
@@ -107,7 +131,8 @@ export function updateStreak(studiedToday: boolean, useShield = false): void {
 export function useStreakShield(): boolean {
   const db = getDb();
   const profile = getUserProfile();
-  if (profile.streakCurrent === 0 || profile.streak_shield_available !== 1) return false;
+  const raw = (getDb().getFirstSync<{ streak_shield_available: number }>('SELECT streak_shield_available FROM user_profile WHERE id = 1'))?.streak_shield_available;
+  if (profile.streakCurrent === 0 || raw !== 1) return false;
   updateStreak(false, true);
   return true;
 }
@@ -132,6 +157,17 @@ export function getActivityHistory(days = 90): DailyLog[] {
   const db = getDb();
   const rows = db.getAllSync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>(`SELECT * FROM daily_log ORDER BY date DESC LIMIT ?`, [days]);
   return rows.map(r => ({ date: r.date, checkedIn: r.checked_in === 1, mood: r.mood as Mood | null, totalMinutes: r.total_minutes, xpEarned: r.xp_earned, sessionCount: r.session_count }));
+}
+
+export function resetStudyProgress(): void {
+  const db = getDb();
+  db.runSync(`UPDATE topic_progress SET status = 'unseen', confidence = 0, last_studied_at = NULL, times_studied = 0, xp_earned = 0, next_review_date = NULL`);
+  db.runSync(`UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`);
+  db.runSync(`DELETE FROM daily_log`);
+}
+
+export function clearAiCache(): void {
+  getDb().runSync('DELETE FROM ai_cache');
 }
 
 export function getDaysToExam(dateStr: string): number {

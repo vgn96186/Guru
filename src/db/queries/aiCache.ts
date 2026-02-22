@@ -72,6 +72,49 @@ export function getAllCachedQuestions(): MockQuestion[] {
   return all;
 }
 
+export function setContentFlagged(topicId: number, contentType: ContentType, flagged: boolean): void {
+  const db = getDb();
+  db.runSync(
+    'UPDATE ai_cache SET is_flagged = ? WHERE topic_id = ? AND content_type = ?',
+    [flagged ? 1 : 0, topicId, contentType],
+  );
+}
+
+export interface FlaggedItem {
+  topicId: number;
+  topicName: string;
+  subjectName: string;
+  contentType: ContentType;
+  content: AIContent;
+  modelUsed: string;
+  createdAt: number;
+}
+
+export function getFlaggedContent(): FlaggedItem[] {
+  const db = getDb();
+  const rows = db.getAllSync<{
+    topic_id: number; topic_name: string; subject_name: string;
+    content_type: string; content_json: string; model_used: string; created_at: number;
+  }>(
+    `SELECT c.topic_id, t.name AS topic_name, s.name AS subject_name,
+            c.content_type, c.content_json, c.model_used, c.created_at
+     FROM ai_cache c
+     JOIN topics t ON c.topic_id = t.id
+     JOIN subjects s ON t.subject_id = s.id
+     WHERE c.is_flagged = 1
+     ORDER BY c.created_at DESC`,
+  );
+  return rows.map(r => ({
+    topicId: r.topic_id,
+    topicName: r.topic_name,
+    subjectName: r.subject_name,
+    contentType: r.content_type as ContentType,
+    content: JSON.parse(r.content_json) as AIContent,
+    modelUsed: r.model_used,
+    createdAt: r.created_at,
+  }));
+}
+
 export function clearTopicCache(topicId: number): void {
   const db = getDb();
   db.runSync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);

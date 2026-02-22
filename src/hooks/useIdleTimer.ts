@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, PanResponder } from 'react-native';
 
 interface UseIdleTimerProps {
   onIdle: () => void;
@@ -57,9 +57,19 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
     };
   }, [resetTimer]);
 
-  // Return empty panHandlers to maintain compatibility
-  return { 
-    panHandlers: {},
-    isIdle 
+  // Keep a ref to the latest resetTimer to avoid stale closures in PanResponder
+  const resetTimerRef = useRef(resetTimer);
+  useEffect(() => { resetTimerRef.current = resetTimer; }, [resetTimer]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponderCapture: () => { resetTimerRef.current(); return false; },
+      onMoveShouldSetPanResponderCapture: () => { resetTimerRef.current(); return false; },
+    }),
+  ).current;
+
+  return {
+    panHandlers: panResponder.panHandlers,
+    isIdle,
   };
 }

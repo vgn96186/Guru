@@ -1,7 +1,10 @@
 export type RootStackParamList = {
+  BreakEnforcer: { durationSeconds: number };
+  DeviceLink: undefined;
+  DoomscrollGuide: undefined;
+  Lockdown: { duration: number };
   CheckIn: undefined;
   Tabs: undefined;
-  BrainDumpReview: undefined;
 };
 
 export type HomeStackParamList = {
@@ -14,6 +17,9 @@ export type HomeStackParamList = {
   BossBattle: undefined;
   Inertia: undefined;
   ManualLog: { appId?: string };
+  StudyPlan: undefined;
+  DailyChallenge: undefined;
+  FlaggedReview: undefined;
 };
 
 export type SyllabusStackParamList = {
@@ -23,7 +29,6 @@ export type SyllabusStackParamList = {
 
 export type TabParamList = {
   HomeTab: undefined;
-  PlanTab: undefined;
   SyllabusTab: undefined;
   StatsTab: undefined;
   SettingsTab: undefined;

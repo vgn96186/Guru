@@ -20,6 +20,7 @@ import BreakScreen from './BreakScreen';
 import type { Mood, SessionMode } from '../types';
 import { XP_REWARDS } from '../constants/gamification';
 import { useIdleTimer } from '../hooks/useIdleTimer';
+import { useGuruPresence } from '../hooks/useGuruPresence';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
@@ -27,10 +28,11 @@ type Route = RouteProp<HomeStackParamList, 'Session'>;
 export default function SessionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { mood, mode: forcedMode } = route.params as { mood: Mood; mode?: SessionMode };
+  const { mood, mode: forcedMode, forcedMinutes } = route.params as { mood: Mood; mode?: SessionMode; forcedMinutes?: number };
 
   const store = useSessionStore();
   const profile = useAppStore(s => s.profile);
+  const dailyAvailability = useAppStore(s => s.dailyAvailability);
   const refreshProfile = useAppStore(s => s.refreshProfile);
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -38,11 +40,22 @@ export default function SessionScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const xpAnim = useRef(new Animated.Value(0)).current;
   const [showXp, setShowXp] = useState(0);
+  const [sessionXpTotal, setSessionXpTotal] = useState(0);
   const [aiError, setAiError] = useState<string | null>(null);
+  const isPausedRef = useRef(store.isPaused);
 
-  const idleTimeout = 1 * 60 * 1000;
+  const isStudying = store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused;
 
-  const { panResponder } = useIdleTimer({
+  const { currentMessage, presencePulse, toastOpacity, triggerEvent } = useGuruPresence({
+    topicNames: store.agenda?.items.map(i => i.topic.name) ?? [],
+    apiKey: profile?.openrouterApiKey ?? '',
+    orKey: profile?.openrouterKey ?? undefined,
+    isActive: isStudying && (profile?.bodyDoublingEnabled ?? true),
+  });
+
+  const idleTimeout = (profile?.idleTimeoutMinutes ?? 2) * 60 * 1000;
+
+  const { panHandlers } = useIdleTimer({
     timeout: idleTimeout,
     onIdle: () => {
       if (store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused) {
@@ -79,14 +92,19 @@ export default function SessionScreen() {
   }, [store.sessionState, profile?.strictModeEnabled]);
 
   useEffect(() => {
+    isPausedRef.current = store.isPaused;
+  }, [store.isPaused]);
+
+  useEffect(() => {
     store.resetSession();
     startPlanning();
     timerRef.current = setInterval(() => {
       setElapsedSeconds(s => s + 1);
-      if (!store.isPaused) setActiveElapsedSeconds(s => s + 1);
+      if (!isPausedRef.current) setActiveElapsedSeconds(s => s + 1);
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [store.isPaused]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!store.isOnBreak) return;
@@ -117,7 +135,8 @@ export default function SessionScreen() {
     setAiError(null);
     store.setSessionState('planning');
     try {
-      const sessionLength = forcedMode === 'sprint' ? 10 : (profile.preferredSessionLength ?? 45);
+      const sessionLength = forcedMinutes ? forcedMinutes : (forcedMode === 'sprint' ? 10
+        : (dailyAvailability && dailyAvailability > 0 ? dailyAvailability : (profile.preferredSessionLength ?? 45)));
       const agenda = await buildSession(mood, sessionLength, profile.openrouterApiKey, profile.openrouterKey || undefined);
       const sessionId = createSession(agenda.items.map(i => i.topic.id), mood, agenda.mode);
       store.setSessionId(sessionId);
@@ -136,7 +155,7 @@ export default function SessionScreen() {
       store.markTopicComplete();
       const isLast = store.currentItemIndex >= (store.agenda?.items.length ?? 1) - 1;
       if (isLast) store.nextTopic();
-      else store.startBreak(300);
+      else store.startBreak((profile?.breakDurationMinutes ?? 5) * 60);
     }
   }
 
@@ -150,6 +169,8 @@ export default function SessionScreen() {
     updateTopicProgress(item.topic.id, status, confidence, xp);
     setShowXp(xp);
     Animated.sequence([Animated.timing(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }), Animated.delay(800), Animated.timing(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true })]).start();
+    if (confidence === 1) triggerEvent('again_rated');
+    else triggerEvent('card_done');
     handleContentDone();
   }
 
@@ -181,6 +202,7 @@ export default function SessionScreen() {
     const xpResult = calculateAndAwardSessionXp(completedTopics, quizResults, isFirstToday);
     endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
     updateStreak(durationMin >= 20);
+    setSessionXpTotal(xpResult.total);
     refreshProfile();
     store.setSessionState('session_done');
   }
@@ -231,10 +253,10 @@ export default function SessionScreen() {
 
   if (store.isOnBreak) {
     const item = getCurrentAgendaItem(store);
-    return <BreakScreen countdown={store.breakCountdown} topicId={item?.topic.id} apiKey={profile?.openrouterApiKey} orKey={profile?.openrouterKey || undefined} onDone={handleBreakDone} />;
+    return <BreakScreen countdown={store.breakCountdown} totalSeconds={(profile?.breakDurationMinutes ?? 5) * 60} topicId={item?.topic.id} apiKey={profile?.openrouterApiKey} orKey={profile?.openrouterKey || undefined} onDone={handleBreakDone} />;
   }
 
-  if (store.sessionState === 'session_done') return <SessionDoneScreen completedCount={store.completedTopicIds.length} elapsedSeconds={elapsedSeconds} onClose={() => navigation.popToTop()} />;
+  if (store.sessionState === 'session_done') return <SessionDoneScreen completedCount={store.completedTopicIds.length} elapsedSeconds={elapsedSeconds} xpTotal={sessionXpTotal} onClose={() => navigation.popToTop()} />;
 
   if (store.sessionState === 'topic_done') {
     return (
@@ -242,7 +264,7 @@ export default function SessionScreen() {
         <View style={styles.topicDoneContainer}>
           <Text style={styles.topicDoneEmoji}>✅</Text>
           <Text style={styles.topicDoneName}>{getCurrentAgendaItem(store)?.topic.name}</Text>
-          <Text style={styles.topicDoneSub}>Topic complete! Taking a 5-min break...</Text>
+          <Text style={styles.topicDoneSub}>Topic complete! Taking a {profile?.breakDurationMinutes ?? 5}-min break...</Text>
         </View>
       </SafeAreaView>
     );
@@ -260,7 +282,7 @@ export default function SessionScreen() {
   const showPausedOverlay = store.isPaused && store.sessionState === 'studying' && !store.isOnBreak;
 
   return (
-    <SafeAreaView style={styles.safe} {...panResponder.panHandlers}>
+    <SafeAreaView style={styles.safe} {...panHandlers}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -270,6 +292,9 @@ export default function SessionScreen() {
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={handleDowngrade} style={styles.sosBtn}><Text style={styles.sosBtnText}>🆘</Text></TouchableOpacity>
+          {isStudying && (
+            <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
+          )}
           <Text style={styles.timer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
           <TouchableOpacity onPress={finishSession} style={styles.endBtn}><Text style={styles.endBtnText}>End</Text></TouchableOpacity>
         </View>
@@ -281,6 +306,12 @@ export default function SessionScreen() {
         <Text style={styles.progressBarText}>{progressPercent}% complete</Text>
       </View>
 
+      {currentMessage && isStudying && !showPausedOverlay && (
+        <Animated.View style={[styles.guruToast, { opacity: toastOpacity }]}>
+          <Text style={styles.guruToastText}>{currentMessage}</Text>
+        </Animated.View>
+      )}
+
       <View style={styles.contentTypeTabs}>
         {item.contentTypes.map((ct, idx) => (
           <View key={ct} style={[styles.contentTab, idx === store.currentContentIndex && styles.contentTabActive, idx < store.currentContentIndex && styles.contentTabDone]}>
@@ -290,7 +321,16 @@ export default function SessionScreen() {
       </View>
 
       {store.isLoadingContent ? <LoadingOrb message="Fetching content..." /> : store.currentContent ? (
-        <ContentCard content={store.currentContent} onDone={handleConfidenceRating} onSkip={handleContentDone} />
+        <ContentCard
+          content={store.currentContent}
+          topicId={item?.topic.id}
+          onDone={handleConfidenceRating}
+          onSkip={handleContentDone}
+          onQuizAnswered={c => triggerEvent(c ? 'quiz_correct' : 'quiz_wrong')}
+          onQuizComplete={(correct, total) => {
+            if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
+          }}
+        />
       ) : <LoadingOrb message="Loading..." />}
 
       <Animated.View style={[styles.xpPop, { opacity: xpAnim, transform: [{ translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) }] }]}>
@@ -310,9 +350,9 @@ export default function SessionScreen() {
 
 const CONTENT_LABELS: Record<string, string> = { keypoints: 'Key Points', quiz: 'Quiz', story: 'Story', mnemonic: 'Mnemonic', teach_back: 'Teach', error_hunt: 'Hunt', detective: 'Case' };
 
-function SessionDoneScreen({ completedCount, elapsedSeconds, onClose }: { completedCount: number; elapsedSeconds: number; onClose: () => void }) {
+function SessionDoneScreen({ completedCount, elapsedSeconds, xpTotal, onClose }: { completedCount: number; elapsedSeconds: number; xpTotal: number; onClose: () => void }) {
   const mins = Math.round(elapsedSeconds / 60);
-  const xpEarned = completedCount * 80;
+  const xpEarned = xpTotal;
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.doneContainer}>
@@ -393,6 +433,9 @@ const styles = StyleSheet.create({
   skipBtnText: { color: '#FF9800', fontWeight: '700', fontSize: 16 },
   leaveBtn: { paddingVertical: 12 },
   leaveBtnText: { color: '#555', fontSize: 14 },
+  guruDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#6C63FF', shadowColor: '#6C63FF', shadowRadius: 6, shadowOpacity: 0.9, elevation: 4, marginRight: 6 },
+  guruToast: { position: 'absolute', top: 130, left: 16, right: 16, backgroundColor: '#1A1A2E', borderRadius: 12, borderLeftWidth: 3, borderLeftColor: '#6C63FF', borderWidth: 1, borderColor: '#6C63FF33', padding: 12, zIndex: 50, elevation: 8 },
+  guruToastText: { color: '#D0C8FF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
   pausedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
   pausedText: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 10 },
   pausedSubText: { color: '#9E9E9E', fontSize: 15, textAlign: 'center', marginBottom: 30 },

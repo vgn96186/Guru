@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import * as Speech from 'expo-speech';
+import * as Haptics from 'expo-haptics';
+
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Alert, ActivityIndicator, Animated,
+  StyleSheet, Alert, ActivityIndicator,
 } from 'react-native';
 import type {
   AIContent, KeyPointsContent, QuizContent, StoryContent,
@@ -10,26 +13,85 @@ import type {
 
 import { askGuru } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
+import { setContentFlagged } from '../db/queries/aiCache';
+import GuruChatOverlay from '../components/GuruChatOverlay';
 
 interface Props {
   content: AIContent;
+  topicId?: number;
   onDone: (confidence: number) => void;
   onSkip: () => void;
-  timePerQuestion?: number; // seconds — enables per-question countdown (sprint mode)
+  onQuizAnswered?: (correct: boolean) => void;
   onQuizComplete?: (correct: number, total: number) => void;
 }
 
-export default function ContentCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: Props) {
-  switch (content.type) {
-    case 'keypoints': return <KeyPointsCard content={content} onDone={onDone} onSkip={onSkip} />;
-    case 'quiz':      return <QuizCard content={content} onDone={onDone} onSkip={onSkip} timePerQuestion={timePerQuestion} onQuizComplete={onQuizComplete} />;
-    case 'story':     return <StoryCard content={content} onDone={onDone} onSkip={onSkip} />;
-    case 'mnemonic':  return <MnemonicCard content={content} onDone={onDone} onSkip={onSkip} />;
-    case 'teach_back':return <TeachBackCard content={content} onDone={onDone} onSkip={onSkip} />;
-    case 'error_hunt':return <ErrorHuntCard content={content} onDone={onDone} onSkip={onSkip} />;
-    case 'detective': return <DetectiveCard content={content} onDone={onDone} onSkip={onSkip} />;
-    default:          return null;
+export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizComplete }: Props) {
+  const [chatOpen, setChatOpen] = useState(false);
+  const [quizAnswered, setQuizAnswered] = useState(false);
+  const [flagged, setFlagged] = useState(false);
+  const profile = useAppStore(s => s.profile);
+
+  function handleFlag() {
+    if (!topicId) return;
+    const newFlagged = !flagged;
+    setFlagged(newFlagged);
+    setContentFlagged(topicId, content.type, newFlagged);
+    if (newFlagged) Alert.alert('Flagged for review', 'This content has been flagged. You can review all flagged items in the Flagged Review section.');
   }
+
+  const handleQuizAnswered = (correct: boolean) => {
+    setQuizAnswered(true);
+    onQuizAnswered?.(correct);
+  };
+
+  const card = (() => {
+    
+  const handleReadAloud = (text: string) => {
+    Speech.isSpeakingAsync().then(speaking => {
+      if (speaking) {
+        Speech.stop();
+      } else {
+        Speech.speak(text, { rate: 0.9, pitch: 1 });
+      }
+    });
+  };
+
+  switch (content.type) {
+      case 'keypoints': return <KeyPointsCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'quiz':      return <QuizCard content={content} onDone={onDone} onSkip={onSkip} onQuizAnswered={handleQuizAnswered} onQuizComplete={onQuizComplete} />;
+      case 'story':     return <StoryCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'mnemonic':  return <MnemonicCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'teach_back':return <TeachBackCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'error_hunt':return <ErrorHuntCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'detective': return <DetectiveCard content={content} onDone={onDone} onSkip={onSkip} />;
+      default:          return null;
+    }
+  })();
+
+  return (
+    <View style={{ flex: 1 }}>
+      {card}
+      <View style={s.cardActions}>
+        {topicId ? (
+          <TouchableOpacity style={[s.flagBtn, flagged && s.flagBtnActive]} onPress={handleFlag} activeOpacity={0.8}>
+            <Text style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</Text>
+          </TouchableOpacity>
+        ) : <View />}
+        {(content.type !== 'quiz' || quizAnswered) && (
+          <TouchableOpacity style={s.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.85}>
+            <Text style={s.askGuruText}>Ask Guru</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+      <GuruChatOverlay
+        visible={chatOpen}
+        topicName={content.topicName}
+        apiKey={profile?.openrouterApiKey ?? ''}
+        orKey={profile?.openrouterKey ?? undefined}
+        onClose={() => setChatOpen(false)}
+      />
+    </View>
+  );
 }
 
 function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
@@ -88,80 +150,29 @@ function KeyPointsCard({ content, onDone, onSkip }: { content: KeyPointsContent 
 
 // ── Quiz ──────────────────────────────────────────────────────────
 
-function QuizCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: { content: QuizContent } & Omit<Props, 'content'>) {
+function QuizCard({ content, onDone, onSkip, onQuizAnswered, onQuizComplete }: { content: QuizContent } & Omit<Props, 'content'>) {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExpl, setShowExpl] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(timePerQuestion ?? 0);
-  const [timedOut, setTimedOut] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timerAnim = useRef(new Animated.Value(1)).current;
 
   const q = content.questions[currentQ];
-
-  // Reset timer on each new question
-  useEffect(() => {
-    if (!timePerQuestion) return;
-    setTimeLeft(timePerQuestion);
-    setTimedOut(false);
-    timerAnim.setValue(1);
-    timerRef.current = setInterval(() => {
-      setTimeLeft(t => {
-        if (t <= 1) {
-          clearInterval(timerRef.current!);
-          setTimedOut(true);
-          setShowExpl(true);
-          // auto-advance after 1.5s
-          setTimeout(() => advanceQuestion(false), 1500);
-          return 0;
-        }
-        return t - 1;
-      });
-    }, 1000);
-    // Animate timer bar
-    Animated.timing(timerAnim, {
-      toValue: 0,
-      duration: timePerQuestion * 1000,
-      useNativeDriver: false,
-    }).start();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [currentQ]);
-
   if (!q) return null;
 
-  function advanceQuestion(wasCorrect: boolean) {
-    const newScore = wasCorrect ? score + 1 : score;
-    if (currentQ < content.questions.length - 1) {
-      setCurrentQ(c => c + 1);
-      setSelected(null);
-      setShowExpl(false);
-      setTimedOut(false);
-      if (wasCorrect) setScore(newScore);
-    } else {
-      const finalScore = wasCorrect ? score + 1 : score;
-      if (wasCorrect) setScore(finalScore);
-      onQuizComplete?.(finalScore, content.questions.length);
-      const confidence = Math.round((finalScore / content.questions.length) * 4) + 1;
-      onDone(Math.min(5, confidence));
-    }
-  }
-
   function handleSelect(idx: number) {
-    if (selected !== null || timedOut) return;
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (selected !== null) return;
     setSelected(idx);
     setShowExpl(true);
-    if (idx === q.correctIndex) setScore(s => s + 1);
+    const correct = idx === q.correctIndex;
+    if (correct) setScore(s => s + 1);
+    onQuizAnswered?.(correct);
   }
 
   function handleNext() {
-    const isCorrect = selected === q.correctIndex;
     if (currentQ < content.questions.length - 1) {
       setCurrentQ(c => c + 1);
       setSelected(null);
       setShowExpl(false);
-      setTimedOut(false);
     } else {
       onQuizComplete?.(score, content.questions.length);
       const confidence = Math.round((score / content.questions.length) * 4) + 1;
@@ -169,37 +180,16 @@ function QuizCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: 
     }
   }
 
-  const timerColor = timeLeft > 30 ? '#4CAF50' : timeLeft > 10 ? '#FF9800' : '#F44336';
-
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🎯 QUIZ  {currentQ + 1}/{content.questions.length}</Text>
-
-      {/* Per-question countdown timer bar */}
-      {!!timePerQuestion && (
-        <View style={s.timerBarTrack}>
-          <Animated.View
-            style={[
-              s.timerBarFill,
-              {
-                backgroundColor: timerColor,
-                width: timerAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-              },
-            ]}
-          />
-          <Text style={[s.timerBarText, { color: timerColor }]}>
-            {timedOut ? 'Time up!' : `${timeLeft}s`}
-          </Text>
-        </View>
-      )}
-
       <Text style={s.cardTitle}>{content.topicName}</Text>
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
           let bgColor = '#1A1A24';
           let borderColor = '#2A2A38';
-          if (selected !== null || timedOut) {
+          if (selected !== null) {
             if (idx === q.correctIndex) { bgColor = '#1A2A1A'; borderColor = '#4CAF50'; }
             else if (idx === selected) { bgColor = '#2A0A0A'; borderColor = '#F44336'; }
           }
@@ -215,15 +205,9 @@ function QuizCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: 
           );
         })}
       </View>
-      {(showExpl && !timedOut) && (
+      {showExpl && (
         <View style={s.explBox}>
           <Text style={s.explLabel}>{selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}</Text>
-          <Text style={s.explText}>{q.explanation}</Text>
-        </View>
-      )}
-      {timedOut && (
-        <View style={[s.explBox, { borderColor: '#FF9800' }]}>
-          <Text style={[s.explLabel, { color: '#FF9800' }]}>⏰ Time's up — marked wrong</Text>
           <Text style={s.explText}>{q.explanation}</Text>
         </View>
       )}
@@ -234,11 +218,9 @@ function QuizCard({ content, onDone, onSkip, timePerQuestion, onQuizComplete }: 
           </Text>
         </TouchableOpacity>
       )}
-      {!timePerQuestion && (
-        <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
-          <Text style={s.skipText}>Skip quiz</Text>
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+        <Text style={s.skipText}>Skip quiz</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -316,13 +298,14 @@ function TeachBackCard({ content, onDone, onSkip }: { content: TeachBackContent 
   const [validating, setValidating] = useState(false);
   const [guruFeedback, setGuruFeedback] = useState<{ feedback: string; score: number; missed: string[] } | null>(null);
   const apiKey = useAppStore(s => s.profile?.openrouterApiKey);
+  const orKey = useAppStore(s => s.profile?.openrouterKey || undefined);
 
   async function handleValidate() {
     if (!answer.trim() || !apiKey) return;
     setValidating(true);
     try {
       const context = `Topic: ${content.topicName}. Expected points: ${content.keyPointsToMention.join(', ')}`;
-      const raw = await askGuru(answer, context, apiKey);
+      const raw = await askGuru(answer, context, apiKey, orKey);
       const parsed = JSON.parse(raw);
       setGuruFeedback(parsed);
       setSubmitted(true);
@@ -530,7 +513,10 @@ const s = StyleSheet.create({
   missedBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2A2A38' },
   missedLabel: { color: '#F44336', fontSize: 11, fontWeight: '700', marginBottom: 4 },
   missedText: { color: '#9E9E9E', fontSize: 13, fontStyle: 'italic' },
-  timerBarTrack: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, marginBottom: 14, overflow: 'hidden', position: 'relative' },
-  timerBarFill: { height: 6, borderRadius: 3 },
-  timerBarText: { position: 'absolute', right: 0, top: -18, fontSize: 11, fontWeight: '700' },
+  cardActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 12 },
+  flagBtn: { backgroundColor: '#1A1A2E', borderColor: '#FF980044', borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8 },
+  flagBtnActive: { backgroundColor: '#2A1A00', borderColor: '#FF9800' },
+  flagBtnText: { color: '#FF9800', fontWeight: '600', fontSize: 12 },
+  askGuruBtn: { backgroundColor: '#1A1A2E', borderColor: '#6C63FF66', borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8, elevation: 4 },
+  askGuruText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
 });

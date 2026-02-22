@@ -44,7 +44,7 @@ export default function ReviewScreen() {
     flipAnim.setValue(0);
 
     // Fetch 'keypoints' or 'mnemonic' for flashcard back
-    fetchContent(currentTopic, 'keypoints', profile.openrouterApiKey)
+    fetchContent(currentTopic, 'keypoints', profile.openrouterApiKey, profile.openrouterKey || undefined)
       .then(c => {
         setContent(c);
         setLoading(false);

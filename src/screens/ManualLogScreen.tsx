@@ -4,12 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import { getAllSubjects } from '../db/queries/topics';
+import { getAllSubjects, getTopicsBySubject, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
 import { updateStreak } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
 import { EXTERNAL_APPS } from '../constants/externalApps';
-import type { Subject } from '../types';
+import type { Subject, TopicWithProgress } from '../types';
 
 type Nav = NativeStackNavigationProp<any, 'ManualLog'>;
 type Route = RouteProp<any, 'ManualLog'>;
@@ -22,8 +22,20 @@ export default function ManualLogScreen() {
   
   const [selectedAppId, setSelectedAppId] = useState<string | null>(route.params?.appId ?? null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
+  const [subjectTopics, setSubjectTopics] = useState<TopicWithProgress[]>([]);
+  const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
   const [duration, setDuration] = useState('45');
   const [topicName, setTopicName] = useState('');
+
+  useEffect(() => {
+    if (selectedSubjectId) {
+      const topics = getTopicsBySubject(selectedSubjectId).filter(t => !t.parentTopicId).slice(0, 8);
+      setSubjectTopics(topics);
+      setSelectedTopicId(null);
+    } else {
+      setSubjectTopics([]);
+    }
+  }, [selectedSubjectId]);
 
   async function handleSubmit() {
     const mins = parseInt(duration) || 0;
@@ -43,10 +55,16 @@ export default function ManualLogScreen() {
     // We pass [] as completed topic IDs since we don't track granular topics externally yet, 
     // unless we create a dummy topic? For now, just log XP and time.
     endSession(sessionId, [], xp, mins);
-    
+
+    // Update SRS for selected topic if applicable
+    if (selectedTopicId) {
+      const confidence = mins >= 60 ? 4 : mins >= 30 ? 3 : 2;
+      updateTopicProgress(selectedTopicId, 'seen', confidence, xp);
+    }
+
     // Update streak if > 20 mins
     updateStreak(mins >= 20);
-    
+
     await refreshProfile();
     navigation.goBack();
   }
@@ -90,6 +108,25 @@ export default function ManualLogScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        {subjectTopics.length > 0 && (
+          <>
+            <Text style={styles.label}>Topic Studied (Optional)</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.subjectScroll}>
+              {subjectTopics.map(t => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={[styles.subjectChip, selectedTopicId === t.id && { backgroundColor: '#6C63FF' }]}
+                  onPress={() => setSelectedTopicId(t.id === selectedTopicId ? null : t.id)}
+                >
+                  <Text style={[styles.subjectText, selectedTopicId === t.id && { color: '#fff' }]} numberOfLines={1}>
+                    {t.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         <Text style={styles.label}>Topic / Chapter Name</Text>
         <TextInput

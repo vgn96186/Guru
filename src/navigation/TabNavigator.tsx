@@ -1,5 +1,4 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +18,8 @@ import BossBattleScreen from '../screens/BossBattleScreen';
 import InertiaScreen from '../screens/InertiaScreen';
 import ManualLogScreen from '../screens/ManualLogScreen';
 import StudyPlanScreen from '../screens/StudyPlanScreen';
+import DailyChallengeScreen from '../screens/DailyChallengeScreen';
+import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
 
 // Navigation setup
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -37,6 +38,9 @@ function HomeStackNav() {
       <HomeStack.Screen name="BossBattle" component={BossBattleScreen} />
       <HomeStack.Screen name="Inertia" component={InertiaScreen} />
       <HomeStack.Screen name="ManualLog" component={ManualLogScreen} />
+      <HomeStack.Screen name="StudyPlan" component={StudyPlanScreen} />
+      <HomeStack.Screen name="DailyChallenge" component={DailyChallengeScreen} />
+      <HomeStack.Screen name="FlaggedReview" component={FlaggedReviewScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -66,7 +70,6 @@ export default function TabNavigator() {
         tabBarIcon: ({ color, size, focused }) => {
           const icons: Record<string, string> = {
             HomeTab: focused ? 'play-circle' : 'play-circle-outline',
-            PlanTab: focused ? 'calendar' : 'calendar-outline',
             SyllabusTab: focused ? 'grid' : 'grid-outline',
             StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
             SettingsTab: focused ? 'settings' : 'settings-outline',
@@ -75,20 +78,16 @@ export default function TabNavigator() {
         },
         tabBarLabel: ({ color }) => {
           const labels: Record<string, string> = {
-            HomeTab: 'Study', PlanTab: 'Plan', SyllabusTab: 'Syllabus',
+            HomeTab: 'Study', SyllabusTab: 'Syllabus',
             StatsTab: 'Stats', SettingsTab: 'Settings',
           };
-          const label = labels[route.name] || route.name;
-          return (
-            <Text style={{ color, fontSize: 10, fontWeight: '600', marginTop: -2 }}>{label}</Text>
-          );
+          return null; // icons only
         },
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeStackNav} />
-      <Tab.Screen name="PlanTab" component={StudyPlanScreen} />
-      <Tab.Screen name="StatsTab" component={StatsScreen} />
       <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} />
+      <Tab.Screen name="StatsTab" component={StatsScreen} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} />
     </Tab.Navigator>
   );

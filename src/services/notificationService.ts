@@ -53,14 +53,14 @@ export async function scheduleStreakWarning(): Promise<void> {
   }
 }
 
-export async function scheduleMorningReminder(title: string, body: string): Promise<void> {
+export async function scheduleMorningReminder(title: string, body: string, hour = 7): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
     await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: 7,
+        hour,
         minute: 30,
       },
     });
@@ -69,14 +69,14 @@ export async function scheduleMorningReminder(title: string, body: string): Prom
   }
 }
 
-export async function scheduleEveningNudge(title: string, body: string): Promise<void> {
+export async function scheduleEveningNudge(title: string, body: string, hour = 18): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
     await Notifications.scheduleNotificationAsync({
       content: { title, body, sound: true },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        hour: 18,
+        hour,
         minute: 0,
       },
     });
@@ -118,6 +118,83 @@ export async function sendImmediateNag(title: string, body: string): Promise<voi
   }
 }
 
+
+export async function scheduleHarassment(): Promise<void> {
+  if (!areNotificationsSupported) return;
+  try {
+    await cancelAllNotifications(); // Clear existing to prevent duplicates
+    
+    const messages = [
+      "Open the app. Now.",
+      "You're doomscrolling again, aren't you?",
+      "Every minute you scroll, your competition is studying Pathology.",
+      "I will literally keep buzzing until you open this app.",
+      "Just 1 flashcard. Stop ignoring me.",
+      "INICET does not care about your Instagram feed.",
+      "This is your last warning. Open the app.",
+      "Still scrolling? Pathetic.",
+      "Do you want to be a doctor or a professional scroller?",
+      "5 minutes. That's all I'm asking for. Open me."
+    ];
+
+    // Schedule 10 notifications, starting 5 minutes from now, spaced 3 minutes apart
+    for (let i = 0; i < messages.length; i++) {
+      const triggerTime = new Date(Date.now() + (i * 3 + 1) * 60000); // 1m, 4m, 7m, 10m...
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🚨 DOOMSCROLL DETECTED',
+          body: messages[i],
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.MAX,
+          vibrate: [0, 500, 200, 500],
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to schedule harassment:', error);
+  }
+}
+
+
+export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<void> {
+  if (!areNotificationsSupported) return;
+  try {
+    await cancelAllNotifications(); // Clear existing to prevent duplicates
+    
+    const messages = [
+      "🚨 BREAK IS OVER. Return to the tablet now.",
+      "Are you ignoring me? Close Instagram immediately.",
+      "Every second you waste is a lower INICET score.",
+      "I told you this would happen. Go back to studying.",
+      "Your 5 minutes are up. Stop scrolling.",
+      "Get up. Walk to the tablet. Press play.",
+      "This is pathetic. Drop the phone.",
+      "I will not stop buzzing. Resume the lecture.",
+      "Resume the lecture on the tablet to silence me."
+    ];
+
+    const startTime = Date.now() + (durationSeconds * 1000);
+    
+    // Schedule aggressive notifications 15 seconds apart immediately after the break ends
+    for (let i = 0; i < messages.length; i++) {
+      const triggerTime = new Date(startTime + (i * 15 * 1000));
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: '🚨 BREAK OVER',
+          body: messages[i],
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.MAX,
+          vibrate: [0, 500, 200, 500, 200, 1000],
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to schedule break alarms:', error);
+  }
+}
+
 export async function cancelAllNotifications(): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
@@ -150,11 +227,13 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     await Notifications.setBadgeCountAsync(badgeCount);
 
     // 1. Forced SRS Alarm: Check if strictly due
+    const notifHour = profile.notificationHour ?? 7;
     if (dueTopics.length > 0) {
       await cancelAllNotifications();
       await scheduleMorningReminder(
         '🚨 CRITICAL REVIEW DUE',
-        `Topic "${dueTopics[0].name}" is fading! Quiz now to save your mastery level. Only correct answers count.`
+        `Topic "${dueTopics[0].name}" is fading! Quiz now to save your mastery level. Only correct answers count.`,
+        notifHour,
       );
 
       if (nemesisTopics.length > 0) {
@@ -197,9 +276,9 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
 
     for (const msg of messages) {
       if (msg.scheduledFor === 'morning') {
-        await scheduleMorningReminder(msg.title, msg.body);
+        await scheduleMorningReminder(msg.title, msg.body, notifHour);
       } else if (msg.scheduledFor === 'evening') {
-        await scheduleEveningNudge(msg.title, msg.body);
+        await scheduleEveningNudge(msg.title, msg.body, Math.min(23, notifHour + 11));
       } else if (msg.scheduledFor === 'streak_warning') {
         await scheduleStreakWarning();
       }

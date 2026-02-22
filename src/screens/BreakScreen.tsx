@@ -4,17 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchContent } from '../services/aiService';
 import { getTopicById } from '../db/queries/topics';
 import type { QuizContent } from '../types';
+import GuruChatOverlay from '../components/GuruChatOverlay';
 
 interface Props {
   countdown: number;
+  totalSeconds?: number;
   topicId?: number;
   apiKey?: string;
+  orKey?: string;
   onDone: () => void;
 }
 
-export default function BreakScreen({ countdown, topicId, apiKey, onDone }: Props) {
+export default function BreakScreen({ countdown, totalSeconds, topicId, apiKey, orKey, onDone }: Props) {
   const [quizQuestion, setQuizQuestion] = useState<{ question: string; options: string[]; correct: number } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
+  const topicName = topicId ? (getTopicById(topicId)?.name ?? 'General Medicine') : 'General Medicine';
+  const duration = totalSeconds ?? 300;
 
   useEffect(() => {
     // Block back button during break
@@ -36,7 +42,7 @@ export default function BreakScreen({ countdown, topicId, apiKey, onDone }: Prop
     if (!topicId || !apiKey) return;
     const topic = getTopicById(topicId);
     if (!topic) return;
-    fetchContent(topic, 'quiz', apiKey)
+    fetchContent(topic, 'quiz', apiKey!, orKey)
       .then(content => {
         const q = (content as QuizContent).questions?.[0];
         if (q) {
@@ -47,12 +53,12 @@ export default function BreakScreen({ countdown, topicId, apiKey, onDone }: Prop
           });
         }
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   const mins = Math.floor(countdown / 60);
   const secs = countdown % 60;
-  const pct = ((300 - countdown) / 300) * 100;
+  const pct = duration > 0 ? ((duration - countdown) / duration) * 100 : 100;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -106,17 +112,26 @@ export default function BreakScreen({ countdown, topicId, apiKey, onDone }: Prop
           </View>
         )}
 
-        {/* Emergency continue / Hyperfocus Leverage */}
+        {/* Emergency continue */}
         {countdown > 0 && (
-          <TouchableOpacity style={styles.hyperfocusBtn} onPress={onDone} activeOpacity={0.8}>
-            <Text style={styles.hyperfocusBtnEmoji}>🔥</Text>
-            <View>
-              <Text style={styles.hyperfocusBtnTitle}>I'm in the zone!</Text>
-              <Text style={styles.hyperfocusBtnSub}>Skip the break. Keep the momentum.</Text>
-            </View>
+          <TouchableOpacity style={styles.forceBtn} onPress={onDone} activeOpacity={0.8}>
+            <Text style={styles.forceBtnText}>I'm ready now ({mins}:{secs.toString().padStart(2,'0')} left)</Text>
+          </TouchableOpacity>
+        )}
+
+        {apiKey && (
+          <TouchableOpacity style={styles.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.8}>
+            <Text style={styles.askGuruText}>Ask Guru a question</Text>
           </TouchableOpacity>
         )}
       </View>
+      <GuruChatOverlay
+        visible={chatOpen}
+        topicName={topicName}
+        apiKey={apiKey ?? ''}
+        orKey={orKey}
+        onClose={() => setChatOpen(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -140,17 +155,8 @@ const styles = StyleSheet.create({
   idleEmoji: { fontSize: 48, marginBottom: 12 },
   idleText: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 },
   idleText2: { color: '#9E9E9E', fontSize: 14 },
-  hyperfocusBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FF572222',
-    padding: 16,
-    borderRadius: 16,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: '#FF5722'
-  },
-  hyperfocusBtnEmoji: { fontSize: 24, marginRight: 12 },
-  hyperfocusBtnTitle: { color: '#FF5722', fontSize: 16, fontWeight: 'bold' },
-  hyperfocusBtnSub: { color: '#FF5722aa', fontSize: 12, marginTop: 2 }
+  forceBtn: { padding: 16, alignItems: 'center' },
+  forceBtnText: { color: '#555', fontSize: 13 },
+  askGuruBtn: { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF66', borderRadius: 12, padding: 12, alignItems: 'center', marginHorizontal: 24, marginBottom: 8 },
+  askGuruText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
 });

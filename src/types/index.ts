@@ -36,8 +36,17 @@ export interface TopicProgress {
   xpEarned: number;
   nextReviewDate: string | null;
   userNotes: string;
-  wrongCount?: number;
-  isNemesis?: boolean;
+
+  fsrsDue: string | null;
+  fsrsStability: number;
+  fsrsDifficulty: number;
+  fsrsElapsedDays: number;
+  fsrsScheduledDays: number;
+  fsrsReps: number;
+  fsrsLapses: number;
+  fsrsState: number;
+  fsrsLastReview: string | null;
+
 }
 
 export interface TopicWithProgress extends Topic {
@@ -94,21 +103,17 @@ export interface UserProfile {
   neetDate: string;
   preferredSessionLength: number;
   lastActiveDate: string | null;
-  openrouterApiKey: string;
-  openaiKey: string;
-  transcriptionEngine: 'gemini' | 'openai';
+  syncCode: string | null;
+  openrouterApiKey: string;  // Gemini API key (confusingly named for historical reasons)
+  openrouterKey: string;     // Actual OpenRouter key for free model fallbacks
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
-  alwaysAskMoodOnLaunch: boolean;
-  focusAudioEnabled: boolean;
-  visualTimersEnabled: boolean;
-  faceTrackingEnabled: boolean;
-}
-
-export interface BrainDump {
-  id: number;
-  note: string;
-  createdAt: number;
+  bodyDoublingEnabled: boolean;
+  blockedContentTypes: ContentType[];
+  idleTimeoutMinutes: number;
+  breakDurationMinutes: number;
+  notificationHour: number;
+  focusSubjectIds: number[];
 }
 
 // AI Content shapes

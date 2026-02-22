@@ -8,9 +8,21 @@ import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
-import { updateUserProfile, getUserProfile } from '../db/queries/progress';
+import { updateUserProfile, getUserProfile, resetStudyProgress, clearAiCache } from '../db/queries/progress';
+import { getAllSubjects } from '../db/queries/topics';
 import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
 import { getDb } from '../db/database';
+import type { ContentType, Subject } from '../types';
+
+const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
+  { type: 'keypoints', label: 'Key Points' },
+  { type: 'quiz', label: 'Quiz' },
+  { type: 'story', label: 'Story' },
+  { type: 'mnemonic', label: 'Mnemonic' },
+  { type: 'teach_back', label: 'Teach Back' },
+  { type: 'error_hunt', label: 'Error Hunt' },
+  { type: 'detective', label: 'Detective' },
+];
 
 const BACKUP_VERSION = 1;
 
@@ -186,9 +198,17 @@ export default function SettingsScreen() {
   const [validation, setValidation] = useState<ValidationState>('idle');
   const [validationMsg, setValidationMsg] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
+  const [bodyDoubling, setBodyDoubling] = useState(true);
+  const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
+  const [idleTimeout, setIdleTimeout] = useState('2');
+  const [breakDuration, setBreakDuration] = useState('5');
+  const [notifHour, setNotifHour] = useState('7');
+  const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    try { setSubjects(getAllSubjects()); } catch { /* non-critical */ }
     if (profile) {
       if (profile.openrouterApiKey.includes('|')) {
         const parts = profile.openrouterApiKey.split('|');
@@ -205,6 +225,12 @@ export default function SettingsScreen() {
       setDailyGoal(profile.dailyGoalMinutes.toString());
       setNotifs(profile.notificationsEnabled);
       setStrictMode(profile.strictModeEnabled);
+      setBodyDoubling(profile.bodyDoublingEnabled ?? true);
+      setBlockedTypes(profile.blockedContentTypes ?? []);
+      setIdleTimeout((profile.idleTimeoutMinutes ?? 2).toString());
+      setBreakDuration((profile.breakDurationMinutes ?? 5).toString());
+      setNotifHour((profile.notificationHour ?? 7).toString());
+      setFocusSubjectIds(profile.focusSubjectIds ?? []);
       if (profile.openrouterApiKey) setValidation('success');
     }
   }, [profile]);
@@ -261,6 +287,12 @@ export default function SettingsScreen() {
         dailyGoalMinutes: parseInt(dailyGoal) || 120,
         notificationsEnabled: notifs,
         strictModeEnabled: strictMode,
+        bodyDoublingEnabled: bodyDoubling,
+        blockedContentTypes: blockedTypes,
+        idleTimeoutMinutes: Math.min(60, Math.max(1, parseInt(idleTimeout) || 2)),
+        breakDurationMinutes: Math.min(30, Math.max(1, parseInt(breakDuration) || 5)),
+        notificationHour: Math.min(23, Math.max(0, parseInt(notifHour) || 7)),
+        focusSubjectIds,
       });
 
       if (notifs) {
@@ -460,9 +492,129 @@ export default function SettingsScreen() {
               thumbColor="#fff"
             />
           </View>
+          <Label text="Reminder hour (0–23, e.g. 7 = 7:30 AM)" />
+          <TextInput
+            style={styles.input}
+            value={notifHour}
+            onChangeText={setNotifHour}
+            keyboardType="number-pad"
+            placeholderTextColor="#444"
+          />
+          <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
           <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
             <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
           </TouchableOpacity>
+        </Section>
+
+        <Section title="👻 Body Doubling">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Guru presence during sessions</Text>
+              <Text style={styles.hint}>Ambient toast messages and pulsing dot while you study. Helps with focus.</Text>
+            </View>
+            <Switch
+              value={bodyDoubling}
+              onValueChange={setBodyDoubling}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
+        </Section>
+
+        <Section title="🃏 Content Type Preferences">
+          <Text style={styles.hint}>Block card types you don't want in sessions. Keypoints can't be blocked.</Text>
+          <View style={styles.chipGrid}>
+            {ALL_CONTENT_TYPES.map(({ type, label }) => {
+              const isBlocked = blockedTypes.includes(type);
+              const isLocked = type === 'keypoints';
+              return (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.typeChip, isBlocked && styles.typeChipBlocked, isLocked && styles.typeChipLocked]}
+                  onPress={() => {
+                    if (isLocked) return;
+                    setBlockedTypes(prev => isBlocked ? prev.filter(t => t !== type) : [...prev, type]);
+                  }}
+                  activeOpacity={isLocked ? 1 : 0.8}
+                >
+                  <Text style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}>{label}</Text>
+                  {isBlocked && <Text style={styles.typeChipX}> ✕</Text>}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Section>
+
+        <Section title="🔬 Focus Subjects">
+          <Text style={styles.hint}>Pin subjects to limit sessions to those areas only. Clear all to study everything.</Text>
+          <View style={styles.chipGrid}>
+            {subjects.map(s => {
+              const isFocused = focusSubjectIds.includes(s.id);
+              return (
+                <TouchableOpacity
+                  key={s.id}
+                  style={[styles.typeChip, isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex }]}
+                  onPress={() => setFocusSubjectIds(prev => isFocused ? prev.filter(id => id !== s.id) : [...prev, s.id])}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>{s.shortCode}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {focusSubjectIds.length > 0 && (
+            <TouchableOpacity onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
+              <Text style={styles.clearBtnText}>Clear focus (study all subjects)</Text>
+            </TouchableOpacity>
+          )}
+        </Section>
+
+        <Section title="⏱️ Session Timing">
+          <Label text="Idle timeout (minutes before auto-pause)" />
+          <TextInput
+            style={styles.input}
+            value={idleTimeout}
+            onChangeText={setIdleTimeout}
+            keyboardType="number-pad"
+            placeholderTextColor="#444"
+          />
+          <Label text="Break duration between topics (minutes)" />
+          <TextInput
+            style={styles.input}
+            value={breakDuration}
+            onChangeText={setBreakDuration}
+            keyboardType="number-pad"
+            placeholderTextColor="#444"
+          />
+        </Section>
+
+        <Section title="🗑️ Data">
+          <TouchableOpacity
+            style={styles.dangerBtn}
+            onPress={() => Alert.alert('Clear AI Cache?', 'All cached content cards will be regenerated fresh on next use.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Clear', style: 'destructive', onPress: () => { clearAiCache(); Alert.alert('Done', 'AI cache cleared.'); } },
+            ])}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.dangerBtnText}>🧹  Clear AI Content Cache</Text>
+          </TouchableOpacity>
+          <Text style={styles.hint}>Forces fresh generation of all key points, quizzes, stories, etc.</Text>
+          <TouchableOpacity
+            style={[styles.dangerBtn, { borderColor: '#F4433666', marginTop: 10 }]}
+            onPress={() => Alert.alert(
+              'Reset all progress?',
+              'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Reset', style: 'destructive', onPress: () => { resetStudyProgress(); refreshProfile(); Alert.alert('Reset', 'Progress has been wiped. Start fresh!'); } },
+              ],
+            )}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.dangerBtnText, { color: '#F44336' }]}>💀  Reset All Progress</Text>
+          </TouchableOpacity>
+          <Text style={styles.hint}>Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.</Text>
         </Section>
 
         <Section title="💾 Backup & Restore">
@@ -531,7 +683,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.footer}>
           NEET Study — Powered by Guru AI{'\n'}
-          Google Gemini 3.0 Flash Preview
+          v1.0.0 · Google Gemini 3.0 Flash Preview
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -584,6 +736,17 @@ const styles = StyleSheet.create({
   backupBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF66' },
   backupBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   footer: { color: '#333', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  typeChip: { backgroundColor: '#0F0F14', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#2A2A38', flexDirection: 'row', alignItems: 'center' },
+  typeChipBlocked: { backgroundColor: '#2A0A0A', borderColor: '#F4433666' },
+  typeChipLocked: { borderColor: '#6C63FF44', opacity: 0.5 },
+  typeChipText: { color: '#E0E0E0', fontSize: 13, fontWeight: '600' },
+  typeChipTextBlocked: { color: '#F44336' },
+  typeChipX: { color: '#F44336', fontSize: 11 },
+  clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
+  clearBtnText: { color: '#555', fontSize: 13 },
+  dangerBtn: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
+  dangerBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   modelSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 8 },
   modelSelectorText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   modelSelectorArrow: { color: '#666', fontSize: 12 },

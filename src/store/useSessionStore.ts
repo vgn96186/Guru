@@ -81,7 +81,7 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
     const { agenda, currentItemIndex, completedTopicIds } = get();
     if (!agenda) return;
     const currentTopic = agenda.items[currentItemIndex];
-    const newCompleted = currentTopic
+    const newCompleted = currentTopic && !completedTopicIds.includes(currentTopic.topic.id)
       ? [...completedTopicIds, currentTopic.topic.id]
       : completedTopicIds;
 
@@ -121,11 +121,11 @@ export const useSessionStore = create<SessionStoreState>((set, get) => ({
   },
 
   startBreak: (seconds) => set({ isOnBreak: true, breakCountdown: seconds }),
-  endBreak: () => set({ isOnBreak: false, breakCountdown: 300 }),
+  endBreak: () => set({ isOnBreak: false, breakCountdown: 0 }),
   tickBreak: () => {
     const { breakCountdown } = get();
     if (breakCountdown <= 1) {
-      set({ isOnBreak: false, breakCountdown: 300 });
+      set({ isOnBreak: false, breakCountdown: 0 });
     } else {
       set({ breakCountdown: breakCountdown - 1 });
     }

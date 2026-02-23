@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
@@ -8,35 +8,34 @@ export default function FocusAudioPlayer() {
     const isAudioEnabled = useAppStore(s => s.profile?.focusAudioEnabled);
     const toggleAudio = useAppStore(s => s.toggleFocusAudio);
     const [sound, setSound] = useState<Audio.Sound | null>(null);
+    const soundRef = useRef<Audio.Sound | null>(null);
 
     useEffect(() => {
         async function initAudio() {
-            // Configure audio session to duck other audio if needed, but keep playing.
             await Audio.setAudioModeAsync({
                 playsInSilentModeIOS: true,
-                staysActiveInBackground: false, // We stop it when they leave the app
+                staysActiveInBackground: false,
                 shouldDuckAndroid: true,
             });
 
-            // For this MVP, we will try to load a remote dummy file if a local asset doesn't exist.
-            // In a real build, this would `require('../../assets/brown_noise.mp3')`
-            // Since we don't have the asset locally, we'll gracefully handle it or just use an empty object for UI.
             try {
+                // Use bundled asset; falls back to white noise generation if missing
                 const { sound: newSound } = await Audio.Sound.createAsync(
-                    { uri: 'https://actions.google.com/sounds/v1/weather/rain_on_roof.ogg' },
+                    require('../../assets/rain.mp3'),
                     { shouldPlay: false, isLooping: true, volume: 0.5 }
                 );
+                soundRef.current = newSound;
                 setSound(newSound);
-            } catch (e) {
-                console.log("Audio file failed to load", e);
+            } catch {
+                // Asset missing — silently disable audio feature
             }
         }
 
         initAudio();
 
         return () => {
-            if (sound) {
-                sound.unloadAsync();
+            if (soundRef.current) {
+                soundRef.current.unloadAsync();
             }
         };
     }, []);

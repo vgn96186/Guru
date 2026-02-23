@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList } from '../navigation/types';
 import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { getAllSubjects } from '../db/queries/topics';
 import { addXp } from '../db/queries/progress';
@@ -12,7 +14,7 @@ const PLAYER_HP = 3;
 const DAMAGE_PER_HIT = 10;
 
 export default function BossBattleScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const refreshProfile = useAppStore(s => s.refreshProfile);
   const [phase, setPhase] = useState<'select' | 'battle' | 'victory' | 'defeat'>('select');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);

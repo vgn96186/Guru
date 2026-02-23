@@ -12,16 +12,31 @@ const ROOM_PREFIX = 'neet_study/room/';
 let client: any = null;
 let currentRoomCode: string | null = null;
 let mqttModule: any = null;
+let mqttUnavailable = false;
 
 async function getMqtt() {
   if (mqttModule) return mqttModule;
+  if (mqttUnavailable) return null;
   try {
     // @ts-ignore - lazy load to avoid crashing the bundle if polyfills are missing
     mqttModule = require('mqtt/dist/mqtt');
     return mqttModule;
-  } catch (e) {
-    console.warn('[Sync] MQTT not available:', e);
+  } catch {
+    mqttUnavailable = true;
     return null;
+  }
+}
+
+/** Returns true if the MQTT module is loadable and sync is available */
+export function isSyncAvailable(): boolean {
+  if (mqttModule) return true;
+  if (mqttUnavailable) return false;
+  try {
+    // @ts-ignore
+    require('mqtt/dist/mqtt');
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -40,10 +55,7 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
     const topic = ROOM_PREFIX + code;
 
     client.on('connect', () => {
-      console.log('[Sync] Connected to room:', code);
-      client?.subscribe(topic, (err: any) => {
-        if (err) console.error('[Sync] Subscribe error', err);
-      });
+      client?.subscribe(topic);
     });
 
     client.on('message', (receivedTopic: string, message: any) => {
@@ -51,10 +63,14 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
         try {
           const payload = JSON.parse(message.toString()) as SyncMessage;
           onMessage(payload);
-        } catch (e) {
-          console.error('[Sync] Parse error', e);
+        } catch {
+          // ignore malformed messages
         }
       }
+    });
+
+    client.on('error', () => {
+      // silently handle connection errors
     });
   });
 

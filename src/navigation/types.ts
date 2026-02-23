@@ -6,11 +6,13 @@ export type RootStackParamList = {
   CheckIn: undefined;
   Tabs: undefined;
   BrainDumpReview: undefined;
+  SleepMode: undefined;
+  WakeUp: undefined;
 };
 
 export type HomeStackParamList = {
   Home: undefined;
-  Session: { mood: string; mode?: string };
+  Session: { mood: string; mode?: string; forcedMinutes?: number };
   LectureMode: { subjectId?: number };
   MockTest: undefined;
   Review: undefined;
@@ -31,6 +33,7 @@ export type SyllabusStackParamList = {
 export type TabParamList = {
   HomeTab: undefined;
   SyllabusTab: undefined;
+  PlanTab: undefined;
   StatsTab: undefined;
   SettingsTab: undefined;
 };

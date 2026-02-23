@@ -20,7 +20,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   
   if (g.__GURU_DB__ && !actualForce) {
     _db = g.__GURU_DB__;
-    console.log('[DB] Using existing global DB instance');
+    if (__DEV__) console.log('[DB] Using existing global DB instance');
     // We don't return here, we want to ensure tables and migrations are checked
   }
 
@@ -38,15 +38,15 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await db.execAsync(sql);
   }
 
+  // Check topic count BEFORE seeding subjects (to detect fresh install)
+  const topicCountRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM topics');
+  const topicCount = topicCountRes?.count ?? 0;
+
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
 
-  // Seed topics if empty or forced
-  const subjectCountRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM subjects');
-  const subjectCount = subjectCountRes?.count ?? 0;
-
-  if (subjectCount === 0 || actualForce) {
-    console.log(`[DB] Seeding topics (force: ${actualForce})`);
+  if (topicCount === 0 || actualForce) {
+    if (__DEV__) console.log(`[DB] Seeding topics (force: ${actualForce})`);
     if (actualForce) {
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
@@ -64,7 +64,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
   await seedVaultTopics(db);
   const topicCountAfterRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM topics');
-  console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
+  if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
 
   // Schema migrations (safe — fail silently if column already exists)
   const migrations = [
@@ -80,6 +80,12 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE user_profile ADD COLUMN break_duration_minutes INTEGER NOT NULL DEFAULT 5`,
     `ALTER TABLE user_profile ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 7`,
     `ALTER TABLE user_profile ADD COLUMN focus_subject_ids TEXT NOT NULL DEFAULT '[]'`,
+    `ALTER TABLE user_profile ADD COLUMN focus_audio_enabled INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN visual_timers_enabled INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN face_tracking_enabled INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE topic_progress ADD COLUMN wrong_count INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE topic_progress ADD COLUMN is_nemesis INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN quiz_correct_count INTEGER NOT NULL DEFAULT 0`,
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }
@@ -188,7 +194,7 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
       vaultTopicIds
     );
   }
-  console.log(`[DB] Vault Seed: ${inserted} inserted, ${ignored} ignored`);
+  if (__DEV__) console.log(`[DB] Vault Seed: ${inserted} inserted, ${ignored} ignored`);
 }
 
 async function seedUserProfile(db: SQLite.SQLiteDatabase): Promise<void> {

@@ -115,8 +115,8 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Answer 50 quiz questions correctly',
     emoji: '🎯',
     check: () => {
-      const r = getDb().getFirstSync<{ count: number }>(`SELECT COUNT(*) as count FROM sessions WHERE mode != 'external' AND ended_at IS NOT NULL`);
-      return (r?.count ?? 0) >= 10; // proxy: 10 completed sessions ≈ 50+ correct
+      const r = getDb().getFirstSync<{ quiz_correct_count: number }>('SELECT quiz_correct_count FROM user_profile WHERE id = 1');
+      return (r?.quiz_correct_count ?? 0) >= 50;
     },
   },
   {

@@ -28,8 +28,8 @@ export default function StartButton({
     );
     const glowAnim = Animated.loop(
       Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 1200, useNativeDriver: false }),
-        Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: false }),
+        Animated.timing(glow, { toValue: 1, duration: 1200, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: true }),
       ]),
     );
     pulse.start();
@@ -37,25 +37,45 @@ export default function StartButton({
     return () => { pulse.stop(); glowAnim.stop(); };
   }, []);
 
-  const shadowRadius = glow.interpolate({ inputRange: [0, 1], outputRange: [8, 24] });
-  const shadowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.7] });
-
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
-      <TouchableOpacity
-        onPress={onPress}
-        disabled={disabled}
-        activeOpacity={0.85}
-        style={[styles.button, { backgroundColor: disabled ? '#333' : color }]}
-      >
-        <Text style={styles.label}>{label}</Text>
-        {sublabel ? <Text style={styles.sublabel}>{sublabel}</Text> : null}
-      </TouchableOpacity>
+      <View style={styles.glowWrapper}>
+        <Animated.View style={[styles.glowLayer, { opacity: glow, backgroundColor: color }]} />
+        <TouchableOpacity
+          onPress={onPress}
+          disabled={disabled}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Start study session"
+          accessibilityState={{ disabled }}
+          style={[styles.button, { backgroundColor: disabled ? '#333' : color }]}
+        >
+          <Text style={styles.label}>{label}</Text>
+          {sublabel ? <Text style={styles.sublabel}>{sublabel}</Text> : null}
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  glowWrapper: {
+    width: 220,
+    height: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glowLayer: {
+    position: 'absolute',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 30,
+    shadowOpacity: 0.8,
+    elevation: 20,
+  },
   button: {
     width: 220,
     height: 220,
@@ -63,10 +83,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 12,
-    shadowColor: '#6C63FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 20,
-    shadowOpacity: 0.6,
   },
   label: {
     color: '#fff',

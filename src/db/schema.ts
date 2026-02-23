@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS topic_progress (
   times_studied INTEGER NOT NULL DEFAULT 0,
   xp_earned INTEGER NOT NULL DEFAULT 0,
   next_review_date TEXT,
-  user_notes TEXT NOT NULL DEFAULT ''
+  user_notes TEXT NOT NULL DEFAULT '',
+  wrong_count INTEGER NOT NULL DEFAULT 0,
+  is_nemesis INTEGER NOT NULL DEFAULT 0
   , fsrs_due TEXT
   , fsrs_stability REAL DEFAULT 0
   , fsrs_difficulty REAL DEFAULT 0
@@ -112,7 +114,11 @@ CREATE TABLE IF NOT EXISTS user_profile (
   idle_timeout_minutes INTEGER NOT NULL DEFAULT 2,
   break_duration_minutes INTEGER NOT NULL DEFAULT 5,
   notification_hour INTEGER NOT NULL DEFAULT 7,
-  focus_subject_ids TEXT NOT NULL DEFAULT '[]'
+  focus_subject_ids TEXT NOT NULL DEFAULT '[]',
+  focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
+  visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
+  face_tracking_enabled INTEGER NOT NULL DEFAULT 0,
+  quiz_correct_count INTEGER NOT NULL DEFAULT 0
 )`;
 
 export const CREATE_BRAIN_DUMPS = `

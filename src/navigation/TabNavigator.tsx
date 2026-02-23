@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { TabParamList, HomeStackParamList, SyllabusStackParamList } from './types';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -38,7 +39,6 @@ function HomeStackNav() {
       <HomeStack.Screen name="BossBattle" component={BossBattleScreen} />
       <HomeStack.Screen name="Inertia" component={InertiaScreen} />
       <HomeStack.Screen name="ManualLog" component={ManualLogScreen} />
-      <HomeStack.Screen name="StudyPlan" component={StudyPlanScreen} />
       <HomeStack.Screen name="DailyChallenge" component={DailyChallengeScreen} />
       <HomeStack.Screen name="FlaggedReview" component={FlaggedReviewScreen} />
     </HomeStack.Navigator>
@@ -55,15 +55,20 @@ function SyllabusStackNav() {
 }
 
 export default function TabNavigator() {
+  const insets = useSafeAreaInsets();
+  const bottomInset = Math.max(insets.bottom, 8);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarHideOnKeyboard: true,
+        tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: '#1A1A24',
           borderTopColor: '#2A2A38',
-          paddingBottom: 8,
-          height: 60,
+          paddingBottom: bottomInset,
+          height: 52 + bottomInset,
         },
         tabBarActiveTintColor: '#6C63FF',
         tabBarInactiveTintColor: '#555',
@@ -71,22 +76,17 @@ export default function TabNavigator() {
           const icons: Record<string, string> = {
             HomeTab: focused ? 'play-circle' : 'play-circle-outline',
             SyllabusTab: focused ? 'grid' : 'grid-outline',
+            PlanTab: focused ? 'calendar' : 'calendar-outline',
             StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
             SettingsTab: focused ? 'settings' : 'settings-outline',
           };
           return <Ionicons name={icons[route.name] as any} size={size} color={color} />;
         },
-        tabBarLabel: ({ color }) => {
-          const labels: Record<string, string> = {
-            HomeTab: 'Study', SyllabusTab: 'Syllabus',
-            StatsTab: 'Stats', SettingsTab: 'Settings',
-          };
-          return null; // icons only
-        },
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeStackNav} />
       <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} />
+      <Tab.Screen name="PlanTab" component={StudyPlanScreen} />
       <Tab.Screen name="StatsTab" component={StatsScreen} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} />
     </Tab.Navigator>

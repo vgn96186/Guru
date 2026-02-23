@@ -3,7 +3,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 
-const DB_NAME = 'study_guru.db';
+const DB_NAME = 'neet_study.db';
 const DB_DIR = `${FileSystem.documentDirectory}SQLite`;
 const DB_PATH = `${DB_DIR}/${DB_NAME}`;
 
@@ -28,7 +28,7 @@ export async function exportDatabase() {
       Alert.alert('Error', 'Sharing is not available on this device');
     }
   } catch (e) {
-    console.error('Backup error', e);
+    if (__DEV__) console.error('Backup error', e);
     Alert.alert('Error', 'Failed to export backup.');
   }
 }
@@ -62,7 +62,7 @@ export async function importDatabase() {
       { text: 'OK' }
     ]);
   } catch (e) {
-    console.error('Import error', e);
+    if (__DEV__) console.error('Import error', e);
     Alert.alert('Error', 'Failed to import backup.');
   }
 }

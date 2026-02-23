@@ -64,19 +64,45 @@ export async function transcribeWithGemini(
   audioFilePath: string,
   geminiKey: string,
 ): Promise<LectureAnalysis> {
-  // Read audio file as base64 — ensure file:// URI prefix for expo-file-system
   const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
-  const base64 = await FileSystem.readAsStringAsync(fileUri, {
-    encoding: FileSystem.EncodingType.Base64,
+  
+  // 1. Upload to Gemini Files API
+  const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiKey}`;
+  const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  
+  if (!fileInfo.exists) {
+    throw new Error('Audio file does not exist');
+  }
+
+  const uploadRes = await FileSystem.uploadAsync(uploadUrl, fileUri, {
+    httpMethod: 'POST',
+    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    headers: {
+      'X-Goog-Upload-Protocol': 'raw',
+      'X-Goog-Upload-Command': 'start, upload, finalize',
+      'X-Goog-Upload-Header-Content-Length': fileInfo.size.toString(),
+      'X-Goog-Upload-Header-Content-Type': 'audio/mp4',
+      'Content-Type': 'audio/mp4',
+    },
   });
 
-  // Gemini 1.5 Flash supports inline audio up to 20MB
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+  if (uploadRes.status !== 200) {
+     throw new Error(`Gemini upload error ${uploadRes.status}: ${uploadRes.body}`);
+  }
+
+  const uploadData = JSON.parse(uploadRes.body);
+  const fileUriGemini = uploadData.file.uri;
+
+  // 2. Wait for processing if needed (audio usually fast, but good practice)
+  // For audio, it's generally immediate enough for a simple generateContent call.
+
+  // 3. Generate Content using the File URI
+  const generateUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
 
   const body = {
     contents: [{
       parts: [
-        { inline_data: { mime_type: 'audio/mp4', data: base64 } },
+        { file_data: { mime_type: 'audio/mp4', file_uri: fileUriGemini } },
         { text: MEDICAL_EXTRACT_PROMPT },
       ],
     }],
@@ -87,7 +113,7 @@ export async function transcribeWithGemini(
     },
   };
 
-  const res = await fetch(url, {
+  const res = await fetch(generateUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -95,7 +121,7 @@ export async function transcribeWithGemini(
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Gemini audio error ${res.status}: ${err}`);
+    throw new Error(`Gemini generate error ${res.status}: ${err}`);
   }
 
   const data = await res.json();

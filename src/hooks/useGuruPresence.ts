@@ -23,18 +23,21 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive }: GuruPre
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const messagesRef = useRef<GuruPresenceMessage[]>([]);
   const hasGenerated = useRef(false);
+  const lastTopicKey = useRef('');
   const isShowingRef = useRef(false);
   const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Generate presence messages once when topics are available
+  // Generate presence messages when topics change materially
   useEffect(() => {
-    if (topicNames.length === 0 || hasGenerated.current || !apiKey) return;
+    if (topicNames.length === 0 || !apiKey) return;
+    const key = topicNames.slice().sort().join('|');
+    if (hasGenerated.current && key === lastTopicKey.current) return;
     hasGenerated.current = true;
+    lastTopicKey.current = key;
     generateGuruPresenceMessages(topicNames, topicNames, apiKey, orKey)
       .then(msgs => { messagesRef.current = msgs; })
       .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topicNames.length]);
+  }, [topicNames, apiKey, orKey]);
 
   // Pulse animation — run when active, pause otherwise
   useEffect(() => {

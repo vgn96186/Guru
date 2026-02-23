@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addBrainDump } from '../db/queries/brainDumps';
 
 export default function BrainDumpFab() {
+    const insets = useSafeAreaInsets();
+    const bottomOffset = Math.max(insets.bottom, 0) + 72;
     const [modalVisible, setModalVisible] = useState(false);
     const [note, setNote] = useState('');
 
@@ -18,7 +21,7 @@ export default function BrainDumpFab() {
     return (
         <>
             <TouchableOpacity
-                style={styles.fab}
+                style={[styles.fab, { bottom: bottomOffset }]}
                 onPress={() => setModalVisible(true)}
             >
                 <Ionicons name="bulb" size={24} color="#FFFFFF" />
@@ -34,7 +37,7 @@ export default function BrainDumpFab() {
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.modalOverlay}
                 >
-                    <View style={styles.modalContent}>
+                    <View style={[styles.modalContent, { paddingBottom: Math.max(insets.bottom, 0) + 24 }]}>
                         <View style={styles.header}>
                             <Text style={styles.title}>Park a Thought 🧠</Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>

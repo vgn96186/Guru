@@ -32,7 +32,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
 
       await Linking.openURL(app.webUrl);
     } catch (e) {
-      console.warn('Could not launch app', e);
+      if (__DEV__) console.warn('Could not launch app', e);
       // Last resort: try web URL directly
       Linking.openURL(app.webUrl).catch(() => {
         Alert.alert('Could not open app', `Please ensure ${app.name} is installed.`);
@@ -51,16 +51,16 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
           <TouchableOpacity
             key={app.id}
             style={[styles.appBtn, { borderColor: app.color + '44' }]}
-            onPress={() => onLogSession(app.id)}
-            onLongPress={() => launchApp(app)}
-            delayLongPress={1000}
+            onPress={() => launchApp(app)}
+            onLongPress={() => onLogSession(app.id)}
+            delayLongPress={500}
             activeOpacity={0.7}
           >
             <View style={[styles.iconBox, { backgroundColor: app.color + '22' }]}>
               <Text style={styles.icon}>{app.iconEmoji}</Text>
             </View>
             <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
-            <Text style={styles.actionText}>Log</Text>
+            <Text style={styles.actionText}>Open</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

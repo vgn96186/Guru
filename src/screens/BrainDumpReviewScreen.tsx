@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -25,7 +26,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
     };
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>Parked Thoughts</Text>
                 <Text style={styles.subtitle}>You safely deferred these while studying.</Text>
@@ -62,7 +63,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
                     <Text style={styles.doneText}>Done</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -71,7 +72,6 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#0F0F14',
         padding: 20,
-        paddingTop: 60,
     },
     header: {
         marginBottom: 24,

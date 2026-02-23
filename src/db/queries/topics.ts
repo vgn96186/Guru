@@ -17,6 +17,7 @@ type TopicRow = {
   status: string; confidence: number; last_studied_at: number | null; times_studied: number; xp_earned: number;
   next_review_date: string | null; user_notes: string;
   fsrs_due: string | null; fsrs_stability: number; fsrs_difficulty: number; fsrs_elapsed_days: number; fsrs_scheduled_days: number; fsrs_reps: number; fsrs_lapses: number; fsrs_state: number; fsrs_last_review: string | null;
+  wrong_count: number; is_nemesis: number;
   subject_name: string; short_code: string; color_hex: string;
 };
 
@@ -26,7 +27,7 @@ export function getAllSubjects(): Subject[] {
     id: number; name: string; short_code: string; color_hex: string;
     inicet_weight: number; neet_weight: number; display_order: number;
   }>('SELECT * FROM subjects ORDER BY display_order');
-  console.log(`[DB] Found ${rows.length} subjects`);
+  if (__DEV__) console.log(`[DB] Found ${rows.length} subjects`);
   return rows.map(r => ({
     id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
     inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
@@ -59,7 +60,7 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
   const id = Number(subjectId);
   if (isNaN(id)) return [];
 
-  console.log(`[DB] Fetching topics for subject_id: ${id}`);
+  if (__DEV__) console.log(`[DB] Fetching topics for subject_id: ${id}`);
   
   const rows = db.getAllSync<any>(`
     SELECT 
@@ -86,7 +87,7 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
     ORDER BY t.inicet_priority DESC, t.name
   `, [id]);
 
-  console.log(`[DB] Subject ${id} has ${rows.length} topics`);
+  if (__DEV__) console.log(`[DB] Subject ${id} has ${rows.length} topics`);
 
   return rows.map(mapTopicRow);
 }
@@ -226,7 +227,7 @@ export function getSubjectCoverage(): Array<{ subjectId: number; total: number; 
      LEFT JOIN topic_progress p ON t.id = p.topic_id
      GROUP BY t.subject_id`,
   );
-  console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
+  if (__DEV__) console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
   return rows;
 }
 
@@ -281,10 +282,47 @@ function mapTopicRow(r: any): TopicWithProgress {
       fsrsLapses: r.fsrs_lapses ?? 0,
       fsrsState: r.fsrs_state ?? 0,
       fsrsLastReview: r.fsrs_last_review ?? null,
+      wrongCount: r.wrong_count ?? 0,
+      isNemesis: (r.is_nemesis ?? 0) === 1,
     },
   };
 }
 
-export const getNemesisTopics = async (): Promise<any[]> => {
-  return [];
+export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
+  const db = getDb();
+  const rows = db.getAllSync<TopicRow>(
+    `${TOPIC_SELECT}, p.wrong_count, p.is_nemesis
+     FROM topics t
+     JOIN subjects s ON t.subject_id = s.id
+     JOIN topic_progress p ON t.id = p.topic_id
+     WHERE p.is_nemesis = 1
+     ORDER BY p.wrong_count DESC, p.confidence ASC
+     LIMIT 10`,
+  );
+  return rows.map(mapTopicRow);
 };
+
+export function markNemesisTopics(): void {
+  const db = getDb();
+  // Reset all nemesis flags
+  db.runSync('UPDATE topic_progress SET is_nemesis = 0');
+  // Mark topics with 3+ wrong answers and low confidence as nemesis
+  db.runSync(
+    `UPDATE topic_progress SET is_nemesis = 1
+     WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
+  );
+}
+
+export function incrementWrongCount(topicId: number): void {
+  const db = getDb();
+  db.runSync(
+    'UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?',
+    [topicId],
+  );
+  // Auto-mark as nemesis if threshold reached
+  db.runSync(
+    `UPDATE topic_progress SET is_nemesis = 1
+     WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
+    [topicId],
+  );
+}

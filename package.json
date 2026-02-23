@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "main": "index.ts",
   "scripts": {
-    "start": "NODE_OPTIONS='--no-node-snapshot' WATCHMAN_RECAP=1 expo start",
-    "android": "NODE_OPTIONS='--no-node-snapshot' WATCHMAN_RECAP=1 expo start --android",
-    "ios": "NODE_OPTIONS='--no-node-snapshot' WATCHMAN_RECAP=1 expo start --ios",
-    "web": "NODE_OPTIONS='--no-node-snapshot' WATCHMAN_RECAP=1 expo start --web"
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -18,11 +18,13 @@
     "expo": "~54.0.33",
     "expo-av": "~15.0.2",
     "expo-background-fetch": "~12.0.0",
+    "expo-build-properties": "~1.0.10",
     "expo-document-picker": "~14.0.8",
     "expo-file-system": "~19.0.21",
     "expo-haptics": "~14.0.0",
     "expo-keep-awake": "~15.0.8",
     "expo-notifications": "~0.32.16",
+    "expo-sensors": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-speech": "~13.0.0",
     "expo-splash-screen": "~31.0.13",
@@ -43,7 +45,6 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
-    "@types/react-native": "^0.72.8",
     "babel-preset-expo": "^54.0.10",
     "typescript": "~5.9.2"
   },

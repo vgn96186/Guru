@@ -45,6 +45,11 @@ function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
     if (topic.inicetPriority >= 8) score += 5;
   }
 
+  // Nemesis Massive Boost
+  if (topic.progress.isNemesis) {
+    score += 50; // Force nemesis topics to the top of the queue
+  }
+
   return score;
 }
 

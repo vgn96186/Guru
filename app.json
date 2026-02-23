@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
@@ -33,7 +33,8 @@
     "plugins": [
       "expo-sqlite",
       "expo-notifications",
-      "./modules/app-launcher/withAppLauncher"
+      "./modules/app-launcher/withAppLauncher",
+      "expo-build-properties"
     ],
     "extra": {
       "eas": {

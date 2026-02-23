@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { updateUserProfile } from '../db/queries/progress';
 
 export default function DeviceLinkScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const profile = useAppStore(s => s.profile);
   const refreshProfile = useAppStore(s => s.refreshProfile);
   const [code, setCode] = useState(profile?.syncCode || '');

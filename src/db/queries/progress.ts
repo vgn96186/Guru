@@ -13,6 +13,8 @@ export function getUserProfile(): UserProfile {
     body_doubling_enabled: number; blocked_content_types: string;
     idle_timeout_minutes: number; break_duration_minutes: number;
     notification_hour: number; focus_subject_ids: string;
+    focus_audio_enabled: number; visual_timers_enabled: number; face_tracking_enabled: number;
+    quiz_correct_count: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -25,6 +27,8 @@ export function getUserProfile(): UserProfile {
       strictModeEnabled: false, bodyDoublingEnabled: true,
       blockedContentTypes: [], idleTimeoutMinutes: 2,
       breakDurationMinutes: 5, notificationHour: 7, focusSubjectIds: [],
+      focusAudioEnabled: false, visualTimersEnabled: false, faceTrackingEnabled: false,
+      quizCorrectCount: 0,
     };
   }
 
@@ -50,6 +54,10 @@ export function getUserProfile(): UserProfile {
     breakDurationMinutes: r.break_duration_minutes ?? 5,
     notificationHour: r.notification_hour ?? 7,
     focusSubjectIds: (() => { try { return JSON.parse(r.focus_subject_ids ?? '[]'); } catch { return []; } })() as number[],
+    focusAudioEnabled: (r.focus_audio_enabled ?? 0) === 1,
+    visualTimersEnabled: (r.visual_timers_enabled ?? 0) === 1,
+    faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
+    quizCorrectCount: r.quiz_correct_count ?? 0,
   };
 }
 
@@ -63,6 +71,8 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     notificationsEnabled: 'notifications_enabled', lastActiveDate: 'last_active_date', syncCode: 'sync_code', strictModeEnabled: 'strict_mode_enabled',
     bodyDoublingEnabled: 'body_doubling_enabled', idleTimeoutMinutes: 'idle_timeout_minutes',
     breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
+    focusAudioEnabled: 'focus_audio_enabled', visualTimersEnabled: 'visual_timers_enabled',
+    faceTrackingEnabled: 'face_tracking_enabled', quizCorrectCount: 'quiz_correct_count',
   };
 
   const setClauses: string[] = [];
@@ -93,16 +103,18 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
 
 export function addXp(amount: number): { newTotal: number; leveledUp: boolean; newLevel: number } {
   const db = getDb();
-  const profile = getUserProfile();
-  const newTotal = profile.totalXp + amount;
+  const currentProfile = db.getFirstSync<{ total_xp: number, current_level: number }>('SELECT total_xp, current_level FROM user_profile WHERE id = 1');
+  const oldTotal = currentProfile?.total_xp ?? 0;
+  const oldLevel = currentProfile?.current_level ?? 1;
+  const newTotal = oldTotal + amount;
 
-  let newLevel = profile.currentLevel;
+  let newLevel = oldLevel;
   for (let i = LEVELS.length - 1; i >= 0; i--) {
     if (newTotal >= LEVELS[i].xpRequired) { newLevel = LEVELS[i].level; break; }
   }
 
-  const leveledUp = newLevel > profile.currentLevel;
-  db.runSync('UPDATE user_profile SET total_xp = ?, current_level = ? WHERE id = 1', [newTotal, newLevel]);
+  const leveledUp = newLevel > oldLevel;
+  db.runSync('UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1', [amount, newLevel]);
   return { newTotal, leveledUp, newLevel };
 }
 
@@ -170,8 +182,8 @@ export function clearAiCache(): void {
   getDb().runSync('DELETE FROM ai_cache');
 }
 
-export function getDaysToExam(dateStr: string): number {
-  const exam = new Date(dateStr).getTime();
+export function getDaysToExam(examDateStr: string): number {
+  const exam = new Date(examDateStr).getTime();
   const now = Date.now();
   return Math.max(0, Math.ceil((exam - now) / 86400000));
 }

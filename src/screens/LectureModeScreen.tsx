@@ -54,26 +54,27 @@ export default function LectureModeScreen() {
   const [proofOfLifeCountdown, setProofOfLifeCountdown] = useState(0);
 
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
+  const recordingRef = useRef<Audio.Recording | null>(null);
   const [isRecordingEnabled, setIsRecordingEnabled] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
 
-  
-  
   const [partnerDoomscrolling, setPartnerDoomscrolling] = useState(false);
-const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!profile) refreshProfile();
+  }, [profile]);
+
   useEffect(() => {
     if (profile?.syncCode) {
-      const unsubscribe = connectToRoom(profile.syncCode, (msg) => {
+      const unsubscribe = connectToRoom(profile.syncCode, (msg: any) => {
         if (msg.type === 'DOOMSCROLL_DETECTED') {
           setPartnerDoomscrolling(true);
           Vibration.vibrate([0, 500, 200, 500, 200, 1000]);
           setTimeout(() => setPartnerDoomscrolling(false), 10000); // Hide after 10s
         }
       });
-      
+
       // Tell phone we started
       if (selectedSubjectId) {
         sendSyncMessage({ type: 'LECTURE_STARTED', subjectId: selectedSubjectId });
@@ -85,8 +86,6 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
       };
     }
   }, [profile?.syncCode, selectedSubjectId]);
-
-  }, [profile]);
 
   // Handle App sending to background (doomscrolling attempt)
   useEffect(() => {
@@ -120,7 +119,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
       });
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current);
-    if (recording) recording.stopAndUnloadAsync().catch(() => {});
+    if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => {});
     setIsRecordingEnabled(false); };
   }, [onBreak]);
 
@@ -225,9 +224,10 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
       const { recording: newRec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
       );
+      recordingRef.current = newRec;
       setRecording(newRec);
     } catch (err) {
-      console.error('Failed to start recording', err);
+      if (__DEV__) console.error('Failed to start recording', err);
     }
   }
 
@@ -238,16 +238,12 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     try {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      recordingRef.current = null;
       setRecording(null);
 
       if (uri) {
-        // Read file as base64
-        const base64 = await FileSystem.readAsStringAsync(uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-        
-        // Transcribe
-        const text = await transcribeAndSummarizeAudio(base64, profile.openrouterApiKey);
+        // Transcribe directly from file URI to avoid Base64 out-of-memory errors
+        const text = await transcribeAndSummarizeAudio(uri, profile.openrouterApiKey);
         if (text && text !== 'NO_CONTENT' && !text.includes('NO_CONTENT')) {
           saveLectureNote(selectedSubjectId, text.trim());
           setNotes(n => [...n, text.trim()]);
@@ -260,7 +256,7 @@ const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
         await FileSystem.deleteAsync(uri, { idempotent: true });
       }
     } catch (err) {
-      console.error('Transcription failed:', err);
+      if (__DEV__) console.error('Transcription failed:', err);
     } finally {
       setIsTranscribing(false);
       // Restart recording immediately if still enabled

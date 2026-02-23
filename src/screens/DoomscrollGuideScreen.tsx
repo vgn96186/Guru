@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { scheduleHarassment, requestNotificationPermissions } from '../services/notificationService';
 
 export default function DoomscrollGuideScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [harassmentActive, setHarassmentActive] = useState(false);
 
   async function activateHarassment() {

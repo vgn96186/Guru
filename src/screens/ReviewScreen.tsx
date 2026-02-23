@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
 import { addXp } from '../db/queries/progress';
 import { fetchContent } from '../services/aiService';
@@ -18,7 +20,7 @@ const RATINGS = [
 ];
 
 export default function ReviewScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { profile, refreshProfile } = useAppStore();
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -65,18 +67,16 @@ export default function ReviewScreen() {
   function handleRate(rating: typeof RATINGS[0]) {
     if (!currentTopic) return;
 
-    // Update DB
-    // logic similar to updateTopicProgress but using explicit 'days' if needed, 
-    // or just mapping confidence. Our existing updateTopicProgress uses confidence.
-    // For now, we map confidence to our SRS intervals in db/queries/topics
-    // so we just pass the new confidence.
-
-    // 5 = Mastered (for Easy if already high), but let's stick to 1-4 scale for cards
     let newConf = rating.confidence;
     if (rating.label === 'Easy' && currentTopic.progress.confidence >= 4) newConf = 5;
 
-    // Use a simplified XP reward for flashcards (lower than full study)
-    const xp = 10 * newConf;
+    let xp = 10 * newConf;
+    let nemesisBonus = 0;
+    
+    if (currentTopic.progress.isNemesis) {
+      nemesisBonus = 50;
+      xp += nemesisBonus;
+    }
 
     updateTopicProgress(
       currentTopic.id,
@@ -88,11 +88,10 @@ export default function ReviewScreen() {
     addXp(xp);
     refreshProfile();
 
-    // Next card
     if (currentIdx < queue.length - 1) {
       setCurrentIdx(i => i + 1);
     } else {
-      navigation.goBack(); // Done
+      navigation.goBack();
     }
   }
 
@@ -130,6 +129,11 @@ export default function ReviewScreen() {
 
       <View style={styles.header}>
         <Text style={styles.progress}>Card {currentIdx + 1} / {queue.length}</Text>
+        {currentTopic.progress.isNemesis && (
+          <View style={styles.nemesisBadge}>
+            <Text style={styles.nemesisBadgeText}>⚔️ NEMESIS (+50 XP)</Text>
+          </View>
+        )}
         <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.close}>✕</Text></TouchableOpacity>
       </View>
 
@@ -193,8 +197,10 @@ export default function ReviewScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, alignItems: 'center' },
   progress: { color: '#666', fontWeight: '700' },
+  nemesisBadge: { backgroundColor: '#F4433622', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#F44336' },
+  nemesisBadgeText: { color: '#F44336', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   close: { color: '#fff', fontSize: 20 },
   emoji: { fontSize: 60, marginBottom: 20 },
   title: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },

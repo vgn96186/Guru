@@ -21,6 +21,7 @@ export function calculateAndAwardSessionXp(
   isFirstSessionToday: boolean,
 ): SessionXpResult {
   const breakdown: XpBreakdown[] = [];
+  let totalQuizCorrect = 0;
 
   for (const topic of completedTopics) {
     const isUnseen = topic.progress.status === 'unseen';
@@ -30,11 +31,17 @@ export function calculateAndAwardSessionXp(
 
   for (const result of quizResults) {
     if (result.correct > 0) {
+      totalQuizCorrect += result.correct;
       breakdown.push({ label: 'Quiz correct answers', amount: result.correct * XP_REWARDS.QUIZ_CORRECT });
     }
     if (result.correct === result.total && result.total > 0) {
       breakdown.push({ label: 'Perfect quiz bonus!', amount: XP_REWARDS.QUIZ_PERFECT });
     }
+  }
+
+  if (totalQuizCorrect > 0) {
+    const { getDb } = require('../db/database');
+    getDb().runSync('UPDATE user_profile SET quiz_correct_count = quiz_correct_count + ? WHERE id = 1', [totalQuizCorrect]);
   }
 
   if (isFirstSessionToday) {

@@ -11,11 +11,16 @@ interface UseIdleTimerProps {
 export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTimerProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isIdle, setIsIdle] = useState(false);
+  const isIdleRef = useRef(false);
   const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  useEffect(() => {
+    isIdleRef.current = isIdle;
+  }, [isIdle]);
 
   const resetTimer = useCallback(() => {
     if (disabled) return;
-    if (isIdle) {
+    if (isIdleRef.current) {
       setIsIdle(false);
       onActive?.();
     }
@@ -24,7 +29,7 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
       setIsIdle(true);
       onIdle();
     }, timeout);
-  }, [disabled, isIdle, onIdle, onActive, timeout]);
+  }, [disabled, onIdle, onActive, timeout]);
 
   // Handle app state changes (background/foreground)
   useEffect(() => {

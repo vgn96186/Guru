@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, BackHandler, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 
 export default function LockdownScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<any>();
   const [timeLeft, setTimeLeft] = useState(route.params?.duration ?? 300); // 5 mins default
   const [attempts, setAttempts] = useState(0);
@@ -22,7 +24,7 @@ export default function LockdownScreen() {
       setTimeLeft((prev: number) => {
         if (prev <= 1) {
           clearInterval(timer);
-          navigation.navigate('Home');
+          navigation.navigate('Tabs');
           return 0;
         }
         return prev - 1;
@@ -65,7 +67,7 @@ export default function LockdownScreen() {
 
         <TouchableOpacity 
           style={styles.studyBtn}
-          onPress={() => navigation.navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft/60) })}
+          onPress={() => (navigation as any).navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft/60) })}
         >
           <Text style={styles.studyBtnText}>Open Flashcards</Text>
         </TouchableOpacity>

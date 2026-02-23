@@ -1,16 +1,16 @@
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
+import { getAllTopicsWithProgress } from '../db/queries/topics';
+import { prefetchTopicContent } from './aiService';
+import { getUserProfile } from '../db/queries/progress';
+import { getMoodContentTypes } from '../constants/prompts';
+import type { ContentType } from '../types';
 
 const PREFETCH_TASK = 'PREFETCH_AI_CONTENT';
 
 try {
   TaskManager.defineTask(PREFETCH_TASK, async () => {
     try {
-      const { getAllTopicsWithProgress } = require('../db/queries/topics');
-      const { prefetchTopicContent } = require('./aiService');
-      const { getUserProfile } = require('../db/queries/progress');
-      const { getMoodContentTypes } = require('../constants/prompts');
-
       const profile = getUserProfile();
       if (!profile.openrouterApiKey) {
         return BackgroundFetch.BackgroundFetchResult.NoData;
@@ -26,8 +26,8 @@ try {
         return BackgroundFetch.BackgroundFetchResult.NoData;
       }
 
-      const contentTypes = getMoodContentTypes('good').filter((ct: any) => !profile.blockedContentTypes.includes(ct));
-      const typesToFetch = contentTypes.length > 0 ? contentTypes : ['keypoints'];
+      const contentTypes = getMoodContentTypes('good').filter((ct: any) => !profile.blockedContentTypes.includes(ct)) as ContentType[];
+      const typesToFetch: ContentType[] = contentTypes.length > 0 ? contentTypes : ['keypoints'];
 
       for (const topic of candidates) {
         await prefetchTopicContent(topic, typesToFetch, profile.openrouterApiKey, profile.openrouterKey);
@@ -35,12 +35,12 @@ try {
 
       return BackgroundFetch.BackgroundFetchResult.NewData;
     } catch (error) {
-      console.error('Background fetch failed:', error);
+      if (__DEV__) console.error('Background fetch failed:', error);
       return BackgroundFetch.BackgroundFetchResult.Failed;
     }
   });
 } catch (e) {
-  console.warn('Failed to define background task:', e);
+  if (__DEV__) console.warn('Failed to define background task:', e);
 }
 
 export async function registerBackgroundFetch() {
@@ -54,6 +54,6 @@ export async function registerBackgroundFetch() {
       });
     }
   } catch (e) {
-    console.warn('Failed to register background fetch:', e);
+    if (__DEV__) console.warn('Failed to register background fetch:', e);
   }
 }

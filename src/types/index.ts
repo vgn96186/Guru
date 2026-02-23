@@ -46,7 +46,8 @@ export interface TopicProgress {
   fsrsLapses: number;
   fsrsState: number;
   fsrsLastReview: string | null;
-
+  wrongCount: number;
+  isNemesis: boolean;
 }
 
 export interface TopicWithProgress extends Topic {
@@ -117,6 +118,7 @@ export interface UserProfile {
   breakDurationMinutes: number;
   notificationHour: number;
   focusSubjectIds: number[];
+  quizCorrectCount?: number;
 }
 
 // AI Content shapes

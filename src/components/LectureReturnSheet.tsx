@@ -16,6 +16,9 @@ import {
   Modal, View, Text, TouchableOpacity, ScrollView,
   StyleSheet, ActivityIndicator,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { transcribeWithGemini, transcribeWithOpenAI, markTopicsFromLecture, type LectureAnalysis } from '../services/transcriptionService';
 import { catalyzeTranscript } from '../services/aiService';
 import { deleteRecording } from '../../modules/app-launcher';
@@ -31,6 +34,7 @@ interface Props {
   openaiKey: string;
   transcriptionEngine: 'gemini' | 'openai';
   onDone: () => void;
+  onStudyNow?: () => void;
 }
 
 interface QuizQuestion {
@@ -45,7 +49,9 @@ type Phase = 'intro' | 'transcribing' | 'results' | 'quiz' | 'quiz_done' | 'erro
 export default function LectureReturnSheet({
   visible, appName, durationMinutes, recordingPath,
   geminiKey, openaiKey, transcriptionEngine, onDone,
+  onStudyNow,
 }: Props) {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [phase, setPhase] = useState<Phase>('intro');
   const [analysis, setAnalysis] = useState<LectureAnalysis | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -359,6 +365,24 @@ Summary: ${result.lectureSummary}`;
               <>
                 <TouchableOpacity
                   style={styles.primaryBtn}
+                  onPress={() => {
+                    handleMarkStudied();
+                    if (onStudyNow) {
+                      onStudyNow();
+                      return;
+                    }
+                    try {
+                      navigation.getParent?.()?.navigate?.('SyllabusTab');
+                    } catch {
+                      // no-op
+                    }
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.primaryBtnText}>📖 Study Now (Syllabus)</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.primaryBtn, { backgroundColor: '#2A2A38' }]}
                   onPress={handleMarkAndQuiz}
                   activeOpacity={0.85}
                 >

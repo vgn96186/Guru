@@ -200,16 +200,16 @@ async function callWithFallbacks(
     return { text, modelUsed: model };
   } catch (err) {
     if (!(err instanceof RateLimitError) || !orKey) throw err;
-    console.log('[AI] Gemini rate-limited, trying OpenRouter free models...');
+    if (__DEV__) console.log('[AI] Gemini rate-limited, trying OpenRouter free models...');
   }
 
   for (const model of OPENROUTER_FREE_MODELS) {
     try {
       const text = await callOpenRouter(messages, orKey, model);
-      console.log(`[AI] OpenRouter fallback succeeded with ${model}`);
+      if (__DEV__) console.log(`[AI] OpenRouter fallback succeeded with ${model}`);
       return { text, modelUsed: model };
     } catch (err) {
-      console.warn(`[AI] ${model} failed:`, (err as Error).message);
+      if (__DEV__) console.warn(`[AI] ${model} failed:`, (err as Error).message);
       // Continue to next model regardless of error type
     }
   }
@@ -252,7 +252,7 @@ export async function fetchContent(
       return parsed;
     } catch (e) {
       lastError = e as Error;
-      console.warn(`[AI] Zod validation failed for ${contentType} attempt ${attempt + 1}:`, (e as Error).message);
+      if (__DEV__) console.warn(`[AI] Zod validation failed for ${contentType} attempt ${attempt + 1}:`, (e as Error).message);
     }
   }
   throw lastError!;
@@ -393,9 +393,37 @@ export async function askGuru(
 
 
 export async function transcribeAndSummarizeAudio(
-  base64Audio: string,
+  audioFilePath: string,
   apiKey: string
 ): Promise<string> {
+  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+
+  const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+  const fileInfo = await import('expo-file-system/legacy').then(fs => fs.getInfoAsync(fileUri));
+  
+  if (!fileInfo.exists) {
+    throw new Error('Audio file does not exist');
+  }
+
+  const uploadRes = await import('expo-file-system/legacy').then(fs => fs.uploadAsync(uploadUrl, fileUri, {
+    httpMethod: 'POST',
+    uploadType: fs.FileSystemUploadType.BINARY_CONTENT,
+    headers: {
+      'X-Goog-Upload-Protocol': 'raw',
+      'X-Goog-Upload-Command': 'start, upload, finalize',
+      'X-Goog-Upload-Header-Content-Length': (fileInfo.size ?? 0).toString(),
+      'X-Goog-Upload-Header-Content-Type': 'audio/mp4',
+      'Content-Type': 'audio/mp4',
+    },
+  }));
+
+  if (uploadRes.status !== 200) {
+     throw new Error(`Gemini upload error ${uploadRes.status}: ${uploadRes.body}`);
+  }
+
+  const uploadData = JSON.parse(uploadRes.body);
+  const fileUriGemini = uploadData.file.uri;
+
   const url = `${GEMINI_BASE}/${PRIMARY_MODEL}:generateContent?key=${apiKey}`;
 
   const res = await fetch(url, {
@@ -407,7 +435,7 @@ export async function transcribeAndSummarizeAudio(
           role: 'user',
           parts: [
             { text: "You are a medical lecture assistant. Transcribe and extract the absolute highest-yield medical facts and clinical pearls from this lecture snippet. Return ONLY a concise, bulleted list of 1-3 key points. If no clear medical concepts are spoken, return 'NO_CONTENT'." },
-            { inlineData: { mimeType: 'audio/m4a', data: base64Audio } }
+            { fileData: { mimeType: 'audio/mp4', fileUri: fileUriGemini } }
           ]
         }
       ],

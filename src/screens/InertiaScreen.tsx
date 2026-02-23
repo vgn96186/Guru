@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, Easing, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { fetchContent } from '../services/aiService';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
@@ -14,7 +16,7 @@ const { width } = Dimensions.get('window');
 type Phase = 'breathe' | 'fetching' | 'micro_win' | 'pivot';
 
 export default function InertiaScreen() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const profile = useAppStore(s => s.profile);
   const [phase, setPhase] = useState<Phase>('breathe');
   const [breatheText, setBreatheText] = useState('Breathe in...');
@@ -95,7 +97,7 @@ export default function InertiaScreen() {
         }
       }
     } catch (e) {
-      console.log('Failed to fetch micro win', e);
+      if (__DEV__) console.log('Failed to fetch micro win', e);
     }
   }
 

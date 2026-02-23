@@ -10,8 +10,6 @@ interface Props {
 
 export default function SubjectCard({ subject, coverage, onPress }: Props) {
   const pct = coverage.total > 0 ? Math.round((coverage.seen / coverage.total) * 100) : 0;
-  const circumference = 2 * Math.PI * 20;
-  const dashOffset = circumference * (1 - pct / 100);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>

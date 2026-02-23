@@ -104,6 +104,9 @@ export default function DailyChallengeScreen() {
     setSelected(idx);
     const q = questions[currentIdx];
     const correct = idx === q.correctIndex;
+    const newScore = correct ? score + 1 : score;
+    const newCorrectTopics = correct ? [...correctTopics, q.topicId] : correctTopics;
+    const newWrongTopics = correct ? wrongTopics : [...wrongTopics, q.topicId];
     if (correct) {
       setScore(s => s + 1);
       setCorrectTopics(prev => [...prev, q.topicId]);
@@ -117,7 +120,7 @@ export default function DailyChallengeScreen() {
       Animated.timing(feedbackOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start(() => {
       if (currentIdx + 1 >= questions.length) {
-        finishChallenge();
+        finishChallenge(newScore, newCorrectTopics, newWrongTopics);
       } else {
         setCurrentIdx(i => i + 1);
         setSelected(null);
@@ -125,17 +128,17 @@ export default function DailyChallengeScreen() {
     });
   }
 
-  async function finishChallenge() {
-    const totalXp = score * XP_PER_CORRECT;
+  async function finishChallenge(finalScore: number, finalCorrect: number[], finalWrong: number[]) {
+    const totalXp = finalScore * XP_PER_CORRECT;
     const sessionId = createSession([], 'good', 'normal');
-    endSession(sessionId, correctTopics, totalXp, Math.ceil(questions.length * 1.5));
+    endSession(sessionId, finalCorrect, totalXp, Math.ceil(questions.length * 1.5));
     updateStreak(true);
 
     // Update SRS for each answered topic
-    for (const topicId of correctTopics) {
+    for (const topicId of finalCorrect) {
       updateTopicProgress(topicId, 'reviewed', 4, XP_PER_CORRECT);
     }
-    for (const topicId of wrongTopics) {
+    for (const topicId of finalWrong) {
       updateTopicProgress(topicId, 'seen', 2, 10);
     }
 
@@ -209,7 +212,7 @@ export default function DailyChallengeScreen() {
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>⚡ Daily Challenge</Text>
-        <Text style={styles.headerScore}>{score}/{currentIdx}</Text>
+        <Text style={styles.headerScore}>{score}/{currentIdx + 1}</Text>
       </View>
 
       {/* Progress bar */}

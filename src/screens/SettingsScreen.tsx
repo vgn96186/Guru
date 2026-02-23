@@ -4,7 +4,10 @@ import {
   StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, FlatList, Modal
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { File, Paths } from 'expo-file-system';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
@@ -72,13 +75,13 @@ async function exportBackup(): Promise<void> {
 
   const json = JSON.stringify(backup, null, 2);
   const dateStr = new Date().toISOString().slice(0, 10);
-  const file = new File(Paths.document, `guru_backup_${dateStr}.json`);
-  file.write(json);
+  const filePath = `${FileSystem.cacheDirectory}guru_backup_${dateStr}.json`;
+  await FileSystem.writeAsStringAsync(filePath, json);
 
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
+    await Sharing.shareAsync(filePath, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
   } else {
-    Alert.alert('Backup saved', `File written to:\n${file.uri}`);
+    Alert.alert('Backup saved', `File written to:\n${filePath}`);
   }
 }
 
@@ -86,8 +89,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   const result = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true });
   if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
 
-  const file = new File(result.assets[0].uri);
-  const content = await file.text();
+  const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
   let backup: any;
   try {
     backup = JSON.parse(content);
@@ -110,7 +112,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   for (const row of backup.topic_progress as Record<string, any>[]) {
     // Validate required fields exist
     if (!row.topic_id || typeof row.status === 'undefined') {
-      console.warn('Skipping invalid topic_progress row:', row);
+      if (__DEV__) console.warn('Skipping invalid topic_progress row:', row);
       continue;
     }
     // Validate status is valid
@@ -132,7 +134,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   // Restore daily_log with validation
   for (const row of (backup.daily_log ?? []) as Record<string, any>[]) {
     if (!row.date) {
-      console.warn('Skipping invalid daily_log row:', row);
+      if (__DEV__) console.warn('Skipping invalid daily_log row:', row);
       continue;
     }
     db.runSync(
@@ -181,6 +183,7 @@ async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: st
 }
 
 export default function SettingsScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile, refreshProfile } = useAppStore();
   const [apiKey, setApiKey] = useState('');
   const [orKey, setOrKey] = useState('');
@@ -431,6 +434,13 @@ export default function SettingsScreen() {
         </Modal>
 
         <Section title="👤 Profile">
+          <TouchableOpacity 
+            style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]} 
+            onPress={() => navigation.navigate('DeviceLink')} 
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>📱 Link Another Device (Sync)</Text>
+          </TouchableOpacity>
           <Label text="Your name" />
           <TextInput
             style={styles.input}

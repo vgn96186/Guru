@@ -102,6 +102,8 @@ export default function CheckInScreen() {
                   style={styles.moodBtn}
                   onPress={() => handleMoodSelect(mood)}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={info.label + ' mood'}
                 >
                   <Text style={styles.moodEmoji}>{info.emoji}</Text>
                   <Text style={styles.moodLabel}>{info.label}</Text>
@@ -178,7 +180,7 @@ const styles = StyleSheet.create({
   greeting: { color: '#fff', fontSize: 26, fontWeight: '800', marginBottom: 8 },
   countdown: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 4 },
   streak: { color: '#FF9800', fontSize: 14 },
-  motivation: { color: '#555', fontSize: 13, fontStyle: 'italic', marginTop: 10, lineHeight: 18 },
+  motivation: { color: '#888', fontSize: 13, fontStyle: 'italic', marginTop: 10, lineHeight: 18 },
   question: { color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 20 },
   moodGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   moodBtn: {

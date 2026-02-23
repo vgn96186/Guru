@@ -54,7 +54,6 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     name: 'Dr. Bhatia',
     packageName: 'com.dbmci.bhatia',
     webUrl: 'https://www.dbmci.com',
-    customScheme: 'dbmci://',
     iconEmoji: '👨‍⚕️',
     color: '#4CAF50',
   },

@@ -14,7 +14,7 @@ export default function NemesisSection({ weakTopics, dueTopics, navigation }: Pr
   return (
     <>
       {weakTopics.length > 0 && (
-        <TouchableOpacity style={styles.nemesisBar} activeOpacity={0.8}>
+        <TouchableOpacity style={styles.nemesisBar} activeOpacity={0.8} onPress={() => navigation.navigate('BossBattle')}>
           <Text style={styles.nemesisText}>
             ⚔️ {weakTopics.length} nemesis topic{weakTopics.length > 1 ? 's' : ''} still own you
           </Text>

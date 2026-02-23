@@ -45,18 +45,7 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
   };
 
   const card = (() => {
-    
-  const handleReadAloud = (text: string) => {
-    Speech.isSpeakingAsync().then(speaking => {
-      if (speaking) {
-        Speech.stop();
-      } else {
-        Speech.speak(text, { rate: 0.9, pitch: 1 });
-      }
-    });
-  };
-
-  switch (content.type) {
+    switch (content.type) {
       case 'keypoints': return <KeyPointsCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'quiz':      return <QuizCard content={content} onDone={onDone} onSkip={onSkip} onQuizAnswered={handleQuizAnswered} onQuizComplete={onQuizComplete} />;
       case 'story':     return <StoryCard content={content} onDone={onDone} onSkip={onSkip} />;

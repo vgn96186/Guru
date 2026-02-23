@@ -4,6 +4,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList } from '../navigation/types';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
@@ -17,7 +19,7 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function FlaggedReviewScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 

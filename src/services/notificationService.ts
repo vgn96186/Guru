@@ -17,7 +17,7 @@ try {
     }),
   });
 } catch (error) {
-  console.warn('Notifications not supported (likely running in Expo Go):', error);
+  if (__DEV__) console.warn('Notifications not supported (likely running in Expo Go):', error);
   areNotificationsSupported = false;
 }
 
@@ -27,7 +27,7 @@ export async function requestNotificationPermissions(): Promise<boolean> {
     const { status } = await Notifications.requestPermissionsAsync();
     return status === 'granted';
   } catch (error) {
-    console.warn('Failed to request notification permissions:', error);
+    if (__DEV__) console.warn('Failed to request notification permissions:', error);
     return false;
   }
 }
@@ -49,7 +49,7 @@ export async function scheduleStreakWarning(): Promise<void> {
       },
     });
   } catch (error) {
-    console.warn('Failed to schedule streak warning:', error);
+    if (__DEV__) console.warn('Failed to schedule streak warning:', error);
   }
 }
 
@@ -65,7 +65,7 @@ export async function scheduleMorningReminder(title: string, body: string, hour 
       },
     });
   } catch (error) {
-    console.warn('Failed to schedule morning reminder:', error);
+    if (__DEV__) console.warn('Failed to schedule morning reminder:', error);
   }
 }
 
@@ -81,7 +81,7 @@ export async function scheduleEveningNudge(title: string, body: string, hour = 1
       },
     });
   } catch (error) {
-    console.warn('Failed to schedule evening nudge:', error);
+    if (__DEV__) console.warn('Failed to schedule evening nudge:', error);
   }
 }
 
@@ -102,7 +102,7 @@ export async function scheduleBossFightTarget(nemesisName: string): Promise<void
       },
     });
   } catch (error) {
-    console.warn('Failed to schedule boss fight:', error);
+    if (__DEV__) console.warn('Failed to schedule boss fight:', error);
   }
 }
 
@@ -114,7 +114,7 @@ export async function sendImmediateNag(title: string, body: string): Promise<voi
       trigger: null,
     });
   } catch (error) {
-    console.warn('Failed to send immediate nag:', error);
+    if (__DEV__) console.warn('Failed to send immediate nag:', error);
   }
 }
 
@@ -146,13 +146,12 @@ export async function scheduleHarassment(): Promise<void> {
           body: messages[i],
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
-          vibrate: [0, 500, 200, 500],
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
       });
     }
   } catch (error) {
-    console.warn('Failed to schedule harassment:', error);
+    if (__DEV__) console.warn('Failed to schedule harassment:', error);
   }
 }
 
@@ -185,13 +184,12 @@ export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<v
           body: messages[i],
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
-          vibrate: [0, 500, 200, 500, 200, 1000],
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
       });
     }
   } catch (error) {
-    console.warn('Failed to schedule break alarms:', error);
+    if (__DEV__) console.warn('Failed to schedule break alarms:', error);
   }
 }
 
@@ -200,7 +198,7 @@ export async function cancelAllNotifications(): Promise<void> {
   try {
     await Notifications.cancelAllScheduledNotificationsAsync();
   } catch (error) {
-    console.warn('Failed to cancel notifications:', error);
+    if (__DEV__) console.warn('Failed to cancel notifications:', error);
   }
 }
 
@@ -258,7 +256,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
         profile.openrouterKey || undefined,
       );
     } catch (aiError) {
-      console.warn('Failed to generate accountability messages:', aiError);
+      if (__DEV__) console.warn('Failed to generate accountability messages:', aiError);
       // Use default messages if AI fails
       messages = [
         { title: '📚 Time to Study!', body: 'Keep your streak going!', scheduledFor: 'morning' },

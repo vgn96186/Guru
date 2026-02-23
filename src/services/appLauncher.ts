@@ -43,15 +43,15 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
     const app = MEDICAL_APP_SCHEMES[appKey];
 
     if (Platform.OS !== 'android') {
-        console.warn('[AppLauncher] Android-only feature.');
+        if (__DEV__) console.warn('[AppLauncher] Android-only feature.');
         return false;
     }
 
-    console.log(`[AppLauncher] Launching: ${app.name} (${app.androidStore})`);
+    if (__DEV__) console.log(`[AppLauncher] Launching: ${app.name} (${app.androidStore})`);
 
     // Check if app is installed first
     const installed = await isAppInstalled(app.androidStore);
-    console.log(`[AppLauncher] isAppInstalled: ${installed}`);
+    if (__DEV__) console.log(`[AppLauncher] isAppInstalled: ${installed}`);
 
     if (installed) {
         try {
@@ -62,9 +62,9 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
                 let projectionGranted = false;
                 try {
                     projectionGranted = await requestMediaProjection();
-                    console.log(`[AppLauncher] MediaProjection granted: ${projectionGranted}`);
+                    if (__DEV__) console.log(`[AppLauncher] MediaProjection granted: ${projectionGranted}`);
                 } catch (e) {
-                    console.warn('[AppLauncher] MediaProjection request failed:', e);
+                    if (__DEV__) console.warn('[AppLauncher] MediaProjection request failed:', e);
                 }
 
                 // 2. If projection denied, fall back to mic — still need mic permission
@@ -79,7 +79,7 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
                         },
                     );
                     if (micGranted !== PermissionsAndroid.RESULTS.GRANTED) {
-                        console.warn('[AppLauncher] Mic permission denied — launching without recording');
+                        if (__DEV__) console.warn('[AppLauncher] Mic permission denied — launching without recording');
                     }
                 }
 
@@ -88,10 +88,10 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
                 recordingPath = await startRecording(
                     projectionGranted ? app.androidStore : ''
                 );
-            } catch (e) { console.warn('[AppLauncher] Recording start failed:', e); }
+            } catch (e) { if (__DEV__) console.warn('[AppLauncher] Recording start failed:', e); }
 
             await launchApp(app.androidStore);
-            console.log('[AppLauncher] ✅ Native launch succeeded');
+            if (__DEV__) console.log('[AppLauncher] Native launch succeeded');
             startExternalAppSession(app.name, recordingPath);
 
             // Show floating timer bubble if overlay permission is granted
@@ -99,25 +99,25 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
                 const hasOverlay = await canDrawOverlays();
                 if (hasOverlay) {
                     await showOverlay(app.name, faceTracking);
-                    console.log('[AppLauncher] ✅ Overlay shown');
+                    if (__DEV__) console.log('[AppLauncher] Overlay shown');
                 } else {
                     // First launch: request permission (opens settings)
                     // The overlay will work on next launch after user grants it
                     requestOverlayPermission().catch(() => {});
-                    console.log('[AppLauncher] Overlay permission requested');
+                    if (__DEV__) console.log('[AppLauncher] Overlay permission requested');
                 }
             } catch (e) {
-                console.warn('[AppLauncher] Overlay failed:', e);
+                if (__DEV__) console.warn('[AppLauncher] Overlay failed:', e);
             }
 
             return true;
         } catch (err: any) {
-            console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);
+            if (__DEV__) console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);
         }
     }
 
     // Not installed — open Play Store
-    console.log('[AppLauncher] Opening Play Store...');
+    if (__DEV__) console.log('[AppLauncher] Opening Play Store...');
     try {
         await Linking.openURL(`market://details?id=${app.androidStore}`);
     } catch {

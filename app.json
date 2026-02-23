@@ -34,7 +34,8 @@
       "expo-sqlite",
       "expo-notifications",
       "./modules/app-launcher/withAppLauncher",
-      "expo-build-properties"
+      "expo-build-properties",
+      "expo-font"
     ],
     "extra": {
       "eas": {

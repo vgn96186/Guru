@@ -34,6 +34,8 @@ export default function HomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasIncompleteSession, setHasIncompleteSession] = useState(false);
   const [toolsExpanded, setToolsExpanded] = useState(false);
+  const [challengesExpanded, setChallengesExpanded] = useState(false);
+  const [statsExpanded, setStatsExpanded] = useState(true);
   const [masteredCount, setMasteredCount] = useState(0);
   const [totalTopicCount, setTotalTopicCount] = useState(0);
 
@@ -355,28 +357,41 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Section 6: Challenges ── */}
+        {/* ── Section 6: Challenges (collapsible) ── */}
 
-        <TouchableOpacity style={styles.bossBtn} onPress={() => navigation.navigate('BossBattle')} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel="Boss Battles - challenge a subject boss">
-          <Text style={styles.bossBtnEmoji}>👹</Text>
-          <View>
-            <Text style={styles.bossBtnTitle}>BOSS BATTLES</Text>
-            <Text style={styles.bossBtnSub}>Challenge a subject boss to earn epic XP</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* Lockdown */}
         <TouchableOpacity
-          style={styles.lockdownBtn}
-          onPress={() => navigation.getParent()?.navigate('Lockdown', { duration: 300 })}
-          activeOpacity={0.9}
-          accessibilityRole="button"
-          accessibilityLabel="Force 5 minute lockdown"
+          style={styles.toolsHeader}
+          onPress={() => setChallengesExpanded(prev => !prev)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.lockdownEmoji}>⛓️</Text>
-          <Text style={styles.lockdownTitle}>Force 5-Min Lockdown</Text>
-          <Text style={styles.lockdownSub}>Blocks back button. Shames you if you try to leave.</Text>
+          <Text style={styles.sectionHeader}>CHALLENGES</Text>
+          <Text style={styles.toolsChevron}>{challengesExpanded ? '▲' : '▼'}</Text>
         </TouchableOpacity>
+
+        {challengesExpanded && (
+          <View>
+            <TouchableOpacity style={styles.bossBtn} onPress={() => navigation.navigate('BossBattle')} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel="Boss Battles - challenge a subject boss">
+              <Text style={styles.bossBtnEmoji}>👹</Text>
+              <View>
+                <Text style={styles.bossBtnTitle}>BOSS BATTLES</Text>
+                <Text style={styles.bossBtnSub}>Challenge a subject boss to earn epic XP</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Lockdown */}
+            <TouchableOpacity
+              style={styles.lockdownBtn}
+              onPress={() => navigation.getParent()?.navigate('Lockdown', { duration: 300 })}
+              activeOpacity={0.9}
+              accessibilityRole="button"
+              accessibilityLabel="Force 5 minute lockdown"
+            >
+              <Text style={styles.lockdownEmoji}>⛓️</Text>
+              <Text style={styles.lockdownTitle}>Force 5-Min Lockdown</Text>
+              <Text style={styles.lockdownSub}>Blocks back button. Shames you if you try to leave.</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Nemesis */}
         <NemesisSection weakTopics={weakTopics} dueTopics={dueTopics} navigation={navigation} />
@@ -446,14 +461,14 @@ const styles = StyleSheet.create({
   // Section headers
   sectionHeader: { color: '#888', fontWeight: '800', fontSize: 11, letterSpacing: 1.5, paddingHorizontal: 16, marginTop: 24, marginBottom: 12 },
 
-  lectureBtn: { marginHorizontal: 16, backgroundColor: '#1A1A24', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2A2A38', marginBottom: 10 },
+  lectureBtn: { marginHorizontal: 16, backgroundColor: '#0F0F14', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2A2A38', marginBottom: 10 },
   lectureBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   miniRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, marginBottom: 12 },
-  miniBtn: { backgroundColor: '#0F1A2E', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44', flex: 1, marginBottom: 0 },
+  miniBtn: { backgroundColor: '#0F0F14', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44', flex: 1, marginBottom: 0 },
   miniBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   reviewBtn: { marginHorizontal: 16, backgroundColor: '#F44336', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 16, elevation: 4 },
   reviewBtnText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
-  challengeBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 14, padding: 16, marginHorizontal: 16, marginBottom: 12, borderWidth: 1, borderColor: '#6C63FF44' },
+  challengeBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0F0F14', borderRadius: 14, padding: 16, marginHorizontal: 16, marginBottom: 12, borderWidth: 1, borderColor: '#6C63FF44' },
   challengeEmoji: { fontSize: 28, marginRight: 14 },
   challengeInfo: { flex: 1 },
   challengeTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
@@ -469,7 +484,7 @@ const styles = StyleSheet.create({
   toolsChevron: { color: '#888', fontSize: 12 },
 
   // Nightstand Mode (was inline)
-  nightstandBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0A0A14', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#6C63FF44', flexDirection: 'row', alignItems: 'center' },
+  nightstandBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0F0F14', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#6C63FF44', flexDirection: 'row', alignItems: 'center' },
   nightstandEmoji: { fontSize: 24, marginRight: 12 },
   nightstandInfo: { flex: 1 },
   nightstandTitle: { color: '#6C63FF', fontWeight: '800', fontSize: 14, textTransform: 'uppercase' },

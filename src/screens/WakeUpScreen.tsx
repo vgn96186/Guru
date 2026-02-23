@@ -6,8 +6,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'WakeUp'>;
-
 type WakeUpPhase = 'breathe' | 'ground' | 'fog_check' | 'done';
+
+const PHASE_LABELS: Record<WakeUpPhase, { label: string; step: number; total: number }> = {
+  breathe: { label: 'Breathe', step: 1, total: 3 },
+  ground: { label: 'Ground', step: 2, total: 3 },
+  fog_check: { label: 'Check', step: 3, total: 3 },
+  done: { label: 'Done', step: 3, total: 3 },
+};
 
 export default function WakeUpScreen() {
   const navigation = useNavigation<Nav>();
@@ -72,6 +78,9 @@ export default function WakeUpScreen() {
         
         {phase === 'breathe' && (
           <View style={styles.centerBox}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressText}>Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}</Text>
+            </View>
             <Text style={styles.title}>Morning Intercept</Text>
             <Text style={styles.sub}>Before the dopamine hits, let's ground.</Text>
             
@@ -84,6 +93,9 @@ export default function WakeUpScreen() {
 
         {phase === 'ground' && (
           <View style={styles.centerBox}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressText}>Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}</Text>
+            </View>
             <Text style={styles.emoji}>🌱</Text>
             <Text style={styles.title}>Grounding</Text>
             <Text style={styles.groundText}>{groundingPrompts[groundStep]}</Text>
@@ -105,6 +117,9 @@ export default function WakeUpScreen() {
 
         {phase === 'fog_check' && (
           <View style={styles.centerBox}>
+            <View style={styles.progressRow}>
+              <Text style={styles.progressText}>Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}</Text>
+            </View>
             <Text style={styles.emoji}>🧠</Text>
             <Text style={styles.title}>How is the brain fog today?</Text>
             
@@ -139,6 +154,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   container: { flex: 1, padding: 24, justifyContent: 'center' },
   centerBox: { alignItems: 'center' },
+  progressRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
+  progressText: { color: '#6C63FF', fontSize: 14, fontWeight: '700' },
   emoji: { fontSize: 64, marginBottom: 20 },
   title: { color: '#fff', fontSize: 24, fontWeight: '800', textAlign: 'center', marginBottom: 8 },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 60 },

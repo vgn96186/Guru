@@ -225,6 +225,7 @@ export default function SettingsScreen() {
   const [idleTimeout, setIdleTimeout] = useState('2');
   const [breakDuration, setBreakDuration] = useState('5');
   const [notifHour, setNotifHour] = useState('7');
+  const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>('normal');
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -274,6 +275,7 @@ export default function SettingsScreen() {
       setIdleTimeout((profile.idleTimeoutMinutes ?? 2).toString());
       setBreakDuration((profile.breakDurationMinutes ?? 5).toString());
       setNotifHour((profile.notificationHour ?? 7).toString());
+      setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
       if (profile.openrouterApiKey) setValidation('success');
     }
@@ -336,6 +338,7 @@ export default function SettingsScreen() {
         idleTimeoutMinutes: Math.min(60, Math.max(1, parseInt(idleTimeout) || 2)),
         breakDurationMinutes: Math.min(30, Math.max(1, parseInt(breakDuration) || 5)),
         notificationHour: Math.min(23, Math.max(0, parseInt(notifHour) || 7)),
+        guruFrequency,
         focusSubjectIds,
       });
 
@@ -587,6 +590,23 @@ export default function SettingsScreen() {
             placeholderTextColor="#444"
           />
           <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
+          <Label text="Guru presence frequency" />
+          <View style={styles.frequencyRow}>
+            {(['rare', 'normal', 'frequent', 'off'] as const).map(freq => (
+              <TouchableOpacity
+                key={freq}
+                style={[styles.freqBtn, guruFrequency === freq && styles.freqBtnActive]}
+                onPress={() => setGuruFrequency(freq)}
+              >
+                <Text style={[styles.freqText, guruFrequency === freq && styles.freqTextActive]}>
+                  {freq.charAt(0).toUpperCase() + freq.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.hint}>
+            How often Guru sends ambient messages during sessions. Rare: every 30min, Normal: every 20min, Frequent: every 10min.
+          </Text>
           <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
             <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
           </TouchableOpacity>
@@ -787,11 +807,15 @@ export default function SettingsScreen() {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children, initiallyExpanded = true }: { title: string; children: React.ReactNode; initiallyExpanded?: boolean }) {
+  const [expanded, setExpanded] = useState(initiallyExpanded);
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionContent}>{children}</View>
+      <TouchableOpacity style={styles.sectionHeader} onPress={() => setExpanded(!expanded)} activeOpacity={0.8}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={styles.sectionToggle}>{expanded ? '▼' : '▶'}</Text>
+      </TouchableOpacity>
+      {expanded && <View style={styles.sectionContent}>{children}</View>}
     </View>
   );
 }
@@ -824,7 +848,9 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 60 },
   title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 20, marginTop: 8 },
   section: { marginBottom: 24 },
-  sectionTitle: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  sectionTitle: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  sectionToggle: { color: '#6C63FF', fontSize: 12, fontWeight: '700' },
   sectionContent: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16 },
   label: { color: '#9E9E9E', fontSize: 13, marginBottom: 6, marginTop: 8 },
   input: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 4 },
@@ -852,6 +878,11 @@ const styles = StyleSheet.create({
   backupBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF66' },
   backupBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   backupDate: { color: '#555', fontSize: 11, textAlign: 'center', fontStyle: 'italic', marginBottom: 8 },
+  frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
+  freqBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#2A2A38' },
+  freqBtnActive: { backgroundColor: '#6C63FF33', borderColor: '#6C63FF' },
+  freqText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
+  freqTextActive: { color: '#6C63FF', fontWeight: '700' },
   footer: { color: '#333', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   typeChip: { backgroundColor: '#0F0F14', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#2A2A38', flexDirection: 'row', alignItems: 'center' },

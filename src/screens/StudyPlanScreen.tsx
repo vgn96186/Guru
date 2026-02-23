@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generateStudyPlan, type DailyPlan, type StudyPlanSummary } from '../services/studyPlanner';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 
+type Nav = NativeStackNavigationProp<HomeStackParamList>;
+
 export default function StudyPlanScreen() {
+  const navigation = useNavigation<Nav>();
   const [plan, setPlan] = useState<DailyPlan[]>([]);
   const [summary, setSummary] = useState<StudyPlanSummary | null>(null);
   const { profile } = useAppStore();
@@ -77,6 +83,9 @@ export default function StudyPlanScreen() {
                   item.type === 'deep_dive' && styles.rowDeep
                 ]}
                 activeOpacity={0.7}
+                onPress={() => {
+                  navigation.navigate('Session', { mood: 'good', mode: 'focus' });
+                }}
               >
                 <View style={[styles.dot, { backgroundColor: item.topic.subjectColor }]} />
                 <View style={{ flex: 1 }}>
@@ -88,7 +97,10 @@ export default function StudyPlanScreen() {
                   </View>
                   <Text style={styles.topicSub}>{item.topic.subjectName}</Text>
                 </View>
-                <Text style={styles.topicTime}>{item.duration}m</Text>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={styles.topicTime}>{item.duration}m</Text>
+                  <Text style={styles.startHint}>Tap to start →</Text>
+                </View>
               </TouchableOpacity>
             ))}
             
@@ -138,6 +150,7 @@ const styles = StyleSheet.create({
   topicName: { color: '#E0E0E0', fontSize: 14, fontWeight: '600' },
   topicSub: { color: '#666', fontSize: 11, marginTop: 2 },
   topicTime: { color: '#555', fontSize: 12, fontWeight: '600' },
+  startHint: { color: '#6C63FF', fontSize: 10, marginTop: 2 },
   
   tagReview: { fontSize: 9, color: '#4CAF50', fontWeight: '900', backgroundColor: '#4CAF5022', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
   tagDeep: { fontSize: 9, color: '#F44336', fontWeight: '900', backgroundColor: '#F4433622', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },

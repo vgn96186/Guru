@@ -8,6 +8,7 @@ interface GuruPresenceOptions {
   apiKey: string;
   orKey?: string;
   isActive: boolean;
+  frequency?: 'rare' | 'normal' | 'frequent' | 'off';
 }
 
 interface GuruPresenceReturn {
@@ -17,7 +18,7 @@ interface GuruPresenceReturn {
   triggerEvent: (type: GuruEventType) => void;
 }
 
-export function useGuruPresence({ topicNames, apiKey, orKey, isActive }: GuruPresenceOptions): GuruPresenceReturn {
+export function useGuruPresence({ topicNames, apiKey, orKey, isActive, frequency = 'normal' }: GuruPresenceOptions): GuruPresenceReturn {
   const [currentMessage, setCurrentMessage] = useState<string | null>(null);
   const presencePulse = useRef(new Animated.Value(1)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -78,15 +79,25 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive }: GuruPre
     showMessage(msg.text);
   }, [showMessage]);
 
-  // Periodic ambient messages: first fires at 2 min, then every 20 min
+  // Periodic ambient messages based on frequency setting
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || frequency === 'off') return;
+    
+    // Define timing based on frequency
+    const timings = {
+      rare: { first: 5 * 60 * 1000, interval: 30 * 60 * 1000 },    // 5min first, 30min repeat
+      normal: { first: 2 * 60 * 1000, interval: 20 * 60 * 1000 }, // 2min first, 20min repeat
+      frequent: { first: 30 * 1000, interval: 10 * 60 * 1000 },    // 30sec first, 10min repeat
+    };
+    
+    const { first, interval } = timings[frequency];
+    
     const firstTimer = setTimeout(() => {
       triggerEvent('periodic');
-    }, 2 * 60 * 1000);
-    const interval = setInterval(() => triggerEvent('periodic'), 20 * 60 * 1000);
-    return () => { clearTimeout(firstTimer); clearInterval(interval); };
-  }, [isActive, triggerEvent]);
+    }, first);
+    const intervalTimer = setInterval(() => triggerEvent('periodic'), interval);
+    return () => { clearTimeout(firstTimer); clearInterval(intervalTimer); };
+  }, [isActive, frequency, triggerEvent]);
 
   return { currentMessage, presencePulse, toastOpacity, triggerEvent };
 }

@@ -44,7 +44,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>LAUNCH & LOG</Text>
-        <Text style={styles.subtitle}>Track study time in other apps</Text>
+        <Text style={styles.subtitle}>Tap to open · Hold to log session</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {EXTERNAL_APPS.map(app => (

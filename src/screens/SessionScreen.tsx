@@ -12,6 +12,7 @@ import { fetchContent, prefetchTopicContent } from '../services/aiService';
 import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession } from '../db/queries/sessions';
 import { updateTopicProgress } from '../db/queries/topics';
+import { setContentFlagged } from '../db/queries/aiCache';
 import { getDailyLog, updateStreak } from '../db/queries/progress';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
@@ -57,6 +58,7 @@ export default function SessionScreen() {
     apiKey: profile?.openrouterApiKey ?? '',
     orKey: profile?.openrouterKey ?? undefined,
     isActive: isStudying && (profile?.bodyDoublingEnabled ?? true),
+    frequency: profile?.guruFrequency ?? 'normal',
   });
 
   const idleTimeout = (profile?.idleTimeoutMinutes ?? 2) * 60 * 1000;
@@ -222,6 +224,22 @@ export default function SessionScreen() {
     ]);
   }
 
+  function handleMarkForReview() {
+    const item = getCurrentAgendaItem(store);
+    if (!item) return;
+    Alert.alert(
+      'Mark for Review?',
+      `Flag "${item.topic.name}" to review later in Flagged Review.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Flag Topic', onPress: () => {
+          setContentFlagged(item.topic.id, 'manual', true);
+          Alert.alert('Flagged', 'Topic added to your review queue.');
+        }}
+      ]
+    );
+  }
+
   async function finishSession() {
     if (timerRef.current) clearInterval(timerRef.current);
     const { sessionId, completedTopicIds, quizResults, agenda } = store;
@@ -327,7 +345,12 @@ export default function SessionScreen() {
 
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.topicProgress}>Topic {topicNum}/{totalTopics}</Text>
+          <View style={styles.phaseRow}>
+            <Text style={styles.phaseBadge}>
+              {store.isPaused ? '⏸️ Paused' : store.isOnBreak ? '☕ Break' : store.sessionState === 'studying' ? '📖 Studying' : store.sessionState === 'planning' ? '📋 Planning' : store.sessionState === 'agenda_reveal' ? '✨ Starting' : '💤 Done'}
+            </Text>
+            <Text style={styles.topicProgress}>Topic {topicNum}/{totalTopics}</Text>
+          </View>
           <Text style={styles.topicName}>{item.topic.name}</Text>
           <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
         </View>
@@ -349,6 +372,11 @@ export default function SessionScreen() {
         <View style={styles.menuOverlay}>
           <TouchableOpacity style={styles.menuBackdrop} onPress={() => setMenuVisible(false)} activeOpacity={1} />
           <View style={styles.menuDropdown}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleMarkForReview(); }}>
+              <Text style={styles.menuItemEmoji}>🚩</Text>
+              <Text style={styles.menuItemText}>Mark for Review</Text>
+            </TouchableOpacity>
+            <View style={styles.menuDivider} />
             <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleDowngrade(); }}>
               <Text style={styles.menuItemEmoji}>🆘</Text>
               <Text style={styles.menuItemText}>Downgrade to Sprint</Text>
@@ -440,6 +468,8 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   topicProgress: { color: '#9E9E9E', fontSize: 11, marginBottom: 2 },
+  phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  phaseBadge: { color: '#6C63FF', fontSize: 11, fontWeight: '700', backgroundColor: '#6C63FF22', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   topicName: { color: '#fff', fontWeight: '800', fontSize: 18 },
   subjectTag: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
   menuBtn: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 },

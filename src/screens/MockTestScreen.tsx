@@ -118,26 +118,33 @@ export default function MockTestScreen() {
 
           <Text style={styles.setupLabel}>How many questions?</Text>
           <View style={styles.countGrid}>
-            {[10, 20, 50, 100].map(c => (
-              <TouchableOpacity
-                key={c}
-                style={[
-                  styles.countBtn, 
-                  selectedCount === c && styles.countBtnActive,
-                  c > availableCount && styles.countBtnDisabled
-                ]}
-                disabled={c > availableCount}
-                onPress={() => setSelectedCount(c > availableCount ? availableCount : c)}
-              >
-                <Text style={[
-                  styles.countBtnText, 
-                  selectedCount === c && styles.countBtnTextActive,
-                  c > availableCount && styles.countBtnTextDisabled
-                ]}>
-                  {c > availableCount ? availableCount : c}
-                </Text>
-              </TouchableOpacity>
-            ))}
+            {[10, 20, 50, 100].map(c => {
+              const isUnlocked = c <= availableCount;
+              const needsMore = c - availableCount;
+              return (
+                <TouchableOpacity
+                  key={c}
+                  style={[
+                    styles.countBtn, 
+                    selectedCount === c && styles.countBtnActive,
+                    !isUnlocked && styles.countBtnLocked
+                  ]}
+                  disabled={!isUnlocked}
+                  onPress={() => setSelectedCount(c)}
+                >
+                  <Text style={[
+                    styles.countBtnText, 
+                    selectedCount === c && styles.countBtnTextActive,
+                    !isUnlocked && styles.countBtnTextLocked
+                  ]}>
+                    {c}
+                  </Text>
+                  {!isUnlocked && (
+                    <Text style={styles.lockHint}>+{needsMore} more</Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
             <TouchableOpacity
               style={[styles.countBtn, selectedCount === availableCount && styles.countBtnActive]}
               onPress={() => setSelectedCount(availableCount)}
@@ -319,7 +326,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerNum: { color: '#6C63FF', fontWeight: '800', fontSize: 16 },
-  headerTopic: { flex: 1, color: '#9E9E9E', fontSize: 11 },
+  headerTopic: { flex: 1, color: '#9E9E9E', fontSize: 13 },
   skipBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#2A2A38', borderRadius: 8 },
   skipBtnText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
   progressTrack: { height: 3, backgroundColor: '#2A2A38' },
@@ -334,19 +341,19 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     marginBottom: 10,
   },
-  optionLetter: { color: '#9E9E9E', fontWeight: '800', fontSize: 14, marginRight: 10, width: 16 },
-  optionText: { flex: 1, fontSize: 14, lineHeight: 20 },
+  optionLetter: { color: '#9E9E9E', fontWeight: '800', fontSize: 15, marginRight: 10, width: 16 },
+  optionText: { flex: 1, fontSize: 15, lineHeight: 22 },
   explanation: { backgroundColor: '#1A1A2E', borderRadius: 12, padding: 14, marginTop: 12, marginBottom: 8, borderWidth: 1, borderColor: '#6C63FF44' },
-  explanationTitle: { color: '#6C63FF', fontWeight: '700', fontSize: 13, marginBottom: 6 },
-  explanationText: { color: '#ccc', fontSize: 13, lineHeight: 20 },
+  explanationTitle: { color: '#6C63FF', fontWeight: '700', fontSize: 14, marginBottom: 6 },
+  explanationText: { color: '#ccc', fontSize: 14, lineHeight: 20 },
   markingBadge: { alignItems: 'center', marginVertical: 10 },
-  markingText: { color: '#555', fontSize: 11 },
+  markingText: { color: '#555', fontSize: 13 },
   confirmBtn: { backgroundColor: '#6C63FF', borderRadius: 14, padding: 16, alignItems: 'center', marginTop: 8 },
   confirmBtnSkip: { backgroundColor: '#2A2A38' },
-  confirmBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  confirmBtnText: { color: '#fff', fontWeight: '800', fontSize: 17 },
   // Results
   resultsContent: { padding: 16, paddingBottom: 60 },
-  resultsTitle: { color: '#fff', fontSize: 26, fontWeight: '900', textAlign: 'center', marginBottom: 20, marginTop: 8 },
+  resultsTitle: { color: '#fff', fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 20, marginTop: 8 },
   scoreCircle: { alignItems: 'center', backgroundColor: '#1A1A24', borderRadius: 24, padding: 24, marginBottom: 16 },
   scoreNum: { fontSize: 56, fontWeight: '900' },
   scoreMax: { color: '#9E9E9E', fontSize: 16 },
@@ -354,15 +361,15 @@ const styles = StyleSheet.create({
   scoreBreakdown: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   scoreCell: { flex: 1, backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, alignItems: 'center' },
   scoreCellNum: { fontSize: 26, fontWeight: '900' },
-  scoreCellLabel: { color: '#9E9E9E', fontSize: 11, marginTop: 4, textAlign: 'center' },
-  markingNote: { color: '#555', fontSize: 11, textAlign: 'center', marginBottom: 20 },
+  scoreCellLabel: { color: '#9E9E9E', fontSize: 12, marginTop: 4, textAlign: 'center' },
+  markingNote: { color: '#555', fontSize: 12, textAlign: 'center', marginBottom: 20 },
   reviewTitle: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 },
   reviewRow: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 4 },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   reviewNum: { color: '#9E9E9E', fontWeight: '700', fontSize: 12 },
   reviewStatus: { fontWeight: '800', fontSize: 14 },
   reviewQ: { color: '#fff', fontSize: 14, lineHeight: 20, marginBottom: 6 },
-  reviewTopic: { color: '#6C63FF', fontSize: 11, marginBottom: 6 },
+  reviewTopic: { color: '#6C63FF', fontSize: 12, marginBottom: 6 },
   reviewAns: { fontSize: 12, marginBottom: 2 },
   reviewCorrect: { color: '#4CAF50', fontSize: 12, marginBottom: 4 },
   reviewExplain: { color: '#9E9E9E', fontSize: 12, lineHeight: 18 },
@@ -379,12 +386,13 @@ const styles = StyleSheet.create({
   setupSub: { color: '#9E9E9E', fontSize: 15, marginBottom: 40, textAlign: 'center' },
   setupLabel: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 16 },
   countGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 40 },
-  countBtn: { backgroundColor: '#1A1A24', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, borderWidth: 2, borderColor: '#2A2A38', minWidth: 70, alignItems: 'center' },
+  countBtn: { backgroundColor: '#1A1A24', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 16, borderWidth: 2, borderColor: '#2A2A38', minWidth: 70, alignItems: 'center' },
   countBtnActive: { borderColor: '#6C63FF', backgroundColor: '#1A1A3A' },
-  countBtnDisabled: { opacity: 0.3 },
+  countBtnLocked: { borderColor: '#333', backgroundColor: '#0F0F14', opacity: 0.7 },
   countBtnText: { color: '#9E9E9E', fontWeight: '700', fontSize: 15 },
   countBtnTextActive: { color: '#fff' },
-  countBtnTextDisabled: { color: '#555' },
+  countBtnTextLocked: { color: '#555' },
+  lockHint: { color: '#6C63FF', fontSize: 10, marginTop: 4 },
   startBtn: { backgroundColor: '#6C63FF', borderRadius: 16, paddingHorizontal: 48, paddingVertical: 18, elevation: 4 },
   startBtnText: { color: '#fff', fontWeight: '800', fontSize: 18, letterSpacing: 0.5 },
 });

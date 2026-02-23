@@ -65,6 +65,14 @@ export default function CheckInScreen() {
     });
   }
 
+  function handleQuickStart() {
+    // Quick start with default mood and 30min availability
+    checkinToday('good');
+    setDailyAvailability(30);
+    refreshProfile();
+    navigation.replace('Tabs');
+  }
+
   function handleTimeSelect(minutes: number) {
     if (selectedMood) {
       checkinToday(selectedMood);
@@ -92,6 +100,11 @@ export default function CheckInScreen() {
           </View>
 
           <Text style={styles.question}>How are you feeling right now?</Text>
+
+          <TouchableOpacity style={styles.quickStartBtn} onPress={handleQuickStart}>
+            <Text style={styles.quickStartText}>⚡ Quick Start</Text>
+            <Text style={styles.quickStartSub}>Skip check-in · 30 min session</Text>
+          </TouchableOpacity>
 
           <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}>
             {MOODS.map(mood => {
@@ -195,6 +208,17 @@ const styles = StyleSheet.create({
   moodEmoji: { fontSize: 28, marginBottom: 6 },
   moodLabel: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   moodDesc: { color: '#9E9E9E', fontSize: 11, textAlign: 'center' },
+  quickStartBtn: {
+    backgroundColor: '#6C63FF22',
+    borderWidth: 1,
+    borderColor: '#6C63FF',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  quickStartText: { color: '#6C63FF', fontSize: 16, fontWeight: '700' },
+  quickStartSub: { color: '#6C63FF99', fontSize: 12, marginTop: 2 },
   subGreeting: { color: '#9E9E9E', fontSize: 16 },
   timeGrid: { gap: 12 },
   timeBtn: {

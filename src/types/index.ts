@@ -117,6 +117,7 @@ export interface UserProfile {
   idleTimeoutMinutes: number;
   breakDurationMinutes: number;
   notificationHour: number;
+  guruFrequency?: 'rare' | 'normal' | 'frequent' | 'off';
   focusSubjectIds: number[];
   quizCorrectCount?: number;
   lastBackupDate?: string | null;

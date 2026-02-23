@@ -13,13 +13,16 @@ const BOSS_HP = 100;
 const PLAYER_HP = 3;
 const DAMAGE_PER_HIT = 10;
 
+type Phase = 'select' | 'battle' | 'answer_feedback' | 'victory' | 'defeat';
+
 export default function BossBattleScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const refreshProfile = useAppStore(s => s.refreshProfile);
-  const [phase, setPhase] = useState<'select' | 'battle' | 'victory' | 'defeat'>('select');
+  const [phase, setPhase] = useState<Phase>('select');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [questions, setQuestions] = useState<MockQuestion[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
+  const [lastAnswer, setLastAnswer] = useState<{idx: number; correct: boolean} | null>(null);
   
   const [bossHp, setBossHp] = useState(BOSS_HP);
   const [playerHp, setPlayerHp] = useState(PLAYER_HP);
@@ -48,16 +51,17 @@ export default function BossBattleScreen() {
   function handleAnswer(idx: number) {
     const q = questions[currentQ];
     const isCorrect = idx === q.correctIndex;
-
+    setLastAnswer({idx, correct: isCorrect});
+    
     if (isCorrect) {
       const newBossHp = Math.max(0, bossHp - DAMAGE_PER_HIT);
       setBossHp(newBossHp);
       if (newBossHp === 0) {
         setPhase('victory');
-        addXp(500); // Big reward
+        addXp(500);
         refreshProfile();
       } else {
-        nextQuestion();
+        setPhase('answer_feedback');
       }
     } else {
       shakeScreen();
@@ -66,9 +70,21 @@ export default function BossBattleScreen() {
       if (newPlayerHp === 0) {
         setPhase('defeat');
       } else {
-        nextQuestion();
+        setPhase('answer_feedback');
       }
     }
+  }
+
+  function handleContinueAfterFeedback() {
+    setPhase('battle');
+    nextQuestion();
+  }
+
+  function handleRetreat() {
+    Alert.alert('Retreat?', 'Leave this boss fight and return later.', [
+      { text: 'Stay', style: 'cancel' },
+      { text: 'Retreat', style: 'destructive', onPress: () => navigation.goBack() }
+    ]);
   }
 
   function nextQuestion() {
@@ -148,8 +164,9 @@ export default function BossBattleScreen() {
     );
   }
 
-  // Battle Phase
+  // Battle Phase or Answer Feedback
   const q = questions[currentQ];
+  const isFeedback = phase === 'answer_feedback';
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -171,20 +188,44 @@ export default function BossBattleScreen() {
           </View>
         </View>
 
-        {/* Question */}
+        {/* Retreat button */}
+        <TouchableOpacity style={styles.retreatBtn} onPress={handleRetreat}>
+          <Text style={styles.retreatText}>↩ Retreat</Text>
+        </TouchableOpacity>
+
+        {/* Question or Feedback */}
         <ScrollView contentContainerStyle={styles.qContainer}>
-          <Text style={styles.qText}>{q.question}</Text>
-          <View style={styles.options}>
-            {q.options.map((opt, i) => (
-              <TouchableOpacity 
-                key={i} 
-                style={styles.optionBtn}
-                onPress={() => handleAnswer(i)}
-              >
-                <Text style={styles.optionText}>{opt}</Text>
+          {isFeedback && lastAnswer ? (
+            <View style={styles.feedbackContainer}>
+              <Text style={[styles.feedbackEmoji, lastAnswer.correct && { color: '#4CAF50' }]}>
+                {lastAnswer.correct ? '✓ Correct!' : '✗ Wrong!'}
+              </Text>
+              {!lastAnswer.correct && (
+                <>
+                  <Text style={styles.correctAnswer}>Answer: {q.options[q.correctIndex]}</Text>
+                  <Text style={styles.explanation}>{q.explanation}</Text>
+                </>
+              )}
+              <TouchableOpacity style={styles.continueBtn} onPress={handleContinueAfterFeedback}>
+                <Text style={styles.continueText}>Next →</Text>
               </TouchableOpacity>
-            ))}
-          </View>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.qText}>{q.question}</Text>
+              <View style={styles.options}>
+                {q.options.map((opt, i) => (
+                  <TouchableOpacity 
+                    key={i} 
+                    style={styles.optionBtn}
+                    onPress={() => handleAnswer(i)}
+                  >
+                    <Text style={styles.optionText}>{opt}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
         </ScrollView>
 
       </Animated.View>
@@ -222,4 +263,12 @@ const styles = StyleSheet.create({
   options: { gap: 12 },
   optionBtn: { backgroundColor: '#2A2A38', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#444' },
   optionText: { color: '#ddd', fontSize: 15, textAlign: 'center' },
+  retreatBtn: { position: 'absolute', top: 100, right: 16, padding: 8, backgroundColor: '#2A2A38', borderRadius: 8, borderWidth: 1, borderColor: '#444', zIndex: 10 },
+  retreatText: { color: '#9E9E9E', fontSize: 12, fontWeight: '600' },
+  feedbackContainer: { alignItems: 'center', paddingVertical: 20 },
+  feedbackEmoji: { fontSize: 48, marginBottom: 16, color: '#F44336' },
+  correctAnswer: { color: '#4CAF50', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  explanation: { color: '#9E9E9E', fontSize: 14, textAlign: 'center', lineHeight: 22, marginBottom: 24, paddingHorizontal: 20 },
+  continueBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 40, paddingVertical: 16, borderRadius: 12, marginTop: 8 },
+  continueText: { color: '#fff', fontWeight: '800', fontSize: 16 },
 });

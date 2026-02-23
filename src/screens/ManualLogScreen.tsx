@@ -138,6 +138,19 @@ export default function ManualLogScreen() {
         />
 
         <Text style={styles.label}>Duration (minutes)</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.durationScroll}>
+          {[15, 30, 45, 60, 90].map(mins => (
+            <TouchableOpacity
+              key={mins}
+              style={[styles.durationChip, duration === mins.toString() && styles.durationChipActive]}
+              onPress={() => setDuration(mins.toString())}
+            >
+              <Text style={[styles.durationText, duration === mins.toString() && styles.durationTextActive]}>
+                {mins}m
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
         <TextInput
           style={styles.input}
           value={duration}
@@ -171,6 +184,14 @@ const styles = StyleSheet.create({
   appName: { color: '#9E9E9E', fontSize: 11, fontWeight: '600' },
   appNameActive: { color: '#fff' },
   subjectScroll: { flexDirection: 'row', marginBottom: 20 },
+  durationScroll: { flexDirection: 'row', marginBottom: 12, marginTop: 4 },
+  durationChip: {
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
+    backgroundColor: '#1A1A24', marginRight: 8, borderWidth: 1, borderColor: '#333'
+  },
+  durationChipActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
+  durationText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  durationTextActive: { color: '#fff', fontWeight: '700' },
   subjectChip: {
     paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
     backgroundColor: '#1A1A24', marginRight: 8, borderWidth: 1, borderColor: '#333'

@@ -108,26 +108,40 @@ export default function FlaggedReviewScreen() {
             const key = `${item.topicId}-${item.contentType}`;
             const isExpanded = expanded === key;
             return (
-              <TouchableOpacity key={key} style={styles.card} onPress={() => toggleExpand(key)} activeOpacity={0.85}>
+              <View key={key} style={styles.card}>
+                {/* Card header with unflag button - separate touch zone */}
                 <View style={styles.cardHeader}>
-                  <View style={styles.cardMeta}>
+                  <TouchableOpacity 
+                    style={styles.cardMeta} 
+                    onPress={() => toggleExpand(key)} 
+                    activeOpacity={0.85}
+                  >
                     <Text style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</Text>
                     <Text style={styles.cardSubject}>{item.subjectName}</Text>
-                  </View>
-                  <TouchableOpacity style={styles.unflagBtn} onPress={() => handleUnflag(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.unflagBtn} 
+                    onPress={() => handleUnflag(item)} 
+                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                    activeOpacity={0.7}
+                  >
                     <Text style={styles.unflagText}>✕</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.cardTopic}>{item.topicName}</Text>
-                <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
+                
+                {/* Main card body - tap to expand */}
+                <TouchableOpacity onPress={() => toggleExpand(key)} activeOpacity={0.85}>
+                  <Text style={styles.cardTopic}>{item.topicName}</Text>
+                  <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
 
-                {isExpanded && (
-                  <View style={styles.preview}>
-                    {renderPreview(item)}
-                  </View>
-                )}
-                <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
-              </TouchableOpacity>
+                  {isExpanded && (
+                    <View style={styles.preview}>
+                      {renderPreview(item)}
+                    </View>
+                  )}
+                  <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
+                </TouchableOpacity>
+              </View>
             );
           })}
         </ScrollView>

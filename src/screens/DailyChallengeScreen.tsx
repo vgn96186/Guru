@@ -76,7 +76,9 @@ export default function DailyChallengeScreen() {
 
     setLoadingMsg(`Generating ${combined.length} questions...`);
     const qs: ChallengeQuestion[] = [];
-    for (const topic of combined) {
+    for (let i = 0; i < combined.length; i++) {
+      const topic = combined[i];
+      setLoadingMsg(`Generating Question ${i + 1} of ${combined.length}...`);
       try {
         const content = await fetchContent(topic, 'quiz', apiKey, orKey);
         const q = (content as QuizContent).questions[0];

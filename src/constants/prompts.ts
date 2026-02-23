@@ -116,6 +116,16 @@ Return JSON:
 }`;
 }
 
+export function buildManualPrompt(topicName: string, subjectName: string): string {
+  return `Return strict JSON:
+{
+  "type": "manual",
+  "topicName": "${topicName}"
+}
+
+No other keys. No markdown. No extra text.`;
+}
+
 export function buildAgendaPrompt(
   candidates: Array<{ id: number; name: string; subject: string; priority: number; status: string; score: number }>,
   sessionMinutes: number,
@@ -233,6 +243,7 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
   teach_back: buildTeachBackPrompt,
   error_hunt: buildErrorHuntPrompt,
   detective: buildDetectivePrompt,
+  manual: buildManualPrompt,
 };
 
 export function getMoodContentTypes(mood: Mood): ContentType[] {

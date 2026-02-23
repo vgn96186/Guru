@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated } from 'react-native';
 import { generateGuruPresenceMessages } from '../services/aiService';
 import type { GuruEventType, GuruPresenceMessage } from '../services/aiService';
@@ -22,22 +22,22 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive }: GuruPre
   const presencePulse = useRef(new Animated.Value(1)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const messagesRef = useRef<GuruPresenceMessage[]>([]);
-  const hasGenerated = useRef(false);
-  const lastTopicKey = useRef('');
+  const lastGeneratedKeyRef = useRef<string | null>(null);
   const isShowingRef = useRef(false);
   const pulseAnimRef = useRef<Animated.CompositeAnimation | null>(null);
 
-  // Generate presence messages when topics change materially
+  const topicsKey = useMemo(() => topicNames.join('|'), [topicNames]);
+
+  // Generate presence messages once when topics are available
   useEffect(() => {
-    if (topicNames.length === 0 || !apiKey) return;
-    const key = topicNames.slice().sort().join('|');
-    if (hasGenerated.current && key === lastTopicKey.current) return;
-    hasGenerated.current = true;
-    lastTopicKey.current = key;
+    if (!apiKey) return;
+    if (topicNames.length === 0) return;
+    if (lastGeneratedKeyRef.current === topicsKey) return;
+    lastGeneratedKeyRef.current = topicsKey;
     generateGuruPresenceMessages(topicNames, topicNames, apiKey, orKey)
       .then(msgs => { messagesRef.current = msgs; })
       .catch(() => {});
-  }, [topicNames, apiKey, orKey]);
+  }, [topicsKey, topicNames, apiKey, orKey]);
 
   // Pulse animation — run when active, pause otherwise
   useEffect(() => {
@@ -56,18 +56,7 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive }: GuruPre
     }
   }, [isActive]);
 
-  // Periodic ambient messages: first fires at 2 min, then every 20 min
-  useEffect(() => {
-    if (!isActive) return;
-    const firstTimer = setTimeout(() => {
-      triggerEvent('periodic');
-    }, 2 * 60 * 1000);
-    const interval = setInterval(() => triggerEvent('periodic'), 20 * 60 * 1000);
-    return () => { clearTimeout(firstTimer); clearInterval(interval); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive]);
-
-  function showMessage(text: string) {
+  const showMessage = useCallback((text: string) => {
     if (isShowingRef.current) return;
     isShowingRef.current = true;
     setCurrentMessage(text);
@@ -79,15 +68,25 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive }: GuruPre
       setCurrentMessage(null);
       isShowingRef.current = false;
     });
-  }
+  }, [toastOpacity]);
 
-  function triggerEvent(type: GuruEventType) {
+  const triggerEvent = useCallback((type: GuruEventType) => {
     if (isShowingRef.current) return;
     const matching = messagesRef.current.filter(m => m.trigger === type);
     if (matching.length === 0) return;
     const msg = matching[Math.floor(Math.random() * matching.length)];
     showMessage(msg.text);
-  }
+  }, [showMessage]);
+
+  // Periodic ambient messages: first fires at 2 min, then every 20 min
+  useEffect(() => {
+    if (!isActive) return;
+    const firstTimer = setTimeout(() => {
+      triggerEvent('periodic');
+    }, 2 * 60 * 1000);
+    const interval = setInterval(() => triggerEvent('periodic'), 20 * 60 * 1000);
+    return () => { clearTimeout(firstTimer); clearInterval(interval); };
+  }, [isActive, triggerEvent]);
 
   return { currentMessage, presencePulse, toastOpacity, triggerEvent };
 }

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, BackHandler, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 
 export default function LockdownScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<any>();
-  const [timeLeft, setTimeLeft] = useState(route.params?.duration ?? 300); // 5 mins default
+  const route = useRoute<RouteProp<RootStackParamList, 'Lockdown'>>();
+  const [timeLeft, setTimeLeft] = useState(route.params.duration ?? 300); // 5 mins default
   const [attempts, setAttempts] = useState(0);
 
   useEffect(() => {

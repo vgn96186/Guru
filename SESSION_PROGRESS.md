@@ -1,5 +1,51 @@
 # Guru App — Session Progress Log
+Last updated: 2026-02-23 (Session 4 — Production Hardening)
+
+---
+
+## Session 4 — Production Hardening & Resilience (2026-02-23)
+
+This session focused on implementing 7 critical "must-have" features to move the app from a functional prototype to a robust, production-ready tool, addressing data safety, offline capability, and user experience friction.
+
+### 1. Implemented Session Recovery
+**File:** `src/store/useSessionStore.ts`
+- **Problem:** App crashes or background kills would wipe the user's active session progress.
+- **Fix:** Integrated `zustand/middleware/persist` with `@react-native-async-storage/async-storage`. The entire session state (current topic, progress, etc.) is now automatically saved to disk, ensuring that users can resume an interrupted session seamlessly.
+
+### 2. Added Offline-First Fallback Mode
+**Files:** `src/screens/SessionScreen.tsx`, `src/screens/ContentCard.tsx`, `src/types/index.ts`
+- **Problem:** AI or network failures would completely block the user from studying.
+- **Fix:** Created a new "Manual Review" content type. If an AI call fails, the user is now presented with an option to continue their session offline. This card prompts them to mentally review the topic and then rate their confidence, keeping the study loop intact.
+
+### 3. Built Permissions & Diagnostics UI
+**File:** `src/screens/SettingsScreen.tsx`
+- **Problem:** Critical features (notifications, audio transcription, break overlays) could fail silently if permissions were not granted.
+- **Fix:** Added a new "Permissions & Diagnostics" section in Settings. This UI actively checks and displays the status of Notifications, Microphone, and Draw Over Apps permissions, with "Fix" buttons that deep-link to the relevant system settings.
+
+### 4. Implemented Crash Reporting (ErrorBoundary)
+**Files:** `src/components/ErrorBoundary.tsx`, `App.tsx`
+- **Problem:** A rendering error in any single component could crash the entire application.
+- **Fix:** Created a global `ErrorBoundary` component. The root `App.tsx` is now wrapped in this boundary, which will catch any UI-related crashes and display a user-friendly error screen instead of a native crash, improving app stability.
+
+### 5. Enhanced Data Safety (Backup Timestamps)
+**Files:** `src/screens/SettingsScreen.tsx`, `src/db/queries/progress.ts`, `src/db/schema.ts`
+- **Problem:** Users had no confirmation of when their last successful backup was.
+- **Fix:** Added a `last_backup_date` field to the `user_profile` table. The Settings UI now displays the timestamp of the last successful backup, giving users confidence in their data's safety.
+
+### 6. Corrected Stale AI Messages
+**File:** `src/hooks/useGuruPresence.ts`
+- **Problem:** The `useGuruPresence` hook would not regenerate its AI-powered "ambient messages," even when the topics in the session changed, leading to stale and irrelevant tips.
+- **Fix:** Removed the faulty "generate-once" guard and replaced it with logic that correctly re-generates messages whenever the list of topics for the current session changes.
+
+### 7. Fixed TypeScript and Code Quality Issues
+**Files:** `src/screens/BreakEnforcerScreen.tsx`, `src/screens/LockdownScreen.tsx`, various services.
+- **Problem:** Remnants of `useRoute<any>` and verbose `console.log` statements remained in the codebase.
+- **Fix:** Replaced all instances of `any` with strict `RouteProp` types from React Navigation. Commented out development-only `console.log` statements across the application to clean up production logs.
+
+---
+# Guru App — Session Progress Log
 Last updated: 2026-02-23 (Session 3 — Full Codebase Audit & Fix)
+
 
 ---
 

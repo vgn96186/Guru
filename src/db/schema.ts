@@ -118,7 +118,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
   visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
   face_tracking_enabled INTEGER NOT NULL DEFAULT 0,
-  quiz_correct_count INTEGER NOT NULL DEFAULT 0
+  quiz_correct_count INTEGER NOT NULL DEFAULT 0,
+  last_backup_date TEXT
 )`;
 
 export const CREATE_BRAIN_DUMPS = `

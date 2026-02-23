@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { initDatabase } from './src/db/database';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useAppStore } from './src/store/useAppStore';
+import ErrorBoundary from './src/components/ErrorBoundary';
 import LoadingOrb from './src/components/LoadingOrb';
 import { registerBackgroundFetch } from './src/services/backgroundTasks';
 
@@ -32,7 +33,7 @@ export default function App() {
       try {
         await SplashScreen.preventAutoHideAsync();
         await initDatabase();
-        await registerBackgroundFetch().catch(e => console.log('Background task not registered:', e));
+        await registerBackgroundFetch().catch((e: unknown) => console.log('Background task not registered:', e));
 
         setDbReady(true);
       } catch (e) {
@@ -63,7 +64,11 @@ export default function App() {
     );
   }
 
-  return <AppContent />;
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
+  );
 }
 
 const styles = StyleSheet.create({

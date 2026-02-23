@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, AppState, BackHandler, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
@@ -11,8 +11,8 @@ import { useAppStore } from '../store/useAppStore';
 
 export default function BreakEnforcerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const route = useRoute<any>();
-  const [timeLeft, setTimeLeft] = useState(route.params?.durationSeconds ?? 300);
+  const route = useRoute<RouteProp<RootStackParamList, 'BreakEnforcer'>>();
+  const [timeLeft, setTimeLeft] = useState(route.params.durationSeconds ?? 300);
   const profile = useAppStore(s => s.profile);
   const [isOver, setIsOver] = useState(false);
 

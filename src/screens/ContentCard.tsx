@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import type {
   AIContent, KeyPointsContent, QuizContent, StoryContent,
-  MnemonicContent, TeachBackContent, ErrorHuntContent, DetectiveContent,
+  MnemonicContent, TeachBackContent, ErrorHuntContent, DetectiveContent, ManualContent
 } from '../types';
 
 import { askGuru } from '../services/aiService';
@@ -53,6 +53,7 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
       case 'teach_back':return <TeachBackCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'error_hunt':return <ErrorHuntCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'detective': return <DetectiveCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'manual':    return <ManualReviewCard content={content} onDone={onDone} onSkip={onSkip} />;
       default:          return null;
     }
   })();
@@ -450,6 +451,44 @@ function DetectiveCard({ content, onDone, onSkip }: { content: DetectiveContent 
   );
 }
 
+// ── Manual Review ──────────────────────────────────────────────────
+
+function ManualReviewCard({ content, onDone, onSkip }: { content: ManualContent } & Omit<Props, 'content'>) {
+  const [showRating, setShowRating] = useState(false);
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+      <Text style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</Text>
+      <Text style={s.cardTitle}>{content.topicName}</Text>
+      
+      <View style={s.offlineBox}>
+        <Text style={s.offlineEmoji}>📡❌</Text>
+        <Text style={s.offlineText}>
+          Guru is offline or AI is unavailable. Spend 2-5 minutes recalling everything you know about this topic.
+        </Text>
+      </View>
+
+      <Text style={s.promptText}>
+        Close your eyes and try to visualize:
+        {'\n'}• Classification / Types
+        {'\n'}• Clinical presentation
+        {'\n'}• Gold standard diagnosis
+        {'\n'}• First-line treatment
+      </Text>
+
+      {!showRating ? (
+        <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
+          <Text style={s.doneBtnText}>I've reviewed it →</Text>
+        </TouchableOpacity>
+      ) : (
+        <ConfidenceRating onRate={onDone} />
+      )}
+      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+        <Text style={s.skipText}>Skip topic</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
 const s = StyleSheet.create({
   scroll: { flex: 1 },
   container: { padding: 20, paddingBottom: 60 },
@@ -508,4 +547,8 @@ const s = StyleSheet.create({
   flagBtnText: { color: '#FF9800', fontWeight: '600', fontSize: 12 },
   askGuruBtn: { backgroundColor: '#1A1A2E', borderColor: '#6C63FF66', borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 8, elevation: 4 },
   askGuruText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
+  offlineBox: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: '#333' },
+  offlineEmoji: { fontSize: 32, textAlign: 'center', marginBottom: 12 },
+  offlineText: { color: '#9E9E9E', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  promptText: { color: '#E0E0E0', fontSize: 15, lineHeight: 28, backgroundColor: '#0A0A14', padding: 20, borderRadius: 12, marginBottom: 32 },
 });

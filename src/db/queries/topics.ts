@@ -27,7 +27,7 @@ export function getAllSubjects(): Subject[] {
     id: number; name: string; short_code: string; color_hex: string;
     inicet_weight: number; neet_weight: number; display_order: number;
   }>('SELECT * FROM subjects ORDER BY display_order');
-  if (__DEV__) console.log(`[DB] Found ${rows.length} subjects`);
+// if (__DEV__) console.log(`[DB] Found ${rows.length} subjects`);
   return rows.map(r => ({
     id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
     inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
@@ -60,7 +60,7 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
   const id = Number(subjectId);
   if (isNaN(id)) return [];
 
-  if (__DEV__) console.log(`[DB] Fetching topics for subject_id: ${id}`);
+// if (__DEV__) console.log(`[DB] Fetching topics for subject_id: ${id}`);
   
   const rows = db.getAllSync<any>(`
     SELECT 
@@ -87,7 +87,7 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
     ORDER BY t.inicet_priority DESC, t.name
   `, [id]);
 
-  if (__DEV__) console.log(`[DB] Subject ${id} has ${rows.length} topics`);
+// if (__DEV__) console.log(`[DB] Subject ${id} has ${rows.length} topics`);
 
   return rows.map(mapTopicRow);
 }
@@ -227,7 +227,7 @@ export function getSubjectCoverage(): Array<{ subjectId: number; total: number; 
      LEFT JOIN topic_progress p ON t.id = p.topic_id
      GROUP BY t.subject_id`,
   );
-  if (__DEV__) console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
+// if (__DEV__) console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
   return rows;
 }
 

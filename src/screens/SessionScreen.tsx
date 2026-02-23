@@ -31,6 +31,7 @@ export default function SessionScreen() {
   const { mood, mode: forcedMode, forcedMinutes } = route.params as { mood: Mood; mode?: SessionMode; forcedMinutes?: number };
 
   const store = useSessionStore();
+  const storeRef = useRef(store);
   const profile = useAppStore(s => s.profile);
   const dailyAvailability = useAppStore(s => s.dailyAvailability);
   const refreshProfile = useAppStore(s => s.refreshProfile);
@@ -44,6 +45,10 @@ export default function SessionScreen() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const isPausedRef = useRef(store.isPaused);
+
+  useEffect(() => {
+    storeRef.current = store;
+  }, [store]);
 
   const isStudying = store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused;
 
@@ -96,15 +101,20 @@ export default function SessionScreen() {
     isPausedRef.current = store.isPaused;
   }, [store.isPaused]);
 
+  const startPlanningRef = useRef<() => void>(() => {});
+
   useEffect(() => {
-    store.resetSession();
-    startPlanning();
+    startPlanningRef.current = startPlanning;
+  }, [startPlanning]);
+
+  useEffect(() => {
+    storeRef.current.resetSession();
+    startPlanningRef.current();
     timerRef.current = setInterval(() => {
       setElapsedSeconds(s => s + 1);
       if (!isPausedRef.current) setActiveElapsedSeconds(s => s + 1);
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -145,6 +155,18 @@ export default function SessionScreen() {
       store.setSessionState('agenda_reveal');
       setTimeout(() => store.setSessionState('studying'), 3000);
     } catch (e: any) { setAiError(e?.message ?? 'Could not plan session'); }
+  }
+
+  function handleStartManualReview() {
+    setAiError(null);
+    const item = getCurrentAgendaItem(store);
+    if (item) {
+      store.setCurrentContent({ type: 'manual', topicName: item.topic.name });
+    } else {
+      // If we failed during planning, we need a basic agenda
+      // This is more complex, for now just skip to home if no agenda
+      navigation.goBack();
+    }
   }
 
   function handleContentDone() {
@@ -223,7 +245,10 @@ export default function SessionScreen() {
           <Text style={styles.errorTitle}>AI Unavailable</Text>
           <Text style={styles.errorMsg}>{aiError}</Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => { setAiError(null); !store.agenda ? startPlanning() : store.setCurrentContent(null); }}>
-            <Text style={styles.retryBtnText}>Retry</Text>
+            <Text style={styles.retryBtnText}>Retry AI</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.manualBtn} onPress={handleStartManualReview}>
+            <Text style={styles.manualBtnText}>Manual Review (Offline)</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.skipBtn} onPress={() => { setAiError(null); !store.agenda ? navigation.goBack() : handleContentDone(); }}>
             <Text style={styles.skipBtnText}>Skip to Next</Text>
@@ -464,6 +489,8 @@ const styles = StyleSheet.create({
   errorMsg: { color: '#9E9E9E', fontSize: 14, textAlign: 'center', marginBottom: 32, lineHeight: 20 },
   retryBtn: { backgroundColor: '#6C63FF', borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center' },
   retryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  manualBtn: { backgroundColor: '#2A1A1A', borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#F4433644' },
+  manualBtnText: { color: '#F44336', fontWeight: '800', fontSize: 16 },
   skipBtn: { backgroundColor: '#1A1A24', borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#FF9800' },
   skipBtnText: { color: '#FF9800', fontWeight: '700', fontSize: 16 },
   leaveBtn: { paddingVertical: 12 },

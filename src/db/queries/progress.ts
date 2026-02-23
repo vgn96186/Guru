@@ -14,7 +14,7 @@ export function getUserProfile(): UserProfile {
     idle_timeout_minutes: number; break_duration_minutes: number;
     notification_hour: number; focus_subject_ids: string;
     focus_audio_enabled: number; visual_timers_enabled: number; face_tracking_enabled: number;
-    quiz_correct_count: number;
+    quiz_correct_count: number; last_backup_date: string | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -28,7 +28,7 @@ export function getUserProfile(): UserProfile {
       blockedContentTypes: [], idleTimeoutMinutes: 2,
       breakDurationMinutes: 5, notificationHour: 7, focusSubjectIds: [],
       focusAudioEnabled: false, visualTimersEnabled: false, faceTrackingEnabled: false,
-      quizCorrectCount: 0,
+      quizCorrectCount: 0, lastBackupDate: null,
     };
   }
 
@@ -58,6 +58,7 @@ export function getUserProfile(): UserProfile {
     visualTimersEnabled: (r.visual_timers_enabled ?? 0) === 1,
     faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
     quizCorrectCount: r.quiz_correct_count ?? 0,
+    lastBackupDate: r.last_backup_date,
   };
 }
 
@@ -73,6 +74,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
     focusAudioEnabled: 'focus_audio_enabled', visualTimersEnabled: 'visual_timers_enabled',
     faceTrackingEnabled: 'face_tracking_enabled', quizCorrectCount: 'quiz_correct_count',
+    lastBackupDate: 'last_backup_date',
   };
 
   const setClauses: string[] = [];

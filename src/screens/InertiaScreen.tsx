@@ -97,7 +97,7 @@ export default function InertiaScreen() {
         }
       }
     } catch (e) {
-      if (__DEV__) console.log('Failed to fetch micro win', e);
+// if (__DEV__) console.log('Failed to fetch micro win', e);
     }
   }
 

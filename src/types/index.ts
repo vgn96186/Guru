@@ -1,4 +1,4 @@
-export type ContentType = 'keypoints' | 'quiz' | 'story' | 'mnemonic' | 'teach_back' | 'error_hunt' | 'detective';
+export type ContentType = 'keypoints' | 'quiz' | 'story' | 'mnemonic' | 'teach_back' | 'error_hunt' | 'detective' | 'manual';
 
 export type TopicStatus = 'unseen' | 'seen' | 'reviewed' | 'mastered';
 
@@ -119,6 +119,7 @@ export interface UserProfile {
   notificationHour: number;
   focusSubjectIds: number[];
   quizCorrectCount?: number;
+  lastBackupDate?: string | null;
 }
 
 // AI Content shapes
@@ -180,6 +181,11 @@ export interface DetectiveContent {
   explanation: string;
 }
 
+export interface ManualContent {
+  type: 'manual';
+  topicName: string;
+}
+
 export type AIContent =
   | KeyPointsContent
   | QuizContent
@@ -187,7 +193,8 @@ export type AIContent =
   | MnemonicContent
   | TeachBackContent
   | ErrorHuntContent
-  | DetectiveContent;
+  | DetectiveContent
+  | ManualContent;
 
 export interface AccountabilityMessage {
   title: string;

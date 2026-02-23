@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, FlatList, Modal
+  StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, FlatList, Modal, Platform, Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import * as Notifications from 'expo-notifications';
+import { Audio } from 'expo-av';
+import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
 import { useAppStore } from '../store/useAppStore';
 import { updateUserProfile, getUserProfile, resetStudyProgress, clearAiCache } from '../db/queries/progress';
 import { getAllSubjects } from '../db/queries/topics';
@@ -57,7 +60,7 @@ async function listGeminiModels(key: string): Promise<{ ok: boolean; models: str
   }
 }
 
-async function exportBackup(): Promise<void> {
+async function exportBackup(): Promise<boolean> {
   const db = getDb();
   const profile = db.getFirstSync<Record<string, unknown>>('SELECT * FROM user_profile WHERE id = 1');
   const topicProgress = db.getAllSync<Record<string, unknown>>('SELECT * FROM topic_progress');
@@ -79,9 +82,16 @@ async function exportBackup(): Promise<void> {
   await FileSystem.writeAsStringAsync(filePath, json);
 
   if (await Sharing.isAvailableAsync()) {
-    await Sharing.shareAsync(filePath, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
+    try {
+      await Sharing.shareAsync(filePath, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
+      return true;
+    } catch (e) {
+      // User cancelled sharing
+      return false;
+    }
   } else {
     Alert.alert('Backup saved', `File written to:\n${filePath}`);
+    return true;
   }
 }
 
@@ -184,7 +194,16 @@ async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: st
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const isFocused = useIsFocused();
   const { profile, refreshProfile } = useAppStore();
+  
+  // Permissions State
+  const [permStatus, setPermStatus] = useState({
+    notifs: 'undetermined',
+    overlay: 'undetermined',
+    mic: 'undetermined',
+  });
+
   const [apiKey, setApiKey] = useState('');
   const [orKey, setOrKey] = useState('');
   const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
@@ -209,6 +228,28 @@ export default function SettingsScreen() {
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (isFocused) {
+      checkPermissions();
+    }
+  }, [isFocused]);
+
+  async function checkPermissions() {
+    const n = await Notifications.getPermissionsAsync();
+    const m = await Audio.getPermissionsAsync();
+    let o = 'undetermined';
+    if (Platform.OS === 'android') {
+      const hasOverlay = await canDrawOverlays();
+      o = hasOverlay ? 'granted' : 'denied';
+    }
+
+    setPermStatus({
+      notifs: n.status,
+      mic: m.status,
+      overlay: o,
+    });
+  }
 
   useEffect(() => {
     try { setSubjects(getAllSubjects()); } catch { /* non-critical */ }
@@ -433,6 +474,41 @@ export default function SettingsScreen() {
           </View>
         </Modal>
 
+        <Section title="✅ Permissions & Diagnostics">
+          <PermissionRow
+            label="Notifications"
+            status={permStatus.notifs}
+            onFix={async () => {
+              await Notifications.requestPermissionsAsync();
+              checkPermissions();
+            }}
+          />
+          <PermissionRow
+            label="Microphone (Audio)"
+            status={permStatus.mic}
+            onFix={async () => {
+              await Audio.requestPermissionsAsync();
+              checkPermissions();
+            }}
+          />
+          {Platform.OS === 'android' && (
+            <PermissionRow
+              label="Draw Over Apps (Break Overlay)"
+              status={permStatus.overlay}
+              onFix={async () => {
+                await requestOverlayPermission();
+                Alert.alert('Overlay Permission', 'Please enable Guru in the settings screen that just opened, then return to the app.');
+              }}
+            />
+          )}
+          <TouchableOpacity 
+            style={styles.diagBtn} 
+            onPress={() => Linking.openSettings()}
+          >
+            <Text style={styles.diagBtnText}>Open System Settings</Text>
+          </TouchableOpacity>
+        </Section>
+
         <Section title="👤 Profile">
           <TouchableOpacity 
             style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]} 
@@ -629,6 +705,11 @@ export default function SettingsScreen() {
 
         <Section title="💾 Backup & Restore">
           <Text style={styles.hint}>Export your study progress to a JSON file, or restore from a previous backup.</Text>
+          {profile?.lastBackupDate && (
+            <Text style={styles.backupDate}>
+              Last backup: {new Date(profile.lastBackupDate).toLocaleString()}
+            </Text>
+          )}
           <View style={styles.backupRow}>
             <TouchableOpacity
               style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
@@ -637,7 +718,13 @@ export default function SettingsScreen() {
               onPress={async () => {
                 setBackupBusy(true);
                 try {
-                  await exportBackup();
+                  const success = await exportBackup();
+                  if (success) {
+                    const now = new Date().toISOString();
+                    updateUserProfile({ lastBackupDate: now });
+                    refreshProfile();
+                    Alert.alert('Backup successful');
+                  }
                 } catch (e: any) {
                   Alert.alert('Export failed', e?.message ?? 'Unknown error');
                 } finally {
@@ -709,6 +796,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function PermissionRow({ label, status, onFix }: { label: string; status: string; onFix: () => void }) {
+  const isOk = status === 'granted';
+  return (
+    <View style={styles.permRow}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.permLabel}>{label}</Text>
+        <Text style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
+          {isOk ? '✓ Active' : status === 'denied' ? '✗ Disabled' : '○ Not Set'}
+        </Text>
+      </View>
+      {!isOk && (
+        <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
+          <Text style={styles.fixBtnText}>Fix</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
 function Label({ text }: { text: string }) {
   return <Text style={styles.label}>{text}</Text>;
 }
@@ -745,6 +851,7 @@ const styles = StyleSheet.create({
   backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   backupBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF66' },
   backupBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
+  backupDate: { color: '#555', fontSize: 11, textAlign: 'center', fontStyle: 'italic', marginBottom: 8 },
   footer: { color: '#333', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   typeChip: { backgroundColor: '#0F0F14', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#2A2A38', flexDirection: 'row', alignItems: 'center' },
@@ -770,4 +877,14 @@ const styles = StyleSheet.create({
   checkMark: { color: '#6C63FF', fontWeight: 'bold' },
   closeBtn: { marginTop: 16, padding: 14, alignItems: 'center', backgroundColor: '#333', borderRadius: 12 },
   closeBtnText: { color: '#fff', fontWeight: '600' },
+  // Diagnostics
+  permRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A38' },
+  permLabel: { color: '#E0E0E0', fontSize: 14, fontWeight: '600' },
+  permStatus: { fontSize: 12, marginTop: 2 },
+  permOk: { color: '#4CAF50' },
+  permError: { color: '#F44336' },
+  fixBtn: { backgroundColor: '#6C63FF22', borderWidth: 1, borderColor: '#6C63FF', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  fixBtnText: { color: '#6C63FF', fontSize: 12, fontWeight: '800' },
+  diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
+  diagBtnText: { color: '#666', fontSize: 13, textDecorationLine: 'underline' },
 });

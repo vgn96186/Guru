@@ -47,11 +47,11 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
         return false;
     }
 
-    if (__DEV__) console.log(`[AppLauncher] Launching: ${app.name} (${app.androidStore})`);
+// if (__DEV__) console.log(`[AppLauncher] Launching: ${app.name} (${app.androidStore})`);
 
     // Check if app is installed first
     const installed = await isAppInstalled(app.androidStore);
-    if (__DEV__) console.log(`[AppLauncher] isAppInstalled: ${installed}`);
+// if (__DEV__) console.log(`[AppLauncher] isAppInstalled: ${installed}`);
 
     if (installed) {
         try {
@@ -62,7 +62,7 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
                 let projectionGranted = false;
                 try {
                     projectionGranted = await requestMediaProjection();
-                    if (__DEV__) console.log(`[AppLauncher] MediaProjection granted: ${projectionGranted}`);
+// if (__DEV__) console.log(`[AppLauncher] MediaProjection granted: ${projectionGranted}`);
                 } catch (e) {
                     if (__DEV__) console.warn('[AppLauncher] MediaProjection request failed:', e);
                 }
@@ -91,7 +91,7 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
             } catch (e) { if (__DEV__) console.warn('[AppLauncher] Recording start failed:', e); }
 
             await launchApp(app.androidStore);
-            if (__DEV__) console.log('[AppLauncher] Native launch succeeded');
+// if (__DEV__) console.log('[AppLauncher] Native launch succeeded');
             startExternalAppSession(app.name, recordingPath);
 
             // Show floating timer bubble if overlay permission is granted
@@ -99,12 +99,12 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
                 const hasOverlay = await canDrawOverlays();
                 if (hasOverlay) {
                     await showOverlay(app.name, faceTracking);
-                    if (__DEV__) console.log('[AppLauncher] Overlay shown');
+// if (__DEV__) console.log('[AppLauncher] Overlay shown');
                 } else {
                     // First launch: request permission (opens settings)
                     // The overlay will work on next launch after user grants it
                     requestOverlayPermission().catch(() => {});
-                    if (__DEV__) console.log('[AppLauncher] Overlay permission requested');
+// if (__DEV__) console.log('[AppLauncher] Overlay permission requested');
                 }
             } catch (e) {
                 if (__DEV__) console.warn('[AppLauncher] Overlay failed:', e);
@@ -112,12 +112,12 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
 
             return true;
         } catch (err: any) {
-            if (__DEV__) console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);
+// if (__DEV__) console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);
         }
     }
 
     // Not installed — open Play Store
-    if (__DEV__) console.log('[AppLauncher] Opening Play Store...');
+// if (__DEV__) console.log('[AppLauncher] Opening Play Store...');
     try {
         await Linking.openURL(`market://details?id=${app.androidStore}`);
     } catch {

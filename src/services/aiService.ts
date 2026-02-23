@@ -200,13 +200,13 @@ async function callWithFallbacks(
     return { text, modelUsed: model };
   } catch (err) {
     if (!(err instanceof RateLimitError) || !orKey) throw err;
-    if (__DEV__) console.log('[AI] Gemini rate-limited, trying OpenRouter free models...');
+// if (__DEV__) console.log('[AI] Gemini rate-limited, trying OpenRouter free models...');
   }
 
   for (const model of OPENROUTER_FREE_MODELS) {
     try {
       const text = await callOpenRouter(messages, orKey, model);
-      if (__DEV__) console.log(`[AI] OpenRouter fallback succeeded with ${model}`);
+// if (__DEV__) console.log(`[AI] OpenRouter fallback succeeded with ${model}`);
       return { text, modelUsed: model };
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${model} failed:`, (err as Error).message);

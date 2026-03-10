@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
-import { scheduleHarassment, requestNotificationPermissions } from '../services/notificationService';
+import { scheduleHarassment, cancelAllNotifications, requestNotificationPermissions } from '../services/notificationService';
 
 export default function DoomscrollGuideScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -17,16 +17,22 @@ export default function DoomscrollGuideScreen() {
       Alert.alert('Permissions Needed', 'You need to enable notifications to use Harassment Mode.');
       return;
     }
-    
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     await scheduleHarassment();
     setHarassmentActive(true);
-    
+
     Alert.alert(
       'Harassment Mode Activated 🚨',
       'If you close this app and go doomscroll, I will start blowing up your phone with notifications every 3 minutes starting soon. The only way to stop it is to come back and study.',
       [{ text: 'I understand the consequences' }]
     );
+  }
+
+  async function deactivateHarassment() {
+    await cancelAllNotifications();
+    setHarassmentActive(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
   return (
@@ -46,8 +52,8 @@ export default function DoomscrollGuideScreen() {
           <Text style={styles.cardText}>
             Opening the app again cancels the bombardment.
           </Text>
-          <TouchableOpacity 
-            style={[styles.btn, harassmentActive && styles.btnActive]} 
+          <TouchableOpacity
+            style={[styles.btn, harassmentActive && styles.btnActive]}
             onPress={activateHarassment}
             disabled={harassmentActive}
           >
@@ -55,6 +61,11 @@ export default function DoomscrollGuideScreen() {
               {harassmentActive ? '💣 Bombardment Armed' : 'Activate Harassment Mode'}
             </Text>
           </TouchableOpacity>
+          {harassmentActive && (
+            <TouchableOpacity style={styles.deactivateBtn} onPress={deactivateHarassment}>
+              <Text style={styles.deactivateBtnText}>✕ Deactivate</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.card}>
@@ -113,6 +124,8 @@ const styles = StyleSheet.create({
   osTitle: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
   osStep: { color: '#E0E0E0', fontSize: 14, marginBottom: 6, lineHeight: 20 },
   
+  deactivateBtn: { marginTop: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#555', borderRadius: 10 },
+  deactivateBtnText: { color: '#9E9E9E', fontSize: 14, fontWeight: '700' },
   backBtn: { marginTop: 16, padding: 16 },
   backBtnText: { color: '#666', fontSize: 16, fontWeight: '600' }
 });

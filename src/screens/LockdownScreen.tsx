@@ -52,8 +52,8 @@ export default function LockdownScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Text style={styles.emoji}>🔒</Text>
-        <Text style={styles.title}>LOCKDOWN MODE</Text>
-        <Text style={styles.sub}>You committed to this block. You cannot leave.</Text>
+        <Text style={styles.title}>FOCUS BLOCK</Text>
+        <Text style={styles.sub}>You set this block. Just {Math.ceil((route.params.duration ?? 300) / 60)} minutes — you've got this.</Text>
         
         <Text style={styles.timer}>
           {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
@@ -65,11 +65,11 @@ export default function LockdownScreen() {
           </Text>
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.studyBtn}
           onPress={() => (navigation as any).navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft/60) })}
         >
-          <Text style={styles.studyBtnText}>Open Flashcards</Text>
+          <Text style={styles.studyBtnText}>Start 5-min Sprint →</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -18,6 +18,7 @@ import { updateUserProfile, getUserProfile, resetStudyProgress, clearAiCache } f
 import { getAllSubjects } from '../db/queries/topics';
 import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
 import { getDb } from '../db/database';
+import { fetchExamDates } from '../services/aiService';
 import type { ContentType, Subject } from '../types';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
@@ -229,12 +230,35 @@ export default function SettingsScreen() {
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [fetchingDates, setFetchingDates] = useState(false);
+  const [fetchDatesMsg, setFetchDatesMsg] = useState('');
 
   useEffect(() => {
     if (isFocused) {
       checkPermissions();
     }
   }, [isFocused]);
+
+  async function handleAutoFetchDates() {
+    const key = apiKey.trim() || profile?.openrouterApiKey || '';
+    const or = orKey.trim() || profile?.openrouterKey || '';
+    if (!key && !or) {
+      setFetchDatesMsg('Add an API key first to auto-fetch dates.');
+      return;
+    }
+    setFetchingDates(true);
+    setFetchDatesMsg('');
+    try {
+      const dates = await fetchExamDates(key, or || undefined);
+      setInicetDate(dates.inicetDate);
+      setNeetDate(dates.neetDate);
+      setFetchDatesMsg(`✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`);
+    } catch (e: any) {
+      setFetchDatesMsg(`❌ ${e?.message || 'Could not fetch dates. Try manually.'}`);
+    } finally {
+      setFetchingDates(false);
+    }
+  }
 
   async function checkPermissions() {
     const n = await Notifications.getPermissionsAsync();
@@ -375,7 +399,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Settings</Text>
 
-        <Section title="🤖 AI Configuration">
+        <Section title="🤖 AI Configuration" initiallyExpanded={true}>
           <Label text="Gemini API Key (Google AI Studio)" />
           <View style={styles.apiKeyRow}>
             <TextInput
@@ -535,6 +559,24 @@ export default function SettingsScreen() {
           <TextInput style={styles.input} value={inicetDate} onChangeText={setInicetDate} placeholderTextColor="#444" />
           <Label text="NEET-PG date (YYYY-MM-DD)" />
           <TextInput style={styles.input} value={neetDate} onChangeText={setNeetDate} placeholderTextColor="#444" />
+          <TouchableOpacity
+            style={[styles.autoFetchBtn, fetchingDates && styles.autoFetchBtnDisabled]}
+            onPress={handleAutoFetchDates}
+            disabled={fetchingDates}
+            activeOpacity={0.8}
+          >
+            {fetchingDates
+              ? <ActivityIndicator size="small" color="#6C63FF" />
+              : <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
+            }
+          </TouchableOpacity>
+          {fetchDatesMsg ? (
+            <Text style={[styles.hint, fetchDatesMsg.startsWith('✅') ? { color: '#4CAF50' } : { color: '#F44336' }]}>
+              {fetchDatesMsg}
+            </Text>
+          ) : (
+            <Text style={styles.hint}>Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.</Text>
+          )}
         </Section>
 
         <Section title="⏱️ Study Preferences">
@@ -807,7 +849,7 @@ export default function SettingsScreen() {
   );
 }
 
-function Section({ title, children, initiallyExpanded = true }: { title: string; children: React.ReactNode; initiallyExpanded?: boolean }) {
+function Section({ title, children, initiallyExpanded = false }: { title: string; children: React.ReactNode; initiallyExpanded?: boolean }) {
   const [expanded, setExpanded] = useState(initiallyExpanded);
   return (
     <View style={styles.section}>
@@ -867,6 +909,9 @@ const styles = StyleSheet.create({
   validationSuccess: { color: '#4CAF50' },
   validationError: { color: '#F44336' },
   hint: { color: '#555', fontSize: 12, marginBottom: 4 },
+  autoFetchBtn: { marginTop: 10, backgroundColor: '#1A1A2E', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
+  autoFetchBtnDisabled: { opacity: 0.5 },
+  autoFetchBtnText: { color: '#6C63FF', fontSize: 13, fontWeight: '600' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   switchLabel: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 2 },
   testBtn: { marginTop: 12, backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },

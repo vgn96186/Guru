@@ -23,7 +23,7 @@ export default function DailyAgendaSection({ todayTasks, hasNewTopics, onStartSe
               task.type === 'review' && styles.taskReview,
               task.type === 'deep_dive' && styles.taskDeep,
             ]}>
-              <Text style={styles.taskTitle} numberOfLines={1}>{task.topic.name}</Text>
+              <Text style={styles.taskTitle} numberOfLines={2}>{task.topic.name}</Text>
               <Text style={styles.taskSub}>
                 {task.type === 'review' ? 'REL' : task.type === 'deep_dive' ? 'DEEP' : 'NEW'} · {task.topic.subjectName}
               </Text>

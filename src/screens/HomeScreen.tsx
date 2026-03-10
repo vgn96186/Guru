@@ -16,7 +16,7 @@ import LoadingOrb from '../components/LoadingOrb';
 import QuickStatsCard from '../components/home/QuickStatsCard';
 import DailyAgendaSection from '../components/home/DailyAgendaSection';
 import NemesisSection from '../components/home/NemesisSection';
-import { getDailyLog, getDaysToExam, getUserProfile } from '../db/queries/progress';
+import { getDailyLog, getDaysToExam, getUserProfile, useStreakShield } from '../db/queries/progress';
 import { getWeakestTopics, getTopicsDueForReview, getAllTopicsWithProgress, getSubjectCoverage } from '../db/queries/topics';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
@@ -33,9 +33,10 @@ export default function HomeScreen() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [hasIncompleteSession, setHasIncompleteSession] = useState(false);
+  const [quickModesExpanded, setQuickModesExpanded] = useState(false);
   const [toolsExpanded, setToolsExpanded] = useState(false);
   const [challengesExpanded, setChallengesExpanded] = useState(false);
-  const [statsExpanded, setStatsExpanded] = useState(true);
+  const [nemesisExpanded, setNemesisExpanded] = useState(false);
   const [masteredCount, setMasteredCount] = useState(0);
   const [totalTopicCount, setTotalTopicCount] = useState(0);
 
@@ -169,7 +170,25 @@ export default function HomeScreen() {
 
         {/* Header row */}
         <View style={styles.headerRow}>
-          {!isLowMomentum && <StreakBadge streak={profile.streakCurrent} />}
+          {!isLowMomentum && (
+            <View style={styles.streakRow}>
+              <StreakBadge streak={profile.streakCurrent} />
+              {profile.streakShieldAvailable && (
+                <TouchableOpacity
+                  style={styles.shieldBtn}
+                  onPress={() => {
+                    const used = useStreakShield();
+                    if (used) {
+                      refreshProfile();
+                      Alert.alert('🛡️ Shield Used', 'Your streak is protected for today!');
+                    }
+                  }}
+                >
+                  <Text style={styles.shieldBtnText}>🛡️</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
           {isLowMomentum && (
             <View style={styles.readinessBadge}>
               <Text style={styles.readinessIcon}>📊</Text>
@@ -200,7 +219,7 @@ export default function HomeScreen() {
         )}
 
         {/* Quick Stats with Progress Ring */}
-        <QuickStatsCard progressPercent={progressPercent} todayMinutes={todayMinutes} dailyGoal={dailyGoal} minutesLeft={minutesLeft} />
+        <QuickStatsCard progressPercent={progressPercent} todayMinutes={todayMinutes} dailyGoal={dailyGoal} minutesLeft={minutesLeft} examType={profile.examType} />
 
         {/* ── Section 2: Primary Action ── */}
 
@@ -243,45 +262,56 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* ── Section 3: Quick Modes ── */}
-
-        <Text style={styles.sectionHeader}>QUICK MODES</Text>
-
-        <View style={styles.miniRow}>
-          <TouchableOpacity
-            style={[styles.miniBtn, { flex: 1, marginBottom: 0 }]}
-            onPress={() => hasApiKey && navigation.navigate('Session', { mood, mode: 'sprint' })}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.miniBtnText}>⚡ 10m Sprint</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.miniBtn, { flex: 1, marginBottom: 0, borderColor: '#FF980044' }]}
-            onPress={() => navigation.navigate('MockTest')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.miniBtnText, { color: '#FF9800' }]}>📝 Mock Test</Text>
-          </TouchableOpacity>
-        </View>
+        {/* ── Section 3: Quick Modes (collapsible) ── */}
 
         <TouchableOpacity
-          style={styles.challengeBtn}
-          onPress={() => hasApiKey ? navigation.navigate('DailyChallenge') : Alert.alert('Set API Key', 'Add your API key in Settings first.', [{ text: 'OK' }])}
-          activeOpacity={0.85}
+          style={styles.toolsHeader}
+          onPress={() => setQuickModesExpanded(prev => !prev)}
+          activeOpacity={0.7}
         >
-          <Text style={styles.challengeEmoji}>⚡</Text>
-          <View style={styles.challengeInfo}>
-            <Text style={styles.challengeTitle}>Daily Challenge</Text>
-            <Text style={styles.challengeSub}>5 rapid-fire questions from weak topics</Text>
-          </View>
-          <Text style={styles.challengeXp}>+{5 * 60} XP</Text>
+          <Text style={styles.sectionHeader}>QUICK MODES</Text>
+          <Text style={styles.toolsChevron}>{quickModesExpanded ? '▲' : '▼'}</Text>
         </TouchableOpacity>
 
-        {/* Lecture mode button */}
-        <TouchableOpacity style={styles.lectureBtn} onPress={handleLectureMode} activeOpacity={0.8}>
-          <Text style={styles.lectureBtnText}>📺 Watching a Lecture</Text>
-        </TouchableOpacity>
+        {quickModesExpanded && (
+          <View>
+            <View style={styles.miniRow}>
+              <TouchableOpacity
+                style={[styles.miniBtn, { flex: 1, marginBottom: 0 }]}
+                onPress={() => hasApiKey && navigation.navigate('Session', { mood, mode: 'sprint' })}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.miniBtnText}>⚡ 10m Sprint</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.miniBtn, { flex: 1, marginBottom: 0, borderColor: '#FF980044' }]}
+                onPress={() => navigation.navigate('MockTest')}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.miniBtnText, { color: '#FF9800' }]}>📝 Mock Test</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.challengeBtn}
+              onPress={() => hasApiKey ? navigation.navigate('DailyChallenge') : Alert.alert('Set API Key', 'Add your API key in Settings first.', [{ text: 'OK' }])}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.challengeEmoji}>⚡</Text>
+              <View style={styles.challengeInfo}>
+                <Text style={styles.challengeTitle}>Daily Challenge</Text>
+                <Text style={styles.challengeSub}>5 rapid-fire questions from weak topics</Text>
+              </View>
+              <Text style={styles.challengeXp}>+{5 * 60} XP</Text>
+            </TouchableOpacity>
+
+            {/* Lecture mode button */}
+            <TouchableOpacity style={styles.lectureBtn} onPress={handleLectureMode} activeOpacity={0.8}>
+              <Text style={styles.lectureBtnText}>📺 Watching a Lecture</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ── Section 4: Review & Due ── */}
 
@@ -314,16 +344,17 @@ export default function HomeScreen() {
 
         {toolsExpanded && (
           <View>
-            <TouchableOpacity style={styles.searchBtn} onPress={() => navigation.navigate('NotesSearch')}>
-              <Text style={styles.searchBtnText}>🔍 Search My Notes</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.searchBtn} onPress={() => navigation.getParent()?.navigate('BrainDumpReview')}>
-              <Text style={styles.searchBtnText}>🧠 Review Parked Thoughts</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.flaggedBtn} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
-              <Text style={styles.flaggedBtnText}>🚩 Flagged for Review</Text>
+            <TouchableOpacity
+              style={styles.notesCard}
+              onPress={() => navigation.navigate('NotesHub')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.notesCardEmoji}>📓</Text>
+              <View style={styles.notesCardInfo}>
+                <Text style={styles.notesCardTitle}>My Notes</Text>
+                <Text style={styles.notesCardSub}>Search, flagged items & brain dumps</Text>
+              </View>
+              <Text style={styles.notesCardArrow}>→</Text>
             </TouchableOpacity>
 
             {/* External Apps Row */}
@@ -393,8 +424,18 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Nemesis */}
-        <NemesisSection weakTopics={weakTopics} dueTopics={dueTopics} navigation={navigation} />
+        {/* ── Nemesis (collapsible) ── */}
+        <TouchableOpacity
+          style={styles.toolsHeader}
+          onPress={() => setNemesisExpanded(prev => !prev)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sectionHeader}>NEMESIS TOPICS</Text>
+          <Text style={styles.toolsChevron}>{nemesisExpanded ? '▲' : '▼'}</Text>
+        </TouchableOpacity>
+        {nemesisExpanded && (
+          <NemesisSection weakTopics={weakTopics} dueTopics={dueTopics} navigation={navigation} />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -411,6 +452,9 @@ const styles = StyleSheet.create({
   setupBannerSub: { color: '#9E9E9E', fontSize: 12, lineHeight: 16 },
   setupBannerArrow: { color: '#6C63FF', fontSize: 18, fontWeight: '700', marginLeft: 8 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, marginBottom: 8 },
+  streakRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  shieldBtn: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, borderWidth: 1, borderColor: '#6C63FF44' },
+  shieldBtnText: { fontSize: 16 },
   headerRight: { alignItems: 'flex-end' },
   countdown: { color: '#6C63FF', fontWeight: '700', fontSize: 15 },
   todayMin: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
@@ -474,10 +518,17 @@ const styles = StyleSheet.create({
   challengeTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
   challengeSub: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
   challengeXp: { color: '#6C63FF', fontWeight: '800', fontSize: 14 },
-  searchBtn: { alignItems: 'center', marginBottom: 8, padding: 10 },
-  searchBtnText: { color: '#9E9E9E', fontWeight: '600', fontSize: 13 },
-  flaggedBtn: { alignItems: 'center', marginBottom: 12, padding: 10 },
-  flaggedBtnText: { color: '#FF9800', fontWeight: '600', fontSize: 13 },
+  notesCard: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#1A1A2E', borderRadius: 14,
+    padding: 16, marginHorizontal: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: '#6C63FF44',
+  },
+  notesCardEmoji: { fontSize: 28, marginRight: 14 },
+  notesCardInfo: { flex: 1 },
+  notesCardTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  notesCardSub: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
+  notesCardArrow: { color: '#6C63FF', fontSize: 20, fontWeight: '700' },
 
   // Tools & Library collapsible header
   toolsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 16, marginBottom: 0 },

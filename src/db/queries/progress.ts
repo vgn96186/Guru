@@ -11,16 +11,19 @@ export function getUserProfile(): UserProfile {
     openrouter_api_key: string; openrouter_key: string; notifications_enabled: number; last_active_date: string | null; sync_code: string | null;
     strict_mode_enabled: number; streak_shield_available: number;
     body_doubling_enabled: number; blocked_content_types: string;
+    guru_frequency: string | null;
     idle_timeout_minutes: number; break_duration_minutes: number;
     notification_hour: number; focus_subject_ids: string;
     focus_audio_enabled: number; visual_timers_enabled: number; face_tracking_enabled: number;
     quiz_correct_count: number; last_backup_date: string | null;
+    exam_type: string | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
     return {
       displayName: 'Doctor', totalXp: 0, currentLevel: 1,
       streakCurrent: 0, streakBest: 0, dailyGoalMinutes: 120,
+      examType: 'INICET' as const,
       inicetDate: '2026-05-01', neetDate: '2026-08-01',
       preferredSessionLength: 45, openrouterApiKey: '', openrouterKey: '',
       notificationsEnabled: true, lastActiveDate: null, syncCode: null,
@@ -29,6 +32,7 @@ export function getUserProfile(): UserProfile {
       breakDurationMinutes: 5, notificationHour: 7, focusSubjectIds: [],
       focusAudioEnabled: false, visualTimersEnabled: false, faceTrackingEnabled: false,
       quizCorrectCount: 0, lastBackupDate: null,
+      guruFrequency: 'normal' as const, streakShieldAvailable: true,
     };
   }
 
@@ -59,6 +63,9 @@ export function getUserProfile(): UserProfile {
     faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
     quizCorrectCount: r.quiz_correct_count ?? 0,
     lastBackupDate: r.last_backup_date,
+    examType: (r.exam_type === 'NEET' ? 'NEET' : 'INICET') as 'INICET' | 'NEET',
+    guruFrequency: (r.guru_frequency ?? 'normal') as 'rare' | 'normal' | 'frequent' | 'off',
+    streakShieldAvailable: r.streak_shield_available === 1,
   };
 }
 
@@ -74,7 +81,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
     focusAudioEnabled: 'focus_audio_enabled', visualTimersEnabled: 'visual_timers_enabled',
     faceTrackingEnabled: 'face_tracking_enabled', quizCorrectCount: 'quiz_correct_count',
-    lastBackupDate: 'last_backup_date',
+    lastBackupDate: 'last_backup_date', examType: 'exam_type', guruFrequency: 'guru_frequency',
   };
 
   const setClauses: string[] = [];

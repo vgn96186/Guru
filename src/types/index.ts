@@ -100,6 +100,7 @@ export interface UserProfile {
   streakCurrent: number;
   streakBest: number;
   dailyGoalMinutes: number;
+  examType: 'INICET' | 'NEET';
   inicetDate: string;
   neetDate: string;
   preferredSessionLength: number;
@@ -121,6 +122,7 @@ export interface UserProfile {
   focusSubjectIds: number[];
   quizCorrectCount?: number;
   lastBackupDate?: string | null;
+  streakShieldAvailable?: boolean;
 }
 
 // AI Content shapes

@@ -7,6 +7,7 @@ interface QuickStatsCardProps {
   todayMinutes: number;
   dailyGoal: number;
   minutesLeft: number;
+  examType?: 'INICET' | 'NEET';
 }
 
 const RING_SIZE = 72;
@@ -14,7 +15,7 @@ const STROKE_WIDTH = 7;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
-export default function QuickStatsCard({ progressPercent, todayMinutes, dailyGoal, minutesLeft }: QuickStatsCardProps) {
+export default function QuickStatsCard({ progressPercent, todayMinutes, dailyGoal, minutesLeft, examType }: QuickStatsCardProps) {
   const clamped = Math.min(100, Math.max(0, progressPercent));
   const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * clamped) / 100;
 
@@ -52,10 +53,23 @@ export default function QuickStatsCard({ progressPercent, todayMinutes, dailyGoa
         </View>
       </View>
       <View style={styles.quickStatsInfo}>
-        <Text style={styles.quickStatsTitle}>Today's Progress</Text>
-        <Text style={styles.quickStatsMinutes}>{todayMinutes} / {dailyGoal} min</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.quickStatsTitle}>Today's Progress</Text>
+          {examType && (
+            <View style={[styles.examBadge, examType === 'NEET' && styles.examBadgeNeet]}>
+              <Text style={[styles.examBadgeText, examType === 'NEET' && styles.examBadgeTextNeet]}>
+                {examType === 'NEET' ? 'NEET PG' : 'INICET'}
+              </Text>
+            </View>
+          )}
+        </View>
+        {todayMinutes > 0 && (
+          <Text style={styles.quickStatsMinutes}>{todayMinutes} / {dailyGoal} min</Text>
+        )}
         {minutesLeft > 0 ? (
-          <Text style={styles.quickStatsLeft}>{minutesLeft} min left</Text>
+          <Text style={styles.quickStatsLeft}>
+            {todayMinutes === 0 ? `${dailyGoal} min goal` : `${minutesLeft} min left`}
+          </Text>
         ) : (
           <Text style={styles.quickStatsDone}>Goal reached!</Text>
         )}
@@ -71,7 +85,12 @@ const styles = StyleSheet.create({
   progressPercent: { color: '#fff', fontWeight: '900', fontSize: 16 },
   progressLabel: { color: '#9E9E9E', fontSize: 9 },
   quickStatsInfo: { flex: 1 },
-  quickStatsTitle: { color: '#fff', fontWeight: '700', fontSize: 16, marginBottom: 4 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  quickStatsTitle: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  examBadge: { backgroundColor: '#6C63FF22', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: '#6C63FF44' },
+  examBadgeNeet: { backgroundColor: '#FF980022', borderColor: '#FF980044' },
+  examBadgeText: { color: '#6C63FF', fontSize: 9, fontWeight: '800' },
+  examBadgeTextNeet: { color: '#FF9800' },
   quickStatsMinutes: { color: '#9E9E9E', fontSize: 14, marginBottom: 2 },
   quickStatsLeft: { color: '#FF9800', fontSize: 12 },
   quickStatsDone: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },

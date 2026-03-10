@@ -59,7 +59,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             <View style={[styles.iconBox, { backgroundColor: app.color + '22' }]}>
               <Text style={styles.icon}>{app.iconEmoji}</Text>
             </View>
-            <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+            <Text style={styles.appName} numberOfLines={2}>{app.name}</Text>
             <Text style={styles.actionText}>Open</Text>
           </TouchableOpacity>
         ))}
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   subtitle: { color: '#555', fontSize: 11, marginTop: 2 },
   scroll: { paddingHorizontal: 16, gap: 12 },
   appBtn: {
-    width: 80,
+    width: 90,
     alignItems: 'center',
     backgroundColor: '#1A1A24',
     borderRadius: 12,
@@ -91,6 +91,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   icon: { fontSize: 20 },
-  appName: { color: '#fff', fontSize: 11, fontWeight: '600', marginBottom: 2 },
+  appName: { color: '#fff', fontSize: 11, fontWeight: '600', marginBottom: 2, textAlign: 'center' },
   actionText: { color: '#6C63FF', fontSize: 10, fontWeight: '700' },
 });

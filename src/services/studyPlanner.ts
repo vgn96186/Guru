@@ -28,6 +28,7 @@ export interface StudyPlanSummary {
   requiredHoursPerDay: number;
   feasible: boolean;
   message: string;
+  examType: 'INICET' | 'NEET';
 }
 
 export interface TodayTask {
@@ -123,13 +124,15 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
   const profile = getUserProfile();
   const allTopics = getAllTopicsWithProgress();
   const subjects = getAllSubjects();
-  const subjectWeights = new Map(subjects.map(s => [s.id, s.inicetWeight]));
+  const isNeet = profile.examType === 'NEET';
+  const subjectWeights = new Map(subjects.map(s => [s.id, isNeet ? s.neetWeight : s.inicetWeight]));
+  const activeExamDate = isNeet ? profile.neetDate : profile.inicetDate;
 
   // 1. Initial State
   const today = new Date();
-  const daysToExam = getDaysToExam(profile.inicetDate);
+  const daysToExam = getDaysToExam(activeExamDate);
   const dailyGoal = profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 120;
-  
+
   // Get exam dates to mark as rest days
   const examDates = new Set([
     profile.inicetDate,
@@ -335,7 +338,8 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
       daysRemaining: daysToExam,
       requiredHoursPerDay: Number((avgMins / 60).toFixed(1)),
       feasible: isFeasible,
-      message
+      message,
+      examType: isNeet ? 'NEET' : 'INICET',
     }
   };
 }

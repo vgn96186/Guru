@@ -21,6 +21,8 @@ import ManualLogScreen from '../screens/ManualLogScreen';
 import StudyPlanScreen from '../screens/StudyPlanScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
+import NotesHubScreen from '../screens/NotesHubScreen';
+import GuruChatScreen from '../screens/GuruChatScreen';
 
 // Navigation setup
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -36,6 +38,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="MockTest" component={MockTestScreen} />
       <HomeStack.Screen name="Review" component={ReviewScreen} />
       <HomeStack.Screen name="NotesSearch" component={NotesSearchScreen} />
+      <HomeStack.Screen name="NotesHub" component={NotesHubScreen} />
       <HomeStack.Screen name="BossBattle" component={BossBattleScreen} />
       <HomeStack.Screen name="Inertia" component={InertiaScreen} />
       <HomeStack.Screen name="ManualLog" component={ManualLogScreen} />
@@ -77,6 +80,7 @@ export default function TabNavigator() {
             HomeTab: focused ? 'play-circle' : 'play-circle-outline',
             SyllabusTab: focused ? 'grid' : 'grid-outline',
             PlanTab: focused ? 'calendar' : 'calendar-outline',
+            GuruTab: focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline',
             StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
             SettingsTab: focused ? 'settings' : 'settings-outline',
           };
@@ -87,6 +91,7 @@ export default function TabNavigator() {
       <Tab.Screen name="HomeTab" component={HomeStackNav} />
       <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} />
       <Tab.Screen name="PlanTab" component={StudyPlanScreen} />
+      <Tab.Screen name="GuruTab" component={GuruChatScreen} />
       <Tab.Screen name="StatsTab" component={StatsScreen} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} />
     </Tab.Navigator>

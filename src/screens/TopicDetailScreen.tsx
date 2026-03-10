@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   topicInfo: { flex: 1, padding: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },
   folderIcon: { color: '#6C63FF', fontSize: 12, fontWeight: '900' },
-  topicName: { color: '#fff', fontWeight: '600', fontSize: 15 },
+  topicName: { color: '#fff', fontWeight: '600', fontSize: 15, flex: 1 },
   parentName: { fontSize: 16, fontWeight: '800', color: '#6C63FF' },
   topicMeta: { flexDirection: 'row', marginTop: 4 },
   topicMetaText: { color: '#9E9E9E', fontSize: 11 },

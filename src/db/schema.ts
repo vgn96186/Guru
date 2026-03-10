@@ -119,7 +119,9 @@ CREATE TABLE IF NOT EXISTS user_profile (
   visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
   face_tracking_enabled INTEGER NOT NULL DEFAULT 0,
   quiz_correct_count INTEGER NOT NULL DEFAULT 0,
-  last_backup_date TEXT
+  last_backup_date TEXT,
+  exam_type TEXT NOT NULL DEFAULT 'INICET',
+  guru_frequency TEXT NOT NULL DEFAULT 'normal'
 )`;
 
 export const CREATE_BRAIN_DUMPS = `

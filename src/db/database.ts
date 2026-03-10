@@ -87,6 +87,8 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE topic_progress ADD COLUMN is_nemesis INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE user_profile ADD COLUMN quiz_correct_count INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE user_profile ADD COLUMN last_backup_date TEXT`,
+    `ALTER TABLE user_profile ADD COLUMN exam_type TEXT NOT NULL DEFAULT 'INICET'`,
+    `ALTER TABLE user_profile ADD COLUMN guru_frequency TEXT NOT NULL DEFAULT 'normal'`,
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }

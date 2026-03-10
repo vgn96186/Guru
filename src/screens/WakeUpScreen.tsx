@@ -75,7 +75,16 @@ export default function WakeUpScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
-        
+
+        {/* Skip fast path — always visible */}
+        <TouchableOpacity
+          style={styles.skipBtn}
+          onPress={() => navigation.replace('CheckIn')}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.skipBtnText}>Skip — I'm already awake ›</Text>
+        </TouchableOpacity>
+
         {phase === 'breathe' && (
           <View style={styles.centerBox}>
             <View style={styles.progressRow}>
@@ -168,6 +177,8 @@ const styles = StyleSheet.create({
   nextBtn: { backgroundColor: '#1A1A24', paddingHorizontal: 40, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: '#333' },
   nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
+  skipBtn: { alignSelf: 'flex-end', padding: 8, marginBottom: 8 },
+  skipBtnText: { color: '#444', fontSize: 13 },
   fogGrid: { width: '100%', gap: 12, marginTop: 20 },
   fogBtn: { backgroundColor: '#1A1A24', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#2A2A38', flexDirection: 'row', alignItems: 'center' },
   fogBtnEmoji: { fontSize: 32, marginRight: 16 },

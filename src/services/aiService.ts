@@ -391,6 +391,36 @@ export async function askGuru(
   return text.replace(/```json|```/g, '');
 }
 
+// Fetch upcoming NEET-PG and INICET exam dates from AI knowledge
+export async function fetchExamDates(
+  apiKey: string,
+  orKey?: string,
+): Promise<{ inicetDate: string; neetDate: string }> {
+  const currentYear = new Date().getFullYear();
+  const { text } = await callWithFallbacks(
+    [
+      {
+        role: 'system',
+        content: `You are a knowledgeable assistant about Indian medical entrance exams. Return only valid JSON, no markdown.`,
+      },
+      {
+        role: 'user',
+        content: `What are the upcoming NEET-PG and INICET exam dates for ${currentYear} or ${currentYear + 1}? Return JSON in this exact format: {"inicetDate":"YYYY-MM-DD","neetDate":"YYYY-MM-DD"}. Use the most recent/upcoming dates you know. If unsure of exact date, give a reasonable estimate based on historical patterns (INICET is usually in May, NEET-PG is usually in August).`,
+      },
+    ],
+    apiKey,
+    orKey,
+  );
+  const clean = text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+  if (!parsed.inicetDate || !parsed.neetDate) throw new Error('Invalid date format from AI');
+  // Validate YYYY-MM-DD format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(parsed.inicetDate) || !dateRegex.test(parsed.neetDate)) {
+    throw new Error('AI returned invalid date format');
+  }
+  return { inicetDate: parsed.inicetDate, neetDate: parsed.neetDate };
+}
 
 export async function transcribeAndSummarizeAudio(
   audioFilePath: string,

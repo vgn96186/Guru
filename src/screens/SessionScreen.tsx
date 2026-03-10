@@ -13,11 +13,13 @@ import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession } from '../db/queries/sessions';
 import { updateTopicProgress } from '../db/queries/topics';
 import { setContentFlagged } from '../db/queries/aiCache';
-import { getDailyLog, updateStreak } from '../db/queries/progress';
+import { getDailyLog, updateStreak, updateUserProfile } from '../db/queries/progress';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
 import ContentCard from './ContentCard';
 import BreakScreen from './BreakScreen';
+import FocusAudioPlayer from '../components/FocusAudioPlayer';
+import VisualTimer from '../components/VisualTimer';
 import type { Mood, SessionMode } from '../types';
 import { XP_REWARDS } from '../constants/gamification';
 import { useIdleTimer } from '../hooks/useIdleTimer';
@@ -355,6 +357,15 @@ export default function SessionScreen() {
           <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
         </View>
         <View style={styles.headerRight}>
+          {profile?.visualTimersEnabled && store.sessionState === 'studying' && (
+            <VisualTimer
+              totalSeconds={totalSessionSeconds}
+              remainingSeconds={Math.max(0, totalSessionSeconds - activeElapsedSeconds)}
+              size={52}
+              strokeWidth={5}
+            />
+          )}
+          <FocusAudioPlayer />
           {isStudying && (
             <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
           )}
@@ -412,7 +423,13 @@ export default function SessionScreen() {
           topicId={item?.topic.id}
           onDone={handleConfidenceRating}
           onSkip={handleContentDone}
-          onQuizAnswered={c => triggerEvent(c ? 'quiz_correct' : 'quiz_wrong')}
+          onQuizAnswered={c => {
+            triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
+            if (c) {
+              updateUserProfile({ quizCorrectCount: (profile?.quizCorrectCount ?? 0) + 1 });
+              refreshProfile();
+            }
+          }}
           onQuizComplete={(correct, total) => {
             if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
           }}
@@ -493,7 +510,7 @@ const styles = StyleSheet.create({
   revealSub: { color: '#888', fontSize: 13 },
   revealTopic: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   revealDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
-  revealTopicName: { color: '#fff', fontSize: 16, fontWeight: '600', marginRight: 8 },
+  revealTopicName: { color: '#fff', fontSize: 16, fontWeight: '600', marginRight: 8, flex: 1 },
   revealTopicSub: { color: '#9E9E9E', fontSize: 12 },
   topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topicDoneEmoji: { fontSize: 64, marginBottom: 16 },

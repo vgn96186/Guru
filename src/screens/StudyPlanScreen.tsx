@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
+import { updateUserProfile } from '../db/queries/progress';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList>;
 
@@ -13,7 +14,7 @@ export default function StudyPlanScreen() {
   const navigation = useNavigation<Nav>();
   const [plan, setPlan] = useState<DailyPlan[]>([]);
   const [summary, setSummary] = useState<StudyPlanSummary | null>(null);
-  const { profile } = useAppStore();
+  const { profile, refreshProfile } = useAppStore();
 
   useEffect(() => {
     refreshPlan();
@@ -25,16 +26,33 @@ export default function StudyPlanScreen() {
     setSummary(s);
   }
 
+  function toggleExamType() {
+    const newType = profile?.examType === 'NEET' ? 'INICET' : 'NEET';
+    updateUserProfile({ examType: newType });
+    refreshProfile();
+    // Re-generate plan after state update
+    setTimeout(() => refreshPlan(), 50);
+  }
+
   if (!summary) return null;
+
+  const examLabel = summary.examType === 'NEET' ? 'NEET PG' : 'INICET';
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Dynamic Plan</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Dynamic Plan</Text>
+            <TouchableOpacity style={styles.examToggle} onPress={toggleExamType} activeOpacity={0.8}>
+              <Text style={[styles.examToggleOption, summary.examType === 'INICET' && styles.examToggleActive]}>INICET</Text>
+              <Text style={styles.examToggleDivider}>|</Text>
+              <Text style={[styles.examToggleOption, summary.examType === 'NEET' && styles.examToggleActive]}>NEET PG</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.subtitle}>
-            {summary.daysRemaining} days to INICET · {summary.totalHoursLeft}h content left
+            {summary.daysRemaining} days to {examLabel} · {summary.totalHoursLeft}h content left
           </Text>
         </View>
 
@@ -120,8 +138,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   content: { padding: 20, paddingBottom: 60 },
   header: { marginBottom: 24 },
-  title: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 4 },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  title: { color: '#fff', fontSize: 28, fontWeight: '900' },
   subtitle: { color: '#9E9E9E', fontSize: 14 },
+  examToggle: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#6C63FF44', gap: 6 },
+  examToggleOption: { color: '#555', fontSize: 12, fontWeight: '700' },
+  examToggleActive: { color: '#6C63FF' },
+  examToggleDivider: { color: '#333', fontSize: 12 },
   
   card: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 20, marginBottom: 32, borderWidth: 1, borderColor: '#333' },
   cardWarning: { borderColor: '#F44336', backgroundColor: '#2A0A0A' },

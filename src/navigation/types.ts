@@ -17,6 +17,7 @@ export type HomeStackParamList = {
   MockTest: undefined;
   Review: undefined;
   NotesSearch: undefined;
+  NotesHub: undefined;
   BossBattle: undefined;
   Inertia: undefined;
   ManualLog: { appId?: string };
@@ -34,6 +35,7 @@ export type TabParamList = {
   HomeTab: undefined;
   SyllabusTab: undefined;
   PlanTab: undefined;
+  GuruTab: undefined;
   StatsTab: undefined;
   SettingsTab: undefined;
 };

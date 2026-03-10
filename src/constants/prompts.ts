@@ -161,35 +161,54 @@ Rules: higher score = higher priority. Don't repeat recent topics.`;
 }
 
 export function buildAccountabilityPrompt(stats: {
+  displayName: string;
   streak: number;
   weakestTopics: string[];
+  nemesisTopics: string[];
   lastStudied: string;
   daysToInicet: number;
+  daysToNeetPg: number;
   coveragePercent: number;
+  masteredCount: number;
+  totalTopics: number;
   lastMood: Mood | null;
+  guruFrequency: 'rare' | 'normal' | 'frequent' | 'off';
 }): string {
-  return `Generate 3 personalized accountability notification messages for a NEET-PG student.
+  const count = stats.guruFrequency === 'rare' ? 2 : stats.guruFrequency === 'frequent' ? 4 : 3;
+  const slots: string[] =
+    count === 2 ? ['morning', 'streak_warning']
+    : count === 4 ? ['morning', 'afternoon', 'evening', 'streak_warning']
+    : ['morning', 'evening', 'streak_warning'];
 
-Student stats:
-- Streak: ${stats.streak} days
-- Weakest topics: ${stats.weakestTopics.join(', ')}
+  const examLines: string[] = [];
+  if (stats.daysToInicet > 0) examLines.push(`INI-CET in ${stats.daysToInicet} days`);
+  if (stats.daysToNeetPg > 0) examLines.push(`NEET-PG in ${stats.daysToNeetPg} days`);
+  const examContext = examLines.length > 0 ? examLines.join(' | ') : 'exam date not set';
+
+  return `Generate exactly ${count} accountability push notifications for ${stats.displayName}, a NEET-PG/INI-CET student preparing in India.
+
+STUDENT SNAPSHOT:
+- Name: ${stats.displayName}
+- Streak: ${stats.streak} day${stats.streak !== 1 ? 's' : ''}${stats.streak === 0 ? ' (broken — restart needed)' : ''}
+- Exams: ${examContext}
+- Syllabus: ${stats.coveragePercent}% covered (${stats.masteredCount} mastered out of ${stats.totalTopics} topics)
+- Weakest topics: ${stats.weakestTopics.length > 0 ? stats.weakestTopics.join(', ') : 'none yet (just started)'}
+- Nemesis topics (most failed): ${stats.nemesisTopics.length > 0 ? stats.nemesisTopics.join(', ') : 'none yet'}
 - Last studied: ${stats.lastStudied}
-- Days to INICET: ${stats.daysToInicet}
-- Syllabus coverage: ${stats.coveragePercent}%
-- Last mood: ${stats.lastMood || 'unknown'}
+- Last mood: ${stats.lastMood ?? 'unknown'}
 
-Return JSON:
-{
-  "messages": [
-    { "title": "...", "body": "...", "scheduledFor": "morning" },
-    { "title": "...", "body": "...", "scheduledFor": "evening" },
-    { "title": "...", "body": "...", "scheduledFor": "streak_warning" }
-  ]
-}
+Return exactly ${count} messages as JSON, one for each scheduledFor slot:
+{ "messages": [${slots.map(s => `{ "title": "...", "body": "...", "scheduledFor": "${s}" }`).join(', ')}] }
 
-Tone: Like Guru — direct, specific, slightly sarcastic but genuinely caring.
-Reference actual data (streak count, specific weak topics, INICET countdown).
-Morning: energizing. Evening: nudge. Streak warning: urgent but not mean.`;
+RULES:
+- Use ${stats.displayName}'s name at least once across all messages
+- Each message must reference at least one real data point (streak, topic name, exam countdown, coverage %)
+- morning: energising kick-start, name a specific weak topic to tackle today
+- afternoon: midday check-in, mention nemesis topic or exam pressure if present
+- evening: firm nudge toward end-of-day goal, reference syllabus gap
+- streak_warning: fires at 9 pm — urgent, streak-focused, exact day count if > 0; encouraging if streak = 0
+- Tone: Guru — sharp, specific, a little sarcastic but genuinely invested. Not generic.
+- Title: max 60 chars. Body: max 110 chars. No placeholder text like "...".`;
 }
 
 export function buildCatalystPrompt(transcript: string): string {

@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
-  detailScroll: {},
+  detailScroll: { flex: 1 },
   topicRow: {
     flexDirection: 'row',
     alignItems: 'center',

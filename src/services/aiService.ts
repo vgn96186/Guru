@@ -688,12 +688,18 @@ export async function planSessionWithAI(
 
 export async function generateAccountabilityMessages(
   stats: {
+    displayName: string;
     streak: number;
     weakestTopics: string[];
+    nemesisTopics: string[];
     lastStudied: string;
     daysToInicet: number;
+    daysToNeetPg: number;
     coveragePercent: number;
+    masteredCount: number;
+    totalTopics: number;
     lastMood: Mood | null;
+    guruFrequency: 'rare' | 'normal' | 'frequent' | 'off';
   },
 ): Promise<Array<{ title: string; body: string; scheduledFor: string }>> {
   const userPrompt = buildAccountabilityPrompt(stats);
@@ -702,7 +708,9 @@ export async function generateAccountabilityMessages(
     { role: 'user', content: userPrompt },
   ];
 
-  const AccountMsgSchema = z.object({ messages: z.array(z.object({ title: z.string(), body: z.string(), scheduledFor: z.string() })) });
+  const AccountMsgSchema = z.object({
+    messages: z.array(z.object({ title: z.string(), body: z.string(), scheduledFor: z.string() })),
+  });
   const { parsed } = await generateJSONWithRouting(messages, AccountMsgSchema, 'high');
   return parsed.messages;
 }

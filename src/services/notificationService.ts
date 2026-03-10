@@ -1,7 +1,8 @@
 import * as Notifications from 'expo-notifications';
 import { generateAccountabilityMessages } from './aiService';
 import { getUserProfile, getDaysToExam, getLast30DaysLog } from '../db/queries/progress';
-import { getWeakestTopics, getTopicsDueForReview, getNemesisTopics } from '../db/queries/topics';
+import { getWeakestTopics, getTopicsDueForReview, getNemesisTopics, getSubjectBreakdown } from '../db/queries/topics';
+import { todayStr } from '../db/database';
 import type { Mood } from '../types';
 
 let areNotificationsSupported = true;
@@ -249,78 +250,183 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
   const profile = getUserProfile();
   if (!profile.notificationsEnabled) return;
 
+  const notifHour = profile.notificationHour ?? 7;
+  const guruFrequency = profile.guruFrequency ?? 'normal';
+
+  // Real syllabus coverage from subject breakdown
+  const breakdown = getSubjectBreakdown();
+  const totalTopics = breakdown.reduce((s, r) => s + r.total, 0);
+  const coveredTopics = breakdown.reduce((s, r) => s + r.covered, 0);
+  const masteredCount = breakdown.reduce((s, r) => s + r.mastered, 0);
+  const coveragePercent = totalTopics > 0 ? Math.round((coveredTopics / totalTopics) * 100) : 0;
+
   const nemesisTopics = getNemesisTopics();
   const weakTopics = getWeakestTopics(3).map(t => t.name);
-  const dueTopics = getTopicsDueForReview(1); // Check if any topic is due
+  const dueTopics = getTopicsDueForReview(1);
   const logs = getLast30DaysLog();
-  const lastStudied = logs.find(l => l.sessionCount > 0)?.date ?? 'unknown';
-  const daysToInicet = getDaysToExam(profile.inicetDate);
-  const studiedDays = logs.filter(l => l.totalMinutes >= 20).length;
-  const coveragePercent = Math.round((studiedDays / 30) * 100);
   const lastMood = logs[0]?.mood ?? null;
 
+  // Human-readable "last studied" relative to today
+  const lastStudiedDate = logs.find(l => l.sessionCount > 0)?.date ?? null;
+  const daysSince = lastStudiedDate
+    ? Math.max(0, Math.floor((Date.now() - new Date(`${lastStudiedDate}T00:00:00`).getTime()) / 86400000))
+    : null;
+  const lastStudied =
+    daysSince === null ? 'never'
+    : daysSince === 0 ? 'today'
+    : daysSince === 1 ? 'yesterday'
+    : `${daysSince} days ago`;
+
+  const daysToInicet = getDaysToExam(profile.inicetDate);
+  const daysToNeetPg = getDaysToExam(profile.neetDate);
+
   try {
-
-    // BADGE UPDATE: Badge = Nemesis Topics + (1 if studied 0 mins today) to cause native anxiety
-    const streakDanger = (studiedDays === 0 || (logs[0]?.totalMinutes < 20)) ? 1 : 0;
-    const badgeCount = nemesisTopics.length + streakDanger;
-    await Notifications.setBadgeCountAsync(badgeCount);
-
-    // 1. Forced SRS Alarm: Check if strictly due
-    const notifHour = profile.notificationHour ?? 7;
-    if (dueTopics.length > 0) {
-      await cancelNotificationsByPrefix(ACCOUNTABILITY_ID_PREFIX);
-      await scheduleMorningReminder(
-        '🚨 CRITICAL REVIEW DUE',
-        `Topic "${dueTopics[0].name}" is fading! Quiz now to save your mastery level. Only correct answers count.`,
-        notifHour,
-      );
-
-      if (nemesisTopics.length > 0) {
-        await scheduleBossFightTarget(nemesisTopics[0].name);
-      }
-      return; // Stop here, SRS priority
-    }
-
-    // Wrap AI call in try/catch to prevent crashes
-    let messages: Array<{ title: string; body: string; scheduledFor: string }> = [];
-    try {
-      messages = await generateAccountabilityMessages({
-        streak: profile.streakCurrent,
-        weakestTopics: weakTopics,
-        lastStudied,
-        daysToInicet,
-        coveragePercent,
-        lastMood: lastMood as Mood | null,
-      });
-    } catch (aiError) {
-      if (__DEV__) console.warn('Failed to generate accountability messages:', aiError);
-      // Use default messages if AI fails
-      messages = [
-        { title: '📚 Time to Study!', body: 'Keep your streak going!', scheduledFor: 'morning' },
-        { title: '📖 Last chance today', body: 'Complete one topic before bed.', scheduledFor: 'evening' },
-        { title: '🔥 Don\'t break your streak!', body: 'Study for at least 20 minutes.', scheduledFor: 'streak_warning' },
-      ];
-    }
+    // Badge = nemesis count + 1 if nothing studied today (nudge anxiety)
+    const studiedToday = (logs[0]?.totalMinutes ?? 0) >= 20 && logs[0]?.date === todayStr();
+    await Notifications.setBadgeCountAsync(nemesisTopics.length + (studiedToday ? 0 : 1));
 
     await cancelNotificationsByPrefix(ACCOUNTABILITY_ID_PREFIX);
 
-    if (nemesisTopics.length > 0) {
-      // High priority intrusive notification
-      await scheduleBossFightTarget(nemesisTopics[0].name);
+    // — SRS Priority path: a review is overdue, skip AI, fire critical alert —
+    if (dueTopics.length > 0) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${ACCOUNTABILITY_ID_PREFIX}morning`,
+        content: {
+          title: '🚨 Critical Review Due',
+          body: `"${dueTopics[0].name}" is fading. Quiz it now before your mastery drops.`,
+          sound: true,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: notifHour, minute: 30 },
+      });
+      if (nemesisTopics.length > 0) {
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${ACCOUNTABILITY_ID_PREFIX}boss`,
+          content: {
+            title: '⚔️ Boss Fight',
+            body: `${nemesisTopics[0].name} beat you before. Today you finish it.`,
+            sound: true,
+          },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 12, minute: 0 },
+        });
+      }
+      return;
     }
 
-    for (const msg of messages) {
+    // — guruFrequency 'off': skip AI, schedule minimal system-level streak warning —
+    if (guruFrequency === 'off') {
+      const streakBody = profile.streakCurrent > 0
+        ? `${profile.streakCurrent}-day streak at risk. Study 20 min to keep it alive.`
+        : 'No streak yet. Start one today — even 20 minutes counts.';
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${ACCOUNTABILITY_ID_PREFIX}streak`,
+        content: { title: '🔥 Streak Alert', body: streakBody, sound: true },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 21, minute: 0 },
+      });
+      return;
+    }
+
+    // — AI-generated dynamic messages —
+    let aiMessages: Array<{ title: string; body: string; scheduledFor: string }> = [];
+    try {
+      aiMessages = await generateAccountabilityMessages({
+        displayName: profile.displayName,
+        streak: profile.streakCurrent,
+        weakestTopics: weakTopics,
+        nemesisTopics: nemesisTopics.slice(0, 2).map(t => t.name),
+        lastStudied,
+        daysToInicet,
+        daysToNeetPg,
+        coveragePercent,
+        masteredCount,
+        totalTopics,
+        lastMood: lastMood as Mood | null,
+        guruFrequency,
+      });
+    } catch (aiError) {
+      if (__DEV__) console.warn('[Notifications] AI generation failed, using smart fallbacks:', aiError);
+      // Smart fallbacks: use real user data even without AI
+      const name = profile.displayName;
+      const topic = weakTopics[0] ?? 'your weakest topic';
+      const streakLine = profile.streakCurrent > 0
+        ? `${profile.streakCurrent}-day streak on the line.`
+        : 'Restart your streak today.';
+      aiMessages = [
+        {
+          title: `📚 Morning, ${name}!`,
+          body: `${coveragePercent}% covered. Work on ${topic} today.`,
+          scheduledFor: 'morning',
+        },
+        {
+          title: '📖 Evening check-in',
+          body: `${daysToInicet > 0 ? `${daysToInicet}d to INI-CET. ` : ''}One more topic before bed.`,
+          scheduledFor: 'evening',
+        },
+        {
+          title: '🔥 Streak Warning',
+          body: streakLine + ' 20 minutes is all it takes.',
+          scheduledFor: 'streak_warning',
+        },
+      ];
+    }
+
+    // Schedule each AI message with a stable identifier and correct trigger time
+    const eveningHour = Math.min(20, Math.max(17, notifHour + 11));
+    for (const msg of aiMessages) {
       if (msg.scheduledFor === 'morning') {
-        await scheduleMorningReminder(msg.title, msg.body, notifHour);
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${ACCOUNTABILITY_ID_PREFIX}morning`,
+          content: { title: msg.title, body: msg.body, sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: notifHour, minute: 30 },
+        });
+      } else if (msg.scheduledFor === 'afternoon') {
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${ACCOUNTABILITY_ID_PREFIX}afternoon`,
+          content: { title: msg.title, body: msg.body, sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 12, minute: 0 },
+        });
       } else if (msg.scheduledFor === 'evening') {
-        await scheduleEveningNudge(msg.title, msg.body, Math.min(23, notifHour + 11));
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${ACCOUNTABILITY_ID_PREFIX}evening`,
+          content: { title: msg.title, body: msg.body, sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: eveningHour, minute: 0 },
+        });
       } else if (msg.scheduledFor === 'streak_warning') {
-        await scheduleStreakWarning();
+        // Always fires at 9pm — use the AI-generated content (not the hardcoded fallback)
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${ACCOUNTABILITY_ID_PREFIX}streak`,
+          content: { title: msg.title, body: msg.body, sound: true },
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 21, minute: 0 },
+        });
       }
     }
+
+    // Boss fight notification: noon, separate from Guru messages
+    if (nemesisTopics.length > 0) {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${ACCOUNTABILITY_ID_PREFIX}boss`,
+        content: {
+          title: '⚔️ Boss Fight Today',
+          body: `${nemesisTopics[0].name} is your nemesis. You've failed it before. Not today.`,
+          sound: true,
+          badge: nemesisTopics.length,
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 12, minute: 0 },
+      });
+    }
+
   } catch {
-    // Non-critical — schedule defaults
-    await scheduleStreakWarning();
+    // Last-resort fallback — at minimum schedule a streak reminder
+    try {
+      await Notifications.scheduleNotificationAsync({
+        identifier: `${ACCOUNTABILITY_ID_PREFIX}streak`,
+        content: {
+          title: '🔥 Streak Alert!',
+          body: 'Study for 20 minutes to keep your streak alive.',
+          sound: true,
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 21, minute: 0 },
+      });
+    } catch { /* silent */ }
   }
 }

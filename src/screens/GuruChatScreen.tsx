@@ -114,9 +114,13 @@ export default function GuruChatScreen() {
       >
         <ResponsiveContainer style={styles.flex}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.8}>
-              <Text style={styles.backText}>‹ Back</Text>
-            </TouchableOpacity>
+            {navigation.canGoBack() ? (
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.8}>
+                <Text style={styles.backText}>‹ Back</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.backBtn} />
+            )}
             <View style={styles.headerTextWrap}>
               <Text style={styles.title}>Guru Medical Chat</Text>
               <Text style={styles.subtitle}>{topicName}</Text>

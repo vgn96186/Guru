@@ -30,6 +30,7 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SyllabusStack = createNativeStackNavigator<SyllabusStackParamList>();
 const NotesStack = createNativeStackNavigator<HomeStackParamList>();
+const ChatStack = createNativeStackNavigator<HomeStackParamList>();
 
 function HomeStackNav() {
   return (
@@ -74,6 +75,14 @@ function NotesStackNav() {
   );
 }
 
+function ChatStackNav() {
+  return (
+    <ChatStack.Navigator initialRouteName="GuruChat" screenOptions={{ headerShown: false }}>
+      <ChatStack.Screen name="GuruChat" component={GuruChatScreen} />
+    </ChatStack.Navigator>
+  );
+}
+
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 8);
@@ -104,6 +113,7 @@ export default function TabNavigator() {
             HomeTab: focused ? 'home' : 'home-outline',
             SyllabusTab: focused ? 'grid' : 'grid-outline',
             NotesTab: focused ? 'book' : 'book-outline',
+            ChatTab: focused ? 'chatbubbles' : 'chatbubbles-outline',
             PlanTab: focused ? 'calendar' : 'calendar-outline',
             StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
             SettingsTab: focused ? 'settings' : 'settings-outline',
@@ -115,6 +125,7 @@ export default function TabNavigator() {
       <Tab.Screen name="HomeTab" component={HomeStackNav} options={{ tabBarLabel: 'Home', tabBarButtonTestID: 'tab-home', tabBarAccessibilityLabel: 'Home tab' }} />
       <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} options={{ tabBarLabel: 'Syllabus', tabBarButtonTestID: 'tab-syllabus', tabBarAccessibilityLabel: 'Syllabus tab' }} />
       <Tab.Screen name="NotesTab" component={NotesStackNav} options={{ tabBarLabel: 'Notes', tabBarButtonTestID: 'tab-notes', tabBarAccessibilityLabel: 'Notes tab' }} />
+      <Tab.Screen name="ChatTab" component={ChatStackNav} options={{ tabBarLabel: 'Chat', tabBarButtonTestID: 'tab-chat', tabBarAccessibilityLabel: 'Guru Chat tab' }} />
       <Tab.Screen name="PlanTab" component={StudyPlanScreen} options={{ tabBarLabel: 'Plan', tabBarButtonTestID: 'tab-plan', tabBarAccessibilityLabel: 'Study Plan tab' }} />
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ tabBarLabel: 'Stats', tabBarButtonTestID: 'tab-stats', tabBarAccessibilityLabel: 'Statistics tab' }} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ tabBarLabel: 'Settings', tabBarButtonTestID: 'tab-settings', tabBarAccessibilityLabel: 'Settings tab' }} />

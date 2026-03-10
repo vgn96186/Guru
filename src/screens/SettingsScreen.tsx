@@ -273,8 +273,8 @@ export default function SettingsScreen() {
   const [orKey, setOrKey] = useState('');
   const [groqKey, setGroqKey] = useState('');
   const [name, setName] = useState('');
-  const [inicetDate, setInicetDate] = useState('2026-05-01');
-  const [neetDate, setNeetDate] = useState('2026-08-01');
+  const [inicetDate, setInicetDate] = useState('2026-05-17');
+  const [neetDate, setNeetDate] = useState('2026-08-30');
   const [sessionLength, setSessionLength] = useState('45');
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
@@ -392,8 +392,8 @@ export default function SettingsScreen() {
       setOrKey(profile.openrouterKey ?? '');
       setGroqKey(profile.groqApiKey ?? '');
       setName(profile.displayName);
-      setInicetDate(profile.inicetDate);
-      setNeetDate(profile.neetDate);
+      setInicetDate(profile.inicetDate || '2026-05-17');
+      setNeetDate(profile.neetDate || '2026-08-30');
       setSessionLength(profile.preferredSessionLength.toString());
       setDailyGoal(profile.dailyGoalMinutes.toString());
       setNotifs(profile.notificationsEnabled);
@@ -447,10 +447,10 @@ export default function SettingsScreen() {
     const finalNeetDate = normalizedNeet ?? fallbackNeet;
 
     if (!finalInicetDate) {
-      nextValidationErrors.inicetDate = 'Use a valid date (YYYY-MM-DD, e.g. 2026-05-01).';
+      nextValidationErrors.inicetDate = 'Use a valid date (YYYY-MM-DD, e.g. 2026-05-17).';
     }
     if (!finalNeetDate) {
-      nextValidationErrors.neetDate = 'Use a valid date (YYYY-MM-DD, e.g. 2026-08-01).';
+      nextValidationErrors.neetDate = 'Use a valid date (YYYY-MM-DD, e.g. 2026-08-30).';
     }
 
     const parsedSessionLength = Number.parseInt(sessionLength, 10);

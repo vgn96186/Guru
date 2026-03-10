@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  StatusBar, Alert, AppState, ActivityIndicator, Modal,
+  StatusBar, Alert, AppState, ActivityIndicator, Modal, InteractionManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -36,6 +36,7 @@ import { getDb } from '../db/database';
 import type { TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import Svg, { Circle } from 'react-native-svg';
+import { showToast } from '../components/Toast';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -145,19 +146,21 @@ export default function HomeScreen() {
       if (recordingPath) {
         console.log('[Home] Validating recording file via native:', recordingPath);
         let validated = false;
-        for (let attempt = 0; attempt < 3; attempt++) {
+        const MAX_RETRIES = 8;
+        const BASE_DELAY_MS = 300;
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
           try {
             const info = await validateRecordingFile(recordingPath);
             console.log(`[Home] Native file check attempt ${attempt}: exists=${info.exists}, size=${info.size}`);
-            if (info.exists && info.size > 100) {
+            if (info.exists && info.size > 1024) {
               validated = true;
               break;
             }
           } catch (e) {
             console.warn(`[Home] Native file check error attempt ${attempt}:`, e);
           }
-          if (attempt < 2) {
-            await new Promise(res => setTimeout(res, 200));
+          if (attempt < MAX_RETRIES - 1) {
+            await new Promise(res => setTimeout(res, BASE_DELAY_MS * Math.pow(1.5, attempt)));
           }
         }
         if (!validated) {
@@ -166,6 +169,10 @@ export default function HomeScreen() {
             if (!finalInfo.exists || finalInfo.size <= 100) {
               console.warn(
                 `[Home] Recording file still not ready: exists=${finalInfo.exists}, size=${finalInfo.size}. Keeping path for downstream retry.`,
+              );
+              showToast(
+                "Recording file isn't ready yet — it may appear when you reopen the app.",
+                'warning',
               );
             } else {
               console.log(`[Home] Recording file validated: size=${finalInfo.size} bytes`);
@@ -191,6 +198,7 @@ export default function HomeScreen() {
       });
     } catch (err) {
       console.error('[Home] Error in checkForReturnedSession:', err);
+      showToast("Couldn't process your lecture recording. Try opening the app again.", 'error');
     }
   }, []);
 
@@ -209,29 +217,35 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        await refreshProfile();
-        if (!isMounted) return;
-        markNemesisTopics();
-        setWeakTopics(getWeakestTopics(3));
-        setDueTopics(getTopicsDueForReview(5));
-        setTodayTasks(getTodaysAgendaWithTimes().slice(0, 2));
-        setCompletedSessions(getCompletedSessionCount());
-        const log = getDailyLog();
-        setTodayMinutes(log?.totalMinutes ?? 0);
-      } catch (err: any) {
-        if (!isMounted) return;
-        console.error('[Home] Failed to load initial data:', err);
-        Alert.alert('Load Failed', err?.message ?? 'Unable to load home data. Please try again.');
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    loadData();
+    const task = InteractionManager.runAfterInteractions(() => {
+      const loadData = async () => {
+        setIsLoading(true);
+        try {
+          await refreshProfile();
+          if (!isMounted) return;
+          markNemesisTopics();
+          // Yield between heavy queries to avoid long synchronous blocks
+          setWeakTopics(getWeakestTopics(3));
+          await new Promise(r => setTimeout(r, 0));
+          setDueTopics(getTopicsDueForReview(5));
+          await new Promise(r => setTimeout(r, 0));
+          setTodayTasks(getTodaysAgendaWithTimes().slice(0, 2));
+          setCompletedSessions(getCompletedSessionCount());
+          const log = getDailyLog();
+          setTodayMinutes(log?.totalMinutes ?? 0);
+        } catch (err: any) {
+          if (!isMounted) return;
+          console.error('[Home] Failed to load initial data:', err);
+          Alert.alert('Load Failed', err?.message ?? 'Unable to load home data. Please try again.');
+        } finally {
+          if (isMounted) setIsLoading(false);
+        }
+      };
+      loadData();
+    });
     return () => {
       isMounted = false;
+      task.cancel();
     };
   }, []);
 
@@ -543,26 +557,6 @@ export default function HomeScreen() {
             />
           </View>
 
-          <TouchableOpacity
-            style={styles.notesHubCard}
-            onPress={() => navigation.navigate('NotesHub')}
-            activeOpacity={0.85}
-            testID="notes-hub-btn"
-          >
-            <View style={styles.notesHubCardHeader}>
-              <Text style={styles.notesHubEyebrow}>KNOWLEDGE VAULT</Text>
-              <Text style={styles.notesHubArrow}>›</Text>
-            </View>
-            <Text style={styles.notesHubTitle}>My Notes</Text>
-            <Text style={styles.notesHubText}>
-              Open lecture notes, search saved concepts, and revisit transcripts without digging through More.
-            </Text>
-            <View style={styles.notesHubMetaRow}>
-              <Text style={styles.notesHubMeta}>Search notes</Text>
-              <Text style={styles.notesHubMeta}>Lecture transcripts</Text>
-            </View>
-          </TouchableOpacity>
-
           {/* Task paralysis — subtle inline link, not a big button */}
           {daysSinceActive >= 2 && (
             <TouchableOpacity
@@ -680,17 +674,8 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.moreGroupLabel}>AI & NOTES</Text>
+              <Text style={styles.moreGroupLabel}>AI TOOLS</Text>
               {/* Tools */}
-              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('NotesHub')}>
-                <Text style={styles.moreLinkText}>📚 My Notes Hub</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('NotesSearch')}>
-                <Text style={styles.moreLinkText}>🔍 Search My Notes</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('TranscriptHistory')}>
-                <Text style={styles.moreLinkText}>📄 Lecture Transcripts</Text>
-              </TouchableOpacity>
               <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('BrainDumpReview')}>
                 <Text style={styles.moreLinkText}>🧠 Review Parked Thoughts</Text>
               </TouchableOpacity>

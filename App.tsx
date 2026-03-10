@@ -8,10 +8,12 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { useAppStore } from './src/store/useAppStore';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import LoadingOrb from './src/components/LoadingOrb';
+import { ToastContainer } from './src/components/Toast';
 import { registerBackgroundFetch } from './src/services/backgroundTasks';
 import { bootstrapLocalModels } from './src/services/localModelBootstrap';
 import { syncExamDatesFromInternet } from './src/services/examDateSyncService';
 import { applyConfidenceDecay } from './src/db/queries/progress';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export const navigationRef = createNavigationContainerRef<any>();
 
@@ -73,6 +75,7 @@ function AppContent() {
   return (
     <NavigationContainer ref={navigationRef}>
       <RootNavigator />
+      <ToastContainer />
     </NavigationContainer>
   );
 }
@@ -111,25 +114,31 @@ export default function App() {
 
   if (dbError) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Startup Error</Text>
-        <Text style={styles.errorText}>{dbError}</Text>
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorTitle}>Startup Error</Text>
+          <Text style={styles.errorText}>{dbError}</Text>
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   if (!dbReady) {
     return (
-      <View style={styles.loadingContainer}>
-        <LoadingOrb message="Guru is waking up..." />
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <LoadingOrb message="Guru is waking up..." />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <ErrorBoundary>
-      <AppContent />
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 

@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { ALL_SCHEMAS } from './schema';
+import { ALL_SCHEMAS, DB_INDEXES } from './schema';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 
@@ -36,6 +36,11 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   // Create all tables
   for (const sql of ALL_SCHEMAS) {
     await db.execAsync(sql);
+  }
+
+  // Create performance indexes (IF NOT EXISTS — safe for existing installs)
+  for (const sql of DB_INDEXES) {
+    try { await db.execAsync(sql); } catch (_) { /* ignore */ }
   }
 
   // Check topic count BEFORE seeding subjects (to detect fresh install)

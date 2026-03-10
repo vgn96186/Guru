@@ -18,6 +18,7 @@ import {
   getLectureHistory,
   searchLectureNotes,
   deleteLectureNote,
+  updateLectureTranscriptSummary,
   getLectureNoteById,
   type LectureHistoryItem
 } from '../db/queries/aiCache';
@@ -152,13 +153,19 @@ export default function TranscriptHistoryScreen() {
   const [notes, setNotes] = useState<LectureHistoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState<LectureHistoryItem | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [renameText, setRenameText] = useState('');
+  const [showRenameEditor, setShowRenameEditor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const loadNotes = useCallback(() => {
     const items = getLectureHistory(100);
     setNotes(items);
+    setSelectedIds(prev => prev.filter(id => items.some(item => item.id === id)));
   }, []);
+
+  const isSelectionMode = selectedIds.length > 0;
 
   useFocusEffect(
     useCallback(() => {
@@ -226,6 +233,68 @@ export default function TranscriptHistoryScreen() {
     );
   };
 
+  const toggleSelection = (id: number) => {
+    setSelectedIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(x => x !== id);
+      }
+      return [...prev, id];
+    });
+  };
+
+  const handleLongPressItem = (id: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    toggleSelection(id);
+  };
+
+  const cancelSelection = () => {
+    setSelectedIds([]);
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.length === 0) return;
+    const idsToDelete = [...selectedIds];
+    Alert.alert(
+      `Delete ${idsToDelete.length} transcript${idsToDelete.length !== 1 ? 's' : ''}?`,
+      'This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            idsToDelete.forEach(id => deleteLectureNote(id));
+            setSelectedIds([]);
+            if (selectedNote && idsToDelete.includes(selectedNote.id)) {
+              setSelectedNote(null);
+            }
+            loadNotes();
+          },
+        },
+      ],
+    );
+  };
+
+  const openRename = () => {
+    if (!selectedNote) return;
+    const current = (selectedNote.summary && selectedNote.summary.trim().length > 0)
+      ? selectedNote.summary
+      : extractFirstLine(selectedNote.note);
+    setRenameText(current);
+    setShowRenameEditor(true);
+  };
+
+  const saveRename = () => {
+    if (!selectedNote) return;
+    const next = renameText.trim();
+    updateLectureTranscriptSummary(selectedNote.id, next.length > 0 ? next : null);
+    setSelectedNote({ ...selectedNote, summary: next.length > 0 ? next : null });
+    setShowRenameEditor(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    loadNotes();
+  };
+
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -244,15 +313,33 @@ export default function TranscriptHistoryScreen() {
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
-  const renderNote = ({ item }: { item: LectureHistoryItem }) => (
+  const renderNote = ({ item }: { item: LectureHistoryItem }) => {
+    const isSelected = selectedIds.includes(item.id);
+    return (
     <TouchableOpacity
-      style={styles.noteCard}
+      style={[styles.noteCard, isSelected && styles.noteCardSelected]}
+      onLongPress={() => handleLongPressItem(item.id)}
+      delayLongPress={220}
       onPress={() => {
+        if (isSelectionMode) {
+          Haptics.selectionAsync();
+          toggleSelection(item.id);
+          return;
+        }
         Haptics.selectionAsync();
         setSelectedNote(item);
       }}
       activeOpacity={0.7}
     >
+      {isSelectionMode && (
+        <View style={styles.selectionTickWrap}>
+          <Ionicons
+            name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+            size={22}
+            color={isSelected ? '#6C63FF' : '#666'}
+          />
+        </View>
+      )}
       <View style={styles.noteHeader}>
         <View style={[styles.subjectChip, { backgroundColor: SUBJECT_COLORS[item.subjectName ?? 'Unknown'] ?? '#9E9E9E' }]}>
           <Text style={styles.subjectText}>{item.subjectName ?? 'Unknown'}</Text>
@@ -294,6 +381,7 @@ export default function TranscriptHistoryScreen() {
       </View>
     </TouchableOpacity>
   );
+  };
 
   return (
     <View style={styles.container}>
@@ -318,9 +406,24 @@ export default function TranscriptHistoryScreen() {
 
       {/* Header stats */}
       <View style={styles.statsBar}>
-        <Text style={styles.statsText}>
-          {notes.length} lecture{notes.length !== 1 ? 's' : ''} recorded
-        </Text>
+        {isSelectionMode ? (
+          <View style={styles.selectionBar}>
+            <Text style={styles.selectionText}>{selectedIds.length} selected</Text>
+            <View style={styles.selectionActions}>
+              <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
+                <Text style={styles.selectionCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
+                <Ionicons name="trash-outline" size={14} color="#fff" />
+                <Text style={styles.selectionDeleteText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <Text style={styles.statsText}>
+            {notes.length} lecture{notes.length !== 1 ? 's' : ''} recorded
+          </Text>
+        )}
       </View>
 
       {/* Empty state */}
@@ -370,17 +473,35 @@ export default function TranscriptHistoryScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
+              <Text style={styles.modalTitle} numberOfLines={1}>
                 {selectedNote?.subjectName ?? 'Lecture'} Transcript
               </Text>
-              <TouchableOpacity onPress={() => setSelectedNote(null)}>
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
+              <View style={styles.modalHeaderActions}>
+                <TouchableOpacity style={styles.headerActionBtn} onPress={openRename}>
+                  <Ionicons name="create-outline" size={18} color="#A09CF7" />
+                  <Text style={styles.headerActionText}>Rename</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.headerActionBtn}
+                  onPress={() => selectedNote && handleDelete(selectedNote.id)}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#F28B8B" />
+                  <Text style={[styles.headerActionText, { color: '#F28B8B' }]}>Delete</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.headerActionBtn} onPress={() => setSelectedNote(null)}>
+                  <Ionicons name="close" size={22} color="#fff" />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <ScrollView style={styles.modalScroll}>
               {/* Meta info */}
               <View style={styles.modalMeta}>
+                {selectedNote && (
+                  <Text style={styles.customTitleText}>
+                    {selectedNote.summary?.trim() || extractFirstLine(selectedNote.note)}
+                  </Text>
+                )}
                 {selectedNote?.appName && (
                   <Text style={styles.modalMetaText}>
                     via {selectedNote.appName} • {formatDate(selectedNote.createdAt)}
@@ -395,6 +516,28 @@ export default function TranscriptHistoryScreen() {
                   {CONFIDENCE_LABELS[selectedNote?.confidence ?? 2]}
                 </Text>
               </View>
+
+              {showRenameEditor && (
+                <View style={styles.renameCard}>
+                  <Text style={styles.renameLabel}>Rename transcript</Text>
+                  <TextInput
+                    style={styles.renameInput}
+                    value={renameText}
+                    onChangeText={setRenameText}
+                    placeholder="Enter title"
+                    placeholderTextColor="#777"
+                    autoFocus
+                  />
+                  <View style={styles.renameActions}>
+                    <TouchableOpacity style={styles.renameCancelBtn} onPress={() => setShowRenameEditor(false)}>
+                      <Text style={styles.renameCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.renameSaveBtn} onPress={saveRename}>
+                      <Text style={styles.renameSaveText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
 
               {/* Topics */}
               {selectedNote && selectedNote.topics.length > 0 && (
@@ -421,14 +564,6 @@ export default function TranscriptHistoryScreen() {
                 <TranscriptSection transcript={selectedNote.transcript} />
               )}
 
-              {/* Delete button */}
-              <TouchableOpacity
-                style={styles.deleteBtn}
-                onPress={() => selectedNote && handleDelete(selectedNote.id)}
-              >
-                <Ionicons name="trash-outline" size={18} color="#F44336" />
-                <Text style={styles.deleteBtnText}>Delete Transcript</Text>
-              </TouchableOpacity>
             </ScrollView>
           </View>
         </View>
@@ -460,6 +595,26 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   statsText: { color: '#888', fontSize: 13 },
+  selectionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  selectionText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  selectionCancelBtn: { paddingHorizontal: 10, paddingVertical: 6 },
+  selectionCancelText: { color: '#999', fontSize: 13, fontWeight: '600' },
+  selectionDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#D9534F',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  selectionDeleteText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
 
   noteCard: {
@@ -467,6 +622,17 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
+  },
+  noteCardSelected: {
+    borderWidth: 1,
+    borderColor: '#6C63FF',
+    backgroundColor: '#232038',
+  },
+  selectionTickWrap: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 2,
   },
   noteHeader: {
     flexDirection: 'row',
@@ -539,10 +705,38 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '600' },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '600', flex: 1 },
+  modalHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 10 },
+  headerActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4 },
+  headerActionText: { color: '#A09CF7', fontSize: 12, fontWeight: '600' },
   modalScroll: { padding: 16 },
   modalMeta: { marginBottom: 16 },
+  customTitleText: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
   modalMetaText: { color: '#888', fontSize: 13 },
+  renameCard: {
+    backgroundColor: '#222',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    padding: 12,
+    marginBottom: 16,
+  },
+  renameLabel: { color: '#bbb', fontSize: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.6 },
+  renameInput: {
+    backgroundColor: '#111',
+    borderWidth: 1,
+    borderColor: '#3A3A3A',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 15,
+  },
+  renameActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
+  renameCancelBtn: { paddingHorizontal: 12, paddingVertical: 8 },
+  renameCancelText: { color: '#999', fontSize: 13, fontWeight: '600' },
+  renameSaveBtn: { backgroundColor: '#6C63FF', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  renameSaveText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   modalSection: { marginBottom: 20 },
   modalSectionTitle: { color: '#888', fontSize: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
   modalText: { color: '#ddd', fontSize: 15, lineHeight: 22 },
@@ -567,14 +761,4 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
   },
-  deleteBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    marginTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-  },
-  deleteBtnText: { color: '#F44336', fontSize: 14, marginLeft: 8 },
 });

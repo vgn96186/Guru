@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { getAllSubjects } from '../db/queries/topics';
-import { searchLectureNotes, type LectureHistoryItem } from '../db/queries/aiCache';
+import { searchLectureNotes, deleteLectureNote, type LectureHistoryItem } from '../db/queries/aiCache';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 interface TopicNoteResult {
@@ -28,7 +28,24 @@ export default function NotesSearchScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const subjects = React.useMemo(() => getAllSubjects(), []);
+  const isSelectionMode = selectedKeys.length > 0;
+
+  function getResultKey(item: SearchResult): string {
+    return item.type === 'lecture' ? `lec-${item.item.id}` : `topic-${item.id}`;
+  }
+
+  function toggleSelection(key: string) {
+    setSelectedKeys(prev => {
+      if (prev.includes(key)) return prev.filter(k => k !== key);
+      return [...prev, key];
+    });
+  }
+
+  function clearSelection() {
+    setSelectedKeys([]);
+  }
 
   function getSubjectForTopic(topicName: string) {
     return subjects.find(s => topicName.toLowerCase().includes(s.name.toLowerCase()));
@@ -36,6 +53,7 @@ export default function NotesSearchScreen() {
 
   function search(text: string) {
     setQuery(text);
+    setSelectedKeys([]);
     if (text.length < 2) {
       setResults([]);
       return;
@@ -72,51 +90,180 @@ export default function NotesSearchScreen() {
       .slice(0, 150);
   }
 
+  function removeLectureNote(id: number) {
+    Alert.alert(
+      'Delete transcript?',
+      'This will permanently delete the lecture note and transcript.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteLectureNote(id);
+            search(query);
+          },
+        },
+      ],
+    );
+  }
+
+  function removeTopicNote(topicId: number) {
+    Alert.alert(
+      'Delete topic note?',
+      'This clears your saved note for this topic.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            const db = getDb();
+            db.runSync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', topicId]);
+            search(query);
+          },
+        },
+      ],
+    );
+  }
+
+  function openResult(item: SearchResult) {
+    if (item.type === 'lecture') {
+      navigation.navigate('TranscriptHistory', { noteId: item.item.id });
+      return;
+    }
+
+    const subject = getSubjectForTopic(item.name);
+    if (subject) {
+      navigation.getParent()?.navigate('SyllabusTab', {
+        screen: 'TopicDetail',
+        params: {
+          subjectId: subject.id,
+          subjectName: subject.name,
+          initialTopicId: item.id,
+          initialSearchQuery: item.name,
+        },
+      });
+    }
+  }
+
+  function batchDeleteSelected() {
+    if (selectedKeys.length === 0) return;
+    const keysToDelete = [...selectedKeys];
+    Alert.alert(
+      `Delete ${keysToDelete.length} note${keysToDelete.length !== 1 ? 's' : ''}?`,
+      'This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            const db = getDb();
+            keysToDelete.forEach(key => {
+              if (key.startsWith('lec-')) {
+                const id = Number(key.replace('lec-', ''));
+                if (!Number.isNaN(id)) deleteLectureNote(id);
+              } else if (key.startsWith('topic-')) {
+                const id = Number(key.replace('topic-', ''));
+                if (!Number.isNaN(id)) {
+                  db.runSync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', id]);
+                }
+              }
+            });
+            setSelectedKeys([]);
+            search(query);
+          },
+        },
+      ],
+    );
+  }
+
   function renderItem({ item }: { item: SearchResult }) {
+    const resultKey = getResultKey(item);
+    const isSelected = selectedKeys.includes(resultKey);
+
     if (item.type === 'lecture') {
       const lecture = item.item;
       return (
-        <TouchableOpacity
-          style={styles.item}
-          onPress={() => navigation.navigate('TranscriptHistory', { noteId: lecture.id })}
-        >
-          <View style={styles.lectureHeader}>
-            <Text style={styles.lectureBadge}>LECTURE</Text>
-            {lecture.appName && <Text style={styles.appName}>via {lecture.appName}</Text>}
+        <View style={styles.item}>
+          <View style={styles.rowBetween}>
+            <TouchableOpacity
+              style={[styles.resultBody, isSelected && styles.resultBodySelected]}
+              onLongPress={() => toggleSelection(resultKey)}
+              delayLongPress={220}
+              onPress={() => {
+                if (isSelectionMode) {
+                  toggleSelection(resultKey);
+                  return;
+                }
+                openResult(item);
+              }}
+              activeOpacity={0.8}
+            >
+              {isSelectionMode && (
+                <Text style={styles.selectedMarker}>{isSelected ? '● Selected' : '○ Select'}</Text>
+              )}
+              <View style={styles.lectureHeader}>
+                <Text style={styles.lectureBadge}>LECTURE</Text>
+                {lecture.appName && <Text style={styles.appName}>via {lecture.appName}</Text>}
+              </View>
+              <Text style={styles.topic}>{lecture.subjectName ?? 'Lecture'}</Text>
+              <Text style={styles.note} numberOfLines={3}>{extractPreview(lecture.note)}</Text>
+              {lecture.topics.length > 0 && (
+                <Text style={styles.topicsPreview}>{lecture.topics.slice(0, 3).join(' · ')}</Text>
+              )}
+              <Text style={styles.tapHint}>Tap to view lecture notes →</Text>
+            </TouchableOpacity>
+            {!isSelectionMode && (
+              <TouchableOpacity
+                style={styles.deletePill}
+                onPress={() => removeLectureNote(lecture.id)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.deletePillText}>Delete</Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text style={styles.topic}>{lecture.subjectName ?? 'Lecture'}</Text>
-          <Text style={styles.note} numberOfLines={3}>{extractPreview(lecture.note)}</Text>
-          {lecture.topics.length > 0 && (
-            <Text style={styles.topicsPreview}>{lecture.topics.slice(0, 3).join(' · ')}</Text>
-          )}
-          <Text style={styles.tapHint}>Tap to view lecture notes →</Text>
-        </TouchableOpacity>
+        </View>
       );
     }
 
     // Topic note
     return (
-      <TouchableOpacity
-        style={styles.item}
-        onPress={() => {
-          const subject = getSubjectForTopic(item.name);
-          if (subject) {
-            navigation.getParent()?.navigate('SyllabusTab', {
-              screen: 'TopicDetail',
-              params: {
-                subjectId: subject.id,
-                subjectName: subject.name,
-                initialTopicId: item.id,
-                initialSearchQuery: item.name,
-              },
-            });
-          }
-        }}
-      >
-        <Text style={styles.topic}>{item.name}</Text>
-        <Text style={styles.note} numberOfLines={3}>{item.user_notes}</Text>
-        <Text style={styles.tapHint}>Tap to view topic →</Text>
-      </TouchableOpacity>
+      <View style={styles.item}>
+        <View style={styles.rowBetween}>
+          <TouchableOpacity
+            style={[styles.resultBody, isSelected && styles.resultBodySelected]}
+            onLongPress={() => toggleSelection(resultKey)}
+            delayLongPress={220}
+            onPress={() => {
+              if (isSelectionMode) {
+                toggleSelection(resultKey);
+                return;
+              }
+              openResult(item);
+            }}
+            activeOpacity={0.8}
+          >
+            {isSelectionMode && (
+              <Text style={styles.selectedMarker}>{isSelected ? '● Selected' : '○ Select'}</Text>
+            )}
+            <Text style={styles.topic}>{item.name}</Text>
+            <Text style={styles.note} numberOfLines={3}>{item.user_notes}</Text>
+            <Text style={styles.tapHint}>Tap to view topic →</Text>
+          </TouchableOpacity>
+          {!isSelectionMode && (
+            <TouchableOpacity
+              style={styles.deletePill}
+              onPress={() => removeTopicNote(item.id)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.deletePillText}>Delete</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
     );
   }
 
@@ -137,6 +284,19 @@ export default function NotesSearchScreen() {
         </View>
         <FlatList
           data={results}
+          ListHeaderComponent={isSelectionMode ? (
+            <View style={styles.selectionBar}>
+              <Text style={styles.selectionText}>{selectedKeys.length} selected</Text>
+              <View style={styles.selectionActions}>
+                <TouchableOpacity onPress={clearSelection} style={styles.selectionCancelBtn}>
+                  <Text style={styles.selectionCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={batchDeleteSelected} style={styles.selectionDeleteBtn}>
+                  <Text style={styles.selectionDeleteText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : null}
           keyExtractor={(item, idx) =>
             item.type === 'lecture' ? `lec-${item.item.id}` : `topic-${item.id}`
           }
@@ -163,6 +323,26 @@ const styles = StyleSheet.create({
   back: { color: '#fff', fontSize: 24 },
   input: { flex: 1, backgroundColor: '#1A1A24', padding: 12, borderRadius: 10, color: '#fff', fontSize: 16 },
   item: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#222', backgroundColor: '#0F0F14' },
+  rowBetween: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  resultBody: { flex: 1 },
+  resultBodySelected: {
+    borderWidth: 1,
+    borderColor: '#6C63FF',
+    borderRadius: 10,
+    padding: 10,
+    margin: -10,
+    backgroundColor: '#1A1A24',
+  },
+  selectedMarker: { color: '#A09CF7', fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  deletePill: {
+    borderWidth: 1,
+    borderColor: '#6A3131',
+    backgroundColor: '#261414',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  deletePillText: { color: '#F28B8B', fontSize: 12, fontWeight: '700' },
   tapHint: { color: '#6C63FF', fontSize: 12, marginTop: 8, fontWeight: '600' },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptySub: { color: '#666', textAlign: 'center', marginTop: 8, fontSize: 14 },
@@ -183,4 +363,23 @@ const styles = StyleSheet.create({
   },
   appName: { color: '#888', fontSize: 11 },
   topicsPreview: { color: '#A09CF7', fontSize: 12, marginTop: 4 },
+  selectionBar: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectionText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  selectionCancelBtn: { paddingHorizontal: 10, paddingVertical: 6 },
+  selectionCancelText: { color: '#999', fontSize: 13, fontWeight: '700' },
+  selectionDeleteBtn: {
+    backgroundColor: '#D9534F',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  selectionDeleteText: { color: '#fff', fontSize: 12, fontWeight: '800' },
 });

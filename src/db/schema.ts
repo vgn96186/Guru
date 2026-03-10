@@ -162,6 +162,19 @@ CREATE TABLE IF NOT EXISTS external_app_logs (
   pipeline_metrics_json TEXT
 )`;
 
+export const CREATE_OFFLINE_AI_QUEUE = `
+CREATE TABLE IF NOT EXISTS offline_ai_queue (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  request_type TEXT NOT NULL,
+  payload TEXT NOT NULL,
+  status TEXT DEFAULT 'pending'
+    CHECK(status IN ('pending','processing','failed','completed')),
+  attempts INTEGER DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  last_attempt_at INTEGER,
+  error_message TEXT
+)`;
+
 export const MIGRATE_EXTERNAL_APP_LOGS_V2 = `
 ALTER TABLE external_app_logs ADD COLUMN transcription_status TEXT DEFAULT 'pending';
 `;
@@ -178,6 +191,24 @@ export const MIGRATE_EXTERNAL_APP_LOGS_V6 = `
 ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'pending';
 `;
 
+// ── Performance Indexes ───────────────────────────────────────────
+export const DB_INDEXES = [
+  // Spaced repetition lookups (HomeScreen agenda)
+  `CREATE INDEX IF NOT EXISTS idx_tp_status_review ON topic_progress(status, next_review_date)`,
+  // AI cache content fetches (topic detail screen)
+  `CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
+  // Lecture notes chronological listing
+  `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created ON lecture_notes(created_at DESC)`,
+  // External app session "active" check (returned_at IS NULL)
+  `CREATE INDEX IF NOT EXISTS idx_ext_logs_active ON external_app_logs(returned_at)`,
+  // Sessions by date for StatsScreen
+  `CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(created_at DESC)`,
+  // Topic tree traversal (parent lookups)
+  `CREATE INDEX IF NOT EXISTS idx_topics_parent ON topics(parent_topic_id)`,
+  // Topic-to-subject join
+  `CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject_id)`,
+];
+
 export const ALL_SCHEMAS = [
   CREATE_SUBJECTS,
   CREATE_TOPICS,
@@ -189,4 +220,5 @@ export const ALL_SCHEMAS = [
   CREATE_USER_PROFILE,
   CREATE_BRAIN_DUMPS,
   CREATE_EXTERNAL_APP_LOGS,
+  CREATE_OFFLINE_AI_QUEUE,
 ];

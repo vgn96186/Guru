@@ -1,5 +1,6 @@
 import type { AIContent, ContentType, Mood, TopicWithProgress } from '../types';
 import { z } from 'zod';
+import { AppState, AppStateStatus } from 'react-native';
 import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildAgendaPrompt, buildAccountabilityPrompt } from '../constants/prompts';
 import { getCachedContent, setCachedContent } from '../db/queries/aiCache';
 import { getUserProfile } from '../db/queries/progress';
@@ -111,6 +112,7 @@ const FALLBACK_MESSAGES: GuruPresenceMessage[] = [
 let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
 let llamaContextPromise: Promise<LlamaContext> | null = null;
+let contextInUse = false; // semaphore: true while a generation is in flight
 
 async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
   if (llamaContext && currentLlamaPath === modelPath) {
@@ -140,6 +142,7 @@ async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
 
 /** Release the native LLM context to free memory. Safe to call at any time. */
 export async function releaseLlamaContext(): Promise<void> {
+  if (contextInUse) return; // don't interrupt in-flight generation
   if (llamaContext) {
     try { await llamaContext.release(); } catch {}
     llamaContext = null;
@@ -147,9 +150,19 @@ export async function releaseLlamaContext(): Promise<void> {
   }
 }
 
+// Release the 200 MB+ LLM context when app goes to background to prevent OOM kills.
+(function setupAppStateListener() {
+  AppState.addEventListener('change', async (state: AppStateStatus) => {
+    if (state === 'background' || state === 'inactive') {
+      await releaseLlamaContext();
+    }
+  });
+})();
+
 async function callLocalLLM(messages: Message[], modelPath: string, textMode = false): Promise<string> {
   const ctx = await getLlamaContext(modelPath);
-  
+  contextInUse = true;
+  try {
   let prompt = '';
   const isQwen = modelPath.toLowerCase().includes('qwen');
 
@@ -184,6 +197,9 @@ async function callLocalLLM(messages: Message[], modelPath: string, textMode = f
     text = `{${text}`;
   }
   return text;
+  } finally {
+    contextInUse = false;
+  }
 }
 
 async function callOpenRouter(

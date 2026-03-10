@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getAllSubjects, getAllTopicsWithProgress } from '../db/queries/topics';
+import { getSubjectBreakdown } from '../db/queries/topics';
 import { getDailyLog, getDaysToExam, getActivityHistory } from '../db/queries/progress';
 import { getTotalStudyMinutes, getRecentSessions, getWeeklyComparison, calculateCurrentStreak } from '../db/queries/sessions';
 import { getTotalExternalStudyMinutes } from '../db/queries/externalLogs';
@@ -39,76 +39,41 @@ export default function StatsScreen() {
   }, []);
 
   function loadStats() {
-    const subjects = getAllSubjects();
-    const allTopics = getAllTopicsWithProgress();
+    // Use SQL aggregation — avoids loading all 5000+ topic rows into JS
+    const breakdown = getSubjectBreakdown();
 
-    let covered = 0;
-    let mastered = 0;
-    const masteredNames: string[] = [];
-    let highYieldCovered = 0;
-    let totalHighYield = 0;
-
-    const breakdown = subjects.map(sub => {
-      const subTopics = allTopics.filter(t => t.subjectId === sub.id);
-      let subCovered = 0;
-
-      subTopics.forEach(t => {
-        if (t.progress.status !== 'unseen') {
-          covered++;
-          subCovered++;
-        }
-        if (t.progress.status === 'mastered') {
-          mastered++;
-          masteredNames.push(t.name);
-        }
-        if (t.inicetPriority >= 4) {
-          totalHighYield++;
-          if (t.progress.status !== 'unseen') highYieldCovered++;
-        }
-      });
-
-      return {
-        id: sub.id,
-        name: sub.name,
-        shortCode: sub.shortCode,
-        color: sub.colorHex,
-        covered: subCovered,
-        total: subTopics.length,
-        percent: subTopics.length > 0 ? Math.round((subCovered / subTopics.length) * 100) : 0
-      };
-    });
+    const covered = breakdown.reduce((s, r) => s + r.covered, 0);
+    const mastered = breakdown.reduce((s, r) => s + r.mastered, 0);
+    const totalTopics = breakdown.reduce((s, r) => s + r.total, 0);
+    const totalHighYield = breakdown.reduce((s, r) => s + r.highYieldTotal, 0);
+    const highYieldCovered = breakdown.reduce((s, r) => s + r.highYieldCovered, 0);
 
     const highYieldPercent = totalHighYield > 0 ? Math.round((highYieldCovered / totalHighYield) * 100) : 0;
-    
-    // Rough projection logic: Base 50 + (High Yield coverage * 2.5) -> max ~300
     const projectedScore = Math.min(300, Math.round(50 + (highYieldPercent * 2.5)));
 
     const totalAppMinutes = getTotalStudyMinutes();
     const totalExternalMinutes = getTotalExternalStudyMinutes();
     const allSessions = getRecentSessions(9999);
-    
-    // Calculate 30-day consistency
+
     const recentLogs = getActivityHistory(30);
     const activeDays30 = recentLogs.filter(l => l.sessionCount > 0 || l.totalMinutes > 0).length;
-    
-    // New stats: streak, weekly comparison, projected completion
+
     const currentStreak = calculateCurrentStreak();
     const bestStreak = profile?.streakBest ?? currentStreak;
     const weeklyComp = getWeeklyComparison();
-    
-    // Calculate projected completion: remaining topics / avg topics per active day
-    const remaining = allTopics.length - covered;
+
+    const remaining = totalTopics - covered;
     const avgTopicsPerDay = activeDays30 > 0 ? covered / activeDays30 : 1;
     const projectedCompletionDays = avgTopicsPerDay > 0 ? Math.ceil(remaining / avgTopicsPerDay) : 999;
 
     setStats({
       totalCovered: covered,
-      totalTopics: allTopics.length,
+      totalTopics,
       masteredCount: mastered,
       coveragePercent: highYieldPercent,
       projectedScore,
       subjectBreakdown: breakdown.sort((a, b) => b.percent - a.percent),
-      masteredTopics: masteredNames.slice(0, 10), // Show a sample
+      masteredTopics: [],
       totalAppMinutes,
       totalExternalMinutes,
       totalSessions: allSessions.length,

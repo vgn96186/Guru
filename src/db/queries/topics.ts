@@ -295,3 +295,64 @@ export function incrementWrongCount(topicId: number): void {
     [topicId],
   );
 }
+
+export interface SubjectBreakdownRow {
+  id: number;
+  name: string;
+  shortCode: string;
+  color: string;
+  total: number;
+  covered: number;
+  mastered: number;
+  highYieldTotal: number;
+  highYieldCovered: number;
+  percent: number;
+}
+
+/**
+ * Returns per-subject coverage stats using a single SQL aggregation query,
+ * avoiding loading all 5000+ topic rows into JS memory.
+ */
+export function getSubjectBreakdown(): SubjectBreakdownRow[] {
+  const db = getDb();
+  const rows = db.getAllSync<{
+    id: number;
+    name: string;
+    short_code: string;
+    color_hex: string;
+    total: number;
+    covered: number;
+    mastered: number;
+    high_yield_total: number;
+    high_yield_covered: number;
+  }>(
+    `SELECT
+       s.id,
+       s.name,
+       s.short_code,
+       s.color_hex,
+       COUNT(t.id)                                                             AS total,
+       SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) AS covered,
+       SUM(CASE WHEN p.status = 'mastered'                      THEN 1 ELSE 0 END) AS mastered,
+       SUM(CASE WHEN t.inicet_priority >= 4                      THEN 1 ELSE 0 END) AS high_yield_total,
+       SUM(CASE WHEN t.inicet_priority >= 4
+                AND p.status IN ('seen','reviewed','mastered')   THEN 1 ELSE 0 END) AS high_yield_covered
+     FROM subjects s
+     LEFT JOIN topics t ON t.subject_id = s.id
+     LEFT JOIN topic_progress p ON t.id = p.topic_id
+     GROUP BY s.id
+     ORDER BY s.name`,
+  );
+  return rows.map(r => ({
+    id: r.id,
+    name: r.name,
+    shortCode: r.short_code,
+    color: r.color_hex,
+    total: r.total ?? 0,
+    covered: r.covered ?? 0,
+    mastered: r.mastered ?? 0,
+    highYieldTotal: r.high_yield_total ?? 0,
+    highYieldCovered: r.high_yield_covered ?? 0,
+    percent: r.total > 0 ? Math.round(((r.covered ?? 0) / r.total) * 100) : 0,
+  }));
+}

@@ -29,6 +29,7 @@ import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SyllabusStack = createNativeStackNavigator<SyllabusStackParamList>();
+const NotesStack = createNativeStackNavigator<HomeStackParamList>();
 
 function HomeStackNav() {
   return (
@@ -61,6 +62,18 @@ function SyllabusStackNav() {
   );
 }
 
+function NotesStackNav() {
+  return (
+    <NotesStack.Navigator initialRouteName="NotesHub" screenOptions={{ headerShown: false }}>
+      <NotesStack.Screen name="NotesHub" component={NotesHubScreen} />
+      <NotesStack.Screen name="NotesSearch" component={NotesSearchScreen} />
+      <NotesStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} options={{ title: 'Lecture History' }} />
+      <NotesStack.Screen name="GuruChat" component={GuruChatScreen} />
+      <NotesStack.Screen name="LectureMode" component={LectureModeScreen} />
+    </NotesStack.Navigator>
+  );
+}
+
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 8);
@@ -90,6 +103,7 @@ export default function TabNavigator() {
           const icons: Record<string, string> = {
             HomeTab: focused ? 'home' : 'home-outline',
             SyllabusTab: focused ? 'grid' : 'grid-outline',
+            NotesTab: focused ? 'book' : 'book-outline',
             PlanTab: focused ? 'calendar' : 'calendar-outline',
             StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
             SettingsTab: focused ? 'settings' : 'settings-outline',
@@ -100,6 +114,7 @@ export default function TabNavigator() {
     >
       <Tab.Screen name="HomeTab" component={HomeStackNav} options={{ tabBarLabel: 'Home', tabBarButtonTestID: 'tab-home', tabBarAccessibilityLabel: 'Home tab' }} />
       <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} options={{ tabBarLabel: 'Syllabus', tabBarButtonTestID: 'tab-syllabus', tabBarAccessibilityLabel: 'Syllabus tab' }} />
+      <Tab.Screen name="NotesTab" component={NotesStackNav} options={{ tabBarLabel: 'Notes', tabBarButtonTestID: 'tab-notes', tabBarAccessibilityLabel: 'Notes tab' }} />
       <Tab.Screen name="PlanTab" component={StudyPlanScreen} options={{ tabBarLabel: 'Plan', tabBarButtonTestID: 'tab-plan', tabBarAccessibilityLabel: 'Study Plan tab' }} />
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ tabBarLabel: 'Stats', tabBarButtonTestID: 'tab-stats', tabBarAccessibilityLabel: 'Statistics tab' }} />
       <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ tabBarLabel: 'Settings', tabBarButtonTestID: 'tab-settings', tabBarAccessibilityLabel: 'Settings tab' }} />

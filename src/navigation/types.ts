@@ -50,6 +50,7 @@ export type SyllabusStackParamList = {
 export type TabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
   SyllabusTab: NavigatorScreenParams<SyllabusStackParamList> | undefined;
+  NotesTab: undefined;
   PlanTab: undefined;
   StatsTab: undefined;
   SettingsTab: undefined;

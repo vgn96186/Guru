@@ -156,7 +156,12 @@ async function fetchWithTimeout(url: string, timeoutMs = 12000): Promise<string>
     const res = await fetch(url, {
       method: 'GET',
       signal: controller.signal,
-      headers: { Accept: 'text/html,application/json,text/plain;q=0.9,*/*;q=0.8' },
+      headers: {
+        Accept: 'text/html,application/json,text/plain;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-IN,en;q=0.9',
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
+        'Cache-Control': 'no-cache',
+      },
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.text();
@@ -179,10 +184,11 @@ async function fetchSourceText(url: string): Promise<string> {
   return htmlToText(proxied);
 }
 
-function scoreHit(context: string, examKeyword: RegExp): number {
+function scoreHit(context: string, examKeyword: RegExp, sourceUrl: string): number {
   let score = 1;
   if (examKeyword.test(context)) score += 2;
   if (/(exam date|scheduled|to be held|conducted on|notification|prospectus)/i.test(context)) score += 1;
+  if (/(neetpg|ini|cet|notice|course|exam)/i.test(sourceUrl)) score += 1;
   return score;
 }
 
@@ -201,7 +207,7 @@ function extractDateHits(text: string, sourceUrl: string, examKeyword: RegExp): 
     const start = Math.max(0, match.index - 180);
     const end = Math.min(text.length, match.index + raw.length + 180);
     const context = lower.slice(start, end);
-    const score = scoreHit(context, examKeyword);
+    const score = scoreHit(context, examKeyword, sourceUrl);
 
     // ignore weak/global dates that are probably unrelated posting dates
     if (score < 2) continue;
@@ -232,7 +238,7 @@ function resolveBestDate(hits: DateHit[]): { date: string; sources: string[] } |
 
   // Verification rule: either repeated across multiple official pages,
   // or strong single-source evidence.
-  const isVerified = best.sources.size >= 2 || best.totalScore >= 4;
+  const isVerified = best.sources.size >= 2 || best.totalScore >= 3;
   if (!isVerified) return null;
 
   return { date: bestDate, sources: [...best.sources] };

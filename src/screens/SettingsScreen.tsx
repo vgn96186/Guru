@@ -56,6 +56,41 @@ type BackupTableData = Record<BackupTableName, BackupRow[]>;
 
 type ValidationErrors = Partial<Record<'inicetDate' | 'neetDate' | 'sessionLength' | 'dailyGoal' | 'notifHour', string>>;
 
+function normalizeUserDateInput(value: string): string | null {
+  const raw = value.trim();
+  if (!raw) return null;
+
+  const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (ymd) {
+    const y = Number(ymd[1]);
+    const m = Number(ymd[2]);
+    const d = Number(ymd[3]);
+    if (y >= 2020 && y <= 2035 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      const iso = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+      const parsed = new Date(`${iso}T00:00:00`);
+      if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso) {
+        return iso;
+      }
+    }
+  }
+
+  const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (dmy) {
+    const d = Number(dmy[1]);
+    const m = Number(dmy[2]);
+    const y = Number(dmy[3]);
+    if (y >= 2020 && y <= 2035 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      const iso = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+      const parsed = new Date(`${iso}T00:00:00`);
+      if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso) {
+        return iso;
+      }
+    }
+  }
+
+  return null;
+}
+
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
   const tables = {} as BackupTableData;
@@ -403,11 +438,19 @@ export default function SettingsScreen() {
     setSaveError('');
 
     const nextValidationErrors: ValidationErrors = {};
-    if (!isValidIsoDate(inicetDate)) {
-      nextValidationErrors.inicetDate = 'Use YYYY-MM-DD with a valid calendar date.';
+    const normalizedInicet = normalizeUserDateInput(inicetDate);
+    const normalizedNeet = normalizeUserDateInput(neetDate);
+    const fallbackInicet = profile?.inicetDate && isValidIsoDate(profile.inicetDate) ? profile.inicetDate : null;
+    const fallbackNeet = profile?.neetDate && isValidIsoDate(profile.neetDate) ? profile.neetDate : null;
+
+    const finalInicetDate = normalizedInicet ?? fallbackInicet;
+    const finalNeetDate = normalizedNeet ?? fallbackNeet;
+
+    if (!finalInicetDate) {
+      nextValidationErrors.inicetDate = 'Use a valid date (YYYY-MM-DD, e.g. 2026-05-01).';
     }
-    if (!isValidIsoDate(neetDate)) {
-      nextValidationErrors.neetDate = 'Use YYYY-MM-DD with a valid calendar date.';
+    if (!finalNeetDate) {
+      nextValidationErrors.neetDate = 'Use a valid date (YYYY-MM-DD, e.g. 2026-08-01).';
     }
 
     const parsedSessionLength = Number.parseInt(sessionLength, 10);
@@ -446,6 +489,8 @@ export default function SettingsScreen() {
     }, {});
 
     setValidationErrors({});
+    if (finalInicetDate) setInicetDate(finalInicetDate);
+    if (finalNeetDate) setNeetDate(finalNeetDate);
     setSessionLength(String(sanitizedSessionLength));
     setDailyGoal(String(sanitizedDailyGoal));
     setNotifHour(String(sanitizedNotifHour));
@@ -458,8 +503,8 @@ export default function SettingsScreen() {
         openrouterKey: orKey.trim(),
         groqApiKey: groqKey.trim(),
         displayName: name.trim() || 'Doctor',
-        inicetDate,
-        neetDate,
+        inicetDate: finalInicetDate ?? inicetDate,
+        neetDate: finalNeetDate ?? neetDate,
         preferredSessionLength: sanitizedSessionLength,
         dailyGoalMinutes: sanitizedDailyGoal,
         notificationsEnabled: notifs,
@@ -714,6 +759,9 @@ export default function SettingsScreen() {
           {!!validationErrors.neetDate && <Text style={styles.fieldError}>{validationErrors.neetDate}</Text>}
           <Text style={styles.hint}>
             Guru auto-checks official websites in the background whenever the app opens or returns to foreground.
+          </Text>
+          <Text style={styles.hint}>
+            If online verification fails, you can still enter dates manually and save.
           </Text>
           <TouchableOpacity
             style={[styles.testBtn, examSyncBusy && styles.saveBtnDisabled]}

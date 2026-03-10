@@ -6,19 +6,11 @@ export type SyncMessage =
   | { type: 'BREAK_STARTED'; durationSeconds: number }
   | { type: 'LECTURE_RESUMED' };
 
-const BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
-const ROOM_PREFIX = 'neet_study/room/';
+import { encryptPayload, decryptPayload, clearKeyCache } from './syncCrypto';
 
-// Simple HMAC-like message signing using the room code as shared secret.
-// This does NOT replace proper auth but prevents trivial injection on a public broker.
-function signPayload(json: string, secret: string): string {
-  let hash = 0;
-  const combined = json + ':' + secret;
-  for (let i = 0; i < combined.length; i++) {
-    hash = ((hash << 5) - hash + combined.charCodeAt(i)) | 0;
-  }
-  return hash.toString(36);
-}
+const BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
+// v2 prefix: incompatible with old un-encrypted v1 clients
+const ROOM_PREFIX = 'guru/v2/room/';
 
 let client: any = null;
 let currentRoomCode: string | null = null;
@@ -59,13 +51,15 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
     try { client.end(true); } catch {}
     client = null;
   }
+  // Evict any cached key for a previous sync code
+  clearKeyCache();
 
   let cancelled = false;
 
   connectPromise = getMqtt().then((mqtt) => {
     if (!mqtt || cancelled) return;
 
-    const clientId = 'neet_' + Math.random().toString(16).slice(2, 8);
+    const clientId = 'guru_' + Math.random().toString(16).slice(2, 8);
     client = mqtt.connect(BROKER_URL, { clientId });
     currentRoomCode = code;
 
@@ -77,15 +71,12 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
 
     client.on('message', (receivedTopic: string, message: any) => {
       if (receivedTopic === topic) {
-        try {
-          const raw = JSON.parse(message.toString());
-          const { _sig, ...payload } = raw;
-          // Verify signature to reject injected messages
-          if (_sig !== signPayload(JSON.stringify(payload), code)) return;
-          onMessage(payload as SyncMessage);
-        } catch {
-          // ignore malformed messages
-        }
+        // Async decrypt — null result means stale / wrong-key / tampered message
+        decryptPayload(code, message.toString()).then(payload => {
+          if (payload && (payload as any).type) {
+            onMessage(payload as SyncMessage);
+          }
+        }).catch(() => { /* ignore */ });
       }
     });
 
@@ -113,10 +104,14 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
 }
 
 export function sendSyncMessage(msg: SyncMessage) {
-  if (client && currentRoomCode) {
-    const topic = ROOM_PREFIX + currentRoomCode;
-    const json = JSON.stringify(msg);
-    const signed = { ...msg, _sig: signPayload(json, currentRoomCode) };
-    client.publish(topic, JSON.stringify(signed));
-  }
+  if (!client || !currentRoomCode) return;
+  const topic = ROOM_PREFIX + currentRoomCode;
+  const code = currentRoomCode;
+  // Encrypt async, then publish
+  encryptPayload(code, msg).then(envelope => {
+    client?.publish(topic, envelope);
+  }).catch(err => {
+    console.warn('[DeviceSync] encrypt failed, dropping message:', err);
+  });
 }
+

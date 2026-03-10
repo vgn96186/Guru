@@ -17,6 +17,13 @@ interface ReviewDay {
   topics: Array<{ name: string; confidence: number }>;
 }
 
+function toLocalDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function getReviewCalendarData(year: number, month: number): ReviewDay[] {
   const db = getDb();
   const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -25,28 +32,32 @@ function getReviewCalendarData(year: number, month: number): ReviewDay[] {
     : `${year}-${String(month + 2).padStart(2, '0')}-01`;
 
   const rows = db.getAllSync<{
-    next_review_date: string;
+    review_date: string;
     topic_name: string;
     confidence: number;
   }>(
-    `SELECT tp.next_review_date, t.name as topic_name, tp.confidence
+    `SELECT COALESCE(DATE(tp.fsrs_due), tp.next_review_date) as review_date,
+            t.name as topic_name,
+            tp.confidence
      FROM topic_progress tp
      JOIN topics t ON tp.topic_id = t.id
-     WHERE tp.next_review_date IS NOT NULL
-       AND tp.next_review_date >= ? AND tp.next_review_date < ?
-     ORDER BY tp.next_review_date ASC`,
+     WHERE tp.status != 'unseen'
+       AND COALESCE(DATE(tp.fsrs_due), tp.next_review_date) IS NOT NULL
+       AND COALESCE(DATE(tp.fsrs_due), tp.next_review_date) >= ?
+       AND COALESCE(DATE(tp.fsrs_due), tp.next_review_date) < ?
+     ORDER BY review_date ASC`,
     [startDate, endDate],
   );
 
   const byDate = new Map<string, ReviewDay>();
   for (const r of rows) {
-    const existing = byDate.get(r.next_review_date);
+    const existing = byDate.get(r.review_date);
     if (existing) {
       existing.count++;
       existing.topics.push({ name: r.topic_name, confidence: r.confidence });
     } else {
-      byDate.set(r.next_review_date, {
-        date: r.next_review_date,
+      byDate.set(r.review_date, {
+        date: r.review_date,
         count: 1,
         topics: [{ name: r.topic_name, confidence: r.confidence }],
       });
@@ -75,7 +86,7 @@ export default function ReviewCalendar() {
     return m;
   }, [reviewData]);
 
-  const todayStr = now.toISOString().slice(0, 10);
+  const todayStr = toLocalDateKey(now);
 
   // Build calendar grid
   const firstDay = new Date(year, month, 1).getDay();

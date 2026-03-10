@@ -86,6 +86,9 @@ class OverlayService : Service(), LifecycleOwner {
     private var faceDetector: FaceDetector? = null
     private var noFaceSince = 0L
     private var lastAbsentNotifAt = 0L
+    // Throttle ML Kit to 1 analysis per 2 seconds to save battery during long lectures
+    private var lastFaceAnalysisTime = 0L
+    private val FACE_ANALYSIS_INTERVAL_MS = 2000L
 
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -171,9 +174,16 @@ class OverlayService : Service(), LifecycleOwner {
 
         val analysis = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setTargetResolution(android.util.Size(320, 240))
             .build()
 
         analysis.setAnalyzer(executor) { imageProxy ->
+            val now = System.currentTimeMillis()
+            if (now - lastFaceAnalysisTime < FACE_ANALYSIS_INTERVAL_MS) {
+                imageProxy.close()
+                return@setAnalyzer
+            }
+            lastFaceAnalysisTime = now
             val mediaImage = imageProxy.image
             if (mediaImage != null) {
                 val image = InputImage.fromMediaImage(

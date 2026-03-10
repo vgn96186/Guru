@@ -222,6 +222,14 @@ export function updateLectureTranscriptNote(noteId: number, note: string): void 
   );
 }
 
+export function updateLectureTranscriptSummary(noteId: number, summary: string | null): void {
+  const db = getDb();
+  db.runSync(
+    'UPDATE lecture_notes SET summary = ? WHERE id = ?',
+    [summary, noteId],
+  );
+}
+
 export interface LectureHistoryItem {
   id: number;
   subjectId: number | null;

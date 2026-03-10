@@ -15,7 +15,7 @@ import PunishmentMode from '../screens/PunishmentMode';
 import DoomscrollInterceptor from '../screens/DoomscrollInterceptor';
 import LocalModelScreen from '../screens/LocalModelScreen';
 import { useAppStore } from '../store/useAppStore';
-import { checkinToday, updateUserProfile } from '../db/queries/progress';
+import { checkinToday, updateUserProfile, getDailyLog, getUserProfile } from '../db/queries/progress';
 import { invalidatePlanCache } from '../services/studyPlanner';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -25,6 +25,18 @@ export default function RootNavigator() {
   const profile = useAppStore(s => s.profile);
   const refreshProfile = useAppStore(s => s.refreshProfile);
   const setDailyAvailability = useAppStore(s => s.setDailyAvailability);
+
+  // Compute the initial route synchronously from DB to eliminate the CheckIn screen flash.
+  // This runs once on mount. Zustand may still have hasCheckedInToday=false at this point.
+  const initialRouteRef = React.useRef<'Tabs' | 'CheckIn'>((() => {
+    try {
+      const todayLog = getDailyLog();
+      if (todayLog?.checkedIn) return 'Tabs';
+      const p = getUserProfile();
+      if ((p?.quickStartStreak ?? 0) >= 3) return 'Tabs';
+    } catch { /* DB not ready — fall through */ }
+    return 'CheckIn';
+  })());
 
   // Auto-skip check-in for repeat Quick Start users (≥3 consecutive)
   const shouldAutoSkip = !hasCheckedInToday && (profile?.quickStartStreak ?? 0) >= 3;
@@ -41,7 +53,7 @@ export default function RootNavigator() {
 
   return (
     <Stack.Navigator
-      initialRouteName={(hasCheckedInToday || shouldAutoSkip) ? 'Tabs' : 'CheckIn'}
+      initialRouteName={initialRouteRef.current}
       screenOptions={{ headerShown: false, animation: 'fade' }}
     >
       <Stack.Screen name="CheckIn" component={CheckInScreen} />

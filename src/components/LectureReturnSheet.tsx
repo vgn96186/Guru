@@ -14,7 +14,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  StyleSheet, ActivityIndicator,
+  StyleSheet, ActivityIndicator, Alert,
 } from 'react-native';
 import { type LectureAnalysis } from '../services/transcriptionService';
 import {
@@ -79,6 +79,8 @@ export default function LectureReturnSheet({
   const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
   const canTranscribe = !!(recordingPath && (groqKey || hasLocalWhisper));
   const transcriptionStartedRef = React.useRef(false);
+  const cancelRequestedRef = React.useRef(false);
+  const transcriptionRunIdRef = React.useRef(0);
   useEffect(() => {
     if (visible && canTranscribe && !transcriptionStartedRef.current) {
       transcriptionStartedRef.current = true;
@@ -120,6 +122,7 @@ export default function LectureReturnSheet({
       setShowExpl(false);
       setScore(0);
       transcriptionStartedRef.current = false;
+      cancelRequestedRef.current = false;
     }
   }, [visible]);
 
@@ -136,6 +139,7 @@ export default function LectureReturnSheet({
   }, [phase, visible]);
 
   function handlePipelineProgress(progress: LecturePipelineProgress) {
+    if (cancelRequestedRef.current) return;
     if (progress.stage === 'enhancing') {
       return;
     }
@@ -144,6 +148,8 @@ export default function LectureReturnSheet({
   }
 
   async function runTranscription() {
+    const runId = ++transcriptionRunIdRef.current;
+    cancelRequestedRef.current = false;
     setPhase('transcribing');
     setIsExpanded(false);
     setActiveStage('transcribing');
@@ -159,6 +165,10 @@ export default function LectureReturnSheet({
         logId,
         onProgress: handlePipelineProgress,
       });
+      if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
+        updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+        return;
+      }
       setAnalysis(result);
       setTranscriptionCompleted(true);
       setSessionSaved(false);
@@ -171,6 +181,10 @@ export default function LectureReturnSheet({
         generateQuiz(result);
       }
     } catch (e: any) {
+      if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
+        updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+        return;
+      }
       console.error('[Transcription] Error:', e);
       const message = e?.message ?? 'Transcription failed';
       setActiveStage(null);
@@ -179,6 +193,28 @@ export default function LectureReturnSheet({
       updateSessionTranscriptionStatus(logId, 'failed', message);
       setPhase('error');
     }
+  }
+
+  function handleCancelTranscription() {
+    Alert.alert(
+      'Cancel transcription?',
+      'Processing will stop in the UI. Audio is preserved and can be retried later.',
+      [
+        { text: 'Keep processing', style: 'cancel' },
+        {
+          text: 'Cancel',
+          style: 'destructive',
+          onPress: () => {
+            cancelRequestedRef.current = true;
+            setActiveStage(null);
+            setStageMessage('');
+            setPhase('intro');
+            updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+            onDone();
+          },
+        },
+      ],
+    );
   }
 
   async function generateQuiz(result: LectureAnalysis) {
@@ -436,6 +472,13 @@ Summary: ${result.lectureSummary}`;
                   <Text style={styles.processingHint}>
                     {stageMessage || 'This can take a few minutes for long recordings. You can keep using Guru while this runs.'}
                   </Text>
+                  <TouchableOpacity
+                    style={styles.cancelProcessingBtn}
+                    onPress={handleCancelTranscription}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.cancelProcessingBtnText}>Cancel transcription</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -878,6 +921,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
+  },
+  cancelProcessingBtn: {
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#6A3131',
+    backgroundColor: '#261414',
+  },
+  cancelProcessingBtnText: {
+    color: '#F28B8B',
+    fontSize: 12,
+    fontWeight: '700',
   },
   inlineStatusCard: {
     marginBottom: 14,

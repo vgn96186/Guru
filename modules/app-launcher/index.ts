@@ -2,10 +2,20 @@ import { requireNativeModule } from 'expo-modules-core';
 
 const GuruAppLauncher = requireNativeModule('GuruAppLauncher');
 
+/**
+ * Launch an external app by Android package name using an Intent.
+ * @param packageName - e.g. `"com.marrowmed.marrow"` or `"com.prepladder.app"`
+ * @returns `true` if the launch intent was fired, `false` if the app is not installed.
+ */
 export async function launchApp(packageName: string): Promise<boolean> {
     return GuruAppLauncher.launchApp(packageName);
 }
 
+/**
+ * Check whether an app is installed on the device.
+ * @param packageName - Android package name to check.
+ * @returns `true` if installed and accessible via PackageManager.
+ */
 export async function isAppInstalled(packageName: string): Promise<boolean> {
     return GuruAppLauncher.isAppInstalled(packageName);
 }
@@ -17,77 +27,119 @@ export async function getAppUid(packageName: string): Promise<number> {
 
 /**
  * Requests MediaProjection permission (system dialog) for internal audio capture.
- * Returns true if user granted, false if denied or unavailable (< Android 10).
+ * Must be called before `startRecording()` when you want to capture audio from another app.
+ * @returns `true` if user granted, `false` if denied or unavailable (< Android 10 / API 29).
+ * @note On Android < 10 this always returns `false` — fall back to microphone recording.
  */
 export async function requestMediaProjection(): Promise<boolean> {
     return GuruAppLauncher.requestMediaProjection();
 }
 
 /**
- * Starts audio recording.
- * @param targetPackage — package name of the app to capture audio from.
- *   If MediaProjection was granted and API 29+, captures only that app's audio.
- *   Otherwise falls back to microphone recording.
- *   Pass empty string '' to always use microphone.
+ * Starts background audio recording.
+ * - **Android 10+ with MediaProjection granted**: captures internal audio from `targetPackage`.
+ * - **Otherwise**: captures from the device microphone.
+ *
+ * The recording runs in `RecordingService` (a foreground service) so it survives app switching.
+ * Call `stopRecording()` to flush and retrieve the file path.
+ *
+ * @param targetPackage - Package name of the lecture app to capture audio from.
+ *   Pass `''` to always use the microphone regardless of MediaProjection status.
+ * @returns A promise that resolves when the service has started (does not wait for recording to finish).
  */
 export async function startRecording(targetPackage: string = ''): Promise<string> {
     return GuruAppLauncher.startRecording(targetPackage);
 }
 
-/** Stops recording. Returns the saved .m4a file path (or null if none was active). */
+/**
+ * Stops the active recording and flushes the audio buffer to disk.
+ * @returns Absolute path to the `.m4a` recording file in the app's internal storage,
+ *   or `null` if no recording was active.
+ * @note For long recordings (60+ min) the file may take 1–3 seconds to be fully written.
+ *   Use `validateRecordingFile()` with retry logic after calling this.
+ */
 export async function stopRecording(): Promise<string | null> {
     return GuruAppLauncher.stopRecording();
 }
 
-/** Deletes the recording file after transcription to reclaim space. */
+/**
+ * Deletes a recording file to reclaim storage space after transcription.
+ * @param path - Absolute path returned by `stopRecording()` or `convertToWav()`.
+ * @returns `true` if deleted successfully, `false` if file was not found.
+ */
 export async function deleteRecording(path: string): Promise<boolean> {
     return GuruAppLauncher.deleteRecording(path);
 }
 
-/** Validates a recording file using native File API (bypasses JS FileSystem path issues). */
+/**
+ * Validates a recording file using the native Java `File` API.
+ * More reliable than `expo-file-system` for paths in the app's internal storage.
+ * @param path - Absolute file path to check.
+ * @returns `{ exists: boolean; size: number }` — size is 0 if file does not exist.
+ */
 export async function validateRecordingFile(path: string): Promise<{ exists: boolean; size: number }> {
     return GuruAppLauncher.validateRecordingFile(path);
 }
 
 /**
- * Converts an M4A/AAC file to 16kHz mono 16-bit PCM WAV.
- * Required because whisper.rn only accepts WAV input.
- * Returns the WAV file path, or null on failure.
+ * Converts an M4A/AAC file to 16 kHz mono 16-bit PCM WAV format.
+ * Required because `whisper.rn` only accepts WAV input.
+ * @param m4aPath - Absolute path to the source `.m4a` file.
+ * @returns Absolute path to the output `.wav` file, or `null` if conversion failed.
  */
 export async function convertToWav(m4aPath: string): Promise<string | null> {
     return GuruAppLauncher.convertToWav(m4aPath);
 }
 
+/**
+ * Pause an active recording (e.g. while the user leaves the lecture app briefly).
+ * @returns `true` if the recording was paused successfully.
+ */
 export async function pauseRecording(): Promise<boolean> {
     return GuruAppLauncher.pauseRecording();
 }
 
+/**
+ * Resume a paused recording.
+ * @returns `true` if the recording was resumed successfully.
+ */
 export async function resumeRecording(): Promise<boolean> {
     return GuruAppLauncher.resumeRecording();
 }
 
 // ── Floating overlay ──────────────────────────────────────────────
 
-/** Checks if the app has "draw over other apps" permission. */
+/** Checks if the app has the `SYSTEM_ALERT_WINDOW` ("draw over other apps") permission. */
 export async function canDrawOverlays(): Promise<boolean> {
     return GuruAppLauncher.canDrawOverlays();
 }
 
-/** Opens system settings to grant overlay permission. */
+/**
+ * Opens Android system settings so the user can grant overlay permission.
+ * @returns Resolves after the settings intent is sent (does not wait for user action).
+ */
 export async function requestOverlayPermission(): Promise<boolean> {
     return GuruAppLauncher.requestOverlayPermission();
 }
 
 /**
  * Shows a floating timer bubble on screen while user is in another app.
- * @param faceTracking If true, opens the front camera and runs ML Kit face
- *   detection — the bubble ring turns green/orange/red based on focus state.
+ *
+ * Bubble ring colors:
+ * - 🟣 Purple: timer only (no face tracking)
+ * - 🟢 Green: face detected, focused
+ * - 🟠 Orange: drowsy or looking away (`headEulerAngleY/X > 35°` or eyes < 30% open)
+ * - 🔴 Red: face absent > 5 s (sends push notification after 15 s)
+ *
+ * @param appName - Display name shown in the overlay (e.g. `"Marrow"`).
+ * @param faceTracking - If `true`, opens the front camera and runs ML Kit face detection.
+ *   Requires camera permission. Gracefully degrades to purple (neutral) if camera unavailable.
  */
 export async function showOverlay(appName: string, faceTracking = false): Promise<boolean> {
     return GuruAppLauncher.showOverlay(appName, faceTracking);
 }
 
-/** Hides the floating timer bubble. */
+/** Hides the floating timer bubble and stops `OverlayService`. */
 export async function hideOverlay(): Promise<boolean> {
     return GuruAppLauncher.hideOverlay();
 }

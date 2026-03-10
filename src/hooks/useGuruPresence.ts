@@ -5,8 +5,6 @@ import type { GuruEventType, GuruPresenceMessage } from '../services/aiService';
 
 interface GuruPresenceOptions {
   topicNames: string[];
-  apiKey: string;
-  orKey?: string;
   isActive: boolean;
   frequency?: 'rare' | 'normal' | 'frequent' | 'off';
 }
@@ -18,7 +16,7 @@ interface GuruPresenceReturn {
   triggerEvent: (type: GuruEventType) => void;
 }
 
-export function useGuruPresence({ topicNames, apiKey, orKey, isActive, frequency = 'normal' }: GuruPresenceOptions): GuruPresenceReturn {
+export function useGuruPresence({ topicNames, isActive, frequency = 'normal' }: GuruPresenceOptions): GuruPresenceReturn {
   const [currentMessage, setCurrentMessage] = useState<string | null>(null);
   const presencePulse = useRef(new Animated.Value(1)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -31,14 +29,13 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive, frequency
 
   // Generate presence messages once when topics are available
   useEffect(() => {
-    if (!apiKey) return;
     if (topicNames.length === 0) return;
     if (lastGeneratedKeyRef.current === topicsKey) return;
     lastGeneratedKeyRef.current = topicsKey;
-    generateGuruPresenceMessages(topicNames, topicNames, apiKey, orKey)
+    generateGuruPresenceMessages(topicNames, topicNames)
       .then(msgs => { messagesRef.current = msgs; })
       .catch(() => {});
-  }, [topicsKey, topicNames, apiKey, orKey]);
+  }, [topicsKey, topicNames]);
 
   // Pulse animation — run when active, pause otherwise
   useEffect(() => {
@@ -51,6 +48,10 @@ export function useGuruPresence({ topicNames, apiKey, orKey, isActive, frequency
       );
       pulseAnimRef.current = anim;
       anim.start();
+      return () => {
+        anim.stop();
+        pulseAnimRef.current = null;
+      };
     } else {
       pulseAnimRef.current?.stop();
       Animated.timing(presencePulse, { toValue: 1, duration: 200, useNativeDriver: true }).start();

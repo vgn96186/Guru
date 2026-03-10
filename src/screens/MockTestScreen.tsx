@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet,
   StatusBar, BackHandler, Alert,
@@ -8,6 +7,8 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
+import { ResponsiveContainer } from '../hooks/useResponsive';
+import React, { useState, useEffect, useRef } from 'react';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MockTest'>;
 
@@ -27,6 +28,8 @@ export default function MockTestScreen() {
   const [selectedCount, setSelectedCount] = useState(20);
   const [selected, setSelected] = useState<number | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const all = getAllCachedQuestions();
@@ -42,45 +45,50 @@ export default function MockTestScreen() {
     setQuestions(subset);
     setAnswers(new Array(subset.length).fill(null));
     setCurrent(0);
+    setElapsedSeconds(0);
     setPhase('test');
   }
 
+  // Timer for test phase
+  useEffect(() => {
+    if (phase === 'test') {
+      timerRef.current = setInterval(() => setElapsedSeconds(s => s + 1), 1000);
+      return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  }, [phase]);
+
+  // Back handler during test
+  useEffect(() => {
+    if (phase !== 'test') return;
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+      const unanswered = answers.filter(a => a === null).length;
+      Alert.alert(
+        'Leave Test?',
+        unanswered > 0 ? `You have ${unanswered} unanswered questions. Your progress will be lost.` : 'Are you sure you want to leave?',
+        [
+          { text: 'Continue Test', style: 'cancel' },
+          { text: 'Leave', style: 'destructive', onPress: () => navigation.goBack() },
+        ],
+      );
+      return true;
+    });
+    return () => handler.remove();
+  }, [phase, answers]);
+
   function handleOptionSelect(idx: number) {
-    if (revealed) return;
     setSelected(idx);
   }
 
-  function handleConfirm() {
-    if (!revealed) {
-      if (selected === null) {
-        skipQuestion();
-      } else {
-        setRevealed(true);
-      }
-    } else {
-      const newAnswers = [...answers];
-      newAnswers[current] = selected;
-      setAnswers(newAnswers);
-
-      if (current + 1 < questions.length) {
-        setCurrent(current + 1);
-        setSelected(null);
-        setRevealed(false);
-      } else {
-        setPhase('results');
-      }
-    }
-  }
-
-  function skipQuestion() {
+  function handleNext() {
     const newAnswers = [...answers];
-    newAnswers[current] = -1; // -1 for skipped
+    newAnswers[current] = selected; // stores idx or null
     setAnswers(newAnswers);
 
     if (current + 1 < questions.length) {
       setCurrent(current + 1);
       setSelected(null);
-      setRevealed(false);
     } else {
       setPhase('results');
     }
@@ -92,7 +100,7 @@ export default function MockTestScreen() {
       return (
         <SafeAreaView style={styles.safe}>
           <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-          <View style={styles.emptyContainer}>
+          <ResponsiveContainer style={styles.emptyContainer}>
             <Text style={styles.emptyEmoji}>🧪</Text>
             <Text style={styles.emptyTitle}>No Questions Yet</Text>
             <Text style={styles.emptyMsg}>
@@ -101,7 +109,7 @@ export default function MockTestScreen() {
             <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
               <Text style={styles.doneBtnText}>Back</Text>
             </TouchableOpacity>
-          </View>
+          </ResponsiveContainer>
         </SafeAreaView>
       );
     }
@@ -109,7 +117,7 @@ export default function MockTestScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.setupContainer}>
+        <ResponsiveContainer style={styles.setupContainer}>
           <Text style={styles.setupEmoji}>📝</Text>
           <Text style={styles.setupTitle}>Mock Test</Text>
           <Text style={styles.setupSub}>
@@ -158,7 +166,7 @@ export default function MockTestScreen() {
           <TouchableOpacity style={styles.startBtn} onPress={() => startTest(selectedCount)}>
             <Text style={styles.startBtnText}>Start Test</Text>
           </TouchableOpacity>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -167,13 +175,14 @@ export default function MockTestScreen() {
   if (phase === 'results') {
     let correct = 0; let wrong = 0; let skipped = 0;
     answers.forEach((a, i) => {
-      if (a === null || a === -1) { skipped++; }
-      else if (a === questions[i].correctIndex) { correct++; }
+      const q = questions[i];
+      if (!q || a === null || a === -1) { skipped++; }
+      else if (a === q.correctIndex) { correct++; }
       else { wrong++; }
     });
     const score = correct * CORRECT_MARKS + wrong * WRONG_MARKS;
     const maxScore = questions.length * CORRECT_MARKS;
-    const pct = Math.round((score / maxScore) * 100);
+    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
 
     const scoreColor = pct >= 60 ? '#4CAF50' : pct >= 40 ? '#FF9800' : '#F44336';
 
@@ -181,6 +190,7 @@ export default function MockTestScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
         <ScrollView contentContainerStyle={styles.resultsContent}>
+          <ResponsiveContainer>
           <Text style={styles.resultsTitle}>Test Complete</Text>
           <View style={styles.scoreCircle}>
             <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
@@ -222,12 +232,12 @@ export default function MockTestScreen() {
                 </View>
                 <Text style={styles.reviewQ}>{q.question}</Text>
                 <Text style={styles.reviewTopic}>{q.subjectName} · {q.topicName}</Text>
-                {!isSkipped && (
+                {!isSkipped && ans !== null && ans >= 0 && ans < q.options.length && (
                   <Text style={[styles.reviewAns, { color: isCorrect ? '#4CAF50' : '#F44336' }]}>
                     Your answer: {q.options[ans as number]}
                   </Text>
                 )}
-                <Text style={styles.reviewCorrect}>Correct: {q.options[q.correctIndex]}</Text>
+                <Text style={styles.reviewCorrect}>Correct: {q.options[q.correctIndex] ?? '—'}</Text>
                 <Text style={styles.reviewExplain}>{q.explanation}</Text>
               </View>
             );
@@ -236,6 +246,7 @@ export default function MockTestScreen() {
           <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
+          </ResponsiveContainer>
         </ScrollView>
       </SafeAreaView>
     );
@@ -245,18 +256,16 @@ export default function MockTestScreen() {
   if (phase === 'loading' || questions.length === 0) return null;
 
   const q = questions[current];
+  if (!q) return null;
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerNum}>Q {current + 1} / {questions.length}</Text>
         <Text style={styles.headerTopic}>{q.subjectName} · {q.topicName}</Text>
-        <TouchableOpacity onPress={skipQuestion} style={styles.skipBtn}>
-          <Text style={styles.skipBtnText}>Skip</Text>
-        </TouchableOpacity>
+        <Text style={styles.timerText}>⏱ {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}</Text>
       </View>
 
       {/* Progress bar */}
@@ -265,51 +274,43 @@ export default function MockTestScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.testContent}>
+        <ResponsiveContainer>
         <Text style={styles.question}>{q.question}</Text>
 
         {q.options.map((opt, idx) => {
-          let bg = '#1A1A24';
-          let border = '#2A2A38';
-          let textColor = '#fff';
-          if (!revealed) {
-            if (idx === selected) { bg = '#1A1A3A'; border = '#6C63FF'; }
-          } else {
-            if (idx === q.correctIndex) { bg = '#1A2A1A'; border = '#4CAF50'; textColor = '#4CAF50'; }
-            else if (idx === selected && selected !== q.correctIndex) { bg = '#2A1A1A'; border = '#F44336'; textColor = '#F44336'; }
-          }
+          const isSelected = idx === selected;
+          const bg = isSelected ? '#1A1A3A' : '#1A1A24';
+          const border = isSelected ? '#6C63FF' : '#2A2A38';
+          
           return (
             <TouchableOpacity
               key={idx}
               style={[styles.option, { backgroundColor: bg, borderColor: border }]}
               onPress={() => handleOptionSelect(idx)}
-              activeOpacity={revealed ? 1 : 0.8}
+              activeOpacity={0.8}
             >
               <Text style={styles.optionLetter}>{['A', 'B', 'C', 'D'][idx]}</Text>
-              <Text style={[styles.optionText, { color: textColor }]}>{opt}</Text>
+              <Text style={styles.optionText}>{opt}</Text>
             </TouchableOpacity>
           );
         })}
-
-        {revealed && (
-          <View style={styles.explanation}>
-            <Text style={styles.explanationTitle}>Explanation</Text>
-            <Text style={styles.explanationText}>{q.explanation}</Text>
-          </View>
-        )}
 
         <View style={styles.markingBadge}>
           <Text style={styles.markingText}>+{CORRECT_MARKS} correct · {WRONG_MARKS} wrong · 0 skip</Text>
         </View>
 
         <TouchableOpacity
-          style={[styles.confirmBtn, !revealed && selected === null && styles.confirmBtnSkip]}
-          onPress={handleConfirm}
+          style={[styles.confirmBtn, selected === null && styles.confirmBtnSkip]}
+          onPress={handleNext}
           activeOpacity={0.8}
         >
           <Text style={styles.confirmBtnText}>
-            {!revealed ? (selected !== null ? 'Confirm Answer' : 'Skip Question') : (current + 1 < questions.length ? 'Next Question →' : 'See Results')}
+            {selected !== null 
+              ? (current + 1 < questions.length ? 'Next Question →' : 'See Results') 
+              : 'Skip Question'}
           </Text>
         </TouchableOpacity>
+        </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
   );
@@ -327,6 +328,7 @@ const styles = StyleSheet.create({
   },
   headerNum: { color: '#6C63FF', fontWeight: '800', fontSize: 16 },
   headerTopic: { flex: 1, color: '#9E9E9E', fontSize: 13 },
+  timerText: { color: '#FF9800', fontWeight: '800', fontSize: 14 },
   skipBtn: { paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#2A2A38', borderRadius: 8 },
   skipBtnText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
   progressTrack: { height: 3, backgroundColor: '#2A2A38' },

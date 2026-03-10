@@ -10,6 +10,7 @@ import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../store/useAppStore';
 import { getDailyLog } from '../db/queries/progress';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const HARASSMENT_INTERVAL = 5 * 60 * 1000; // Every 5 minutes
 const GUILT_CHECK_INTERVAL = 60 * 1000; // Check every minute
@@ -82,23 +83,31 @@ export default function PunishmentMode() {
   useEffect(() => {
     if (showGuiltScreen) {
       // Pulsing animation
-      Animated.loop(
+      const pulseLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      pulseLoop.start();
       
+      let shakeLoop: Animated.CompositeAnimation | undefined;
       // Shake for high shame levels
       if (shameLevel >= 2) {
-        Animated.loop(
+        shakeLoop = Animated.loop(
           Animated.sequence([
             Animated.timing(shakeAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
             Animated.timing(shakeAnim, { toValue: -5, duration: 100, useNativeDriver: true }),
             Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
           ])
-        ).start();
+        );
+        shakeLoop.start();
       }
+      
+      return () => {
+        pulseLoop.stop();
+        shakeLoop?.stop();
+      };
     }
   }, [showGuiltScreen, shameLevel]);
 
@@ -129,7 +138,7 @@ export default function PunishmentMode() {
   function handleStartStudying() {
     setIsActive(false);
     setShowGuiltScreen(false);
-    navigation.navigate('Session', { mood: 'guilty', mode: 'sprint', forcedMinutes: 10 });
+    navigation.navigate('Session', { mood: 'stressed', mode: 'sprint', forcedMinutes: 10 });
   }
 
   function handleQuickWin() {
@@ -163,12 +172,12 @@ export default function PunishmentMode() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.minimizedContainer}>
+        <ResponsiveContainer style={styles.minimizedContainer}>
           <Text style={styles.minimizedText}>😴 Punishment Mode Snoozed</Text>
           <TouchableOpacity style={styles.wakeBtn} onPress={() => setShowGuiltScreen(true)}>
             <Text style={styles.wakeBtnText}>Wake Me Up</Text>
           </TouchableOpacity>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -176,7 +185,8 @@ export default function PunishmentMode() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      <Animated.View style={[styles.container, { transform: [{ translateX: shakeAnim }] }]}>
+      <ResponsiveContainer style={{ flex: 1 }}>
+        <Animated.View style={[styles.container, { transform: [{ translateX: shakeAnim }] }]}>
         <Animated.View style={[styles.shameIcon, { transform: [{ scale: pulseAnim }] }]}>
           <Text style={styles.shameEmoji}>😤</Text>
         </Animated.View>
@@ -241,6 +251,7 @@ export default function PunishmentMode() {
           Punishment Level {shameLevel}/3 • Idle: {minutesIdle}min
         </Text>
       </Animated.View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

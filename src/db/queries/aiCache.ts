@@ -80,6 +80,49 @@ export function setContentFlagged(topicId: number, contentType: ContentType, fla
   );
 }
 
+export function flagTopicForReview(topicId: number, topicName: string): ContentType {
+  const db = getDb();
+  const existing = db.getFirstSync<{ content_type: ContentType }>(
+    `SELECT content_type
+     FROM ai_cache
+     WHERE topic_id = ?
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [topicId],
+  );
+
+  const contentType = existing?.content_type ?? 'keypoints';
+
+  if (!existing) {
+    setCachedContent(
+      topicId,
+      contentType,
+      {
+        type: 'keypoints',
+        topicName,
+        points: [
+          'Manual review requested during a study session.',
+          'Revisit this topic with textbook notes or a fresh AI card.',
+        ],
+        memoryHook: 'Flagged for later review.',
+      },
+      'manual-review',
+    );
+  }
+
+  setContentFlagged(topicId, contentType, true);
+  return contentType;
+}
+
+export function isContentFlagged(topicId: number, contentType: ContentType): boolean {
+  const db = getDb();
+  const row = db.getFirstSync<{ is_flagged: number }>(
+    'SELECT is_flagged FROM ai_cache WHERE topic_id = ? AND content_type = ?',
+    [topicId, contentType],
+  );
+  return (row?.is_flagged ?? 0) === 1;
+}
+
 export interface FlaggedItem {
   topicId: number;
   topicName: string;
@@ -137,4 +180,181 @@ export function saveLectureNote(subjectId: number | null, note: string): void {
     'INSERT INTO lecture_notes (subject_id, note, created_at) VALUES (?, ?, ?)',
     [subjectId, note, nowTs()],
   );
+}
+
+/** Extended lecture note with full transcript data */
+export interface LectureNoteData {
+  subjectId: number | null;
+  note: string;
+  transcript?: string;
+  summary?: string;
+  topics?: string[];
+  appName?: string;
+  durationMinutes?: number;
+  confidence?: number;
+}
+
+export function saveLectureTranscript(data: LectureNoteData): number {
+  const db = getDb();
+  const result = db.runSync(
+    `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.subjectId,
+      data.note,
+      nowTs(),
+      data.transcript ?? null,
+      data.summary ?? null,
+      data.topics ? JSON.stringify(data.topics) : null,
+      data.appName ?? null,
+      data.durationMinutes ?? null,
+      data.confidence ?? 2,
+    ],
+  );
+  return result.lastInsertRowId;
+}
+
+export function updateLectureTranscriptNote(noteId: number, note: string): void {
+  const db = getDb();
+  db.runSync(
+    'UPDATE lecture_notes SET note = ? WHERE id = ?',
+    [note, noteId],
+  );
+}
+
+export interface LectureHistoryItem {
+  id: number;
+  subjectId: number | null;
+  subjectName: string | null;
+  note: string;
+  transcript: string | null;
+  summary: string | null;
+  topics: string[];
+  appName: string | null;
+  durationMinutes: number | null;
+  confidence: number;
+  createdAt: number;
+}
+
+export function getLectureNoteById(noteId: number): LectureHistoryItem | null {
+  const db = getDb();
+  const row = db.getFirstSync<{
+    id: number;
+    subject_id: number | null;
+    subject_name: string | null;
+    note: string;
+    transcript: string | null;
+    summary: string | null;
+    topics_json: string | null;
+    app_name: string | null;
+    duration_minutes: number | null;
+    confidence: number | null;
+    created_at: number;
+  }>(
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+     FROM lecture_notes ln
+     LEFT JOIN subjects s ON ln.subject_id = s.id
+     WHERE ln.id = ?
+     LIMIT 1`,
+    [noteId],
+  );
+
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    subjectId: row.subject_id,
+    subjectName: row.subject_name,
+    note: row.note,
+    transcript: row.transcript,
+    summary: row.summary,
+    topics: row.topics_json ? JSON.parse(row.topics_json) : [],
+    appName: row.app_name,
+    durationMinutes: row.duration_minutes,
+    confidence: row.confidence ?? 2,
+    createdAt: row.created_at,
+  };
+}
+
+export function getLectureHistory(limit = 50): LectureHistoryItem[] {
+  const db = getDb();
+  const rows = db.getAllSync<{
+    id: number;
+    subject_id: number | null;
+    subject_name: string | null;
+    note: string;
+    transcript: string | null;
+    summary: string | null;
+    topics_json: string | null;
+    app_name: string | null;
+    duration_minutes: number | null;
+    confidence: number | null;
+    created_at: number;
+  }>(
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+     FROM lecture_notes ln
+     LEFT JOIN subjects s ON ln.subject_id = s.id
+     ORDER BY ln.created_at DESC
+     LIMIT ?`,
+    [limit],
+  );
+
+  return rows.map(r => ({
+    id: r.id,
+    subjectId: r.subject_id,
+    subjectName: r.subject_name,
+    note: r.note,
+    transcript: r.transcript,
+    summary: r.summary,
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
+    appName: r.app_name,
+    durationMinutes: r.duration_minutes,
+    confidence: r.confidence ?? 2,
+    createdAt: r.created_at,
+  }));
+}
+
+export function searchLectureNotes(query: string, limit = 20): LectureHistoryItem[] {
+  const db = getDb();
+  const likeQuery = `%${query}%`;
+  const rows = db.getAllSync<{
+    id: number;
+    subject_id: number | null;
+    subject_name: string | null;
+    note: string;
+    transcript: string | null;
+    summary: string | null;
+    topics_json: string | null;
+    app_name: string | null;
+    duration_minutes: number | null;
+    confidence: number | null;
+    created_at: number;
+  }>(
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+     FROM lecture_notes ln
+     LEFT JOIN subjects s ON ln.subject_id = s.id
+     WHERE ln.note LIKE ? OR ln.transcript LIKE ? OR ln.summary LIKE ? OR ln.topics_json LIKE ?
+     ORDER BY ln.created_at DESC
+     LIMIT ?`,
+    [likeQuery, likeQuery, likeQuery, likeQuery, limit],
+  );
+
+  return rows.map(r => ({
+    id: r.id,
+    subjectId: r.subject_id,
+    subjectName: r.subject_name,
+    note: r.note,
+    transcript: r.transcript,
+    summary: r.summary,
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
+    appName: r.app_name,
+    durationMinutes: r.duration_minutes,
+    confidence: r.confidence ?? 2,
+    createdAt: r.created_at,
+  }));
+}
+
+export function deleteLectureNote(id: number): void {
+  const db = getDb();
+  db.runSync('DELETE FROM lecture_notes WHERE id = ?', [id]);
 }

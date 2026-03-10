@@ -9,6 +9,14 @@ export function getTotalStudyMinutes(): number {
   return r?.total ?? 0;
 }
 
+export function getCompletedSessionCount(): number {
+  const db = getDb();
+  const r = db.getFirstSync<{ cnt: number }>(
+    'SELECT COUNT(*) as cnt FROM sessions WHERE ended_at IS NOT NULL',
+  );
+  return r?.cnt ?? 0;
+}
+
 export function createSession(
   plannedTopics: number[],
   mood: Mood | null,
@@ -90,6 +98,27 @@ export function getRecentlyStudiedTopicNames(sessionCount = 3): string[] {
   return nameRows.map(r => r.name);
 }
 
+export function getCompletedTopicIdsBetween(startTs: number, endTs?: number): number[] {
+  const db = getDb();
+  const rows = endTs == null
+    ? db.getAllSync<{ completed_topics: string }>(
+        'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ?',
+        [startTs],
+      )
+    : db.getAllSync<{ completed_topics: string }>(
+        'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND started_at < ?',
+        [startTs, endTs],
+      );
+
+  return rows.flatMap((row) => {
+    try {
+      return JSON.parse(row.completed_topics) as number[];
+    } catch {
+      return [];
+    }
+  });
+}
+
 export function getPreferredStudyHours(): number[] {
   const db = getDb();
   // Get all session start times
@@ -125,4 +154,78 @@ export function getPreferredStudyHours(): number[] {
   }
   
   return uniqueHours.sort((a, b) => a - b);
+}
+
+/** Get weekly stats: this week vs last week */
+export function getWeeklyComparison(): { thisWeek: { minutes: number; sessions: number; topics: number }; lastWeek: { minutes: number; sessions: number; topics: number } } {
+  const db = getDb();
+  const now = Date.now();
+  const dayMs = 86400000;
+  
+  // Get start of this week (Monday)
+  const today = new Date(now);
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+  const thisWeekStart = now - mondayOffset * dayMs - (today.getHours() * 3600000 + today.getMinutes() * 60000 + today.getSeconds() * 1000);
+  const lastWeekStart = thisWeekStart - 7 * dayMs;
+  
+  const thisWeekRows = db.getAllSync<{ duration_minutes: number; completed_topics: string }>(
+    `SELECT duration_minutes, completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ?`,
+    [thisWeekStart]
+  );
+  
+  const lastWeekRows = db.getAllSync<{ duration_minutes: number; completed_topics: string }>(
+    `SELECT duration_minutes, completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND started_at < ?`,
+    [lastWeekStart, thisWeekStart]
+  );
+  
+  const calcStats = (rows: { duration_minutes: number; completed_topics: string }[]) => {
+    let minutes = 0;
+    let topics = 0;
+    for (const r of rows) {
+      minutes += r.duration_minutes ?? 0;
+      try { topics += JSON.parse(r.completed_topics).length; } catch { }
+    }
+    return { minutes, sessions: rows.length, topics };
+  };
+  
+  return {
+    thisWeek: calcStats(thisWeekRows),
+    lastWeek: calcStats(lastWeekRows),
+  };
+}
+
+/** Calculate current streak from daily_log */
+export function calculateCurrentStreak(): number {
+  const db = getDb();
+  const rows = db.getAllSync<{ date: string; total_minutes: number; session_count: number }>(
+    `SELECT date, total_minutes, session_count FROM daily_log ORDER BY date DESC LIMIT 90`
+  );
+  
+  if (rows.length === 0) return 0;
+  
+  let streak = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  
+  // Check if today or yesterday has activity (streak can start from either)
+  const firstActive = rows[0];
+  if (firstActive.date !== today && firstActive.date !== yesterday) return 0;
+  
+  let expectedDate = new Date(firstActive.date);
+  
+  for (const log of rows) {
+    const logDate = log.date;
+    const expected = expectedDate.toISOString().slice(0, 10);
+    
+    if (logDate === expected && (log.total_minutes > 0 || log.session_count > 0)) {
+      streak++;
+      expectedDate = new Date(expectedDate.getTime() - 86400000);
+    } else if (logDate < expected) {
+      // Gap found
+      break;
+    }
+  }
+  
+  return streak;
 }

@@ -291,8 +291,12 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ---
 
 ## Highest ROI improvements (shortlist)
-1. **Make tappable items consistently do something** (or remove tap styling), especially in `StudyPlanScreen`, search results, etc.
-2. **Reduce cognitive load on `HomeScreen` and `SettingsScreen`** with collapsible sections / progressive disclosure.
-3. **Improve actionability**: `NotesSearchScreen` results → navigate to topic; `TopicDetailScreen` “Study this now” → start a topic-focused session.
-4. **Strengthen feedback** in game/quiz-like flows (`BossBattleScreen` answer feedback, loading progress in `DailyChallengeScreen`).
+
+### ✅ RESOLVED (March 2026)
+1. ~~**Make tappable items consistently do something**~~ — `StudyPlanScreen` rows now navigate to Session, `NotesSearchScreen` results navigate to topic.
+2. ~~**Improve actionability**~~ — `NotesSearchScreen` results navigate to topic; `TopicDetailScreen` "Study this now" starts a topic-focused session.
+3. ~~**Strengthen feedback**~~ — `BossBattleScreen` has answer feedback phase with explanation; `DailyChallengeScreen` shows loading progress ("Generating Q2/5...").
+
+### REMAINING
+4. **Reduce cognitive load on `HomeScreen` and `SettingsScreen`** with collapsible sections / progressive disclosure.
 5. **Clarify/soften high-intensity features** with explicit “how to disable” and transparency (doomscroll/harassment, alarms).

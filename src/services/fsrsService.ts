@@ -14,9 +14,13 @@ export function reviewCard(card: Card, rating: Rating, now: Date = new Date()): 
 }
 
 export function mapConfidenceToRating(confidence: number): Rating {
-  // confidence 1-2 = again/hard, 3-4 = good, 5 = easy
-  if (confidence <= 2) return Rating.Again;
-  if (confidence === 3) return Rating.Hard;
-  if (confidence === 4) return Rating.Good;
+  // App confidence is 0–3:
+  //   0 = Again (complete fail)
+  //   1 = Hard  (barely recalled)
+  //   2 = Good  (recalled with effort)
+  //   3 = Easy  (instant recall)
+  if (confidence <= 0) return Rating.Again;
+  if (confidence === 1) return Rating.Hard;
+  if (confidence === 2) return Rating.Good;
   return Rating.Easy;
 }

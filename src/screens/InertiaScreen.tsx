@@ -7,9 +7,9 @@ import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { fetchContent } from '../services/aiService';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
-import { useAppStore } from '../store/useAppStore';
 import type { MnemonicContent, TopicWithProgress } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const { width } = Dimensions.get('window');
 
@@ -19,7 +19,6 @@ const POSITION_CHECK_DURATION = 3000; // 3 seconds to verify position
 
 export default function InertiaScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const profile = useAppStore(s => s.profile);
   const [phase, setPhase] = useState<Phase>('breathe');
   const [breatheText, setBreatheText] = useState('Breathe in...');
   const [content, setContent] = useState<MnemonicContent | null>(null);
@@ -76,8 +75,8 @@ export default function InertiaScreen() {
 
     setTimeout(() => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setPhase('position_check');
-      checkPosition();
+      setPhase('sit_up_prompt');
+      fadeIn();
     }, 14000);
   }
 
@@ -86,30 +85,7 @@ export default function InertiaScreen() {
     Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }).start();
   }
 
-  function checkPosition() {
-    // Simulate accelerometer position check
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      setPositionProgress(progress);
-      
-      // Mock position detection
-      const mockZ = Math.random();
-      setIsLyingDown(mockZ < 0.5);
-      
-      if (progress >= 100) {
-        clearInterval(interval);
-        if (mockZ > 0.5) {
-          setPositionVerified(true);
-          setPhase(content ? 'micro_win' : 'fetching');
-          fadeIn();
-        } else {
-          setPhase('sit_up_prompt');
-          fadeIn();
-        }
-      }
-    }, 300);
-  }
+  // Position check removed — using honest self-report instead
 
   function handlePositionConfirm() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -119,8 +95,6 @@ export default function InertiaScreen() {
   }
 
   async function fetchMicroWin() {
-    if (!profile?.openrouterApiKey) return;
-    
     // Pick an EASY or HIGH CONFIDENCE topic to guarantee a win, or a random seen one
     const topics = getAllTopicsWithProgress();
     const seen = topics.filter(t => t.progress.status === 'reviewed' || t.progress.status === 'mastered');
@@ -130,7 +104,7 @@ export default function InertiaScreen() {
 
     try {
       // Mnemonic is the lowest friction, highest reward content type
-      const res = await fetchContent(selected, 'mnemonic', profile.openrouterApiKey, profile.openrouterKey);
+      const res = await fetchContent(selected, 'mnemonic');
       if (res.type === 'mnemonic') {
         setContent(res);
         if (phase === 'fetching') {
@@ -161,7 +135,7 @@ export default function InertiaScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.center}>
+        <ResponsiveContainer style={styles.center}>
           <Text style={styles.breatheTitle}>Task Paralysis?</Text>
           <Text style={styles.breatheSub}>It's okay. Drop your shoulders.</Text>
           
@@ -178,7 +152,7 @@ export default function InertiaScreen() {
               <Text style={styles.skipBtnText}>Skip breathing →</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -191,32 +165,14 @@ export default function InertiaScreen() {
     );
   }
 
-  if (phase === 'position_check') {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.center}>
-          <Text style={styles.positionEmoji}>📱</Text>
-          <Text style={styles.positionTitle}>Checking Position...</Text>
-          <Text style={styles.positionSub}>
-            {isLyingDown ? 'Still lying down. Sit up to continue.' : 'Good! Hold upright position...'}
-          </Text>
-          
-          <View style={styles.positionBar}>
-            <View style={[styles.positionFill, { width: `${positionProgress}%` }]} />
-          </View>
-          
-          <Text style={styles.positionPercent}>{positionProgress}%</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // position_check phase removed — see sit_up_prompt below
 
   if (phase === 'sit_up_prompt') {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
+        <ResponsiveContainer style={{ flex: 1 }}>
+          <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
           <Text style={styles.sitUpEmoji}>🪑</Text>
           <Text style={styles.sitUpTitle}>Almost There!</Text>
           <Text style={styles.sitUpSub}>
@@ -235,6 +191,7 @@ export default function InertiaScreen() {
             </TouchableOpacity>
           </View>
         </Animated.View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -242,7 +199,8 @@ export default function InertiaScreen() {
   if (phase === 'micro_win_bed' && content) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
+        <ResponsiveContainer style={{ flex: 1 }}>
+          <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
           <Text style={styles.bedEmoji}>🛏️</Text>
           <Text style={styles.bedTitle}>Bed Study Mode</Text>
           <Text style={styles.bedSub}>One card while lying down. Then we get up.</Text>
@@ -260,9 +218,10 @@ export default function InertiaScreen() {
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.stayBedBtn} onPress={handleWinComplete}>
-            <Text style={styles.stayBedBtnText}>Stay in Bed (Weak)</Text>
+            <Text style={styles.stayBedBtnText}>Rest a bit more</Text>
           </TouchableOpacity>
         </Animated.View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -270,7 +229,8 @@ export default function InertiaScreen() {
   if (phase === 'micro_win' && content) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
+        <ResponsiveContainer style={{ flex: 1 }}>
+          <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
           <Text style={styles.emoji}>🧠</Text>
           <Text style={styles.winTitle}>Just read this one thing.</Text>
           <Text style={styles.winTopic}>{content.topicName}</Text>
@@ -287,6 +247,7 @@ export default function InertiaScreen() {
             <Text style={styles.doneBtnText}>Okay, read it.</Text>
           </TouchableOpacity>
         </Animated.View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -294,7 +255,8 @@ export default function InertiaScreen() {
   if (phase === 'pivot') {
     return (
       <SafeAreaView style={styles.safe}>
-        <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
+        <ResponsiveContainer style={{ flex: 1 }}>
+          <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
           <Text style={styles.emoji}>🎉</Text>
           <Text style={styles.pivotTitle}>You just studied!</Text>
           <Text style={styles.pivotSub}>
@@ -315,6 +277,7 @@ export default function InertiaScreen() {
             <Text style={styles.closeBtnText}>I'll stop here.</Text>
           </TouchableOpacity>
         </Animated.View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }

@@ -44,6 +44,28 @@ export async function deleteRecording(path: string): Promise<boolean> {
     return GuruAppLauncher.deleteRecording(path);
 }
 
+/** Validates a recording file using native File API (bypasses JS FileSystem path issues). */
+export async function validateRecordingFile(path: string): Promise<{ exists: boolean; size: number }> {
+    return GuruAppLauncher.validateRecordingFile(path);
+}
+
+/**
+ * Converts an M4A/AAC file to 16kHz mono 16-bit PCM WAV.
+ * Required because whisper.rn only accepts WAV input.
+ * Returns the WAV file path, or null on failure.
+ */
+export async function convertToWav(m4aPath: string): Promise<string | null> {
+    return GuruAppLauncher.convertToWav(m4aPath);
+}
+
+export async function pauseRecording(): Promise<boolean> {
+    return GuruAppLauncher.pauseRecording();
+}
+
+export async function resumeRecording(): Promise<boolean> {
+    return GuruAppLauncher.resumeRecording();
+}
+
 // ── Floating overlay ──────────────────────────────────────────────
 
 /** Checks if the app has "draw over other apps" permission. */

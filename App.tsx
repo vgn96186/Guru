@@ -1,24 +1,77 @@
 import React, { useEffect, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
-import { View, Text, StyleSheet } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { View, Text, StyleSheet, AppState } from 'react-native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 import { initDatabase } from './src/db/database';
 import RootNavigator from './src/navigation/RootNavigator';
 import { useAppStore } from './src/store/useAppStore';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import LoadingOrb from './src/components/LoadingOrb';
 import { registerBackgroundFetch } from './src/services/backgroundTasks';
+import { bootstrapLocalModels } from './src/services/localModelBootstrap';
+import { syncExamDatesFromInternet } from './src/services/examDateSyncService';
+import { applyConfidenceDecay } from './src/db/queries/progress';
+
+export const navigationRef = createNavigationContainerRef<any>();
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 
 function AppContent() {
   const loadProfile = useAppStore(s => s.loadProfile);
+  const refreshProfile = useAppStore(s => s.refreshProfile);
 
   useEffect(() => {
+    let isMounted = true;
     loadProfile();
-  }, []);
+
+    const runExamDateSync = async () => {
+      try {
+        const res = await syncExamDatesFromInternet();
+        if (res.updated && isMounted) {
+          refreshProfile();
+        }
+      } catch (err) {
+        if (__DEV__) {
+          console.warn('[ExamDateSync] Background sync failed:', (err as Error).message);
+        }
+      }
+    };
+
+    runExamDateSync();
+    
+    // Listen for alarm notification taps to route to WakeUp
+    const sub = Notifications.addNotificationResponseReceivedListener(response => {
+      const data = response.notification.request.content.data;
+      if (data?.screen === 'WakeUp' && navigationRef.isReady()) {
+        navigationRef.navigate('WakeUp');
+      }
+    });
+
+    const appStateSub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        runExamDateSync();
+      }
+    });
+    
+    return () => {
+      isMounted = false;
+      sub.remove();
+      appStateSub.remove();
+    };
+  }, [loadProfile, refreshProfile]);
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <RootNavigator />
     </NavigationContainer>
   );
@@ -34,6 +87,15 @@ export default function App() {
         await SplashScreen.preventAutoHideAsync();
         await initDatabase();
         await registerBackgroundFetch().catch((e: unknown) => console.log('Background task not registered:', e));
+
+        // Apply confidence decay for overdue topics
+        try {
+          const { decayed } = applyConfidenceDecay();
+          if (decayed > 0) console.log(`[ConfidenceDecay] ${decayed} topics decayed`);
+        } catch (e) { console.warn('[ConfidenceDecay] Error:', e); }
+
+        // Auto-download local AI models in background (non-blocking)
+        bootstrapLocalModels().catch((e: unknown) => console.log('Local model bootstrap skipped:', e));
 
         setDbReady(true);
       } catch (e) {

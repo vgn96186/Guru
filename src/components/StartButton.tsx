@@ -20,6 +20,7 @@ export default function StartButton({
   const glow = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (disabled) return; // Don't animate when disabled
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(scale, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
@@ -35,7 +36,7 @@ export default function StartButton({
     pulse.start();
     glowAnim.start();
     return () => { pulse.stop(); glowAnim.stop(); };
-  }, []);
+  }, [disabled]);
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
@@ -48,10 +49,27 @@ export default function StartButton({
           accessibilityRole="button"
           accessibilityLabel="Start study session"
           accessibilityState={{ disabled }}
+          testID="start-session-btn"
           style={[styles.button, { backgroundColor: disabled ? '#333' : color }]}
         >
-          <Text style={styles.label}>{label}</Text>
-          {sublabel ? <Text style={styles.sublabel}>{sublabel}</Text> : null}
+          <Text
+            style={styles.label}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            {label}
+          </Text>
+          {sublabel ? (
+            <Text
+              style={styles.sublabel}
+              numberOfLines={2}
+              adjustsFontSizeToFit
+              minimumFontScale={0.8}
+            >
+              {sublabel}
+            </Text>
+          ) : null}
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -90,11 +108,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     letterSpacing: 2,
     textAlign: 'center',
+    width: '80%',
   },
   sublabel: {
     color: 'rgba(255,255,255,0.7)',
     fontSize: 12,
     marginTop: 6,
     textAlign: 'center',
+    width: '75%',
   },
 });

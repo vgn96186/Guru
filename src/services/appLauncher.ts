@@ -1,11 +1,14 @@
 import { Linking, Platform, PermissionsAndroid } from 'react-native';
 import { startExternalAppSession } from '../db/queries/externalLogs';
+import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lectureSessionMonitor';
 import {
     launchApp, isAppInstalled, startRecording, requestMediaProjection,
     canDrawOverlays, requestOverlayPermission, showOverlay,
 } from '../../modules/app-launcher';
 
-export type SupportedMedicalApp = 'marrow' | 'dbmci' | 'cerebellum' | 'prepladder' | 'bhatia';
+export type SupportedMedicalApp = 'marrow' | 'dbmci' | 'cerebellum' | 'prepladder' | 'bhatia' | 'youtube';
+
+const YOUTUBE_PREFERRED_PACKAGES = ['org.schabi.newpipe', 'com.google.android.youtube'] as const;
 
 export const MEDICAL_APP_SCHEMES: Record<SupportedMedicalApp, { androidStore: string, name: string, scheme: string }> = {
     marrow: {
@@ -32,6 +35,11 @@ export const MEDICAL_APP_SCHEMES: Record<SupportedMedicalApp, { androidStore: st
         androidStore: 'com.dbmci.bhatia',
         name: 'Dr. Bhatia',
         scheme: 'dbmci://'
+    },
+    youtube: {
+        androidStore: 'com.google.android.youtube',
+        name: 'YouTube',
+        scheme: 'vnd.youtube://'
     }
 };
 
@@ -39,7 +47,19 @@ export const MEDICAL_APP_SCHEMES: Record<SupportedMedicalApp, { androidStore: st
  * Launches a 3rd-party medical app using native Android getLaunchIntentForPackage.
  * Falls back to Play Store if not installed.
  */
+let _launchInProgress = false;
 export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking = false): Promise<boolean> {
+    // Debounce: prevent double-tap launching two recordings/overlays
+    if (_launchInProgress) return false;
+    _launchInProgress = true;
+    try {
+      return await _launchMedicalAppInner(appKey, faceTracking);
+    } finally {
+      _launchInProgress = false;
+    }
+}
+
+async function _launchMedicalAppInner(appKey: SupportedMedicalApp, faceTracking: boolean): Promise<boolean> {
     const app = MEDICAL_APP_SCHEMES[appKey];
 
     if (Platform.OS !== 'android') {
@@ -47,77 +67,107 @@ export async function launchMedicalApp(appKey: SupportedMedicalApp, faceTracking
         return false;
     }
 
-// if (__DEV__) console.log(`[AppLauncher] Launching: ${app.name} (${app.androidStore})`);
+console.log(`[AppLauncher] Launching: ${app.name} (${app.androidStore})`);
 
     // Check if app is installed first
-    const installed = await isAppInstalled(app.androidStore);
-// if (__DEV__) console.log(`[AppLauncher] isAppInstalled: ${installed}`);
+    let targetPackage = app.androidStore;
+    let installed = await isAppInstalled(targetPackage);
+    if (appKey === 'youtube') {
+        installed = false;
+        for (const pkg of YOUTUBE_PREFERRED_PACKAGES) {
+            if (await isAppInstalled(pkg)) {
+                targetPackage = pkg;
+                installed = true;
+                break;
+            }
+        }
+    }
+
+    // All apps get overlay + mic recording now (mic captures speaker audio for transcription)
+console.log(`[AppLauncher] isAppInstalled: ${installed}`);
 
     if (installed) {
         try {
+            // ── Setup permissions & recording BEFORE launching the app ──
+            // MediaProjection dialog needs our activity in foreground
             let recordingPath: string | undefined;
-            try {
-                // 1. Try to get MediaProjection for internal audio capture (no mic noise)
-                //    This shows a one-time system dialog: "Start recording or casting?"
-                let projectionGranted = false;
-                try {
-                    projectionGranted = await requestMediaProjection();
-// if (__DEV__) console.log(`[AppLauncher] MediaProjection granted: ${projectionGranted}`);
-                } catch (e) {
-                    if (__DEV__) console.warn('[AppLauncher] MediaProjection request failed:', e);
-                }
+            let useInternal = false;
+            const forceMicMode = appKey === 'youtube' || targetPackage === 'com.google.android.youtube' || targetPackage === 'org.schabi.newpipe';
 
-                // 2. If projection denied, fall back to mic — still need mic permission
-                if (!projectionGranted) {
-                    const micGranted = await PermissionsAndroid.request(
-                        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-                        {
-                            title: 'Microphone Permission',
-                            message: 'Guru needs microphone access to record your lecture for automatic topic detection.',
-                            buttonPositive: 'Allow',
-                            buttonNegative: 'Deny',
-                        },
-                    );
-                    if (micGranted !== PermissionsAndroid.RESULTS.GRANTED) {
-                        if (__DEV__) console.warn('[AppLauncher] Mic permission denied — launching without recording');
-                    }
-                }
-
-                // 3. Start recording — passes package name so internal capture
-                //    filters to only that app's audio output
-                recordingPath = await startRecording(
-                    projectionGranted ? app.androidStore : ''
+            if (true) { // All apps get recording + overlay
+                let micGranted = await PermissionsAndroid.check(
+                    PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
                 );
-            } catch (e) { if (__DEV__) console.warn('[AppLauncher] Recording start failed:', e); }
-
-            await launchApp(app.androidStore);
-// if (__DEV__) console.log('[AppLauncher] Native launch succeeded');
-            startExternalAppSession(app.name, recordingPath);
-
-            // Show floating timer bubble if overlay permission is granted
-            try {
-                const hasOverlay = await canDrawOverlays();
-                if (hasOverlay) {
-                    await showOverlay(app.name, faceTracking);
-// if (__DEV__) console.log('[AppLauncher] Overlay shown');
-                } else {
-                    // First launch: request permission (opens settings)
-                    // The overlay will work on next launch after user grants it
-                    requestOverlayPermission().catch(() => {});
-// if (__DEV__) console.log('[AppLauncher] Overlay permission requested');
+                if (!micGranted) {
+                    const result = await PermissionsAndroid.request(
+                        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+                    );
+                    micGranted = result === PermissionsAndroid.RESULTS.GRANTED;
                 }
-            } catch (e) {
-                if (__DEV__) console.warn('[AppLauncher] Overlay failed:', e);
+
+                // 2. Try internal audio capture (shows system dialog while we're still in foreground)
+                if (micGranted && !forceMicMode) {
+                    try {
+                        useInternal = await requestMediaProjection();
+                        console.log(`[AppLauncher] MediaProjection granted: ${useInternal}`);
+                    } catch (e) {
+                        console.log('[AppLauncher] MediaProjection failed, will use mic');
+                    }
+                } else if (forceMicMode) {
+                    console.log('[AppLauncher] Forcing microphone capture for YouTube/NewPipe');
+                }
+
+                // 3. Start recording before launching (so we capture from the start)
+                if (micGranted) {
+                    try {
+                        recordingPath = await startRecording(useInternal ? targetPackage : '');
+                        console.log(`[AppLauncher] Recording started (${useInternal ? 'internal' : 'mic'}), path: ${recordingPath}`);
+                        if (recordingPath) {
+                            startRecordingHealthCheck(recordingPath, app.name);
+                        }
+                    } catch (e) {
+                        console.warn('[AppLauncher] Recording start failed:', e);
+                    }
+                } else {
+                    console.warn('[AppLauncher] Mic permission NOT granted — cannot record');
+                }
             }
 
+            // ── Show overlay ──
+            {
+                try {
+                    const hasOverlay = await canDrawOverlays();
+                    if (hasOverlay) {
+                        await showOverlay(app.name, faceTracking);
+                        console.log('[AppLauncher] Overlay shown');
+                    } else {
+                        requestOverlayPermission().catch(() => {});
+                        console.log('[AppLauncher] Overlay permission requested');
+                    }
+                } catch (e) {
+                    console.warn('[AppLauncher] Overlay failed:', e);
+                }
+            }
+
+            // ── Launch the external app ──
+            await launchApp(targetPackage);
+            console.log('[AppLauncher] Native launch succeeded');
+
+            startExternalAppSession(app.name, recordingPath);
             return true;
         } catch (err: any) {
-// if (__DEV__) console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);
+            console.log(`[AppLauncher] Native launch error: ${err?.message || err}`);
+            // Stop both the health check and the native recording service
+            stopRecordingHealthCheck();
+            try {
+                const { stopRecording: nativeStopRecording } = require('../../modules/app-launcher');
+                await nativeStopRecording();
+            } catch {}
         }
     }
 
     // Not installed — open Play Store
-// if (__DEV__) console.log('[AppLauncher] Opening Play Store...');
+console.log('[AppLauncher] Opening Play Store...');
     try {
         await Linking.openURL(`market://details?id=${app.androidStore}`);
     } catch {

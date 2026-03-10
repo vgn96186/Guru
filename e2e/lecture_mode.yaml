@@ -1,0 +1,36 @@
+appId: com.anonymous.gurustudy
+---
+- launchApp
+- runFlow: check_in.yaml
+
+# Navigate to Lecture Mode (Hostage Mode)
+# Usually accessed via a tab or a specific action button
+- tapOn: "Lecture" 
+
+# Assert Hostage Mode UI
+- assertVisible: "📺 Hostage Mode"
+- assertVisible: "What subject are you watching?"
+
+# Select a subject
+- tapOn: "BIO" # Select Biochemistry
+- assertVisible: "Biochemistry"
+
+# Enable Auto-Scribe Transcription
+- tapOn: "🎙️ Enable Auto-Scribe"
+
+# Test the "Proof of Focus" entry manually
+- tapOn: "Type a key concept to prove you're listening..."
+- inputText: "The citric acid cycle happens in the mitochondria."
+- tapOn: "Save Note"
+
+# Assert the note appears in the Proof of Focus list
+- assertVisible: "Proof of Focus (1)"
+- assertVisible: "The citric acid cycle happens in the mitochondria."
+
+# End Lecture
+- tapOn: "← End"
+- assertVisible: "Stop" # Confirmation alert
+- tapOn: "Stop"
+
+# Return Home
+- assertVisible: "Welcome back, Doctor"

@@ -5,19 +5,22 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
-import { getAllSubjects } from '../db/queries/topics';
+import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
+import { fetchContent } from '../services/aiService';
 import { addXp } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const BOSS_HP = 100;
 const PLAYER_HP = 3;
 const DAMAGE_PER_HIT = 10;
 
-type Phase = 'select' | 'battle' | 'answer_feedback' | 'victory' | 'defeat';
+type Phase = 'select' | 'loading' | 'battle' | 'answer_feedback' | 'victory' | 'defeat';
 
 export default function BossBattleScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const refreshProfile = useAppStore(s => s.refreshProfile);
+  const profile = useAppStore(s => s.profile);
   const [phase, setPhase] = useState<Phase>('select');
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [questions, setQuestions] = useState<MockQuestion[]>([]);
@@ -29,16 +32,30 @@ export default function BossBattleScreen() {
   
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  function startBattle(subjectName: string) {
-    const all = getAllCachedQuestions();
-    // Filter by subject if enough questions, otherwise take mixed
-    let subjectQs = all.filter(q => q.subjectName === subjectName);
+  async function startBattle(subjectName: string) {
+    let subjectQs = getAllCachedQuestions().filter(q => q.subjectName === subjectName);
+    
+    if (subjectQs.length < 5) {
+      // Generate fresh questions from studied topics
+      setPhase('loading');
+      const subjects = getAllSubjects();
+      const subject = subjects.find(s => s.name === subjectName);
+      if (subject) {
+        const topics = getTopicsBySubject(subject.id).filter(t => t.progress.timesStudied > 0).slice(0, 3);
+        await Promise.allSettled(
+          topics.map(t => fetchContent(t, 'quiz'))
+        );
+        subjectQs = getAllCachedQuestions().filter(q => q.subjectName === subjectName);
+      }
+    }
+
     if (subjectQs.length < 5) {
       Alert.alert('Not enough questions', `Study more ${subjectName} topics to unlock this boss! (Need 5+ questions, have ${subjectQs.length})`);
+      setPhase('select');
       return;
     }
     // Shuffle
-    subjectQs = subjectQs.sort(() => 0.5 - Math.random()).slice(0, 15); // max 15 q per battle
+    subjectQs = subjectQs.sort(() => 0.5 - Math.random()).slice(0, 15);
     
     setSelectedSubject(subjectName);
     setQuestions(subjectQs);
@@ -50,6 +67,7 @@ export default function BossBattleScreen() {
 
   function handleAnswer(idx: number) {
     const q = questions[currentQ];
+    if (!q) return;
     const isCorrect = idx === q.correctIndex;
     setLastAnswer({idx, correct: isCorrect});
     
@@ -108,6 +126,18 @@ export default function BossBattleScreen() {
     ]).start();
   }
 
+  if (phase === 'loading') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.center}>
+          <Text style={styles.emoji}>⚔️</Text>
+          <Text style={styles.title}>Generating Questions...</Text>
+          <Text style={styles.sub}>Preparing the boss fight...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (phase === 'select') {
     const subjects = getAllSubjects();
     return (
@@ -118,6 +148,7 @@ export default function BossBattleScreen() {
           <Text style={styles.title}>Select Boss</Text>
         </View>
         <ScrollView contentContainerStyle={styles.grid}>
+          <ResponsiveContainer>
           {subjects.map(s => (
             <TouchableOpacity 
               key={s.id} 
@@ -128,6 +159,7 @@ export default function BossBattleScreen() {
               <Text style={[styles.subjectName, { color: s.colorHex }]}>{s.name}</Text>
             </TouchableOpacity>
           ))}
+          </ResponsiveContainer>
         </ScrollView>
       </SafeAreaView>
     );
@@ -166,6 +198,7 @@ export default function BossBattleScreen() {
 
   // Battle Phase or Answer Feedback
   const q = questions[currentQ];
+  if (!q) return null;
   const isFeedback = phase === 'answer_feedback';
 
   return (
@@ -195,6 +228,7 @@ export default function BossBattleScreen() {
 
         {/* Question or Feedback */}
         <ScrollView contentContainerStyle={styles.qContainer}>
+          <ResponsiveContainer>
           {isFeedback && lastAnswer ? (
             <View style={styles.feedbackContainer}>
               <Text style={[styles.feedbackEmoji, lastAnswer.correct && { color: '#4CAF50' }]}>
@@ -226,6 +260,7 @@ export default function BossBattleScreen() {
               </View>
             </>
           )}
+          </ResponsiveContainer>
         </ScrollView>
 
       </Animated.View>

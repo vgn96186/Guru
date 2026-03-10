@@ -5,6 +5,12 @@ import { getUserProfile } from '../db/queries/progress';
 import { planSessionWithAI } from './aiService';
 import { getMoodContentTypes } from '../constants/prompts';
 
+interface BuildSessionOptions {
+  focusTopicId?: number;
+  focusTopicIds?: number[];
+  preferredActionType?: 'study' | 'review' | 'deep_dive';
+}
+
 function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
   let score = 0;
 
@@ -67,11 +73,43 @@ function getSessionLength(mood: Mood, preferred: number): number {
   return preferred;
 }
 
+function resolveFocusedContentTypes(
+  topic: TopicWithProgress,
+  safeContentTypes: ContentType[],
+  blockedContentTypes: Set<ContentType>,
+  preferredActionType?: 'study' | 'review' | 'deep_dive',
+): ContentType[] {
+  let focusedTypes = safeContentTypes;
+
+  if (preferredActionType === 'review') {
+    focusedTypes = !blockedContentTypes.has('quiz')
+      ? ['quiz' as ContentType]
+      : ['keypoints' as ContentType];
+  } else if (preferredActionType === 'deep_dive') {
+    focusedTypes = (['keypoints', 'teach_back', 'quiz'] as ContentType[])
+      .filter(ct => !blockedContentTypes.has(ct));
+    if (focusedTypes.length === 0) focusedTypes = safeContentTypes;
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  if (
+    topic.progress.nextReviewDate &&
+    topic.progress.nextReviewDate <= today &&
+    !blockedContentTypes.has('quiz')
+  ) {
+    focusedTypes = ['quiz' as ContentType];
+  }
+
+  return focusedTypes;
+}
+
 export async function buildSession(
   mood: Mood,
   preferredMinutes: number,
   apiKey: string,
   orKey?: string,
+  groqKey?: string,
+  options?: BuildSessionOptions,
 ): Promise<Agenda> {
   const profile = getUserProfile();
   const focusSubjectIds = profile.focusSubjectIds ?? [];
@@ -82,6 +120,67 @@ export async function buildSession(
 
   const sessionMinutes = getSessionLength(mood, preferredMinutes);
   const mode = getSessionMode(mood);
+  const rawContentTypes = getMoodContentTypes(mood);
+  const contentTypes = rawContentTypes.filter(ct => !blockedContentTypes.has(ct));
+  const safeContentTypes = contentTypes.length > 0 ? contentTypes : ['keypoints' as ContentType];
+  const today = new Date().toISOString().slice(0, 10);
+  const explicitTopicIds = options?.focusTopicIds?.length
+    ? options.focusTopicIds
+    : options?.focusTopicId
+      ? [options.focusTopicId]
+      : [];
+
+  if (explicitTopicIds.length > 0) {
+    const explicitTopics = explicitTopicIds
+      .map(id => allTopics.find(t => t.id === id))
+      .filter((topic): topic is TopicWithProgress => Boolean(topic));
+
+    if (explicitTopics.length > 0) {
+      const sortedTopics = [...explicitTopics].sort((a, b) => {
+        if (options?.preferredActionType === 'review') {
+          const aDue = a.progress.nextReviewDate ?? '9999-12-31';
+          const bDue = b.progress.nextReviewDate ?? '9999-12-31';
+          return aDue.localeCompare(bDue) || b.inicetPriority - a.inicetPriority;
+        }
+        if (options?.preferredActionType === 'deep_dive') {
+          return b.inicetPriority - a.inicetPriority || a.progress.confidence - b.progress.confidence;
+        }
+        return b.inicetPriority - a.inicetPriority;
+      });
+
+      const slicedTopics = sortedTopics.slice(
+        0,
+        Math.max(1, Math.min(4, options?.preferredActionType === 'review' ? 4 : 3)),
+      );
+
+      const items = slicedTopics.map(topic => ({
+        topic,
+        contentTypes: resolveFocusedContentTypes(
+          topic,
+          safeContentTypes,
+          blockedContentTypes,
+          options?.preferredActionType,
+        ),
+        estimatedMinutes: Math.max(12, Math.min(topic.estimatedMinutes, 35)),
+      }));
+
+      const totalMinutes = Math.max(
+        12,
+        Math.min(sessionMinutes, items.reduce((sum, item) => sum + item.estimatedMinutes, 0)),
+      );
+      const focusNames = slicedTopics.map(topic => topic.name);
+
+      return {
+        items,
+        totalMinutes,
+        focusNote: `Focused ${options?.preferredActionType ?? 'study'}: ${focusNames.join(' + ')}`,
+        mode: options?.preferredActionType === 'deep_dive' ? 'deep' : mode,
+        guruMessage: options?.preferredActionType === 'review'
+          ? `Review set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`
+          : `Focused set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`,
+      };
+    }
+  }
 
   // Apply focus filter — if subjects are pinned, restrict to those
   const topicPool = focusSubjectIds.length > 0
@@ -96,29 +195,49 @@ export async function buildSession(
   // Take top 15 as candidates
   const candidates = scored.slice(0, 15);
 
-  // Ask AI to pick from candidates
+  // Ask AI to pick from candidates (skip AI entirely if no API key configured)
   let agendaResponse: { selectedTopicIds: number[]; focusNote: string; guruMessage: string };
-  try {
-    agendaResponse = await planSessionWithAI(candidates, sessionMinutes, mood, recentTopics, apiKey, orKey);
-  } catch {
-    // Fallback: just take top 2-3 by score
-    const count = mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : 2;
+  const hasAiKey = !!(apiKey?.trim()) || !!(orKey?.trim()) || !!(groqKey?.trim()) || profile.useLocalModel;
+  if (hasAiKey) {
+    try {
+      agendaResponse = await planSessionWithAI(candidates, sessionMinutes, mood, recentTopics);
+    } catch {
+      // Fallback: just take top 2-3 by score
+      const count = mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : 2;
+      const recentSet = new Set(recentTopics);
+      const fallbackTopics = candidates.filter(t => !recentSet.has(t.name)).slice(0, count);
+      if (fallbackTopics.length === 0 && candidates.length > 0) fallbackTopics.push(candidates[0]);
+      agendaResponse = {
+        selectedTopicIds: fallbackTopics.map(t => t.id),
+        focusNote: `Today: ${fallbackTopics.map(t => t.name).join(' + ')}`,
+        guruMessage: mode === 'gentle'
+          ? 'Take it easy today. Small steps still move you forward.'
+          : 'Let\'s get started. You\'ve got this.',
+      };
+    }
+  } else {
+    // No AI keys at all — use smart local fallback (no network call)
+    const count = mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : Math.min(3, Math.ceil(sessionMinutes / 15));
     const recentSet = new Set(recentTopics);
     const fallbackTopics = candidates.filter(t => !recentSet.has(t.name)).slice(0, count);
+    if (fallbackTopics.length === 0 && candidates.length > 0) fallbackTopics.push(candidates[0]);
+    const gentleMessages = [
+      'Take it easy today. Small steps still move you forward.',
+      'No pressure. Even reviewing one topic is progress.',
+      'Consistency > intensity. You showed up — that\'s what matters.',
+    ];
+    const normalMessages = [
+      'Let\'s get started. You\'ve got this.',
+      'Your future self will thank you for this session.',
+      'Focus mode: ON. Let\'s make this count.',
+    ];
+    const msgs = mode === 'gentle' ? gentleMessages : normalMessages;
     agendaResponse = {
       selectedTopicIds: fallbackTopics.map(t => t.id),
       focusNote: `Today: ${fallbackTopics.map(t => t.name).join(' + ')}`,
-      guruMessage: mode === 'gentle'
-        ? 'Take it easy today. Small steps still move you forward.'
-        : 'Let\'s get started. You\'ve got this.',
+      guruMessage: msgs[Math.floor(Math.random() * msgs.length)],
     };
   }
-
-  const rawContentTypes = getMoodContentTypes(mood);
-  // Remove blocked content types; keep at least keypoints as fallback
-  const contentTypes = rawContentTypes.filter(ct => !blockedContentTypes.has(ct));
-  const safeContentTypes = contentTypes.length > 0 ? contentTypes : ['keypoints' as ContentType];
-  const today = new Date().toISOString().slice(0, 10);
 
   const topicMap = new Map(candidates.map(t => [t.id, t]));
   const items: AgendaItem[] = agendaResponse.selectedTopicIds

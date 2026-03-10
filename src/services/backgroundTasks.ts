@@ -12,9 +12,6 @@ try {
   TaskManager.defineTask(PREFETCH_TASK, async () => {
     try {
       const profile = getUserProfile();
-      if (!profile.openrouterApiKey) {
-        return BackgroundFetch.BackgroundFetchResult.NoData;
-      }
 
       const allTopics = getAllTopicsWithProgress();
       const candidates = allTopics
@@ -30,7 +27,7 @@ try {
       const typesToFetch: ContentType[] = contentTypes.length > 0 ? contentTypes : ['keypoints'];
 
       for (const topic of candidates) {
-        await prefetchTopicContent(topic, typesToFetch, profile.openrouterApiKey, profile.openrouterKey);
+        await prefetchTopicContent(topic, typesToFetch);
       }
 
       return BackgroundFetch.BackgroundFetchResult.NewData;

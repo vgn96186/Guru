@@ -6,15 +6,21 @@ interface Props {
   todayTasks: TodayTask[];
   hasNewTopics: boolean;
   onStartSession: () => void;
+  onTaskPress?: (task: TodayTask) => void;
 }
 
-export default function DailyAgendaSection({ todayTasks, hasNewTopics, onStartSession }: Props) {
+export default function DailyAgendaSection({ todayTasks, hasNewTopics, onStartSession, onTaskPress }: Props) {
   if (todayTasks.length > 0) {
     return (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>📅 Today's Agenda</Text>
         {todayTasks.map((task, i) => (
-          <View key={i} style={styles.taskRow}>
+          <TouchableOpacity 
+            key={i} 
+            style={styles.taskRow}
+            onPress={() => onTaskPress?.(task)}
+            activeOpacity={0.7}
+          >
             <View style={styles.timeBox}>
               <Text style={styles.timeText}>{task.timeLabel.split(' - ')[0]}</Text>
             </View>
@@ -22,13 +28,15 @@ export default function DailyAgendaSection({ todayTasks, hasNewTopics, onStartSe
               styles.taskCard,
               task.type === 'review' && styles.taskReview,
               task.type === 'deep_dive' && styles.taskDeep,
+              i === 0 && styles.taskFirst,
             ]}>
               <Text style={styles.taskTitle} numberOfLines={1}>{task.topic.name}</Text>
               <Text style={styles.taskSub}>
-                {task.type === 'review' ? 'REL' : task.type === 'deep_dive' ? 'DEEP' : 'NEW'} · {task.topic.subjectName}
+                {task.type === 'review' ? 'REVIEW' : task.type === 'deep_dive' ? 'DEEP DIVE' : 'NEW TOPIC'} · {task.topic.subjectName}
               </Text>
             </View>
-          </View>
+            <Text style={styles.taskArrow}>›</Text>
+          </TouchableOpacity>
         ))}
       </View>
     );
@@ -65,6 +73,8 @@ const styles = StyleSheet.create({
   taskDeep: { borderLeftColor: '#F44336' },
   taskTitle: { color: '#fff', fontSize: 13, fontWeight: '600' },
   taskSub: { color: '#9E9E9E', fontSize: 10, marginTop: 2, textTransform: 'uppercase' },
+  taskFirst: { borderWidth: 1, borderColor: '#6C63FF44' },
+  taskArrow: { color: '#6C63FF', fontSize: 22, fontWeight: '700', paddingRight: 12 },
   emptyStateCard: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 24, marginHorizontal: 16, marginBottom: 16, alignItems: 'center' },
   emptyEmoji: { fontSize: 40, marginBottom: 12 },
   emptyTitle: { color: '#fff', fontWeight: '700', fontSize: 18, marginBottom: 8, textAlign: 'center' },

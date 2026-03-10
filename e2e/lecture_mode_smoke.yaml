@@ -1,0 +1,53 @@
+appId: com.anonymous.gurustudy
+---
+- launchApp
+
+# Enter app (Dev Client shows MainActivity already with bundle loaded in this setup)
+- extendedWaitUntil:
+    visible:
+      id: "quick-start-btn"
+    timeout: 30000
+- tapOn:
+    id: "quick-start-btn"
+
+# Open Tools & Library and enter Lecture Mode
+- scrollUntilVisible:
+    element:
+      id: "tools-library-header"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "tools-library-header"
+
+- scrollUntilVisible:
+    element:
+      id: "lecture-mode-btn"
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: "lecture-mode-btn"
+
+# Lecture mode loaded
+- extendedWaitUntil:
+    visible:
+      id: "lecture-end-btn"
+    timeout: 15000
+- assertVisible: "📺 HOSTAGE MODE"
+
+# Enable Auto-Scribe and add a proof note (smoke interaction)
+- tapOn: "🎙️ Enable Auto-Scribe"
+- tapOn:
+    id: "lecture-note-input"
+- inputText: "Citric acid cycle in mitochondria"
+- tapOn:
+    id: "save-note-btn"
+- assertVisible: "Proof of Focus (1)"
+
+# End lecture and confirm return
+- tapOn:
+    id: "lecture-end-btn"
+- tapOn: "Stop"
+- extendedWaitUntil:
+    visible:
+      id: "start-session-btn"
+    timeout: 15000

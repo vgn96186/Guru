@@ -21,6 +21,25 @@ try {
   areNotificationsSupported = false;
 }
 
+// Notification identifier prefixes for category-specific cancellation
+const HARASSMENT_ID_PREFIX = 'harassment_';
+const BREAK_ID_PREFIX = 'break_';
+const ACCOUNTABILITY_ID_PREFIX = 'accountability_';
+
+async function cancelNotificationsByPrefix(prefix: string): Promise<void> {
+  if (!areNotificationsSupported) return;
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const notif of scheduled) {
+      if (notif.identifier.startsWith(prefix)) {
+        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+      }
+    }
+  } catch (error) {
+    if (__DEV__) console.warn('Failed to cancel notifications by prefix:', error);
+  }
+}
+
 export async function requestNotificationPermissions(): Promise<boolean> {
   if (!areNotificationsSupported) return false;
   try {
@@ -118,11 +137,32 @@ export async function sendImmediateNag(title: string, body: string): Promise<voi
   }
 }
 
+export async function notifyRecordingHealthIssue(appName: string): Promise<void> {
+  await sendImmediateNag(
+    '⚠️ Recording Issue',
+    `Your ${appName} lecture recording may have stopped. Return to Guru to check.`,
+  );
+}
+
+export async function notifyTranscriptionFailure(appName: string, durationMinutes: number): Promise<void> {
+  await sendImmediateNag(
+    '❌ Transcription Failed',
+    `Your ${appName} lecture (${durationMinutes}min) couldn't be transcribed. Audio is saved — we'll retry later.`,
+  );
+}
+
+export async function notifyTranscriptionRecovered(appName: string): Promise<void> {
+  await sendImmediateNag(
+    '✅ Lecture Recovered!',
+    `Your ${appName} lecture was transcribed successfully. Check your notes!`,
+  );
+}
+
 
 export async function scheduleHarassment(): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
-    await cancelAllNotifications(); // Clear existing to prevent duplicates
+    await cancelNotificationsByPrefix(HARASSMENT_ID_PREFIX); // Only clear harassment notifications
     
     const messages = [
       "Open the app. Now.",
@@ -141,6 +181,7 @@ export async function scheduleHarassment(): Promise<void> {
     for (let i = 0; i < messages.length; i++) {
       const triggerTime = new Date(Date.now() + (i * 3 + 1) * 60000); // 1m, 4m, 7m, 10m...
       await Notifications.scheduleNotificationAsync({
+        identifier: `${HARASSMENT_ID_PREFIX}${i}`,
         content: {
           title: '🚨 DOOMSCROLL DETECTED',
           body: messages[i],
@@ -159,7 +200,7 @@ export async function scheduleHarassment(): Promise<void> {
 export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
-    await cancelAllNotifications(); // Clear existing to prevent duplicates
+    await cancelNotificationsByPrefix(BREAK_ID_PREFIX); // Only clear break notifications
     
     const messages = [
       "🚨 BREAK IS OVER. Return to the tablet now.",
@@ -179,6 +220,7 @@ export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<v
     for (let i = 0; i < messages.length; i++) {
       const triggerTime = new Date(startTime + (i * 15 * 1000));
       await Notifications.scheduleNotificationAsync({
+        identifier: `${BREAK_ID_PREFIX}${i}`,
         content: {
           title: '🚨 BREAK OVER',
           body: messages[i],
@@ -205,9 +247,9 @@ export async function cancelAllNotifications(): Promise<void> {
 export async function refreshAccountabilityNotifications(): Promise<void> {
   if (!areNotificationsSupported) return;
   const profile = getUserProfile();
-  if (!profile.notificationsEnabled || !profile.openrouterApiKey) return;
+  if (!profile.notificationsEnabled) return;
 
-  const nemesisTopics = await getNemesisTopics();
+  const nemesisTopics = getNemesisTopics();
   const weakTopics = getWeakestTopics(3).map(t => t.name);
   const dueTopics = getTopicsDueForReview(1); // Check if any topic is due
   const logs = getLast30DaysLog();
@@ -227,7 +269,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     // 1. Forced SRS Alarm: Check if strictly due
     const notifHour = profile.notificationHour ?? 7;
     if (dueTopics.length > 0) {
-      await cancelAllNotifications();
+      await cancelNotificationsByPrefix(ACCOUNTABILITY_ID_PREFIX);
       await scheduleMorningReminder(
         '🚨 CRITICAL REVIEW DUE',
         `Topic "${dueTopics[0].name}" is fading! Quiz now to save your mastery level. Only correct answers count.`,
@@ -243,18 +285,14 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     // Wrap AI call in try/catch to prevent crashes
     let messages: Array<{ title: string; body: string; scheduledFor: string }> = [];
     try {
-      messages = await generateAccountabilityMessages(
-        {
-          streak: profile.streakCurrent,
-          weakestTopics: weakTopics,
-          lastStudied,
-          daysToInicet,
-          coveragePercent,
-          lastMood: lastMood as Mood | null,
-        },
-        profile.openrouterApiKey,
-        profile.openrouterKey || undefined,
-      );
+      messages = await generateAccountabilityMessages({
+        streak: profile.streakCurrent,
+        weakestTopics: weakTopics,
+        lastStudied,
+        daysToInicet,
+        coveragePercent,
+        lastMood: lastMood as Mood | null,
+      });
     } catch (aiError) {
       if (__DEV__) console.warn('Failed to generate accountability messages:', aiError);
       // Use default messages if AI fails
@@ -265,7 +303,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
       ];
     }
 
-    await cancelAllNotifications();
+    await cancelNotificationsByPrefix(ACCOUNTABILITY_ID_PREFIX);
 
     if (nemesisTopics.length > 0) {
       // High priority intrusive notification

@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const POSITION_CHECK_INTERVAL = 1000; // Check every second
 const STANDING_THRESHOLD = 0.7; // Z-axis value when standing (phone upright)
@@ -113,10 +114,10 @@ export default function BedLockScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.center}>
+        <ResponsiveContainer style={styles.center}>
           <ActivityIndicator size="large" color="#6C63FF" />
           <Text style={styles.detectingText}>Detecting position...</Text>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -125,7 +126,7 @@ export default function BedLockScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.center}>
+        <ResponsiveContainer style={styles.center}>
           <Text style={styles.shameEmoji}>😴</Text>
           <Text style={styles.shameTitle}>You're Lying Down</Text>
           <Text style={styles.shameSub}>
@@ -148,7 +149,7 @@ export default function BedLockScreen() {
           <TouchableOpacity style={styles.cheatBtn} onPress={handleForceUnlock}>
             <Text style={styles.cheatBtnText}>Unlock Anyway (Cheating)</Text>
           </TouchableOpacity>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -157,22 +158,24 @@ export default function BedLockScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <Animated.View style={[styles.center, { transform: [{ translateX: shakeAnim }] }]}>
-          <Text style={styles.progressEmoji}>💪</Text>
-          <Text style={styles.progressTitle}>Keep Sitting Up!</Text>
-          <Text style={styles.progressSub}>Hold phone upright to unlock</Text>
-          
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress}%` }]} />
-          </View>
-          
-          <Text style={styles.progressPercent}>{progress}%</Text>
-          <Text style={styles.positionText}>Current: {positionZ.toFixed(2)}</Text>
-          
-          {progress > 50 && (
-            <Text style={styles.encouragement}>Almost there! Stay upright!</Text>
-          )}
-        </Animated.View>
+        <ResponsiveContainer style={{ flex: 1 }}>
+          <Animated.View style={[styles.center, { transform: [{ translateX: shakeAnim }] }]}>
+            <Text style={styles.progressEmoji}>💪</Text>
+            <Text style={styles.progressTitle}>Keep Sitting Up!</Text>
+            <Text style={styles.progressSub}>Hold phone upright to unlock</Text>
+            
+            <View style={styles.progressBar}>
+              <View style={[styles.progressFill, { width: `${progress}%` }]} />
+            </View>
+            
+            <Text style={styles.progressPercent}>{progress}%</Text>
+            <Text style={styles.positionText}>Current: {positionZ.toFixed(2)}</Text>
+            
+            {progress > 50 && (
+              <Text style={styles.encouragement}>Almost there! Stay upright!</Text>
+            )}
+          </Animated.View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -180,7 +183,7 @@ export default function BedLockScreen() {
   if (phase === 'unlocked') {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
+        <ResponsiveContainer style={styles.center}>
           <Text style={styles.unlockedEmoji}>🎉</Text>
           <Text style={styles.unlockedTitle}>You're Upright!</Text>
           <Text style={styles.unlockedSub}>The hardest part is done. Now let's study.</Text>
@@ -198,7 +201,7 @@ export default function BedLockScreen() {
           >
             <Text style={styles.sprintBtnText}>⚡ 5-Min Sprint</Text>
           </TouchableOpacity>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }

@@ -10,12 +10,10 @@ interface ChatMessage { role: 'user' | 'guru'; text: string; }
 interface Props {
   visible: boolean;
   topicName: string;
-  apiKey: string;
-  orKey?: string;
   onClose: () => void;
 }
 
-export default function GuruChatOverlay({ visible, topicName, apiKey, orKey, onClose }: Props) {
+export default function GuruChatOverlay({ visible, topicName, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -43,7 +41,7 @@ export default function GuruChatOverlay({ visible, topicName, apiKey, orKey, onC
     setLoading(true);
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     try {
-      const { reply } = await chatWithGuru(q, topicName, next, apiKey, orKey);
+      const { reply } = await chatWithGuru(q, topicName, next.slice(-10));
       setMessages(prev => [...prev, { role: 'guru', text: reply }]);
     } catch {
       setMessages(prev => [...prev, { role: 'guru', text: "Couldn't connect. Try again." }]);

@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { checkinToday } from '../db/queries/progress';
+import { useAppStore } from '../store/useAppStore';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'WakeUp'>;
 type WakeUpPhase = 'breathe' | 'ground' | 'fog_check' | 'done';
@@ -17,6 +20,8 @@ const PHASE_LABELS: Record<WakeUpPhase, { label: string; step: number; total: nu
 
 export default function WakeUpScreen() {
   const navigation = useNavigation<Nav>();
+  const refreshProfile = useAppStore(s => s.refreshProfile);
+  const setDailyAvailability = useAppStore(s => s.setDailyAvailability);
   const [phase, setPhase] = useState<WakeUpPhase>('breathe');
   
   // Breathing
@@ -33,48 +38,49 @@ export default function WakeUpScreen() {
   ];
 
   useEffect(() => {
-    if (phase === 'breathe') {
-      const cycle = () => {
-        if (breatheCycle >= 3) {
-          setPhase('ground');
-          return;
-        }
+    if (phase !== 'breathe') return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let cancelled = false;
 
-        setBreatheText('Breathe In');
-        Animated.timing(breatheAnim, { toValue: 2, duration: 4000, useNativeDriver: true }).start();
-        
-        setTimeout(() => {
-          setBreatheText('Hold');
-        }, 4000);
+    function runCycle(cycleNum: number) {
+      if (cancelled || cycleNum >= 3) {
+        if (!cancelled) setPhase('ground');
+        return;
+      }
 
-        setTimeout(() => {
-          setBreatheText('Breathe Out');
-          Animated.timing(breatheAnim, { toValue: 1, duration: 4000, useNativeDriver: true }).start();
-        }, 8000);
+      setBreatheText('Breathe In');
+      Animated.timing(breatheAnim, { toValue: 2, duration: 4000, useNativeDriver: true }).start();
 
-        setTimeout(() => {
-          setBreatheText('Hold');
-        }, 12000);
-
-        setTimeout(() => {
-          setBreatheCycle(c => c + 1);
-          cycle();
-        }, 16000);
-      };
-
-      cycle();
+      timers.push(setTimeout(() => { if (!cancelled) setBreatheText('Hold'); }, 4000));
+      timers.push(setTimeout(() => {
+        if (cancelled) return;
+        setBreatheText('Breathe Out');
+        Animated.timing(breatheAnim, { toValue: 1, duration: 4000, useNativeDriver: true }).start();
+      }, 8000));
+      timers.push(setTimeout(() => { if (!cancelled) setBreatheText('Hold'); }, 12000));
+      timers.push(setTimeout(() => { if (!cancelled) runCycle(cycleNum + 1); }, 16000));
     }
-  }, [phase, breatheCycle]);
+
+    runCycle(0);
+    return () => { cancelled = true; timers.forEach(clearTimeout); };
+  }, [phase]);
 
   function handleFogCheck(level: 'clear' | 'hazy' | 'foggy') {
-    // Depending on level, we could route differently, but for now we'll route to CheckIn or Home
-    // In a full implementation, 'foggy' might route to a 'ComebackScreen' or 'MicroSession'
-    navigation.replace('CheckIn');
+    if (level === 'foggy') {
+      // Very foggy → auto check-in as tired, gentle session defaults
+      checkinToday('tired');
+      setDailyAvailability(20);
+      refreshProfile();
+      navigation.replace('Tabs');
+    } else {
+      // Clear or hazy → normal check-in
+      navigation.replace('CheckIn');
+    }
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ResponsiveContainer style={styles.container}>
         
         {phase === 'breathe' && (
           <View style={styles.centerBox}>
@@ -145,7 +151,7 @@ export default function WakeUpScreen() {
           </View>
         )}
 
-      </View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

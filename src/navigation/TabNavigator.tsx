@@ -8,12 +8,14 @@ import type { TabParamList, HomeStackParamList, SyllabusStackParamList } from '.
 import HomeScreen from '../screens/HomeScreen';
 import SessionScreen from '../screens/SessionScreen';
 import LectureModeScreen from '../screens/LectureModeScreen';
+import GuruChatScreen from '../screens/GuruChatScreen';
 import MockTestScreen from '../screens/MockTestScreen';
 import SyllabusScreen from '../screens/SyllabusScreen';
 import TopicDetailScreen from '../screens/TopicDetailScreen';
 import StatsScreen from '../screens/StatsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ReviewScreen from '../screens/ReviewScreen';
+import NotesHubScreen from '../screens/NotesHubScreen';
 import NotesSearchScreen from '../screens/NotesSearchScreen';
 import BossBattleScreen from '../screens/BossBattleScreen';
 import InertiaScreen from '../screens/InertiaScreen';
@@ -21,6 +23,7 @@ import ManualLogScreen from '../screens/ManualLogScreen';
 import StudyPlanScreen from '../screens/StudyPlanScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
+import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
 
 // Navigation setup
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -33,14 +36,18 @@ function HomeStackNav() {
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="Session" component={SessionScreen} />
       <HomeStack.Screen name="LectureMode" component={LectureModeScreen} />
+      <HomeStack.Screen name="GuruChat" component={GuruChatScreen} />
       <HomeStack.Screen name="MockTest" component={MockTestScreen} />
       <HomeStack.Screen name="Review" component={ReviewScreen} />
+      <HomeStack.Screen name="NotesHub" component={NotesHubScreen} />
       <HomeStack.Screen name="NotesSearch" component={NotesSearchScreen} />
       <HomeStack.Screen name="BossBattle" component={BossBattleScreen} />
       <HomeStack.Screen name="Inertia" component={InertiaScreen} />
       <HomeStack.Screen name="ManualLog" component={ManualLogScreen} />
+      <HomeStack.Screen name="StudyPlan" component={StudyPlanScreen} />
       <HomeStack.Screen name="DailyChallenge" component={DailyChallengeScreen} />
       <HomeStack.Screen name="FlaggedReview" component={FlaggedReviewScreen} />
+      <HomeStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} options={{ title: 'Lecture History' }} />
     </HomeStack.Navigator>
   );
 }
@@ -63,18 +70,25 @@ export default function TabNavigator() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarHideOnKeyboard: true,
-        tabBarShowLabel: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '700',
+          marginTop: 0,
+          letterSpacing: 0.3,
+        },
         tabBarStyle: {
           backgroundColor: '#1A1A24',
           borderTopColor: '#2A2A38',
           paddingBottom: bottomInset,
-          height: 52 + bottomInset,
+          height: 62 + bottomInset,
+          paddingTop: 4,
         },
         tabBarActiveTintColor: '#6C63FF',
-        tabBarInactiveTintColor: '#555',
+        tabBarInactiveTintColor: '#777',
         tabBarIcon: ({ color, size, focused }) => {
           const icons: Record<string, string> = {
-            HomeTab: focused ? 'play-circle' : 'play-circle-outline',
+            HomeTab: focused ? 'home' : 'home-outline',
             SyllabusTab: focused ? 'grid' : 'grid-outline',
             PlanTab: focused ? 'calendar' : 'calendar-outline',
             StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
@@ -84,11 +98,11 @@ export default function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="HomeTab" component={HomeStackNav} />
-      <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} />
-      <Tab.Screen name="PlanTab" component={StudyPlanScreen} />
-      <Tab.Screen name="StatsTab" component={StatsScreen} />
-      <Tab.Screen name="SettingsTab" component={SettingsScreen} />
+      <Tab.Screen name="HomeTab" component={HomeStackNav} options={{ tabBarLabel: 'Home', tabBarButtonTestID: 'tab-home', tabBarAccessibilityLabel: 'Home tab' }} />
+      <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} options={{ tabBarLabel: 'Syllabus', tabBarButtonTestID: 'tab-syllabus', tabBarAccessibilityLabel: 'Syllabus tab' }} />
+      <Tab.Screen name="PlanTab" component={StudyPlanScreen} options={{ tabBarLabel: 'Plan', tabBarButtonTestID: 'tab-plan', tabBarAccessibilityLabel: 'Study Plan tab' }} />
+      <Tab.Screen name="StatsTab" component={StatsScreen} options={{ tabBarLabel: 'Stats', tabBarButtonTestID: 'tab-stats', tabBarAccessibilityLabel: 'Statistics tab' }} />
+      <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ tabBarLabel: 'Settings', tabBarButtonTestID: 'tab-settings', tabBarAccessibilityLabel: 'Settings tab' }} />
     </Tab.Navigator>
   );
 }

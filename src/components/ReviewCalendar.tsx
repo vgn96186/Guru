@@ -1,0 +1,304 @@
+/**
+ * ReviewCalendar
+ * Shows upcoming review dates on a mini calendar view.
+ * Topics appear as dots on their review dates.
+ */
+
+import React, { useMemo, useState } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { getDb } from '../db/database';
+
+interface ReviewDay {
+  date: string; // YYYY-MM-DD
+  count: number;
+  topics: Array<{ name: string; confidence: number }>;
+}
+
+function getReviewCalendarData(year: number, month: number): ReviewDay[] {
+  const db = getDb();
+  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const endDate = month === 11
+    ? `${year + 1}-01-01`
+    : `${year}-${String(month + 2).padStart(2, '0')}-01`;
+
+  const rows = db.getAllSync<{
+    next_review_date: string;
+    topic_name: string;
+    confidence: number;
+  }>(
+    `SELECT tp.next_review_date, t.name as topic_name, tp.confidence
+     FROM topic_progress tp
+     JOIN topics t ON tp.topic_id = t.id
+     WHERE tp.next_review_date IS NOT NULL
+       AND tp.next_review_date >= ? AND tp.next_review_date < ?
+     ORDER BY tp.next_review_date ASC`,
+    [startDate, endDate],
+  );
+
+  const byDate = new Map<string, ReviewDay>();
+  for (const r of rows) {
+    const existing = byDate.get(r.next_review_date);
+    if (existing) {
+      existing.count++;
+      existing.topics.push({ name: r.topic_name, confidence: r.confidence });
+    } else {
+      byDate.set(r.next_review_date, {
+        date: r.next_review_date,
+        count: 1,
+        topics: [{ name: r.topic_name, confidence: r.confidence }],
+      });
+    }
+  }
+  return Array.from(byDate.values());
+}
+
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+export default function ReviewCalendar() {
+  const now = new Date();
+  const [year, setYear] = useState(now.getFullYear());
+  const [month, setMonth] = useState(now.getMonth());
+  const [selectedDay, setSelectedDay] = useState<ReviewDay | null>(null);
+
+  const reviewData = useMemo(() => getReviewCalendarData(year, month), [year, month]);
+  const reviewMap = useMemo(() => {
+    const m = new Map<string, ReviewDay>();
+    for (const d of reviewData) m.set(d.date, d);
+    return m;
+  }, [reviewData]);
+
+  const todayStr = now.toISOString().slice(0, 10);
+
+  // Build calendar grid
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const weeks: (number | null)[][] = [];
+  let currentWeek: (number | null)[] = Array(firstDay).fill(null);
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    currentWeek.push(d);
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek);
+      currentWeek = [];
+    }
+  }
+  if (currentWeek.length > 0) {
+    while (currentWeek.length < 7) currentWeek.push(null);
+    weeks.push(currentWeek);
+  }
+
+  const changeMonth = (delta: number) => {
+    let m = month + delta;
+    let y = year;
+    if (m < 0) { m = 11; y--; }
+    if (m > 11) { m = 0; y++; }
+    setMonth(m);
+    setYear(y);
+    setSelectedDay(null);
+  };
+
+  const totalReviews = reviewData.reduce((s, d) => s + d.count, 0);
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navBtn}>
+          <Ionicons name="chevron-back" size={20} color="#888" />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <Text style={styles.monthText}>{MONTHS[month]} {year}</Text>
+          <Text style={styles.reviewCount}>
+            {totalReviews} review{totalReviews !== 1 ? 's' : ''} scheduled
+          </Text>
+        </View>
+        <TouchableOpacity onPress={() => changeMonth(1)} style={styles.navBtn}>
+          <Ionicons name="chevron-forward" size={20} color="#888" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Day of week headers */}
+      <View style={styles.weekRow}>
+        {DAYS_OF_WEEK.map((d, i) => (
+          <Text key={i} style={styles.dayHeader}>{d}</Text>
+        ))}
+      </View>
+
+      {/* Calendar grid */}
+      {weeks.map((week, wi) => (
+        <View key={wi} style={styles.weekRow}>
+          {week.map((day, di) => {
+            if (day === null) return <View key={di} style={styles.dayCell} />;
+
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const review = reviewMap.get(dateStr);
+            const isToday = dateStr === todayStr;
+            const isSelected = selectedDay?.date === dateStr;
+            const isPast = dateStr < todayStr;
+
+            return (
+              <TouchableOpacity
+                key={di}
+                style={[
+                  styles.dayCell,
+                  isToday && styles.todayCell,
+                  isSelected && styles.selectedCell,
+                ]}
+                onPress={() => review && setSelectedDay(isSelected ? null : review)}
+                activeOpacity={review ? 0.6 : 1}
+              >
+                <Text style={[
+                  styles.dayText,
+                  isToday && styles.todayText,
+                  isSelected && styles.selectedText,
+                  isPast && !isToday && styles.pastText,
+                ]}>
+                  {day}
+                </Text>
+                {review && (
+                  <View style={styles.dotsRow}>
+                    {review.count <= 3 ? (
+                      Array.from({ length: review.count }).map((_, i) => (
+                        <View key={i} style={[
+                          styles.dot,
+                          isPast && { backgroundColor: '#F44336' },
+                        ]} />
+                      ))
+                    ) : (
+                      <>
+                        <View style={[styles.dot, isPast && { backgroundColor: '#F44336' }]} />
+                        <Text style={[styles.dotCount, isPast && { color: '#F44336' }]}>{review.count}</Text>
+                      </>
+                    )}
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ))}
+
+      {/* Selected day detail */}
+      {selectedDay && (
+        <View style={styles.detailSection}>
+          <Text style={styles.detailTitle}>
+            {new Date(selectedDay.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
+            {' · '}{selectedDay.count} topic{selectedDay.count !== 1 ? 's' : ''}
+          </Text>
+          <ScrollView style={styles.detailScroll}>
+            {selectedDay.topics.map((t, i) => (
+              <View key={i} style={styles.topicRow}>
+                <View style={[styles.confDot, {
+                  backgroundColor: t.confidence >= 3 ? '#4CAF50' : t.confidence >= 2 ? '#FF9800' : '#F44336',
+                }]} />
+                <Text style={styles.topicName}>{t.name}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#1A1A24',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  navBtn: { padding: 8 },
+  headerCenter: { alignItems: 'center' },
+  monthText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  reviewCount: { color: '#888', fontSize: 11, marginTop: 2 },
+  weekRow: { flexDirection: 'row' },
+  dayHeader: {
+    flex: 1,
+    textAlign: 'center',
+    color: '#555',
+    fontSize: 11,
+    fontWeight: '600',
+    paddingVertical: 6,
+  },
+  dayCell: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+    minHeight: 44,
+  },
+  todayCell: {
+    backgroundColor: '#6C63FF22',
+    borderRadius: 10,
+  },
+  selectedCell: {
+    backgroundColor: '#6C63FF44',
+    borderRadius: 10,
+  },
+  dayText: { color: '#ccc', fontSize: 14 },
+  todayText: { color: '#6C63FF', fontWeight: '800' },
+  selectedText: { color: '#fff', fontWeight: '800' },
+  pastText: { color: '#555' },
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+    gap: 2,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#6C63FF',
+  },
+  dotCount: {
+    color: '#6C63FF',
+    fontSize: 9,
+    fontWeight: '700',
+    marginLeft: 1,
+  },
+  detailSection: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#2A2A38',
+    paddingTop: 12,
+    maxHeight: 160,
+  },
+  detailTitle: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  detailScroll: {},
+  topicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    gap: 8,
+  },
+  confDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  topicName: {
+    color: '#ccc',
+    fontSize: 13,
+    flex: 1,
+  },
+});

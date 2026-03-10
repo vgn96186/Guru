@@ -3,9 +3,32 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
 
+const Updates = (() => {
+  try {
+    return require('expo-updates') as { reloadAsync: () => Promise<void> };
+  } catch {
+    return null;
+  }
+})();
+
 const DB_NAME = 'neet_study.db';
 const DB_DIR = `${FileSystem.documentDirectory}SQLite`;
 const DB_PATH = `${DB_DIR}/${DB_NAME}`;
+const SQLITE_HEADER = 'SQLite format 3';
+
+async function hasSQLiteHeader(filePath: string): Promise<boolean> {
+  try {
+    const headerBase64 = await FileSystem.readAsStringAsync(filePath, {
+      encoding: FileSystem.EncodingType.Base64,
+      position: 0,
+      length: 16,
+    });
+    const header = atob(headerBase64);
+    return header.startsWith(SQLITE_HEADER);
+  } catch {
+    return false;
+  }
+}
 
 export async function exportDatabase() {
   try {
@@ -43,23 +66,83 @@ export async function importDatabase() {
     if (result.canceled) return;
     
     const asset = result.assets[0];
-    
-    // Verify it looks like a DB file
-    if (!asset.name.endsWith('.db') && !asset.name.includes('backup')) {
-      Alert.alert('Warning', 'This does not look like a backup database file.');
-      return;
-    }
-    
-    // Ensure SQLite dir exists
+    const tempImportPath = `${FileSystem.cacheDirectory}neet_study_import_tmp_${Date.now()}.db`;
+    const rollbackPath = `${DB_PATH}.rollback_${Date.now()}.bak`;
+
+    // Ensure SQLite dir exists first
     const dirInfo = await FileSystem.getInfoAsync(DB_DIR);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(DB_DIR, { intermediates: true });
     }
-    
-    // Replace DB
-    await FileSystem.copyAsync({ from: asset.uri, to: DB_PATH });
-    Alert.alert('Success', 'Backup restored successfully! Please restart the app.', [
-      { text: 'OK' }
+
+    // Copy selected file to temp path and validate SQLite signature
+    await FileSystem.copyAsync({ from: asset.uri, to: tempImportPath });
+    const validSqlite = await hasSQLiteHeader(tempImportPath);
+    if (!validSqlite) {
+      await FileSystem.deleteAsync(tempImportPath, { idempotent: true });
+      Alert.alert('Invalid backup', 'Selected file is not a valid SQLite database backup.');
+      return;
+    }
+
+    // Close current DB connection before replacing file
+    try {
+      const { getDb } = require('../db/database');
+      const db = getDb();
+      db.closeSync();
+    } catch {}
+    (global as any).__GURU_DB__ = null;
+
+    const existing = await FileSystem.getInfoAsync(DB_PATH);
+    if (existing.exists) {
+      await FileSystem.copyAsync({ from: DB_PATH, to: rollbackPath });
+    }
+
+    try {
+      await FileSystem.copyAsync({ from: tempImportPath, to: DB_PATH });
+      await FileSystem.deleteAsync(tempImportPath, { idempotent: true });
+      // Keep rollback until we verify the new DB is valid
+    } catch (replaceError) {
+      // Restore old DB if replacement fails
+      const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
+      if (rollbackExists.exists) {
+        await FileSystem.copyAsync({ from: rollbackPath, to: DB_PATH });
+      }
+      await FileSystem.deleteAsync(tempImportPath, { idempotent: true });
+      await FileSystem.deleteAsync(rollbackPath, { idempotent: true });
+      throw replaceError;
+    }
+
+    // Verify the imported DB can be opened and has expected tables
+    try {
+      const { getDb } = require('../db/database');
+      const testDb = getDb();
+      testDb.getFirstSync('SELECT COUNT(*) FROM subjects');
+      // DB is valid — clean up rollback
+      await FileSystem.deleteAsync(rollbackPath, { idempotent: true });
+    } catch (validationError) {
+      // Imported DB is corrupt — rollback
+      const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
+      if (rollbackExists.exists) {
+        await FileSystem.copyAsync({ from: rollbackPath, to: DB_PATH });
+      }
+      await FileSystem.deleteAsync(rollbackPath, { idempotent: true });
+      Alert.alert('Invalid Backup', 'The backup file failed schema validation. Your original data has been restored.');
+      return;
+    }
+
+    Alert.alert('Success', 'Backup restored successfully! The app will now restart.', [
+      {
+        text: 'Restart',
+        onPress: () => {
+          // Force a full restart so all components get fresh DB handles
+          try {
+            void Updates?.reloadAsync?.();
+          } catch {
+            // Fallback for dev builds where Updates isn't available
+            Alert.alert('Please restart the app manually.');
+          }
+        },
+      },
     ]);
   } catch (e) {
     if (__DEV__) console.error('Import error', e);

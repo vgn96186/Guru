@@ -55,7 +55,7 @@ export default function QuickStatsCard({ progressPercent, todayMinutes, dailyGoa
         <Text style={styles.quickStatsTitle}>Today's Progress</Text>
         <Text style={styles.quickStatsMinutes}>{todayMinutes} / {dailyGoal} min</Text>
         {minutesLeft > 0 ? (
-          <Text style={styles.quickStatsLeft}>{minutesLeft} min left</Text>
+          <Text style={styles.quickStatsLeft}>Just {minutesLeft} min to crush your goal! 💪</Text>
         ) : (
           <Text style={styles.quickStatsDone}>Goal reached!</Text>
         )}

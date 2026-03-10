@@ -4,7 +4,7 @@
     "slug": "guru-study",
     "scheme": "guru-study",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -35,8 +35,13 @@
       "expo-notifications",
       "./modules/app-launcher/withAppLauncher",
       "expo-build-properties",
-      "expo-font"
+      "expo-font",
+      "llama.rn",
+      "@config-plugins/detox"
     ],
+    "developmentClient": {
+      "silentLaunch": true
+    },
     "extra": {
       "eas": {
         "projectId": "9bd98d16-0bbc-4416-8f97-a5ac65e0dc56"

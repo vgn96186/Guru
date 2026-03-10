@@ -2,7 +2,7 @@ import { getAllTopicsWithProgress, getAllSubjects, getTopicsDueForReview } from 
 import { getUserProfile, getDaysToExam } from '../db/queries/progress';
 import { getPreferredStudyHours } from '../db/queries/sessions';
 import { useAppStore } from '../store/useAppStore';
-import type { TopicWithProgress } from '../types';
+import type { TopicWithProgress, StudyResourceMode } from '../types';
 
 export type PlanActionType = 'study' | 'review' | 'deep_dive';
 
@@ -11,6 +11,7 @@ export interface PlanItem {
   topic: TopicWithProgress;
   type: PlanActionType;
   duration: number;
+  reasonLabels: string[];
 }
 
 export interface DailyPlan {
@@ -28,6 +29,12 @@ export interface StudyPlanSummary {
   requiredHoursPerDay: number;
   feasible: boolean;
   message: string;
+  projectedFinishDate: string | null;
+  bufferDays: number;
+  resourceMode: StudyResourceMode;
+  resourceLabel: string;
+  workloadAssumption: string;
+  subjectLoadHighlights: string[];
 }
 
 export interface TodayTask {
@@ -37,10 +44,224 @@ export interface TodayTask {
   duration: number;
 }
 
+export type PlanMode = 'balanced' | 'high_yield' | 'exam_crunch';
+
+interface GeneratePlanOptions {
+  mode?: PlanMode;
+  resourceMode?: StudyResourceMode;
+}
+
+interface ResourceProfile {
+  label: string;
+  workloadAssumption: string;
+  reviewMinutes: number;
+  newTopicMultiplier: number;
+  deepDiveMultiplier: number;
+  minNewTopicMinutes: number;
+  minDeepDiveMinutes: number;
+  newTopicDailyBudgetMultiplier: number;
+  deepDiveDailyBudgetMultiplier: number;
+  subjectWeightSensitivity: number;
+}
+
+const RESOURCE_PROFILES: Record<StudyResourceMode, ResourceProfile> = {
+  standard: {
+    label: 'Standard Topics',
+    workloadAssumption: 'Revision-sized topic blocks with lighter time assumptions.',
+    reviewMinutes: 15,
+    newTopicMultiplier: 1,
+    deepDiveMultiplier: 1,
+    minNewTopicMinutes: 35,
+    minDeepDiveMinutes: 35,
+    newTopicDailyBudgetMultiplier: 1,
+    deepDiveDailyBudgetMultiplier: 0.6,
+    subjectWeightSensitivity: 0.35,
+  },
+  btr: {
+    label: 'BTR',
+    workloadAssumption: 'Compressed high-yield revision blocks modeled closer to 75-90 minute sessions.',
+    reviewMinutes: 22,
+    newTopicMultiplier: 2.2,
+    deepDiveMultiplier: 1.8,
+    minNewTopicMinutes: 75,
+    minDeepDiveMinutes: 60,
+    newTopicDailyBudgetMultiplier: 1.35,
+    deepDiveDailyBudgetMultiplier: 0.85,
+    subjectWeightSensitivity: 0.7,
+  },
+  dbmci_live: {
+    label: 'DBMCI Live',
+    workloadAssumption: 'Lecture-heavy plan with new learning blocked as multi-hour teaching sessions.',
+    reviewMinutes: 28,
+    newTopicMultiplier: 3.4,
+    deepDiveMultiplier: 2.5,
+    minNewTopicMinutes: 120,
+    minDeepDiveMinutes: 90,
+    newTopicDailyBudgetMultiplier: 1.85,
+    deepDiveDailyBudgetMultiplier: 1.05,
+    subjectWeightSensitivity: 1,
+  },
+  hybrid: {
+    label: 'BTR + DBMCI Hybrid',
+    workloadAssumption: 'Blends marathon revision blocks with multi-hour live-class learning load.',
+    reviewMinutes: 25,
+    newTopicMultiplier: 2.8,
+    deepDiveMultiplier: 2.2,
+    minNewTopicMinutes: 95,
+    minDeepDiveMinutes: 80,
+    newTopicDailyBudgetMultiplier: 1.55,
+    deepDiveDailyBudgetMultiplier: 0.95,
+    subjectWeightSensitivity: 0.85,
+  },
+};
+
+export const SUBJECT_WORKLOAD_OVERRIDES: Record<string, number> = {
+  MED: 1.35,
+  SURG: 1.3,
+  OBG: 1.2,
+  PSM: 1.2,
+  PEDS: 1.15,
+  PATH: 1.12,
+  PHAR: 1.08,
+  ANAT: 1.08,
+  PHYS: 1.05,
+  MICR: 1.05,
+  ORTH: 1.02,
+  OPTH: 0.95,
+  ENT: 0.92,
+  FMT: 0.9,
+  PSY: 0.88,
+  DERM: 0.88,
+  RADI: 0.9,
+  ANES: 0.86,
+  BIOC: 0.96,
+};
+
+function toDateOnly(dateLike: string | null): string | null {
+  if (!dateLike) return null;
+  return dateLike.slice(0, 10);
+}
+
+function buildReasonLabels(topic: TopicWithProgress, type: PlanActionType, today: string): string[] {
+  const labels: string[] = [];
+  const dueDate = toDateOnly(topic.progress.fsrsDue ?? topic.progress.nextReviewDate);
+
+  if (type === 'review') {
+    if (dueDate && dueDate < today) {
+      const overdueDays = Math.max(
+        1,
+        Math.ceil((new Date(today).getTime() - new Date(dueDate).getTime()) / 86400000),
+      );
+      labels.push(`Overdue ${overdueDays}d`);
+    } else if (dueDate === today) {
+      labels.push('Due today');
+    } else {
+      labels.push('Scheduled review');
+    }
+  }
+
+  if (type === 'deep_dive') labels.push('Weak topic');
+  if (type === 'study' && topic.progress.status === 'unseen') labels.push('Untouched');
+  if (topic.inicetPriority >= 8) labels.push('High yield');
+  if (topic.progress.isNemesis) labels.push('Nemesis');
+
+  return labels.slice(0, 3);
+}
+
+function createPlanItem(
+  id: string,
+  topic: TopicWithProgress,
+  type: PlanActionType,
+  duration: number,
+  today: string,
+): PlanItem {
+  return {
+    id,
+    topic,
+    type,
+    duration,
+    reasonLabels: buildReasonLabels(topic, type, today),
+  };
+}
+
+function getResourceProfile(mode: StudyResourceMode): ResourceProfile {
+  return RESOURCE_PROFILES[mode] ?? RESOURCE_PROFILES.hybrid;
+}
+
+export function getDefaultSubjectLoadMultiplier(subjectCode: string): number {
+  return SUBJECT_WORKLOAD_OVERRIDES[subjectCode] ?? 1;
+}
+
+function getSubjectLoadFactor(
+  topic: TopicWithProgress,
+  resourceMode: StudyResourceMode,
+  customOverrides?: Record<string, number>,
+): number {
+  const resourceProfile = getResourceProfile(resourceMode);
+  const baseline = customOverrides?.[topic.subjectCode] ?? getDefaultSubjectLoadMultiplier(topic.subjectCode);
+  return 1 + ((baseline - 1) * resourceProfile.subjectWeightSensitivity);
+}
+
+function estimateActionDuration(
+  topic: TopicWithProgress,
+  type: PlanActionType,
+  resourceMode: StudyResourceMode,
+  customOverrides?: Record<string, number>,
+): number {
+  const profile = getResourceProfile(resourceMode);
+  const baseMinutes = Math.max(topic.estimatedMinutes || 35, 20);
+  const subjectFactor = getSubjectLoadFactor(topic, resourceMode, customOverrides);
+
+  if (type === 'review') {
+    return Math.round((profile.reviewMinutes + (topic.inicetPriority >= 8 ? 5 : 0)) * Math.max(0.92, Math.min(1.15, subjectFactor)));
+  }
+
+  if (type === 'deep_dive') {
+    const scaled = Math.round(baseMinutes * profile.deepDiveMultiplier * subjectFactor);
+    return Math.max(profile.minDeepDiveMinutes, scaled);
+  }
+
+  const scaled = Math.round(baseMinutes * profile.newTopicMultiplier * subjectFactor);
+  const priorityBoost = topic.inicetPriority >= 8 ? 10 : 0;
+  return Math.max(profile.minNewTopicMinutes, scaled + priorityBoost);
+}
+
+function getActiveSubjectLoadHighlights(
+  resourceMode: StudyResourceMode,
+  customOverrides?: Record<string, number>,
+): string[] {
+  const resourceProfile = getResourceProfile(resourceMode);
+  return Object.entries({ ...SUBJECT_WORKLOAD_OVERRIDES, ...(customOverrides ?? {}) })
+    .map(([code, factor]) => ({
+      code,
+      applied: 1 + ((factor - 1) * resourceProfile.subjectWeightSensitivity),
+    }))
+    .filter(item => item.applied >= 1.1)
+    .sort((a, b) => b.applied - a.applied)
+    .slice(0, 4)
+    .map(item => `${item.code} ${item.applied.toFixed(2)}x`);
+}
+
+// In-memory cache to prevent heavy recomputation on every render
+let cachedPlan: { plan: DailyPlan[]; summary: StudyPlanSummary } | null = null;
+let lastCacheKey: string | null = null;
+
+export function invalidatePlanCache() {
+  cachedPlan = null;
+  lastCacheKey = null;
+}
+
 export function getTodaysAgendaWithTimes(): TodayTask[] {
   const { plan } = generateStudyPlan();
   const todayPlan = plan[0];
   if (!todayPlan || todayPlan.items.length === 0) return [];
+
+  const formatClock = (totalMinutes: number) => {
+    const normalized = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+    const hour = Math.floor(normalized / 60);
+    const minute = normalized % 60;
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  };
 
   // Get user-stated availability from store
   const availability = useAppStore.getState().dailyAvailability;
@@ -91,18 +312,11 @@ export function getTodaysAgendaWithTimes(): TodayTask[] {
   // Group items into hour blocks
   for (const item of items) {
     const hour = availableHours[hourIndex] ?? (availableHours[availableHours.length-1] + 1 + (hourIndex - availableHours.length));
-    
-    // Format label: "09:00 - 09:30"
-    const startMin = currentSlotMinutes;
-    const endMin = startMin + item.duration;
-    
-    // Simple 24h to AM/PM converter or just HH:MM
-    const h = hour % 24;
-    const startStr = `${h.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
-    const endStr = `${h.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
+    const slotStart = (hour * 60) + currentSlotMinutes;
+    const slotEnd = slotStart + item.duration;
     
     schedule.push({
-      timeLabel: `${startStr} - ${endStr}`,
+      timeLabel: `${formatClock(slotStart)} - ${formatClock(slotEnd)}`,
       topic: item.topic,
       type: item.type,
       duration: item.duration
@@ -119,8 +333,18 @@ export function getTodaysAgendaWithTimes(): TodayTask[] {
   return schedule;
 }
 
-export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSummary } {
+export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyPlan[]; summary: StudyPlanSummary } {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const mode = options?.mode ?? 'balanced';
   const profile = getUserProfile();
+  const resourceMode = options?.resourceMode ?? profile.studyResourceMode ?? 'hybrid';
+  const customSubjectLoads = profile.customSubjectLoadMultipliers ?? {};
+  const resourceProfile = getResourceProfile(resourceMode);
+  const cacheKey = `${todayStr}:${mode}:${resourceMode}:${JSON.stringify(customSubjectLoads)}`;
+  if (cachedPlan && lastCacheKey === cacheKey) {
+    return cachedPlan;
+  }
+
   const allTopics = getAllTopicsWithProgress();
   const subjects = getAllSubjects();
   const subjectWeights = new Map(subjects.map(s => [s.id, s.inicetWeight]));
@@ -144,31 +368,32 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
   // A. Overdue Reviews (Priority 1)
   const due = getTopicsDueForReview(1000); // Get all due
   for (const t of due) {
-    pendingActions.push({
-      id: `rev_${t.id}_init`,
-      topic: t,
-      type: 'review',
-      duration: 15 // Standard review time
-    });
+    pendingActions.push(createPlanItem(`rev_${t.id}_init`, t, 'review', estimateActionDuration(t, 'review', resourceMode, customSubjectLoads), todayStr));
   }
 
   // B. Weak Topics (Priority 2 - Deep Dive)
   // Confidence < 3 AND seen at least once
-  const weak = allTopics.filter(t => t.progress.status !== 'unseen' && t.progress.confidence < 3);
+  const weak = allTopics.filter(t => {
+    if (t.progress.status === 'unseen' || t.progress.confidence >= 3) return false;
+    if (mode === 'high_yield') return t.inicetPriority >= 7;
+    return true;
+  });
   for (const t of weak) {
     // Only add if not already in due list (avoid double booking, prioritize full re-study)
     if (!due.find(d => d.id === t.id)) {
       pendingActions.push({
-        id: `dive_${t.id}_init`,
-        topic: t,
-        type: 'deep_dive',
-        duration: t.estimatedMinutes // Full duration for re-study
+        ...createPlanItem(`dive_${t.id}_init`, t, 'deep_dive', estimateActionDuration(t, 'deep_dive', resourceMode, customSubjectLoads), todayStr),
       });
     }
   }
 
   // C. New Topics (Priority 3)
-  const newTopics = allTopics.filter(t => t.progress.status === 'unseen');
+  const newTopics = allTopics.filter(t => {
+    if (t.progress.status !== 'unseen') return false;
+    if (mode === 'high_yield') return t.inicetPriority >= 8;
+    if (mode === 'exam_crunch') return t.inicetPriority >= 9;
+    return true;
+  });
   // Sort new topics by weight
   newTopics.sort((a, b) => {
     const scoreA = (subjectWeights.get(a.subjectId) ?? 5) * 1.5 + a.inicetPriority;
@@ -177,12 +402,7 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
   });
 
   for (const t of newTopics) {
-    pendingActions.push({
-      id: `new_${t.id}_init`,
-      topic: t,
-      type: 'study',
-      duration: t.estimatedMinutes
-    });
+    pendingActions.push(createPlanItem(`new_${t.id}_init`, t, 'study', estimateActionDuration(t, 'study', resourceMode, customSubjectLoads), todayStr));
   }
 
   // Sort Pending Queue: Reviews > Deep Dives > High Yield New
@@ -193,12 +413,24 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
   const queueDeep = pendingActions.filter(p => p.type === 'deep_dive');
   const queueNew = pendingActions.filter(p => p.type === 'study');
 
+  const totalExpectedWorkloadMinutes =
+    queueReviews.reduce((sum, item) => sum + item.duration, 0)
+    + queueDeep.reduce((sum, item) => sum + item.duration + estimateActionDuration(item.topic, 'review', resourceMode, customSubjectLoads), 0)
+    + queueNew.reduce((sum, item) => sum + item.duration + (estimateActionDuration(item.topic, 'review', resourceMode, customSubjectLoads) * 2), 0);
+
   // Simulation State
   const plan: DailyPlan[] = [];
   const futureReviews: Map<number, PlanItem[]> = new Map(); // DayOffset -> Items
 
   const daysToPlan = Math.min(daysToExam, 60);
   let totalMinutesScheduled = 0;
+  const planEndDate = new Date(today);
+  planEndDate.setDate(today.getDate() + daysToPlan);
+  const planEndStr = planEndDate.toISOString().slice(0, 10);
+  const studyDaysAvailable = Math.max(
+    1,
+    daysToPlan - Array.from(examDates).filter(date => date >= todayStr && date <= planEndStr).length,
+  );
 
   for (let i = 0; i < daysToPlan; i++) {
     const currentDate = new Date(today);
@@ -231,6 +463,7 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
 
     // 1. Must-do: Future Scheduled Reviews (SRS simulation)
     const scheduledToday = futureReviews.get(i) || [];
+    futureReviews.delete(i);
     for (const item of scheduledToday) {
       if (dayMinutes + item.duration <= dailyGoal * 1.2) { // Allow slight overflow for reviews
         dayItems.push(item);
@@ -253,8 +486,13 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
 
     // 3. Deep Dives (Limit 1 per day to avoid burnout, unless day is empty)
     let divesToday = 0;
-    while (queueDeep.length > 0 && dayMinutes < dailyGoal) {
-      if (divesToday >= 1 && dayMinutes > dailyGoal * 0.6) break; // Balance
+    const deepDiveBudget = Math.max(dailyGoal, Math.round(dailyGoal * resourceProfile.deepDiveDailyBudgetMultiplier));
+    while (queueDeep.length > 0 && dayMinutes < deepDiveBudget) {
+      const diveLimit = mode === 'exam_crunch' ? 2 : 1;
+      const deepThreshold = mode === 'high_yield'
+        ? deepDiveBudget * 0.85
+        : deepDiveBudget * 0.7;
+      if (divesToday >= diveLimit && dayMinutes > deepThreshold) break; // Balance
       const item = queueDeep.shift()!;
       dayItems.push(item);
       dayMinutes += item.duration;
@@ -263,17 +501,18 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
       // Schedule follow-up review
       const revDay = i + 2;
       const list = futureReviews.get(revDay) || [];
-      list.push({
-        id: `rev_${item.topic.id}_post_dive`,
-        topic: item.topic,
-        type: 'review',
-        duration: 15
-      });
+      list.push(createPlanItem(`rev_${item.topic.id}_post_dive`, item.topic, 'review', estimateActionDuration(item.topic, 'review', resourceMode, customSubjectLoads), todayStr));
       futureReviews.set(revDay, list);
     }
 
     // 4. New Study
-    while (queueNew.length > 0 && dayMinutes < dailyGoal) {
+    const baseNewTopicBudget = Math.round(dailyGoal * resourceProfile.newTopicDailyBudgetMultiplier);
+    const newTopicBudget = mode === 'exam_crunch'
+      ? baseNewTopicBudget * 0.55
+      : mode === 'high_yield'
+        ? baseNewTopicBudget * 0.8
+        : baseNewTopicBudget;
+    while (queueNew.length > 0 && dayMinutes < newTopicBudget) {
       const item = queueNew.shift()!;
       dayItems.push(item);
       dayMinutes += item.duration;
@@ -282,13 +521,13 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
       // Day + 1
       const r1 = i + 1;
       const l1 = futureReviews.get(r1) || [];
-      l1.push({ id: `rev_${item.topic.id}_1`, topic: item.topic, type: 'review', duration: 15 });
+      l1.push(createPlanItem(`rev_${item.topic.id}_1`, item.topic, 'review', estimateActionDuration(item.topic, 'review', resourceMode, customSubjectLoads), todayStr));
       futureReviews.set(r1, l1);
 
       // Day + 4
       const r2 = i + 4;
       const l2 = futureReviews.get(r2) || [];
-      l2.push({ id: `rev_${item.topic.id}_2`, topic: item.topic, type: 'review', duration: 15 });
+      l2.push(createPlanItem(`rev_${item.topic.id}_2`, item.topic, 'review', estimateActionDuration(item.topic, 'review', resourceMode, customSubjectLoads), todayStr));
       futureReviews.set(r2, l2);
     }
 
@@ -311,31 +550,56 @@ export function generateStudyPlan(): { plan: DailyPlan[]; summary: StudyPlanSumm
   }
 
   // Summary Logic
-  const totalTopics = allTopics.length;
-  const coveredTopics = allTopics.filter(t => t.progress.status === 'mastered' || t.progress.status === 'reviewed').length; // Rough calc
-  const left = queueNew.length + queueDeep.length; // Remaining backlog
+  const left = allTopics.filter(t => t.progress.status !== 'mastered').length;
   
   // Total workload estimation includes the backlog + simulated reviews
-  // Simpler: total scheduled / days
-  const filledDays = plan.filter(d => d.totalMinutes > 0).length;
-  const avgMins = filledDays > 0 ? Math.round(totalMinutesScheduled / filledDays) : 0;
+  const requiredMinutesPerDay = totalExpectedWorkloadMinutes > 0
+    ? Math.ceil(totalExpectedWorkloadMinutes / Math.max(1, studyDaysAvailable))
+    : 0;
+  const remainingFutureReviewMinutes = Array.from(futureReviews.entries())
+    .filter(([dayOffset]) => dayOffset >= daysToPlan)
+    .reduce((sum, [, items]) => sum + items.reduce((itemSum, item) => itemSum + item.duration, 0), 0);
+  const remainingQueueMinutes =
+    queueReviews.reduce((sum, item) => sum + item.duration, 0)
+    + queueDeep.reduce((sum, item) => sum + item.duration, 0)
+    + queueNew.reduce((sum, item) => sum + item.duration, 0)
+    + remainingFutureReviewMinutes;
+  const isFeasible = remainingQueueMinutes === 0 && requiredMinutesPerDay <= (dailyGoal * 1.15);
   
-  const isFeasible = queueNew.length === 0; // If we emptied the new queue, it's feasible in the timeframe
-  
+  const lastPlannedDay = [...plan].reverse().find(day => day.totalMinutes > 0);
+  const projectedFinishDate = remainingQueueMinutes > 0 ? null : (lastPlannedDay?.date ?? null);
+  const projectedFinishOffset = projectedFinishDate
+    ? Math.max(0, Math.ceil((new Date(projectedFinishDate).getTime() - new Date(todayStr).getTime()) / 86400000))
+    : 0;
+  const bufferDays = Math.max(0, daysToExam - projectedFinishOffset - 1);
+
   let message = "On track.";
-  if (queueNew.length > 0) message = `Tight! ${queueNew.length} topics didn't fit. Increase daily goal.`;
-  else if (avgMins > dailyGoal) message = `Heavy load! Avg ${Math.round(avgMins/60)}h/day required.`;
+  if (mode === 'high_yield') message = 'High-yield mode: prioritizing the most exam-relevant topics first.';
+  if (mode === 'exam_crunch') message = 'Exam crunch mode: review-heavy with only the highest-yield new topics.';
+  if (remainingQueueMinutes > 0) message = `Course load exceeds the current horizon. Raise the daily goal or switch to a lighter resource profile.`;
+  else if (requiredMinutesPerDay > dailyGoal) message = `Heavy load! ${Number((requiredMinutesPerDay / 60).toFixed(1))}h/day required with ${resourceProfile.label}.`;
+  else if (projectedFinishDate) message = `Projected finish ${projectedFinishDate}${bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'}`;
   else message = "Plan looks solid. Stick to it!";
 
-  return {
+  const result = {
     plan,
     summary: {
       totalTopicsLeft: left,
-      totalHoursLeft: Math.round(totalMinutesScheduled / 60),
+      totalHoursLeft: Number((totalExpectedWorkloadMinutes / 60).toFixed(1)),
       daysRemaining: daysToExam,
-      requiredHoursPerDay: Number((avgMins / 60).toFixed(1)),
+      requiredHoursPerDay: Number((requiredMinutesPerDay / 60).toFixed(1)),
       feasible: isFeasible,
-      message
+      message,
+      projectedFinishDate,
+      bufferDays,
+      resourceMode,
+      resourceLabel: resourceProfile.label,
+      workloadAssumption: resourceProfile.workloadAssumption,
+      subjectLoadHighlights: getActiveSubjectLoadHighlights(resourceMode, customSubjectLoads),
     }
   };
+
+  cachedPlan = result;
+  lastCacheKey = cacheKey;
+  return result;
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { UserProfile, LevelInfo } from '../types';
+import type { UserProfile, LevelInfo, StudyResourceMode } from '../types';
 import { getUserProfile, updateUserProfile, getDailyLog } from '../db/queries/progress';
 import { getLevelInfo } from '../services/xpService';
 
@@ -16,6 +16,11 @@ interface AppState {
   toggleFocusAudio: () => void;
   toggleVisualTimers: () => void;
   toggleFaceTracking: () => void;
+  setUseLocalModel: (use: boolean) => void;
+  setLocalModelPath: (path: string | null) => void;
+  setUseLocalWhisper: (use: boolean) => void;
+  setLocalWhisperPath: (path: string | null) => void;
+  setStudyResourceMode: (mode: StudyResourceMode) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -81,6 +86,46 @@ export const useAppStore = create<AppState>((set) => ({
       const newValue = !state.profile.faceTrackingEnabled;
       updateUserProfile({ faceTrackingEnabled: newValue });
       return { profile: { ...state.profile, faceTrackingEnabled: newValue } };
+    });
+  },
+
+  setUseLocalModel: (use: boolean) => {
+    set(state => {
+      if (!state.profile) return state;
+      updateUserProfile({ useLocalModel: use });
+      return { profile: { ...state.profile, useLocalModel: use } };
+    });
+  },
+
+  setLocalModelPath: (path: string | null) => {
+    set(state => {
+      if (!state.profile) return state;
+      updateUserProfile({ localModelPath: path });
+      return { profile: { ...state.profile, localModelPath: path } };
+    });
+  },
+
+  setUseLocalWhisper: (use: boolean) => {
+    set(state => {
+      if (!state.profile) return state;
+      updateUserProfile({ useLocalWhisper: use });
+      return { profile: { ...state.profile, useLocalWhisper: use } };
+    });
+  },
+
+  setLocalWhisperPath: (path: string | null) => {
+    set(state => {
+      if (!state.profile) return state;
+      updateUserProfile({ localWhisperPath: path });
+      return { profile: { ...state.profile, localWhisperPath: path } };
+    });
+  },
+
+  setStudyResourceMode: (mode: StudyResourceMode) => {
+    set(state => {
+      if (!state.profile) return state;
+      updateUserProfile({ studyResourceMode: mode });
+      return { profile: { ...state.profile, studyResourceMode: mode } };
     });
   },
 }));

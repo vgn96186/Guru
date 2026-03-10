@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput, StyleSheet, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import { updateStreak } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import type { Subject, TopicWithProgress } from '../types';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<any, 'ManualLog'>;
 type Route = RouteProp<any, 'ManualLog'>;
@@ -39,7 +40,10 @@ export default function ManualLogScreen() {
 
   async function handleSubmit() {
     const mins = parseInt(duration) || 0;
-    if (mins <= 0) return;
+    if (mins <= 0) {
+      Alert.alert('Invalid Duration', 'Please enter a duration greater than 0 minutes.');
+      return;
+    }
 
     // Log the session
     const sessionId = createSession([], 'good', 'external'); // external mode
@@ -75,6 +79,7 @@ export default function ManualLogScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <ScrollView contentContainerStyle={styles.content}>
+        <ResponsiveContainer>
         <Text style={styles.title}>Log External Study</Text>
         <Text style={styles.subtitle}>
           Did you watch a video on Cerebellum or solve MCQs on Marrow? Log it here to keep your streak alive!
@@ -163,6 +168,7 @@ export default function ManualLogScreen() {
         <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
           <Text style={styles.submitText}>Log Session (+{parseInt(duration || '0') * 10} XP)</Text>
         </TouchableOpacity>
+        </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
   );

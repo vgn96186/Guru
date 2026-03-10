@@ -64,7 +64,13 @@ CREATE TABLE IF NOT EXISTS lecture_notes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   subject_id INTEGER REFERENCES subjects(id),
   note TEXT NOT NULL,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  transcript TEXT,
+  summary TEXT,
+  topics_json TEXT,
+  app_name TEXT,
+  duration_minutes INTEGER,
+  confidence INTEGER DEFAULT 2
 )`;
 
 export const CREATE_DAILY_LOG = `
@@ -119,7 +125,16 @@ CREATE TABLE IF NOT EXISTS user_profile (
   visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
   face_tracking_enabled INTEGER NOT NULL DEFAULT 0,
   quiz_correct_count INTEGER NOT NULL DEFAULT 0,
-  last_backup_date TEXT
+  last_backup_date TEXT,
+  use_local_model INTEGER NOT NULL DEFAULT 1,
+  local_model_path TEXT
+  , use_local_whisper INTEGER NOT NULL DEFAULT 1
+  , local_whisper_path TEXT
+  , quick_start_streak INTEGER NOT NULL DEFAULT 0
+  , groq_api_key TEXT NOT NULL DEFAULT ''
+  , study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'
+    CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
+  , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'
 )`;
 
 export const CREATE_BRAIN_DUMPS = `
@@ -137,8 +152,31 @@ CREATE TABLE IF NOT EXISTS external_app_logs (
   returned_at INTEGER,
   duration_minutes REAL,
   notes TEXT,
-  recording_path TEXT
+  recording_path TEXT,
+  transcription_status TEXT DEFAULT 'pending'
+    CHECK(transcription_status IN ('pending','recording','transcribing','completed','failed','no_audio')),
+  transcription_error TEXT,
+  lecture_note_id INTEGER REFERENCES lecture_notes(id),
+  note_enhancement_status TEXT DEFAULT 'pending'
+    CHECK(note_enhancement_status IN ('pending','completed','failed')),
+  pipeline_metrics_json TEXT
 )`;
+
+export const MIGRATE_EXTERNAL_APP_LOGS_V2 = `
+ALTER TABLE external_app_logs ADD COLUMN transcription_status TEXT DEFAULT 'pending';
+`;
+export const MIGRATE_EXTERNAL_APP_LOGS_V3 = `
+ALTER TABLE external_app_logs ADD COLUMN transcription_error TEXT;
+`;
+export const MIGRATE_EXTERNAL_APP_LOGS_V4 = `
+ALTER TABLE external_app_logs ADD COLUMN lecture_note_id INTEGER;
+`;
+export const MIGRATE_EXTERNAL_APP_LOGS_V5 = `
+ALTER TABLE external_app_logs ADD COLUMN pipeline_metrics_json TEXT;
+`;
+export const MIGRATE_EXTERNAL_APP_LOGS_V6 = `
+ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'pending';
+`;
 
 export const ALL_SCHEMAS = [
   CREATE_SUBJECTS,

@@ -7,10 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { checkinToday, getUserProfile, getDaysToExam } from '../db/queries/progress';
+import { checkinToday, getDaysToExam, updateUserProfile } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
 import type { Mood } from '../types';
 import { MOOD_LABELS } from '../constants/gamification';
+import { invalidatePlanCache } from '../services/studyPlanner';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CheckIn'>;
 
@@ -48,8 +50,8 @@ export default function CheckInScreen() {
   const fadeIn = useRef(new Animated.Value(0)).current;
   const fadeOut = useRef(new Animated.Value(1)).current;
 
-  const profile = getUserProfile();
-  const daysToInicet = getDaysToExam(profile.inicetDate);
+  const profile = useAppStore(s => s.profile);
+  const daysToInicet = profile ? getDaysToExam(profile.inicetDate) : 0;
 
   useEffect(() => {
     Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }).start();
@@ -69,6 +71,10 @@ export default function CheckInScreen() {
     // Quick start with default mood and 30min availability
     checkinToday('good');
     setDailyAvailability(30);
+    // Track consecutive Quick Start usage for auto-skip
+    const currentStreak = profile?.quickStartStreak ?? 0;
+    updateUserProfile({ quickStartStreak: currentStreak + 1 });
+    invalidatePlanCache();
     refreshProfile();
     navigation.replace('Tabs');
   }
@@ -77,6 +83,9 @@ export default function CheckInScreen() {
     if (selectedMood) {
       checkinToday(selectedMood);
       setDailyAvailability(minutes);
+      // Reset Quick Start streak when user manually picks mood
+      updateUserProfile({ quickStartStreak: 0 });
+      invalidatePlanCache();
       refreshProfile();
       navigation.replace('Tabs');
     }
@@ -85,91 +94,93 @@ export default function CheckInScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      
-      {step === 'mood' ? (
-        <Animated.View style={[styles.container, { opacity: fadeIn }]}>
-          <View style={styles.top}>
-            <Text style={styles.greeting}>Good {getTimeOfDay()}, {profile.displayName}</Text>
-            <Text style={styles.countdown}>
-              ⚡ {daysToInicet} days to INICET
-            </Text>
-            {profile.streakCurrent > 0 && (
-              <Text style={styles.streak}>🔥 {profile.streakCurrent}-day streak</Text>
-            )}
-            <Text style={styles.motivation}>{getMotivationalMessage()}</Text>
-          </View>
+      <ResponsiveContainer>
+        {step === 'mood' ? (
+          <Animated.View style={[styles.container, { opacity: fadeIn }]}>
+            <View style={styles.top}>
+              <Text style={styles.greeting}>Good {getTimeOfDay()}, {profile?.displayName ?? 'Doctor'}</Text>
+              <Text style={styles.countdown}>
+                ⚡ {daysToInicet} days to INICET
+              </Text>
+              {(profile?.streakCurrent ?? 0) > 0 && (
+                <Text style={styles.streak}>🔥 {profile?.streakCurrent}-day streak</Text>
+              )}
+              <Text style={styles.motivation}>{getMotivationalMessage()}</Text>
+            </View>
 
-          <Text style={styles.question}>How are you feeling right now?</Text>
+            <Text style={styles.question}>How are you feeling right now?</Text>
 
-          <TouchableOpacity style={styles.quickStartBtn} onPress={handleQuickStart}>
-            <Text style={styles.quickStartText}>⚡ Quick Start</Text>
-            <Text style={styles.quickStartSub}>Skip check-in · 30 min session</Text>
-          </TouchableOpacity>
+            <TouchableOpacity testID="quick-start-btn" style={styles.quickStartBtn} onPress={handleQuickStart}>
+              <Text style={styles.quickStartText}>⚡ Quick Start</Text>
+              <Text style={styles.quickStartSub}>Skip check-in · 30 min session</Text>
+            </TouchableOpacity>
 
-          <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}>
-            {MOODS.map(mood => {
-              const info = MOOD_LABELS[mood];
-              return (
-                <TouchableOpacity
-                  key={mood}
-                  style={styles.moodBtn}
-                  onPress={() => handleMoodSelect(mood)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={info.label + ' mood'}
-                >
-                  <Text style={styles.moodEmoji}>{info.emoji}</Text>
-                  <Text style={styles.moodLabel}>{info.label}</Text>
-                  <Text style={styles.moodDesc}>{info.desc}</Text>
-                </TouchableOpacity>
-              );
-            })}
+            <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}>
+              {MOODS.map(mood => {
+                const info = MOOD_LABELS[mood];
+                return (
+                  <TouchableOpacity
+                    key={mood}
+                    style={styles.moodBtn}
+                    onPress={() => handleMoodSelect(mood)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={info.label + ' mood'}
+                    testID={`mood-${mood}`}
+                  >
+                    <Text style={styles.moodEmoji}>{info.emoji}</Text>
+                    <Text style={styles.moodLabel}>{info.label}</Text>
+                    <Text style={styles.moodDesc}>{info.desc}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </Animated.View>
           </Animated.View>
-        </Animated.View>
-      ) : (
-        <Animated.View style={[styles.container, { opacity: fadeOut }]}>
-          <View style={styles.top}>
-            <Text style={styles.greeting}>One last thing...</Text>
-            <Text style={styles.subGreeting}>To build your schedule for today:</Text>
-          </View>
+        ) : (
+          <Animated.View style={[styles.container, { opacity: fadeOut }]}>
+            <View style={styles.top}>
+              <Text style={styles.greeting}>One last thing...</Text>
+              <Text style={styles.subGreeting}>To build your schedule for today:</Text>
+            </View>
 
-          <Text style={styles.question}>How much time do you have *right now*?</Text>
+            <Text style={styles.question}>How much time do you have right now?</Text>
 
-          <View style={styles.timeGrid}>
-            <TimeOption 
-              label="Sprint" 
-              sub="15-20 mins" 
-              emoji="⚡" 
-              onPress={() => handleTimeSelect(20)} 
-            />
-            <TimeOption 
-              label="Solid Block" 
-              sub="45-60 mins" 
-              emoji="🧱" 
-              onPress={() => handleTimeSelect(60)} 
-            />
-            <TimeOption 
-              label="Deep Work" 
-              sub="2+ hours" 
-              emoji="🌊" 
-              onPress={() => handleTimeSelect(120)} 
-            />
-            <TimeOption 
-              label="Just Checking" 
-              sub="0 mins" 
-              emoji="👀" 
-              onPress={() => handleTimeSelect(0)} 
-            />
-          </View>
-        </Animated.View>
-      )}
+            <View style={styles.timeGrid}>
+              <TimeOption 
+                label="Sprint" 
+                sub="15-20 mins" 
+                emoji="⚡" 
+                onPress={() => handleTimeSelect(20)} 
+              />
+              <TimeOption 
+                label="Solid Block" 
+                sub="45-60 mins" 
+                emoji="🧱" 
+                onPress={() => handleTimeSelect(60)} 
+              />
+              <TimeOption 
+                label="Deep Work" 
+                sub="2+ hours" 
+                emoji="🌊" 
+                onPress={() => handleTimeSelect(120)} 
+              />
+              <TimeOption 
+                label="Just Checking" 
+                sub="0 mins" 
+                emoji="👀" 
+                onPress={() => handleTimeSelect(0)} 
+              />
+            </View>
+          </Animated.View>
+        )}
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
 
 function TimeOption({ label, sub, emoji, onPress }: { label: string, sub: string, emoji: string, onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.timeBtn} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.timeBtn} onPress={onPress} activeOpacity={0.8} testID={`time-${label.toLowerCase().replace(/\s+/g, '-')}`}>
       <Text style={styles.timeEmoji}>{emoji}</Text>
       <View>
         <Text style={styles.timeLabel}>{label}</Text>
@@ -209,16 +220,17 @@ const styles = StyleSheet.create({
   moodLabel: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   moodDesc: { color: '#9E9E9E', fontSize: 11, textAlign: 'center' },
   quickStartBtn: {
-    backgroundColor: '#6C63FF22',
-    borderWidth: 1,
+    backgroundColor: '#6C63FF',
+    borderWidth: 2,
     borderColor: '#6C63FF',
     borderRadius: 16,
-    padding: 16,
+    padding: 18,
     alignItems: 'center',
     marginBottom: 20,
+    elevation: 4,
   },
-  quickStartText: { color: '#6C63FF', fontSize: 16, fontWeight: '700' },
-  quickStartSub: { color: '#6C63FF99', fontSize: 12, marginTop: 2 },
+  quickStartText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  quickStartSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
   subGreeting: { color: '#9E9E9E', fontSize: 16 },
   timeGrid: { gap: 12 },
   timeBtn: {

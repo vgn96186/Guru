@@ -3,17 +3,11 @@ import type { Subject, Topic, TopicProgress, TopicWithProgress } from '../../typ
 import { getInitialCard, reviewCard, mapConfidenceToRating } from '../../services/fsrsService';
 import type { Card } from 'ts-fsrs';
 
-// SM-2-inspired: confidence → days until next review
-function srsNextDate(confidence: number): string {
-  const intervals = [1, 1, 3, 7, 14, 21]; // days per confidence level 0-5
-  const days = intervals[Math.min(Math.max(0, confidence), 5)];
-  const d = new Date(Date.now() + days * 86400000);
-  return d.toISOString().slice(0, 10);
-}
+// Removed SM-2 srsNextDate in favor of FSRS
 
 // Shared extended row type used across queries
 type TopicRow = {
-  id: number; subject_id: number; name: string; estimated_minutes: number; inicet_priority: number;
+  id: number; subject_id: number; parent_topic_id: number | null; name: string; estimated_minutes: number; inicet_priority: number;
   status: string; confidence: number; last_studied_at: number | null; times_studied: number; xp_earned: number;
   next_review_date: string | null; user_notes: string;
   fsrs_due: string | null; fsrs_stability: number; fsrs_difficulty: number; fsrs_elapsed_days: number; fsrs_scheduled_days: number; fsrs_reps: number; fsrs_lapses: number; fsrs_state: number; fsrs_last_review: string | null;
@@ -53,6 +47,7 @@ const TOPIC_SELECT = `SELECT
   p.next_review_date,
   p.user_notes,
   p.fsrs_due, p.fsrs_stability, p.fsrs_difficulty, p.fsrs_elapsed_days, p.fsrs_scheduled_days, p.fsrs_reps, p.fsrs_lapses, p.fsrs_state, p.fsrs_last_review,
+  p.wrong_count, p.is_nemesis,
   s.name as subject_name, s.short_code, s.color_hex`;
 
 export function getTopicsBySubject(subjectId: number | string): TopicWithProgress[] {
@@ -60,34 +55,15 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
   const id = Number(subjectId);
   if (isNaN(id)) return [];
 
-// if (__DEV__) console.log(`[DB] Fetching topics for subject_id: ${id}`);
-  
-  const rows = db.getAllSync<any>(`
-    SELECT 
-      t.id, 
-      t.subject_id, 
-      t.parent_topic_id,
-      t.name, 
-      t.estimated_minutes, 
-      t.inicet_priority,
-      p.status, 
-      p.confidence, 
-      p.last_studied_at, 
-      p.times_studied, 
-      p.xp_earned,
-      p.next_review_date,
-      p.user_notes,
-      s.name as subject_name,
-      s.short_code,
-      s.color_hex
-    FROM topics t
-    JOIN subjects s ON t.subject_id = s.id
-    LEFT JOIN topic_progress p ON t.id = p.topic_id
-    WHERE t.subject_id = ?
-    ORDER BY t.inicet_priority DESC, t.name
-  `, [id]);
-
-// if (__DEV__) console.log(`[DB] Subject ${id} has ${rows.length} topics`);
+  const rows = db.getAllSync<TopicRow>(
+    `${TOPIC_SELECT}
+     FROM topics t
+     JOIN subjects s ON t.subject_id = s.id
+     LEFT JOIN topic_progress p ON t.id = p.topic_id
+     WHERE t.subject_id = ?
+     ORDER BY COALESCE(t.parent_topic_id, t.id), CASE WHEN t.parent_topic_id IS NULL THEN 0 ELSE 1 END, t.inicet_priority DESC, t.name`,
+    [id],
+  );
 
   return rows.map(mapTopicRow);
 }
@@ -126,7 +102,6 @@ export function updateTopicProgress(
 ): void {
   const db = getDb();
   const now = Date.now();
-  const nextReview = srsNextDate(confidence);
   
   // Get existing FSRS data
   const existing = db.getFirstSync<any>('SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?', [topicId]);
@@ -151,6 +126,7 @@ export function updateTopicProgress(
   const rating = mapConfidenceToRating(confidence);
   const log = reviewCard(card, rating, new Date());
   const updatedCard = log.card;
+  const nextReview = updatedCard.due.toISOString().slice(0, 10);
   
   db.runSync(
     `INSERT INTO topic_progress (
@@ -195,23 +171,16 @@ export function updateTopicNotes(topicId: number, notes: string): void {
 export function getTopicsDueForReview(limit = 10): TopicWithProgress[] {
   const db = getDb();
   const today = todayStr();
-  const rows = db.getAllSync<{
-    id: number; subject_id: number; name: string; estimated_minutes: number; inicet_priority: number;
-    status: string; confidence: number; last_studied_at: number | null; times_studied: number; xp_earned: number;
-    next_review_date: string | null; user_notes: string;
-    subject_name: string; short_code: string; color_hex: string;
-  }>(
-    `SELECT t.*, p.status, p.confidence, p.last_studied_at, p.times_studied, p.xp_earned,
-            p.next_review_date, p.user_notes,
-            s.name as subject_name, s.short_code, s.color_hex
+  const rows = db.getAllSync<TopicRow>(
+    `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
      JOIN topic_progress p ON t.id = p.topic_id
      WHERE p.status != 'unseen'
-       AND (p.next_review_date IS NULL OR p.next_review_date <= ?)
-     ORDER BY p.confidence ASC, p.last_studied_at ASC
+       AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now'))
+     ORDER BY p.fsrs_due ASC, p.confidence ASC
      LIMIT ?`,
-    [today, limit],
+    [limit],
   );
   return rows.map(mapTopicRow);
 }
@@ -288,10 +257,10 @@ function mapTopicRow(r: any): TopicWithProgress {
   };
 }
 
-export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
+export const getNemesisTopics = (): TopicWithProgress[] => {
   const db = getDb();
   const rows = db.getAllSync<TopicRow>(
-    `${TOPIC_SELECT}, p.wrong_count, p.is_nemesis
+    `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
      JOIN topic_progress p ON t.id = p.topic_id

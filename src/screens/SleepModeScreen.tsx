@@ -6,8 +6,10 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
+import * as Notifications from 'expo-notifications';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,6 +24,7 @@ export default function SleepModeScreen() {
   const [isTracking, setIsTracking] = useState(false);
   const [alarmRinging, setAlarmRinging] = useState(false);
   const [movementCount, setMovementCount] = useState(0);
+  const [notifId, setNotifId] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -39,7 +42,7 @@ export default function SleepModeScreen() {
       Accelerometer.setUpdateInterval(1000); // Check once a second
       let lastPoint = { x: 0, y: 0, z: 0 };
       
-      subscription = Accelerometer.addListener(data => {
+      subscription = Accelerometer.addListener((data: { x: number; y: number; z: number }) => {
         // Simple movement detection: if acceleration change is significant
         const dx = Math.abs(data.x - lastPoint.x);
         const dy = Math.abs(data.y - lastPoint.y);
@@ -110,18 +113,35 @@ export default function SleepModeScreen() {
     navigation.replace('WakeUp');
   }
 
-  function toggleTracking() {
+  async function toggleTracking() {
     if (!isTracking) {
-      // Set alarm for 8 hours from now as a default for this demo
-      // In a real app, we'd have a time picker
+      // Set alarm for let's say 8 hours from now
+      // Before scheduling, ask for permissions just in case
+      await Notifications.requestPermissionsAsync();
+      
       const target = new Date();
       target.setHours(target.getHours() + 8);
       setAlarmTime(target);
       setIsTracking(true);
       setMovementCount(0);
+      
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Good Morning, Doctor. 🌅",
+          body: "Time to rise and build some momentum. Tap here to wake up.",
+          data: { screen: 'WakeUp' },
+          sound: 'default'
+        },
+        trigger: { date: target } as any,
+      });
+      setNotifId(id);
     } else {
       setIsTracking(false);
       setAlarmTime(null);
+      if (notifId) {
+        await Notifications.cancelScheduledNotificationAsync(notifId);
+        setNotifId(null);
+      }
     }
   }
 
@@ -144,7 +164,7 @@ export default function SleepModeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ResponsiveContainer style={styles.container}>
         <Text style={styles.clock}>{timeString}</Text>
         
         {isTracking ? (
@@ -175,7 +195,7 @@ export default function SleepModeScreen() {
             <Text style={styles.backBtnText}>Exit</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

@@ -7,21 +7,24 @@ import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { useSessionStore, getCurrentAgendaItem, getCurrentContentType } from '../store/useSessionStore';
 import { useAppStore } from '../store/useAppStore';
+import { getTodaysAgendaWithTimes, invalidatePlanCache, type TodayTask } from '../services/studyPlanner';
 import { buildSession } from '../services/sessionPlanner';
 import { fetchContent, prefetchTopicContent } from '../services/aiService';
 import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession } from '../db/queries/sessions';
-import { updateTopicProgress } from '../db/queries/topics';
-import { setContentFlagged } from '../db/queries/aiCache';
+import { updateTopicProgress, incrementWrongCount } from '../db/queries/topics';
+import { flagTopicForReview, setContentFlagged } from '../db/queries/aiCache';
 import { getDailyLog, updateStreak } from '../db/queries/progress';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
 import ContentCard from './ContentCard';
 import BreakScreen from './BreakScreen';
+import BrainDumpFab from '../components/BrainDumpFab';
 import type { Mood, SessionMode } from '../types';
 import { XP_REWARDS } from '../constants/gamification';
 import { useIdleTimer } from '../hooks/useIdleTimer';
 import { useGuruPresence } from '../hooks/useGuruPresence';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
@@ -29,7 +32,21 @@ type Route = RouteProp<HomeStackParamList, 'Session'>;
 export default function SessionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const { mood, mode: forcedMode, forcedMinutes } = route.params as { mood: Mood; mode?: SessionMode; forcedMinutes?: number };
+  const {
+    mood,
+    mode: forcedMode,
+    forcedMinutes,
+    focusTopicId,
+    focusTopicIds,
+    preferredActionType,
+  } = route.params as {
+    mood: Mood;
+    mode?: SessionMode;
+    forcedMinutes?: number;
+    focusTopicId?: number;
+    focusTopicIds?: number[];
+    preferredActionType?: 'study' | 'review' | 'deep_dive';
+  };
 
   const store = useSessionStore();
   const storeRef = useRef(store);
@@ -55,8 +72,6 @@ export default function SessionScreen() {
 
   const { currentMessage, presencePulse, toastOpacity, triggerEvent } = useGuruPresence({
     topicNames: store.agenda?.items.map(i => i.topic.name) ?? [],
-    apiKey: profile?.openrouterApiKey ?? '',
-    orKey: profile?.openrouterKey ?? undefined,
     isActive: isStudying && (profile?.bodyDoublingEnabled ?? true),
     frequency: profile?.guruFrequency ?? 'normal',
   });
@@ -129,28 +144,34 @@ export default function SessionScreen() {
     if (store.sessionState !== 'studying') return;
     const item = getCurrentAgendaItem(store);
     const contentType = getCurrentContentType(store);
-    if (!item || !contentType || !profile?.openrouterApiKey || store.currentContent) return;
+    if (!item || !contentType || store.currentContent) return;
     setAiError(null);
     store.setLoadingContent(true);
-    fetchContent(item.topic, contentType, profile.openrouterApiKey, profile.openrouterKey || undefined)
+    fetchContent(item.topic, contentType)
       .then(content => { store.setCurrentContent(content); store.setLoadingContent(false); })
       .catch(e => { store.setLoadingContent(false); setAiError(e?.message ?? 'AI content failed'); });
   }, [store.sessionState, store.currentItemIndex, store.currentContentIndex]);
 
   useEffect(() => {
-    if (!store.agenda || !profile?.openrouterApiKey) return;
+    if (!store.agenda) return;
     const nextItem = store.agenda.items[store.currentItemIndex + 1];
-    if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes, profile.openrouterApiKey, profile.openrouterKey || undefined);
+    if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes);
   }, [store.currentItemIndex]);
 
   async function startPlanning() {
-    if (!profile?.openrouterApiKey) return;
     setAiError(null);
     store.setSessionState('planning');
     try {
       const sessionLength = forcedMinutes ? forcedMinutes : (forcedMode === 'sprint' ? 10
-        : (dailyAvailability && dailyAvailability > 0 ? dailyAvailability : (profile.preferredSessionLength ?? 45)));
-      const agenda = await buildSession(mood, sessionLength, profile.openrouterApiKey, profile.openrouterKey || undefined);
+        : (dailyAvailability && dailyAvailability > 0 ? dailyAvailability : (profile?.preferredSessionLength ?? 45)));
+      const agenda = await buildSession(
+        mood,
+        sessionLength,
+        profile?.openrouterApiKey ?? '',
+        profile?.openrouterKey,
+        profile?.groqApiKey,
+        { focusTopicId, focusTopicIds, preferredActionType },
+      );
       const sessionId = createSession(agenda.items.map(i => i.topic.id), mood, agenda.mode);
       store.setSessionId(sessionId);
       store.setAgenda(agenda);
@@ -215,8 +236,8 @@ export default function SessionScreen() {
         store.setCurrentContent(null);
         const item = getCurrentAgendaItem(store);
         const contentType = getCurrentContentType(store);
-        if (item && contentType && profile?.openrouterApiKey) {
-          fetchContent(item.topic, contentType, profile.openrouterApiKey, profile.openrouterKey || undefined)
+        if (item && contentType) {
+          fetchContent(item.topic, contentType)
             .then(c => { store.setCurrentContent(c); store.setLoadingContent(false); })
             .catch(() => store.setLoadingContent(false));
         }
@@ -233,8 +254,17 @@ export default function SessionScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Flag Topic', onPress: () => {
-          setContentFlagged(item.topic.id, 'manual', true);
-          Alert.alert('Flagged', 'Topic added to your review queue.');
+          const flaggedType = store.currentContent?.type === 'manual'
+            ? flagTopicForReview(item.topic.id, item.topic.name)
+            : (() => {
+                const currentType = store.currentContent?.type;
+                if (currentType) {
+                  setContentFlagged(item.topic.id, currentType, true);
+                  return currentType;
+                }
+                return flagTopicForReview(item.topic.id, item.topic.name);
+              })();
+          Alert.alert('Flagged', `Added to Flagged Review as ${flaggedType.replace('_', ' ')}.`);
         }}
       ]
     );
@@ -252,13 +282,14 @@ export default function SessionScreen() {
     updateStreak(durationMin >= 20);
     setSessionXpTotal(xpResult.total);
     refreshProfile();
+    invalidatePlanCache();
     store.setSessionState('session_done');
   }
 
   if (aiError) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.errorContainer}>
+        <ResponsiveContainer style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>⚠️</Text>
           <Text style={styles.errorTitle}>AI Unavailable</Text>
           <Text style={styles.errorMsg}>{aiError}</Text>
@@ -274,18 +305,18 @@ export default function SessionScreen() {
           <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.leaveBtnText}>Leave Session</Text>
           </TouchableOpacity>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
 
-  if (store.sessionState === 'planning') return <SafeAreaView style={styles.safe}><LoadingOrb message="Guru is planning your session..." /></SafeAreaView>;
+  if (store.sessionState === 'planning') return <SafeAreaView style={styles.safe} testID="session-planning"><LoadingOrb message="Guru is planning your session..." /></SafeAreaView>;
 
   if (store.sessionState === 'agenda_reveal' && store.agenda) {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-        <View style={styles.revealContainer}>
+        <ResponsiveContainer style={styles.revealContainer} testID="session-agenda-reveal">
           <Text style={styles.revealEmoji}>🎯</Text>
           <Text style={styles.revealFocus}>{store.agenda.focusNote}</Text>
           <Text style={styles.revealGuru}>"{store.agenda.guruMessage}"</Text>
@@ -297,14 +328,14 @@ export default function SessionScreen() {
               <Text style={styles.revealTopicSub}>{item.topic.subjectCode}</Text>
             </View>
           ))}
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
 
   if (store.isOnBreak) {
     const item = getCurrentAgendaItem(store);
-    return <BreakScreen countdown={store.breakCountdown} totalSeconds={(profile?.breakDurationMinutes ?? 5) * 60} topicId={item?.topic.id} apiKey={profile?.openrouterApiKey} orKey={profile?.openrouterKey || undefined} onDone={handleBreakDone} />;
+    return <BreakScreen countdown={store.breakCountdown} totalSeconds={(profile?.breakDurationMinutes ?? 5) * 60} topicId={item?.topic.id} onDone={handleBreakDone} onEndSession={finishSession} />;
   }
 
   if (store.sessionState === 'session_done') return <SessionDoneScreen completedCount={store.completedTopicIds.length} elapsedSeconds={elapsedSeconds} xpTotal={sessionXpTotal} onClose={() => navigation.popToTop()} />;
@@ -312,11 +343,11 @@ export default function SessionScreen() {
   if (store.sessionState === 'topic_done') {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.topicDoneContainer}>
+        <ResponsiveContainer style={styles.topicDoneContainer}>
           <Text style={styles.topicDoneEmoji}>✅</Text>
           <Text style={styles.topicDoneName}>{getCurrentAgendaItem(store)?.topic.name}</Text>
           <Text style={styles.topicDoneSub}>Topic complete! Taking a {profile?.breakDurationMinutes ?? 5}-min break...</Text>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -335,101 +366,108 @@ export default function SessionScreen() {
   const showPausedOverlay = store.isPaused && store.sessionState === 'studying' && !store.isOnBreak;
 
   return (
-    <SafeAreaView style={styles.safe} {...panHandlers}>
+    <SafeAreaView style={styles.safe} {...panHandlers} testID="session-studying">
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
 
-      {/* Story-style time progress bar across top edge */}
-      <View style={styles.storyBarContainer}>
-        <View style={[styles.storyBarFill, { width: `${timeProgressPercent}%` }]} />
-      </View>
-
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <View style={styles.phaseRow}>
-            <Text style={styles.phaseBadge}>
-              {store.isPaused ? '⏸️ Paused' : store.isOnBreak ? '☕ Break' : store.sessionState === 'studying' ? '📖 Studying' : store.sessionState === 'planning' ? '📋 Planning' : store.sessionState === 'agenda_reveal' ? '✨ Starting' : '💤 Done'}
-            </Text>
-            <Text style={styles.topicProgress}>Topic {topicNum}/{totalTopics}</Text>
-          </View>
-          <Text style={styles.topicName}>{item.topic.name}</Text>
-          <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
+      <ResponsiveContainer>
+        {/* Story-style time progress bar across top edge */}
+        <View style={styles.storyBarContainer}>
+          <View style={[styles.storyBarFill, { width: `${timeProgressPercent}%` }]} />
         </View>
-        <View style={styles.headerRight}>
-          {isStudying && (
-            <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
-          )}
-          <TouchableOpacity
-            onPress={() => setMenuVisible(true)}
-            style={styles.menuBtn}
-          >
-            <Text style={styles.menuBtnText}>•••</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Menu overlay */}
-      {menuVisible && (
-        <View style={styles.menuOverlay}>
-          <TouchableOpacity style={styles.menuBackdrop} onPress={() => setMenuVisible(false)} activeOpacity={1} />
-          <View style={styles.menuDropdown}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleMarkForReview(); }}>
-              <Text style={styles.menuItemEmoji}>🚩</Text>
-              <Text style={styles.menuItemText}>Mark for Review</Text>
-            </TouchableOpacity>
-            <View style={styles.menuDivider} />
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleDowngrade(); }}>
-              <Text style={styles.menuItemEmoji}>🆘</Text>
-              <Text style={styles.menuItemText}>Downgrade to Sprint</Text>
-            </TouchableOpacity>
-            <View style={styles.menuDivider} />
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); finishSession(); }}>
-              <Text style={styles.menuItemEmoji}>🚪</Text>
-              <Text style={[styles.menuItemText, { color: '#F44336' }]}>End Session</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
-      {currentMessage && isStudying && !showPausedOverlay && (
-        <Animated.View style={[styles.guruToast, { opacity: toastOpacity }]}>
-          <Text style={styles.guruToastText}>{currentMessage}</Text>
-        </Animated.View>
-      )}
-
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.contentTypeTabs}>
-          {item.contentTypes.map((ct, idx) => (
-            <View key={ct} style={[styles.contentTab, idx === store.currentContentIndex && styles.contentTabActive, idx < store.currentContentIndex && styles.contentTabDone]}>
-              <Text style={styles.contentTabText}>{CONTENT_LABELS[ct]}</Text>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <View style={styles.phaseRow}>
+              <Text style={styles.phaseBadge}>
+                {store.isPaused ? '⏸️ Paused' : store.isOnBreak ? '☕ Break' : store.sessionState === 'studying' ? '📖 Studying' : (store.sessionState as string) === 'planning' ? '📋 Planning' : (store.sessionState as string) === 'agenda_reveal' ? '✨ Starting' : '💤 Done'}
+              </Text>
+              <Text style={styles.topicProgress}>Topic {topicNum}/{totalTopics}</Text>
             </View>
-          ))}
+            <Text style={styles.topicName}>{item.topic.name}</Text>
+            <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
+          </View>
+          <View style={styles.headerRight}>
+            {isStudying && (
+              <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
+            )}
+            <TouchableOpacity
+              onPress={() => setMenuVisible(true)}
+              style={styles.menuBtn}
+              testID="session-menu-btn"
+            >
+              <Text style={styles.menuBtnText}>•••</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </ScrollView>
 
-      {store.isLoadingContent ? <LoadingOrb message="Fetching content..." /> : store.currentContent ? (
-        <ContentCard
-          content={store.currentContent}
-          topicId={item?.topic.id}
-          onDone={handleConfidenceRating}
-          onSkip={handleContentDone}
-          onQuizAnswered={c => triggerEvent(c ? 'quiz_correct' : 'quiz_wrong')}
-          onQuizComplete={(correct, total) => {
-            if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
-          }}
-        />
-      ) : <LoadingOrb message="Loading..." />}
+        {/* Menu overlay */}
+        {menuVisible && (
+          <View style={styles.menuOverlay}>
+            <TouchableOpacity style={styles.menuBackdrop} onPress={() => setMenuVisible(false)} activeOpacity={1} />
+            <View style={styles.menuDropdown}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleMarkForReview(); }}>
+                <Text style={styles.menuItemEmoji}>🚩</Text>
+                <Text style={styles.menuItemText}>Mark for Review</Text>
+              </TouchableOpacity>
+              <View style={styles.menuDivider} />
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleDowngrade(); }}>
+                <Text style={styles.menuItemEmoji}>🆘</Text>
+                <Text style={styles.menuItemText}>Downgrade to Sprint</Text>
+              </TouchableOpacity>
+              <View style={styles.menuDivider} />
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); finishSession(); }} testID="end-session-btn">
+                <Text style={styles.menuItemEmoji}>🚪</Text>
+                <Text style={[styles.menuItemText, { color: '#F44336' }]}>End Session</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
-      <Animated.View style={[styles.xpPop, { opacity: xpAnim, transform: [{ translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) }] }]}>
-        <Text style={styles.xpPopText}>+{showXp} XP</Text>
-      </Animated.View>
-      
-      {showPausedOverlay && (
-        <View style={styles.pausedOverlay}>
-          <Text style={styles.pausedText}>Session Paused</Text>
-          <Text style={styles.pausedSubText}>Are you still studying, Doctor?</Text>
-          <TouchableOpacity style={styles.resumeOverlayBtn} onPress={() => store.setPaused(false)}><Text style={styles.resumeOverlayBtnText}>Resume Session</Text></TouchableOpacity>
-        </View>
-      )}
+        {currentMessage && isStudying && !showPausedOverlay && (
+          <Animated.View style={[styles.guruToast, { opacity: toastOpacity }]}>
+            <Text style={styles.guruToastText}>{currentMessage}</Text>
+          </Animated.View>
+        )}
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.contentTypeTabs}>
+            {item.contentTypes.map((ct, idx) => (
+              <View key={ct} style={[styles.contentTab, idx === store.currentContentIndex && styles.contentTabActive, idx < store.currentContentIndex && styles.contentTabDone]}>
+                <Text style={styles.contentTabText}>{CONTENT_LABELS[ct]}</Text>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+
+        {store.isLoadingContent ? <LoadingOrb message="Fetching content..." /> : store.currentContent ? (
+          <ContentCard
+            content={store.currentContent}
+            topicId={item?.topic.id}
+            onDone={handleConfidenceRating}
+            onSkip={handleContentDone}
+            onQuizAnswered={c => {
+              triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
+              if (!c && item?.topic.id) incrementWrongCount(item.topic.id);
+            }}
+            onQuizComplete={(correct, total) => {
+              if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
+            }}
+          />
+        ) : <LoadingOrb message="Loading..." />}
+
+        <Animated.View style={[styles.xpPop, { opacity: xpAnim, transform: [{ translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) }] }]}>
+          <Text style={styles.xpPopText}>+{showXp} XP</Text>
+        </Animated.View>
+        
+        {showPausedOverlay && (
+          <View style={styles.pausedOverlay}>
+            <Text style={styles.pausedText}>Session Paused</Text>
+            <Text style={styles.pausedSubText}>Are you still studying, Doctor?</Text>
+            <TouchableOpacity style={styles.resumeOverlayBtn} onPress={() => store.setPaused(false)}><Text style={styles.resumeOverlayBtnText}>Resume Session</Text></TouchableOpacity>
+          </View>
+        )}
+        <BrainDumpFab />
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
@@ -441,7 +479,7 @@ function SessionDoneScreen({ completedCount, elapsedSeconds, xpTotal, onClose }:
   const xpEarned = xpTotal;
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.doneContainer}>
+      <ResponsiveContainer style={styles.doneContainer} testID="session-done">
         <Text style={styles.doneEmoji}>🎉</Text>
         <Text style={styles.doneTitle}>Session Complete!</Text>
         <View style={styles.summaryCard}>
@@ -454,8 +492,8 @@ function SessionDoneScreen({ completedCount, elapsedSeconds, xpTotal, onClose }:
           </View>
         </View>
         <Text style={styles.doneStat}>{completedCount} topics covered · {mins} min</Text>
-        <TouchableOpacity style={styles.doneBtn} onPress={onClose}><Text style={styles.doneBtnText}>Back to Home</Text></TouchableOpacity>
-      </View>
+        <TouchableOpacity style={styles.doneBtn} onPress={onClose} testID="back-to-home-btn"><Text style={styles.doneBtnText}>Back to Home</Text></TouchableOpacity>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

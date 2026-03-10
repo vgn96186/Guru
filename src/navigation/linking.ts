@@ -14,6 +14,7 @@ const linking: LinkingOptions<RootStackParamList> = {
               Home: 'home',
               Session: 'session',
               LectureMode: 'lecture-mode',
+              GuruChat: 'guru-chat',
               MockTest: 'mock-test',
               Review: 'review',
               NotesSearch: 'notes-search',

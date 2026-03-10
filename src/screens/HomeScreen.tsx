@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  StatusBar, Alert,
+  StatusBar, Alert, AppState, ActivityIndicator, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -9,20 +9,41 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import ExternalToolsRow from '../components/ExternalToolsRow';
+import LectureReturnSheet from '../components/LectureReturnSheet';
 import StartButton from '../components/StartButton';
-import StreakBadge from '../components/StreakBadge';
-import XPBar from '../components/XPBar';
 import LoadingOrb from '../components/LoadingOrb';
-import QuickStatsCard from '../components/home/QuickStatsCard';
-import DailyAgendaSection from '../components/home/DailyAgendaSection';
-import NemesisSection from '../components/home/NemesisSection';
-import { getDailyLog, getDaysToExam, getUserProfile } from '../db/queries/progress';
-import { getWeakestTopics, getTopicsDueForReview, getAllTopicsWithProgress, getSubjectCoverage } from '../db/queries/topics';
+import { getDailyLog, getDaysToExam, useStreakShield, getReviewDueTopics } from '../db/queries/progress';
+import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics, getSubjectById } from '../db/queries/topics';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
-import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
+import { connectToRoom } from '../services/deviceSyncService';
+import { getIncompleteExternalSession, finishExternalAppSession } from '../db/queries/externalLogs';
+import { getCompletedSessionCount } from '../db/queries/sessions';
+import { stopRecording, hideOverlay, validateRecordingFile } from '../../modules/app-launcher';
+import * as DocumentPicker from 'expo-document-picker';
+import { saveLectureTranscript } from '../db/queries/aiCache';
+import {
+  retryFailedTranscriptions,
+  retryPendingNoteEnhancements,
+  stopRecordingHealthCheck
+} from '../services/lectureSessionMonitor';
+import {
+  buildQuickLectureNote,
+  markTopicsFromLecture,
+  transcribeWithGroq,
+  transcribeWithLocalWhisper,
+} from '../services/transcriptionService';
+import { getDb } from '../db/database';
 import type { TopicWithProgress } from '../types';
+import { ResponsiveContainer } from '../hooks/useResponsive';
+import Svg, { Circle } from 'react-native-svg';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
+
+// Progress ring constants
+const RING_SIZE = 48;
+const STROKE_WIDTH = 5;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
@@ -32,52 +53,210 @@ export default function HomeScreen() {
   const [todayTasks, setTodayTasks] = useState<TodayTask[]>([]);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [hasIncompleteSession, setHasIncompleteSession] = useState(false);
-  const [toolsExpanded, setToolsExpanded] = useState(false);
-  const [challengesExpanded, setChallengesExpanded] = useState(false);
-  const [statsExpanded, setStatsExpanded] = useState(true);
-  const [masteredCount, setMasteredCount] = useState(0);
-  const [totalTopicCount, setTotalTopicCount] = useState(0);
+  const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+  const [uploadTranscript, setUploadTranscript] = useState('');
+  const [showTranscriptModal, setShowTranscriptModal] = useState(false);
+  const [moreExpanded, setMoreExpanded] = useState(false);
+  const [completedSessions, setCompletedSessions] = useState(0);
 
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      await refreshProfile();
-      setWeakTopics(getWeakestTopics(3));
-      setDueTopics(getTopicsDueForReview(5));
-      setTodayTasks(getTodaysAgendaWithTimes().slice(0, 4));
-      const coverage = getSubjectCoverage();
-      setMasteredCount(coverage.reduce((sum, s) => sum + s.mastered, 0));
-      setTotalTopicCount(coverage.reduce((sum, s) => sum + s.total, 0));
-      const log = getDailyLog();
-      setTodayMinutes(log?.totalMinutes ?? 0);
+  // LectureReturnSheet state
+  const [returnSheet, setReturnSheet] = useState<{
+    appName: string; durationMinutes: number; recordingPath: string | null; logId: number;
+  } | null>(null);
+  const appStateRef = useRef(AppState.currentState);
+  const handledReturnLogRef = useRef<number | null>(null);
+  const lastRecoveryAttemptRef = useRef(0);
+  const lectureStartAlertVisibleRef = useRef(false);
 
-      // Check if user has new topics to continue learning
-      const user = getUserProfile();
-      if (user.lastActiveDate === new Date().toISOString().slice(0, 10)) {
-        const allTopics = getAllTopicsWithProgress();
-        const newTopics = allTopics.filter(t => t.progress.status === 'unseen');
-        setHasIncompleteSession(newTopics.length > 0);
+  const recoverPendingTranscriptions = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastRecoveryAttemptRef.current < 60_000) {
+      return;
+    }
+    lastRecoveryAttemptRef.current = now;
+    try {
+      const [recoveredTranscriptions, recoveredEnhancements] = await Promise.all([
+        retryFailedTranscriptions(),
+        retryPendingNoteEnhancements(),
+      ]);
+      const totalRecovered = recoveredTranscriptions + recoveredEnhancements;
+      if (totalRecovered > 0) {
+        const parts = [
+          recoveredTranscriptions > 0
+            ? `${recoveredTranscriptions} transcription${recoveredTranscriptions > 1 ? 's' : ''}`
+            : null,
+          recoveredEnhancements > 0
+            ? `${recoveredEnhancements} note enhancement${recoveredEnhancements > 1 ? 's' : ''}`
+            : null,
+        ].filter(Boolean);
+        Alert.alert(
+          'Recovered lecture notes',
+          `${parts.join(' and ')} recovered automatically.`,
+        );
+      }
+    } catch (err) {
+      console.warn('[Home] Failed to recover pending transcriptions:', err);
+    }
+  }, []);
+
+  const checkForReturnedSession = useCallback(async (showPrompt: boolean) => {
+    try {
+      const session = getIncompleteExternalSession();
+      if (!session || handledReturnLogRef.current === session.id) return;
+
+      const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
+      const logId = session.id!;
+      handledReturnLogRef.current = logId;
+      stopRecordingHealthCheck();
+
+      if (!showPrompt && !session.recordingPath) {
+        finishExternalAppSession(logId, durationMinutes, 'Recovered silently on cold app launch');
+        return;
       }
 
-      setIsLoading(false);
+      // Cold launch (not returning from background) — finish silently, don't show sheet
+      if (!showPrompt) {
+        console.log(`[Home] Cold launch with stale session ${logId}, finishing silently`);
+        finishExternalAppSession(logId, durationMinutes, 'Stale session cleaned on cold launch');
+        return;
+      }
+
+      let recordingPath = session.recordingPath ?? null;
+      console.log(`[Home] Session found: app=${session.appName}, dbPath=${recordingPath}, duration=${durationMinutes}min`);
+
+      try {
+        const stoppedPath = await Promise.race<string | null>([
+          stopRecording(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+        ]);
+        console.log(`[Home] stopRecording returned: ${stoppedPath}`);
+        if (stoppedPath) recordingPath = stoppedPath;
+      } catch (err) {
+        console.warn('[Home] stopRecording failed:', err);
+      }
+
+      // If stopRecording returned null but DB has a path, try the DB path
+      if (!recordingPath && session.recordingPath) {
+        console.log('[Home] stopRecording null, falling back to DB path:', session.recordingPath);
+        recordingPath = session.recordingPath;
+      }
+
+      // Validate using NATIVE file API (avoids expo-file-system path format issues)
+      if (recordingPath) {
+        console.log('[Home] Validating recording file via native:', recordingPath);
+        let validated = false;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            const info = await validateRecordingFile(recordingPath);
+            console.log(`[Home] Native file check attempt ${attempt}: exists=${info.exists}, size=${info.size}`);
+            if (info.exists && info.size > 100) {
+              validated = true;
+              break;
+            }
+          } catch (e) {
+            console.warn(`[Home] Native file check error attempt ${attempt}:`, e);
+          }
+          if (attempt < 2) {
+            await new Promise(res => setTimeout(res, 200));
+          }
+        }
+        if (!validated) {
+          try {
+            const finalInfo = await validateRecordingFile(recordingPath);
+            if (!finalInfo.exists || finalInfo.size <= 100) {
+              console.warn(
+                `[Home] Recording file still not ready: exists=${finalInfo.exists}, size=${finalInfo.size}. Keeping path for downstream retry.`,
+              );
+            } else {
+              console.log(`[Home] Recording file validated: size=${finalInfo.size} bytes`);
+            }
+          } catch (e) {
+            // If native validation itself errors, KEEP the path — don't discard a potentially valid file
+            console.warn('[Home] Native validation threw, keeping path anyway:', e);
+          }
+        }
+      }
+
+      try { await hideOverlay(); } catch (err) { console.warn('[Home] hideOverlay failed:', err); }
+
+      // Mark session complete in DB so it doesn't re-trigger on next app open.
+      // The returnSheet state below captures all needed data (recordingPath etc).
+      finishExternalAppSession(logId, durationMinutes);
+
+      setReturnSheet({
+        appName: session.appName,
+        durationMinutes,
+        recordingPath,
+        logId
+      });
+    } catch (err) {
+      console.error('[Home] Error in checkForReturnedSession:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkForReturnedSession(false);
+    recoverPendingTranscriptions(true);
+    const sub = AppState.addEventListener('change', nextState => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        checkForReturnedSession(true);
+        recoverPendingTranscriptions();
+      }
+      appStateRef.current = nextState;
+    });
+    return () => sub.remove();
+  }, [checkForReturnedSession, recoverPendingTranscriptions]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await refreshProfile();
+        if (!isMounted) return;
+        markNemesisTopics();
+        setWeakTopics(getWeakestTopics(3));
+        setDueTopics(getTopicsDueForReview(5));
+        setTodayTasks(getTodaysAgendaWithTimes().slice(0, 2));
+        setCompletedSessions(getCompletedSessionCount());
+        const log = getDailyLog();
+        setTodayMinutes(log?.totalMinutes ?? 0);
+      } catch (err: any) {
+        if (!isMounted) return;
+        console.error('[Home] Failed to load initial data:', err);
+        Alert.alert('Load Failed', err?.message ?? 'Unable to load home data. Please try again.');
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
     };
     loadData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
     if (profile?.syncCode) {
       const unsubscribe = connectToRoom(profile.syncCode, (msg: any) => {
-
         if (msg.type === 'BREAK_STARTED') {
           navigation.getParent()?.navigate('BreakEnforcer', { durationSeconds: msg.durationSeconds });
         }
         if (msg.type === 'LECTURE_STARTED') {
-          // The other device started a lecture. The phone is now a hostage.
-          Alert.alert('Lecture Detected', 'Your tablet just started a lecture. Your phone is now entering Hostage Mode.', [
-            { text: 'Okay', onPress: () => navigation.navigate('LectureMode', { subjectId: msg.subjectId }) }
-          ]);
-          navigation.navigate('LectureMode', { subjectId: msg.subjectId });
+          if (lectureStartAlertVisibleRef.current) return;
+          lectureStartAlertVisibleRef.current = true;
+          const sub = getSubjectById(msg.subjectId);
+          const openLectureMode = () => {
+            lectureStartAlertVisibleRef.current = false;
+            navigation.navigate('LectureMode', { subjectId: msg.subjectId });
+          };
+          Alert.alert('Lecture Detected', `Your tablet just started a ${sub?.name || 'lecture'}. Your phone is now entering Hostage Mode.`, [
+            { text: 'Okay', onPress: openLectureMode }
+          ], {
+            cancelable: true,
+            onDismiss: () => {
+              lectureStartAlertVisibleRef.current = false;
+            },
+          });
         }
       });
       return unsubscribe;
@@ -94,10 +273,12 @@ export default function HomeScreen() {
   }
 
   const daysToInicet = getDaysToExam(profile.inicetDate);
-  const hasApiKey = profile.openrouterApiKey.length > 0;
+  const daysToNeetPg = getDaysToExam(profile.neetDate);
   const mood = getDailyLog()?.mood ?? 'good';
+  const reviewDue = getReviewDueTopics();
+  const overdueReviews = reviewDue.filter(r => r.daysOverdue > 0);
 
-  // Micro-commitment ladder: dynamic start button text based on activity gap
+  // Micro-commitment ladder
   const daysSinceActive = (() => {
     if (!profile.lastActiveDate) return 999;
     const last = new Date(profile.lastActiveDate);
@@ -105,297 +286,491 @@ export default function HomeScreen() {
     return Math.floor((now.getTime() - last.getTime()) / 86400000);
   })();
   const startLabel = daysSinceActive >= 4 ? 'JUST 1 QUESTION' : daysSinceActive >= 2 ? 'JUST 5 MINUTES' : 'START SESSION';
-  const startSublabel = daysSinceActive >= 4 ? 'One question. That\'s it.' : daysSinceActive >= 2 ? 'A tiny win to get back on track' : `~${profile.preferredSessionLength} min · ${mood}`;
+  const startSublabel = daysSinceActive >= 4 ? 'One question. That\'s it.' : daysSinceActive >= 2 ? 'A tiny win to get back on track' : `~${profile.preferredSessionLength} min`;
 
-  // Low momentum = streak is 0 or long gap
-  const isLowMomentum = profile.streakCurrent === 0 || daysSinceActive >= 2;
-
-  // Exam readiness metric
-  const readinessPercent = totalTopicCount > 0 ? Math.round((masteredCount / totalTopicCount) * 100) : 0;
-
-  // Quick stats calculation
-  const dailyGoal = profile.dailyGoalMinutes;
-  const progressPercent = Math.min(100, Math.round((todayMinutes / dailyGoal) * 100));
-  const minutesLeft = Math.max(0, dailyGoal - todayMinutes);
+  // Daily progress
+  const dailyGoalRaw = Number(profile.dailyGoalMinutes);
+  const dailyGoal = Number.isFinite(dailyGoalRaw) && dailyGoalRaw > 0 ? dailyGoalRaw : 120;
+  const progressPercentRaw = Math.round((todayMinutes / dailyGoal) * 100);
+  const progressPercent = Number.isFinite(progressPercentRaw) ? progressPercentRaw : 0;
+  const progressClamped = Math.min(100, Math.max(0, progressPercent));
+  const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100;
 
   function handleStartSession() {
-    if (!hasApiKey) {
-      Alert.alert('Set API Key', 'Add your Google AI Studio key in Settings to enable AI features.', [{ text: 'OK' }]);
-      return;
-    }
     navigation.navigate('Session', { mood });
-  }
-
-  function handleContinueLearning() {
-    if (!hasApiKey) {
-      Alert.alert('Set API Key', 'Add your API key in Settings first.', [{ text: 'OK' }]);
-      return;
-    }
-    navigation.navigate('Session', { mood });
-  }
-
-  function handleLectureMode() {
-    navigation.navigate('LectureMode', {});
   }
 
   function handleLogExternal(appId: string) {
     navigation.navigate('ManualLog', { appId });
   }
 
-  const hasNewTopics = getAllTopicsWithProgress().some(t => t.progress.status === 'unseen');
+  function handleRepairStreak() {
+    const success = useStreakShield();
+    if (success) {
+      refreshProfile();
+      Alert.alert('Shield Used', 'Your streak has been repaired!');
+    } else {
+      Alert.alert('No Shields', 'You are out of streak shields!');
+    }
+  }
+
+  async function handleAudioUpload() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: ['audio/*'], copyToCacheDirectory: true });
+      if (result.canceled) return;
+
+      const uri = result.assets[0]?.uri;
+      if (!uri) return;
+
+      const groqKey = profile?.groqApiKey?.trim() || '';
+      const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
+      if (!groqKey && !hasLocalWhisper) {
+        Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings.');
+        return;
+      }
+
+      setIsTranscribingUpload(true);
+      const analysis = hasLocalWhisper
+        ? await transcribeWithLocalWhisper(uri, profile!.localWhisperPath!)
+        : await transcribeWithGroq(uri, groqKey);
+
+      if (!analysis.transcript || analysis.lectureSummary === 'No medical content detected') {
+        Alert.alert('No Speech Detected', 'No usable speech was found in this audio file.');
+        return;
+      }
+
+      const db = getDb();
+      if (analysis.topics.length > 0) {
+        markTopicsFromLecture(db, analysis.topics, analysis.estimatedConfidence, analysis.subject);
+      }
+
+      const quickNote = buildQuickLectureNote(analysis);
+      const subjectRow = db.getFirstSync<{ id: number }>(
+        'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?) LIMIT 1',
+        [analysis.subject],
+      );
+      saveLectureTranscript({
+        subjectId: subjectRow?.id ?? null,
+        note: quickNote,
+        transcript: analysis.transcript,
+        summary: analysis.lectureSummary,
+        topics: analysis.topics,
+        appName: 'Uploaded Audio',
+        confidence: analysis.estimatedConfidence,
+      });
+
+      setWeakTopics(getWeakestTopics(3));
+      setDueTopics(getTopicsDueForReview(5));
+      setUploadTranscript(quickNote);
+      setShowTranscriptModal(true);
+    } catch (err: any) {
+      Alert.alert('Upload Failed', err.message);
+    } finally {
+      setIsTranscribingUpload(false);
+    }
+  }
+
+  const nextPlannedTask = todayTasks[0] ?? null;
+  const heroCta = (() => {
+    if (overdueReviews.length > 0) {
+      return {
+        label: 'REVIEW OVERDUE TOPICS',
+        sublabel: `${overdueReviews.length} overdue · ${overdueReviews[0].topicName}`,
+        onPress: () => navigation.navigate('Session', {
+          mood: 'good',
+          focusTopicIds: overdueReviews.slice(0, 4).map(item => item.topicId),
+          preferredActionType: 'review',
+        }),
+      };
+    }
+    if (nextPlannedTask) {
+      return {
+        label: 'START NEXT TASK',
+        sublabel: `${nextPlannedTask.topic.name} · ${nextPlannedTask.type === 'review' ? 'Review' : nextPlannedTask.type === 'deep_dive' ? 'Deep dive' : 'New topic'}`,
+        onPress: () => navigation.navigate('Session', {
+          mood,
+          mode: nextPlannedTask.type === 'deep_dive' ? 'deep' : undefined,
+          focusTopicId: nextPlannedTask.topic.id,
+          preferredActionType: nextPlannedTask.type,
+        }),
+      };
+    }
+    if (weakTopics.length > 0) {
+      return {
+        label: 'FIX A WEAK SPOT',
+        sublabel: weakTopics[0].name,
+        onPress: () => navigation.navigate('Session', {
+          mood: 'energetic',
+          mode: 'deep',
+          focusTopicId: weakTopics[0].id,
+          preferredActionType: 'deep_dive',
+        }),
+      };
+    }
+    return {
+      label: startLabel,
+      sublabel: startSublabel,
+      onPress: handleStartSession,
+    };
+  })();
+
+  const criticalItems = (() => {
+    const items: Array<{
+      key: string;
+      title: string;
+      sub: string;
+      accent: string;
+      badge: string;
+      onPress: () => void;
+    }> = [];
+
+    if (overdueReviews.length > 0) {
+      items.push({
+        key: 'overdue',
+        title: `${overdueReviews.length} overdue review${overdueReviews.length > 1 ? 's' : ''}`,
+        sub: overdueReviews.slice(0, 2).map(item => item.topicName).join(', '),
+        accent: '#F97316',
+        badge: 'OVERDUE',
+        onPress: () => navigation.navigate('Session', {
+          mood: 'good',
+          focusTopicIds: overdueReviews.slice(0, 4).map(item => item.topicId),
+          preferredActionType: 'review',
+        }),
+      });
+    } else if (reviewDue.length > 0) {
+      items.push({
+        key: 'due',
+        title: `${reviewDue.length} review${reviewDue.length > 1 ? 's' : ''} due today`,
+        sub: reviewDue.slice(0, 2).map(item => item.topicName).join(', '),
+        accent: '#4CAF50',
+        badge: 'DUE',
+        onPress: () => navigation.navigate('Review'),
+      });
+    }
+
+    if (weakTopics.length > 0) {
+      items.push({
+        key: 'weak',
+        title: `${weakTopics.length} weak topic${weakTopics.length > 1 ? 's' : ''} need attention`,
+        sub: weakTopics[0].name,
+        accent: '#FF9800',
+        badge: 'WEAK',
+        onPress: () => navigation.navigate('BossBattle'),
+      });
+    }
+
+    if (nextPlannedTask) {
+      items.push({
+        key: 'next',
+        title: 'Next planned topic',
+        sub: `${nextPlannedTask.topic.name} · ${nextPlannedTask.timeLabel}`,
+        accent: '#6C63FF',
+        badge: nextPlannedTask.type === 'review' ? 'REVIEW' : nextPlannedTask.type === 'deep_dive' ? 'DEEP' : 'NEW',
+        onPress: () => navigation.navigate('Session', {
+          mood,
+          mode: nextPlannedTask.type === 'deep_dive' ? 'deep' : undefined,
+          focusTopicId: nextPlannedTask.topic.id,
+          preferredActionType: nextPlannedTask.type,
+        }),
+      });
+    }
+
+    if (items.length === 0) {
+      items.push({
+        key: 'challenge',
+        title: 'Daily challenge',
+        sub: '5 rapid-fire questions from weak topics',
+        accent: '#6C63FF',
+        badge: 'GO',
+        onPress: () => navigation.navigate('DailyChallenge'),
+      });
+    }
+
+    return items.slice(0, 3);
+  })();
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} testID="home-scroll">
+        <ResponsiveContainer style={styles.content}>
 
-        {/* ── Section 1: Status ── */}
+          {/* ── 1. Compact Status Row ── */}
+          <View style={styles.statusRow}>
+            <View style={styles.statusLeft}>
+              {profile.streakCurrent > 0 && (
+                <View style={styles.streakChip}>
+                  <Text style={styles.streakText}>🔥 {profile.streakCurrent}</Text>
+                </View>
+              )}
+              <View style={styles.levelChip}>
+                <Text style={styles.levelText}>Lv {levelInfo.level}</Text>
+              </View>
+              {/* Inline progress ring */}
+              <View style={styles.ringWrap}>
+                <Svg width={RING_SIZE} height={RING_SIZE}>
+                  <Circle cx={RING_SIZE/2} cy={RING_SIZE/2} r={RADIUS} stroke="#2A2A38" strokeWidth={STROKE_WIDTH} fill="transparent" />
+                  <Circle cx={RING_SIZE/2} cy={RING_SIZE/2} r={RADIUS} stroke={progressClamped >= 100 ? '#4CAF50' : '#6C63FF'} strokeWidth={STROKE_WIDTH} fill="transparent" strokeDasharray={CIRCUMFERENCE} strokeDashoffset={strokeDashoffset} strokeLinecap="round" rotation="-90" origin={`${RING_SIZE/2}, ${RING_SIZE/2}`} />
+                </Svg>
+                <View style={[StyleSheet.absoluteFill, styles.ringLabel]} pointerEvents="none">
+                  <Text style={styles.ringPercent}>{progressClamped}%</Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.statusRight}>
+              <Text style={styles.countdown}>INICET {daysToInicet}d</Text>
+              <Text style={styles.countdownSecondary}>NEET-PG {daysToNeetPg}d</Text>
+              <Text style={styles.todayMin}>{todayMinutes}/{dailyGoal} min today</Text>
+            </View>
+          </View>
 
-        {/* API key setup banner */}
-        {!hasApiKey && (
+          {/* Streak repair nudge (only when broken + had streak before) */}
+          {profile.streakCurrent === 0 && profile.streakBest > 0 && (
+            <TouchableOpacity style={styles.repairNudge} onPress={handleRepairStreak} activeOpacity={0.8}>
+              <Text style={styles.repairText}>🛡️ Your {profile.streakBest}-day streak broke. Tap to use a shield.</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* ── 2. External Apps — the main flow ── */}
+          <ExternalToolsRow onLogSession={handleLogExternal} />
+
+          {/* ── 3. Hero Start Button ── */}
+          <View style={styles.startArea}>
+            <StartButton
+              onPress={handleStartSession}
+              label={startLabel}
+              sublabel={startSublabel}
+            />
+          </View>
+
           <TouchableOpacity
-            style={styles.setupBanner}
-            onPress={() => navigation.getParent()?.navigate('SettingsTab' as any)}
+            style={styles.notesHubCard}
+            onPress={() => navigation.navigate('NotesHub')}
             activeOpacity={0.85}
+            testID="notes-hub-btn"
           >
-            <Text style={styles.setupBannerEmoji}>🔑</Text>
-            <View style={styles.setupBannerText}>
-              <Text style={styles.setupBannerTitle}>Set up your API key</Text>
-              <Text style={styles.setupBannerSub}>Tap here → Settings to add your Gemini key and start studying</Text>
+            <View style={styles.notesHubCardHeader}>
+              <Text style={styles.notesHubEyebrow}>KNOWLEDGE VAULT</Text>
+              <Text style={styles.notesHubArrow}>›</Text>
             </View>
-            <Text style={styles.setupBannerArrow}>→</Text>
+            <Text style={styles.notesHubTitle}>My Notes</Text>
+            <Text style={styles.notesHubText}>
+              Open lecture notes, search saved concepts, and revisit transcripts without digging through More.
+            </Text>
+            <View style={styles.notesHubMetaRow}>
+              <Text style={styles.notesHubMeta}>Search notes</Text>
+              <Text style={styles.notesHubMeta}>Lecture transcripts</Text>
+            </View>
           </TouchableOpacity>
-        )}
 
-        {/* Header row */}
-        <View style={styles.headerRow}>
-          {!isLowMomentum && <StreakBadge streak={profile.streakCurrent} />}
-          {isLowMomentum && (
-            <View style={styles.readinessBadge}>
-              <Text style={styles.readinessIcon}>📊</Text>
-              <Text style={styles.readinessCount}>{masteredCount}</Text>
-              <Text style={styles.readinessLabel}> mastered</Text>
+          {/* Task paralysis — subtle inline link, not a big button */}
+          {daysSinceActive >= 2 && (
+            <TouchableOpacity
+              style={styles.paralysisLink}
+              onPress={() => navigation.navigate('Inertia')}
+              activeOpacity={0.7}
+              testID="task-paralysis-btn"
+            >
+              <Text style={styles.paralysisText}>Can't start? Tap here.</Text>
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.criticalSection}>
+            <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
+            {criticalItems.map(item => (
+              <TouchableOpacity
+                key={item.key}
+                style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
+                onPress={item.onPress}
+                activeOpacity={0.8}
+              >
+                <View style={styles.criticalCardTop}>
+                  <Text style={[styles.criticalBadge, { color: item.accent }]}>{item.badge}</Text>
+                  <Text style={[styles.criticalArrow, { color: item.accent }]}>›</Text>
+                </View>
+                <Text style={styles.criticalTitle}>{item.title}</Text>
+                <Text style={styles.criticalSub}>{item.sub}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.coreActionsSection}>
+            <Text style={styles.sectionLabel}>CORE TOOLS</Text>
+            <View style={styles.coreActionsRow}>
+              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('GuruChat')} activeOpacity={0.8}>
+                <Text style={styles.coreActionTitle}>Guru Chat</Text>
+                <Text style={styles.coreActionSub}>Ask grounded medical questions</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('LectureMode', {})} activeOpacity={0.8} testID="lecture-mode-btn">
+                <Text style={styles.coreActionTitle}>Lecture Mode</Text>
+                <Text style={styles.coreActionSub}>Capture and summarize lectures</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={styles.coreActionWide} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
+              <Text style={styles.coreActionWideTitle}>Flagged Review</Text>
+              <Text style={styles.coreActionWideSub}>Return to topics you explicitly marked for later</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* ── 5. Today's Agenda (max 2 items) ── */}
+          {todayTasks.length > 0 && (
+            <View style={styles.agendaSection}>
+              <Text style={styles.sectionLabel}>UP NEXT</Text>
+              {todayTasks.map((task, i) => (
+                <TouchableOpacity
+                  key={i}
+                  style={[styles.agendaRow, i === 0 && styles.agendaRowFirst]}
+                  onPress={() => navigation.navigate('Session', {
+                    mood,
+                    mode: task.type === 'deep_dive' ? 'deep' : undefined,
+                    focusTopicId: task.topic.id,
+                    preferredActionType: task.type,
+                  })}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.agendaTime}>
+                    <Text style={styles.agendaTimeText}>{task.timeLabel.split(' - ')[0]}</Text>
+                  </View>
+                  <View style={[styles.agendaCard, task.type === 'review' && styles.agendaReview, task.type === 'deep_dive' && styles.agendaDeep]}>
+                    <Text style={styles.agendaTitle} numberOfLines={1}>{task.topic.name}</Text>
+                    <Text style={styles.agendaSub}>{task.type === 'review' ? 'REVIEW' : task.type === 'deep_dive' ? 'DEEP DIVE' : 'NEW'} · {task.topic.subjectName}</Text>
+                    <View style={styles.agendaBadgeRow}>
+                      {task.type === 'review' && <Text style={styles.agendaBadge}>Due now</Text>}
+                      {task.type === 'deep_dive' && <Text style={styles.agendaBadge}>Weak topic</Text>}
+                      {task.topic.inicetPriority >= 8 && <Text style={styles.agendaBadge}>High yield</Text>}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity onPress={() => navigation.navigate('StudyPlan')} activeOpacity={0.7}>
+                <Text style={styles.seeAllLink}>See full plan →</Text>
+              </TouchableOpacity>
             </View>
           )}
-          <View style={styles.headerRight}>
-            <Text style={styles.countdown}>⚡ {daysToInicet}d to INICET</Text>
-            <Text style={styles.todayMin}>{todayMinutes}min today</Text>
-          </View>
-        </View>
 
-        {/* Exam Readiness bar (replaces XP bar when low momentum) */}
-        {isLowMomentum ? (
-          <View style={styles.readinessBar}>
-            <View style={styles.readinessBarRow}>
-              <Text style={styles.readinessBarTitle}>Exam Readiness</Text>
-              <Text style={styles.readinessBarPercent}>{readinessPercent}%</Text>
+          {/* ── 6. More — everything else, collapsed ── */}
+          <TouchableOpacity
+            style={styles.moreHeader}
+            onPress={() => setMoreExpanded(prev => !prev)}
+            activeOpacity={0.7}
+            testID="more-header"
+          >
+            <Text style={styles.sectionLabel}>MORE</Text>
+            <Text style={styles.moreChevron}>{moreExpanded ? '▲' : '▼'}</Text>
+          </TouchableOpacity>
+
+          {moreExpanded && (
+            <View style={styles.moreContent}>
+              <Text style={styles.moreGroupLabel}>QUICK START</Text>
+              {/* Quick modes */}
+              <View style={styles.moreRow}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('Session', { mood, mode: 'sprint' })} activeOpacity={0.8}>
+                  <Text style={styles.moreBtnText}>⚡ 10m Sprint</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('MockTest')} activeOpacity={0.8}>
+                  <Text style={styles.moreBtnText}>📝 Mock Test</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.moreRow}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('DailyChallenge')} activeOpacity={0.8}>
+                  <Text style={styles.moreBtnText}>⚡ Daily Challenge</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('BossBattle')} activeOpacity={0.8}>
+                  <Text style={styles.moreBtnText}>👹 Boss Battle</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.moreGroupLabel}>AI & NOTES</Text>
+              {/* Tools */}
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('NotesHub')}>
+                <Text style={styles.moreLinkText}>📚 My Notes Hub</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('NotesSearch')}>
+                <Text style={styles.moreLinkText}>🔍 Search My Notes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('TranscriptHistory')}>
+                <Text style={styles.moreLinkText}>📄 Lecture Transcripts</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('BrainDumpReview')}>
+                <Text style={styles.moreLinkText}>🧠 Review Parked Thoughts</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.moreLink, isTranscribingUpload && { opacity: 0.7 }]}
+                onPress={handleAudioUpload}
+                disabled={isTranscribingUpload}
+              >
+                <View style={styles.moreLinkRow}>
+                  <Text style={styles.moreLinkText}>
+                    {isTranscribingUpload ? '🎙️ Transcribing audio…' : '🎙️ Transcribe Audio'}
+                  </Text>
+                  {isTranscribingUpload && <ActivityIndicator size="small" color="#6C63FF" />}
+                </View>
+              </TouchableOpacity>
+
+              <Text style={styles.moreGroupLabel}>CHALLENGES & UTILITIES</Text>
+              {/* Challenges */}
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('Lockdown', { duration: 300 })}>
+                <Text style={[styles.moreLinkText, { color: '#F44336' }]}>⛓️ Force Lockdown</Text>
+              </TouchableOpacity>
+
+              {/* Utilities */}
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('SleepMode')}>
+                <Text style={styles.moreLinkText}>🌙 Nightstand Mode</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('DoomscrollGuide')}>
+                <Text style={styles.moreLinkText}>📱 App Hijack Setup</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.navigate('Inertia')}>
+                <Text style={styles.moreLinkText}>🐢 Task Paralysis Helper</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.readinessTrack}>
-              <View style={[styles.readinessFill, { width: `${readinessPercent}%` }]} />
-            </View>
-            <Text style={styles.readinessBarSub}>{masteredCount}/{totalTopicCount} topics mastered</Text>
-          </View>
-        ) : (
-          <XPBar levelInfo={levelInfo} totalXp={profile.totalXp} />
-        )}
-
-        {/* Quick Stats with Progress Ring */}
-        <QuickStatsCard progressPercent={progressPercent} todayMinutes={todayMinutes} dailyGoal={dailyGoal} minutesLeft={minutesLeft} />
-
-        {/* ── Section 2: Primary Action ── */}
-
-        <View style={styles.startArea}>
-          <StartButton
-            onPress={handleStartSession}
-            label={startLabel}
-            sublabel={startSublabel}
-            disabled={!hasApiKey}
-          />
-          {!hasApiKey && (
-            <Text style={styles.noKeyWarning}>⚠️ Add API key in Settings</Text>
           )}
-        </View>
 
-        {/* Continue Learning Button */}
-        {hasIncompleteSession && (
-          <TouchableOpacity style={styles.continueBtn} onPress={handleContinueLearning} activeOpacity={0.8}>
-            <Text style={styles.continueIcon}>▶️</Text>
-            <View style={styles.continueInfo}>
-              <Text style={styles.continueTitle}>Continue Learning</Text>
-              <Text style={styles.continueSub}>Pick up where you left off</Text>
-            </View>
-            <Text style={styles.continueArrow}>→</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Task Paralysis escape hatch */}
-        <TouchableOpacity
-          style={styles.inertiaBtn}
-          onPress={() => navigation.navigate('Inertia')}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Task Paralysis - break the cycle"
-        >
-          <Text style={styles.inertiaEmoji}>🐢</Text>
-          <View>
-            <Text style={styles.inertiaTitle}>Task Paralysis?</Text>
-            <Text style={styles.inertiaSub}>Tap here to break the cycle</Text>
-          </View>
-        </TouchableOpacity>
-
-        {/* ── Section 3: Quick Modes ── */}
-
-        <Text style={styles.sectionHeader}>QUICK MODES</Text>
-
-        <View style={styles.miniRow}>
-          <TouchableOpacity
-            style={[styles.miniBtn, { flex: 1, marginBottom: 0 }]}
-            onPress={() => hasApiKey && navigation.navigate('Session', { mood, mode: 'sprint' })}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.miniBtnText}>⚡ 10m Sprint</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.miniBtn, { flex: 1, marginBottom: 0, borderColor: '#FF980044' }]}
-            onPress={() => navigation.navigate('MockTest')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.miniBtnText, { color: '#FF9800' }]}>📝 Mock Test</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={styles.challengeBtn}
-          onPress={() => hasApiKey ? navigation.navigate('DailyChallenge') : Alert.alert('Set API Key', 'Add your API key in Settings first.', [{ text: 'OK' }])}
-          activeOpacity={0.85}
-        >
-          <Text style={styles.challengeEmoji}>⚡</Text>
-          <View style={styles.challengeInfo}>
-            <Text style={styles.challengeTitle}>Daily Challenge</Text>
-            <Text style={styles.challengeSub}>5 rapid-fire questions from weak topics</Text>
-          </View>
-          <Text style={styles.challengeXp}>+{5 * 60} XP</Text>
-        </TouchableOpacity>
-
-        {/* Lecture mode button */}
-        <TouchableOpacity style={styles.lectureBtn} onPress={handleLectureMode} activeOpacity={0.8}>
-          <Text style={styles.lectureBtnText}>📺 Watching a Lecture</Text>
-        </TouchableOpacity>
-
-        {/* ── Section 4: Review & Due ── */}
-
-        {/* Review Due Button */}
-        {dueTopics.length > 0 && (
-          <TouchableOpacity style={styles.reviewBtn} onPress={() => navigation.navigate('Review')} activeOpacity={0.8}>
-            <Text style={styles.reviewBtnText}>🔥 Review {dueTopics.length} Due Cards</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Today's Schedule or Empty State */}
-        <DailyAgendaSection
-          todayTasks={todayTasks}
-          hasNewTopics={hasNewTopics}
-          onStartSession={handleStartSession}
-        />
-
-        {/* ── Section 5: Tools & Library (collapsible) ── */}
-
-        <TouchableOpacity
-          style={styles.toolsHeader}
-          onPress={() => setToolsExpanded(prev => !prev)}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={`Tools and Library, ${toolsExpanded ? 'collapse' : 'expand'}`}
-        >
-          <Text style={styles.sectionHeader}>TOOLS & LIBRARY</Text>
-          <Text style={styles.toolsChevron}>{toolsExpanded ? '▲' : '▼'}</Text>
-        </TouchableOpacity>
-
-        {toolsExpanded && (
-          <View>
-            <TouchableOpacity style={styles.searchBtn} onPress={() => navigation.navigate('NotesSearch')}>
-              <Text style={styles.searchBtnText}>🔍 Search My Notes</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.searchBtn} onPress={() => navigation.getParent()?.navigate('BrainDumpReview')}>
-              <Text style={styles.searchBtnText}>🧠 Review Parked Thoughts</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.flaggedBtn} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
-              <Text style={styles.flaggedBtnText}>🚩 Flagged for Review</Text>
-            </TouchableOpacity>
-
-            {/* External Apps Row */}
-            <ExternalToolsRow onLogSession={handleLogExternal} />
-
-            {/* Nightstand Mode */}
-            <TouchableOpacity
-              style={styles.nightstandBtn}
-              onPress={() => navigation.getParent()?.navigate('SleepMode')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.nightstandEmoji}>🌙</Text>
-              <View style={styles.nightstandInfo}>
-                <Text style={styles.nightstandTitle}>Nightstand Mode</Text>
-                <Text style={styles.nightstandSub}>Track sleep cycles & intercept morning fog.</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* App Hijack Mode */}
-            <TouchableOpacity
-              style={styles.hijackBtn}
-              onPress={() => navigation.getParent()?.navigate('DoomscrollGuide')}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.hijackEmoji}>📱</Text>
-              <View style={styles.hijackInfo}>
-                <Text style={styles.hijackTitle}>App Hijack Mode</Text>
-                <Text style={styles.hijackSub}>Learn how to force your phone to open this app instead of Instagram.</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* ── Section 6: Challenges (collapsible) ── */}
-
-        <TouchableOpacity
-          style={styles.toolsHeader}
-          onPress={() => setChallengesExpanded(prev => !prev)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.sectionHeader}>CHALLENGES</Text>
-          <Text style={styles.toolsChevron}>{challengesExpanded ? '▲' : '▼'}</Text>
-        </TouchableOpacity>
-
-        {challengesExpanded && (
-          <View>
-            <TouchableOpacity style={styles.bossBtn} onPress={() => navigation.navigate('BossBattle')} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel="Boss Battles - challenge a subject boss">
-              <Text style={styles.bossBtnEmoji}>👹</Text>
-              <View>
-                <Text style={styles.bossBtnTitle}>BOSS BATTLES</Text>
-                <Text style={styles.bossBtnSub}>Challenge a subject boss to earn epic XP</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Lockdown */}
-            <TouchableOpacity
-              style={styles.lockdownBtn}
-              onPress={() => navigation.getParent()?.navigate('Lockdown', { duration: 300 })}
-              activeOpacity={0.9}
-              accessibilityRole="button"
-              accessibilityLabel="Force 5 minute lockdown"
-            >
-              <Text style={styles.lockdownEmoji}>⛓️</Text>
-              <Text style={styles.lockdownTitle}>Force 5-Min Lockdown</Text>
-              <Text style={styles.lockdownSub}>Blocks back button. Shames you if you try to leave.</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Nemesis */}
-        <NemesisSection weakTopics={weakTopics} dueTopics={dueTopics} navigation={navigation} />
+          {/* Bottom breathing room */}
+          <View style={{ height: 40 }} />
+        </ResponsiveContainer>
       </ScrollView>
+
+      {returnSheet && (
+        <LectureReturnSheet
+          visible={!!returnSheet}
+          appName={returnSheet.appName}
+          durationMinutes={returnSheet.durationMinutes}
+          recordingPath={returnSheet.recordingPath}
+          logId={returnSheet.logId}
+          groqKey={profile?.groqApiKey ?? ''}
+          onDone={() => {
+            setReturnSheet(null);
+          }}
+          onStudyNow={() => {
+            setReturnSheet(null);
+          }}
+        />
+      )}
+
+      <Modal
+        visible={showTranscriptModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTranscriptModal(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Transcription Result</Text>
+            <Text style={styles.modalHint}>Saved to lecture notes and used to update matching topics.</Text>
+            <ScrollView style={styles.modalBody} contentContainerStyle={styles.modalBodyContent}>
+              <Text style={styles.modalText}>{uploadTranscript}</Text>
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setShowTranscriptModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -403,108 +778,219 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   scroll: { flex: 1 },
-  content: { paddingBottom: 40 },
-  setupBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A2E', borderRadius: 14, padding: 16, margin: 16, marginBottom: 0, borderWidth: 1, borderColor: '#6C63FF66' },
-  setupBannerEmoji: { fontSize: 24, marginRight: 12 },
-  setupBannerText: { flex: 1 },
-  setupBannerTitle: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
-  setupBannerSub: { color: '#9E9E9E', fontSize: 12, lineHeight: 16 },
-  setupBannerArrow: { color: '#6C63FF', fontSize: 18, fontWeight: '700', marginLeft: 8 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, marginBottom: 8 },
-  headerRight: { alignItems: 'flex-end' },
-  countdown: { color: '#6C63FF', fontWeight: '700', fontSize: 15 },
-  todayMin: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
-  readinessBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0A1A2A', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4 },
-  readinessIcon: { fontSize: 14 },
-  readinessCount: { color: '#4CAF50', fontWeight: '700', fontSize: 14, marginLeft: 4 },
-  readinessLabel: { color: '#4CAF50', fontSize: 12 },
-  readinessBar: { paddingHorizontal: 16, paddingVertical: 8 },
-  readinessBarRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  readinessBarTitle: { color: '#4CAF50', fontWeight: '700', fontSize: 13 },
-  readinessBarPercent: { color: '#9E9E9E', fontSize: 12 },
-  readinessTrack: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, overflow: 'hidden' },
-  readinessFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 3 },
-  readinessBarSub: { color: '#888', fontSize: 10, marginTop: 2, textAlign: 'right' },
+  content: { paddingBottom: 0 },
 
-  quickStatsCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginHorizontal: 16, marginBottom: 16 },
-  progressRingContainer: { width: 80, height: 80, marginRight: 16 },
-  progressRing: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#2A2A38', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  progressRingFill: { position: 'absolute', width: 80, height: 80, borderRadius: 40, borderWidth: 6, borderColor: '#6C63FF', borderLeftColor: 'transparent', borderBottomColor: 'transparent' },
-  progressRingCenter: { alignItems: 'center' },
-  progressPercent: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  progressLabel: { color: '#9E9E9E', fontSize: 9 },
-  quickStatsInfo: { flex: 1 },
-  quickStatsTitle: { color: '#fff', fontWeight: '700', fontSize: 16, marginBottom: 4 },
-  quickStatsMinutes: { color: '#9E9E9E', fontSize: 14, marginBottom: 2 },
-  quickStatsLeft: { color: '#FF9800', fontSize: 12 },
-  quickStatsDone: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },
+  // ── 1. Status Row ──
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  statusLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  streakChip: {
+    backgroundColor: '#2A1A00',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  streakText: { color: '#FF9800', fontWeight: '700', fontSize: 13 },
+  levelChip: {
+    backgroundColor: '#1A1A2E',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  levelText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
+  ringWrap: { width: RING_SIZE, height: RING_SIZE },
+  ringLabel: { alignItems: 'center', justifyContent: 'center' },
+  ringPercent: { color: '#fff', fontWeight: '800', fontSize: 11 },
+  statusRight: { alignItems: 'flex-end' },
+  countdown: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
+  countdownSecondary: { color: '#8F95A7', fontWeight: '700', fontSize: 12, marginTop: 2 },
+  todayMin: { color: '#A4A8B3', fontSize: 12, marginTop: 2 },
 
-  continueBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1A2A1A', borderRadius: 14, padding: 16, marginHorizontal: 16, marginBottom: 16, borderWidth: 1, borderColor: '#4CAF5044' },
-  continueIcon: { fontSize: 24, marginRight: 12 },
-  continueInfo: { flex: 1 },
-  continueTitle: { color: '#4CAF50', fontWeight: '700', fontSize: 16 },
-  continueSub: { color: '#9E9E9E', fontSize: 12 },
-  continueArrow: { color: '#4CAF50', fontSize: 20 },
+  // Streak repair
+  repairNudge: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#2A1A0A',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#FF980033',
+  },
+  repairText: { color: '#FF9800', fontSize: 12, fontWeight: '600', textAlign: 'center' },
 
-  startArea: { alignItems: 'center', paddingVertical: 32 },
-  noKeyWarning: { color: '#FF9800', fontSize: 12, marginTop: 12 },
-  cantStartText: { color: '#888', fontSize: 13, marginTop: 16, textDecorationLine: 'underline' },
-  planBtn: { marginTop: 16, padding: 10 },
-  planBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
+  // ── 3. Start Button ──
+  startArea: { alignItems: 'center', paddingVertical: 24 },
+  notesHubCard: {
+    marginHorizontal: 16,
+    marginBottom: 18,
+    borderRadius: 20,
+    padding: 18,
+    backgroundColor: '#161922',
+    borderWidth: 1,
+    borderColor: '#2B3040',
+  },
+  notesHubCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  notesHubEyebrow: {
+    color: '#8AB4FF',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+  },
+  notesHubArrow: { color: '#8AB4FF', fontSize: 22, fontWeight: '700' },
+  notesHubTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 6 },
+  notesHubText: { color: '#C4CCDA', fontSize: 14, lineHeight: 21 },
+  notesHubMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
+  notesHubMeta: {
+    color: '#DCE6FF',
+    fontSize: 12,
+    fontWeight: '700',
+    backgroundColor: '#22293A',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
 
-  // Task Paralysis (was inline)
-  inertiaBtn: { alignSelf: 'center', marginBottom: 16, backgroundColor: '#2A1A1A', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderColor: '#FF572244', flexDirection: 'row', alignItems: 'center' },
-  inertiaEmoji: { fontSize: 24, marginRight: 12 },
-  inertiaTitle: { color: '#FF5722', fontWeight: '800', fontSize: 15 },
-  inertiaSub: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
+  // Task paralysis — subtle
+  paralysisLink: { alignSelf: 'center', marginBottom: 16 },
+  paralysisText: { color: '#BCC2D0', fontSize: 13, textDecorationLine: 'underline' },
 
-  // Section headers
-  sectionHeader: { color: '#888', fontWeight: '800', fontSize: 11, letterSpacing: 1.5, paddingHorizontal: 16, marginTop: 24, marginBottom: 12 },
+  criticalSection: { paddingHorizontal: 16, marginBottom: 18 },
+  criticalCard: {
+    backgroundColor: '#1A1A24',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 10,
+  },
+  criticalCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  criticalBadge: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  criticalArrow: { fontSize: 20, fontWeight: '800' },
+  criticalTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  criticalSub: { color: '#9CA3B5', fontSize: 13, lineHeight: 19 },
 
-  lectureBtn: { marginHorizontal: 16, backgroundColor: '#0F0F14', borderRadius: 14, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#2A2A38', marginBottom: 10 },
-  lectureBtnText: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  miniRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 16, marginBottom: 12 },
-  miniBtn: { backgroundColor: '#0F0F14', borderRadius: 14, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44', flex: 1, marginBottom: 0 },
-  miniBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
-  reviewBtn: { marginHorizontal: 16, backgroundColor: '#F44336', borderRadius: 14, padding: 16, alignItems: 'center', marginBottom: 16, elevation: 4 },
-  reviewBtnText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 0.5 },
-  challengeBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#0F0F14', borderRadius: 14, padding: 16, marginHorizontal: 16, marginBottom: 12, borderWidth: 1, borderColor: '#6C63FF44' },
-  challengeEmoji: { fontSize: 28, marginRight: 14 },
-  challengeInfo: { flex: 1 },
-  challengeTitle: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  challengeSub: { color: '#9E9E9E', fontSize: 12, marginTop: 2 },
-  challengeXp: { color: '#6C63FF', fontWeight: '800', fontSize: 14 },
-  searchBtn: { alignItems: 'center', marginBottom: 8, padding: 10 },
-  searchBtnText: { color: '#9E9E9E', fontWeight: '600', fontSize: 13 },
-  flaggedBtn: { alignItems: 'center', marginBottom: 12, padding: 10 },
-  flaggedBtnText: { color: '#FF9800', fontWeight: '600', fontSize: 13 },
+  coreActionsSection: { paddingHorizontal: 16, marginBottom: 18 },
+  coreActionsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  coreActionCard: {
+    flex: 1,
+    backgroundColor: '#171722',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    padding: 14,
+  },
+  coreActionTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 4 },
+  coreActionSub: { color: '#99A2B6', fontSize: 12, lineHeight: 18 },
+  coreActionWide: {
+    backgroundColor: '#171722',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    padding: 14,
+  },
+  coreActionWideTitle: { color: '#FFB34D', fontSize: 15, fontWeight: '800', marginBottom: 4 },
+  coreActionWideSub: { color: '#99A2B6', fontSize: 12, lineHeight: 18 },
 
-  // Tools & Library collapsible header
-  toolsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingRight: 16, marginBottom: 0 },
-  toolsChevron: { color: '#888', fontSize: 12 },
+  // ── 5. Agenda ──
+  agendaSection: { paddingHorizontal: 16, marginBottom: 16 },
+  sectionLabel: { color: '#9399AA', fontWeight: '800', fontSize: 11, letterSpacing: 1.5, marginBottom: 10 },
+  agendaRow: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },
+  agendaRowFirst: {},
+  agendaTime: { width: 44, alignItems: 'flex-end', marginRight: 10 },
+  agendaTimeText: { color: '#B1B7C5', fontSize: 12, fontWeight: '700' },
+  agendaCard: { flex: 1, backgroundColor: '#1A1A24', padding: 12, borderRadius: 10, borderLeftWidth: 3, borderLeftColor: '#6C63FF' },
+  agendaReview: { borderLeftColor: '#4CAF50' },
+  agendaDeep: { borderLeftColor: '#F44336' },
+  agendaTitle: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  agendaSub: { color: '#A4A9B8', fontSize: 10, marginTop: 2, textTransform: 'uppercase' },
+  agendaBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  agendaBadge: {
+    color: '#D7DEEC',
+    fontSize: 10,
+    fontWeight: '700',
+    backgroundColor: '#262938',
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+  },
+  seeAllLink: { color: '#6C63FF', fontSize: 12, fontWeight: '600', marginTop: 4, textAlign: 'right' },
 
-  // Nightstand Mode (was inline)
-  nightstandBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#0F0F14', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#6C63FF44', flexDirection: 'row', alignItems: 'center' },
-  nightstandEmoji: { fontSize: 24, marginRight: 12 },
-  nightstandInfo: { flex: 1 },
-  nightstandTitle: { color: '#6C63FF', fontWeight: '800', fontSize: 14, textTransform: 'uppercase' },
-  nightstandSub: { color: '#9E9E9E', fontSize: 11, marginTop: 2 },
+  // ── 6. More ──
+  moreHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  moreChevron: { color: '#A0A6B7', fontSize: 12 },
+  moreContent: { paddingHorizontal: 16 },
+  moreGroupLabel: { color: '#8F95A7', fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 6, marginBottom: 8 },
+  moreRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
+  moreBtn: {
+    flex: 1,
+    backgroundColor: '#1A1A24',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
+  moreBtnText: { color: '#CED2DB', fontWeight: '600', fontSize: 13 },
+  moreLink: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1A1A24' },
+  moreLinkRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  moreLinkText: { color: '#CFD4DF', fontSize: 14, flexShrink: 1, lineHeight: 20 },
 
-  // App Hijack Mode (was inline)
-  hijackBtn: { marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1A1A24', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#FF9800', flexDirection: 'row', alignItems: 'center' },
-  hijackEmoji: { fontSize: 24, marginRight: 12 },
-  hijackInfo: { flex: 1 },
-  hijackTitle: { color: '#FF9800', fontWeight: '800', fontSize: 14, textTransform: 'uppercase' },
-  hijackSub: { color: '#9E9E9E', fontSize: 11, marginTop: 2 },
-
-  // Lockdown (was inline)
-  lockdownBtn: { marginHorizontal: 16, marginTop: 16, backgroundColor: '#2A0505', padding: 20, borderRadius: 16, borderWidth: 2, borderColor: '#F44336', alignItems: 'center' },
-  lockdownEmoji: { fontSize: 32, marginBottom: 8 },
-  lockdownTitle: { color: '#F44336', fontWeight: '900', fontSize: 18, textTransform: 'uppercase', letterSpacing: 1 },
-  lockdownSub: { color: '#FF9800', fontSize: 12, marginTop: 8, textAlign: 'center' },
-
-  bossBtn: { marginHorizontal: 16, marginTop: 24, marginBottom: 12, backgroundColor: '#2A0505', borderWidth: 2, borderColor: '#F44336', borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center' },
-  bossBtnEmoji: { fontSize: 32, marginRight: 16 },
-  bossBtnTitle: { color: '#F44336', fontWeight: '900', fontSize: 18, letterSpacing: 1 },
-  bossBtnSub: { color: '#9E9E9E', fontSize: 12 },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  modalCard: {
+    backgroundColor: '#171722',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    maxHeight: '75%',
+    padding: 16,
+  },
+  modalTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '700' },
+  modalHint: { color: '#A6ABBC', fontSize: 12, marginTop: 4, marginBottom: 10 },
+  modalBody: { backgroundColor: '#101019', borderRadius: 10 },
+  modalBodyContent: { padding: 12 },
+  modalText: { color: '#E6E9EF', fontSize: 14, lineHeight: 20 },
+  modalCloseBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 12,
+    backgroundColor: '#6C63FF',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  modalCloseText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 });

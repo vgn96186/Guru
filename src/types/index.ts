@@ -6,6 +6,8 @@ export type Mood = 'energetic' | 'good' | 'okay' | 'tired' | 'stressed' | 'distr
 
 export type SessionMode = 'normal' | 'sprint' | 'gentle' | 'deep' | 'external';
 
+export type StudyResourceMode = 'standard' | 'btr' | 'dbmci_live' | 'hybrid';
+
 export interface Subject {
   id: number;
   name: string;
@@ -108,8 +110,9 @@ export interface UserProfile {
   visualTimersEnabled?: boolean;
   faceTrackingEnabled?: boolean;
   syncCode: string | null;
-  openrouterApiKey: string;  // Gemini API key (confusingly named for historical reasons)
+  openrouterApiKey: string;  // Legacy API key field (kept for backward compatibility)
   openrouterKey: string;     // Actual OpenRouter key for free model fallbacks
+  groqApiKey: string;        // Groq API key for fast cloud inference fallback
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
   bodyDoublingEnabled: boolean;
@@ -121,6 +124,13 @@ export interface UserProfile {
   focusSubjectIds: number[];
   quizCorrectCount?: number;
   lastBackupDate?: string | null;
+  useLocalModel?: boolean;
+  localModelPath?: string | null;
+  useLocalWhisper?: boolean;
+  localWhisperPath?: string | null;
+  quickStartStreak?: number;
+  studyResourceMode?: StudyResourceMode;
+  customSubjectLoadMultipliers?: Record<string, number>;
 }
 
 // AI Content shapes

@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import * as Speech from 'expo-speech';
-import * as Haptics from 'expo-haptics';
+import React, { useEffect, useState } from 'react';
 
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
@@ -12,8 +10,7 @@ import type {
 } from '../types';
 
 import { askGuru } from '../services/aiService';
-import { useAppStore } from '../store/useAppStore';
-import { setContentFlagged } from '../db/queries/aiCache';
+import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 
 interface Props {
@@ -27,9 +24,15 @@ interface Props {
 
 export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizComplete }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
-  const [quizAnswered, setQuizAnswered] = useState(false);
   const [flagged, setFlagged] = useState(false);
-  const profile = useAppStore(s => s.profile);
+
+  useEffect(() => {
+    if (topicId) {
+      setFlagged(isContentFlagged(topicId, content.type));
+    } else {
+      setFlagged(false);
+    }
+  }, [topicId, content.type]);
 
   function handleFlag() {
     if (!topicId) return;
@@ -40,7 +43,6 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
   }
 
   const handleQuizAnswered = (correct: boolean) => {
-    setQuizAnswered(true);
     onQuizAnswered?.(correct);
   };
 
@@ -67,17 +69,13 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
             <Text style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</Text>
           </TouchableOpacity>
         ) : <View />}
-        {(content.type !== 'quiz' || quizAnswered) && (
-          <TouchableOpacity style={s.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.85}>
-            <Text style={s.askGuruText}>Ask Guru</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={s.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.85}>
+          <Text style={s.askGuruText}>Ask Guru</Text>
+        </TouchableOpacity>
       </View>
       <GuruChatOverlay
         visible={chatOpen}
         topicName={content.topicName}
-        apiKey={profile?.openrouterApiKey ?? ''}
-        orKey={profile?.openrouterKey ?? undefined}
         onClose={() => setChatOpen(false)}
       />
     </View>
@@ -87,14 +85,16 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
 function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
   return (
     <View style={s.ratingContainer}>
-      <Text style={s.ratingTitle}>How confident do you feel?</Text>
+      <Text style={s.ratingTitle}>How well did you get this?</Text>
       <View style={s.ratingRow}>
-        {[1,2,3,4,5].map(n => (
-          <TouchableOpacity key={n} style={s.ratingBtn} onPress={() => onRate(n)} activeOpacity={0.8}>
-            <Text style={s.ratingNum}>{n}</Text>
-            <Text style={s.ratingLabel}>{CONFIDENCE_LABELS[n]}</Text>
-          </TouchableOpacity>
-        ))}
+        <TouchableOpacity style={[s.ratingBtn, { flex: 1, borderColor: '#F44336' }]} onPress={() => onRate(2)} activeOpacity={0.8}>
+          <Text style={[s.ratingNum, { color: '#F44336' }]}>Not yet</Text>
+          <Text style={s.ratingLabel}>😕</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[s.ratingBtn, { flex: 1, borderColor: '#4CAF50' }]} onPress={() => onRate(4)} activeOpacity={0.8}>
+          <Text style={[s.ratingNum, { color: '#4CAF50' }]}>Got it!</Text>
+          <Text style={s.ratingLabel}>🔥</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -287,15 +287,13 @@ function TeachBackCard({ content, onDone, onSkip }: { content: TeachBackContent 
   const [submitted, setSubmitted] = useState(false);
   const [validating, setValidating] = useState(false);
   const [guruFeedback, setGuruFeedback] = useState<{ feedback: string; score: number; missed: string[] } | null>(null);
-  const apiKey = useAppStore(s => s.profile?.openrouterApiKey);
-  const orKey = useAppStore(s => s.profile?.openrouterKey || undefined);
 
   async function handleValidate() {
-    if (!answer.trim() || !apiKey) return;
+    if (!answer.trim()) return;
     setValidating(true);
     try {
       const context = `Topic: ${content.topicName}. Expected points: ${content.keyPointsToMention.join(', ')}`;
-      const raw = await askGuru(answer, context, apiKey, orKey);
+      const raw = await askGuru(answer, context);
       const parsed = JSON.parse(raw);
       setGuruFeedback(parsed);
       setSubmitted(true);

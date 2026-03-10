@@ -71,6 +71,12 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE topics ADD COLUMN parent_topic_id INTEGER REFERENCES topics(id)`,
     `ALTER TABLE topic_progress ADD COLUMN next_review_date TEXT`,
     `ALTER TABLE topic_progress ADD COLUMN user_notes TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE external_app_logs ADD COLUMN recording_path TEXT`,
+    `ALTER TABLE external_app_logs ADD COLUMN transcription_status TEXT DEFAULT 'pending'`,
+    `ALTER TABLE external_app_logs ADD COLUMN transcription_error TEXT`,
+    `ALTER TABLE external_app_logs ADD COLUMN lecture_note_id INTEGER`,
+    `ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'pending'`,
+    `ALTER TABLE external_app_logs ADD COLUMN pipeline_metrics_json TEXT`,
     `ALTER TABLE user_profile ADD COLUMN strict_mode_enabled INTEGER DEFAULT 0`,
     `ALTER TABLE user_profile ADD COLUMN streak_shield_available INTEGER DEFAULT 1`,
     `ALTER TABLE user_profile ADD COLUMN openrouter_key TEXT NOT NULL DEFAULT ''`,
@@ -87,6 +93,27 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `ALTER TABLE topic_progress ADD COLUMN is_nemesis INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE user_profile ADD COLUMN quiz_correct_count INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE user_profile ADD COLUMN last_backup_date TEXT`,
+    `ALTER TABLE user_profile ADD COLUMN guru_frequency TEXT NOT NULL DEFAULT 'normal'`,
+    `ALTER TABLE user_profile ADD COLUMN use_local_model INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE user_profile ADD COLUMN local_model_path TEXT`,
+    `ALTER TABLE user_profile ADD COLUMN use_local_whisper INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE user_profile ADD COLUMN local_whisper_path TEXT`,
+    `ALTER TABLE user_profile ADD COLUMN quick_start_streak INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE user_profile ADD COLUMN groq_api_key TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE user_profile ADD COLUMN study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'`,
+    `ALTER TABLE user_profile ADD COLUMN subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'`,
+    // Enable local-first for existing users who haven't set API keys
+    `UPDATE user_profile SET use_local_model = 1 WHERE use_local_model = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')`,
+    `UPDATE user_profile SET use_local_whisper = 1 WHERE use_local_whisper = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')`,
+    `UPDATE user_profile SET study_resource_mode = 'hybrid' WHERE study_resource_mode IS NULL OR study_resource_mode = ''`,
+    `UPDATE user_profile SET subject_load_overrides_json = '{}' WHERE subject_load_overrides_json IS NULL OR subject_load_overrides_json = ''`,
+    // lecture_notes expansion for full transcript storage
+    `ALTER TABLE lecture_notes ADD COLUMN transcript TEXT`,
+    `ALTER TABLE lecture_notes ADD COLUMN summary TEXT`,
+    `ALTER TABLE lecture_notes ADD COLUMN topics_json TEXT`,
+    `ALTER TABLE lecture_notes ADD COLUMN app_name TEXT`,
+    `ALTER TABLE lecture_notes ADD COLUMN duration_minutes INTEGER`,
+    `ALTER TABLE lecture_notes ADD COLUMN confidence INTEGER DEFAULT 2`,
   ];
   for (const sql of migrations) {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }
@@ -97,6 +124,16 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 
   // Update streak on open
   await updateStreakOnOpen(db);
+}
+
+/**
+ * Re-run vault topic seeding without destructive wipes.
+ * Safe for manual "sync" actions from the UI.
+ */
+export async function syncVaultSeedTopics(): Promise<void> {
+  const db = getDb();
+  await seedVaultTopics(db);
+  await db.execAsync('INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics');
 }
 
 async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {

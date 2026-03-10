@@ -2,7 +2,7 @@ import React from 'react';
 import { View, useWindowDimensions } from 'react-native';
 
 const TABLET_BREAKPOINT = 600;
-const MAX_CONTENT_WIDTH = 640;
+const MAX_CONTENT_WIDTH = 800;
 
 const SPACING_FACTOR = 1.8;
 const FONT_FACTOR = 1.3;
@@ -19,18 +19,15 @@ export function useResponsive() {
   return { s, f, sz, isTablet, maxContentWidth: isTablet ? MAX_CONTENT_WIDTH : undefined };
 }
 
-export function ResponsiveContainer({ children }: { children: React.ReactNode }) {
+export function ResponsiveContainer({ children, style, testID }: { children: React.ReactNode, style?: any, testID?: string }) {
   const { isTablet, maxContentWidth } = useResponsive();
 
-  if (!isTablet) {
-    return children as React.JSX.Element;
-  }
-
   return React.createElement(View, {
-    style: {
-      width: '100%',
-      maxWidth: maxContentWidth,
-      alignSelf: 'center' as const,
-    },
+    style: [
+      { flex: 1, width: '100%' },
+      isTablet && { maxWidth: maxContentWidth, alignSelf: 'center' as const },
+      style
+    ],
+    testID,
   }, children);
 }

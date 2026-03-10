@@ -5,17 +5,20 @@ import { fetchContent } from '../services/aiService';
 import { getTopicById } from '../db/queries/topics';
 import type { QuizContent } from '../types';
 import GuruChatOverlay from '../components/GuruChatOverlay';
+import VisualTimer from '../components/VisualTimer';
+import { useAppStore } from '../store/useAppStore';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 interface Props {
   countdown: number;
   totalSeconds?: number;
   topicId?: number;
-  apiKey?: string;
-  orKey?: string;
   onDone: () => void;
+  onEndSession?: () => void;
 }
 
-export default function BreakScreen({ countdown, totalSeconds, topicId, apiKey, orKey, onDone }: Props) {
+export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, onEndSession }: Props) {
+  const profile = useAppStore(s => s.profile);
   const [quizQuestion, setQuizQuestion] = useState<{ question: string; options: string[]; correct: number } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -23,13 +26,16 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, apiKey, 
   const duration = totalSeconds ?? 300;
 
   useEffect(() => {
-    // Block back button during break
+    // Block back button during break unless they want to end session early
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Stay focused!', 'The break timer is running. Please wait.');
+      Alert.alert('Stay focused!', 'The break timer is running.', [
+        { text: 'Wait it out', style: 'cancel' },
+        ...(onEndSession ? [{ text: 'End Session Early', style: 'destructive' as const, onPress: onEndSession }] : [])
+      ]);
       return true;
     });
     return () => handler.remove();
-  }, []);
+  }, [onEndSession]);
 
   useEffect(() => {
     if (countdown <= 0) {
@@ -39,10 +45,10 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, apiKey, 
 
   // Load a quick quiz question during break
   useEffect(() => {
-    if (!topicId || !apiKey) return;
+    if (!topicId) return;
     const topic = getTopicById(topicId);
     if (!topic) return;
-    fetchContent(topic, 'quiz', apiKey!, orKey)
+    fetchContent(topic, 'quiz')
       .then(content => {
         const q = (content as QuizContent).questions?.[0];
         if (q) {
@@ -62,14 +68,22 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, apiKey, 
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ResponsiveContainer style={styles.container}>
         {/* Break header */}
         <View style={styles.timerSection}>
           <Text style={styles.breakLabel}>ACTIVE BREAK</Text>
-          <Text style={styles.breakTimer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${pct}%` }]} />
-          </View>
+          {profile?.visualTimersEnabled ? (
+            <View style={{ marginVertical: 16 }}>
+              <VisualTimer totalSeconds={duration} remainingSeconds={countdown} size={160} />
+            </View>
+          ) : (
+            <>
+              <Text style={styles.breakTimer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
+              <View style={styles.progressTrack}>
+                <View style={[styles.progressFill, { width: `${pct}%` }]} />
+              </View>
+            </>
+          )}
           <Text style={styles.breakSubtext}>Stay in the app — session continues automatically</Text>
         </View>
 
@@ -119,17 +133,19 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, apiKey, 
           </TouchableOpacity>
         )}
 
-        {apiKey && (
-          <TouchableOpacity style={styles.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.8}>
-            <Text style={styles.askGuruText}>Ask Guru a question</Text>
+        <TouchableOpacity style={styles.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.8}>
+          <Text style={styles.askGuruText}>Ask Guru a question</Text>
+        </TouchableOpacity>
+
+        {onEndSession && (
+          <TouchableOpacity style={{ alignItems: 'center', marginBottom: 20 }} onPress={onEndSession}>
+            <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>End Session Early</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </ResponsiveContainer>
       <GuruChatOverlay
         visible={chatOpen}
         topicName={topicName}
-        apiKey={apiKey ?? ''}
-        orKey={orKey}
         onClose={() => setChatOpen(false)}
       />
     </SafeAreaView>

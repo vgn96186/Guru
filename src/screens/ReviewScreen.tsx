@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Speech from 'expo-speech';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
@@ -10,6 +11,7 @@ import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, AIContent } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 // Spaced Repetition Ratings
 const RATINGS = [
@@ -34,19 +36,20 @@ export default function ReviewScreen() {
     // Load due topics (limit 20 for a session)
     const due = getTopicsDueForReview(20);
     setQueue(due);
+    return () => { Speech.stop(); };
   }, []);
 
   const currentTopic = queue[currentIdx];
 
   useEffect(() => {
-    if (!currentTopic || !profile?.openrouterApiKey) return;
+    if (!currentTopic) return;
     setLoading(true);
     setContent(null);
     setIsFlipped(false);
     flipAnim.setValue(0);
 
     // Fetch 'keypoints' or 'mnemonic' for flashcard back
-    fetchContent(currentTopic, 'keypoints', profile.openrouterApiKey, profile.openrouterKey || undefined)
+    fetchContent(currentTopic, 'keypoints')
       .then(c => {
         setContent(c);
         setLoading(false);
@@ -62,9 +65,13 @@ export default function ReviewScreen() {
       useNativeDriver: true,
     }).start();
     setIsFlipped(true);
+
+    // Auto-speak disabled by default to avoid disruption in quiet environments
+    // Users can tap "Ask Guru" for audio if needed
   }
 
   function handleRate(rating: typeof RATINGS[0]) {
+    Speech.stop();
     if (!currentTopic) return;
 
     let newConf = rating.confidence;
@@ -98,14 +105,14 @@ export default function ReviewScreen() {
   if (queue.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
+        <ResponsiveContainer style={styles.center}>
           <Text style={styles.emoji}>🎉</Text>
           <Text style={styles.title}>All caught up!</Text>
           <Text style={styles.sub}>No topics due for review right now.</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
             <Text style={styles.btnText}>Back</Text>
           </TouchableOpacity>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -127,69 +134,71 @@ export default function ReviewScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
 
-      <View style={styles.header}>
-        <Text style={styles.progress}>Card {currentIdx + 1} / {queue.length}</Text>
-        {currentTopic.progress.isNemesis && (
-          <View style={styles.nemesisBadge}>
-            <Text style={styles.nemesisBadgeText}>⚔️ NEMESIS (+50 XP)</Text>
-          </View>
-        )}
-        <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.close}>✕</Text></TouchableOpacity>
-      </View>
+      <ResponsiveContainer>
+        <View style={styles.header}>
+          <Text style={styles.progress}>Card {currentIdx + 1} / {queue.length}  ·  ~{Math.ceil((queue.length - currentIdx) * 0.5)} min left</Text>
+          {currentTopic.progress.isNemesis && (
+            <View style={styles.nemesisBadge}>
+              <Text style={styles.nemesisBadgeText}>⚔️ NEMESIS (+50 XP)</Text>
+            </View>
+          )}
+          <TouchableOpacity onPress={() => { Speech.stop(); navigation.goBack(); }}><Text style={styles.close}>✕</Text></TouchableOpacity>
+        </View>
 
-      <View style={styles.cardContainer}>
-        {/* Front */}
-        <Animated.View style={[styles.card, frontAnimatedStyle]}>
-          <Text style={styles.label}>TOPIC</Text>
-          <Text style={styles.topic}>{currentTopic.name}</Text>
-          <Text style={styles.subject}>{currentTopic.subjectName}</Text>
-          <Text style={styles.tapHint}>Tap to flip</Text>
-        </Animated.View>
+        <View style={styles.cardContainer}>
+          {/* Front */}
+          <Animated.View style={[styles.card, frontAnimatedStyle]}>
+            <Text style={styles.label}>TOPIC</Text>
+            <Text style={styles.topic}>{currentTopic.name}</Text>
+            <Text style={styles.subject}>{currentTopic.subjectName}</Text>
+            <Text style={styles.tapHint}>Tap to flip</Text>
+          </Animated.View>
 
-        {/* Back */}
-        <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-          {loading ? (
-            <LoadingOrb />
-          ) : content && content.type === 'keypoints' ? (
-            <View>
-              <Text style={styles.label}>KEY POINTS</Text>
-              {content.points.slice(0, 4).map((p, i) => (
-                <Text key={i} style={styles.point}>• {p}</Text>
+          {/* Back */}
+          <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
+            {loading ? (
+              <LoadingOrb />
+            ) : content && content.type === 'keypoints' && Array.isArray(content.points) ? (
+              <View>
+                <Text style={styles.label}>KEY POINTS</Text>
+                {content.points.slice(0, 4).map((p, i) => (
+                  <Text key={i} style={styles.point}>• {p}</Text>
+                ))}
+                {content.memoryHook ? <Text style={styles.hook}>💡 {content.memoryHook}</Text> : null}
+              </View>
+            ) : (
+              <Text style={styles.error}>Could not load content.</Text>
+            )}
+          </Animated.View>
+
+          {/* Invisible touch layer for flipping */}
+          {!isFlipped && (
+            <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleFlip} activeOpacity={1} />
+          )}
+        </View>
+
+        {/* Controls */}
+        <View style={styles.controls}>
+          {isFlipped ? (
+            <View style={styles.ratings}>
+              {RATINGS.map(r => (
+                <TouchableOpacity
+                  key={r.label}
+                  style={[styles.rateBtn, { borderColor: r.color }]}
+                  onPress={() => handleRate(r)}
+                >
+                  <Text style={[styles.rateLabel, { color: r.color }]}>{r.label}</Text>
+                  <Text style={styles.rateDays}>{r.days}d</Text>
+                </TouchableOpacity>
               ))}
-              <Text style={styles.hook}>💡 {content.memoryHook}</Text>
             </View>
           ) : (
-            <Text style={styles.error}>Could not load content.</Text>
+            <TouchableOpacity style={styles.flipBtn} onPress={handleFlip}>
+              <Text style={styles.flipText}>Show Answer</Text>
+            </TouchableOpacity>
           )}
-        </Animated.View>
-
-        {/* Invisible touch layer for flipping */}
-        {!isFlipped && (
-          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleFlip} activeOpacity={1} />
-        )}
-      </View>
-
-      {/* Controls */}
-      <View style={styles.controls}>
-        {isFlipped ? (
-          <View style={styles.ratings}>
-            {RATINGS.map(r => (
-              <TouchableOpacity
-                key={r.label}
-                style={[styles.rateBtn, { borderColor: r.color }]}
-                onPress={() => handleRate(r)}
-              >
-                <Text style={[styles.rateLabel, { color: r.color }]}>{r.label}</Text>
-                <Text style={styles.rateDays}>{r.days}d</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.flipBtn} onPress={handleFlip}>
-            <Text style={styles.flipText}>Show Answer</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        </View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

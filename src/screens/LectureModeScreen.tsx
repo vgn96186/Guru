@@ -7,10 +7,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
+import * as DocumentPicker from 'expo-document-picker';
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
-import { transcribeAndSummarizeAudio } from '../services/aiService';
+import { transcribeWithGroq, transcribeWithLocalWhisper, markTopicsFromLecture } from '../services/transcriptionService';
+import { getDb } from '../db/database';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -23,7 +25,10 @@ import { useAppStore } from '../store/useAppStore';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
 import BreakScreen from './BreakScreen';
+import FocusAudioPlayer from '../components/FocusAudioPlayer';
+import { useFaceTracking } from '../hooks/useFaceTracking';
 import type { Subject } from '../types';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
 type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
@@ -61,6 +66,8 @@ export default function LectureModeScreen() {
   const [partnerDoomscrolling, setPartnerDoomscrolling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const { focusState } = useFaceTracking();
+
   useEffect(() => {
     if (!profile) refreshProfile();
   }, [profile]);
@@ -88,16 +95,24 @@ export default function LectureModeScreen() {
   }, [profile?.syncCode, selectedSubjectId]);
 
   // Handle App sending to background (doomscrolling attempt)
+  const hasTriggeredDoomscrollRef = useRef(false);
+  
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        hasTriggeredDoomscrollRef.current = false;
+      }
       if ((nextAppState === 'background' || nextAppState === 'inactive') && !onBreak && elapsed > 0) {
-        // They put the phone down or switched to Instagram
-        sendSyncMessage({ type: 'DOOMSCROLL_DETECTED' });
-        sendImmediateNag(
-          "🚨 DOOMSCROLL DETECTED",
-          "You're supposed to be watching a lecture! Put the phone down and look at your tablet!"
-        );
-        Vibration.vibrate([0, 500, 200, 500]);
+        if (!hasTriggeredDoomscrollRef.current) {
+          hasTriggeredDoomscrollRef.current = true;
+          // They put the phone down or switched to Instagram
+          sendSyncMessage({ type: 'DOOMSCROLL_DETECTED' });
+          sendImmediateNag(
+            "🚨 DOOMSCROLL DETECTED",
+            "You're supposed to be watching a lecture! Put the phone down and look at your tablet!"
+          );
+          Vibration.vibrate([0, 500, 200, 500]);
+        }
       }
     });
     return () => subscription.remove();
@@ -144,9 +159,9 @@ export default function LectureModeScreen() {
   // Block Back Button
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Stop lecture?', 'Are you actually done, or just avoiding it?', [
+      Alert.alert('Ready to wrap up?', 'You can always come back and continue later.', [
         { text: 'Keep watching', style: 'cancel' },
-        { text: 'Stop', onPress: stopLecture, style: 'destructive' },
+        { text: 'Finish', onPress: stopLecture, style: 'destructive' },
       ]);
       return true;
     });
@@ -219,7 +234,15 @@ export default function LectureModeScreen() {
 
   async function startRecording() {
     try {
-      if (recording) await recording.stopAndUnloadAsync();
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch {
+          // Ignore stale recorder lifecycle errors and continue with a fresh instance.
+        }
+      }
+      recordingRef.current = null;
+      setRecording(null);
       
       const { recording: newRec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
@@ -232,7 +255,9 @@ export default function LectureModeScreen() {
   }
 
   async function processRecording() {
-    if (!recording || !profile?.openrouterApiKey) return;
+    const groqKey = profile?.groqApiKey?.trim() || '';
+    const hasLocalWhisper = profile?.useLocalWhisper && !!profile?.localWhisperPath;
+    if (!recording || (!groqKey && !hasLocalWhisper)) return;
     setIsTranscribing(true);
 
     try {
@@ -242,27 +267,79 @@ export default function LectureModeScreen() {
       setRecording(null);
 
       if (uri) {
-        // Transcribe directly from file URI to avoid Base64 out-of-memory errors
-        const text = await transcribeAndSummarizeAudio(uri, profile.openrouterApiKey);
-        if (text && text !== 'NO_CONTENT' && !text.includes('NO_CONTENT')) {
-          saveLectureNote(selectedSubjectId, text.trim());
-          setNotes(n => [...n, text.trim()]);
-          
-          // Reset Proof of Life because the AI proved the lecture is happening
-          setProofOfLifeActive(false);
-        }
-        
-        // Delete temp file
+        // Local-first: use on-device Whisper if available, fall back to Groq Whisper
+        const analysis = hasLocalWhisper
+          ? await transcribeWithLocalWhisper(uri, profile!.localWhisperPath!)
+          : await transcribeWithGroq(uri, groqKey);
+        applyLectureAnalysis(analysis);
+
         await FileSystem.deleteAsync(uri, { idempotent: true });
       }
     } catch (err) {
       if (__DEV__) console.error('Transcription failed:', err);
     } finally {
       setIsTranscribing(false);
-      // Restart recording immediately if still enabled
       if (isRecordingEnabled && !onBreak && elapsed > 0) {
         startRecording();
       }
+    }
+  }
+
+  function applyLectureAnalysis(analysis: {
+    topics: string[];
+    estimatedConfidence: 1 | 2 | 3;
+    subject: string;
+    lectureSummary: string;
+    keyConcepts: string[];
+  }) {
+    if (analysis.topics.length > 0) {
+      markTopicsFromLecture(getDb(), analysis.topics, analysis.estimatedConfidence, analysis.subject);
+    }
+
+    const hasContent = analysis.lectureSummary && analysis.lectureSummary !== 'No medical content detected';
+    if (!hasContent) return;
+
+    const conceptsText = analysis.keyConcepts.length > 0
+      ? '\n' + analysis.keyConcepts.map(c => `• ${c}`).join('\n')
+      : '';
+    const noteText = `[${analysis.subject}] ${analysis.lectureSummary}${conceptsText}`;
+    saveLectureNote(selectedSubjectId, noteText);
+    setNotes(n => [...n, noteText]);
+    setProofOfLifeActive(false);
+  }
+
+  async function importAndTranscribeAudio() {
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        type: ['audio/*'],
+        copyToCacheDirectory: true,
+      });
+      if (picked.canceled || !picked.assets?.[0]?.uri) return;
+
+      const groqKey = profile?.groqApiKey?.trim() || '';
+      const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
+      if (!groqKey && !hasLocalWhisper) {
+        Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings.');
+        return;
+      }
+
+      const pickedUri = picked.assets[0].uri;
+      const tempUri = `${FileSystem.cacheDirectory}lecture-import-${Date.now()}.m4a`;
+      await FileSystem.copyAsync({ from: pickedUri, to: tempUri });
+
+      setIsTranscribing(true);
+      const analysis = hasLocalWhisper
+        ? await transcribeWithLocalWhisper(tempUri, profile!.localWhisperPath!)
+        : await transcribeWithGroq(tempUri, groqKey);
+
+      applyLectureAnalysis(analysis);
+      Alert.alert('Transcription Complete', analysis.lectureSummary || 'Done');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to transcribe imported audio.';
+      Alert.alert('Transcription Failed', msg);
+      if (__DEV__) console.error('Import transcription failed:', err);
+    } finally {
+      setIsTranscribing(false);
     }
   }
 
@@ -289,11 +366,21 @@ export default function LectureModeScreen() {
   }, [isRecordingEnabled, onBreak, recording, isTranscribing]);
 
   function toggleAutoScribe() {
-    if (!isRecordingEnabled && !profile?.openrouterApiKey) {
-      Alert.alert('API Key Required', 'You need an AI API key to transcribe lectures.');
+    const groqKey = profile?.groqApiKey?.trim() || '';
+    const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
+
+    if (!isRecordingEnabled && !groqKey && !hasLocalWhisper) {
+      Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings to use Auto-Scribe.');
       return;
     }
     setIsRecordingEnabled(!isRecordingEnabled);
+  }
+
+  function confirmStopLecture() {
+    Alert.alert('Stop lecture?', 'Are you actually done, or just avoiding it?', [
+      { text: 'Keep watching', style: 'cancel' },
+      { text: 'Stop', onPress: stopLecture, style: 'destructive' },
+    ]);
   }
 
   function stopLecture() {
@@ -322,13 +409,13 @@ export default function LectureModeScreen() {
     if (resumeCountdown >= 0) {
       return (
         <SafeAreaView style={styles.safe}>
-          <View style={styles.resumeContainer}>
+          <ResponsiveContainer style={styles.resumeContainer}>
             <Text style={styles.resumeTitle}>Ready to resume?</Text>
             <Text style={styles.resumeTimer}>{resumeCountdown}</Text>
             <TouchableOpacity style={styles.resumeBtn} onPress={() => setResumeCountdown(0)}>
               <Text style={styles.resumeBtnText}>Resume Now</Text>
             </TouchableOpacity>
-          </View>
+          </ResponsiveContainer>
         </SafeAreaView>
       );
     }
@@ -338,16 +425,14 @@ export default function LectureModeScreen() {
         countdown={breakCountdown}
         totalSeconds={(profile?.breakDurationMinutes ?? 5) * 60}
         topicId={randomTopicId}
-        apiKey={profile?.openrouterApiKey}
-        orKey={profile?.openrouterKey}
         onDone={handleBreakDone}
       />
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safe, proofOfLifeActive && styles.safeWarn]}>
-      
+    <SafeAreaView style={[styles.safe, proofOfLifeActive && styles.safeWarn]} testID="lecture-mode-screen">
+
       {partnerDoomscrolling && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,0,0,0.9)', zIndex: 999, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
           <Text style={{ fontSize: 80, marginBottom: 20 }}>📱❌</Text>
@@ -356,121 +441,144 @@ export default function LectureModeScreen() {
         </View>
       )}
 <StatusBar barStyle="light-content" backgroundColor={proofOfLifeActive ? "#2A0A0A" : "#0A0A14"} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={stopLecture} style={styles.backBtn}>
-          <Text style={styles.backText}>← End</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>📺 Hostage Mode</Text>
-        <View style={styles.placeholder} />
-      </View>
-
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        
-        {/* Hostage Instructions */}
-        {!proofOfLifeActive && elapsed < 60 && (
-          <View style={styles.hostageInfo}>
-            <Text style={styles.hostageEmoji}>📱❌</Text>
-            <Text style={styles.hostageText}>
-              Put this phone face up on your desk. Watch the lecture on your tablet. If you close this app to doomscroll, your phone will scream at you.
-            </Text>
-          </View>
-        )}
-
-        {/* Timer */}
-        <View style={[styles.timerBox, proofOfLifeActive && styles.timerBoxWarn]}>
-          <Text style={styles.timerLabel}>Lecture Time</Text>
-          <Text style={[styles.timer, proofOfLifeActive && styles.timerWarn]}>
-            {mins}:{secs.toString().padStart(2, '0')}
-          </Text>
+      <ResponsiveContainer>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={confirmStopLecture} style={styles.backBtn} testID="lecture-end-btn">
+            <Text style={styles.backText}>← End</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>📺 Hostage Mode</Text>
+          <FocusAudioPlayer />
         </View>
 
-        {/* Proof of Life Challenge */}
-        {proofOfLifeActive && (
-          <View style={styles.proofOfLifeBox}>
-            <Text style={styles.proofEmoji}>🚨</Text>
-            <Text style={styles.proofTitle}>ACTIVE LISTENING CHECK</Text>
-            <Text style={styles.proofSub}>
-              You have {proofOfLifeCountdown}s to type one thing the professor just said. Are you zoning out?
-            </Text>
-          </View>
-        )}
-
-        {/* Subject selector */}
-        {!selectedSubjectId ? (
-          <View style={styles.subjectSection}>
-            <Text style={styles.sectionLabel}>What subject are you watching?</Text>
-            <View style={styles.subjectGrid}>
-              {subjects.map(s => (
-                <TouchableOpacity
-                  key={s.id}
-                  style={[styles.subjectChip, { borderColor: s.colorHex }]}
-                  onPress={() => setSelectedSubjectId(s.id)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.subjectChipText, { color: s.colorHex }]}>{s.shortCode}</Text>
-                </TouchableOpacity>
-              ))}
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+          
+          {focusState !== 'focused' && !onBreak && (
+            <View style={[styles.hostageInfo, { borderColor: '#F44336' }]}>
+              <Text style={styles.hostageEmoji}>👀</Text>
+              <Text style={[styles.hostageText, { color: '#F44336' }]}>
+                Face not detected or distracted! Look at your study materials!
+              </Text>
             </View>
-          </View>
-        ) : (
-          <View style={styles.selectedSubject}>
-            <Text style={styles.selectedSubjectText}>
-              {subjects.find(s => s.id === selectedSubjectId)?.name}
+          )}
+          
+          {/* Hostage Instructions */}
+          {!proofOfLifeActive && elapsed < 60 && (
+            <View style={styles.hostageInfo}>
+              <Text style={styles.hostageEmoji}>📱❌</Text>
+              <Text style={styles.hostageText}>
+                Put this phone face up on your desk. Watch the lecture on your tablet. If you close this app to doomscroll, your phone will scream at you.
+              </Text>
+            </View>
+          )}
+
+          {/* Timer */}
+          <View style={[styles.timerBox, proofOfLifeActive && styles.timerBoxWarn]} testID="lecture-timer">
+            <Text style={styles.timerLabel}>Lecture Time</Text>
+            <Text style={[styles.timer, proofOfLifeActive && styles.timerWarn]}>
+              {mins}:{secs.toString().padStart(2, '0')}
             </Text>
-            <TouchableOpacity onPress={() => setSelectedSubjectId(null)}>
-              <Text style={styles.changeBtn}>Change</Text>
+          </View>
+
+          {/* Proof of Life Challenge */}
+          {proofOfLifeActive && (
+            <View style={styles.proofOfLifeBox}>
+              <Text style={styles.proofEmoji}>🚨</Text>
+              <Text style={styles.proofTitle}>ACTIVE LISTENING CHECK</Text>
+              <Text style={styles.proofSub}>
+                You have {proofOfLifeCountdown}s to type one thing the professor just said. Are you zoning out?
+              </Text>
+            </View>
+          )}
+
+          {/* Subject selector */}
+          {!selectedSubjectId ? (
+            <View style={styles.subjectSection}>
+              <Text style={styles.sectionLabel}>What subject are you watching?</Text>
+              <View style={styles.subjectGrid}>
+                {subjects.map(s => (
+                  <TouchableOpacity
+                    key={s.id}
+                    style={[styles.subjectChip, { borderColor: s.colorHex }]}
+                    onPress={() => setSelectedSubjectId(s.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.subjectChipText, { color: s.colorHex }]}>{s.shortCode}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.selectedSubject}>
+              <Text style={styles.selectedSubjectText}>
+                {subjects.find(s => s.id === selectedSubjectId)?.name}
+              </Text>
+              <TouchableOpacity onPress={() => setSelectedSubjectId(null)}>
+                <Text style={styles.changeBtn}>Change</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Note input */}
+
+          <TouchableOpacity
+            style={[styles.transcribeBtn, isRecordingEnabled && styles.transcribeBtnActive]}
+            onPress={toggleAutoScribe}
+            activeOpacity={0.8}
+            testID="auto-scribe-btn"
+          >
+            <Text style={styles.transcribeBtnText}>
+              {isRecordingEnabled ? '🎙️ AUTO-SCRIBE ACTIVE (Listening...)' : '🎙️ Enable Auto-Scribe'}
+            </Text>
+            {isTranscribing && <Text style={{color:'#fff', fontSize: 10}}>Processing...</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.transcribeBtn, styles.importTranscribeBtn]}
+            onPress={importAndTranscribeAudio}
+            activeOpacity={0.8}
+            testID="import-transcribe-btn"
+          >
+            <Text style={styles.transcribeBtnText}>📁 Import Audio & Transcribe</Text>
+          </TouchableOpacity>
+
+          <View style={styles.noteSection}>
+            <TextInput
+              style={[styles.noteInput, proofOfLifeActive && styles.noteInputWarn]}
+              placeholder={proofOfLifeActive ? "Type here immediately to dismiss alarm..." : "Type a key concept to prove you're listening..."}
+              placeholderTextColor={proofOfLifeActive ? "#FF980088" : "#444"}
+              multiline
+              value={currentNote}
+              onChangeText={setCurrentNote}
+              testID="lecture-note-input"
+            />
+            <TouchableOpacity
+              style={[styles.saveBtn, !currentNote.trim() && styles.saveBtnDisabled, proofOfLifeActive && styles.saveBtnWarn]}
+              onPress={saveNote}
+              activeOpacity={0.8}
+              testID="save-note-btn"
+            >
+              <Text style={styles.saveBtnText}>{proofOfLifeActive ? 'CONFIRM LISTENING' : 'Save Note'}</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.breakTriggerBtn} onPress={startBreak}>
+              <Text style={styles.breakTriggerText}>☕ Take 5m Break</Text>
             </TouchableOpacity>
           </View>
-        )}
 
-        {/* Note input */}
-
-        <TouchableOpacity 
-          style={[styles.transcribeBtn, isRecordingEnabled && styles.transcribeBtnActive]}
-          onPress={toggleAutoScribe}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.transcribeBtnText}>
-            {isRecordingEnabled ? '🎙️ AUTO-SCRIBE ACTIVE (Listening...)' : '🎙️ Enable Auto-Scribe'}
-          </Text>
-          {isTranscribing && <Text style={{color:'#fff', fontSize: 10}}>Processing...</Text>}
-        </TouchableOpacity>
-
-        <View style={styles.noteSection}>
-          <TextInput
-            style={[styles.noteInput, proofOfLifeActive && styles.noteInputWarn]}
-            placeholder={proofOfLifeActive ? "Type here immediately to dismiss alarm..." : "Type a key concept to prove you're listening..."}
-            placeholderTextColor={proofOfLifeActive ? "#FF980088" : "#444"}
-            multiline
-            value={currentNote}
-            onChangeText={setCurrentNote}
-          />
-          <TouchableOpacity
-            style={[styles.saveBtn, !currentNote.trim() && styles.saveBtnDisabled, proofOfLifeActive && styles.saveBtnWarn]}
-            onPress={saveNote}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.saveBtnText}>{proofOfLifeActive ? 'CONFIRM LISTENING' : 'Save Note'}</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.breakTriggerBtn} onPress={startBreak}>
-            <Text style={styles.breakTriggerText}>☕ Take 5m Break</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Saved notes */}
-        {notes.length > 0 && (
-          <View style={styles.savedNotes}>
-            <Text style={styles.sectionLabel}>Proof of Focus ({notes.length})</Text>
-            {notes.map((n, i) => (
-              <View key={i} style={styles.noteRow}>
-                <Text style={styles.noteDot}>·</Text>
-                <Text style={styles.noteText}>{n}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+          {/* Saved notes */}
+          {notes.length > 0 && (
+            <View style={styles.savedNotes}>
+              <Text style={styles.sectionLabel}>Proof of Focus ({notes.length})</Text>
+              {notes.map((n, i) => (
+                <View key={i} style={styles.noteRow}>
+                  <Text style={styles.noteDot}>·</Text>
+                  <Text style={styles.noteText}>{n}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
@@ -514,6 +622,7 @@ const styles = StyleSheet.create({
   transcribeBtn: { backgroundColor: '#1A1A24', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#6C63FF', marginBottom: 12, alignItems: 'center' },
   transcribeBtnActive: { backgroundColor: '#2A1A1A', borderColor: '#F44336' },
   transcribeBtnText: { color: '#6C63FF', fontWeight: '800', fontSize: 14 },
+  importTranscribeBtn: { marginTop: -4 },
 
   noteSection: { marginBottom: 20 },
   noteInput: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 16, color: '#fff', fontSize: 16, minHeight: 100, textAlignVertical: 'top', borderWidth: 1, borderColor: '#2A2A38', marginBottom: 12 },

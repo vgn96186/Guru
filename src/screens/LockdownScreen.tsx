@@ -5,6 +5,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 export default function LockdownScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -41,19 +42,19 @@ export default function LockdownScreen() {
   const secs = timeLeft % 60;
   
   const messages = [
-    "No escape.",
-    "Nice try. Get back to work.",
-    "Did you really just try to leave?",
-    "Your brain is looking for cheap dopamine. Denied.",
-    "This is literally just 5 minutes of your life."
+    "Stay with it. You're almost there.",
+    "Your future self thanks you for this discipline.",
+    "The timer's ticking. Make it count.",
+    "Focus builds momentum. Keep going.",
+    "You chose this. Honor that choice."
   ];
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>🔒</Text>
-        <Text style={styles.title}>LOCKDOWN MODE</Text>
-        <Text style={styles.sub}>You committed to this block. You cannot leave.</Text>
+        <Text style={styles.title}>FOCUS TIMER</Text>
+        <Text style={styles.sub}>Stay focused for this block. You've got this.</Text>
         
         <Text style={styles.timer}>
           {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
@@ -71,7 +72,7 @@ export default function LockdownScreen() {
         >
           <Text style={styles.studyBtnText}>Open Flashcards</Text>
         </TouchableOpacity>
-      </View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A0A' },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 64, marginBottom: 24 },
-  title: { color: '#F44336', fontSize: 32, fontWeight: '900', letterSpacing: 2, marginBottom: 12, textAlign: 'center' },
+  title: { color: '#FF9800', fontSize: 32, fontWeight: '900', letterSpacing: 2, marginBottom: 12, textAlign: 'center' },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48, lineHeight: 24 },
   timer: { color: '#fff', fontSize: 72, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 48 },
   shameText: { color: '#FF9800', fontSize: 16, fontWeight: '700', textAlign: 'center', marginBottom: 32, fontStyle: 'italic' },

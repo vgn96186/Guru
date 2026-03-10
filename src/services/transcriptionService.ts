@@ -1,18 +1,43 @@
 /**
  * transcriptionService.ts
  *
- * Two engines:
- *  1. Gemini Audio (default, free) — sends raw .m4a directly to Gemini 1.5 Flash
- *     which transcribes + parses topics in one shot. Uses existing Gemini key.
- *  2. OpenAI Whisper (paid, $0.006/min) — sends audio to Whisper for transcript,
- *     then Gemini for medical topic extraction.
+ * Engines:
+ *  1. Local Whisper (on-device) for offline transcription
+ *  2. Groq Whisper (cloud) for transcription when local model is unavailable
  *
- * Note on on-device: Galaxy S10+ (Exynos 9820) can run whisper-tiny.en but
- * integration requires NDK + JNI + CMakeLists.txt setup. Gemini free tier is
- * strictly better for quality. On-device can be added as v3 when needed.
+ * Transcript analysis/extraction is always routed through aiService
+ * (local model first, then Groq/OpenRouter cloud fallback).
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
+import { z } from 'zod';
+import { generateJSONWithRouting, generateTextWithRouting } from './aiService';
+import { initWhisper } from 'whisper.rn';
+import { convertToWav } from '../../modules/app-launcher';
+
+const LOG_TAG = '[Transcription]';
+
+/** Slice text at a word boundary to avoid cutting mid-word. */
+function sliceAtWordBoundary(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const sliced = text.slice(0, maxLen);
+  const lastSpace = sliced.lastIndexOf(' ');
+  return lastSpace > maxLen * 0.8 ? sliced.slice(0, lastSpace) : sliced;
+}
+
+/**
+ * Medical vocabulary hint for Whisper's `prompt` parameter.
+ * This biases the model toward correct medical term spellings
+ * and handles Hindi-English (Hinglish) code-switching common in
+ * Indian medical lectures.
+ */
+const WHISPER_MEDICAL_PROMPT =
+  'Medical lecture: NEET-PG, INICET preparation. ' +
+  'Common terms: hemostasis, renin-angiotensin system, glomerular filtration rate, ' +
+  'brachial plexus, pneumonia, cirrhosis, pharmacokinetics, pharmacodynamics, ' +
+  'myocardial infarction, atherosclerosis, nephrotic syndrome, ' +
+  'ECG, ABG, CSF, MRI, CT scan, CBC, LFT, RFT, ABG. ' +
+  'Hindi-English mix (Hinglish). Toh, matlab, yahan pe, dekhiye, samajh lo.';
 
 export interface LectureAnalysis {
   subject: string;
@@ -20,7 +45,7 @@ export interface LectureAnalysis {
   keyConcepts: string[];
   lectureSummary: string;
   estimatedConfidence: 1 | 2 | 3;
-  transcript?: string; // Only populated with OpenAI engine
+  transcript?: string; // Raw/cleaned transcript text, when available
 }
 
 const MEDICAL_EXTRACT_PROMPT = `You are a NEET-PG/INICET medical education assistant analyzing audio from a lecture recording.
@@ -59,86 +84,80 @@ estimated_confidence: 1=introduced/hard to follow, 2=understood, 3=can explain c
 If no clear medical content detected (silence, music, ambient noise only), return:
 {"subject":"Unknown","topics":[],"key_concepts":[],"lecture_summary":"No medical content detected","estimated_confidence":1}`;
 
-/** Engine 1: Gemini Audio — sends base64 audio directly, handles transcription + extraction */
-export async function transcribeWithGemini(
-  audioFilePath: string,
-  geminiKey: string,
-): Promise<LectureAnalysis> {
-  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
-  
-  // 1. Upload to Gemini Files API
-  const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiKey}`;
-  const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  
-  if (!fileInfo.exists) {
-    throw new Error('Audio file does not exist');
-  }
+const LectureAnalysisSchema = z.object({
+  subject: z.string(),
+  topics: z.array(z.string()),
+  key_concepts: z.array(z.string()),
+  lecture_summary: z.string(),
+  estimated_confidence: z.number().int().min(1).max(3),
+});
 
-  const uploadRes = await FileSystem.uploadAsync(uploadUrl, fileUri, {
-    httpMethod: 'POST',
-    uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
-    headers: {
-      'X-Goog-Upload-Protocol': 'raw',
-      'X-Goog-Upload-Command': 'start, upload, finalize',
-      'X-Goog-Upload-Header-Content-Length': fileInfo.size.toString(),
-      'X-Goog-Upload-Header-Content-Type': 'audio/mp4',
-      'Content-Type': 'audio/mp4',
-    },
-  });
-
-  if (uploadRes.status !== 200) {
-     throw new Error(`Gemini upload error ${uploadRes.status}: ${uploadRes.body}`);
-  }
-
-  const uploadData = JSON.parse(uploadRes.body);
-  const fileUriGemini = uploadData.file.uri;
-
-  // 2. Wait for processing if needed (audio usually fast, but good practice)
-  // For audio, it's generally immediate enough for a simple generateContent call.
-
-  // 3. Generate Content using the File URI
-  const generateUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-
-  const body = {
-    contents: [{
-      parts: [
-        { file_data: { mime_type: 'audio/mp4', file_uri: fileUriGemini } },
-        { text: MEDICAL_EXTRACT_PROMPT },
-      ],
-    }],
-    generationConfig: {
-      temperature: 0.1,
-      maxOutputTokens: 1000,
-      responseMimeType: 'application/json',
-    },
+function createEmptyAnalysis(lectureSummary: string, transcript = ''): LectureAnalysis {
+  return {
+    subject: 'Unknown',
+    topics: [],
+    keyConcepts: [],
+    lectureSummary,
+    estimatedConfidence: 1,
+    transcript,
   };
+}
 
-  const res = await fetch(generateUrl, {
+/** Cloud fallback: Groq Whisper transcription */
+export async function transcribeRawWithGroq(
+  audioFilePath: string,
+  groqKey: string,
+): Promise<string> {
+  if (!groqKey?.trim()) {
+    throw new Error('Groq API key missing. Add one in Settings or enable Local Whisper.');
+  }
+  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+
+  const formData = new FormData();
+  formData.append('file', {
+    uri: fileUri,
+    name: 'lecture.m4a',
+    type: 'audio/mp4',
+  } as any);
+  formData.append('model', 'whisper-large-v3-turbo');
+  // Don't hardcode language — let Whisper auto-detect for Hinglish lectures
+  formData.append('temperature', '0');
+  formData.append('prompt', WHISPER_MEDICAL_PROMPT);
+
+  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    headers: { Authorization: `Bearer ${groqKey}` },
+    body: formData,
   });
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Gemini generate error ${res.status}: ${err}`);
+    throw new Error(`Groq transcription error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Empty response from Gemini audio');
-
-  const parsed = JSON.parse(text);
-  return normalizeParsed(parsed);
+  const rawTranscript = String(data?.text ?? '').trim();
+  return sanitizeTranscript(rawTranscript);
 }
 
-/** Engine 2: OpenAI Whisper → Gemini topic extraction */
-export async function transcribeWithOpenAI(
+export async function transcribeWithGroq(
+  audioFilePath: string,
+  groqKey: string,
+): Promise<LectureAnalysis> {
+  const transcript = await transcribeRawWithGroq(audioFilePath, groqKey);
+  if (!transcript) {
+    return createEmptyAnalysis('No speech detected');
+  }
+
+  const analysis = await analyzeTranscript(transcript);
+  return { ...analysis, transcript };
+}
+
+/** Engine 2: OpenAI Whisper → local/Groq extraction */
+export async function transcribeRawWithOpenAI(
   audioFilePath: string,
   openaiKey: string,
-  geminiKey: string,
-): Promise<LectureAnalysis> {
-  // Step 1: Whisper transcription
+): Promise<string> {
   const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
   const formData = new FormData();
   formData.append('file', {
@@ -147,7 +166,8 @@ export async function transcribeWithOpenAI(
     type: 'audio/mp4',
   } as any);
   formData.append('model', 'whisper-1');
-  formData.append('language', 'hi'); // Hindi-English mix; Whisper handles Hinglish well
+  // Don't hardcode language — let Whisper auto-detect for Hinglish lectures
+  formData.append('prompt', WHISPER_MEDICAL_PROMPT);
 
   const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
     method: 'POST',
@@ -161,33 +181,124 @@ export async function transcribeWithOpenAI(
   }
 
   const whisperData = await whisperRes.json();
-  const transcript: string = whisperData.text ?? '';
+  const rawTranscript = String(whisperData?.text ?? '').trim();
+  return sanitizeTranscript(rawTranscript);
+}
 
-  if (!transcript.trim()) {
-    return { subject: 'Unknown', topics: [], keyConcepts: [], lectureSummary: 'No speech detected', estimatedConfidence: 1, transcript: '' };
+export async function transcribeWithOpenAI(
+  audioFilePath: string,
+  openaiKey: string,
+): Promise<LectureAnalysis> {
+  const transcript = await transcribeRawWithOpenAI(audioFilePath, openaiKey);
+  if (!transcript) {
+    return createEmptyAnalysis('No speech detected');
   }
 
-  // Step 2: Gemini topic extraction from text transcript
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
-  const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the lecture transcript:\n"""\n${transcript.slice(0, 8000)}\n"""`;
+  const analysis = await analyzeTranscript(transcript);
+  return { ...analysis, transcript };
+}
 
-  const geminiRes = await fetch(geminiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: extractPrompt }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 800, responseMimeType: 'application/json' },
-    }),
-  });
+/** Engine 3: Local Whisper.rn → Local Llama (via aiService routing) */
+export async function transcribeRawWithLocalWhisper(
+  audioFilePath: string,
+  localWhisperPath: string,
+): Promise<string> {
+  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
 
-  if (!geminiRes.ok) throw new Error(`Gemini extract error ${geminiRes.status}`);
+  // Check file exists and log size
+  const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  console.log(`${LOG_TAG} Audio file: ${audioFilePath}, exists: ${fileInfo.exists}, size: ${fileInfo.exists ? fileInfo.size : 0} bytes`);
+  if (!fileInfo.exists || fileInfo.size === 0) {
+    return '';
+  }
 
-  const geminiData = await geminiRes.json();
-  const text = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Empty response from Gemini extraction');
+  // 1. Convert M4A → WAV (whisper.rn only accepts WAV/PCM input)
+  let whisperInputUri = fileUri;
+  if (audioFilePath.endsWith('.m4a') || audioFilePath.endsWith('.mp4')) {
+    console.log(`${LOG_TAG} Converting M4A to WAV for Whisper...`);
+    const wavPath = await convertToWav(audioFilePath);
+    if (wavPath) {
+      whisperInputUri = wavPath.startsWith('file://') ? wavPath : `file://${wavPath}`;
+      console.log(`${LOG_TAG} WAV conversion done: ${wavPath}`);
+    } else {
+      console.warn(`${LOG_TAG} WAV conversion failed, trying original file`);
+    }
+  }
 
-  const parsed = JSON.parse(text);
-  return { ...normalizeParsed(parsed), transcript };
+  // 2. Initialize Whisper
+  const whisperContext = await initWhisper({ filePath: localWhisperPath });
+
+  // 3. Transcribe — prefer fast greedy decoding so the return flow is responsive.
+  try {
+    const { promise } = whisperContext.transcribe(whisperInputUri, {
+      language: 'en',
+      maxThreads: 4,
+      maxContext: 0,
+      maxLen: 64,
+      tokenTimestamps: false,
+      beamSize: 1,
+      bestOf: 1,
+      temperature: 0,
+      prompt: WHISPER_MEDICAL_PROMPT,
+    });
+
+    const { result } = await promise;
+    console.log(`${LOG_TAG} Raw Whisper result: "${result}"`);
+
+    // Filter out Whisper noise/non-speech tokens before checking for content
+    const rawTranscript: string = result?.trim() ?? '';
+    return sanitizeTranscript(rawTranscript);
+  } finally {
+    await whisperContext.release();
+    // Clean up the converted WAV file if we created one
+    if (whisperInputUri !== fileUri) {
+      try {
+        await FileSystem.deleteAsync(whisperInputUri, { idempotent: true });
+        console.log(`${LOG_TAG} Cleaned up temp WAV file`);
+      } catch { /* best effort */ }
+    }
+  }
+}
+
+export async function transcribeWithLocalWhisper(
+  audioFilePath: string,
+  localWhisperPath: string,
+): Promise<LectureAnalysis> {
+  const transcript = await transcribeRawWithLocalWhisper(audioFilePath, localWhisperPath);
+  if (!transcript) {
+    return createEmptyAnalysis('No speech detected locally');
+  }
+
+  const analysis = await analyzeTranscript(transcript);
+  return { ...analysis, transcript };
+}
+
+function sanitizeTranscript(rawTranscript: string): string {
+  const NOISE_PATTERNS = /^\s*(\(.*?\)|\[.*?\]|\*.*?\*)\s*$/i;
+  return rawTranscript
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l && !NOISE_PATTERNS.test(l))
+    .join('\n')
+    .trim();
+}
+
+export async function analyzeTranscript(
+  transcript: string,
+): Promise<LectureAnalysis> {
+  const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the lecture transcript:\n"""\n${sliceAtWordBoundary(transcript, 12000)}\n"""`;
+
+  try {
+    const { parsed } = await generateJSONWithRouting(
+      [{ role: 'user', content: extractPrompt }],
+      LectureAnalysisSchema,
+      'high',
+    );
+    return normalizeParsed(parsed);
+  } catch (err) {
+    console.warn(`${LOG_TAG} LLM topic extraction failed, using basic fallback:`, (err as Error).message);
+    return buildFallbackAnalysis(transcript);
+  }
 }
 
 function normalizeParsed(raw: any): LectureAnalysis {
@@ -198,6 +309,141 @@ function normalizeParsed(raw: any): LectureAnalysis {
     lectureSummary: raw.lecture_summary ?? '',
     estimatedConfidence: ([1, 2, 3].includes(raw.estimated_confidence) ? raw.estimated_confidence : 2) as 1 | 2 | 3,
   };
+}
+
+/** Keyword-based subject detection when LLM is unavailable */
+const SUBJECT_KEYWORDS: Record<string, string[]> = {
+  'Biochemistry': ['glucose', 'glycogen', 'enzyme', 'amino acid', 'protein', 'lipid', 'carbohydrate', 'ATP', 'krebs', 'glycolysis', 'metabolism', 'DNA', 'RNA', 'nucleotide', 'coenzyme', 'vitamin', 'oxidation', 'reduction', 'fatty acid', 'cholesterol', 'urea cycle', 'dehydration', 'polysaccharide', 'disaccharide', 'monosaccharide', 'fructose', 'galactose', 'sucrose', 'lactose', 'maltose'],
+  'Physiology': ['cardiac output', 'blood pressure', 'heart rate', 'GFR', 'renal', 'nerve', 'action potential', 'synapse', 'reflex', 'ventilation', 'respiration', 'hemoglobin', 'oxygen', 'baroreceptor', 'hormone', 'endocrine', 'renin', 'angiotensin', 'aldosterone'],
+  'Anatomy': ['muscle', 'nerve', 'artery', 'vein', 'bone', 'ligament', 'tendon', 'fascia', 'plexus', 'foramen', 'fossa', 'triangle', 'vertebra', 'thorax', 'abdomen', 'pelvis', 'limb'],
+  'Pathology': ['neoplasm', 'tumor', 'cancer', 'inflammation', 'necrosis', 'apoptosis', 'edema', 'thrombus', 'embolism', 'infarction', 'granuloma', 'abscess', 'metaplasia', 'dysplasia', 'hyperplasia', 'atrophy', 'hypertrophy'],
+  'Pharmacology': ['drug', 'receptor', 'agonist', 'antagonist', 'dose', 'bioavailability', 'half-life', 'clearance', 'side effect', 'contraindication', 'mechanism of action', 'pharmacokinetics', 'pharmacodynamics'],
+  'Microbiology': ['bacteria', 'virus', 'fungus', 'parasite', 'gram positive', 'gram negative', 'culture', 'antibiotic', 'infection', 'immunity', 'vaccine', 'antigen', 'antibody', 'PCR', 'staining'],
+  'Medicine': ['diabetes', 'hypertension', 'fever', 'anemia', 'jaundice', 'cirrhosis', 'COPD', 'asthma', 'pneumonia', 'tuberculosis', 'heart failure', 'thyroid', 'liver', 'kidney disease'],
+  'Surgery': ['incision', 'suture', 'wound', 'fracture', 'hernia', 'appendicitis', 'cholecystectomy', 'laparoscopy', 'abscess', 'drainage', 'debridement'],
+};
+
+/**
+ * Builds a basic LectureAnalysis from transcript text when LLM is unavailable.
+ * Uses keyword matching to detect subject and extracts key sentences.
+ */
+function buildFallbackAnalysis(transcript: string): LectureAnalysis {
+  const lower = transcript.toLowerCase();
+
+  // Detect subject by keyword frequency
+  let bestSubject = 'Unknown';
+  let bestScore = 0;
+  for (const [subject, keywords] of Object.entries(SUBJECT_KEYWORDS)) {
+    const score = keywords.filter(kw => lower.includes(kw)).length;
+    if (score > bestScore) {
+      bestScore = score;
+      bestSubject = subject;
+    }
+  }
+
+  // Extract key concepts: pick sentences with medical-sounding words, limit to 5
+  const sentences = transcript
+    .replace(/\s+/g, ' ')
+    .split(/[.!?]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 20 && s.length < 200);
+  const keyConcepts = sentences.slice(0, 5);
+
+  // Summary: first substantial sentence
+  const summary = sentences[0]
+    ? sentences[0].slice(0, 120) + (sentences[0].length > 120 ? '...' : '')
+    : 'Lecture content recorded';
+
+  return {
+    subject: bestSubject,
+    topics: [], // Can't reliably extract topic names without LLM
+    keyConcepts,
+    lectureSummary: summary,
+    estimatedConfidence: 2,
+  };
+}
+
+// ──────────────────────────────────────────────────
+// ADHD-Friendly Note Generation
+// ──────────────────────────────────────────────────
+
+const ADHD_NOTE_SYSTEM_PROMPT = `You create study notes for a medical student with ADHD.
+Rules:
+- SCANNABLE: Short chunks, never walls of text. Max 250 words total.
+- VISUAL: Use emoji anchors so the eye has landmarks.
+- MEMORABLE: Include one weird/funny mnemonic or analogy for the hardest concept.
+- ACTIONABLE: End with 2 quick self-test questions.
+
+Format EXACTLY like this (markdown):
+
+# [EMOJI] [Topic] — [One-line hook that sparks curiosity]
+
+## TL;DR
+[2-3 sentences MAX. The "if you remember nothing else" version.]
+
+## Key Points
+1. **[Trigger word]** — one-line explanation
+2. **[Trigger word]** — one-line explanation
+(max 6 points, each ONE line)
+
+## Memory Hook
+[A weird analogy, mnemonic, or mental image. Make it STICK.]
+
+## Quick Self-Test
+- Q: [question]?
+- Q: [question]?
+
+Return ONLY the formatted note. No preamble, no sign-off.`;
+
+/**
+ * Generate an ADHD-friendly formatted note from a lecture analysis.
+ * Uses the LLM routing chain (local → Groq → OpenRouter).
+ * Falls back to a basic formatted version if LLM fails.
+ */
+export async function generateADHDNote(analysis: LectureAnalysis): Promise<string> {
+  const input = `Subject: ${analysis.subject}
+Topics: ${analysis.topics.join(', ')}
+Key concepts:
+${analysis.keyConcepts.map(c => `- ${c}`).join('\n')}
+Summary: ${analysis.lectureSummary}
+Confidence level: ${analysis.estimatedConfidence} (1=introduced, 2=understood, 3=can explain)`;
+
+  try {
+    const { text } = await generateTextWithRouting(
+      [
+        { role: 'system', content: ADHD_NOTE_SYSTEM_PROMPT },
+        { role: 'user', content: input },
+      ],
+    );
+    const trimmed = text.trim();
+    if (trimmed.length > 50) return trimmed; // Valid note
+    throw new Error('Generated note too short');
+  } catch (e) {
+    console.warn(`${LOG_TAG} ADHD note generation failed, using fallback:`, (e as Error).message);
+    return buildQuickLectureNote(analysis);
+  }
+}
+
+/** Simple fallback when LLM is unavailable */
+export function buildQuickLectureNote(analysis: LectureAnalysis): string {
+  const emoji = analysis.estimatedConfidence === 3 ? '🌳' : analysis.estimatedConfidence === 2 ? '🌿' : '🌱';
+  const topicStr = analysis.topics.length > 0 ? analysis.topics[0] : analysis.subject;
+  const points = analysis.keyConcepts
+    .slice(0, 6)
+    .map((c, i) => `${i + 1}. ${c}`)
+    .join('\n');
+
+  return `# ${emoji} ${topicStr} — ${analysis.lectureSummary}
+
+## TL;DR
+${analysis.lectureSummary}. Topics covered: ${analysis.topics.join(', ') || 'General overview'}.
+
+## Key Points
+${points || '(No key concepts extracted from this lecture)'}
+
+## Quick Self-Test
+- Q: What are the main concepts from this ${analysis.subject} lecture?
+- Q: Can you explain ${analysis.topics[0] ?? analysis.subject} in your own words?`;
 }
 
 /** Mark analysed topics as 'seen' in the topic_progress DB.

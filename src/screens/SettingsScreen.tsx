@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, FlatList, Modal, Platform, Linking
+  StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, Platform, Linking, AppState
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -14,10 +14,16 @@ import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
 import { useAppStore } from '../store/useAppStore';
-import { updateUserProfile, getUserProfile, resetStudyProgress, clearAiCache } from '../db/queries/progress';
+import { updateUserProfile, resetStudyProgress, clearAiCache } from '../db/queries/progress';
+import { getCacheStats } from '../db/queries/aiCache';
 import { getAllSubjects } from '../db/queries/topics';
+import { exportDatabase, importDatabase } from '../services/backupService';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
+import { isSyncAvailable } from '../services/deviceSyncService';
+import { getExamDateSyncMeta, syncExamDatesFromInternet, type ExamDateSyncMeta } from '../services/examDateSyncService';
 import { getDb } from '../db/database';
+import { getDefaultSubjectLoadMultiplier } from '../services/studyPlanner';
 import type { ContentType, Subject } from '../types';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
@@ -30,50 +36,41 @@ const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'detective', label: 'Detective' },
 ];
 
-const BACKUP_VERSION = 1;
+const BACKUP_VERSION = 2;
+const PLACEHOLDER_COLOR = '#7B8193';
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const JSON_BACKUP_TABLES = [
+  'user_profile',
+  'topic_progress',
+  'daily_log',
+  'lecture_notes',
+  'ai_cache',
+  'sessions',
+  'external_app_logs',
+  'brain_dumps',
+] as const;
 
-// List of known Gemini models to check against
-const KNOWN_MODELS = [
-  'gemini-3.0-flash-preview',
-  'gemini-3.0-flash',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-exp',
-  'gemini-1.5-flash',
-];
+type BackupTableName = typeof JSON_BACKUP_TABLES[number];
+type BackupRow = Record<string, unknown>;
+type BackupTableData = Record<BackupTableName, BackupRow[]>;
 
-async function listGeminiModels(key: string): Promise<{ ok: boolean; models: string[]; error?: string }> {
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { ok: false, models: [], error: data?.error?.message || `HTTP ${res.status}` };
-    }
-    const data = await res.json();
-    const models = (data.models || [])
-      .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-      .map((m: any) => m.name.replace('models/', ''));
-    return { ok: true, models };
-  } catch (e: any) {
-    return { ok: false, models: [], error: e?.message || 'Network error' };
-  }
-}
+type ValidationErrors = Partial<Record<'inicetDate' | 'neetDate' | 'sessionLength' | 'dailyGoal' | 'notifHour', string>>;
 
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
-  const profile = db.getFirstSync<Record<string, unknown>>('SELECT * FROM user_profile WHERE id = 1');
-  const topicProgress = db.getAllSync<Record<string, unknown>>('SELECT * FROM topic_progress');
-  const dailyLog = db.getAllSync<Record<string, unknown>>('SELECT * FROM daily_log ORDER BY date DESC LIMIT 90');
-  const lectureNotes = db.getAllSync<Record<string, unknown>>('SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500');
+  const tables = {} as BackupTableData;
+  for (const table of JSON_BACKUP_TABLES) {
+    tables[table] = db.getAllSync<BackupRow>(`SELECT * FROM ${table}`);
+  }
 
-  const backup = {
+  const backup: {
+    version: number;
+    exportedAt: string;
+    tables: BackupTableData;
+  } = {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    user_profile: profile,
-    topic_progress: topicProgress,
-    daily_log: dailyLog,
-    lecture_notes: lectureNotes,
+    tables,
   };
 
   const json = JSON.stringify(backup, null, 2);
@@ -107,89 +104,122 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
     return { ok: false, message: 'Invalid JSON file' };
   }
 
-  if (!backup.version || !backup.topic_progress || !backup.user_profile) {
-    return { ok: false, message: 'Invalid backup format — missing required fields' };
+  if (!backup.version) {
+    return { ok: false, message: 'Invalid backup format — missing version' };
   }
   if (backup.version > BACKUP_VERSION) {
     return { ok: false, message: 'Backup was made with a newer version of the app' };
   }
 
   const db = getDb();
-  let restoredTopics = 0;
-  let restoredLogs = 0;
-
-  // Restore topic_progress with validation
-  for (const row of backup.topic_progress as Record<string, any>[]) {
-    // Validate required fields exist
-    if (!row.topic_id || typeof row.status === 'undefined') {
-      if (__DEV__) console.warn('Skipping invalid topic_progress row:', row);
-      continue;
+  const tablesFromBackup: Partial<Record<BackupTableName, BackupRow[]>> = (() => {
+    if (backup.tables && typeof backup.tables === 'object') {
+      const out: Partial<Record<BackupTableName, BackupRow[]>> = {};
+      for (const table of JSON_BACKUP_TABLES) {
+        const rows = (backup.tables as Record<string, unknown>)[table];
+        if (Array.isArray(rows)) {
+          out[table] = rows as BackupRow[];
+        }
+      }
+      return out;
     }
-    // Validate status is valid
-    const validStatuses = ['unseen', 'seen', 'reviewed', 'mastered'];
-    const status = validStatuses.includes(row.status) ? row.status : 'unseen';
-    // Validate confidence is number 0-5
-    const confidence = typeof row.confidence === 'number' ? Math.min(5, Math.max(0, row.confidence)) : 0;
+    // Legacy v1 format compatibility
+    const legacy: Partial<Record<BackupTableName, BackupRow[]>> = {};
+    if (backup.user_profile) legacy.user_profile = [backup.user_profile as BackupRow];
+    if (Array.isArray(backup.topic_progress)) legacy.topic_progress = backup.topic_progress as BackupRow[];
+    if (Array.isArray(backup.daily_log)) legacy.daily_log = backup.daily_log as BackupRow[];
+    if (Array.isArray(backup.lecture_notes)) legacy.lecture_notes = backup.lecture_notes as BackupRow[];
+    return legacy;
+  })();
 
-    db.runSync(
-      `INSERT OR REPLACE INTO topic_progress
-       (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [row.topic_id, status, confidence, row.last_studied_at,
-       row.times_studied ?? 0, row.xp_earned ?? 0, row.next_review_date ?? null, row.user_notes ?? ''],
-    );
-    restoredTopics++;
+  if (Object.keys(tablesFromBackup).length === 0) {
+    return { ok: false, message: 'Invalid backup format — no restorable tables found' };
   }
-  
-  // Restore daily_log with validation
-  for (const row of (backup.daily_log ?? []) as Record<string, any>[]) {
-    if (!row.date) {
-      if (__DEV__) console.warn('Skipping invalid daily_log row:', row);
-      continue;
+
+  const restoredCounts: Record<string, number> = {};
+  const toBindValue = (value: unknown): string | number | null => {
+    if (value === null || typeof value === 'undefined') return null;
+    if (typeof value === 'string' || typeof value === 'number') return value;
+    if (typeof value === 'boolean') return value ? 1 : 0;
+    return JSON.stringify(value);
+  };
+  const runSql = (sql: string) => {
+    const maybeExecSync = (db as any).execSync;
+    if (typeof maybeExecSync === 'function') {
+      maybeExecSync.call(db, sql);
+    } else {
+      db.runSync(sql);
     }
-    db.runSync(
-      `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [row.date, row.checked_in ?? 0, row.mood ?? null, row.total_minutes ?? 0, row.xp_earned ?? 0, row.session_count ?? 0],
-    );
-    restoredLogs++;
-  }
-  // Restore key profile fields (keep api key from current settings)
-  const p = backup.user_profile as Record<string, any>;
-  if (p) {
-    db.runSync(
-      `UPDATE user_profile SET
-       display_name = ?, total_xp = ?, current_level = ?,
-       streak_current = ?, streak_best = ?,
-       daily_goal_minutes = ?, preferred_session_length = ?
-       WHERE id = 1`,
-      [p.display_name ?? 'Doctor', p.total_xp ?? 0, p.current_level ?? 1,
-       p.streak_current ?? 0, p.streak_best ?? 0,
-       p.daily_goal_minutes ?? 120, p.preferred_session_length ?? 45],
-    );
-  }
+  };
+  const getColumns = (table: string): string[] => {
+    try {
+      const cols = db.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`);
+      return cols.map(c => c.name);
+    } catch {
+      return [];
+    }
+  };
 
-  return { ok: true, message: `Restored ${restoredTopics} topics, ${restoredLogs} log entries` };
-}
-
-type ValidationState = 'idle' | 'testing' | 'success' | 'error';
-
-async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: string; error?: string }> {
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash-preview:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
-        generationConfig: { maxOutputTokens: 5 },
-      }),
-    });
-    if (res.ok) return { ok: true, model: 'Gemini 3.0 Flash Preview' };
-    const data = await res.json().catch(() => ({}));
-    return { ok: false, error: data?.error?.message || `HTTP ${res.status}` };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || 'Network error' };
+    runSql('BEGIN IMMEDIATE');
+
+    for (const table of JSON_BACKUP_TABLES) {
+      if (table === 'user_profile') continue;
+      if (!(table in tablesFromBackup)) continue;
+      const columns = getColumns(table);
+      if (columns.length === 0) continue; // table missing in current schema
+      db.runSync(`DELETE FROM ${table}`);
+      restoredCounts[table] = 0;
+    }
+
+    // Restore user_profile via UPDATE to avoid wiping newer columns not present in older backups
+    if (tablesFromBackup.user_profile?.[0]) {
+      const row = tablesFromBackup.user_profile[0];
+      const userCols = getColumns('user_profile');
+      const setCols = Object.keys(row).filter(c => c !== 'id' && userCols.includes(c));
+      if (setCols.length > 0) {
+        const setSql = setCols.map(c => `${c} = ?`).join(', ');
+        const values = setCols.map(c => toBindValue(row[c]));
+        db.runSync(`UPDATE user_profile SET ${setSql} WHERE id = 1`, values);
+      }
+      restoredCounts.user_profile = 1;
+    }
+
+    for (const table of JSON_BACKUP_TABLES) {
+      if (table === 'user_profile') continue;
+      const rows = tablesFromBackup[table];
+      if (!rows || rows.length === 0) continue;
+
+      const tableCols = getColumns(table);
+      if (tableCols.length === 0) continue;
+
+      for (const rawRow of rows) {
+        const cols = Object.keys(rawRow).filter(c => tableCols.includes(c));
+        if (cols.length === 0) continue;
+        const placeholders = cols.map(() => '?').join(', ');
+        const values = cols.map(c => toBindValue(rawRow[c]));
+        db.runSync(
+          `INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`,
+          values,
+        );
+        restoredCounts[table] = (restoredCounts[table] ?? 0) + 1;
+      }
+    }
+
+    runSql('COMMIT');
+  } catch (e) {
+    try { runSql('ROLLBACK'); } catch {}
+    if (__DEV__) console.warn('[Settings] Backup import failed:', e);
+    return { ok: false, message: 'Import failed during restore. Your existing data was kept.' };
   }
+
+  const summary = [
+    `topics: ${restoredCounts.topic_progress ?? 0}`,
+    `logs: ${restoredCounts.daily_log ?? 0}`,
+    `notes: ${restoredCounts.lecture_notes ?? 0}`,
+    `sessions: ${restoredCounts.sessions ?? 0}`,
+  ].join(', ');
+  return { ok: true, message: `Restored backup successfully (${summary})` };
 }
 
 export default function SettingsScreen() {
@@ -206,9 +236,7 @@ export default function SettingsScreen() {
 
   const [apiKey, setApiKey] = useState('');
   const [orKey, setOrKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
-  const [availableModels, setAvailableModels] = useState<string[]>(KNOWN_MODELS);
-  const [showModelPicker, setShowModelPicker] = useState(false);
+  const [groqKey, setGroqKey] = useState('');
   const [name, setName] = useState('');
   const [inicetDate, setInicetDate] = useState('2026-05-01');
   const [neetDate, setNeetDate] = useState('2026-08-01');
@@ -217,23 +245,91 @@ export default function SettingsScreen() {
   const [notifs, setNotifs] = useState(true);
   const [strictMode, setStrictMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [validation, setValidation] = useState<ValidationState>('idle');
-  const [validationMsg, setValidationMsg] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
+  const [examSyncBusy, setExamSyncBusy] = useState(false);
   const [bodyDoubling, setBodyDoubling] = useState(true);
   const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
   const [idleTimeout, setIdleTimeout] = useState('2');
   const [breakDuration, setBreakDuration] = useState('5');
+  const [visualTimersEnabled, setVisualTimersEnabled] = useState(false);
   const [notifHour, setNotifHour] = useState('7');
   const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>('normal');
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
+  const [subjectLoadOverrides, setSubjectLoadOverrides] = useState<Record<string, string>>({});
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showAdvancedAi, setShowAdvancedAi] = useState(false);
+  const [examSyncMeta, setExamSyncMeta] = useState<ExamDateSyncMeta | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveRef = useRef<() => void>(() => {});
+  const overlayFixPendingRef = useRef(false);
+
+  // Track dirty state — any setter marks as dirty and triggers auto-save
+  const markDirty = useCallback(() => {
+    setIsDirty(true);
+    if (saveState !== 'saving') setSaveState('idle');
+    if (saveError) setSaveError('');
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+    autoSaveRef.current = setTimeout(() => { saveRef.current(); }, 2000);
+  }, [saveState, saveError]);
+
+  const clearFieldError = useCallback((field: keyof ValidationErrors) => {
+    setValidationErrors(prev => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }, []);
+
+  const isValidIsoDate = useCallback((value: string): boolean => {
+    if (!DATE_REGEX.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return false;
+    return parsed.toISOString().slice(0, 10) === value;
+  }, []);
+
+  const clampInt = useCallback((raw: string, fallback: number, min: number, max: number): number => {
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return fallback;
+    return Math.max(min, Math.min(max, parsed));
+  }, []);
+
+  // Auto-save on leaving the screen
+  useEffect(() => {
+    return () => {
+      if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
+      if (saveStateTimeoutRef.current) clearTimeout(saveStateTimeoutRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isFocused && isDirty) {
+      saveRef.current();
+    }
+  }, [isFocused, isDirty]);
 
   useEffect(() => {
     if (isFocused) {
       checkPermissions();
+      getExamDateSyncMeta().then(setExamSyncMeta).catch(() => setExamSyncMeta(null));
     }
+  }, [isFocused]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', nextState => {
+      if (nextState !== 'active') return;
+      if (!isFocused) return;
+      if (overlayFixPendingRef.current) {
+        overlayFixPendingRef.current = false;
+      }
+      checkPermissions();
+    });
+    return () => sub.remove();
   }, [isFocused]);
 
   async function checkPermissions() {
@@ -255,14 +351,11 @@ export default function SettingsScreen() {
   useEffect(() => {
     try { setSubjects(getAllSubjects()); } catch { /* non-critical */ }
     if (profile) {
-      if (profile.openrouterApiKey.includes('|')) {
-        const parts = profile.openrouterApiKey.split('|');
-        setApiKey(parts[0]);
-        setSelectedModel(parts[1]);
-      } else {
-        setApiKey(profile.openrouterApiKey);
-      }
+      // Strip legacy pipe-delimited model name if present
+      const rawKey = profile.openrouterApiKey;
+      setApiKey(rawKey.includes('|') ? rawKey.split('|')[0] : rawKey);
       setOrKey(profile.openrouterKey ?? '');
+      setGroqKey(profile.groqApiKey ?? '');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
       setNeetDate(profile.neetDate);
@@ -274,93 +367,145 @@ export default function SettingsScreen() {
       setBlockedTypes(profile.blockedContentTypes ?? []);
       setIdleTimeout((profile.idleTimeoutMinutes ?? 2).toString());
       setBreakDuration((profile.breakDurationMinutes ?? 5).toString());
+      setVisualTimersEnabled(profile.visualTimersEnabled ?? false);
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
-      if (profile.openrouterApiKey) setValidation('success');
+      setSubjectLoadOverrides(
+        Object.fromEntries(
+          Object.entries(profile.customSubjectLoadMultipliers ?? {}).map(([code, value]) => [code, String(value)])
+        ),
+      );
     }
   }, [profile]);
 
-  function handleApiKeyChange(text: string) {
-    setApiKey(text);
-    setValidation('idle');
-    setValidationMsg('');
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const trimmed = text.trim();
-    if (trimmed.length > 20) {
-      debounceRef.current = setTimeout(() => runValidation(trimmed), 1200);
+  // Mark dirty whenever any setting value changes (skip initial load)
+  const initialLoadDone = useRef(false);
+  useEffect(() => {
+    if (!initialLoadDone.current) {
+      // First render after profile loads — don't mark dirty
+      if (profile) initialLoadDone.current = true;
+      return;
     }
-  }
+    markDirty();
+  }, [apiKey, orKey, groqKey, name, inicetDate, neetDate, sessionLength, dailyGoal,
+      notifs, strictMode, bodyDoubling, blockedTypes, idleTimeout, breakDuration,
+      visualTimersEnabled, notifHour, guruFrequency, focusSubjectIds, subjectLoadOverrides]);
 
-  async function runValidation(key: string) {
-    setValidation('testing');
-    setValidationMsg('');
-    
-    // First, list models
-    const listRes = await listGeminiModels(key);
-    if (!listRes.ok) {
-      setValidation('error');
-      setValidationMsg(listRes.error || 'Invalid key');
+  async function save() {
+    if (saving) return;
+    if (autoSaveRef.current) {
+      clearTimeout(autoSaveRef.current);
+      autoSaveRef.current = null;
+    }
+    setSaving(true);
+    setSaveState('saving');
+    setSaveError('');
+
+    const nextValidationErrors: ValidationErrors = {};
+    if (!isValidIsoDate(inicetDate)) {
+      nextValidationErrors.inicetDate = 'Use YYYY-MM-DD with a valid calendar date.';
+    }
+    if (!isValidIsoDate(neetDate)) {
+      nextValidationErrors.neetDate = 'Use YYYY-MM-DD with a valid calendar date.';
+    }
+
+    const parsedSessionLength = Number.parseInt(sessionLength, 10);
+    if (Number.isNaN(parsedSessionLength)) {
+      nextValidationErrors.sessionLength = 'Enter a number between 10 and 240 minutes.';
+    }
+    const parsedDailyGoal = Number.parseInt(dailyGoal, 10);
+    if (Number.isNaN(parsedDailyGoal)) {
+      nextValidationErrors.dailyGoal = 'Enter a number between 30 and 720 minutes.';
+    }
+    const parsedNotifHour = Number.parseInt(notifHour, 10);
+    if (Number.isNaN(parsedNotifHour)) {
+      nextValidationErrors.notifHour = 'Enter an hour between 0 and 23.';
+    }
+
+    if (Object.keys(nextValidationErrors).length > 0) {
+      setValidationErrors(nextValidationErrors);
+      setSaveState('error');
+      setSaveError('Could not save. Fix the highlighted fields.');
+      setSaving(false);
       return;
     }
 
-    setAvailableModels(listRes.models.length > 0 ? listRes.models : KNOWN_MODELS);
-    
-    // If current model isn't in list, switch to first available
-    if (listRes.models.length > 0 && !listRes.models.includes(selectedModel)) {
-      // Prefer flash models if available
-      const best = listRes.models.find(m => m.includes('flash')) || listRes.models[0];
-      setSelectedModel(best);
-    }
+    const sanitizedSessionLength = clampInt(sessionLength, 45, 10, 240);
+    const sanitizedDailyGoal = clampInt(dailyGoal, 120, 30, 720);
+    const sanitizedNotifHour = clampInt(notifHour, 7, 0, 23);
+    const sanitizedIdleTimeout = clampInt(idleTimeout, 2, 1, 60);
+    const sanitizedBreakDuration = clampInt(breakDuration, 5, 1, 30);
+    const sanitizedSubjectLoads = Object.entries(subjectLoadOverrides).reduce<Record<string, number>>((acc, [code, raw]) => {
+      const trimmed = raw.trim();
+      if (!trimmed) return acc;
+      const parsed = Number.parseFloat(trimmed);
+      if (Number.isNaN(parsed)) return acc;
+      acc[code] = Math.max(0.7, Math.min(1.8, Number(parsed.toFixed(2))));
+      return acc;
+    }, {});
 
-    setValidation('success');
-    setValidationMsg(`Connected — ${listRes.models.length} models found`);
-  }
+    setValidationErrors({});
+    setSessionLength(String(sanitizedSessionLength));
+    setDailyGoal(String(sanitizedDailyGoal));
+    setNotifHour(String(sanitizedNotifHour));
+    setIdleTimeout(String(sanitizedIdleTimeout));
+    setBreakDuration(String(sanitizedBreakDuration));
 
-  async function save() {
-    setSaving(true);
     try {
-      // Store model name WITH key (hacky but saves migration)
-      const keyToStore = `${apiKey.trim()}|${selectedModel}`;
-      
       updateUserProfile({
-        openrouterApiKey: keyToStore,
+        openrouterApiKey: apiKey.trim(),
         openrouterKey: orKey.trim(),
+        groqApiKey: groqKey.trim(),
         displayName: name.trim() || 'Doctor',
         inicetDate,
         neetDate,
-        preferredSessionLength: parseInt(sessionLength) || 45,
-        dailyGoalMinutes: parseInt(dailyGoal) || 120,
+        preferredSessionLength: sanitizedSessionLength,
+        dailyGoalMinutes: sanitizedDailyGoal,
         notificationsEnabled: notifs,
         strictModeEnabled: strictMode,
         bodyDoublingEnabled: bodyDoubling,
         blockedContentTypes: blockedTypes,
-        idleTimeoutMinutes: Math.min(60, Math.max(1, parseInt(idleTimeout) || 2)),
-        breakDurationMinutes: Math.min(30, Math.max(1, parseInt(breakDuration) || 5)),
-        notificationHour: Math.min(23, Math.max(0, parseInt(notifHour) || 7)),
+        idleTimeoutMinutes: sanitizedIdleTimeout,
+        breakDurationMinutes: sanitizedBreakDuration,
+        visualTimersEnabled,
+        notificationHour: sanitizedNotifHour,
         guruFrequency,
         focusSubjectIds,
+        customSubjectLoadMultipliers: sanitizedSubjectLoads,
       });
 
       if (notifs) {
         const granted = await requestNotificationPermissions();
-        if (granted && apiKey.trim()) {
+        if (granted) {
           await refreshAccountabilityNotifications();
         }
       }
 
       refreshProfile();
-      Alert.alert('Saved', 'Settings updated! Guru has been notified. 😏');
+      setIsDirty(false);
+      if (autoSaveRef.current) {
+        clearTimeout(autoSaveRef.current);
+        autoSaveRef.current = null;
+      }
+      setSaveState('saved');
+      if (saveStateTimeoutRef.current) clearTimeout(saveStateTimeoutRef.current);
+      saveStateTimeoutRef.current = setTimeout(() => {
+        setSaveState('idle');
+      }, 2200);
+    } catch (err: any) {
+      console.error('[Settings] Save failed:', err);
+      setSaveState('error');
+      setSaveError(err?.message ?? 'Failed to save settings.');
     } finally {
       setSaving(false);
     }
   }
 
+  // Keep saveRef updated so auto-save timer always calls the latest version
+  saveRef.current = save;
+
   async function testNotification() {
-    if (!apiKey.trim()) {
-      Alert.alert('No API key', 'Add your OpenRouter API key first.');
-      return;
-    }
     try {
       await refreshAccountabilityNotifications();
       Alert.alert('Done', 'Notifications scheduled! Check your notification panel.');
@@ -369,115 +514,122 @@ export default function SettingsScreen() {
     }
   }
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+  async function syncExamDatesNow() {
+    if (examSyncBusy) return;
+    setExamSyncBusy(true);
+    try {
+      const res = await syncExamDatesFromInternet();
+      refreshProfile();
+      const nextMeta = await getExamDateSyncMeta();
+      setExamSyncMeta(nextMeta);
+      Alert.alert(
+        res.updated ? 'Exam Dates Updated' : 'Exam Dates Checked',
+        `${res.message}\n\nINI-CET: ${res.inicetDate ?? 'Unknown'}\nNEET-PG: ${res.neetDate ?? 'Unknown'}`,
+      );
+    } catch (err: any) {
+      Alert.alert('Exam Date Sync Failed', err?.message ?? 'Could not verify exam dates from online sources.');
+    } finally {
+      setExamSyncBusy(false);
+    }
+  }
 
-        <Section title="🤖 AI Configuration">
-          <Label text="Gemini API Key (Google AI Studio)" />
-          <View style={styles.apiKeyRow}>
-            <TextInput
-              style={[styles.input, styles.apiKeyInput,
-                validation === 'success' && styles.inputSuccess,
-                validation === 'error' && styles.inputError,
-              ]}
-              placeholder="AIza..."
-              placeholderTextColor="#444"
-              value={apiKey}
-              onChangeText={handleApiKeyChange}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              style={[styles.validateBtn,
-                validation === 'success' && styles.validateBtnSuccess,
-                validation === 'error' && styles.validateBtnError,
-                validation === 'testing' && styles.validateBtnTesting,
-              ]}
-              onPress={() => apiKey.trim().length > 20 ? runValidation(apiKey.trim()) : null}
-              activeOpacity={0.8}
-              disabled={validation === 'testing'}
-            >
-              {validation === 'testing' ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.validateBtnText}>
-                  {validation === 'success' ? '✓' : validation === 'error' ? '✗' : 'Test'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          {validationMsg ? (
-            <Text style={[styles.validationMsg,
-              validation === 'success' ? styles.validationSuccess : styles.validationError,
-            ]}>
-              {validation === 'success' ? '✅ ' : '❌ '}{validationMsg}
-            </Text>
-          ) : null}
-          
-          <Label text="Selected Model" />
+  return (
+    <SafeAreaView style={styles.safe} testID="settings-screen">
+      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <ScrollView contentContainerStyle={styles.content} testID="settings-scroll">
+        <ResponsiveContainer>
+        <Text style={styles.title}>Settings</Text>
+        <View style={styles.saveStatusRow}>
+          {saveState === 'saving' && (
+            <>
+              <ActivityIndicator size="small" color="#6C63FF" />
+              <Text style={[styles.saveStatusText, styles.saveStatusPending]}>Saving changes...</Text>
+            </>
+          )}
+          {saveState === 'idle' && isDirty && (
+            <Text style={[styles.saveStatusText, styles.saveStatusPending]}>Unsaved changes. Auto-save runs in ~2 seconds.</Text>
+          )}
+          {saveState === 'saved' && !isDirty && (
+            <Text style={[styles.saveStatusText, styles.saveStatusSaved]}>All changes saved.</Text>
+          )}
+          {saveState === 'error' && (
+            <View style={styles.saveErrorRow}>
+              <Text style={[styles.saveStatusText, styles.saveStatusError]}>{saveError || 'Save failed.'}</Text>
+              <TouchableOpacity onPress={save} disabled={saving} activeOpacity={0.8}>
+                <Text style={styles.retrySaveText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+
+        <Section title="🤖 AI Configuration" initiallyExpanded>
           <TouchableOpacity 
-            style={styles.modelSelector} 
+            style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]} 
+            onPress={() => navigation.navigate('LocalModel' as any)} 
             activeOpacity={0.8}
-            onPress={() => setShowModelPicker(true)}
           >
-            <Text style={styles.modelSelectorText}>{selectedModel}</Text>
-            <Text style={styles.modelSelectorArrow}>▼</Text>
+            <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>🦙 Manage On-Device Models</Text>
           </TouchableOpacity>
-          
           <Text style={styles.hint}>
-            Get your free key at aistudio.google.com
+            Default routing is local model first, then Groq cloud fallback. OpenRouter and legacy keys are optional.
           </Text>
 
-          <Label text="OpenRouter API Key (openrouter.ai) — for free model fallbacks" />
+          <Label text="Groq API Key (primary cloud fallback)" />
           <TextInput
             style={styles.input}
-            placeholder="sk-or-..."
-            placeholderTextColor="#444"
-            value={orKey}
-            onChangeText={setOrKey}
+            placeholder="gsk_..."
+            placeholderTextColor={PLACEHOLDER_COLOR}
+            value={groqKey}
+            onChangeText={setGroqKey}
             secureTextEntry
             autoCapitalize="none"
           />
           <Text style={styles.hint}>
-            Optional. When Gemini hits rate limits, Guru auto-retries with free OpenRouter models (Gemini 2.0 Flash, Llama 3.3, Qwen 2.5, etc.).
-            Get a free key at openrouter.ai
+            Used when local model is unavailable or too slow for the task.
           </Text>
+
+          <TouchableOpacity
+            style={styles.advancedToggle}
+            onPress={() => setShowAdvancedAi(prev => !prev)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.advancedToggleText}>{showAdvancedAi ? 'Hide Advanced AI Keys ▲' : 'Show Advanced AI Keys ▼'}</Text>
+          </TouchableOpacity>
+
+          {showAdvancedAi && (
+            <>
+              <Label text="OpenRouter API Key (optional fallback)" />
+              <TextInput
+                style={styles.input}
+                placeholder="sk-or-..."
+                placeholderTextColor={PLACEHOLDER_COLOR}
+                value={orKey}
+                onChangeText={setOrKey}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <Text style={styles.hint}>
+                Secondary fallback after Groq. Useful if you want additional cloud model options.
+              </Text>
+
+              <Label text="Legacy API Key (migration only)" />
+              <TextInput
+                style={styles.input}
+                placeholder="legacy key"
+                placeholderTextColor={PLACEHOLDER_COLOR}
+                value={apiKey}
+                onChangeText={setApiKey}
+                secureTextEntry
+                autoCapitalize="none"
+              />
+              <Text style={styles.hint}>
+                Kept only for backward compatibility with older setups.
+              </Text>
+            </>
+          )}
         </Section>
 
-        {/* Model Picker Modal */}
-        <Modal visible={showModelPicker} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Model</Text>
-              <FlatList
-                data={availableModels}
-                keyExtractor={item => item}
-                renderItem={({ item }) => (
-                  <TouchableOpacity 
-                    style={[styles.modelItem, item === selectedModel && styles.modelItemActive]}
-                    onPress={() => {
-                      setSelectedModel(item);
-                      setShowModelPicker(false);
-                    }}
-                  >
-                    <Text style={[styles.modelItemText, item === selectedModel && styles.modelItemTextActive]}>
-                      {item}
-                    </Text>
-                    {item === selectedModel && <Text style={styles.checkMark}>✓</Text>}
-                  </TouchableOpacity>
-                )}
-              />
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowModelPicker(false)}>
-                <Text style={styles.closeBtnText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
-        <Section title="✅ Permissions & Diagnostics">
+        <Section title="✅ Permissions & Diagnostics" initiallyExpanded={false}>
           <PermissionRow
             label="Notifications"
             status={permStatus.notifs}
@@ -499,6 +651,7 @@ export default function SettingsScreen() {
               label="Draw Over Apps (Break Overlay)"
               status={permStatus.overlay}
               onFix={async () => {
+                overlayFixPendingRef.current = true;
                 await requestOverlayPermission();
                 Alert.alert('Overlay Permission', 'Please enable Guru in the settings screen that just opened, then return to the app.');
               }}
@@ -512,48 +665,141 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Section>
 
-        <Section title="👤 Profile">
+        <Section title="👤 Profile" initiallyExpanded>
+          {!isSyncAvailable() && (
+            <Text style={[styles.hint, { color: '#F44336', marginBottom: 16 }]}>
+              Tablet Sync is currently unavailable on this device (MQTT module missing).
+            </Text>
+          )}
           <TouchableOpacity 
             style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]} 
             onPress={() => navigation.navigate('DeviceLink')} 
             activeOpacity={0.8}
+            disabled={!isSyncAvailable()}
           >
-            <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>📱 Link Another Device (Sync)</Text>
+            <Text style={[styles.testBtnText, { color: isSyncAvailable() ? '#4CAF50' : '#555' }]}>📱 Link Another Device (Sync)</Text>
           </TouchableOpacity>
           <Label text="Your name" />
           <TextInput
             style={styles.input}
             placeholder="Dr. ..."
-            placeholderTextColor="#444"
+            placeholderTextColor={PLACEHOLDER_COLOR}
             value={name}
             onChangeText={setName}
           />
         </Section>
 
-        <Section title="📅 Exam Dates">
+        <Section title="📅 Exam Dates" initiallyExpanded>
           <Label text="INICET date (YYYY-MM-DD)" />
-          <TextInput style={styles.input} value={inicetDate} onChangeText={setInicetDate} placeholderTextColor="#444" />
+          <TextInput
+            style={[styles.input, validationErrors.inicetDate && styles.inputError]}
+            value={inicetDate}
+            onChangeText={(text) => {
+              setInicetDate(text);
+              clearFieldError('inicetDate');
+            }}
+            placeholderTextColor={PLACEHOLDER_COLOR}
+          />
+          {!!validationErrors.inicetDate && <Text style={styles.fieldError}>{validationErrors.inicetDate}</Text>}
           <Label text="NEET-PG date (YYYY-MM-DD)" />
-          <TextInput style={styles.input} value={neetDate} onChangeText={setNeetDate} placeholderTextColor="#444" />
+          <TextInput
+            style={[styles.input, validationErrors.neetDate && styles.inputError]}
+            value={neetDate}
+            onChangeText={(text) => {
+              setNeetDate(text);
+              clearFieldError('neetDate');
+            }}
+            placeholderTextColor={PLACEHOLDER_COLOR}
+          />
+          {!!validationErrors.neetDate && <Text style={styles.fieldError}>{validationErrors.neetDate}</Text>}
+          <Text style={styles.hint}>
+            Guru auto-checks official websites in the background whenever the app opens or returns to foreground.
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, examSyncBusy && styles.saveBtnDisabled]}
+            onPress={syncExamDatesNow}
+            activeOpacity={0.8}
+            disabled={examSyncBusy}
+          >
+            {examSyncBusy ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.testBtnText}>Verify Exam Dates From Internet</Text>
+            )}
+          </TouchableOpacity>
+          {examSyncMeta?.lastCheckedAt && (
+            <Text style={styles.syncMetaText}>
+              Last checked: {new Date(examSyncMeta.lastCheckedAt).toLocaleString()}
+            </Text>
+          )}
+          {examSyncMeta?.lastError && (
+            <Text style={styles.syncErrorText}>{examSyncMeta.lastError}</Text>
+          )}
         </Section>
 
-        <Section title="⏱️ Study Preferences">
+        <Section title="⏱️ Study Preferences" initiallyExpanded>
           <Label text="Preferred session length (minutes)" />
           <TextInput
-            style={styles.input}
+            style={[styles.input, validationErrors.sessionLength && styles.inputError]}
             value={sessionLength}
-            onChangeText={setSessionLength}
+            onChangeText={(text) => {
+              setSessionLength(text);
+              clearFieldError('sessionLength');
+            }}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={PLACEHOLDER_COLOR}
           />
+          {!!validationErrors.sessionLength && <Text style={styles.fieldError}>{validationErrors.sessionLength}</Text>}
           <Label text="Daily study goal (minutes)" />
           <TextInput
-            style={styles.input}
+            style={[styles.input, validationErrors.dailyGoal && styles.inputError]}
             value={dailyGoal}
-            onChangeText={setDailyGoal}
+            onChangeText={(text) => {
+              setDailyGoal(text);
+              clearFieldError('dailyGoal');
+            }}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={PLACEHOLDER_COLOR}
           />
+          {!!validationErrors.dailyGoal && <Text style={styles.fieldError}>{validationErrors.dailyGoal}</Text>}
+          <Label text="Per-subject workload overrides" />
+          <Text style={styles.hint}>
+            Leave blank to use Guru's default weighting. Use higher values for subjects where your lecture load is heavier than the default plan.
+          </Text>
+          <View style={styles.subjectLoadList}>
+            {subjects.map((subject) => {
+              const rawValue = subjectLoadOverrides[subject.shortCode] ?? '';
+              const defaultMultiplier = getDefaultSubjectLoadMultiplier(subject.shortCode);
+              return (
+                <View key={subject.id} style={styles.subjectLoadRow}>
+                  <View style={styles.subjectLoadMeta}>
+                    <View style={[styles.subjectDot, { backgroundColor: subject.colorHex }]} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.subjectLoadCode}>{subject.shortCode} · {subject.name}</Text>
+                      <Text style={styles.subjectLoadHint}>Default {defaultMultiplier.toFixed(2)}x</Text>
+                    </View>
+                  </View>
+                  <TextInput
+                    style={styles.subjectLoadInput}
+                    value={rawValue}
+                    onChangeText={(text) => {
+                      setSubjectLoadOverrides(prev => ({ ...prev, [subject.shortCode]: text }));
+                    }}
+                    keyboardType="decimal-pad"
+                    placeholder={defaultMultiplier.toFixed(2)}
+                    placeholderTextColor={PLACEHOLDER_COLOR}
+                  />
+                </View>
+              );
+            })}
+          </View>
+          <TouchableOpacity
+            onPress={() => setSubjectLoadOverrides({})}
+            style={styles.clearBtn}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.clearBtnText}>Reset all subject overrides</Text>
+          </TouchableOpacity>
           <View style={[styles.switchRow, { marginTop: 16 }]}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Strict Mode 👮</Text>
@@ -566,9 +812,21 @@ export default function SettingsScreen() {
               thumbColor="#fff"
             />
           </View>
+          <View style={[styles.switchRow, { marginTop: 16 }]}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Visual Timers 🍅</Text>
+              <Text style={styles.hint}>Show circular timers during study breaks instead of plain text.</Text>
+            </View>
+            <Switch
+              value={visualTimersEnabled}
+              onValueChange={setVisualTimersEnabled}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
         </Section>
 
-        <Section title="🔔 Notifications">
+        <Section title="🔔 Notifications" initiallyExpanded>
           <View style={styles.switchRow}>
             <View>
               <Text style={styles.switchLabel}>Enable Guru's reminders</Text>
@@ -583,12 +841,16 @@ export default function SettingsScreen() {
           </View>
           <Label text="Reminder hour (0–23, e.g. 7 = 7:30 AM)" />
           <TextInput
-            style={styles.input}
+            style={[styles.input, validationErrors.notifHour && styles.inputError]}
             value={notifHour}
-            onChangeText={setNotifHour}
+            onChangeText={(text) => {
+              setNotifHour(text);
+              clearFieldError('notifHour');
+            }}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={PLACEHOLDER_COLOR}
           />
+          {!!validationErrors.notifHour && <Text style={styles.fieldError}>{validationErrors.notifHour}</Text>}
           <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
           <Label text="Guru presence frequency" />
           <View style={styles.frequencyRow}>
@@ -612,7 +874,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Section>
 
-        <Section title="👻 Body Doubling">
+        <Section title="👻 Body Doubling" initiallyExpanded={false}>
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Guru presence during sessions</Text>
@@ -627,7 +889,7 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <Section title="🃏 Content Type Preferences">
+        <Section title="🃏 Content Type Preferences" initiallyExpanded={false}>
           <Text style={styles.hint}>Block card types you don't want in sessions. Keypoints can't be blocked.</Text>
           <View style={styles.chipGrid}>
             {ALL_CONTENT_TYPES.map(({ type, label }) => {
@@ -651,7 +913,7 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <Section title="🔬 Focus Subjects">
+        <Section title="🔬 Focus Subjects" initiallyExpanded={false}>
           <Text style={styles.hint}>Pin subjects to limit sessions to those areas only. Clear all to study everything.</Text>
           <View style={styles.chipGrid}>
             {subjects.map(s => {
@@ -675,14 +937,14 @@ export default function SettingsScreen() {
           )}
         </Section>
 
-        <Section title="⏱️ Session Timing">
+        <Section title="⏱️ Session Timing" initiallyExpanded={false}>
           <Label text="Idle timeout (minutes before auto-pause)" />
           <TextInput
             style={styles.input}
             value={idleTimeout}
             onChangeText={setIdleTimeout}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={PLACEHOLDER_COLOR}
           />
           <Label text="Break duration between topics (minutes)" />
           <TextInput
@@ -690,17 +952,20 @@ export default function SettingsScreen() {
             value={breakDuration}
             onChangeText={setBreakDuration}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={PLACEHOLDER_COLOR}
           />
         </Section>
 
-        <Section title="🗑️ Data">
+        <Section title="🗑️ Data" initiallyExpanded={false}>
           <TouchableOpacity
             style={styles.dangerBtn}
-            onPress={() => Alert.alert('Clear AI Cache?', 'All cached content cards will be regenerated fresh on next use.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Clear', style: 'destructive', onPress: () => { clearAiCache(); Alert.alert('Done', 'AI cache cleared.'); } },
-            ])}
+            onPress={() => {
+              const stats = getCacheStats();
+              Alert.alert('Clear AI Cache?', `You have ${stats.totalCached} cached items. All content will be regenerated fresh on next use.`, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Clear', style: 'destructive', onPress: () => { clearAiCache(); Alert.alert('Done', 'AI cache cleared.'); } },
+              ]);
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.dangerBtnText}>🧹  Clear AI Content Cache</Text>
@@ -723,7 +988,7 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.</Text>
         </Section>
 
-        <Section title="💾 Backup & Restore">
+        <Section title="💾 Backup & Restore" initiallyExpanded={false}>
           <Text style={styles.hint}>Export your study progress to a JSON file, or restore from a previous backup.</Text>
           {profile?.lastBackupDate && (
             <Text style={styles.backupDate}>
@@ -784,25 +1049,28 @@ export default function SettingsScreen() {
                 );
               }}
             >
-              <Text style={[styles.backupBtnText, { color: '#4CAF50' }]}>⬇️  Import</Text>
+              <Text style={[styles.backupBtnText, { color: '#4CAF50' }]}>⬇️  Import JSON</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <Text style={[styles.hint, { marginTop: 16 }]}>Full SQLite Database Backup (Advanced)</Text>
+          <View style={styles.backupRow}>
+            <TouchableOpacity style={styles.backupBtn} activeOpacity={0.8} onPress={() => exportDatabase()}>
+              <Text style={styles.backupBtnText}>⬆️ Export .db</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.backupBtn, { borderColor: '#4CAF5066' }]} activeOpacity={0.8} onPress={() => importDatabase()}>
+              <Text style={[styles.backupBtnText, { color: '#4CAF50' }]}>⬇️ Import .db</Text>
             </TouchableOpacity>
           </View>
         </Section>
 
-        <TouchableOpacity
-          style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-          onPress={save}
-          disabled={saving}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Settings'}</Text>
-        </TouchableOpacity>
-
         <Text style={styles.footer}>
           NEET Study — Powered by Guru AI{'\n'}
-          v1.0.0 · Google Gemini 3.0 Flash Preview
+          v1.0.0 · Local Qwen + Groq routing
         </Text>
+        </ResponsiveContainer>
       </ScrollView>
+
     </SafeAreaView>
   );
 }
@@ -846,45 +1114,73 @@ function Label({ text }: { text: string }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   content: { padding: 16, paddingBottom: 60 },
-  title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 20, marginTop: 8 },
+  title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 8, marginTop: 8 },
+  saveStatusRow: { minHeight: 22, marginBottom: 12, justifyContent: 'center' },
+  saveStatusText: { fontSize: 12, fontWeight: '600' },
+  saveStatusPending: { color: '#A6ADBE' },
+  saveStatusSaved: { color: '#4CAF50' },
+  saveStatusError: { color: '#FF7B7B', flex: 1 },
+  saveErrorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  retrySaveText: { color: '#6C63FF', fontSize: 12, fontWeight: '800' },
   section: { marginBottom: 24 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  sectionTitle: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  sectionTitle: { color: '#BEC4D1', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   sectionToggle: { color: '#6C63FF', fontSize: 12, fontWeight: '700' },
   sectionContent: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16 },
-  label: { color: '#9E9E9E', fontSize: 13, marginBottom: 6, marginTop: 8 },
+  label: { color: '#C8CDDA', fontSize: 13, marginBottom: 6, marginTop: 8 },
   input: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 4 },
-  apiKeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  apiKeyInput: { flex: 1, marginBottom: 0 },
-  inputSuccess: { borderColor: '#4CAF50' },
-  inputError: { borderColor: '#F44336' },
-  validateBtn: { backgroundColor: '#2A2A38', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', minWidth: 52, borderWidth: 1, borderColor: '#444' },
-  validateBtnSuccess: { backgroundColor: '#1B3A1F', borderColor: '#4CAF50' },
-  validateBtnError: { backgroundColor: '#3A1B1B', borderColor: '#F44336' },
-  validateBtnTesting: { backgroundColor: '#1A1A2E', borderColor: '#6C63FF' },
-  validateBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  validationMsg: { fontSize: 12, marginTop: 6, marginBottom: 2 },
-  validationSuccess: { color: '#4CAF50' },
-  validationError: { color: '#F44336' },
-  hint: { color: '#555', fontSize: 12, marginBottom: 4 },
+  inputError: { borderColor: '#FF6B6B' },
+  fieldError: { color: '#FF9D9D', fontSize: 11, marginBottom: 2 },
+  hint: { color: '#A4ABBB', fontSize: 12, marginBottom: 4 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   switchLabel: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 2 },
   testBtn: { marginTop: 12, backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
   testBtnText: { color: '#6C63FF', fontWeight: '600', fontSize: 14 },
-  saveBtn: { backgroundColor: '#6C63FF', borderRadius: 16, padding: 18, alignItems: 'center', marginTop: 8 },
+  syncMetaText: { color: '#97A0B4', fontSize: 11, marginTop: 8 },
+  syncErrorText: { color: '#FF9D9D', fontSize: 11, marginTop: 6 },
+  advancedToggle: { marginTop: 10, marginBottom: 6, alignSelf: 'flex-start' },
+  advancedToggleText: { color: '#6C63FF', fontSize: 13, fontWeight: '700' },
   saveBtnDisabled: { backgroundColor: '#333' },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 17 },
   backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   backupBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF66' },
   backupBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
-  backupDate: { color: '#555', fontSize: 11, textAlign: 'center', fontStyle: 'italic', marginBottom: 8 },
+  backupDate: { color: '#9EA6B8', fontSize: 11, textAlign: 'center', fontStyle: 'italic', marginBottom: 8 },
   frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
   freqBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#2A2A38' },
   freqBtnActive: { backgroundColor: '#6C63FF33', borderColor: '#6C63FF' },
-  freqText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
+  freqText: { color: '#C8CDD8', fontSize: 13, fontWeight: '600' },
   freqTextActive: { color: '#6C63FF', fontWeight: '700' },
-  footer: { color: '#333', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
+  footer: { color: '#7B8191', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  subjectLoadList: { gap: 10, marginTop: 8 },
+  subjectLoadRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    backgroundColor: '#0F0F14',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    padding: 12,
+  },
+  subjectLoadMeta: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  subjectDot: { width: 10, height: 10, borderRadius: 999 },
+  subjectLoadCode: { color: '#F1F4FA', fontSize: 13, fontWeight: '700' },
+  subjectLoadHint: { color: '#97A0B4', fontSize: 11, marginTop: 2 },
+  subjectLoadInput: {
+    width: 72,
+    backgroundColor: '#151826',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+  },
   typeChip: { backgroundColor: '#0F0F14', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#2A2A38', flexDirection: 'row', alignItems: 'center' },
   typeChipBlocked: { backgroundColor: '#2A0A0A', borderColor: '#F4433666' },
   typeChipLocked: { borderColor: '#6C63FF44', opacity: 0.5 },
@@ -892,12 +1188,12 @@ const styles = StyleSheet.create({
   typeChipTextBlocked: { color: '#F44336' },
   typeChipX: { color: '#F44336', fontSize: 11 },
   clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
-  clearBtnText: { color: '#555', fontSize: 13 },
+  clearBtnText: { color: '#B4BBCB', fontSize: 13 },
   dangerBtn: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
   dangerBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   modelSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 8 },
   modelSelectorText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  modelSelectorArrow: { color: '#666', fontSize: 12 },
+  modelSelectorArrow: { color: '#B9BFCE', fontSize: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#1A1A24', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' },
   modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
@@ -917,5 +1213,5 @@ const styles = StyleSheet.create({
   fixBtn: { backgroundColor: '#6C63FF22', borderWidth: 1, borderColor: '#6C63FF', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
   fixBtnText: { color: '#6C63FF', fontSize: 12, fontWeight: '800' },
   diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
-  diagBtnText: { color: '#666', fontSize: 13, textDecorationLine: 'underline' },
+  diagBtnText: { color: '#B6BDCD', fontSize: 13, textDecorationLine: 'underline' },
 });

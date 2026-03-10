@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar, TextInput, Alert } from 'react-native';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar, TextInput, Alert, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SyllabusStackParamList, TabParamList } from '../navigation/types';
+import type { SyllabusStackParamList } from '../navigation/types';
 import { getTopicsBySubject, updateTopicNotes } from '../db/queries/topics';
+import { clearTopicCache } from '../db/queries/aiCache';
 import type { TopicWithProgress, TopicStatus } from '../types';
+import { ResponsiveContainer } from '../hooks/useResponsive';
+import * as Haptics from 'expo-haptics';
 
 type Route = RouteProp<SyllabusStackParamList, 'TopicDetail'>;
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
@@ -25,41 +28,123 @@ const STATUS_LABELS: Record<TopicStatus, string> = {
   mastered: 'Mastered',
 };
 
+type TopicFilter = 'all' | 'due' | 'unseen' | 'weak' | 'high_yield' | 'notes';
+
+const FILTER_OPTIONS: Array<{ key: TopicFilter; label: string }> = [
+  { key: 'all', label: 'All' },
+  { key: 'due', label: 'Due' },
+  { key: 'unseen', label: 'Unseen' },
+  { key: 'weak', label: 'Weak' },
+  { key: 'high_yield', label: 'High Yield' },
+  { key: 'notes', label: 'Notes' },
+];
+
 export default function TopicDetailScreen() {
   const route = useRoute<Route>();
   const navigation = useNavigation<Nav>();
   const isFocused = useIsFocused();
-  const { subjectId, subjectName } = route.params;
+  const { subjectId, subjectName, initialTopicId, initialSearchQuery } = route.params;
   const [allTopics, setAllTopics] = useState<TopicWithProgress[]>([]);
   const [displayTopics, setDisplayTopics] = useState<TopicWithProgress[]>([]);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [collapsedParents, setCollapsedParents] = useState<Set<number>>(new Set());
   const [noteText, setNoteText] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<TopicFilter>('all');
+  const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     if (isFocused) {
       const data = getTopicsBySubject(subjectId);
       setAllTopics(data);
-      if (data.length === 0) {
-        Alert.alert('Debug', `Subject ${subjectId} (${subjectName}) has 0 topics.`);
-      }
     }
   }, [isFocused, subjectId, subjectName]);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    if (initialSearchQuery) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery, isFocused]);
+
+  useEffect(() => {
+    if (!isFocused || !initialTopicId || allTopics.length === 0) return;
+    const topic = allTopics.find(item => item.id === initialTopicId);
+    if (!topic) return;
+
+    if (topic.parentTopicId) {
+      setCollapsedParents(prev => {
+        const next = new Set(prev);
+        next.delete(topic.parentTopicId!);
+        return next;
+      });
+    }
+
+    setExpandedId(topic.id);
+    setNoteText(topic.progress.userNotes);
+  }, [allTopics, initialTopicId, isFocused]);
 
   useEffect(() => {
     // Re-calculate display list whenever allTopics or collapsedParents change
     const list: TopicWithProgress[] = [];
     const topLevel = allTopics.filter(t => !t.parentTopicId);
-    
+
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const today = new Date().toISOString().slice(0, 10);
+    const matchesTopic = (topic: TopicWithProgress) => {
+      const matchesSearch = normalizedQuery.length === 0 || topic.name.toLowerCase().includes(normalizedQuery);
+      const isDue = topic.progress.status !== 'unseen'
+        && !!topic.progress.fsrsDue
+        && topic.progress.fsrsDue.slice(0, 10) <= today;
+      const isWeak = topic.progress.timesStudied > 0 && topic.progress.confidence > 0 && topic.progress.confidence < 3;
+      const isHighYield = topic.inicetPriority >= 8;
+      const hasNotes = topic.progress.userNotes.trim().length > 0;
+
+      if (!matchesSearch) return false;
+
+      switch (activeFilter) {
+        case 'due':
+          return isDue;
+        case 'unseen':
+          return topic.progress.status === 'unseen';
+        case 'weak':
+          return isWeak;
+        case 'high_yield':
+          return isHighYield;
+        case 'notes':
+          return hasNotes;
+        case 'all':
+        default:
+          return true;
+      }
+    };
+
     for (const parent of topLevel) {
+      const children = allTopics.filter(t => t.parentTopicId === parent.id);
+      const parentMatches = matchesTopic(parent);
+      const visibleChildren = children.filter(matchesTopic);
+
+      if (!parentMatches && visibleChildren.length === 0) {
+        continue;
+      }
+
       list.push(parent);
       if (!collapsedParents.has(parent.id)) {
-        const children = allTopics.filter(t => t.parentTopicId === parent.id);
-        list.push(...children);
+        list.push(...visibleChildren);
       }
     }
+
+    // Subjects without parent grouping
+    const standaloneLeaves = allTopics.filter(t => !t.parentTopicId && !allTopics.some(candidate => candidate.parentTopicId === t.id));
+    const standaloneVisible = standaloneLeaves.filter(matchesTopic);
+    for (const leaf of standaloneVisible) {
+      if (!list.some(existing => existing.id === leaf.id)) {
+        list.push(leaf);
+      }
+    }
+
     setDisplayTopics(list);
-  }, [allTopics, collapsedParents]);
+  }, [activeFilter, allTopics, collapsedParents, searchQuery]);
 
   function handleTopicPress(t: TopicWithProgress) {
     const hasChildren = allTopics.some(child => child.parentTopicId === t.id);
@@ -93,17 +178,157 @@ export default function TopicDetailScreen() {
 
   const done = allTopics.filter(t => t.progress.status !== 'unseen').length;
   const pct = allTopics.length > 0 ? Math.round((done / allTopics.length) * 100) : 0;
+  const leafTopics = useMemo(
+    () => allTopics.filter(topic => !allTopics.some(candidate => candidate.parentTopicId === topic.id)),
+    [allTopics],
+  );
+  const dueTopics = useMemo(
+    () => leafTopics.filter(topic => topic.progress.status !== 'unseen' && !!topic.progress.fsrsDue && topic.progress.fsrsDue.slice(0, 10) <= today),
+    [leafTopics, today],
+  );
+  const weakTopics = useMemo(
+    () => leafTopics.filter(topic => topic.progress.timesStudied > 0 && topic.progress.confidence > 0 && topic.progress.confidence < 3),
+    [leafTopics],
+  );
+  const highYieldTopics = useMemo(
+    () => leafTopics.filter(topic => topic.inicetPriority >= 8),
+    [leafTopics],
+  );
+  const filterCounts = useMemo(() => {
+    return {
+      all: allTopics.length,
+      due: dueTopics.length,
+      unseen: allTopics.filter(t => t.progress.status === 'unseen').length,
+      weak: weakTopics.length,
+      high_yield: highYieldTopics.length,
+      notes: allTopics.filter(t => t.progress.userNotes.trim().length > 0).length,
+    } as Record<TopicFilter, number>;
+  }, [allTopics, dueTopics.length, highYieldTopics.length, weakTopics.length]);
+
+  function launchBatch(topics: TopicWithProgress[], actionType: 'study' | 'review' | 'deep_dive') {
+    const ids = topics.slice(0, actionType === 'review' ? 4 : 3).map(topic => topic.id);
+    if (ids.length === 0) {
+      Alert.alert('Nothing to study', 'There are no matching topics in this bucket yet.');
+      return;
+    }
+    (navigation as any).getParent()?.navigate('HomeTab', {
+      screen: 'Session',
+      params: {
+        mood: actionType === 'deep_dive' ? 'energetic' : 'good',
+        mode: actionType === 'deep_dive' ? 'deep' : undefined,
+        focusTopicIds: ids,
+        preferredActionType: actionType,
+      },
+    });
+  }
+  
+  // Animated progress
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const countAnim = useRef(new Animated.Value(0)).current;
+  const [displayCount, setDisplayCount] = useState(done);
+  const prevPct = useRef(0);
+  
+  useEffect(() => {
+    const increased = pct > prevPct.current;
+    prevPct.current = pct;
+    
+    Animated.timing(progressAnim, {
+      toValue: pct,
+      duration: 600,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    
+    Animated.timing(countAnim, {
+      toValue: done,
+      duration: 400,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+    
+    const listener = countAnim.addListener(({ value }) => {
+      setDisplayCount(Math.round(value));
+    });
+    
+    if (increased && pct > 0 && pct % 25 === 0) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    
+    return () => countAnim.removeListener(listener);
+  }, [pct, done]);
+  
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 100],
+    outputRange: ['0%', '100%'],
+    extrapolate: 'clamp',
+  });
+  
+  // Format review date
+  const formatReviewDate = (dateStr: string | null): string => {
+    if (!dateStr) return '';
+    const today = new Date().toISOString().slice(0, 10);
+    if (dateStr === today) return 'Review today';
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    if (dateStr === tomorrow) return 'Review tomorrow';
+    if (dateStr < today) return 'Overdue for review!';
+    const days = Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000);
+    return `Review in ${days} days`;
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <ResponsiveContainer>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.title}>{subjectName}</Text>
-          <Text style={styles.subtitle}>{done}/{allTopics.length} topics · {pct}%</Text>
+          <View style={styles.progressRow}>
+            <Text style={styles.subtitle}>{displayCount}/{allTopics.length} topics</Text>
+            <View style={[styles.pctBadge, pct >= 50 && styles.pctBadgeGood, pct === 100 && styles.pctBadgeComplete]}>
+              <Text style={[styles.pctText, pct >= 50 && { color: '#4CAF50' }, pct === 100 && { color: '#FFD700' }]}>{pct}%</Text>
+            </View>
+          </View>
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.controls}>
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search topics in this subject..."
+          placeholderTextColor="#555"
+          style={styles.searchInput}
+        />
+        <View style={styles.filterRow}>
+          {FILTER_OPTIONS.map(option => (
+            <TouchableOpacity
+              key={option.key}
+              style={[styles.filterChip, activeFilter === option.key && styles.filterChipActive]}
+              onPress={() => setActiveFilter(option.key)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.filterChipText, activeFilter === option.key && styles.filterChipTextActive]}>
+                {option.label} {filterCounts[option.key]}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <View style={styles.bulkRow}>
+          <TouchableOpacity style={[styles.bulkChip, styles.bulkDueChip]} onPress={() => launchBatch(dueTopics, 'review')} activeOpacity={0.8}>
+            <Text style={styles.bulkChipText}>Review all due</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.bulkChip, styles.bulkHighYieldChip]} onPress={() => launchBatch(highYieldTopics, 'study')} activeOpacity={0.8}>
+            <Text style={styles.bulkChipText}>Study high yield</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.bulkChip, styles.bulkWeakChip]} onPress={() => launchBatch(weakTopics, 'deep_dive')} activeOpacity={0.8}>
+            <Text style={styles.bulkChipText}>Review weak only</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -129,6 +354,15 @@ export default function TopicDetailScreen() {
           const isParent = allTopics.some(t => t.parentTopicId === item.id);
           const isChild = !!item.parentTopicId;
           const isCollapsed = collapsedParents.has(item.id);
+          const isHighYield = item.inicetPriority >= 8;
+          const isDue = item.progress.status !== 'unseen'
+            && !!item.progress.fsrsDue
+            && item.progress.fsrsDue.slice(0, 10) <= new Date().toISOString().slice(0, 10);
+          const isWeak = item.progress.timesStudied > 0 && item.progress.confidence > 0 && item.progress.confidence < 3;
+          const parentChildren = isParent ? allTopics.filter(t => t.parentTopicId === item.id) : [];
+          const parentCompleted = parentChildren.filter(child => child.progress.status !== 'unseen').length;
+          const parentDue = parentChildren.filter(child => child.progress.status !== 'unseen' && !!child.progress.fsrsDue && child.progress.fsrsDue.slice(0, 10) <= today).length;
+          const parentHighYield = parentChildren.filter(child => child.inicetPriority >= 8).length;
 
           return (
             <View>
@@ -147,6 +381,15 @@ export default function TopicDetailScreen() {
                     {isParent && <Text style={styles.folderIcon}>{isCollapsed ? '▶ ' : '▼ '}</Text>}
                     <Text style={[styles.topicName, isParent && styles.parentName]}>{item.name}</Text>
                   </View>
+                  {isParent && parentChildren.length > 0 && (
+                    <View style={styles.parentSummaryRow}>
+                      <Text style={styles.parentSummaryText}>
+                        {parentCompleted}/{parentChildren.length} covered
+                      </Text>
+                      {parentDue > 0 && <Text style={styles.parentDueText}>{parentDue} due</Text>}
+                      {parentHighYield > 0 && <Text style={styles.parentHighYieldText}>{parentHighYield} HY</Text>}
+                    </View>
+                  )}
                   {!isParent && (
                     <View style={styles.topicMeta}>
                       <Text style={styles.topicMetaText}>
@@ -155,6 +398,27 @@ export default function TopicDetailScreen() {
                       {item.progress.timesStudied > 0 && (
                         <Text style={styles.studiedText}> · Studied {item.progress.timesStudied}×</Text>
                       )}
+                    </View>
+                  )}
+                  {!isParent && (
+                    <View style={styles.badgeRow}>
+                      {isHighYield && <Text style={styles.highYieldBadge}>HIGH YIELD</Text>}
+                      {isDue && <Text style={styles.dueBadge}>DUE</Text>}
+                      {isWeak && <Text style={styles.weakBadge}>WEAK</Text>}
+                    </View>
+                  )}
+                  {/* Review date indicator */}
+                  {item.progress.nextReviewDate && !isParent && (
+                    <View style={[
+                      styles.reviewBadge,
+                      item.progress.nextReviewDate < new Date().toISOString().slice(0, 10) && styles.reviewOverdue
+                    ]}>
+                      <Text style={[
+                        styles.reviewText,
+                        item.progress.nextReviewDate < new Date().toISOString().slice(0, 10) && styles.reviewTextOverdue
+                      ]}>
+                        {formatReviewDate(item.progress.nextReviewDate)}
+                      </Text>
                     </View>
                   )}
                   {item.progress.userNotes ? (
@@ -184,10 +448,15 @@ export default function TopicDetailScreen() {
                 <View style={styles.notesExpanded}>
                   <TouchableOpacity
                     style={styles.studyNowBtn}
-                    onPress={() => (navigation as any).getParent()?.navigate('HomeTab')}
+                    onPress={() => {
+                      (navigation as any).getParent()?.navigate('HomeTab', {
+                        screen: 'Session',
+                        params: { mood: 'good', focusTopicId: item.id, preferredActionType: 'study' },
+                      });
+                    }}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.studyNowText}>Study this now →</Text>
+                    <Text style={styles.studyNowText}>Study this topic now →</Text>
                   </TouchableOpacity>
                   <Text style={styles.notesLabel}>Your Notes / Mnemonic</Text>
                   <TextInput
@@ -207,24 +476,79 @@ export default function TopicDetailScreen() {
                       <Text style={styles.notesCancelText}>Cancel</Text>
                     </TouchableOpacity>
                   </View>
+                  <TouchableOpacity style={[styles.notesCancel, { backgroundColor: '#2A0A0A', marginTop: 12 }]} onPress={() => {
+                      Alert.alert('Clear AI Cache?', 'This will remove cached AI content for this topic. It will be regenerated next time you study it.', [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'Clear', style: 'destructive', onPress: () => {
+                            clearTopicCache(item.id);
+                            Alert.alert('Success', 'AI content cache cleared for this topic.');
+                        }},
+                      ]);
+                  }}>
+                    <Text style={[styles.notesCancelText, { color: '#F44336' }]}>Clear AI Cache</Text>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
           );
         }}
       />
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 20 },
-  backBtn: { padding: 4, marginRight: 12 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', padding: 16, paddingTop: 20 },
+  backBtn: { padding: 4, marginRight: 12, marginTop: 4 },
   backText: { color: '#6C63FF', fontSize: 22 },
   headerCenter: { flex: 1 },
   title: { color: '#fff', fontSize: 22, fontWeight: '800' },
-  subtitle: { color: '#9E9E9E', fontSize: 13, marginTop: 2 },
+  progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
+  subtitle: { color: '#9E9E9E', fontSize: 13 },
+  pctBadge: { backgroundColor: '#2A2A38', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginLeft: 8 },
+  pctBadgeGood: { backgroundColor: '#1A2A1A' },
+  pctBadgeComplete: { backgroundColor: '#2A2A0A' },
+  pctText: { color: '#888', fontWeight: '800', fontSize: 12 },
+  progressTrack: { height: 4, backgroundColor: '#2A2A38', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 2 },
+  controls: { paddingHorizontal: 16, gap: 10, marginBottom: 10 },
+  searchInput: {
+    backgroundColor: '#171722',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: '#fff',
+    fontSize: 14,
+  },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  filterChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: '#171722',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
+  filterChipActive: {
+    backgroundColor: '#262145',
+    borderColor: '#6C63FF66',
+  },
+  filterChipText: { color: '#9DA4B7', fontSize: 12, fontWeight: '700' },
+  filterChipTextActive: { color: '#ECE9FF' },
+  bulkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  bulkChip: {
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  bulkDueChip: { backgroundColor: '#472129' },
+  bulkHighYieldChip: { backgroundColor: '#4A3610' },
+  bulkWeakChip: { backgroundColor: '#2E244C' },
+  bulkChipText: { color: '#F3F4F8', fontSize: 12, fontWeight: '800' },
   legend: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 8, gap: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center' },
   legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
@@ -246,9 +570,45 @@ const styles = StyleSheet.create({
   folderIcon: { color: '#6C63FF', fontSize: 12, fontWeight: '900' },
   topicName: { color: '#fff', fontWeight: '600', fontSize: 15 },
   parentName: { fontSize: 16, fontWeight: '800', color: '#6C63FF' },
+  parentSummaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+  parentSummaryText: { color: '#A3ACC2', fontSize: 11, fontWeight: '700' },
+  parentDueText: { color: '#FFB6BC', fontSize: 11, fontWeight: '800' },
+  parentHighYieldText: { color: '#FFD36C', fontSize: 11, fontWeight: '800' },
   topicMeta: { flexDirection: 'row', marginTop: 4 },
   topicMetaText: { color: '#9E9E9E', fontSize: 11 },
   studiedText: { color: '#6C63FF', fontSize: 11 },
+  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  highYieldBadge: {
+    color: '#241600',
+    backgroundColor: '#FFC857',
+    fontSize: 10,
+    fontWeight: '900',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  dueBadge: {
+    color: '#FFD8D8',
+    backgroundColor: '#4A2026',
+    fontSize: 10,
+    fontWeight: '900',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  weakBadge: {
+    color: '#FFE3C4',
+    backgroundColor: '#4A2D16',
+    fontSize: 10,
+    fontWeight: '900',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  reviewBadge: { backgroundColor: '#1A2A2A', alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginTop: 4 },
+  reviewOverdue: { backgroundColor: '#2A1A1A' },
+  reviewText: { color: '#4CAF50', fontSize: 10, fontWeight: '600' },
+  reviewTextOverdue: { color: '#F44336' },
   topicRight: { padding: 12, alignItems: 'flex-end' },
   confRow: { flexDirection: 'row', gap: 2, marginBottom: 4 },
   confDot: { width: 6, height: 6, borderRadius: 3 },

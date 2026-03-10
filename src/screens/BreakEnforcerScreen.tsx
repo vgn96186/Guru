@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, AppState, BackHandler, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { connectToRoom } from '../services/deviceSyncService';
 import { scheduleBreakEndAlarms, cancelAllNotifications } from '../services/notificationService';
 import { useAppStore } from '../store/useAppStore';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 export default function BreakEnforcerScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -15,6 +16,7 @@ export default function BreakEnforcerScreen() {
   const [timeLeft, setTimeLeft] = useState(route.params.durationSeconds ?? 300);
   const profile = useAppStore(s => s.profile);
   const [isOver, setIsOver] = useState(false);
+  const vibIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // 1. Arm the push notifications in case they background the app
@@ -49,17 +51,16 @@ export default function BreakEnforcerScreen() {
       backHandler.remove();
       clearInterval(timer);
       unsubscribeSync();
+      if (vibIntervalRef.current) clearInterval(vibIntervalRef.current);
     };
   }, []);
 
   function triggerMeltdown() {
     setIsOver(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    // Vibrate loop every 2 seconds if app is open
-    const vibInterval = setInterval(() => {
+    vibIntervalRef.current = setInterval(() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }, 2000);
-    return () => clearInterval(vibInterval);
   }
 
   function handleReturnToLecture() {
@@ -73,19 +74,19 @@ export default function BreakEnforcerScreen() {
   if (isOver) {
     return (
       <SafeAreaView style={styles.safeError}>
-        <View style={styles.container}>
+        <ResponsiveContainer style={styles.container}>
           <Text style={styles.emoji}>🚨</Text>
           <Text style={styles.titleError}>YOUR BREAK IS OVER</Text>
           <Text style={styles.subError}>Drop this phone. Walk back to your tablet. Press "Resume Now".</Text>
           <Text style={styles.warning}>I will keep sending you push notifications every 15 seconds until the tablet signals that you are watching the lecture.</Text>
-        </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
+      <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>☕</Text>
         <Text style={styles.title}>Break Mode Active</Text>
         <Text style={styles.sub}>
@@ -97,7 +98,7 @@ export default function BreakEnforcerScreen() {
         </Text>
         
         <Text style={styles.footerText}>Waiting for Tablet signal...</Text>
-      </View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

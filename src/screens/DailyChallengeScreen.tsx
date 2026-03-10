@@ -12,6 +12,7 @@ import { createSession, endSession } from '../db/queries/sessions';
 import { updateStreak } from '../db/queries/progress';
 import { fetchContent } from '../services/aiService';
 import type { QuizContent, TopicWithProgress } from '../types';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyChallenge'>;
 
@@ -31,12 +32,10 @@ export default function DailyChallengeScreen() {
   const navigation = useNavigation<Nav>();
   const profile = useAppStore(s => s.profile);
   const refreshProfile = useAppStore(s => s.refreshProfile);
-  const apiKey = profile?.openrouterApiKey ?? '';
-  const orKey = profile?.openrouterKey || undefined;
-
   const [questions, setQuestions] = useState<ChallengeQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMsg, setLoadingMsg] = useState('Picking your weakest topics...');
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
   const [currentIdx, setCurrentIdx] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [score, setScore] = useState(0);
@@ -74,41 +73,51 @@ export default function DailyChallengeScreen() {
       return;
     }
 
-    setLoadingMsg(`Generating ${combined.length} questions...`);
+    setLoadingProgress({ current: 0, total: combined.length });
+    setLoadingMsg(`Generating Q1/${combined.length}...`);
+    
     const qs: ChallengeQuestion[] = [];
     for (let i = 0; i < combined.length; i++) {
-      const topic = combined[i];
-      setLoadingMsg(`Generating Question ${i + 1} of ${combined.length}...`);
+      setLoadingProgress({ current: i + 1, total: combined.length });
+      setLoadingMsg(`Generating Q${i + 1}/${combined.length}...`);
+      
       try {
-        const content = await fetchContent(topic, 'quiz', apiKey, orKey);
-        const q = (content as QuizContent).questions[0];
-        if (q) {
+        const content = await fetchContent(combined[i], 'quiz');
+        if (!content || typeof content !== 'object') continue;
+        const quiz = content as QuizContent;
+        if (!quiz.questions || !Array.isArray(quiz.questions) || quiz.questions.length === 0) continue;
+        const q = quiz.questions[0];
+        if (q && q.question && Array.isArray(q.options) && q.options.length > 0
+          && typeof q.correctIndex === 'number' && q.correctIndex < q.options.length) {
           qs.push({
-            topicId: topic.id,
-            topicName: topic.name,
+            topicId: combined[i].id,
+            topicName: combined[i].name,
             question: q.question,
             options: q.options,
             correctIndex: q.correctIndex,
-            explanation: q.explanation,
+            explanation: q.explanation ?? '',
           });
         }
       } catch {
-        // skip topic if generation fails
+        // Skip failed AI call
       }
     }
 
+    if (qs.length === 0) {
+      setLoading(false);
+      setDone(true);
+      return;
+    }
     setQuestions(qs);
     setLoading(false);
   }
 
   function handleSelect(idx: number) {
     if (selected !== null) return;
-    setSelected(idx);
     const q = questions[currentIdx];
+    if (!q) return;
+    setSelected(idx);
     const correct = idx === q.correctIndex;
-    const newScore = correct ? score + 1 : score;
-    const newCorrectTopics = correct ? [...correctTopics, q.topicId] : correctTopics;
-    const newWrongTopics = correct ? wrongTopics : [...wrongTopics, q.topicId];
     if (correct) {
       setScore(s => s + 1);
       setCorrectTopics(prev => [...prev, q.topicId]);
@@ -116,13 +125,13 @@ export default function DailyChallengeScreen() {
       setWrongTopics(prev => [...prev, q.topicId]);
     }
 
-    Animated.sequence([
-      Animated.timing(feedbackOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.delay(1800),
-      Animated.timing(feedbackOpacity, { toValue: 0, duration: 200, useNativeDriver: true }),
-    ]).start(() => {
+    Animated.timing(feedbackOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+  }
+
+  function handleNextQuestion() {
+    Animated.timing(feedbackOpacity, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
       if (currentIdx + 1 >= questions.length) {
-        finishChallenge(newScore, newCorrectTopics, newWrongTopics);
+        finishChallenge(score, correctTopics, wrongTopics);
       } else {
         setCurrentIdx(i => i + 1);
         setSelected(null);
@@ -131,31 +140,47 @@ export default function DailyChallengeScreen() {
   }
 
   async function finishChallenge(finalScore: number, finalCorrect: number[], finalWrong: number[]) {
-    const totalXp = finalScore * XP_PER_CORRECT;
-    const sessionId = createSession([], 'good', 'normal');
-    endSession(sessionId, finalCorrect, totalXp, Math.ceil(questions.length * 1.5));
-    updateStreak(true);
+    try {
+      const totalXp = finalScore * XP_PER_CORRECT;
+      const sessionId = createSession([], 'good', 'normal');
+      endSession(sessionId, finalCorrect, totalXp, Math.ceil(questions.length * 1.5));
+      updateStreak(true);
 
-    // Update SRS for each answered topic
-    for (const topicId of finalCorrect) {
-      updateTopicProgress(topicId, 'reviewed', 4, XP_PER_CORRECT);
-    }
-    for (const topicId of finalWrong) {
-      updateTopicProgress(topicId, 'seen', 2, 10);
-    }
+      // Update SRS for each answered topic
+      for (const topicId of finalCorrect) {
+        updateTopicProgress(topicId, 'reviewed', 3, XP_PER_CORRECT);
+      }
+      for (const topicId of finalWrong) {
+        updateTopicProgress(topicId, 'seen', 2, 10);
+      }
 
-    await refreshProfile();
+      await refreshProfile();
+    } catch (e) {
+      console.warn('[DailyChallenge] finishChallenge error:', e);
+    }
     setDone(true);
   }
 
   if (loading) {
+    const progressPct = loadingProgress.total > 0 
+      ? (loadingProgress.current / loadingProgress.total) * 100 
+      : 0;
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+        <ResponsiveContainer>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6C63FF" />
           <Text style={styles.loadingText}>{loadingMsg}</Text>
+          {loadingProgress.total > 0 && (
+            <View style={styles.loadingProgressContainer}>
+              <View style={styles.loadingProgressBg}>
+                <View style={[styles.loadingProgressFill, { width: `${progressPct}%` }]} />
+              </View>
+            </View>
+          )}
         </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -168,6 +193,7 @@ export default function DailyChallengeScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+        <ResponsiveContainer>
         <View style={styles.doneContainer}>
           <Text style={styles.doneEmoji}>{pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '📚'}</Text>
           <Text style={styles.doneGrade}>{grade}</Text>
@@ -184,6 +210,7 @@ export default function DailyChallengeScreen() {
             <Text style={styles.doneBtnText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
@@ -191,23 +218,40 @@ export default function DailyChallengeScreen() {
   if (questions.length === 0) {
     return (
       <SafeAreaView style={styles.safe}>
+        <ResponsiveContainer>
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>No topics due for review yet.{'\n'}Keep studying to unlock challenges!</Text>
           <TouchableOpacity style={[styles.doneBtn, { marginTop: 24 }]} onPress={() => navigation.goBack()}>
             <Text style={styles.doneBtnText}>Go Back</Text>
           </TouchableOpacity>
         </View>
+        </ResponsiveContainer>
       </SafeAreaView>
     );
   }
 
   const q = questions[currentIdx];
+  if (!q) {
+    // Safety guard — should not happen, but prevents crash
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ResponsiveContainer>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Something went wrong loading the challenge.</Text>
+          <TouchableOpacity style={[styles.doneBtn, { marginTop: 24 }]} onPress={() => navigation.goBack()}>
+            <Text style={styles.doneBtnText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+        </ResponsiveContainer>
+      </SafeAreaView>
+    );
+  }
   const isCorrect = selected === q.correctIndex;
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-
+      <ResponsiveContainer>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
@@ -262,10 +306,15 @@ export default function DailyChallengeScreen() {
       {/* Feedback toast */}
       {selected !== null && (
         <Animated.View style={[styles.feedback, isCorrect ? styles.feedbackCorrect : styles.feedbackWrong, { opacity: feedbackOpacity }]}>
-          <Text style={styles.feedbackLabel}>{isCorrect ? '✅ Correct!' : '❌ Wrong'}</Text>
-          <Text style={styles.feedbackExpl}>{q.explanation}</Text>
+          <TouchableOpacity onPress={handleNextQuestion} activeOpacity={0.8}>
+            <Text style={styles.feedbackLabel}>
+              {isCorrect ? '✅ Correct!' : '❌ Wrong'}  <Text style={{color: '#9E9E9E', fontSize: 11, fontWeight: '500'}}>Tap to continue ➔</Text>
+            </Text>
+            <Text style={styles.feedbackExpl}>{q.explanation}</Text>
+          </TouchableOpacity>
         </Animated.View>
       )}
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }
@@ -274,6 +323,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   loadingText: { color: '#9E9E9E', fontSize: 15, marginTop: 16, textAlign: 'center', lineHeight: 22 },
+  loadingProgressContainer: { width: '80%', marginTop: 20 },
+  loadingProgressBg: { height: 6, backgroundColor: '#1A1A24', borderRadius: 3, overflow: 'hidden' },
+  loadingProgressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 3 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
   closeBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   closeText: { color: '#555', fontSize: 16 },

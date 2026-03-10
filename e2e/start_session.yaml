@@ -1,0 +1,29 @@
+appId: com.anonymous.gurustudy
+---
+- launchApp
+- runFlow: check_in.yaml
+
+# Tap the first available topic on the Home Screen Agenda
+- tapOn: "BioChem" # Example placeholder since topics are dynamic, we could just tap the section
+# In an actual test we might tap via index or exact text
+- tapOn: "Deep Work" # Mode selection for session
+- tapOn: "Review" # If it's a review topic
+
+# Inside the session screen
+- assertVisible: "End" 
+- assertVisible: "Flashcards"
+
+# We should see content like 'KeyPoints'
+- assertVisible: "Key Points"
+- tapOn: "Next"
+
+# Answer a Quiz
+- assertVisible: "Quiz"
+- tapOn: "Option 1" # We just tap the first option as a blind test
+- tapOn: "Next"
+
+# Assume we finish the subtopics and complete the session
+- tapOn: "Finish Session"
+
+# Assert we return Home and XP increased
+- assertVisible: "Welcome back, Doctor"

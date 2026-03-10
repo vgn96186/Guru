@@ -1,6 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
+const Updates = (() => {
+  try {
+    return require('expo-updates') as { reloadAsync: () => Promise<void> };
+  } catch {
+    return null;
+  }
+})();
+
 interface State {
   hasError: boolean;
 }
@@ -30,7 +38,19 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
             A critical error occurred. Please restart the app.
             If this keeps happening, try clearing app data or restoring from a backup.
           </Text>
-          {/* In a real app, you might have a "Reload App" button here */}
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => {
+              this.setState({ hasError: false });
+              try {
+                void Updates?.reloadAsync?.();
+              } catch {
+                // Fallback: just reset error state to re-render children
+              }
+            }}
+          >
+            <Text style={styles.retryText}>Reload App</Text>
+          </TouchableOpacity>
         </View>
       );
     }
@@ -62,5 +82,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
+  },
+  retryBtn: {
+    marginTop: 24,
+    backgroundColor: '#7C4DFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

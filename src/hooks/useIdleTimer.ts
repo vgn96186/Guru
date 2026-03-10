@@ -18,18 +18,23 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
     isIdleRef.current = isIdle;
   }, [isIdle]);
 
+  const onIdleRef = useRef(onIdle);
+  const onActiveRef = useRef(onActive);
+  useEffect(() => { onIdleRef.current = onIdle; }, [onIdle]);
+  useEffect(() => { onActiveRef.current = onActive; }, [onActive]);
+
   const resetTimer = useCallback(() => {
     if (disabled) return;
     if (isIdleRef.current) {
       setIsIdle(false);
-      onActive?.();
+      onActiveRef.current?.();
     }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setIsIdle(true);
-      onIdle();
+      onIdleRef.current();
     }, timeout);
-  }, [disabled, onIdle, onActive, timeout]);
+  }, [disabled, timeout]);
 
   // Handle app state changes (background/foreground)
   useEffect(() => {

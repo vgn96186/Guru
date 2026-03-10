@@ -2,9 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAllSubjects, getAllTopicsWithProgress } from '../db/queries/topics';
-import { getDailyLog, getDaysToExam } from '../db/queries/progress';
+import { getDailyLog, getDaysToExam, getActivityHistory } from '../db/queries/progress';
+import { getTotalStudyMinutes, getRecentSessions, getWeeklyComparison, calculateCurrentStreak } from '../db/queries/sessions';
+import { getTotalExternalStudyMinutes } from '../db/queries/externalLogs';
 import { useAppStore } from '../store/useAppStore';
 import LoadingOrb from '../components/LoadingOrb';
+import { ResponsiveContainer } from '../hooks/useResponsive';
+import ReviewCalendar from '../components/ReviewCalendar';
 
 export default function StatsScreen() {
   const profile = useAppStore(s => s.profile);
@@ -16,7 +20,18 @@ export default function StatsScreen() {
     coveragePercent: 0,
     projectedScore: 0,
     subjectBreakdown: [] as any[],
-    masteredTopics: [] as string[]
+    masteredTopics: [] as string[],
+    totalAppMinutes: 0,
+    totalExternalMinutes: 0,
+    totalSessions: 0,
+    activeDays30: 0,
+    // New stats
+    currentStreak: 0,
+    bestStreak: 0,
+    thisWeek: { minutes: 0, sessions: 0, topics: 0 },
+    lastWeek: { minutes: 0, sessions: 0, topics: 0 },
+    projectedCompletionDays: 0,
+    avgTopicsPerDay: 0,
   });
 
   useEffect(() => {
@@ -68,6 +83,24 @@ export default function StatsScreen() {
     // Rough projection logic: Base 50 + (High Yield coverage * 2.5) -> max ~300
     const projectedScore = Math.min(300, Math.round(50 + (highYieldPercent * 2.5)));
 
+    const totalAppMinutes = getTotalStudyMinutes();
+    const totalExternalMinutes = getTotalExternalStudyMinutes();
+    const allSessions = getRecentSessions(9999);
+    
+    // Calculate 30-day consistency
+    const recentLogs = getActivityHistory(30);
+    const activeDays30 = recentLogs.filter(l => l.sessionCount > 0 || l.totalMinutes > 0).length;
+    
+    // New stats: streak, weekly comparison, projected completion
+    const currentStreak = calculateCurrentStreak();
+    const bestStreak = profile?.streakBest ?? currentStreak;
+    const weeklyComp = getWeeklyComparison();
+    
+    // Calculate projected completion: remaining topics / avg topics per active day
+    const remaining = allTopics.length - covered;
+    const avgTopicsPerDay = activeDays30 > 0 ? covered / activeDays30 : 1;
+    const projectedCompletionDays = avgTopicsPerDay > 0 ? Math.ceil(remaining / avgTopicsPerDay) : 999;
+
     setStats({
       totalCovered: covered,
       totalTopics: allTopics.length,
@@ -75,7 +108,17 @@ export default function StatsScreen() {
       coveragePercent: highYieldPercent,
       projectedScore,
       subjectBreakdown: breakdown.sort((a, b) => b.percent - a.percent),
-      masteredTopics: masteredNames.slice(0, 10) // Show a sample
+      masteredTopics: masteredNames.slice(0, 10), // Show a sample
+      totalAppMinutes,
+      totalExternalMinutes,
+      totalSessions: allSessions.length,
+      activeDays30,
+      currentStreak,
+      bestStreak,
+      thisWeek: weeklyComp.thisWeek,
+      lastWeek: weeklyComp.lastWeek,
+      projectedCompletionDays,
+      avgTopicsPerDay: Math.round(avgTopicsPerDay * 10) / 10,
     });
 
     setLoading(false);
@@ -86,8 +129,9 @@ export default function StatsScreen() {
   const daysToInicet = profile?.inicetDate ? getDaysToExam(profile.inicetDate) : 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} testID="stats-screen">
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        <ResponsiveContainer>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Exam Readiness</Text>
           <Text style={styles.headerSub}>Focus on how far you've come.</Text>
@@ -122,6 +166,95 @@ export default function StatsScreen() {
           </View>
         </View>
 
+        {/* Consistency Card utilizing unused getActivityHistory metric */}
+        <View style={[styles.absoluteCard, { backgroundColor: '#1A2A1A' }]}>
+          <Text style={[styles.absoluteTitle, { color: '#4CAF50' }]}>30-Day Consistency</Text>
+          <Text style={[styles.absoluteBig, { color: '#4CAF50' }]}>{stats.activeDays30} / 30 Days</Text>
+          <Text style={styles.absoluteSub}>days studied in the past month</Text>
+        </View>
+
+        {/* Streak Card */}
+        <View style={[styles.absoluteCard, { backgroundColor: '#2A1A0A' }]}>
+          <View style={styles.streakRow}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.absoluteTitle, { color: '#FF9800' }]}>Current Streak</Text>
+              <Text style={[styles.absoluteBig, { color: '#FF9800' }]}>{stats.currentStreak} Days</Text>
+            </View>
+            {stats.bestStreak > stats.currentStreak && (
+              <View style={styles.bestStreakBadge}>
+                <Text style={styles.bestStreakText}>Best: {stats.bestStreak}</Text>
+              </View>
+            )}
+          </View>
+          {stats.currentStreak >= 7 && (
+            <Text style={styles.streakMotivation}>
+              {stats.currentStreak >= 30 ? "🏆 Legendary dedication!" : stats.currentStreak >= 14 ? "💪 Two weeks strong!" : "⭐ One week down!"}
+            </Text>
+          )}
+        </View>
+
+        {/* Week-over-Week Comparison */}
+        <View style={styles.absoluteCard}>
+          <Text style={styles.absoluteTitle}>This Week vs Last Week</Text>
+          <View style={styles.weekCompRow}>
+            <View style={styles.weekCol}>
+              <Text style={styles.weekLabel}>This Week</Text>
+              <Text style={styles.weekVal}>{Math.floor(stats.thisWeek.minutes / 60)}h {stats.thisWeek.minutes % 60}m</Text>
+              <Text style={styles.weekSub}>{stats.thisWeek.sessions} sessions · {stats.thisWeek.topics} topics</Text>
+            </View>
+            <View style={styles.weekDivider}>
+              {(() => {
+                const diff = stats.thisWeek.minutes - stats.lastWeek.minutes;
+                const pct = stats.lastWeek.minutes > 0 ? Math.round((diff / stats.lastWeek.minutes) * 100) : (stats.thisWeek.minutes > 0 ? 100 : 0);
+                const isUp = diff >= 0;
+                return (
+                  <View style={[styles.weekChangeBadge, { backgroundColor: isUp ? '#1A2A1A' : '#2A1A1A' }]}>
+                    <Text style={[styles.weekChangeText, { color: isUp ? '#4CAF50' : '#F44336' }]}>
+                      {isUp ? '↑' : '↓'} {Math.abs(pct)}%
+                    </Text>
+                  </View>
+                );
+              })()}
+            </View>
+            <View style={styles.weekCol}>
+              <Text style={styles.weekLabel}>Last Week</Text>
+              <Text style={[styles.weekVal, { color: '#888' }]}>{Math.floor(stats.lastWeek.minutes / 60)}h {stats.lastWeek.minutes % 60}m</Text>
+              <Text style={styles.weekSub}>{stats.lastWeek.sessions} sessions · {stats.lastWeek.topics} topics</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Projected Completion */}
+        {stats.avgTopicsPerDay > 0 && stats.projectedCompletionDays < 365 && (
+          <View style={[styles.absoluteCard, { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF44' }]}>
+            <Text style={[styles.absoluteTitle, { color: '#6C63FF' }]}>📅 Syllabus Completion Projection</Text>
+            <Text style={[styles.absoluteBig, { color: '#6C63FF' }]}>
+              {stats.projectedCompletionDays} days
+            </Text>
+            <Text style={styles.absoluteSub}>
+              At your pace of {stats.avgTopicsPerDay} topics/day ({stats.totalTopics - stats.totalCovered} remaining)
+            </Text>
+            {daysToInicet > 0 && (
+              <View style={[styles.projectionNote, { marginTop: 12, backgroundColor: stats.projectedCompletionDays <= daysToInicet ? '#1A2A1A' : '#2A1A1A' }]}>
+                <Text style={{ color: stats.projectedCompletionDays <= daysToInicet ? '#4CAF50' : '#F44336', fontSize: 13, textAlign: 'center' }}>
+                  {stats.projectedCompletionDays <= daysToInicet 
+                    ? `✅ On track! ${daysToInicet - stats.projectedCompletionDays} buffer days before INICET`
+                    : `⚠️ Need ${Math.ceil((stats.totalTopics - stats.totalCovered) / daysToInicet)} topics/day to finish before INICET`
+                  }
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Time Logged Card */}
+        <View style={styles.absoluteCard}>
+          <Text style={styles.absoluteTitle}>Time Invested</Text>
+          <Text style={styles.absoluteBig}>{Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h {(stats.totalAppMinutes + stats.totalExternalMinutes) % 60}m</Text>
+          <Text style={styles.absoluteSub}>Total study time across {stats.totalSessions} sessions</Text>
+        </View>
+
         {/* Mastered Topics Boost */}
         {stats.masteredCount > 0 && (
           <View style={styles.masteredCard}>
@@ -153,7 +286,12 @@ export default function StatsScreen() {
           ))}
         </View>
 
+        {/* Review Calendar */}
+        <Text style={styles.sectionTitle}>Review Schedule</Text>
+        <ReviewCalendar />
+
         <View style={styles.bottomSpacer} />
+        </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
   );
@@ -198,6 +336,23 @@ const styles = StyleSheet.create({
   subProgressBar: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
   subProgressFill: { height: '100%', borderRadius: 3 },
   subjectFraction: { color: '#666', fontSize: 11, textAlign: 'right' },
+  
+  // Streak styles
+  streakRow: { flexDirection: 'row', alignItems: 'center' },
+  streakEmoji: { fontSize: 40, marginRight: 16 },
+  bestStreakBadge: { backgroundColor: '#3A2A1A', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  bestStreakText: { color: '#FF9800', fontSize: 12, fontWeight: '700' },
+  streakMotivation: { color: '#D29D52', fontSize: 13, marginTop: 12, textAlign: 'center' },
+  
+  // Week comparison styles
+  weekCompRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  weekCol: { flex: 1 },
+  weekLabel: { color: '#888', fontSize: 11, textTransform: 'uppercase', fontWeight: '600', marginBottom: 4 },
+  weekVal: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  weekSub: { color: '#666', fontSize: 11, marginTop: 2 },
+  weekDivider: { width: 60, alignItems: 'center', justifyContent: 'center' },
+  weekChangeBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  weekChangeText: { fontSize: 14, fontWeight: '800' },
   
   bottomSpacer: { height: 60 }
 });

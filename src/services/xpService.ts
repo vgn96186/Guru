@@ -50,10 +50,14 @@ export function calculateAndAwardSessionXp(
 
   let total = breakdown.reduce((s, b) => s + b.amount, 0);
 
-  // 15% chance for a Lucky Day 2x multiplier
-  if (Math.random() < 0.15) {
-    total *= 2;
-    breakdown.push({ label: '🎰 Lucky Day! 2x Multiplier', amount: total / 2 });
+  // Streak bonus: 10% per streak day, max 50%
+  const { getUserProfile: _getUserProfile } = require('../db/queries/progress');
+  const _profile = _getUserProfile();
+  const streakBonus = Math.min((_profile.streakCurrent ?? 0) * 0.1, 0.5);
+  if (streakBonus > 0) {
+    const bonus = Math.round(total * streakBonus);
+    total += bonus;
+    breakdown.push({ label: `🔥 ${_profile.streakCurrent}-day streak (+${Math.round(streakBonus * 100)}%)`, amount: bonus });
   }
 
   const { newTotal, leveledUp, newLevel } = addXp(total);

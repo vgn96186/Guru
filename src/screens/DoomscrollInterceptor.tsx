@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
+import { getDailyLog } from '../db/queries/progress';
 import * as Haptics from 'expo-haptics';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const DOOMSCROLL_APPS = ['instagram', 'tiktok', 'twitter', 'facebook', 'youtube', 'snapchat'];
 const CHECK_INTERVAL = 2000; // Check every 2 seconds
@@ -16,7 +18,7 @@ const DELAY_SECONDS = 30; // 30-second delay before allowing access
 
 export default function DoomscrollInterceptor() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const [appState, setAppState] = useState(AppState.currentState);
+  const appStateRef = React.useRef(AppState.currentState);
   const [doomscrollAttempts, setDoomscrollAttempts] = useState(0);
   const [isBlocking, setIsBlocking] = useState(false);
   const [blockAppName, setBlockAppName] = useState('');
@@ -29,10 +31,11 @@ export default function DoomscrollInterceptor() {
   // Monitor app state changes (in real implementation, use native module to detect app switches)
   useEffect(() => {
     const subscription = AppState.addEventListener('change', nextAppState => {
-      setAppState(nextAppState);
+      const prevAppState = appStateRef.current;
+      appStateRef.current = nextAppState;
       
       // When app comes to foreground, check if doomscroll app was opened
-      if (nextAppState === 'active' && AppState.currentState.match(/inactive|background/)) {
+      if (nextAppState === 'active' && prevAppState.match(/inactive|background/)) {
         // In real implementation, check which app was last opened
         checkForDoomscrollAttempt();
       }
@@ -42,8 +45,10 @@ export default function DoomscrollInterceptor() {
   }, []);
 
   function checkForDoomscrollAttempt() {
-    // Simulate detecting a doomscroll app
-    const detectedApp = DOOMSCROLL_APPS[Math.floor(Math.random() * DOOMSCROLL_APPS.length)];
+    // TODO: Replace this mock with actual detection via native module.
+    // For now, use a fixed app name when this screen is navigated to,
+    // since opening this screen IS the doomscroll detection event.
+    const detectedApp = 'social media';
     
     setDoomscrollAttempts(prev => {
       const newCount = prev + 1;
@@ -82,21 +87,28 @@ export default function DoomscrollInterceptor() {
   useEffect(() => {
     if (isBlocking) {
       // Pulsing lock animation
-      Animated.loop(
+      const pulseLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.1, duration: 500, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      pulseLoop.start();
       
       // Shake animation for shame
-      Animated.loop(
+      const shakeLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
         ])
-      ).start();
+      );
+      shakeLoop.start();
+      
+      return () => {
+        pulseLoop.stop();
+        shakeLoop.stop();
+      };
     }
   }, [isBlocking]);
 
@@ -141,12 +153,32 @@ export default function DoomscrollInterceptor() {
   }
 
   if (!isBlocking) {
-    return null; // This screen only shows when blocking
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+        <ResponsiveContainer>
+          <View style={[styles.container, { justifyContent: 'center' }]}>
+            <Text style={styles.lockEmoji}>📵</Text>
+            <Text style={styles.title}>Interception standby</Text>
+            <Text style={styles.subtitle}>
+              Live app detection is not active yet on this device. Use App Hijack Setup to enable the guardrails, or go back to study now.
+            </Text>
+            <TouchableOpacity style={styles.studyBtn} onPress={() => navigation.navigate('Inertia')}>
+              <Text style={styles.studyBtnText}>📚 GO BACK TO STUDYING</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.proceedBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.proceedBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </ResponsiveContainer>
+      </SafeAreaView>
+    );
   }
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <ResponsiveContainer>
       <Animated.View style={[styles.container, { transform: [{ translateX: shakeAnim }] }]}>
         <Animated.View style={[styles.lockIcon, { transform: [{ scale: pulseAnim }] }]}>
           <Text style={styles.lockEmoji}>🚫</Text>
@@ -179,7 +211,6 @@ export default function DoomscrollInterceptor() {
         <TouchableOpacity 
           style={styles.studyBtn} 
           onPress={handleGoBackToStudy}
-          disabled={delayRemaining > 0}
         >
           <Text style={styles.studyBtnText}>
             {delayRemaining > 0 ? `Wait ${delayRemaining}s...` : '📚 GO BACK TO STUDYING'}
@@ -194,9 +225,10 @@ export default function DoomscrollInterceptor() {
         
         <View style={styles.statsContainer}>
           <Text style={styles.statsText}>Doomscroll attempts today: {doomscrollAttempts}</Text>
-          <Text style={styles.statsSub}>Study sessions today: 0</Text>
+          <Text style={styles.statsSub}>Study sessions today: {getDailyLog()?.sessionCount ?? 0}</Text>
         </View>
       </Animated.View>
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

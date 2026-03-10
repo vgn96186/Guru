@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { getBrainDumps, clearBrainDumps, BrainDumpLog } from '../db/queries/brainDumps';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BrainDumpReview'>;
 
@@ -16,9 +17,22 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
     }, []);
 
     const handleClear = () => {
-        clearBrainDumps();
-        setDumps([]);
-        navigation.goBack(); // Head home after clearing
+        Alert.alert(
+            'Clear All Thoughts?',
+            'This will permanently delete all parked thoughts. This cannot be undone.',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Clear All',
+                    style: 'destructive',
+                    onPress: () => {
+                        clearBrainDumps();
+                        setDumps([]);
+                        navigation.goBack();
+                    },
+                },
+            ],
+        );
     };
 
     const handleDone = () => {
@@ -27,6 +41,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
 
     return (
         <SafeAreaView style={styles.container}>
+            <ResponsiveContainer>
             <View style={styles.header}>
                 <Text style={styles.title}>Parked Thoughts</Text>
                 <Text style={styles.subtitle}>You safely deferred these while studying.</Text>
@@ -63,6 +78,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
                     <Text style={styles.doneText}>Done</Text>
                 </TouchableOpacity>
             </View>
+            </ResponsiveContainer>
         </SafeAreaView>
     );
 }

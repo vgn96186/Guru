@@ -1,3 +1,21 @@
 {
-    "java.configuration.updateBuildConfiguration": "automatic"
+    "java.configuration.updateBuildConfiguration": "disabled",
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": false,
+    "java.autobuild.enabled": false,
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "java.import.exclusions": [
+        "**/node_modules/**",
+        "**/android/build/**",
+        "**/modules/**/build/**"
+    ],
+    "problems.exclude": {
+        "**/node_modules/**": true
+    },
+    "python.testing.pytestArgs": [
+        "."
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "java.compile.nullAnalysis.mode": "automatic"
 }

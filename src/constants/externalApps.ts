@@ -57,4 +57,13 @@ export const EXTERNAL_APPS: ExternalApp[] = [
     iconEmoji: '👨‍⚕️',
     color: '#4CAF50',
   },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    packageName: 'com.google.android.youtube',
+    webUrl: 'https://www.youtube.com',
+    customScheme: 'vnd.youtube://',
+    iconEmoji: '▶️',
+    color: '#FF0000',
+  },
 ];

@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
+import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const CONTENT_TYPE_LABELS: Record<string, string> = {
   keypoints: 'Key Points',
@@ -87,65 +88,67 @@ export default function FlaggedReviewScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>🚩 Flagged for Review</Text>
-        <Text style={styles.count}>{items.length}</Text>
-      </View>
-
-      {items.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyEmoji}>✅</Text>
-          <Text style={styles.emptyTitle}>No flagged content</Text>
-          <Text style={styles.emptySub}>Tap the 🏳 flag button on any content card to mark it for review here.</Text>
+      <ResponsiveContainer>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>🚩 Flagged for Review</Text>
+          <Text style={styles.count}>{items.length}</Text>
         </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-          <Text style={styles.hint}>Tap a card to expand. These are AI-generated — verify against textbooks before relying on them for exams.</Text>
-          {items.map(item => {
-            const key = `${item.topicId}-${item.contentType}`;
-            const isExpanded = expanded === key;
-            return (
-              <View key={key} style={styles.card}>
-                {/* Card header with unflag button - separate touch zone */}
-                <View style={styles.cardHeader}>
-                  <TouchableOpacity 
-                    style={styles.cardMeta} 
-                    onPress={() => toggleExpand(key)} 
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</Text>
-                    <Text style={styles.cardSubject}>{item.subjectName}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.unflagBtn} 
-                    onPress={() => handleUnflag(item)} 
-                    hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.unflagText}>✕</Text>
+
+        {items.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyEmoji}>✅</Text>
+            <Text style={styles.emptyTitle}>No flagged content</Text>
+            <Text style={styles.emptySub}>Tap the 🏳 flag button on any content card to mark it for review here.</Text>
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+            <Text style={styles.hint}>Tap a card to expand. These are AI-generated — verify against textbooks before relying on them for exams.</Text>
+            {items.map(item => {
+              const key = `${item.topicId}-${item.contentType}`;
+              const isExpanded = expanded === key;
+              return (
+                <View key={key} style={styles.card}>
+                  {/* Card header with unflag button - separate touch zone */}
+                  <View style={styles.cardHeader}>
+                    <TouchableOpacity 
+                      style={styles.cardMeta} 
+                      onPress={() => toggleExpand(key)} 
+                      activeOpacity={0.85}
+                    >
+                      <Text style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</Text>
+                      <Text style={styles.cardSubject}>{item.subjectName}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.unflagBtn} 
+                      onPress={() => handleUnflag(item)} 
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.unflagText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {/* Main card body - tap to expand */}
+                  <TouchableOpacity onPress={() => toggleExpand(key)} activeOpacity={0.85}>
+                    <Text style={styles.cardTopic}>{item.topicName}</Text>
+                    <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
+
+                    {isExpanded && (
+                      <View style={styles.preview}>
+                        {renderPreview(item)}
+                      </View>
+                    )}
+                    <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
                   </TouchableOpacity>
                 </View>
-                
-                {/* Main card body - tap to expand */}
-                <TouchableOpacity onPress={() => toggleExpand(key)} activeOpacity={0.85}>
-                  <Text style={styles.cardTopic}>{item.topicName}</Text>
-                  <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
-
-                  {isExpanded && (
-                    <View style={styles.preview}>
-                      {renderPreview(item)}
-                    </View>
-                  )}
-                  <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
-        </ScrollView>
-      )}
+              );
+            })}
+          </ScrollView>
+        )}
+      </ResponsiveContainer>
     </SafeAreaView>
   );
 }

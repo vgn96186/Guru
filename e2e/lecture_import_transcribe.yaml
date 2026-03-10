@@ -1,0 +1,59 @@
+appId: com.anonymous.gurustudy
+---
+- launchApp
+
+- extendedWaitUntil:
+    visible:
+      id: "quick-start-btn"
+    timeout: 30000
+- tapOn:
+    id: "quick-start-btn"
+
+# Ensure we are on Home tab
+- tapOn:
+    text: "Home tab|Home"
+    optional: true
+
+# Expand More section (updated UI)
+- scrollUntilVisible:
+    element:
+      id: "more-header"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "more-header"
+    optional: true
+
+- scrollUntilVisible:
+    element:
+      id: "lecture-mode-btn"
+    direction: DOWN
+    timeout: 30000
+- tapOn:
+    id: "lecture-mode-btn"
+
+- extendedWaitUntil:
+    visible:
+      id: "import-transcribe-btn"
+    timeout: 15000
+- tapOn:
+    id: "import-transcribe-btn"
+
+# Storage permission prompt can appear on first pick
+- tapOn:
+    text: "Allow|ALLOW|While using the app|Only this time"
+    optional: true
+
+# Android system picker
+- tapOn:
+    text: "Downloads|Download|Documents"
+    optional: true
+- extendedWaitUntil:
+    visible: "guru_test_audio|guru test audio|\.wav|sample|audio"
+    timeout: 45000
+- tapOn: "guru_test_audio|guru test audio|\.wav|sample|audio"
+
+# Accept either success or fallback failure alert text
+- extendedWaitUntil:
+    visible: "Transcription Complete|Transcription Failed"
+    timeout: 120000

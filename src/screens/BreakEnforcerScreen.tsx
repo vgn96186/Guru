@@ -68,6 +68,16 @@ export default function BreakEnforcerScreen() {
     navigation.navigate('Tabs');
   }
 
+  const [showFallback, setShowFallback] = useState(false);
+
+  useEffect(() => {
+    if (isOver) {
+      // Show fallback manual resume button after 3 minutes of meltdown
+      const fallbackTimer = setTimeout(() => setShowFallback(true), 180000);
+      return () => clearTimeout(fallbackTimer);
+    }
+  }, [isOver]);
+
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
 
@@ -79,6 +89,12 @@ export default function BreakEnforcerScreen() {
           <Text style={styles.titleError}>YOUR BREAK IS OVER</Text>
           <Text style={styles.subError}>Drop this phone. Walk back to your tablet. Press "Resume Now".</Text>
           <Text style={styles.warning}>I will keep sending you push notifications every 15 seconds until the tablet signals that you are watching the lecture.</Text>
+
+          {showFallback && (
+            <TouchableOpacity style={styles.fallbackBtn} onPress={handleReturnToLecture}>
+              <Text style={styles.fallbackBtnText}>Tablet isn't syncing? Resume Manually.</Text>
+            </TouchableOpacity>
+          )}
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -114,5 +130,7 @@ const styles = StyleSheet.create({
   subError: { color: '#fff', fontSize: 24, textAlign: 'center', fontWeight: '800', marginBottom: 48, lineHeight: 32 },
   warning: { color: '#FFCDD2', fontSize: 16, textAlign: 'center', fontStyle: 'italic', fontWeight: '600' },
   timer: { color: '#fff', fontSize: 80, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 24 },
-  footerText: { color: '#666', fontSize: 14, fontStyle: 'italic', marginTop: 32 }
+  footerText: { color: '#666', fontSize: 14, fontStyle: 'italic', marginTop: 32 },
+  fallbackBtn: { marginTop: 40, padding: 16, backgroundColor: '#990000', borderRadius: 12, borderWidth: 1, borderColor: '#FFCDD2' },
+  fallbackBtnText: { color: '#FFCDD2', fontSize: 14, fontWeight: '700' }
 });

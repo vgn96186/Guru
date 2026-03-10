@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, BackHandler, AppState } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, BackHandler, AppState, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -70,7 +70,19 @@ export default function LockdownScreen() {
           style={styles.studyBtn}
           onPress={() => (navigation as any).navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft/60) })}
         >
-          <Text style={styles.studyBtnText}>Open Flashcards</Text>
+          <Text style={styles.studyBtnText}>Start {Math.ceil(timeLeft/60)}-min Sprint</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.exitBtn}
+          onPress={() => {
+            Alert.alert('Give up?', 'Are you sure you want to break the lockdown?', [
+              { text: 'Stay Strong', style: 'cancel' },
+              { text: 'I give up', style: 'destructive', onPress: () => (navigation as any).navigate('Tabs') }
+            ]);
+          }}
+        >
+          <Text style={styles.exitBtnText}>Force Exit</Text>
         </TouchableOpacity>
       </ResponsiveContainer>
     </SafeAreaView>
@@ -85,6 +97,8 @@ const styles = StyleSheet.create({
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48, lineHeight: 24 },
   timer: { color: '#fff', fontSize: 72, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 48 },
   shameText: { color: '#FF9800', fontSize: 16, fontWeight: '700', textAlign: 'center', marginBottom: 32, fontStyle: 'italic' },
-  studyBtn: { backgroundColor: '#6C63FF', width: '100%', padding: 20, borderRadius: 16, alignItems: 'center' },
-  studyBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' }
+  studyBtn: { backgroundColor: '#6C63FF', width: '100%', padding: 20, borderRadius: 16, alignItems: 'center', marginBottom: 24 },
+  studyBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' },
+  exitBtn: { padding: 12 },
+  exitBtnText: { color: '#555', fontSize: 14, textDecorationLine: 'underline' }
 });

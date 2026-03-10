@@ -57,6 +57,8 @@ export default function HomeScreen() {
   const [uploadTranscript, setUploadTranscript] = useState('');
   const [showTranscriptModal, setShowTranscriptModal] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
+  const [criticalExpanded, setCriticalExpanded] = useState(false);
+  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [completedSessions, setCompletedSessions] = useState(0);
 
   // LectureReturnSheet state
@@ -575,41 +577,63 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
 
-          <View style={styles.criticalSection}>
-            <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
-            {criticalItems.map(item => (
-              <TouchableOpacity
-                key={item.key}
-                style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
-                onPress={item.onPress}
-                activeOpacity={0.8}
-              >
-                <View style={styles.criticalCardTop}>
-                  <Text style={[styles.criticalBadge, { color: item.accent }]}>{item.badge}</Text>
-                  <Text style={[styles.criticalArrow, { color: item.accent }]}>›</Text>
-                </View>
-                <Text style={styles.criticalTitle}>{item.title}</Text>
-                <Text style={styles.criticalSub}>{item.sub}</Text>
-              </TouchableOpacity>
-            ))}
+          <View style={styles.collapsibleSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setCriticalExpanded(prev => !prev)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
+              <Text style={styles.moreChevron}>{criticalExpanded ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+            {criticalExpanded && (
+              <View style={styles.criticalSectionContent}>
+                {criticalItems.map(item => (
+                  <TouchableOpacity
+                    key={item.key}
+                    style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
+                    onPress={item.onPress}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.criticalCardTop}>
+                      <Text style={[styles.criticalBadge, { color: item.accent }]}>{item.badge}</Text>
+                      <Text style={[styles.criticalArrow, { color: item.accent }]}>›</Text>
+                    </View>
+                    <Text style={styles.criticalTitle}>{item.title}</Text>
+                    <Text style={styles.criticalSub}>{item.sub}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
-          <View style={styles.coreActionsSection}>
-            <Text style={styles.sectionLabel}>CORE TOOLS</Text>
-            <View style={styles.coreActionsRow}>
-              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('GuruChat')} activeOpacity={0.8}>
-                <Text style={styles.coreActionTitle}>Guru Chat</Text>
-                <Text style={styles.coreActionSub}>Ask grounded medical questions</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('LectureMode', {})} activeOpacity={0.8} testID="lecture-mode-btn">
-                <Text style={styles.coreActionTitle}>Lecture Mode</Text>
-                <Text style={styles.coreActionSub}>Capture and summarize lectures</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.coreActionWide} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
-              <Text style={styles.coreActionWideTitle}>Flagged Review</Text>
-              <Text style={styles.coreActionWideSub}>Return to topics you explicitly marked for later</Text>
+          <View style={styles.collapsibleSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setToolsExpanded(prev => !prev)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sectionLabel}>CORE TOOLS</Text>
+              <Text style={styles.moreChevron}>{toolsExpanded ? '▲' : '▼'}</Text>
             </TouchableOpacity>
+            {toolsExpanded && (
+              <View style={styles.coreActionsSectionContent}>
+                <View style={styles.coreActionsRow}>
+                  <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('GuruChat')} activeOpacity={0.8}>
+                    <Text style={styles.coreActionTitle}>Guru Chat</Text>
+                    <Text style={styles.coreActionSub}>Ask grounded medical questions</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('LectureMode', {})} activeOpacity={0.8} testID="lecture-mode-btn">
+                    <Text style={styles.coreActionTitle}>Lecture Mode</Text>
+                    <Text style={styles.coreActionSub}>Capture and summarize lectures</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.coreActionWide} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
+                  <Text style={styles.coreActionWideTitle}>Flagged Review</Text>
+                  <Text style={styles.coreActionWideSub}>Return to topics you explicitly marked for later</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* ── 5. Today's Agenda (max 2 items) ── */}
@@ -870,7 +894,15 @@ const styles = StyleSheet.create({
   paralysisLink: { alignSelf: 'center', marginBottom: 16 },
   paralysisText: { color: '#BCC2D0', fontSize: 13, textDecorationLine: 'underline' },
 
-  criticalSection: { paddingHorizontal: 16, marginBottom: 18 },
+  collapsibleSection: { marginBottom: 8 },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  criticalSectionContent: { paddingHorizontal: 16, paddingBottom: 10 },
   criticalCard: {
     backgroundColor: '#1A1A24',
     borderRadius: 16,
@@ -893,7 +925,7 @@ const styles = StyleSheet.create({
   criticalTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginBottom: 4 },
   criticalSub: { color: '#9CA3B5', fontSize: 13, lineHeight: 19 },
 
-  coreActionsSection: { paddingHorizontal: 16, marginBottom: 18 },
+  coreActionsSectionContent: { paddingHorizontal: 16, paddingBottom: 10 },
   coreActionsRow: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   coreActionCard: {
     flex: 1,

@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
-import { scheduleHarassment, requestNotificationPermissions } from '../services/notificationService';
+import { scheduleHarassment, requestNotificationPermissions, cancelAllNotifications } from '../services/notificationService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 export default function DoomscrollGuideScreen() {
@@ -28,6 +28,13 @@ export default function DoomscrollGuideScreen() {
       'If you close this app and go doomscroll, I will start blowing up your phone with notifications every 3 minutes starting soon. The only way to stop it is to come back and study.',
       [{ text: 'I understand the consequences' }]
     );
+  }
+
+  async function deactivateHarassment() {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await cancelAllNotifications();
+    setHarassmentActive(false);
+    Alert.alert('Deactivated', 'Harassment mode has been turned off.');
   }
 
   return (
@@ -57,6 +64,15 @@ export default function DoomscrollGuideScreen() {
                 {harassmentActive ? '💣 Bombardment Armed' : 'Activate Harassment Mode'}
               </Text>
             </TouchableOpacity>
+
+            {harassmentActive && (
+              <TouchableOpacity
+                style={styles.deactivateBtn}
+                onPress={deactivateHarassment}
+              >
+                <Text style={styles.deactivateBtnText}>Deactivate Harassment Mode</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.card}>
@@ -111,6 +127,8 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: '#F44336', padding: 16, borderRadius: 12, alignItems: 'center' },
   btnActive: { backgroundColor: '#4CAF50' },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  deactivateBtn: { marginTop: 12, padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#F4433655' },
+  deactivateBtnText: { color: '#F44336', fontSize: 14, fontWeight: '700' },
   
   osBox: { backgroundColor: '#2A2A38', padding: 16, borderRadius: 12 },
   osTitle: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },

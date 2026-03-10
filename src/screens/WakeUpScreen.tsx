@@ -94,6 +94,10 @@ export default function WakeUpScreen() {
               <Animated.View style={[styles.breatheCircle, { transform: [{ scale: breatheAnim }] }]} />
               <Text style={styles.breatheText}>{breatheText}</Text>
             </View>
+
+            <TouchableOpacity style={styles.skipBtn} onPress={() => setPhase('ground')} activeOpacity={0.8}>
+              <Text style={styles.skipBtnText}>I'm already awake</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -170,6 +174,9 @@ const styles = StyleSheet.create({
   breatheCircle: { position: 'absolute', width: 100, height: 100, borderRadius: 50, backgroundColor: '#6C63FF33', borderWidth: 2, borderColor: '#6C63FF' },
   breatheText: { color: '#fff', fontSize: 18, fontWeight: '700', zIndex: 10 },
   
+  skipBtn: { marginTop: 40, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, borderWidth: 1, borderColor: '#333' },
+  skipBtnText: { color: '#9E9E9E', fontSize: 14, fontWeight: '600' },
+
   groundText: { color: '#6C63FF', fontSize: 20, fontWeight: '700', textAlign: 'center', marginBottom: 40, paddingHorizontal: 20, lineHeight: 30 },
   nextBtn: { backgroundColor: '#1A1A24', paddingHorizontal: 40, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: '#333' },
   nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },

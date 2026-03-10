@@ -26,6 +26,9 @@ export default function SleepModeScreen() {
   const [movementCount, setMovementCount] = useState(0);
   const [notifId, setNotifId] = useState<string | null>(null);
 
+  // Custom time picker states
+  const [hoursToAdd, setHoursToAdd] = useState(8);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
 
@@ -105,22 +108,45 @@ export default function SleepModeScreen() {
     (soundRef as any).vibrateInterval = interval;
   }
 
-  function stopAlarm() {
+  async function stopAlarm() {
     if ((soundRef as any).vibrateInterval) {
       clearInterval((soundRef as any).vibrateInterval);
+    }
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
     }
     setAlarmRinging(false);
     navigation.replace('WakeUp');
   }
 
+  async function handleSnooze() {
+    if ((soundRef as any).vibrateInterval) {
+      clearInterval((soundRef as any).vibrateInterval);
+    }
+    if (soundRef.current) {
+      await soundRef.current.stopAsync();
+      await soundRef.current.unloadAsync();
+      soundRef.current = null;
+    }
+    setAlarmRinging(false);
+
+    // Snooze for 9 minutes
+    const snoozeTarget = new Date();
+    snoozeTarget.setMinutes(snoozeTarget.getMinutes() + 9);
+    setAlarmTime(snoozeTarget);
+    setIsTracking(true);
+    setMovementCount(0); // Reset movements for snooze period
+    fadeAnim.setValue(0);
+  }
+
   async function toggleTracking() {
     if (!isTracking) {
-      // Set alarm for let's say 8 hours from now
-      // Before scheduling, ask for permissions just in case
       await Notifications.requestPermissionsAsync();
       
       const target = new Date();
-      target.setHours(target.getHours() + 8);
+      target.setHours(target.getHours() + hoursToAdd);
       setAlarmTime(target);
       setIsTracking(true);
       setMovementCount(0);
@@ -158,6 +184,10 @@ export default function SleepModeScreen() {
         <TouchableOpacity style={styles.stopBtn} onPress={stopAlarm} activeOpacity={0.8}>
           <Text style={styles.stopBtnText}>I'M AWAKE</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze} activeOpacity={0.8}>
+          <Text style={styles.snoozeBtnText}>Snooze (9 min)</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -177,7 +207,16 @@ export default function SleepModeScreen() {
           </View>
         ) : (
           <View style={styles.setupInfo}>
-            <Text style={styles.setupText}>Set phone on nightstand to track sleep and wake up in a light sleep phase.</Text>
+            <Text style={styles.setupText}>Wake me up in</Text>
+            <View style={styles.timePickerRow}>
+              <TouchableOpacity style={styles.timePickerBtn} onPress={() => setHoursToAdd(Math.max(1, hoursToAdd - 1))}>
+                <Text style={styles.timePickerText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.timePickerVal}>{hoursToAdd} hrs</Text>
+              <TouchableOpacity style={styles.timePickerBtn} onPress={() => setHoursToAdd(Math.min(12, hoursToAdd + 1))}>
+                <Text style={styles.timePickerText}>+</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -206,8 +245,12 @@ const styles = StyleSheet.create({
   clock: { color: '#333', fontSize: 80, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 40 },
   
   setupInfo: { marginBottom: 40, alignItems: 'center' },
-  setupText: { color: '#555', textAlign: 'center', fontSize: 14, lineHeight: 20 },
-  
+  setupText: { color: '#555', textAlign: 'center', fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
+  timePickerBtn: { backgroundColor: '#1A1A24', width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#333' },
+  timePickerText: { color: '#fff', fontSize: 24, fontWeight: '400' },
+  timePickerVal: { color: '#6C63FF', fontSize: 20, fontWeight: '800', width: 60, textAlign: 'center' },
+
   trackingInfo: { alignItems: 'center', marginBottom: 40 },
   trackingText: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
   alarmText: { color: '#9E9E9E', fontSize: 14, marginBottom: 4 },
@@ -226,6 +269,8 @@ const styles = StyleSheet.create({
   alarmTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
   alarmSub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 60 },
   
-  stopBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 40, paddingVertical: 20, borderRadius: 20, elevation: 8, shadowColor: '#6C63FF', shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 4 } },
+  stopBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 40, paddingVertical: 20, borderRadius: 20, elevation: 8, shadowColor: '#6C63FF', shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, marginBottom: 20 },
   stopBtnText: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
+  snoozeBtn: { paddingHorizontal: 30, paddingVertical: 12, borderRadius: 16, backgroundColor: '#1A1A24', borderWidth: 1, borderColor: '#333' },
+  snoozeBtnText: { color: '#9E9E9E', fontSize: 16, fontWeight: '700' },
 });

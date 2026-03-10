@@ -689,7 +689,7 @@ export default function SettingsScreen() {
           />
         </Section>
 
-        <Section title="📅 Exam Dates" initiallyExpanded>
+        <Section title="📅 Exam Dates" initiallyExpanded={false}>
           <Label text="INICET date (YYYY-MM-DD)" />
           <TextInput
             style={[styles.input, validationErrors.inicetDate && styles.inputError]}
@@ -737,7 +737,7 @@ export default function SettingsScreen() {
           )}
         </Section>
 
-        <Section title="⏱️ Study Preferences" initiallyExpanded>
+        <Section title="⏱️ Study Preferences" initiallyExpanded={false}>
           <Label text="Preferred session length (minutes)" />
           <TextInput
             style={[styles.input, validationErrors.sessionLength && styles.inputError]}
@@ -826,7 +826,7 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
-        <Section title="🔔 Notifications" initiallyExpanded>
+        <Section title="🔔 Notifications" initiallyExpanded={false}>
           <View style={styles.switchRow}>
             <View>
               <Text style={styles.switchLabel}>Enable Guru's reminders</Text>

@@ -39,8 +39,24 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   }
 
   // Create performance indexes (IF NOT EXISTS — safe for existing installs)
+  const staleIndexes = [
+    'DROP INDEX IF EXISTS idx_tp_status_review',
+    'DROP INDEX IF EXISTS idx_sessions_date',
+  ];
+  for (const sql of staleIndexes) {
+    try {
+      await db.execAsync(sql);
+    } catch (err) {
+      if (__DEV__) console.warn('[DB] Failed to drop stale index:', sql, err);
+    }
+  }
+
   for (const sql of DB_INDEXES) {
-    try { await db.execAsync(sql); } catch (_) { /* ignore */ }
+    try {
+      await db.execAsync(sql);
+    } catch (err) {
+      if (__DEV__) console.warn('[DB] Failed to create index:', sql, err);
+    }
   }
 
   // Check topic count BEFORE seeding subjects (to detect fresh install)
@@ -125,6 +141,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `UPDATE user_profile SET use_local_whisper = 1 WHERE use_local_whisper = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')`,
     `UPDATE user_profile SET study_resource_mode = 'hybrid' WHERE study_resource_mode IS NULL OR study_resource_mode = ''`,
     `UPDATE user_profile SET subject_load_overrides_json = '{}' WHERE subject_load_overrides_json IS NULL OR subject_load_overrides_json = ''`,
+    `ALTER TABLE user_profile ADD COLUMN harassment_tone TEXT NOT NULL DEFAULT 'shame'`,
     // lecture_notes expansion for full transcript storage
     `ALTER TABLE lecture_notes ADD COLUMN transcript TEXT`,
     `ALTER TABLE lecture_notes ADD COLUMN summary TEXT`,

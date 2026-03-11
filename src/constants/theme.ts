@@ -32,8 +32,8 @@ export const theme = {
 
     // Text
     textPrimary: '#FFFFFF',
-    textSecondary: '#A0A0B8',
-    textMuted: '#606080',
+    textSecondary: '#B8B8D0',
+    textMuted: '#8080A0',
     textInverse: '#0F0F14',
 
     // Borders

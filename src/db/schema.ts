@@ -162,6 +162,15 @@ CREATE TABLE IF NOT EXISTS external_app_logs (
   pipeline_metrics_json TEXT
 )`;
 
+export const CREATE_CHAT_HISTORY = `
+CREATE TABLE IF NOT EXISTS chat_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  message TEXT NOT NULL,
+  timestamp INTEGER NOT NULL
+)`;
+
 export const CREATE_OFFLINE_AI_QUEUE = `
 CREATE TABLE IF NOT EXISTS offline_ai_queue (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -194,15 +203,19 @@ ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'p
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
-  `CREATE INDEX IF NOT EXISTS idx_tp_status_review ON topic_progress(status, next_review_date)`,
+  `CREATE INDEX IF NOT EXISTS idx_tp_status_fsrs_due ON topic_progress(status, fsrs_due, confidence)`,
   // AI cache content fetches (topic detail screen)
   `CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
   // Lecture notes chronological listing
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created ON lecture_notes(created_at DESC)`,
   // External app session "active" check (returned_at IS NULL)
   `CREATE INDEX IF NOT EXISTS idx_ext_logs_active ON external_app_logs(returned_at)`,
+  // Retry scanner for transcription recovery jobs
+  `CREATE INDEX IF NOT EXISTS idx_ext_logs_retry ON external_app_logs(transcription_status, returned_at)`,
   // Sessions by date for StatsScreen
-  `CREATE INDEX IF NOT EXISTS idx_sessions_date ON sessions(created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_sessions_started_at ON sessions(started_at DESC)`,
+  // Queue processing order for offline AI jobs
+  `CREATE INDEX IF NOT EXISTS idx_offline_ai_queue_status ON offline_ai_queue(status, attempts, created_at)`,
   // Topic tree traversal (parent lookups)
   `CREATE INDEX IF NOT EXISTS idx_topics_parent ON topics(parent_topic_id)`,
   // Topic-to-subject join
@@ -221,4 +234,5 @@ export const ALL_SCHEMAS = [
   CREATE_BRAIN_DUMPS,
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
+  CREATE_CHAT_HISTORY,
 ];

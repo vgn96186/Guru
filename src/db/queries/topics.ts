@@ -1,6 +1,6 @@
 import { getDb, todayStr } from '../database';
 import type { Subject, Topic, TopicProgress, TopicWithProgress } from '../../types';
-import { getInitialCard, reviewCard, mapConfidenceToRating } from '../../services/fsrsService';
+import { getInitialCard, reviewCardFromConfidence } from '../../services/fsrsService';
 import type { Card } from 'ts-fsrs';
 
 // Removed SM-2 srsNextDate in favor of FSRS
@@ -123,8 +123,7 @@ export function updateTopicProgress(
     card = getInitialCard();
   }
   
-  const rating = mapConfidenceToRating(confidence);
-  const log = reviewCard(card, rating, new Date());
+  const log = reviewCardFromConfidence(card, confidence, new Date());
   const updatedCard = log.card;
   const nextReview = updatedCard.due.toISOString().slice(0, 10);
   

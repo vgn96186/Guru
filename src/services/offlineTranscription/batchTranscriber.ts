@@ -21,6 +21,7 @@
 
 import * as FileSystem from 'expo-file-system/legacy';
 import { initWhisper } from 'whisper.rn';
+import { splitWavIntoChunks } from '../../../modules/app-launcher';
 
 type WhisperContextType = Awaited<ReturnType<typeof initWhisper>>;
 import {
@@ -53,6 +54,8 @@ interface AudioChunkInfo {
   /** Duration of this chunk (seconds) */
   durationSec: number;
 }
+
+const WAV_BYTES_PER_SECOND = 16_000 * 2;
 
 export type BatchProgressCallback = (progress: TranscriptionProgress) => void;
 
@@ -243,10 +246,6 @@ export class BatchTranscriber {
     wavFilePath: string,
   ): Promise<AudioChunkInfo[]> {
     const chunks: AudioChunkInfo[] = [];
-    const chunkDir = `${FileSystem.cacheDirectory}batch-chunks/`;
-
-    // Ensure chunk directory exists
-    await FileSystem.makeDirectoryAsync(chunkDir, { intermediates: true });
 
     // Read the WAV file to get its total duration
     // WAV header is 44 bytes. Rest is PCM data.
@@ -257,57 +256,33 @@ export class BatchTranscriber {
     }
 
     const dataBytes = fileInfo.size - 44; // Subtract WAV header
-    const bytesPerSecond = 16000 * 1 * 2; // 16kHz * mono * 16-bit
+    const bytesPerSecond = WAV_BYTES_PER_SECOND; // 16kHz * mono * 16-bit
     const totalDurationSec = dataBytes / bytesPerSecond;
 
     const chunkDuration = this.config.chunkDurationSec;
     const overlap = this.config.overlapSec;
-    const step = chunkDuration - overlap;
+    const chunkBytes = Math.max(bytesPerSecond, Math.floor(chunkDuration * bytesPerSecond));
+    const overlapBytes = Math.max(0, Math.floor(overlap * bytesPerSecond));
+    const stepBytes = Math.max(bytesPerSecond, chunkBytes - overlapBytes);
+    const normalizedPath = wavFilePath.startsWith('file://')
+      ? wavFilePath.replace('file://', '')
+      : wavFilePath;
 
-    let startSec = 0;
-    let chunkIndex = 0;
+    const nativeChunks = await splitWavIntoChunks(
+      normalizedPath,
+      chunkBytes,
+      stepBytes,
+      bytesPerSecond,
+    );
 
-    while (startSec < totalDurationSec) {
-      const endSec = Math.min(startSec + chunkDuration, totalDurationSec);
-      const actualDuration = endSec - startSec;
-
-      // Skip very short chunks (< 1 second)
-      if (actualDuration < 1.0) break;
-
-      // Calculate byte positions in the WAV file
-      const startByte = 44 + Math.floor(startSec * bytesPerSecond);
-      const endByte = 44 + Math.floor(endSec * bytesPerSecond);
-      const chunkDataBytes = endByte - startByte;
-
-      // Read the chunk data from the original file
-      // NOTE: We read as base64 to work with expo-file-system
-      const chunkPath = `${chunkDir}chunk_${chunkIndex.toString().padStart(4, '0')}.wav`;
-
-      // Read the PCM data for this chunk
-      const base64Data = await FileSystem.readAsStringAsync(wavFilePath, {
-        encoding: FileSystem.EncodingType.Base64,
-        position: startByte,
-        length: chunkDataBytes,
-      });
-
-      // Create a WAV file for this chunk (header + data)
-      const headerBuf = this.createWavHeaderBase64(chunkDataBytes);
-      const chunkBase64 = headerBuf + base64Data;
-
-      await FileSystem.writeAsStringAsync(chunkPath, chunkBase64, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
-
+    nativeChunks.forEach((chunk, index) => {
       chunks.push({
-        index: chunkIndex,
-        filePath: chunkPath,
-        startTimeSec: startSec,
-        durationSec: actualDuration,
+        index,
+        filePath: chunk.path,
+        startTimeSec: chunk.startSec,
+        durationSec: chunk.durationSec,
       });
-
-      startSec += step;
-      chunkIndex++;
-    }
+    });
 
     console.log(
       `[Batch] Split ${totalDurationSec.toFixed(0)}s audio into ${chunks.length} chunks (${chunkDuration}s each, ${overlap}s overlap)`,
@@ -390,52 +365,10 @@ export class BatchTranscriber {
     for (const chunk of chunks) {
       await this.deleteChunkFile(chunk.filePath);
     }
-    // Try to remove the chunk directory
-    try {
-      await FileSystem.deleteAsync(
-        `${FileSystem.cacheDirectory}batch-chunks/`,
-        { idempotent: true },
-      );
-    } catch {
-      // Ignore
-    }
+    // Native chunk helper writes unique folders per run; files are removed above.
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
-
-  private createWavHeaderBase64(dataSize: number): string {
-    // Build a 44-byte WAV header for 16kHz mono 16-bit PCM
-    const header = new Uint8Array(44);
-    const view = new DataView(header.buffer);
-
-    const writeStr = (offset: number, str: string) => {
-      for (let i = 0; i < str.length; i++) {
-        header[offset + i] = str.charCodeAt(i);
-      }
-    };
-
-    writeStr(0, 'RIFF');
-    view.setUint32(4, 36 + dataSize, true);
-    writeStr(8, 'WAVE');
-    writeStr(12, 'fmt ');
-    view.setUint32(16, 16, true); // PCM
-    view.setUint16(20, 1, true); // AudioFormat
-    view.setUint16(22, 1, true); // Mono
-    view.setUint32(24, 16000, true); // SampleRate
-    view.setUint32(28, 32000, true); // ByteRate (16000 * 1 * 2)
-    view.setUint16(32, 2, true); // BlockAlign
-    view.setUint16(34, 16, true); // BitsPerSample
-    writeStr(36, 'data');
-    view.setUint32(40, dataSize, true);
-
-    // Convert to base64
-    let binary = '';
-    for (let i = 0; i < header.length; i++) {
-      binary += String.fromCharCode(header[i]);
-    }
-    // Use global btoa (available in React Native Hermes)
-    return btoa(binary);
-  }
 
   private emitProgress(
     state: 'initializing' | 'transcribing' | 'completed',

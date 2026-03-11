@@ -32,6 +32,89 @@ class AppLauncherModule : Module() {
     private companion object {
         private const val MEDIA_PROJECTION_RC = 7001
         private const val TAG = "GuruAppLauncher"
+        private const val WAV_HEADER_BYTES = 44
+        private const val WAV_BYTES_PER_SECOND = 16_000 * 1 * 2 // 16kHz mono 16-bit
+    }
+
+    private fun buildWavHeader(dataSize: Int): ByteArray {
+        val header = ByteBuffer.allocate(WAV_HEADER_BYTES).order(ByteOrder.LITTLE_ENDIAN)
+        header.put("RIFF".toByteArray(Charsets.US_ASCII))
+        header.putInt(36 + dataSize)
+        header.put("WAVE".toByteArray(Charsets.US_ASCII))
+        header.put("fmt ".toByteArray(Charsets.US_ASCII))
+        header.putInt(16) // PCM format chunk size
+        header.putShort(1) // PCM
+        header.putShort(1) // Mono
+        header.putInt(16_000) // Sample rate
+        header.putInt(32_000) // Byte rate
+        header.putShort(2) // Block align
+        header.putShort(16) // Bits per sample
+        header.put("data".toByteArray(Charsets.US_ASCII))
+        header.putInt(dataSize)
+        return header.array()
+    }
+
+    private fun splitWavIntoChunksNative(
+        wavPath: String,
+        chunkDataBytes: Int,
+        stepBytes: Int,
+        minChunkBytes: Int,
+    ): List<Map<String, Any>> {
+        val wavFile = File(wavPath)
+        if (!wavFile.exists() || wavFile.length() <= WAV_HEADER_BYTES) return emptyList()
+
+        val safeChunkBytes = if (chunkDataBytes <= 0) WAV_BYTES_PER_SECOND * 60 else chunkDataBytes
+        val safeStepBytes = when {
+            stepBytes <= 0 -> safeChunkBytes
+            stepBytes > safeChunkBytes -> safeChunkBytes
+            else -> stepBytes
+        }
+        val safeMinChunkBytes = if (minChunkBytes <= 0) WAV_BYTES_PER_SECOND else minChunkBytes
+
+        val chunkDir = File(
+            wavFile.parentFile ?: File("/tmp"),
+            "wav-chunks-${System.currentTimeMillis()}",
+        )
+        chunkDir.mkdirs()
+
+        val chunks = mutableListOf<Map<String, Any>>()
+        RandomAccessFile(wavFile, "r").use { raf ->
+            val totalSize = raf.length()
+            var dataOffset = WAV_HEADER_BYTES.toLong()
+            var chunkIndex = 0
+
+            while (dataOffset < totalSize) {
+                val remaining = (totalSize - dataOffset).toInt()
+                val thisChunkBytes = minOf(safeChunkBytes, remaining)
+                if (thisChunkBytes < safeMinChunkBytes) break
+
+                val pcmData = ByteArray(thisChunkBytes)
+                raf.seek(dataOffset)
+                raf.readFully(pcmData)
+
+                val chunkFile = File(chunkDir, "chunk_${chunkIndex.toString().padStart(3, '0')}.wav")
+                FileOutputStream(chunkFile).use { out ->
+                    out.write(buildWavHeader(thisChunkBytes))
+                    out.write(pcmData)
+                    out.flush()
+                }
+
+                val startSec = (dataOffset - WAV_HEADER_BYTES).toDouble() / WAV_BYTES_PER_SECOND.toDouble()
+                val durationSec = thisChunkBytes.toDouble() / WAV_BYTES_PER_SECOND.toDouble()
+                chunks.add(
+                    mapOf(
+                        "path" to chunkFile.absolutePath,
+                        "startSec" to startSec,
+                        "durationSec" to durationSec,
+                    ),
+                )
+
+                dataOffset += safeStepBytes.toLong()
+                chunkIndex += 1
+            }
+        }
+
+        return chunks
     }
 
     override fun definition() = ModuleDefinition {
@@ -434,6 +517,28 @@ class AppLauncherModule : Module() {
             } catch (e: Exception) {
                 Log.e(TAG, "convertToWav failed", e)
                 return@AsyncFunction null as String?
+            }
+        }
+
+        /**
+         * Split a WAV file into chunk WAV files using native byte-level I/O.
+         * Returns: [{ path, startSec, durationSec }]
+         */
+        AsyncFunction("splitWavIntoChunks") {
+            wavPath: String,
+            chunkDataBytes: Int,
+            stepBytes: Int,
+            minChunkBytes: Int ->
+            return@AsyncFunction try {
+                splitWavIntoChunksNative(
+                    wavPath = wavPath,
+                    chunkDataBytes = chunkDataBytes,
+                    stepBytes = stepBytes,
+                    minChunkBytes = minChunkBytes,
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "splitWavIntoChunks failed", e)
+                emptyList<Map<String, Any>>()
             }
         }
     }

@@ -1,5 +1,5 @@
 import { getDb, todayStr, dateStr } from '../database';
-import type { UserProfile, DailyLog, Mood, ContentType, StudyResourceMode } from '../../types';
+import type { UserProfile, DailyLog, Mood, ContentType, StudyResourceMode, HarassmentTone } from '../../types';
 import { LEVELS } from '../../constants/gamification';
 
 export function getUserProfile(): UserProfile {
@@ -20,6 +20,7 @@ export function getUserProfile(): UserProfile {
     quick_start_streak: number; groq_api_key: string;
     study_resource_mode: StudyResourceMode | null;
     subject_load_overrides_json: string | null;
+    harassment_tone: string | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -38,6 +39,7 @@ export function getUserProfile(): UserProfile {
       useLocalWhisper: false, localWhisperPath: null,
       quickStartStreak: 0,
       studyResourceMode: 'hybrid',
+      harassmentTone: 'shame',
       customSubjectLoadMultipliers: {},
     };
   }
@@ -76,6 +78,7 @@ export function getUserProfile(): UserProfile {
     localWhisperPath: r.local_whisper_path ?? null,
     quickStartStreak: r.quick_start_streak ?? 0,
     studyResourceMode: r.study_resource_mode ?? 'hybrid',
+    harassmentTone: (r.harassment_tone as HarassmentTone | null) ?? 'shame',
     customSubjectLoadMultipliers: (() => {
       try {
         const parsed = JSON.parse(r.subject_load_overrides_json ?? '{}');
@@ -103,6 +106,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     useLocalWhisper: 'use_local_whisper', localWhisperPath: 'local_whisper_path',
     quickStartStreak: 'quick_start_streak', groqApiKey: 'groq_api_key',
     studyResourceMode: 'study_resource_mode',
+    harassmentTone: 'harassment_tone',
   };
 
   const setClauses: string[] = [];
@@ -205,6 +209,51 @@ export function getActivityHistory(days = 90): DailyLog[] {
   return rows.map(r => ({ date: r.date, checkedIn: r.checked_in === 1, mood: r.mood as Mood | null, totalMinutes: r.total_minutes, xpEarned: r.xp_earned, sessionCount: r.session_count }));
 }
 
+export function getActiveStudyDays(days = 30): number {
+  if (days <= 0) return 0;
+
+  const db = getDb();
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+
+  const row = db.getFirstSync<{ count: number }>(
+    `SELECT COUNT(*) AS count
+     FROM daily_log
+     WHERE date >= ?
+       AND (session_count > 0 OR total_minutes > 0)`,
+    [dateStr(start)],
+  );
+
+  return row?.count ?? 0;
+}
+
+export function getDailyMinutesSeries(days = 7): number[] {
+  if (days <= 0) return [];
+
+  const db = getDb();
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  start.setDate(start.getDate() - (days - 1));
+
+  const rows = db.getAllSync<{ total_minutes: number }>(
+    `WITH RECURSIVE date_span(day, remaining) AS (
+       SELECT ?, ?
+       UNION ALL
+       SELECT DATE(day, '+1 day'), remaining - 1
+       FROM date_span
+       WHERE remaining > 1
+     )
+     SELECT COALESCE(d.total_minutes, 0) AS total_minutes
+     FROM date_span
+     LEFT JOIN daily_log d ON d.date = date_span.day
+     ORDER BY date_span.day ASC`,
+    [dateStr(start), days],
+  );
+
+  return rows.map((row) => row.total_minutes ?? 0);
+}
+
 export function resetStudyProgress(): void {
   const db = getDb();
   db.runSync(`UPDATE topic_progress SET status = 'unseen', confidence = 0, last_studied_at = NULL, times_studied = 0, xp_earned = 0, next_review_date = NULL`);
@@ -225,7 +274,7 @@ export function getDaysToExam(examDateStr: string): number {
 /**
  * Confidence decay: reduce confidence for overdue topics.
  * Called on app open. Only decays topics that:
- * - Have a next_review_date in the past (overdue)
+ * - Have an fsrs_due date in the past (overdue)
  * - Have confidence > 0
  * 
  * Decay rules:
@@ -241,17 +290,17 @@ export function applyConfidenceDecay(): { decayed: number } {
   const overdue = db.getAllSync<{
     topic_id: number;
     confidence: number;
-    next_review_date: string;
+    fsrs_due: string;
     status: string;
   }>(
-    `SELECT topic_id, confidence, next_review_date, status FROM topic_progress
-     WHERE next_review_date IS NOT NULL AND next_review_date < ? AND confidence > 0`,
+    `SELECT topic_id, confidence, fsrs_due, status FROM topic_progress
+     WHERE fsrs_due IS NOT NULL AND DATE(fsrs_due) < DATE(?) AND confidence > 0`,
     [today],
   );
 
   let decayed = 0;
   for (const row of overdue) {
-    const reviewDate = new Date(row.next_review_date);
+    const reviewDate = new Date(row.fsrs_due);
     const daysOverdue = Math.floor((Date.now() - reviewDate.getTime()) / 86400000);
 
     let newConf = row.confidence;
@@ -296,15 +345,15 @@ export function getReviewDueTopics(): Array<{
     topic_name: string;
     subject_name: string;
     confidence: number;
-    next_review_date: string;
+    fsrs_due: string;
   }>(
     `SELECT tp.topic_id, t.name as topic_name, s.name as subject_name,
-            tp.confidence, tp.next_review_date
+            tp.confidence, tp.fsrs_due
      FROM topic_progress tp
      JOIN topics t ON tp.topic_id = t.id
      JOIN subjects s ON t.subject_id = s.id
-     WHERE tp.next_review_date IS NOT NULL AND tp.next_review_date <= ?
-     ORDER BY tp.next_review_date ASC
+     WHERE tp.fsrs_due IS NOT NULL AND DATE(tp.fsrs_due) <= DATE(?)
+     ORDER BY tp.fsrs_due ASC
      LIMIT 50`,
     [today],
   );
@@ -314,7 +363,7 @@ export function getReviewDueTopics(): Array<{
     topicName: r.topic_name,
     subjectName: r.subject_name,
     confidence: r.confidence,
-    nextReviewDate: r.next_review_date,
-    daysOverdue: Math.max(0, Math.floor((Date.now() - new Date(r.next_review_date).getTime()) / 86400000)),
+    nextReviewDate: r.fsrs_due.slice(0, 10),
+    daysOverdue: Math.max(0, Math.floor((Date.now() - new Date(r.fsrs_due).getTime()) / 86400000)),
   }));
 }

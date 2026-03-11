@@ -3,8 +3,9 @@
  *
  * Auto-downloads local AI models (Llama + Whisper) on first launch.
  * Runs in the background — does not block app startup.
- * Only downloads if use_local_model/use_local_whisper is enabled
- * AND no model path is set yet.
+ * Downloads automatically when no model path is set yet.
+ * This makes local LLM + Whisper \"just work\" on first launch,
+ * while still allowing users to delete models from Settings.
  *
  * Downloads Whisper first (75MB) since it's needed for transcription,
  * then Qwen-2.5-3B (~2GB) for topic extraction and content generation.
@@ -32,8 +33,11 @@ const WHISPER_MODEL = {
 export async function bootstrapLocalModels(): Promise<void> {
   const profile = getUserProfile();
 
-  const needsLlm = profile.useLocalModel && !profile.localModelPath;
-  const needsWhisper = profile.useLocalWhisper && !profile.localWhisperPath;
+  // Auto-enable models if no path is configured yet.
+  // This means fresh installs will start downloading models in the background
+  // without requiring the user to first toggle \"use local model\" in Settings.
+  const needsLlm = !profile.localModelPath;
+  const needsWhisper = !profile.localWhisperPath;
 
   if (!needsLlm && !needsWhisper) return;
 

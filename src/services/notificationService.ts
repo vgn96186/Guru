@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { generateAccountabilityMessages } from './aiService';
+import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
 import { getUserProfile, getDaysToExam, getLast30DaysLog } from '../db/queries/progress';
 import { getWeakestTopics, getTopicsDueForReview, getNemesisTopics, getSubjectBreakdown } from '../db/queries/topics';
 import { todayStr } from '../db/database';
@@ -160,23 +160,51 @@ export async function notifyTranscriptionRecovered(appName: string): Promise<voi
 }
 
 
-export async function scheduleHarassment(): Promise<void> {
+const HARASSMENT_MESSAGES: Record<string, string[]> = {
+  shame: [
+    "Open the app. Now.",
+    "You're doomscrolling again, aren't you?",
+    "Every minute you scroll, your competition is studying Pathology.",
+    "I will literally keep buzzing until you open this app.",
+    "Just 1 flashcard. Stop ignoring me.",
+    "INICET does not care about your Instagram feed.",
+    "This is your last warning. Open the app.",
+    "Still scrolling? Pathetic.",
+    "Do you want to be a doctor or a professional scroller?",
+    "5 minutes. That's all I'm asking for. Open me.",
+  ],
+  motivational: [
+    "Your future patients need you. Open Guru and study!",
+    "Every doctor you admire studied when they didn't feel like it.",
+    "One topic right now. That's all. You can do this.",
+    "The next 5 minutes of studying will feel better than this scroll.",
+    "You chose medicine to help people. Let's get back to it.",
+    "Progress > Perfection. Just open the app.",
+    "Your dream is waiting. One card at a time.",
+    "Champions study when it's hard. That's what makes them champions.",
+    "Close the feed. Open the future.",
+    "You're closer than you think. Come back.",
+  ],
+  tough_love: [
+    "You chose medicine. This distraction is choosing failure.",
+    "Your rank won't improve by itself. Open the app.",
+    "Every scroll is a gift to your competition.",
+    "Hard truth: This won't matter. Your exam will.",
+    "You'll regret this scroll. You won't regret studying.",
+    "The exam doesn't care about your feelings. Study anyway.",
+    "Stop negotiating with yourself. Open the app now.",
+    "Discipline is the bridge between goals and accomplishment.",
+    "Your future self is watching this choice. Make them proud.",
+    "No excuses. Open the app.",
+  ],
+};
+
+export async function scheduleHarassment(tone: 'shame' | 'motivational' | 'tough_love' = 'shame'): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
     await cancelNotificationsByPrefix(HARASSMENT_ID_PREFIX); // Only clear harassment notifications
-    
-    const messages = [
-      "Open the app. Now.",
-      "You're doomscrolling again, aren't you?",
-      "Every minute you scroll, your competition is studying Pathology.",
-      "I will literally keep buzzing until you open this app.",
-      "Just 1 flashcard. Stop ignoring me.",
-      "INICET does not care about your Instagram feed.",
-      "This is your last warning. Open the app.",
-      "Still scrolling? Pathetic.",
-      "Do you want to be a doctor or a professional scroller?",
-      "5 minutes. That's all I'm asking for. Open me."
-    ];
+
+    const messages = HARASSMENT_MESSAGES[tone] ?? HARASSMENT_MESSAGES.shame;
 
     // Schedule 10 notifications, starting 5 minutes from now, spaced 3 minutes apart
     for (let i = 0; i < messages.length; i++) {
@@ -203,17 +231,7 @@ export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<v
   try {
     await cancelNotificationsByPrefix(BREAK_ID_PREFIX); // Only clear break notifications
     
-    const messages = [
-      "🚨 BREAK IS OVER. Return to the tablet now.",
-      "Are you ignoring me? Close Instagram immediately.",
-      "Every second you waste is a lower INICET score.",
-      "I told you this would happen. Go back to studying.",
-      "Your 5 minutes are up. Stop scrolling.",
-      "Get up. Walk to the tablet. Press play.",
-      "This is pathetic. Drop the phone.",
-      "I will not stop buzzing. Resume the lecture.",
-      "Resume the lecture on the tablet to silence me."
-    ];
+    const messages = await generateBreakEndMessages();
 
     const startTime = Date.now() + (durationSeconds * 1000);
     
@@ -287,32 +305,6 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
 
     await cancelNotificationsByPrefix(ACCOUNTABILITY_ID_PREFIX);
 
-    // — SRS Priority path: a review is overdue, skip AI, fire critical alert —
-    if (dueTopics.length > 0) {
-      await Notifications.scheduleNotificationAsync({
-        identifier: `${ACCOUNTABILITY_ID_PREFIX}morning`,
-        content: {
-          title: '🚨 Critical Review Due',
-          body: `"${dueTopics[0].name}" is fading. Quiz it now before your mastery drops.`,
-          sound: true,
-          priority: Notifications.AndroidNotificationPriority.HIGH,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: notifHour, minute: 30 },
-      });
-      if (nemesisTopics.length > 0) {
-        await Notifications.scheduleNotificationAsync({
-          identifier: `${ACCOUNTABILITY_ID_PREFIX}boss`,
-          content: {
-            title: '⚔️ Boss Fight',
-            body: `${nemesisTopics[0].name} beat you before. Today you finish it.`,
-            sound: true,
-          },
-          trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 12, minute: 0 },
-        });
-      }
-      return;
-    }
-
     // — guruFrequency 'off': skip AI, schedule minimal system-level streak warning —
     if (guruFrequency === 'off') {
       const streakBody = profile.streakCurrent > 0
@@ -334,6 +326,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
         streak: profile.streakCurrent,
         weakestTopics: weakTopics,
         nemesisTopics: nemesisTopics.slice(0, 2).map(t => t.name),
+        dueTopics: dueTopics.map(t => t.name),
         lastStudied,
         daysToInicet,
         daysToNeetPg,
@@ -345,21 +338,28 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
       });
     } catch (aiError) {
       if (__DEV__) console.warn('[Notifications] AI generation failed, using smart fallbacks:', aiError);
+      
       // Smart fallbacks: use real user data even without AI
       const name = profile.displayName;
-      const topic = weakTopics[0] ?? 'your weakest topic';
+      const dueTopic = dueTopics[0]?.name;
+      const topic = dueTopic ?? weakTopics[0] ?? 'your weakest topic';
       const streakLine = profile.streakCurrent > 0
         ? `${profile.streakCurrent}-day streak on the line.`
         : 'Restart your streak today.';
+      
       aiMessages = [
         {
-          title: `📚 Morning, ${name}!`,
-          body: `${coveragePercent}% covered. Work on ${topic} today.`,
+          title: dueTopic ? '🚨 Critical Review Due' : `📚 Morning, ${name}!`,
+          body: dueTopic 
+            ? `"${dueTopic}" is fading. Quiz it now before your mastery drops.`
+            : `${coveragePercent}% covered. Work on ${topic} today.`,
           scheduledFor: 'morning',
         },
         {
-          title: '📖 Evening check-in',
-          body: `${daysToInicet > 0 ? `${daysToInicet}d to INI-CET. ` : ''}One more topic before bed.`,
+          title: nemesisTopics.length > 0 ? '⚔️ Boss Fight' : '📖 Evening check-in',
+          body: nemesisTopics.length > 0
+            ? `${nemesisTopics[0].name} beat you before. Today you finish it.`
+            : `${daysToInicet > 0 ? `${daysToInicet}d to INI-CET. ` : ''}One more topic before bed.`,
           scheduledFor: 'evening',
         },
         {
@@ -399,20 +399,6 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 21, minute: 0 },
         });
       }
-    }
-
-    // Boss fight notification: noon, separate from Guru messages
-    if (nemesisTopics.length > 0) {
-      await Notifications.scheduleNotificationAsync({
-        identifier: `${ACCOUNTABILITY_ID_PREFIX}boss`,
-        content: {
-          title: '⚔️ Boss Fight Today',
-          body: `${nemesisTopics[0].name} is your nemesis. You've failed it before. Not today.`,
-          sound: true,
-          badge: nemesisTopics.length,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 12, minute: 0 },
-      });
     }
 
   } catch {

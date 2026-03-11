@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import type { Subject } from '../types';
 
 interface Props {
@@ -16,6 +17,10 @@ interface Props {
 }
 
 export default function SubjectCard({ subject, coverage, metrics, onPress }: Props) {
+  function handlePress() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }
   const pct = coverage.total > 0 ? Math.round((coverage.seen / coverage.total) * 100) : 0;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -62,7 +67,7 @@ export default function SubjectCard({ subject, coverage, metrics, onPress }: Pro
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.8}>
         {/* Subtle background fill based on progress */}
         <View 
           style={[
@@ -139,11 +144,11 @@ const styles = StyleSheet.create({
   colorBar: { width: 5 },
   content: { flex: 1, padding: 12 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  code: { color: '#9E9E9E', fontSize: 11, fontWeight: '600', marginBottom: 2 },
+  code: { color: '#B8B8CC', fontSize: 11, fontWeight: '600', marginBottom: 2 },
   name: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 6 },
   pctContainer: { alignItems: 'flex-end', marginLeft: 12 },
   pct: { fontWeight: '900', fontSize: 20 },
-  pctLabel: { color: '#666', fontSize: 10, marginTop: 2 },
+  pctLabel: { color: '#8888A4', fontSize: 10, marginTop: 2 },
   progressContainer: { marginVertical: 8 },
   progressTrack: { 
     height: 4, 

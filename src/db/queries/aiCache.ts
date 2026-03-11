@@ -195,6 +195,8 @@ export interface LectureNoteData {
 }
 
 export function saveLectureTranscript(data: LectureNoteData): number {
+  // If transcript is long and not a URI, we should ideally save it to file first.
+  // We assume callers now pass the file URI if they want it on disk.
   const db = getDb();
   const result = db.runSync(
     `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence)
@@ -365,4 +367,42 @@ export function searchLectureNotes(query: string, limit = 20): LectureHistoryIte
 export function deleteLectureNote(id: number): void {
   const db = getDb();
   db.runSync('DELETE FROM lecture_notes WHERE id = ?', [id]);
+}
+
+// ── Chat History ──────────────────────────────────────────────────
+
+export interface ChatHistoryMessage {
+  id: number;
+  topicName: string;
+  role: 'user' | 'guru';
+  message: string;
+  timestamp: number;
+}
+
+export function saveChatMessage(topicName: string, role: 'user' | 'guru', message: string, timestamp: number): void {
+  const db = getDb();
+  db.runSync(
+    'INSERT INTO chat_history (topic_name, role, message, timestamp) VALUES (?, ?, ?, ?)',
+    [topicName, role, message, timestamp],
+  );
+}
+
+export function getChatHistory(topicName: string, limit = 20): ChatHistoryMessage[] {
+  const db = getDb();
+  const rows = db.getAllSync<{ id: number; topic_name: string; role: string; message: string; timestamp: number }>(
+    'SELECT * FROM chat_history WHERE topic_name = ? ORDER BY timestamp ASC LIMIT ?',
+    [topicName, limit],
+  );
+  return rows.map(r => ({
+    id: r.id,
+    topicName: r.topic_name,
+    role: r.role as 'user' | 'guru',
+    message: r.message,
+    timestamp: r.timestamp,
+  }));
+}
+
+export function clearChatHistory(topicName: string): void {
+  const db = getDb();
+  db.runSync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
 }

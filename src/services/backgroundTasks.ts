@@ -3,6 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { prefetchTopicContent } from './aiService';
 import { getUserProfile } from '../db/queries/progress';
+import { refreshAccountabilityNotifications } from './notificationService';
 import { getMoodContentTypes } from '../constants/prompts';
 import type { ContentType } from '../types';
 
@@ -29,6 +30,8 @@ try {
       for (const topic of candidates) {
         await prefetchTopicContent(topic, typesToFetch);
       }
+
+      await refreshAccountabilityNotifications().catch(e => console.log('BG notif refresh failed:', e));
 
       return BackgroundFetch.BackgroundFetchResult.NewData;
     } catch (error) {

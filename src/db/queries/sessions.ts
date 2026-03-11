@@ -1,5 +1,11 @@
-import { getDb, nowTs, todayStr } from '../database';
+import { dateStr, getDb, nowTs, todayStr } from '../database';
 import type { StudySession, Mood, SessionMode } from '../../types';
+
+type WeeklyStatsBucket = {
+  minutes: number;
+  sessions: number;
+  topics: number;
+};
 
 export function getTotalStudyMinutes(): number {
   const db = getDb();
@@ -157,75 +163,115 @@ export function getPreferredStudyHours(): number[] {
 }
 
 /** Get weekly stats: this week vs last week */
-export function getWeeklyComparison(): { thisWeek: { minutes: number; sessions: number; topics: number }; lastWeek: { minutes: number; sessions: number; topics: number } } {
+export function getWeeklyComparison(): { thisWeek: WeeklyStatsBucket; lastWeek: WeeklyStatsBucket } {
   const db = getDb();
   const now = Date.now();
-  const dayMs = 86400000;
-  
-  // Get start of this week (Monday)
+  const dayMs = 86_400_000;
+
   const today = new Date(now);
   const dayOfWeek = today.getDay();
   const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-  const thisWeekStart = now - mondayOffset * dayMs - (today.getHours() * 3600000 + today.getMinutes() * 60000 + today.getSeconds() * 1000);
+  const midnightOffsetMs =
+    today.getHours() * 3_600_000 +
+    today.getMinutes() * 60_000 +
+    today.getSeconds() * 1_000 +
+    today.getMilliseconds();
+  const thisWeekStart = now - mondayOffset * dayMs - midnightOffsetMs;
   const lastWeekStart = thisWeekStart - 7 * dayMs;
-  
-  const thisWeekRows = db.getAllSync<{ duration_minutes: number; completed_topics: string }>(
-    `SELECT duration_minutes, completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ?`,
-    [thisWeekStart]
+
+  const rows = db.getAllSync<{
+    bucket: 'thisWeek' | 'lastWeek';
+    minutes: number;
+    sessions: number;
+    topics: number;
+  }>(
+    `SELECT
+        CASE
+          WHEN started_at >= ? THEN 'thisWeek'
+          ELSE 'lastWeek'
+        END AS bucket,
+        COALESCE(SUM(duration_minutes), 0) AS minutes,
+        COUNT(*) AS sessions,
+        COALESCE(
+          SUM(
+            CASE
+              WHEN json_valid(completed_topics) THEN json_array_length(completed_topics)
+              ELSE 0
+            END
+          ),
+          0
+        ) AS topics
+      FROM sessions
+      WHERE ended_at IS NOT NULL
+        AND started_at >= ?
+      GROUP BY bucket`,
+    [thisWeekStart, lastWeekStart]
   );
-  
-  const lastWeekRows = db.getAllSync<{ duration_minutes: number; completed_topics: string }>(
-    `SELECT duration_minutes, completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND started_at < ?`,
-    [lastWeekStart, thisWeekStart]
+
+  const emptyBucket: WeeklyStatsBucket = { minutes: 0, sessions: 0, topics: 0 };
+  const stats = rows.reduce<Record<'thisWeek' | 'lastWeek', WeeklyStatsBucket>>(
+    (acc, row) => {
+      acc[row.bucket] = {
+        minutes: row.minutes ?? 0,
+        sessions: row.sessions ?? 0,
+        topics: row.topics ?? 0,
+      };
+      return acc;
+    },
+    {
+      thisWeek: { ...emptyBucket },
+      lastWeek: { ...emptyBucket },
+    },
   );
-  
-  const calcStats = (rows: { duration_minutes: number; completed_topics: string }[]) => {
-    let minutes = 0;
-    let topics = 0;
-    for (const r of rows) {
-      minutes += r.duration_minutes ?? 0;
-      try { topics += JSON.parse(r.completed_topics).length; } catch { }
-    }
-    return { minutes, sessions: rows.length, topics };
-  };
-  
+
   return {
-    thisWeek: calcStats(thisWeekRows),
-    lastWeek: calcStats(lastWeekRows),
+    thisWeek: stats.thisWeek,
+    lastWeek: stats.lastWeek,
   };
 }
 
 /** Calculate current streak from daily_log */
 export function calculateCurrentStreak(): number {
   const db = getDb();
-  const rows = db.getAllSync<{ date: string; total_minutes: number; session_count: number }>(
-    `SELECT date, total_minutes, session_count FROM daily_log ORDER BY date DESC LIMIT 90`
+  const today = todayStr();
+  const yesterday = dateStr(new Date(Date.now() - 86_400_000));
+  const result = db.getFirstSync<{ streak: number }>(
+    `WITH RECURSIVE
+       anchor(day) AS (
+         SELECT CASE
+           WHEN EXISTS (
+             SELECT 1
+             FROM daily_log
+             WHERE date = ?
+               AND (total_minutes > 0 OR session_count > 0)
+           ) THEN ?
+           WHEN EXISTS (
+             SELECT 1
+             FROM daily_log
+             WHERE date = ?
+               AND (total_minutes > 0 OR session_count > 0)
+           ) THEN ?
+           ELSE NULL
+         END
+       ),
+       streak(day) AS (
+         SELECT day
+         FROM anchor
+         WHERE day IS NOT NULL
+         UNION ALL
+         SELECT DATE(day, '-1 day')
+         FROM streak
+         WHERE EXISTS (
+           SELECT 1
+           FROM daily_log
+           WHERE date = DATE(streak.day, '-1 day')
+             AND (total_minutes > 0 OR session_count > 0)
+         )
+       )
+     SELECT COUNT(*) AS streak
+     FROM streak`,
+    [today, today, yesterday, yesterday]
   );
-  
-  if (rows.length === 0) return 0;
-  
-  let streak = 0;
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  
-  // Check if today or yesterday has activity (streak can start from either)
-  const firstActive = rows[0];
-  if (firstActive.date !== today && firstActive.date !== yesterday) return 0;
-  
-  let expectedDate = new Date(firstActive.date);
-  
-  for (const log of rows) {
-    const logDate = log.date;
-    const expected = expectedDate.toISOString().slice(0, 10);
-    
-    if (logDate === expected && (log.total_minutes > 0 || log.session_count > 0)) {
-      streak++;
-      expectedDate = new Date(expectedDate.getTime() - 86400000);
-    } else if (logDate < expected) {
-      // Gap found
-      break;
-    }
-  }
-  
-  return streak;
+
+  return result?.streak ?? 0;
 }

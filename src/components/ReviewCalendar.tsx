@@ -36,15 +36,15 @@ function getReviewCalendarData(year: number, month: number): ReviewDay[] {
     topic_name: string;
     confidence: number;
   }>(
-    `SELECT COALESCE(DATE(tp.fsrs_due), tp.next_review_date) as review_date,
+    `SELECT DATE(tp.fsrs_due) as review_date,
             t.name as topic_name,
             tp.confidence
      FROM topic_progress tp
      JOIN topics t ON tp.topic_id = t.id
      WHERE tp.status != 'unseen'
-       AND COALESCE(DATE(tp.fsrs_due), tp.next_review_date) IS NOT NULL
-       AND COALESCE(DATE(tp.fsrs_due), tp.next_review_date) >= ?
-       AND COALESCE(DATE(tp.fsrs_due), tp.next_review_date) < ?
+       AND tp.fsrs_due IS NOT NULL
+       AND DATE(tp.fsrs_due) >= ?
+       AND DATE(tp.fsrs_due) < ?
      ORDER BY review_date ASC`,
     [startDate, endDate],
   );
@@ -166,12 +166,15 @@ export default function ReviewCalendar() {
                 onPress={() => review && setSelectedDay(isSelected ? null : review)}
                 activeOpacity={review ? 0.6 : 1}
               >
-                <Text style={[
-                  styles.dayText,
-                  isToday && styles.todayText,
-                  isSelected && styles.selectedText,
-                  isPast && !isToday && styles.pastText,
-                ]}>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    styles.dayText,
+                    isToday && styles.todayText,
+                    isSelected && styles.selectedText,
+                    isPast && !isToday && styles.pastText,
+                  ]}
+                >
                   {day}
                 </Text>
                 {review && (
@@ -249,8 +252,10 @@ const styles = StyleSheet.create({
   dayCell: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
-    minHeight: 44,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    minHeight: 40,
+    overflow: 'hidden',
   },
   todayCell: {
     backgroundColor: '#6C63FF22',
@@ -260,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#6C63FF44',
     borderRadius: 10,
   },
-  dayText: { color: '#ccc', fontSize: 14 },
+  dayText: { color: '#ccc', fontSize: 12, textAlign: 'center' },
   todayText: { color: '#6C63FF', fontWeight: '800' },
   selectedText: { color: '#fff', fontWeight: '800' },
   pastText: { color: '#555' },

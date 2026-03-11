@@ -6,11 +6,29 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { scheduleHarassment, requestNotificationPermissions } from '../services/notificationService';
+import { updateUserProfile } from '../db/queries/progress';
+import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import type { HarassmentTone } from '../types';
+
+const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
+  { tone: 'shame', icon: '😈', label: 'Shame' },
+  { tone: 'motivational', icon: '💪', label: 'Motivational' },
+  { tone: 'tough_love', icon: '🎯', label: 'Tough Love' },
+];
 
 export default function DoomscrollGuideScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { profile, refreshProfile } = useAppStore();
   const [harassmentActive, setHarassmentActive] = useState(false);
+  const [selectedTone, setSelectedTone] = useState<HarassmentTone>(profile?.harassmentTone ?? 'shame');
+
+  function handleToneSelect(tone: HarassmentTone) {
+    setSelectedTone(tone);
+    updateUserProfile({ harassmentTone: tone });
+    refreshProfile();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
 
   async function activateHarassment() {
     const hasPerm = await requestNotificationPermissions();
@@ -18,11 +36,11 @@ export default function DoomscrollGuideScreen() {
       Alert.alert('Permissions Needed', 'You need to enable notifications to use Harassment Mode.');
       return;
     }
-    
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await scheduleHarassment();
+    await scheduleHarassment(selectedTone);
     setHarassmentActive(true);
-    
+
     Alert.alert(
       'Harassment Mode Activated 🚨',
       'If you close this app and go doomscroll, I will start blowing up your phone with notifications every 3 minutes starting soon. The only way to stop it is to come back and study.',
@@ -43,13 +61,32 @@ export default function DoomscrollGuideScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>🚨 Feature 1: Harassment Mode</Text>
             <Text style={styles.cardText}>
-              About to open Instagram or YouTube? Tap the button below first. The app will schedule 10 highly aggressive, shaming push notifications to fire every 3 minutes while you're scrolling.
+              About to open Instagram or YouTube? Tap the button below first. The app will schedule 10 push notifications to fire every 3 minutes while you're scrolling.
             </Text>
             <Text style={styles.cardText}>
               Opening the app again cancels the bombardment.
             </Text>
-            <TouchableOpacity 
-              style={[styles.btn, harassmentActive && styles.btnActive]} 
+
+            {/* Tone selector */}
+            <Text style={styles.toneLabel}>Notification Tone:</Text>
+            <View style={styles.toneRow}>
+              {TONE_OPTIONS.map(opt => (
+                <TouchableOpacity
+                  key={opt.tone}
+                  style={[styles.toneBtn, selectedTone === opt.tone && styles.toneBtnActive]}
+                  onPress={() => handleToneSelect(opt.tone)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.toneIcon}>{opt.icon}</Text>
+                  <Text style={[styles.toneBtnText, selectedTone === opt.tone && styles.toneBtnTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.btn, harassmentActive && styles.btnActive]}
               onPress={activateHarassment}
               disabled={harassmentActive}
             >
@@ -64,7 +101,7 @@ export default function DoomscrollGuideScreen() {
             <Text style={styles.cardText}>
               You can use your phone's built-in automation to automatically open this study app EVERY TIME you try to open a distraction app.
             </Text>
-            
+
             {Platform.OS === 'ios' ? (
               <View style={styles.osBox}>
                 <Text style={styles.osTitle}>For iOS (Shortcuts App):</Text>
@@ -103,19 +140,30 @@ const styles = StyleSheet.create({
   emoji: { fontSize: 56, marginBottom: 16 },
   title: { color: '#F44336', fontSize: 28, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 32, lineHeight: 24 },
-  
+
   card: { backgroundColor: '#1A1A24', width: '100%', padding: 20, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: '#333' },
   cardTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 12 },
   cardText: { color: '#ccc', fontSize: 14, lineHeight: 22, marginBottom: 16 },
-  
+
+  toneLabel: { color: '#9E9E9E', fontSize: 13, fontWeight: '700', marginBottom: 10, textTransform: 'uppercase' },
+  toneRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  toneBtn: {
+    flex: 1, alignItems: 'center', paddingVertical: 10, paddingHorizontal: 4,
+    borderRadius: 10, borderWidth: 2, borderColor: '#333', backgroundColor: '#0F0F14',
+  },
+  toneBtnActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
+  toneIcon: { fontSize: 20, marginBottom: 4 },
+  toneBtnText: { color: '#666', fontSize: 11, fontWeight: '700' },
+  toneBtnTextActive: { color: '#6C63FF' },
+
   btn: { backgroundColor: '#F44336', padding: 16, borderRadius: 12, alignItems: 'center' },
   btnActive: { backgroundColor: '#4CAF50' },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  
+
   osBox: { backgroundColor: '#2A2A38', padding: 16, borderRadius: 12 },
   osTitle: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
   osStep: { color: '#E0E0E0', fontSize: 14, marginBottom: 6, lineHeight: 20 },
-  
+
   backBtn: { marginTop: 16, padding: 16 },
   backBtnText: { color: '#666', fontSize: 16, fontWeight: '600' }
 });

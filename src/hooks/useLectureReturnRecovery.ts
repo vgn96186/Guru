@@ -1,0 +1,150 @@
+import { useCallback, useEffect, useRef } from 'react';
+import { Alert, AppState } from 'react-native';
+import { stopRecording, hideOverlay, validateRecordingFile } from '../../modules/app-launcher';
+import {
+  getIncompleteExternalSession,
+  finishExternalAppSession,
+  updateSessionPipelineTelemetry,
+} from '../db/queries/externalLogs';
+import {
+  retryFailedTranscriptions,
+  retryPendingNoteEnhancements,
+  stopRecordingHealthCheck,
+} from '../services/lectureSessionMonitor';
+import { showToast } from '../components/Toast';
+import { validateRecordingWithBackoff } from '../services/recordingValidation';
+
+export interface LectureReturnSheetData {
+  appName: string;
+  durationMinutes: number;
+  recordingPath: string | null;
+  logId: number;
+}
+
+interface UseLectureReturnRecoveryParams {
+  onRecovered: (payload: LectureReturnSheetData) => void;
+}
+
+export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecoveryParams) {
+  const appStateRef = useRef(AppState.currentState);
+  const handledReturnLogRef = useRef<number | null>(null);
+  const lastRecoveryAttemptRef = useRef(0);
+
+  const recoverPendingTranscriptions = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastRecoveryAttemptRef.current < 60_000) {
+      return;
+    }
+    lastRecoveryAttemptRef.current = now;
+    try {
+      const [recoveredTranscriptions, recoveredEnhancements] = await Promise.all([
+        retryFailedTranscriptions(),
+        retryPendingNoteEnhancements(),
+      ]);
+      const totalRecovered = recoveredTranscriptions + recoveredEnhancements;
+      if (totalRecovered > 0) {
+        const parts = [
+          recoveredTranscriptions > 0
+            ? `${recoveredTranscriptions} transcription${recoveredTranscriptions > 1 ? 's' : ''}`
+            : null,
+          recoveredEnhancements > 0
+            ? `${recoveredEnhancements} note enhancement${recoveredEnhancements > 1 ? 's' : ''}`
+            : null,
+        ].filter(Boolean);
+        Alert.alert(
+          'Recovered lecture notes',
+          `${parts.join(' and ')} recovered automatically.`,
+        );
+      }
+    } catch (err) {
+      console.warn('[Home] Failed to recover pending transcriptions:', err);
+    }
+  }, []);
+
+  const checkForReturnedSession = useCallback(async (showPrompt: boolean) => {
+    try {
+      const session = getIncompleteExternalSession();
+      if (!session || handledReturnLogRef.current === session.id) return;
+
+      const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
+      const logId = session.id!;
+      handledReturnLogRef.current = logId;
+      stopRecordingHealthCheck();
+
+      if (!showPrompt && !session.recordingPath) {
+        finishExternalAppSession(logId, durationMinutes, 'Recovered silently on cold app launch');
+        return;
+      }
+
+      if (!showPrompt) {
+        finishExternalAppSession(logId, durationMinutes, 'Stale session cleaned on cold launch');
+        return;
+      }
+
+      let recordingPath = session.recordingPath ?? null;
+
+      try {
+        const stoppedPath = await Promise.race<string | null>([
+          stopRecording(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+        ]);
+        if (stoppedPath) recordingPath = stoppedPath;
+      } catch (err) {
+        console.warn('[Home] stopRecording failed:', err);
+      }
+
+      if (!recordingPath && session.recordingPath) {
+        recordingPath = session.recordingPath;
+      }
+
+      if (recordingPath) {
+        const validation = await validateRecordingWithBackoff(recordingPath, validateRecordingFile);
+        updateSessionPipelineTelemetry(logId, {
+          validationAttempts: validation.attemptsUsed,
+        });
+        if (!validation.validated) {
+          try {
+            const finalInfo = await validateRecordingFile(recordingPath);
+            if (!finalInfo.exists || finalInfo.size <= 100) {
+              updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
+              showToast(
+                "Recording file isn't ready yet — it may appear when you reopen the app.",
+                'warning',
+              );
+            }
+          } catch (e) {
+            console.warn('[Home] Native validation threw, keeping path anyway:', e);
+          }
+        }
+      }
+
+      try { await hideOverlay(); } catch (err) { console.warn('[Home] hideOverlay failed:', err); }
+
+      finishExternalAppSession(logId, durationMinutes);
+      onRecovered({
+        appName: session.appName,
+        durationMinutes,
+        recordingPath,
+        logId,
+      });
+    } catch (err) {
+      console.error('[Home] Error in checkForReturnedSession:', err);
+      showToast("Couldn't process your lecture recording. Try opening the app again.", 'error');
+    }
+  }, [onRecovered]);
+
+  useEffect(() => {
+    checkForReturnedSession(false);
+    recoverPendingTranscriptions(true);
+    const sub = AppState.addEventListener('change', nextState => {
+      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
+        checkForReturnedSession(true);
+        recoverPendingTranscriptions();
+      }
+      appStateRef.current = nextState;
+    });
+    return () => sub.remove();
+  }, [checkForReturnedSession, recoverPendingTranscriptions]);
+
+  return { recoverPendingTranscriptions, checkForReturnedSession };
+}

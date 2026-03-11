@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, BackHandler, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, View, Text, StyleSheet, TouchableOpacity, BackHandler, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchContent } from '../services/aiService';
 import { getTopicById } from '../db/queries/topics';
@@ -22,6 +23,36 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
   const [quizQuestion, setQuizQuestion] = useState<{ question: string; options: string[]; correct: number } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
+  const optionAnims = useRef(new Map<number, { bg: Animated.Value; border: Animated.Value }>()).current;
+
+  function getOptionAnim(idx: number) {
+    if (!optionAnims.has(idx)) {
+      optionAnims.set(idx, { bg: new Animated.Value(0), border: new Animated.Value(0) });
+    }
+    return optionAnims.get(idx)!;
+  }
+
+  function handleOptionPress(idx: number) {
+    if (selected !== null || !quizQuestion) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelected(idx);
+    const isCorrect = idx === quizQuestion.correct;
+    const selectedAnim = getOptionAnim(idx);
+    Animated.timing(selectedAnim.bg, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+    Animated.timing(selectedAnim.border, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+    if (!isCorrect) {
+      const correctAnim = getOptionAnim(quizQuestion.correct);
+      Animated.timing(correctAnim.bg, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+      Animated.timing(correctAnim.border, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+    }
+    setTimeout(() => {
+      if (isCorrect) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    }, 150);
+  }
   const topicName = topicId ? (getTopicById(topicId)?.name ?? 'General Medicine') : 'General Medicine';
   const duration = totalSeconds ?? 300;
 
@@ -93,21 +124,30 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
             <Text style={styles.quizLabel}>⚡ Quick fire — stay sharp:</Text>
             <Text style={styles.quizQuestion}>{quizQuestion.question}</Text>
             {quizQuestion.options.map((opt, idx) => {
-              let bg = '#1A1A24';
-              let border = '#2A2A38';
-              if (selected !== null) {
-                if (idx === quizQuestion.correct) { bg = '#1A2A1A'; border = '#4CAF50'; }
-                else if (idx === selected) { bg = '#2A0A0A'; border = '#F44336'; }
-              }
+              const anim = getOptionAnim(idx);
+              const isCorrectOption = idx === quizQuestion.correct;
+              const isSelectedOption = selected === idx;
+              const bgColor = anim.bg.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['#1A1A24', isCorrectOption ? '#1A2A1A' : '#2A0A0A'],
+              });
+              const borderColor = anim.border.interpolate({
+                inputRange: [0, 1],
+                outputRange: ['#2A2A38', isCorrectOption ? '#4CAF50' : '#F44336'],
+              });
               return (
-                <TouchableOpacity
+                <Animated.View
                   key={idx}
-                  style={[styles.option, { backgroundColor: bg, borderColor: border }]}
-                  onPress={() => selected === null && setSelected(idx)}
-                  activeOpacity={0.8}
+                  style={[styles.option, { backgroundColor: bgColor, borderColor }]}
                 >
-                  <Text style={styles.optionText}>{opt}</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleOptionPress(idx)}
+                    activeOpacity={0.8}
+                    style={{ padding: 12 }}
+                  >
+                    <Text style={styles.optionText}>{opt}</Text>
+                  </TouchableOpacity>
+                </Animated.View>
               );
             })}
             {selected !== null && (
@@ -164,7 +204,7 @@ const styles = StyleSheet.create({
   quizSection: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginTop: 8 },
   quizLabel: { color: '#FF9800', fontSize: 12, fontWeight: '700', marginBottom: 10 },
   quizQuestion: { color: '#fff', fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  option: { borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 1.5 },
+  option: { borderRadius: 10, marginBottom: 6, borderWidth: 1.5, overflow: 'hidden' },
   optionText: { color: '#E0E0E0', fontSize: 13 },
   result: { color: '#9E9E9E', fontSize: 13, marginTop: 8, textAlign: 'center' },
   idleSection: { flex: 1, alignItems: 'center', justifyContent: 'center' },

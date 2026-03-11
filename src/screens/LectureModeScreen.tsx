@@ -11,7 +11,7 @@ import * as DocumentPicker from 'expo-document-picker';
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
-import { transcribeWithGroq, transcribeWithLocalWhisper, markTopicsFromLecture } from '../services/transcriptionService';
+import { transcribeAudio, markTopicsFromLecture } from '../services/transcriptionService';
 import { getDb } from '../db/database';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -255,9 +255,7 @@ export default function LectureModeScreen() {
   }
 
   async function processRecording() {
-    const groqKey = profile?.groqApiKey?.trim() || '';
-    const hasLocalWhisper = profile?.useLocalWhisper && !!profile?.localWhisperPath;
-    if (!recording || (!groqKey && !hasLocalWhisper)) return;
+    if (!recording) return;
     setIsTranscribing(true);
 
     try {
@@ -267,10 +265,7 @@ export default function LectureModeScreen() {
       setRecording(null);
 
       if (uri) {
-        // Local-first: use on-device Whisper if available, fall back to Groq Whisper
-        const analysis = hasLocalWhisper
-          ? await transcribeWithLocalWhisper(uri, profile!.localWhisperPath!)
-          : await transcribeWithGroq(uri, groqKey);
+        const analysis = await transcribeAudio(uri);
         applyLectureAnalysis(analysis);
 
         await FileSystem.deleteAsync(uri, { idempotent: true });
@@ -316,21 +311,12 @@ export default function LectureModeScreen() {
       });
       if (picked.canceled || !picked.assets?.[0]?.uri) return;
 
-      const groqKey = profile?.groqApiKey?.trim() || '';
-      const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-      if (!groqKey && !hasLocalWhisper) {
-        Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings.');
-        return;
-      }
-
       const pickedUri = picked.assets[0].uri;
       const tempUri = `${FileSystem.cacheDirectory}lecture-import-${Date.now()}.m4a`;
       await FileSystem.copyAsync({ from: pickedUri, to: tempUri });
 
       setIsTranscribing(true);
-      const analysis = hasLocalWhisper
-        ? await transcribeWithLocalWhisper(tempUri, profile!.localWhisperPath!)
-        : await transcribeWithGroq(tempUri, groqKey);
+      const analysis = await transcribeAudio(tempUri);
 
       applyLectureAnalysis(analysis);
       Alert.alert('Transcription Complete', analysis.lectureSummary || 'Done');
@@ -368,9 +354,8 @@ export default function LectureModeScreen() {
   function toggleAutoScribe() {
     const groqKey = profile?.groqApiKey?.trim() || '';
     const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-
     if (!isRecordingEnabled && !groqKey && !hasLocalWhisper) {
-      Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings to use Auto-Scribe.');
+      Alert.alert('Transcription Required', 'Add a Groq API key or enable Local Whisper in Settings to use Auto-Scribe.');
       return;
     }
     setIsRecordingEnabled(!isRecordingEnabled);

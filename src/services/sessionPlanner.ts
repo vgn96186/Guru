@@ -59,6 +59,10 @@ function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
   return score;
 }
 
+function topicDueDate(topic: TopicWithProgress): string | null {
+  return topic.progress.fsrsDue ? topic.progress.fsrsDue.slice(0, 10) : null;
+}
+
 function getSessionMode(mood: Mood): SessionMode {
   if (mood === 'distracted') return 'sprint';
   if (mood === 'tired' || mood === 'stressed') return 'gentle';
@@ -93,8 +97,8 @@ function resolveFocusedContentTypes(
 
   const today = new Date().toISOString().slice(0, 10);
   if (
-    topic.progress.nextReviewDate &&
-    topic.progress.nextReviewDate <= today &&
+    topicDueDate(topic) &&
+    topicDueDate(topic)! <= today &&
     !blockedContentTypes.has('quiz')
   ) {
     focusedTypes = ['quiz' as ContentType];
@@ -138,8 +142,8 @@ export async function buildSession(
     if (explicitTopics.length > 0) {
       const sortedTopics = [...explicitTopics].sort((a, b) => {
         if (options?.preferredActionType === 'review') {
-          const aDue = a.progress.nextReviewDate ?? '9999-12-31';
-          const bDue = b.progress.nextReviewDate ?? '9999-12-31';
+          const aDue = topicDueDate(a) ?? '9999-12-31';
+          const bDue = topicDueDate(b) ?? '9999-12-31';
           return aDue.localeCompare(bDue) || b.inicetPriority - a.inicetPriority;
         }
         if (options?.preferredActionType === 'deep_dive') {
@@ -245,7 +249,8 @@ export async function buildSession(
     .filter(Boolean)
     .map(topic => {
       // SRS Override: If topic is strictly due, FORCE QUIZ only.
-      if (topic!.progress.nextReviewDate && topic!.progress.nextReviewDate <= today && !blockedContentTypes.has('quiz')) {
+      const dueDate = topicDueDate(topic!);
+      if (dueDate && dueDate <= today && !blockedContentTypes.has('quiz')) {
         return { topic: topic!, contentTypes: ['quiz' as ContentType], estimatedMinutes: topic!.estimatedMinutes };
       }
       return { topic: topic!, contentTypes: safeContentTypes, estimatedMinutes: topic!.estimatedMinutes };

@@ -3,6 +3,7 @@ import { getUserProfile, getDaysToExam } from '../db/queries/progress';
 import { getPreferredStudyHours } from '../db/queries/sessions';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
+import { buildPlanBuckets, buildTopicQueues } from './studyPlannerBuckets';
 
 export type PlanActionType = 'study' | 'review' | 'deep_dive';
 
@@ -144,7 +145,7 @@ function toDateOnly(dateLike: string | null): string | null {
 
 function buildReasonLabels(topic: TopicWithProgress, type: PlanActionType, today: string): string[] {
   const labels: string[] = [];
-  const dueDate = toDateOnly(topic.progress.fsrsDue ?? topic.progress.nextReviewDate);
+  const dueDate = toDateOnly(topic.progress.fsrsDue);
 
   if (type === 'review') {
     if (dueDate && dueDate < today) {
@@ -371,36 +372,21 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
     pendingActions.push(createPlanItem(`rev_${t.id}_init`, t, 'review', estimateActionDuration(t, 'review', resourceMode, customSubjectLoads), todayStr));
   }
 
-  // B. Weak Topics (Priority 2 - Deep Dive)
-  // Confidence < 3 AND seen at least once
-  const weak = allTopics.filter(t => {
-    if (t.progress.status === 'unseen' || t.progress.confidence >= 3) return false;
-    if (mode === 'high_yield') return t.inicetPriority >= 7;
-    return true;
+  const { weak, newTopics } = buildPlanBuckets({
+    allTopics,
+    due,
+    mode,
+    subjectWeights,
   });
+
+  // B. Weak Topics (Priority 2 - Deep Dive)
   for (const t of weak) {
-    // Only add if not already in due list (avoid double booking, prioritize full re-study)
-    if (!due.find(d => d.id === t.id)) {
-      pendingActions.push({
-        ...createPlanItem(`dive_${t.id}_init`, t, 'deep_dive', estimateActionDuration(t, 'deep_dive', resourceMode, customSubjectLoads), todayStr),
-      });
-    }
+    pendingActions.push({
+      ...createPlanItem(`dive_${t.id}_init`, t, 'deep_dive', estimateActionDuration(t, 'deep_dive', resourceMode, customSubjectLoads), todayStr),
+    });
   }
 
   // C. New Topics (Priority 3)
-  const newTopics = allTopics.filter(t => {
-    if (t.progress.status !== 'unseen') return false;
-    if (mode === 'high_yield') return t.inicetPriority >= 8;
-    if (mode === 'exam_crunch') return t.inicetPriority >= 9;
-    return true;
-  });
-  // Sort new topics by weight
-  newTopics.sort((a, b) => {
-    const scoreA = (subjectWeights.get(a.subjectId) ?? 5) * 1.5 + a.inicetPriority;
-    const scoreB = (subjectWeights.get(b.subjectId) ?? 5) * 1.5 + b.inicetPriority;
-    return scoreB - scoreA;
-  });
-
   for (const t of newTopics) {
     pendingActions.push(createPlanItem(`new_${t.id}_init`, t, 'study', estimateActionDuration(t, 'study', resourceMode, customSubjectLoads), todayStr));
   }
@@ -409,9 +395,7 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
   // We'll just keep them in order of insertion roughly, but let's do a strict sort for the simulation
   // actually, let's keep separate queues for the simulation to interleave
   
-  const queueReviews = pendingActions.filter(p => p.type === 'review');
-  const queueDeep = pendingActions.filter(p => p.type === 'deep_dive');
-  const queueNew = pendingActions.filter(p => p.type === 'study');
+  const { queueReviews, queueDeep, queueNew } = buildTopicQueues(pendingActions);
 
   const totalExpectedWorkloadMinutes =
     queueReviews.reduce((sum, item) => sum + item.duration, 0)

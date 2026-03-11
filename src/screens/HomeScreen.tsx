@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  StatusBar, Alert, AppState, ActivityIndicator, Modal, InteractionManager,
+  Animated, View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  StatusBar, Alert, ActivityIndicator, Modal,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,30 +14,22 @@ import LectureReturnSheet from '../components/LectureReturnSheet';
 import StartButton from '../components/StartButton';
 import LoadingOrb from '../components/LoadingOrb';
 import { getDailyLog, getDaysToExam, useStreakShield, getReviewDueTopics } from '../db/queries/progress';
-import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics, getSubjectById } from '../db/queries/topics';
-import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
+import { getSubjectById } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
-import { getIncompleteExternalSession, finishExternalAppSession } from '../db/queries/externalLogs';
-import { getCompletedSessionCount } from '../db/queries/sessions';
-import { stopRecording, hideOverlay, validateRecordingFile } from '../../modules/app-launcher';
 import * as DocumentPicker from 'expo-document-picker';
 import { saveLectureTranscript } from '../db/queries/aiCache';
-import {
-  retryFailedTranscriptions,
-  retryPendingNoteEnhancements,
-  stopRecordingHealthCheck
-} from '../services/lectureSessionMonitor';
+import { saveTranscriptToFile } from '../services/transcriptStorage';
 import {
   buildQuickLectureNote,
   markTopicsFromLecture,
-  transcribeWithGroq,
-  transcribeWithLocalWhisper,
+  transcribeAudio,
 } from '../services/transcriptionService';
 import { getDb } from '../db/database';
-import type { TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import Svg, { Circle } from 'react-native-svg';
 import { showToast } from '../components/Toast';
+import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
+import { useLectureReturnRecovery, type LectureReturnSheetData } from '../hooks/useLectureReturnRecovery';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -49,205 +42,32 @@ const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { profile, levelInfo, refreshProfile } = useAppStore();
-  const [weakTopics, setWeakTopics] = useState<TopicWithProgress[]>([]);
-  const [dueTopics, setDueTopics] = useState<TopicWithProgress[]>([]);
-  const [todayTasks, setTodayTasks] = useState<TodayTask[]>([]);
-  const [todayMinutes, setTodayMinutes] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    weakTopics,
+    dueTopics,
+    todayTasks,
+    todayMinutes,
+    completedSessions,
+    isLoading,
+    reload: reloadHomeDashboard,
+  } = useHomeDashboardData({ refreshProfile });
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
   const [uploadTranscript, setUploadTranscript] = useState('');
   const [showTranscriptModal, setShowTranscriptModal] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
-  const [completedSessions, setCompletedSessions] = useState(0);
+  const moreAnim = useRef(new Animated.Value(0)).current;
+
+  function toggleMore() {
+    const next = !moreExpanded;
+    setMoreExpanded(next);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.timing(moreAnim, { toValue: next ? 1 : 0, duration: 220, useNativeDriver: false }).start();
+  }
 
   // LectureReturnSheet state
-  const [returnSheet, setReturnSheet] = useState<{
-    appName: string; durationMinutes: number; recordingPath: string | null; logId: number;
-  } | null>(null);
-  const appStateRef = useRef(AppState.currentState);
-  const handledReturnLogRef = useRef<number | null>(null);
-  const lastRecoveryAttemptRef = useRef(0);
+  const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
   const lectureStartAlertVisibleRef = useRef(false);
-
-  const recoverPendingTranscriptions = useCallback(async (force = false) => {
-    const now = Date.now();
-    if (!force && now - lastRecoveryAttemptRef.current < 60_000) {
-      return;
-    }
-    lastRecoveryAttemptRef.current = now;
-    try {
-      const [recoveredTranscriptions, recoveredEnhancements] = await Promise.all([
-        retryFailedTranscriptions(),
-        retryPendingNoteEnhancements(),
-      ]);
-      const totalRecovered = recoveredTranscriptions + recoveredEnhancements;
-      if (totalRecovered > 0) {
-        const parts = [
-          recoveredTranscriptions > 0
-            ? `${recoveredTranscriptions} transcription${recoveredTranscriptions > 1 ? 's' : ''}`
-            : null,
-          recoveredEnhancements > 0
-            ? `${recoveredEnhancements} note enhancement${recoveredEnhancements > 1 ? 's' : ''}`
-            : null,
-        ].filter(Boolean);
-        Alert.alert(
-          'Recovered lecture notes',
-          `${parts.join(' and ')} recovered automatically.`,
-        );
-      }
-    } catch (err) {
-      console.warn('[Home] Failed to recover pending transcriptions:', err);
-    }
-  }, []);
-
-  const checkForReturnedSession = useCallback(async (showPrompt: boolean) => {
-    try {
-      const session = getIncompleteExternalSession();
-      if (!session || handledReturnLogRef.current === session.id) return;
-
-      const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
-      const logId = session.id!;
-      handledReturnLogRef.current = logId;
-      stopRecordingHealthCheck();
-
-      if (!showPrompt && !session.recordingPath) {
-        finishExternalAppSession(logId, durationMinutes, 'Recovered silently on cold app launch');
-        return;
-      }
-
-      // Cold launch (not returning from background) — finish silently, don't show sheet
-      if (!showPrompt) {
-        console.log(`[Home] Cold launch with stale session ${logId}, finishing silently`);
-        finishExternalAppSession(logId, durationMinutes, 'Stale session cleaned on cold launch');
-        return;
-      }
-
-      let recordingPath = session.recordingPath ?? null;
-      console.log(`[Home] Session found: app=${session.appName}, dbPath=${recordingPath}, duration=${durationMinutes}min`);
-
-      try {
-        const stoppedPath = await Promise.race<string | null>([
-          stopRecording(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
-        ]);
-        console.log(`[Home] stopRecording returned: ${stoppedPath}`);
-        if (stoppedPath) recordingPath = stoppedPath;
-      } catch (err) {
-        console.warn('[Home] stopRecording failed:', err);
-      }
-
-      // If stopRecording returned null but DB has a path, try the DB path
-      if (!recordingPath && session.recordingPath) {
-        console.log('[Home] stopRecording null, falling back to DB path:', session.recordingPath);
-        recordingPath = session.recordingPath;
-      }
-
-      // Validate using NATIVE file API (avoids expo-file-system path format issues)
-      if (recordingPath) {
-        console.log('[Home] Validating recording file via native:', recordingPath);
-        let validated = false;
-        const MAX_RETRIES = 8;
-        const BASE_DELAY_MS = 300;
-        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-          try {
-            const info = await validateRecordingFile(recordingPath);
-            console.log(`[Home] Native file check attempt ${attempt}: exists=${info.exists}, size=${info.size}`);
-            if (info.exists && info.size > 1024) {
-              validated = true;
-              break;
-            }
-          } catch (e) {
-            console.warn(`[Home] Native file check error attempt ${attempt}:`, e);
-          }
-          if (attempt < MAX_RETRIES - 1) {
-            await new Promise(res => setTimeout(res, BASE_DELAY_MS * Math.pow(1.5, attempt)));
-          }
-        }
-        if (!validated) {
-          try {
-            const finalInfo = await validateRecordingFile(recordingPath);
-            if (!finalInfo.exists || finalInfo.size <= 100) {
-              console.warn(
-                `[Home] Recording file still not ready: exists=${finalInfo.exists}, size=${finalInfo.size}. Keeping path for downstream retry.`,
-              );
-              showToast(
-                "Recording file isn't ready yet — it may appear when you reopen the app.",
-                'warning',
-              );
-            } else {
-              console.log(`[Home] Recording file validated: size=${finalInfo.size} bytes`);
-            }
-          } catch (e) {
-            // If native validation itself errors, KEEP the path — don't discard a potentially valid file
-            console.warn('[Home] Native validation threw, keeping path anyway:', e);
-          }
-        }
-      }
-
-      try { await hideOverlay(); } catch (err) { console.warn('[Home] hideOverlay failed:', err); }
-
-      // Mark session complete in DB so it doesn't re-trigger on next app open.
-      // The returnSheet state below captures all needed data (recordingPath etc).
-      finishExternalAppSession(logId, durationMinutes);
-
-      setReturnSheet({
-        appName: session.appName,
-        durationMinutes,
-        recordingPath,
-        logId
-      });
-    } catch (err) {
-      console.error('[Home] Error in checkForReturnedSession:', err);
-      showToast("Couldn't process your lecture recording. Try opening the app again.", 'error');
-    }
-  }, []);
-
-  useEffect(() => {
-    checkForReturnedSession(false);
-    recoverPendingTranscriptions(true);
-    const sub = AppState.addEventListener('change', nextState => {
-      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
-        checkForReturnedSession(true);
-        recoverPendingTranscriptions();
-      }
-      appStateRef.current = nextState;
-    });
-    return () => sub.remove();
-  }, [checkForReturnedSession, recoverPendingTranscriptions]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const task = InteractionManager.runAfterInteractions(() => {
-      const loadData = async () => {
-        setIsLoading(true);
-        try {
-          await refreshProfile();
-          if (!isMounted) return;
-          markNemesisTopics();
-          // Yield between heavy queries to avoid long synchronous blocks
-          setWeakTopics(getWeakestTopics(3));
-          await new Promise(r => setTimeout(r, 0));
-          setDueTopics(getTopicsDueForReview(5));
-          await new Promise(r => setTimeout(r, 0));
-          setTodayTasks(getTodaysAgendaWithTimes().slice(0, 2));
-          setCompletedSessions(getCompletedSessionCount());
-          const log = getDailyLog();
-          setTodayMinutes(log?.totalMinutes ?? 0);
-        } catch (err: any) {
-          if (!isMounted) return;
-          console.error('[Home] Failed to load initial data:', err);
-          Alert.alert('Load Failed', err?.message ?? 'Unable to load home data. Please try again.');
-        } finally {
-          if (isMounted) setIsLoading(false);
-        }
-      };
-      loadData();
-    });
-    return () => {
-      isMounted = false;
-      task.cancel();
-    };
-  }, []);
+  useLectureReturnRecovery({ onRecovered: setReturnSheet });
 
   useEffect(() => {
     if (profile?.syncCode) {
@@ -336,17 +156,14 @@ export default function HomeScreen() {
       const uri = result.assets[0]?.uri;
       if (!uri) return;
 
-      const groqKey = profile?.groqApiKey?.trim() || '';
-      const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-      if (!groqKey && !hasLocalWhisper) {
-        Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings.');
+      setIsTranscribingUpload(true);
+      let analysis;
+      try {
+        analysis = await transcribeAudio(uri);
+      } catch (err: any) {
+        Alert.alert('Transcription Required', err?.message ?? 'Enable Local Whisper or add a Groq API key in Settings.');
         return;
       }
-
-      setIsTranscribingUpload(true);
-      const analysis = hasLocalWhisper
-        ? await transcribeWithLocalWhisper(uri, profile!.localWhisperPath!)
-        : await transcribeWithGroq(uri, groqKey);
 
       if (!analysis.transcript || analysis.lectureSummary === 'No medical content detected') {
         Alert.alert('No Speech Detected', 'No usable speech was found in this audio file.');
@@ -359,6 +176,7 @@ export default function HomeScreen() {
       }
 
       const quickNote = buildQuickLectureNote(analysis);
+      const transcriptUri = await saveTranscriptToFile(analysis.transcript);
       const subjectRow = db.getFirstSync<{ id: number }>(
         'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?) LIMIT 1',
         [analysis.subject],
@@ -366,15 +184,14 @@ export default function HomeScreen() {
       saveLectureTranscript({
         subjectId: subjectRow?.id ?? null,
         note: quickNote,
-        transcript: analysis.transcript,
+        transcript: typeof transcriptUri !== 'undefined' ? transcriptUri : analysis.transcript,
         summary: analysis.lectureSummary,
         topics: analysis.topics,
         appName: 'Uploaded Audio',
         confidence: analysis.estimatedConfidence,
       });
 
-      setWeakTopics(getWeakestTopics(3));
-      setDueTopics(getTopicsDueForReview(5));
+      void reloadHomeDashboard();
       setUploadTranscript(quickNote);
       setShowTranscriptModal(true);
     } catch (err: any) {
@@ -509,6 +326,11 @@ export default function HomeScreen() {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} testID="home-scroll">
         <ResponsiveContainer style={styles.content}>
 
+          {/* TEMP: loud dev-only banner to confirm bundle */}
+          <View style={styles.devBanner}>
+            <Text style={styles.devBannerText}>GURU DEV BUILD · HOME UI</Text>
+          </View>
+
           {/* ── 1. Compact Status Row ── */}
           <View style={styles.statusRow}>
             <View style={styles.statusLeft}>
@@ -575,7 +397,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={item.key}
                 style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
-                onPress={item.onPress}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); item.onPress(); }}
                 activeOpacity={0.8}
               >
                 <View style={styles.criticalCardTop}>
@@ -590,17 +412,11 @@ export default function HomeScreen() {
 
           <View style={styles.coreActionsSection}>
             <Text style={styles.sectionLabel}>CORE TOOLS</Text>
-            <View style={styles.coreActionsRow}>
-              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('GuruChat')} activeOpacity={0.8}>
-                <Text style={styles.coreActionTitle}>Guru Chat</Text>
-                <Text style={styles.coreActionSub}>Ask grounded medical questions</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('LectureMode', {})} activeOpacity={0.8} testID="lecture-mode-btn">
-                <Text style={styles.coreActionTitle}>Lecture Mode</Text>
-                <Text style={styles.coreActionSub}>Capture and summarize lectures</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.coreActionWide} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.coreActionWide} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('LectureMode', {}); }} activeOpacity={0.8} testID="lecture-mode-btn">
+              <Text style={styles.coreActionWideTitle}>Lecture Mode</Text>
+              <Text style={styles.coreActionWideSub}>Capture and summarize lectures</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.coreActionWide, { marginTop: 12 }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('FlaggedReview'); }} activeOpacity={0.8}>
               <Text style={styles.coreActionWideTitle}>Flagged Review</Text>
               <Text style={styles.coreActionWideSub}>Return to topics you explicitly marked for later</Text>
             </TouchableOpacity>
@@ -645,38 +461,38 @@ export default function HomeScreen() {
           {/* ── 6. More — everything else, collapsed ── */}
           <TouchableOpacity
             style={styles.moreHeader}
-            onPress={() => setMoreExpanded(prev => !prev)}
+            onPress={toggleMore}
             activeOpacity={0.7}
             testID="more-header"
           >
             <Text style={styles.sectionLabel}>MORE</Text>
-            <Text style={styles.moreChevron}>{moreExpanded ? '▲' : '▼'}</Text>
+            <Animated.Text style={[styles.moreChevron, { transform: [{ rotate: moreAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }]}>▼</Animated.Text>
           </TouchableOpacity>
 
-          {moreExpanded && (
+          <Animated.View style={{ maxHeight: moreAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 800] }), opacity: moreAnim, overflow: 'hidden' }}>
             <View style={styles.moreContent}>
               <Text style={styles.moreGroupLabel}>QUICK START</Text>
               {/* Quick modes */}
               <View style={styles.moreRow}>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('Session', { mood, mode: 'sprint' })} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('Session', { mood, mode: 'sprint' }); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>⚡ 10m Sprint</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('MockTest')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('MockTest'); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>📝 Mock Test</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.moreRow}>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('DailyChallenge')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DailyChallenge'); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>⚡ Daily Challenge</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('BossBattle')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('BossBattle'); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>👹 Boss Battle</Text>
                 </TouchableOpacity>
               </View>
 
               <Text style={styles.moreGroupLabel}>AI TOOLS</Text>
               {/* Tools */}
-              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('BrainDumpReview')}>
+              <TouchableOpacity style={styles.moreLink} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.getParent()?.navigate('BrainDumpReview'); }}>
                 <Text style={styles.moreLinkText}>🧠 Review Parked Thoughts</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -709,7 +525,7 @@ export default function HomeScreen() {
                 <Text style={styles.moreLinkText}>🐢 Task Paralysis Helper</Text>
               </TouchableOpacity>
             </View>
-          )}
+          </Animated.View>
 
           {/* Bottom breathing room */}
           <View style={{ height: 40 }} />
@@ -765,6 +581,26 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   content: { paddingBottom: 0 },
 
+  // Dev-only banner to confirm we are on the right JS bundle
+  devBanner: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    marginBottom: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#FF1744',
+    borderWidth: 1,
+    borderColor: '#FF8A80',
+  },
+  devBannerText: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 13,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+
   // ── 1. Status Row ──
   statusRow: {
     flexDirection: 'row',
@@ -795,7 +631,7 @@ const styles = StyleSheet.create({
   statusRight: { alignItems: 'flex-end' },
   countdown: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   countdownSecondary: { color: '#8F95A7', fontWeight: '700', fontSize: 12, marginTop: 2 },
-  todayMin: { color: '#A4A8B3', fontSize: 12, marginTop: 2 },
+  todayMin: { color: '#DCE6FF', fontSize: 13, marginTop: 2, fontWeight: '600' },
 
   // Streak repair
   repairNudge: {
@@ -851,9 +687,18 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
-  // Task paralysis — subtle
-  paralysisLink: { alignSelf: 'center', marginBottom: 16 },
-  paralysisText: { color: '#BCC2D0', fontSize: 13, textDecorationLine: 'underline' },
+  // Task paralysis — pill button
+  paralysisLink: {
+    alignSelf: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#1A1A24',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
+  paralysisText: { color: '#BCC2D0', fontSize: 13 },
 
   criticalSection: { paddingHorizontal: 16, marginBottom: 18 },
   criticalCard: {
@@ -901,7 +746,7 @@ const styles = StyleSheet.create({
   coreActionWideSub: { color: '#99A2B6', fontSize: 12, lineHeight: 18 },
 
   // ── 5. Agenda ──
-  agendaSection: { paddingHorizontal: 16, marginBottom: 16 },
+  agendaSection: { paddingHorizontal: 16, marginBottom: 18 },
   sectionLabel: { color: '#9399AA', fontWeight: '800', fontSize: 11, letterSpacing: 1.5, marginBottom: 10 },
   agendaRow: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },
   agendaRowFirst: {},
@@ -930,7 +775,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   moreChevron: { color: '#A0A6B7', fontSize: 12 },
   moreContent: { paddingHorizontal: 16 },

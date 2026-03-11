@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView,
+  View, Text, TextInput, TouchableOpacity, ScrollView, Modal,
   StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, Platform, Linking, AppState
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -60,34 +61,30 @@ function normalizeUserDateInput(value: string): string | null {
   const raw = value.trim();
   if (!raw) return null;
 
+  let y: number, m: number, d: number;
   const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (ymd) {
-    const y = Number(ymd[1]);
-    const m = Number(ymd[2]);
-    const d = Number(ymd[3]);
-    if (y >= 2020 && y <= 2035 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-      const iso = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-      const parsed = new Date(`${iso}T00:00:00`);
-      if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso) {
-        return iso;
-      }
+    y = Number(ymd[1]);
+    m = Number(ymd[2]);
+    d = Number(ymd[3]);
+  } else {
+    const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (dmy) {
+      d = Number(dmy[1]);
+      m = Number(dmy[2]);
+      y = Number(dmy[3]);
+    } else {
+      return null;
     }
   }
 
-  const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
-  if (dmy) {
-    const d = Number(dmy[1]);
-    const m = Number(dmy[2]);
-    const y = Number(dmy[3]);
-    if (y >= 2020 && y <= 2035 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
-      const iso = `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-      const parsed = new Date(`${iso}T00:00:00`);
-      if (!Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === iso) {
-        return iso;
-      }
-    }
+  if (y < 2020 || y > 2035 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  
+  // Robust check for valid calendar date (e.g. not Feb 30)
+  const dt = new Date(y, m - 1, d);
+  if (dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d) {
+    return `${y.toString().padStart(4, '0')}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
   }
-
   return null;
 }
 
@@ -275,6 +272,7 @@ export default function SettingsScreen() {
   const [name, setName] = useState('');
   const [inicetDate, setInicetDate] = useState('2026-05-17');
   const [neetDate, setNeetDate] = useState('2026-08-30');
+  const [datePickerTarget, setDatePickerTarget] = useState<'inicet' | 'neet' | null>(null);
   const [sessionLength, setSessionLength] = useState('45');
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
@@ -323,9 +321,11 @@ export default function SettingsScreen() {
 
   const isValidIsoDate = useCallback((value: string): boolean => {
     if (!DATE_REGEX.test(value)) return false;
-    const parsed = new Date(`${value}T00:00:00`);
-    if (Number.isNaN(parsed.getTime())) return false;
-    return parsed.toISOString().slice(0, 10) === value;
+    const parts = value.split('-').map(Number);
+    if (parts.length !== 3) return false;
+    const [y, m, d] = parts;
+    const dt = new Date(y, m - 1, d);
+    return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
   }, []);
 
   const clampInt = useCallback((raw: string, fallback: number, min: number, max: number): number => {
@@ -565,6 +565,9 @@ export default function SettingsScreen() {
     try {
       const res = await syncExamDatesFromInternet();
       refreshProfile();
+      // Update local form state so unsaved edits reflect synced dates
+      if (res.inicetDate) setInicetDate(res.inicetDate);
+      if (res.neetDate) setNeetDate(res.neetDate);
       const nextMeta = await getExamDateSyncMeta();
       setExamSyncMeta(nextMeta);
       Alert.alert(
@@ -735,28 +738,48 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title="📅 Exam Dates" initiallyExpanded>
-          <Label text="INICET date (YYYY-MM-DD)" />
-          <TextInput
-            style={[styles.input, validationErrors.inicetDate && styles.inputError]}
-            value={inicetDate}
-            onChangeText={(text) => {
-              setInicetDate(text);
-              clearFieldError('inicetDate');
-            }}
-            placeholderTextColor={PLACEHOLDER_COLOR}
-          />
+          <Label text="INICET Date" />
+          <TouchableOpacity
+            style={[styles.dateBtn, validationErrors.inicetDate && styles.inputError]}
+            onPress={() => setDatePickerTarget('inicet')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.dateBtnText}>
+              {inicetDate ? new Date(inicetDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tap to set date'}
+            </Text>
+            <Text style={styles.dateBtnIcon}>📅</Text>
+          </TouchableOpacity>
           {!!validationErrors.inicetDate && <Text style={styles.fieldError}>{validationErrors.inicetDate}</Text>}
-          <Label text="NEET-PG date (YYYY-MM-DD)" />
-          <TextInput
-            style={[styles.input, validationErrors.neetDate && styles.inputError]}
-            value={neetDate}
-            onChangeText={(text) => {
-              setNeetDate(text);
-              clearFieldError('neetDate');
-            }}
-            placeholderTextColor={PLACEHOLDER_COLOR}
-          />
+
+          <Label text="NEET-PG Date" />
+          <TouchableOpacity
+            style={[styles.dateBtn, validationErrors.neetDate && styles.inputError]}
+            onPress={() => setDatePickerTarget('neet')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.dateBtnText}>
+              {neetDate ? new Date(neetDate + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Tap to set date'}
+            </Text>
+            <Text style={styles.dateBtnIcon}>📅</Text>
+          </TouchableOpacity>
           {!!validationErrors.neetDate && <Text style={styles.fieldError}>{validationErrors.neetDate}</Text>}
+
+          {datePickerTarget && (
+            <DateTimePicker
+              value={new Date((datePickerTarget === 'inicet' ? inicetDate : neetDate) + 'T00:00:00')}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              onChange={(_event: unknown, selected?: Date) => {
+                if (selected) {
+                  const iso = selected.toISOString().slice(0, 10);
+                  if (datePickerTarget === 'inicet') { setInicetDate(iso); clearFieldError('inicetDate'); }
+                  else { setNeetDate(iso); clearFieldError('neetDate'); }
+                }
+                setDatePickerTarget(null);
+              }}
+            />
+          )}
           <Text style={styles.hint}>
             Guru auto-checks official websites in the background whenever the app opens or returns to foreground.
           </Text>
@@ -1178,6 +1201,9 @@ const styles = StyleSheet.create({
   label: { color: '#C8CDDA', fontSize: 13, marginBottom: 6, marginTop: 8 },
   input: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 4 },
   inputError: { borderColor: '#FF6B6B' },
+  dateBtn: { backgroundColor: '#0F0F14', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 14, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  dateBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  dateBtnIcon: { fontSize: 16 },
   fieldError: { color: '#FF9D9D', fontSize: 11, marginBottom: 2 },
   hint: { color: '#A4ABBB', fontSize: 12, marginBottom: 4 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },

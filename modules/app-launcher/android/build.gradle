@@ -25,7 +25,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 group = 'expo.modules.applauncher'
 
 android {
-    namespace "expo.modules.applauncher"
+    namespace = "expo.modules.applauncher"
     compileSdkVersion safeExtGet("compileSdkVersion", 36)
 
     defaultConfig {

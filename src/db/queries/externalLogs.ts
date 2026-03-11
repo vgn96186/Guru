@@ -14,11 +14,13 @@ export interface SessionPipelineTelemetry {
     engine?: 'local_whisper' | 'groq' | 'unknown';
     audioSizeBytes?: number;
     estimatedMinutes?: number;
+    validationAttempts?: number;
     usedChunking?: boolean;
     chunkCount?: number;
     transcriptChars?: number;
     topicsDetected?: number;
     keyConceptsDetected?: number;
+    errorStage?: 'validation' | 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
     totalForegroundMs?: number;
     enhancementSucceeded?: boolean;
     stages?: Partial<Record<PipelineStageName, PipelineStageTelemetry>>;

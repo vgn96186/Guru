@@ -39,7 +39,8 @@ import {
   updateSessionTranscriptionStatus,
 } from '../db/queries/externalLogs';
 import { getDb } from '../db/database';
-import { validateRecordingFile, convertToWav } from '../../modules/app-launcher';
+import { saveTranscriptToFile } from './transcriptStorage';
+import { validateRecordingFile, convertToWav, splitWavIntoChunks } from '../../modules/app-launcher';
 import { LEVELS } from '../constants/gamification';
 
 const LOG = '[SessionMonitor]';
@@ -216,7 +217,6 @@ export function stopRecordingHealthCheck(): void {
 /** Groq's Whisper API has a ~25MB file size limit */
 const GROQ_MAX_FILE_SIZE = 24 * 1024 * 1024; // 24MB to be safe
 const GROQ_TARGET_CHUNK_BYTES = 18 * 1024 * 1024;
-const WAV_HEADER_BYTES = 44;
 const WAV_BYTES_PER_SECOND = 16_000 * 2; // 16kHz mono 16-bit PCM
 
 /**
@@ -253,81 +253,25 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-function createWavHeaderBytes(dataSize: number): Uint8Array {
-  const header = new Uint8Array(WAV_HEADER_BYTES);
-  const view = new DataView(header.buffer);
-  const write = (offset: number, str: string) => {
-    for (let i = 0; i < str.length; i++) header[offset + i] = str.charCodeAt(i);
-  };
-
-  write(0, 'RIFF');
-  view.setUint32(4, 36 + dataSize, true);
-  write(8, 'WAVE');
-  write(12, 'fmt ');
-  view.setUint32(16, 16, true); // PCM
-  view.setUint16(20, 1, true); // Audio format
-  view.setUint16(22, 1, true); // Mono
-  view.setUint32(24, 16_000, true); // Sample rate
-  view.setUint32(28, 32_000, true); // Byte rate
-  view.setUint16(32, 2, true); // Block align
-  view.setUint16(34, 16, true); // Bits per sample
-  write(36, 'data');
-  view.setUint32(40, dataSize, true);
-
-  return header;
-}
-
 async function splitWavIntoGroqChunks(wavPath: string): Promise<string[]> {
   const wavUri = toFileUri(wavPath);
   const info = await FileSystem.getInfoAsync(wavUri);
-  if (!info.exists || !info.size || info.size <= WAV_HEADER_BYTES) {
+  if (!info.exists || !info.size || info.size <= 44) {
     throw new Error('Converted WAV file is empty');
   }
 
-  const totalDataBytes = info.size - WAV_HEADER_BYTES;
-  const chunkDir = `${FileSystem.cacheDirectory}groq-chunks-${Date.now()}/`;
-  await FileSystem.makeDirectoryAsync(chunkDir, { intermediates: true });
-
-  const chunks: string[] = [];
-  let dataOffset = WAV_HEADER_BYTES;
-  let chunkIndex = 0;
+  const totalDataBytes = info.size - 44;
   const chunkBytes = Math.max(
     WAV_BYTES_PER_SECOND * 60, // at least 1 minute
     Math.floor(GROQ_TARGET_CHUNK_BYTES / WAV_BYTES_PER_SECOND) * WAV_BYTES_PER_SECOND,
   );
-
-  while (dataOffset < info.size) {
-    const remaining = info.size - dataOffset;
-    const thisChunkDataBytes = Math.min(chunkBytes, remaining);
-    if (thisChunkDataBytes < WAV_BYTES_PER_SECOND) break;
-
-    const pcmBase64 = await FileSystem.readAsStringAsync(wavUri, {
-      encoding: FileSystem.EncodingType.Base64,
-      position: dataOffset,
-      length: thisChunkDataBytes,
-    });
-
-    // Build WAV header as raw binary, decode PCM base64 to binary,
-    // then concatenate raw bytes BEFORE base64-encoding the combined result.
-    // (Concatenating two independent base64 strings corrupts data due to padding.)
-    const headerBytes = createWavHeaderBytes(thisChunkDataBytes);
-    const pcmBinary = atob(pcmBase64);
-    let combined = '';
-    for (let b = 0; b < headerBytes.length; b++) {
-      combined += String.fromCharCode(headerBytes[b]);
-    }
-    combined += pcmBinary;
-    const wavChunkBase64 = btoa(combined);
-
-    const chunkPath = `${chunkDir}chunk_${chunkIndex.toString().padStart(3, '0')}.wav`;
-    await FileSystem.writeAsStringAsync(toFileUri(chunkPath), wavChunkBase64, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-
-    chunks.push(chunkPath);
-    dataOffset += thisChunkDataBytes;
-    chunkIndex++;
-  }
+  const nativeChunks = await splitWavIntoChunks(
+    wavPath,
+    chunkBytes,
+    chunkBytes,
+    WAV_BYTES_PER_SECOND,
+  );
+  const chunks = nativeChunks.map(chunk => chunk.path);
 
   const estimatedMinutes = Math.round(totalDataBytes / WAV_BYTES_PER_SECOND / 60);
   console.log(`${LOG} Created ${chunks.length} Groq chunks from ~${estimatedMinutes}min recording`);
@@ -419,6 +363,7 @@ export async function transcribeLectureWithRecovery(opts: {
   }
 
   for (let attempt = 0; attempt <= retries; attempt++) {
+    let currentStage: 'transcribing' | 'analyzing' = 'transcribing';
     try {
       emitProgress(opts.onProgress, 'transcribing', 'Transcribing lecture audio');
       const transcribingStartedAt = stageStart(opts.logId, 'transcribing');
@@ -452,6 +397,7 @@ export async function transcribeLectureWithRecovery(opts: {
       }
 
       emitProgress(opts.onProgress, 'analyzing', 'Extracting topics and key concepts');
+      currentStage = 'analyzing';
       const analyzingStartedAt = stageStart(opts.logId, 'analyzing');
       const analysis = await analyzeTranscript(transcript);
       stageComplete(opts.logId, 'analyzing', analyzingStartedAt);
@@ -465,6 +411,9 @@ export async function transcribeLectureWithRecovery(opts: {
       return { ...analysis, transcript };
     } catch (e: any) {
       lastError = e instanceof Error ? e : new Error(String(e));
+      if (opts.logId) {
+        updateSessionPipelineTelemetry(opts.logId, { errorStage: currentStage });
+      }
       if (attempt < retries) {
         const backoffMs = (attempt + 1) * 1500;
         console.warn(`${LOG} Transcription attempt ${attempt + 1} failed. Retrying in ${backoffMs}ms`);
@@ -521,6 +470,7 @@ export async function saveLectureAnalysisQuick(opts: {
     const db = getDb();
     const { analysis } = opts;
     const quickNote = buildQuickLectureNote(analysis);
+    const transcriptUri = await saveTranscriptToFile(analysis.transcript || '');
     const noteId = runInTransaction(db, () => {
       if (analysis.topics.length > 0) {
         markTopicsFromLecture(db, analysis.topics, analysis.estimatedConfidence, analysis.subject);
@@ -534,7 +484,7 @@ export async function saveLectureAnalysisQuick(opts: {
       const createdNoteId = saveLectureTranscript({
         subjectId: subj?.id ?? null,
         note: quickNote,
-        transcript: analysis.transcript,
+        transcript: typeof transcriptUri !== 'undefined' ? transcriptUri : analysis.transcript,
         summary: analysis.lectureSummary,
         topics: analysis.topics,
         appName: opts.appName,
@@ -557,6 +507,7 @@ export async function saveLectureAnalysisQuick(opts: {
 
     return { noteId, note: quickNote };
   } catch (e: any) {
+    updateSessionPipelineTelemetry(opts.logId, { errorStage: 'saving' });
     updateSessionTranscriptionStatus(opts.logId, 'failed', e?.message ?? 'Save failed');
     throw e;
   }
@@ -587,6 +538,7 @@ async function enhanceLectureNoteInBackground(opts: {
       updateSessionNoteEnhancementStatus(opts.logId, 'failed');
       updateSessionPipelineTelemetry(opts.logId, {
         enhancementSucceeded: false,
+        errorStage: 'enhancing',
       });
     }
     console.warn(`${LOG} Background note enhancement failed:`, e);
@@ -637,6 +589,7 @@ export async function runFullTranscriptionPipeline(opts: {
   } catch (e: any) {
     const errMsg = e?.message ?? 'Transcription failed';
     console.error(`${LOG} Transcription failed:`, errMsg);
+    updateSessionPipelineTelemetry(logId, { errorStage: 'transcribing' });
     updateSessionTranscriptionStatus(logId, 'failed', errMsg);
 
     await notifyTranscriptionFailure(appName, durationMinutes);
@@ -655,6 +608,7 @@ export async function runFullTranscriptionPipeline(opts: {
     });
     return { success: true, analysis, adhdNote: saved.note, lectureNoteId: saved.noteId };
   } catch (e: any) {
+    updateSessionPipelineTelemetry(logId, { errorStage: 'saving' });
     return { success: false, analysis, error: e?.message };
   }
 }

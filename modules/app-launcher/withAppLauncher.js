@@ -1,4 +1,6 @@
-const { withAndroidManifest } = require('@expo/config-plugins');
+const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * Expo config plugin for the GuruAppLauncher native module.
@@ -10,7 +12,7 @@ const { withAndroidManifest } = require('@expo/config-plugins');
  *  - <queries> for the medical app packages
  */
 function withAppLauncher(config) {
-  return withAndroidManifest(config, (config) => {
+  const withManifest = withAndroidManifest(config, (config) => {
     const manifest = config.modResults.manifest;
 
     // ── Permissions ──────────────────────────────────────────────
@@ -53,6 +55,9 @@ function withAppLauncher(config) {
     // ── RecordingService in <application> ────────────────────────
     const app = manifest.application?.[0];
     if (app) {
+      app.$ = app.$ ?? {};
+      app.$['android:networkSecurityConfig'] = '@xml/network_security_config';
+
       const services = app.service ?? [];
       const svcName = 'expo.modules.applauncher.RecordingService';
       const overlaySvcName = 'expo.modules.applauncher.OverlayService';
@@ -79,6 +84,28 @@ function withAppLauncher(config) {
 
     return config;
   });
+
+  return withDangerousMod(withManifest, [
+    'android',
+    async (config) => {
+      const projectRoot = config.modRequest.projectRoot;
+      const xmlDir = path.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'xml');
+      const xmlPath = path.join(xmlDir, 'network_security_config.xml');
+
+      fs.mkdirSync(xmlDir, { recursive: true });
+      const networkSecurityConfig = `<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="true">10.0.2.2</domain>
+    <domain includeSubdomains="true">localhost</domain>
+    <domain includeSubdomains="true">127.0.0.1</domain>
+  </domain-config>
+</network-security-config>
+`;
+      fs.writeFileSync(xmlPath, networkSecurityConfig, 'utf8');
+      return config;
+    },
+  ]);
 }
 
 module.exports = withAppLauncher;

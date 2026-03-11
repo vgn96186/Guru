@@ -53,7 +53,7 @@ export default function StudyPlanScreen() {
     const startOfWeek = startOfToday - mondayOffset * 86400000;
     const todayStr = now.toISOString().slice(0, 10);
     const overdue = getTopicsDueForReview(1000).filter(topic => {
-      const dueDate = topic.progress.fsrsDue?.slice(0, 10) ?? topic.progress.nextReviewDate;
+      const dueDate = topic.progress.fsrsDue?.slice(0, 10);
       if (!dueDate || dueDate >= todayStr) return false;
       if (planMode === 'high_yield') return topic.inicetPriority >= 8;
       if (planMode === 'exam_crunch') return topic.inicetPriority >= 7 || topic.progress.confidence < 3;

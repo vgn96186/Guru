@@ -22,6 +22,7 @@ import {
   getLectureNoteById,
   type LectureHistoryItem
 } from '../db/queries/aiCache';
+import { loadTranscriptFromFile } from '../services/transcriptStorage';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -121,6 +122,10 @@ const mdStyles = StyleSheet.create({
 
 /** Collapsible transcript section */
 function TranscriptSection({ transcript }: { transcript: string }) {
+  const [content, setContent] = React.useState<string>('Loading transcript...');
+  React.useEffect(() => {
+    loadTranscriptFromFile(transcript).then((res: string | null) => setContent(res || 'No transcript available.'));
+  }, [transcript]);
   const [expanded, setExpanded] = useState(false);
   return (
     <View style={{ marginBottom: 20 }}>
@@ -140,7 +145,7 @@ function TranscriptSection({ transcript }: { transcript: string }) {
           fontFamily: 'monospace', backgroundColor: '#0D0D0D',
           padding: 12, borderRadius: 8,
         }}>
-          {transcript}
+          {content}
         </Text>
       )}
     </View>

@@ -1,0 +1,52 @@
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native / platform-specific
+/ios/
+/android/
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+android/app/build/
+android/build/
+android/.gradle/
+modules/*/android/build/
+modules/*/android/.gradle/
+
+# Logs & debug output
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+expo*.log
+serve.log
+start_debug*.log
+
+# OS/editor cruft
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# Local env / secrets (never needed by AI)
+.env*
+
+# Local agent / tooling metadata
+.aider*
+.zencoder/
+.zenflow/
+.agents/
+.cursor/
+
+# Build / binary artifacts
+*.xapk
+*.apk
+
+# UI dumps
+window_dump.xml
+

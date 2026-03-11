@@ -13,7 +13,10 @@ import { registerBackgroundFetch } from './src/services/backgroundTasks';
 import { bootstrapLocalModels } from './src/services/localModelBootstrap';
 import { syncExamDatesFromInternet } from './src/services/examDateSyncService';
 import { applyConfidenceDecay } from './src/db/queries/progress';
+import { refreshAccountabilityNotifications } from './src/services/notificationService';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { registerOfflineQueueProcessors } from './src/services/offlineQueueBootstrap';
+import { processQueue } from './src/services/offlineQueue';
 
 export const navigationRef = createNavigationContainerRef<any>();
 
@@ -50,6 +53,7 @@ function AppContent() {
     };
 
     runExamDateSync();
+    refreshAccountabilityNotifications().catch(e => console.log('Notif refresh failed:', e));
     
     // Listen for alarm notification taps to route to WakeUp
     const sub = Notifications.addNotificationResponseReceivedListener(response => {
@@ -62,6 +66,7 @@ function AppContent() {
     const appStateSub = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') {
         runExamDateSync();
+        refreshAccountabilityNotifications().catch(e => console.log('Notif refresh failed:', e));
       }
     });
     
@@ -89,6 +94,8 @@ export default function App() {
       try {
         await SplashScreen.preventAutoHideAsync();
         await initDatabase();
+        registerOfflineQueueProcessors();
+        await processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
         await registerBackgroundFetch().catch((e: unknown) => console.log('Background task not registered:', e));
 
         // Apply confidence decay for overdue topics

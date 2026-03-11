@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { generateWakeUpMessage } from '../services/aiService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -125,10 +126,12 @@ export default function SleepModeScreen() {
       setIsTracking(true);
       setMovementCount(0);
       
+      const { title, body } = await generateWakeUpMessage();
+      
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Good Morning, Doctor. 🌅",
-          body: "Time to rise and build some momentum. Tap here to wake up.",
+          title,
+          body,
           data: { screen: 'WakeUp' },
           sound: 'default'
         },

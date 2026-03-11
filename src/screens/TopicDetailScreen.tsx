@@ -408,16 +408,16 @@ export default function TopicDetailScreen() {
                     </View>
                   )}
                   {/* Review date indicator */}
-                  {item.progress.nextReviewDate && !isParent && (
+                  {item.progress.fsrsDue && !isParent && (
                     <View style={[
                       styles.reviewBadge,
-                      item.progress.nextReviewDate < new Date().toISOString().slice(0, 10) && styles.reviewOverdue
+                      item.progress.fsrsDue.slice(0, 10) < new Date().toISOString().slice(0, 10) && styles.reviewOverdue
                     ]}>
                       <Text style={[
                         styles.reviewText,
-                        item.progress.nextReviewDate < new Date().toISOString().slice(0, 10) && styles.reviewTextOverdue
+                        item.progress.fsrsDue.slice(0, 10) < new Date().toISOString().slice(0, 10) && styles.reviewTextOverdue
                       ]}>
-                        {formatReviewDate(item.progress.nextReviewDate)}
+                        {formatReviewDate(item.progress.fsrsDue.slice(0, 10))}
                       </Text>
                     </View>
                   )}

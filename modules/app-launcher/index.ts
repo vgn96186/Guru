@@ -91,6 +91,25 @@ export async function convertToWav(m4aPath: string): Promise<string | null> {
     return GuruAppLauncher.convertToWav(m4aPath);
 }
 
+export interface NativeWavChunk {
+    path: string;
+    startSec: number;
+    durationSec: number;
+}
+
+/**
+ * Splits a WAV file into chunk WAV files using native byte-level I/O.
+ * Avoids loading large base64 blobs in JS memory.
+ */
+export async function splitWavIntoChunks(
+    wavPath: string,
+    chunkDataBytes: number,
+    stepBytes: number,
+    minChunkBytes: number = 32_000,
+): Promise<NativeWavChunk[]> {
+    return GuruAppLauncher.splitWavIntoChunks(wavPath, chunkDataBytes, stepBytes, minChunkBytes);
+}
+
 /**
  * Pause an active recording (e.g. while the user leaves the lecture app briefly).
  * @returns `true` if the recording was paused successfully.

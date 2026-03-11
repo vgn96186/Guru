@@ -1,5 +1,5 @@
 import { getDb, todayStr, dateStr } from '../database';
-import type { UserProfile, DailyLog, Mood, ContentType, StudyResourceMode } from '../../types';
+import type { UserProfile, DailyLog, Mood, ContentType, StudyResourceMode, HarassmentTone } from '../../types';
 import { LEVELS } from '../../constants/gamification';
 
 export function getUserProfile(): UserProfile {
@@ -20,6 +20,7 @@ export function getUserProfile(): UserProfile {
     quick_start_streak: number; groq_api_key: string;
     study_resource_mode: StudyResourceMode | null;
     subject_load_overrides_json: string | null;
+    harassment_tone: string | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -38,6 +39,7 @@ export function getUserProfile(): UserProfile {
       useLocalWhisper: false, localWhisperPath: null,
       quickStartStreak: 0,
       studyResourceMode: 'hybrid',
+      harassmentTone: 'shame',
       customSubjectLoadMultipliers: {},
     };
   }
@@ -76,6 +78,7 @@ export function getUserProfile(): UserProfile {
     localWhisperPath: r.local_whisper_path ?? null,
     quickStartStreak: r.quick_start_streak ?? 0,
     studyResourceMode: r.study_resource_mode ?? 'hybrid',
+    harassmentTone: (r.harassment_tone as HarassmentTone | null) ?? 'shame',
     customSubjectLoadMultipliers: (() => {
       try {
         const parsed = JSON.parse(r.subject_load_overrides_json ?? '{}');
@@ -103,6 +106,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     useLocalWhisper: 'use_local_whisper', localWhisperPath: 'local_whisper_path',
     quickStartStreak: 'quick_start_streak', groqApiKey: 'groq_api_key',
     studyResourceMode: 'study_resource_mode',
+    harassmentTone: 'harassment_tone',
   };
 
   const setClauses: string[] = [];

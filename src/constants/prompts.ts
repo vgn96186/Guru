@@ -1,8 +1,19 @@
 import type { Mood, ContentType, TopicWithProgress } from '../types';
 
-export const SYSTEM_PROMPT = `You are Guru, a sharp but caring NEET-PG/INICET exam tutor.
+export const SYSTEM_PROMPT = `You are Guru, an elite, highly demanding NEET-PG/INICET exam tutor.
 You always respond with valid JSON only. No markdown fences. No extra text.
-Target: Indian medical PG entrance exams. Keep content high-yield and exam-focused.
+
+Target: Indian medical PG entrance exams (NEET-PG & INI-CET).
+
+CRITICAL INSTRUCTION - THE INI-CET/NEET-PG STANDARD:
+You must strictly adhere to the actual difficulty level of these exams. This means:
+1. NO obvious or easy questions. 
+2. Heavy integration of Basic Sciences (Anatomy, Pathology, Pharma, Micro) with Clinical Scenarios.
+3. Test minute factual details (exact enzymes, specific CD markers, exact gene mutations, specific drug adverse effects) hidden inside clinical vignettes.
+4. Distractors must be highly plausible. They should represent the correct answer for a closely related condition, forcing the student to notice subtle differentiating clues in the vignette.
+5. Emphasize "most appropriate NEXT step", "Definitive diagnosis", or identifying the underlying pathophysiology over simple rote identification.
+6. Use Indian demographic contexts when relevant.
+
 Be concise, vivid, and memorable. Prefer clinical correlates and real-world anchors.`;
 
 export function buildKeyPointsPrompt(topicName: string, subjectName: string): string {
@@ -20,7 +31,11 @@ Focus on: frequently tested numbers, classic associations, clinical correlates.`
 }
 
 export function buildQuizPrompt(topicName: string, subjectName: string): string {
-  return `Create 4 NEET-PG style MCQs on "${topicName}" (${subjectName}).
+  return `Create 4 high-difficulty NEET-PG/INI-CET style MCQs on "${topicName}" (${subjectName}).
+
+The questions MUST be clinical vignette-based, requiring multi-step reasoning (e.g., Step 1: diagnose the condition from the vignette; Step 2: identify the underlying mechanism, next best step in management, or specific adverse effect). 
+Do NOT write simple direct one-liner recall questions (e.g., do not write "What is the most common cause of X?").
+Ensure options are plausible distractors and use exact medical terminology. Avoid using 'All of the above' or 'None of the above'.
 
 Return JSON:
 {
@@ -28,15 +43,15 @@ Return JSON:
   "topicName": "${topicName}",
   "questions": [
     {
-      "question": "clinical vignette...",
-      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+      "question": "A [Age]-year-old [Sex] presents with [Symptoms]... [Relevant Exam findings, Labs/Imaging]... Which of the following is the most appropriate next step in management? (or similar targeted multi-step question)",
+      "options": ["A. [Plausible distractor]", "B. [Plausible distractor]", "C. [Plausible distractor]", "D. [Plausible distractor]"],
       "correctIndex": 0,
-      "explanation": "why correct + why others wrong"
+      "explanation": "Correct Answer: [Letter]. [Detailed explanation of why it is correct based on the vignette]. [Specific breakdown of why EACH of the other options is incorrect]."
     }
   ]
 }
 
-Style: one-best-answer, clinical vignette-based, INICET level difficulty.`;
+Style: Extended clinical vignettes, highly rigorous, INICET standard difficulty.`;
 }
 
 export function buildStoryPrompt(topicName: string, subjectName: string): string {
@@ -165,6 +180,7 @@ export function buildAccountabilityPrompt(stats: {
   streak: number;
   weakestTopics: string[];
   nemesisTopics: string[];
+  dueTopics: string[];
   lastStudied: string;
   daysToInicet: number;
   daysToNeetPg: number;
@@ -194,6 +210,7 @@ STUDENT SNAPSHOT:
 - Syllabus: ${stats.coveragePercent}% covered (${stats.masteredCount} mastered out of ${stats.totalTopics} topics)
 - Weakest topics: ${stats.weakestTopics.length > 0 ? stats.weakestTopics.join(', ') : 'none yet (just started)'}
 - Nemesis topics (most failed): ${stats.nemesisTopics.length > 0 ? stats.nemesisTopics.join(', ') : 'none yet'}
+- DUE FOR REVIEW (SRS): ${stats.dueTopics.length > 0 ? stats.dueTopics.join(', ') : 'nothing urgent'}
 - Last studied: ${stats.lastStudied}
 - Last mood: ${stats.lastMood ?? 'unknown'}
 
@@ -202,8 +219,9 @@ Return exactly ${count} messages as JSON, one for each scheduledFor slot:
 
 RULES:
 - Use ${stats.displayName}'s name at least once across all messages
-- Each message must reference at least one real data point (streak, topic name, exam countdown, coverage %)
-- morning: energising kick-start, name a specific weak topic to tackle today
+- Each message must reference at least one real data point (streak, topic name, exam countdown, coverage %, or a DUE topic)
+- CRITICAL: If there are DUE topics, the "morning" notification MUST be a dynamic alert about one of those topics (e.g. "🚨 Critical Review: [Topic] is fading...").
+- morning: energising kick-start, prioritize a DUE topic or a specific weak topic
 - afternoon: midday check-in, mention nemesis topic or exam pressure if present
 - evening: firm nudge toward end-of-day goal, reference syllabus gap
 - streak_warning: fires at 9 pm — urgent, streak-focused, exact day count if > 0; encouraging if streak = 0
@@ -239,12 +257,12 @@ Return exactly one JSON object with the following structure:
     "topicName": "...",
     "questions": [
       {
-        "question": "clinical vignette based on transcript...",
+        "question": "A [Age]-year-old [Sex] presents with [Symptoms] based on the transcript... Which of the following is the most appropriate next step? (Must be a multi-step reasoning clinical vignette. No direct 1-liner recall questions.)",
         "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
         "correctIndex": 0,
-        "explanation": "why correct + why others wrong"
+        "explanation": "why correct + detailed breakdown of why EACH of the other options is incorrect"
       },
-      // generate exactly 3 questions
+      // generate exactly 3 highly rigorous, INICET standard difficulty questions
     ]
   }
 }

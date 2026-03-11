@@ -11,9 +11,10 @@
 
 import * as FileSystem from 'expo-file-system/legacy';
 import { z } from 'zod';
-import { generateJSONWithRouting, generateTextWithRouting } from './aiService';
+import { generateJSONWithRouting, generateTextWithRouting, getApiKeys } from './aiService';
 import { initWhisper } from 'whisper.rn';
 import { convertToWav } from '../../modules/app-launcher';
+import { getUserProfile } from '../db/queries/progress';
 
 const LOG_TAG = '[Transcription]';
 
@@ -271,6 +272,34 @@ export async function transcribeWithLocalWhisper(
 
   const analysis = await analyzeTranscript(transcript);
   return { ...analysis, transcript };
+}
+
+/**
+ * Unified transcription entry point — Groq first, local Whisper fallback.
+ * Callers should use this instead of calling individual engines directly.
+ */
+export async function transcribeAudio(audioFilePath: string): Promise<LectureAnalysis> {
+  const profile = getUserProfile();
+  const { groqKey } = getApiKeys();
+  const hasGroq = !!groqKey?.trim();
+  const hasLocal = !!(profile.useLocalWhisper && profile.localWhisperPath);
+
+  if (!hasGroq && !hasLocal) {
+    throw new Error('No transcription engine available. Enable Local Whisper or add a Groq API key in Settings.');
+  }
+
+  // Try Groq first
+  if (hasGroq) {
+    try {
+      return await transcribeWithGroq(audioFilePath, groqKey!);
+    } catch (err) {
+      console.warn(`${LOG_TAG} Groq transcription failed, falling back to local:`, (err as Error).message);
+      if (!hasLocal) throw err;
+    }
+  }
+
+  // Fall back to local Whisper
+  return await transcribeWithLocalWhisper(audioFilePath, profile.localWhisperPath!);
 }
 
 function sanitizeTranscript(rawTranscript: string): string {

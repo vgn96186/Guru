@@ -15,6 +15,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   Animated, Text, TouchableOpacity, StyleSheet, Dimensions,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
@@ -66,6 +67,15 @@ function ToastItem({ payload, onDone }: { payload: ToastPayload; onDone: () => v
   const translateY = useRef(new Animated.Value(20)).current;
 
   useEffect(() => {
+    if (payload.type === 'error') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } else if (payload.type === 'warning') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    } else if (payload.type === 'success') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     Animated.parallel([
       Animated.spring(opacity, { toValue: 1, useNativeDriver: true }),
       Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),

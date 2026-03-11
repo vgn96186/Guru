@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { checkinToday, getDaysToExam, updateUserProfile } from '../db/queries/progress';
+import { checkinToday, getDaysToExam, updateUserProfile, getDailyLog } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
 import type { Mood } from '../types';
 import { MOOD_LABELS } from '../constants/gamification';
@@ -46,6 +46,7 @@ export default function CheckInScreen() {
   const refreshProfile = useAppStore(s => s.refreshProfile);
   const [step, setStep] = useState<'mood' | 'time'>('mood');
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
+  const [yesterdayMood, setYesterdayMood] = useState<Mood | null>(null);
   const setDailyAvailability = useAppStore(s => s.setDailyAvailability);
   const fadeIn = useRef(new Animated.Value(0)).current;
   const fadeOut = useRef(new Animated.Value(1)).current;
@@ -55,6 +56,12 @@ export default function CheckInScreen() {
 
   useEffect(() => {
     Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+    // Load yesterday's mood for visual hint
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().slice(0, 10);
+    const yLog = getDailyLog(yStr);
+    if (yLog?.mood) setYesterdayMood(yLog.mood);
   }, []);
 
   function handleMoodSelect(mood: Mood) {
@@ -118,10 +125,11 @@ export default function CheckInScreen() {
             <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}>
               {MOODS.map(mood => {
                 const info = MOOD_LABELS[mood];
+                const isYesterday = mood === yesterdayMood;
                 return (
                   <TouchableOpacity
                     key={mood}
-                    style={styles.moodBtn}
+                    style={[styles.moodBtn, isYesterday && styles.moodBtnYesterday]}
                     onPress={() => handleMoodSelect(mood)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
@@ -131,6 +139,7 @@ export default function CheckInScreen() {
                     <Text style={styles.moodEmoji}>{info.emoji}</Text>
                     <Text style={styles.moodLabel}>{info.label}</Text>
                     <Text style={styles.moodDesc}>{info.desc}</Text>
+                    {isYesterday && <Text style={styles.yesterdayTag}>Yesterday</Text>}
                   </TouchableOpacity>
                 );
               })}
@@ -219,6 +228,8 @@ const styles = StyleSheet.create({
   moodEmoji: { fontSize: 28, marginBottom: 6 },
   moodLabel: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   moodDesc: { color: '#9E9E9E', fontSize: 11, textAlign: 'center' },
+  moodBtnYesterday: { borderColor: '#6C63FF44' },
+  yesterdayTag: { color: '#9E9E9E', fontSize: 9, marginTop: 4 },
   quickStartBtn: {
     backgroundColor: '#6C63FF',
     borderWidth: 2,

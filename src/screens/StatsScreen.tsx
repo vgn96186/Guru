@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSubjectBreakdown } from '../db/queries/topics';
 import { getDailyLog, getDaysToExam, getActivityHistory } from '../db/queries/progress';
@@ -32,6 +33,7 @@ export default function StatsScreen() {
     lastWeek: { minutes: 0, sessions: 0, topics: 0 },
     projectedCompletionDays: 0,
     avgTopicsPerDay: 0,
+    last7DayMinutes: [] as number[],
   });
 
   useEffect(() => {
@@ -57,6 +59,15 @@ export default function StatsScreen() {
 
     const recentLogs = getActivityHistory(30);
     const activeDays30 = recentLogs.filter(l => l.sessionCount > 0 || l.totalMinutes > 0).length;
+
+    // Build last 7 days minute data (fill gaps with 0)
+    const today7 = new Date();
+    const last7DayMinutes = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today7);
+      d.setDate(d.getDate() - (6 - i));
+      const dStr = d.toISOString().slice(0, 10);
+      return recentLogs.find(l => l.date === dStr)?.totalMinutes ?? 0;
+    });
 
     const currentStreak = calculateCurrentStreak();
     const bestStreak = profile?.streakBest ?? currentStreak;
@@ -84,6 +95,7 @@ export default function StatsScreen() {
       lastWeek: weeklyComp.lastWeek,
       projectedCompletionDays,
       avgTopicsPerDay: Math.round(avgTopicsPerDay * 10) / 10,
+      last7DayMinutes,
     });
 
     setLoading(false);
@@ -123,7 +135,7 @@ export default function StatsScreen() {
         {/* Absolute Progress (Anti-Guilt) */}
         <View style={styles.absoluteCard}>
           <Text style={styles.absoluteTitle}>Total Knowledge Acquired</Text>
-          <Text style={styles.absoluteBig}>{stats.totalCovered} / {stats.totalTopics}</Text>
+          <Text style={styles.absoluteBig} numberOfLines={1} adjustsFontSizeToFit>{stats.totalCovered} / {stats.totalTopics}</Text>
           <Text style={styles.absoluteSub}>topics seen at least once</Text>
           
           <View style={styles.progressBar}>
@@ -134,7 +146,7 @@ export default function StatsScreen() {
         {/* Consistency Card utilizing unused getActivityHistory metric */}
         <View style={[styles.absoluteCard, { backgroundColor: '#1A2A1A' }]}>
           <Text style={[styles.absoluteTitle, { color: '#4CAF50' }]}>30-Day Consistency</Text>
-          <Text style={[styles.absoluteBig, { color: '#4CAF50' }]}>{stats.activeDays30} / 30 Days</Text>
+          <Text style={[styles.absoluteBig, { color: '#4CAF50' }]} numberOfLines={1} adjustsFontSizeToFit>{stats.activeDays30} / 30 Days</Text>
           <Text style={styles.absoluteSub}>days studied in the past month</Text>
         </View>
 
@@ -144,7 +156,7 @@ export default function StatsScreen() {
             <Text style={styles.streakEmoji}>🔥</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.absoluteTitle, { color: '#FF9800' }]}>Current Streak</Text>
-              <Text style={[styles.absoluteBig, { color: '#FF9800' }]}>{stats.currentStreak} Days</Text>
+              <Text style={[styles.absoluteBig, { color: '#FF9800' }]} numberOfLines={1} adjustsFontSizeToFit>{stats.currentStreak} Days</Text>
             </View>
             {stats.bestStreak > stats.currentStreak && (
               <View style={styles.bestStreakBadge}>
@@ -190,11 +202,16 @@ export default function StatsScreen() {
           </View>
         </View>
 
+        {/* Weekly Activity Sparkline */}
+        {stats.last7DayMinutes.length === 7 && (
+          <WeeklySparkline minutes={stats.last7DayMinutes} />
+        )}
+
         {/* Projected Completion */}
         {stats.avgTopicsPerDay > 0 && stats.projectedCompletionDays < 365 && (
           <View style={[styles.absoluteCard, { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF44' }]}>
             <Text style={[styles.absoluteTitle, { color: '#6C63FF' }]}>📅 Syllabus Completion Projection</Text>
-            <Text style={[styles.absoluteBig, { color: '#6C63FF' }]}>
+            <Text style={[styles.absoluteBig, { color: '#6C63FF' }]} numberOfLines={1} adjustsFontSizeToFit>
               {stats.projectedCompletionDays} days
             </Text>
             <Text style={styles.absoluteSub}>
@@ -216,7 +233,7 @@ export default function StatsScreen() {
         {/* Time Logged Card */}
         <View style={styles.absoluteCard}>
           <Text style={styles.absoluteTitle}>Time Invested</Text>
-          <Text style={styles.absoluteBig}>{Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h {(stats.totalAppMinutes + stats.totalExternalMinutes) % 60}m</Text>
+          <Text style={styles.absoluteBig} numberOfLines={1} adjustsFontSizeToFit>{Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h {(stats.totalAppMinutes + stats.totalExternalMinutes) % 60}m</Text>
           <Text style={styles.absoluteSub}>Total study time across {stats.totalSessions} sessions</Text>
         </View>
 
@@ -262,6 +279,47 @@ export default function StatsScreen() {
   );
 }
 
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+function WeeklySparkline({ minutes }: { minutes: number[] }) {
+  const { width: screenWidth } = Dimensions.get('window');
+  const chartPadding = 32;
+  const chartWidth = screenWidth - chartPadding * 2;
+  const gap = 4;
+  const barWidth = Math.floor((chartWidth - gap * 6) / 7);
+  const chartHeight = 60;
+  const maxMins = Math.max(...minutes, 1);
+  const todayDow = new Date().getDay();
+
+  return (
+    <View style={[sparkStyles.card]}>
+      <Text style={sparkStyles.title}>7-Day Activity</Text>
+      <Svg width={chartWidth} height={chartHeight + 20}>
+        {minutes.map((mins, i) => {
+          const barH = Math.max(2, Math.round((mins / maxMins) * chartHeight));
+          const x = i * (barWidth + gap);
+          const isToday = i === 6;
+          const fill = isToday ? '#6C63FF' : mins > 0 ? '#4CAF50' : '#2A2A38';
+          const label = DAY_LETTERS[(todayDow - (6 - i) + 7) % 7];
+          return (
+            <React.Fragment key={i}>
+              <Rect x={x} y={chartHeight - barH} width={barWidth} height={barH} fill={fill} rx={3} />
+              <SvgText x={x + barWidth / 2} y={chartHeight + 14} fontSize={10} fill={isToday ? '#6C63FF' : '#555'} textAnchor="middle">
+                {label}
+              </SvgText>
+            </React.Fragment>
+          );
+        })}
+      </Svg>
+    </View>
+  );
+}
+
+const sparkStyles = StyleSheet.create({
+  card: { backgroundColor: '#1A1A24', borderRadius: 20, padding: 24, marginBottom: 20 },
+  title: { color: '#9E9E9E', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginBottom: 16 },
+});
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   container: { padding: 16 },
@@ -272,15 +330,15 @@ const styles = StyleSheet.create({
   projectionCard: { backgroundColor: '#1A1A2E', borderRadius: 20, padding: 24, marginBottom: 20, borderWidth: 1, borderColor: '#6C63FF66' },
   projectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', marginBottom: 20 },
   projectionStat: { alignItems: 'center', flex: 1 },
-  projectionVal: { color: '#6C63FF', fontSize: 36, fontWeight: '900' },
-  projectionLabel: { color: '#9E9E9E', fontSize: 12, marginTop: 4, fontWeight: '600', textTransform: 'uppercase', textAlign: 'center' },
+  projectionVal: { color: '#6C63FF', fontSize: 30, fontWeight: '900', textAlign: 'center' },
+  projectionLabel: { color: '#9E9E9E', fontSize: 11, marginTop: 4, fontWeight: '600', textTransform: 'uppercase', textAlign: 'center' },
   projectionDivider: { width: 1, height: 40, backgroundColor: '#333344' },
   projectionNote: { color: '#C5C5D2', fontSize: 13, textAlign: 'center', lineHeight: 20, backgroundColor: '#12121A', padding: 12, borderRadius: 12 },
 
   absoluteCard: { backgroundColor: '#1A1A24', borderRadius: 20, padding: 24, marginBottom: 20 },
   absoluteTitle: { color: '#9E9E9E', fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 },
-  absoluteBig: { color: '#fff', fontSize: 40, fontWeight: '900' },
-  absoluteSub: { color: '#666', fontSize: 14, marginBottom: 16 },
+  absoluteBig: { color: '#fff', fontSize: 34, fontWeight: '900' },
+  absoluteSub: { color: '#666', fontSize: 13, marginBottom: 16 },
   progressBar: { height: 8, backgroundColor: '#2A2A38', borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 4 },
 
@@ -294,10 +352,10 @@ const styles = StyleSheet.create({
   subjectGrid: { gap: 16 },
   subjectRow: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16 },
   subjectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  subjectNameRow: { flexDirection: 'row', alignItems: 'center' },
-  subjectDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10 },
-  subjectName: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  subjectPercent: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  subjectNameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
+  subjectDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10, flexShrink: 0 },
+  subjectName: { color: '#fff', fontSize: 14, fontWeight: '700', flex: 1 },
+  subjectPercent: { color: '#fff', fontSize: 15, fontWeight: '900', flexShrink: 0 },
   subProgressBar: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
   subProgressFill: { height: '100%', borderRadius: 3 },
   subjectFraction: { color: '#666', fontSize: 11, textAlign: 'right' },
@@ -312,9 +370,9 @@ const styles = StyleSheet.create({
   // Week comparison styles
   weekCompRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   weekCol: { flex: 1 },
-  weekLabel: { color: '#888', fontSize: 11, textTransform: 'uppercase', fontWeight: '600', marginBottom: 4 },
-  weekVal: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  weekSub: { color: '#666', fontSize: 11, marginTop: 2 },
+  weekLabel: { color: '#888', fontSize: 10, textTransform: 'uppercase', fontWeight: '600', marginBottom: 4 },
+  weekVal: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  weekSub: { color: '#666', fontSize: 10, marginTop: 2, flexWrap: 'wrap' },
   weekDivider: { width: 60, alignItems: 'center', justifyContent: 'center' },
   weekChangeBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
   weekChangeText: { fontSize: 14, fontWeight: '800' },

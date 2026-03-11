@@ -8,7 +8,7 @@ import { initLlama, LlamaContext } from 'llama.rn';
 import { initWhisper } from 'whisper.rn';
 
 // Free OpenRouter models tried in order
-const OPENROUTER_FREE_MODELS = [
+export const OPENROUTER_FREE_MODELS = [
   'meta-llama/llama-3.3-70b-instruct:free',
   'qwen/qwen-2.5-72b-instruct:free',
   'deepseek/deepseek-chat-v3-0324:free',
@@ -20,7 +20,7 @@ const OPENROUTER_FREE_MODELS = [
 const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
 
 /** Read API keys from the user profile. Keys are optional. */
-function getApiKeys(): { orKey: string | undefined; groqKey: string | undefined } {
+export function getApiKeys(): { orKey: string | undefined; groqKey: string | undefined } {
   const profile = getUserProfile();
   return {
     orKey: profile.openrouterKey?.trim() || undefined,
@@ -28,7 +28,7 @@ function getApiKeys(): { orKey: string | undefined; groqKey: string | undefined 
   };
 }
 
-interface Message {
+export interface Message {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
@@ -240,9 +240,8 @@ async function callOpenRouter(
 
 // Groq cloud models — fast inference, generous free tier
 // Order: best quality first, then fastest fallback
-const GROQ_MODELS = [
+export const GROQ_MODELS = [
   'llama-3.3-70b-versatile',    // Best quality, 131K context, ~280 tok/s
-  'openai/gpt-oss-120b',        // Strong reasoning, 131K context
   'llama-3.1-8b-instant',       // Fast fallback, 131K context
 ];
 
@@ -331,7 +330,23 @@ async function attemptCloudLLM(
   orKey: string | undefined,
   textMode: boolean,
   groqKey?: string | undefined,
+  chosenModel?: string,
 ): Promise<{ text: string; modelUsed: string }> {
+  // If a specific model is requested
+  if (chosenModel) {
+    if (chosenModel.startsWith('groq/') && groqKey) {
+      const modelName = chosenModel.replace('groq/', '');
+      const text = textMode
+        ? await callGroqText(messages, groqKey, modelName)
+        : await callGroq(messages, groqKey, modelName);
+      return { text, modelUsed: chosenModel };
+    }
+    if (orKey) {
+      const text = await callOpenRouter(messages, orKey, chosenModel);
+      return { text, modelUsed: chosenModel };
+    }
+  }
+
   // 1. Try Groq first — fastest inference, generous free tier
   if (groqKey) {
     for (const model of GROQ_MODELS) {
@@ -564,11 +579,10 @@ export async function generateJSONWithRouting<T>(
   // High complexity tasks on 1B Llama model usually output invalid JSON. We prefer cloud for them.
   const preferCloud = taskComplexity === 'high' && hasLocal && !isQwen && hasCloud;
 
-  // Define the order of backends to try
+  // Define the order of backends to try — cloud first for reliability
   const attempts: ('local' | 'cloud')[] = [];
-  if (hasLocal && !preferCloud) attempts.push('local');
   if (hasCloud) attempts.push('cloud');
-  if (hasLocal && preferCloud) attempts.push('local'); // Fallback to local if cloud fails
+  if (hasLocal) attempts.push('local');
 
   if (attempts.length === 0) throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
 
@@ -592,20 +606,27 @@ export async function generateJSONWithRouting<T>(
 
 export async function generateTextWithRouting(
   messages: Message[],
-  options?: { preferCloud?: boolean },
+  options?: { preferCloud?: boolean; chosenModel?: string },
 ): Promise<{ text: string; modelUsed: string }> {
   const profile = getUserProfile();
   const { orKey, groqKey } = getApiKeys();
   const hasLocal = profile.useLocalModel && !!profile.localModelPath;
   const hasCloud = !!orKey || !!groqKey;
 
+  // If a specific model is chosen and it's local (e.g., matching the local model path name or 'local')
+  if (options?.chosenModel === 'local' && hasLocal) {
+    return await attemptLocalLLM(messages, profile.localModelPath!, true);
+  }
+
   const attempts: ('local' | 'cloud')[] = [];
-  if (options?.preferCloud) {
+  if (options?.chosenModel) {
+    attempts.push('cloud');
+  } else if (options?.preferCloud) {
     if (hasCloud) attempts.push('cloud');
     if (hasLocal) attempts.push('local');
   } else {
-    if (hasLocal) attempts.push('local');
     if (hasCloud) attempts.push('cloud');
+    if (hasLocal) attempts.push('local');
   }
 
   if (attempts.length === 0) throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
@@ -615,7 +636,7 @@ export async function generateTextWithRouting(
     try {
       const { text, modelUsed } = backend === 'local'
         ? await attemptLocalLLM(messages, profile.localModelPath!, true)
-        : await attemptCloudLLM(messages, orKey, true, groqKey);
+        : await attemptCloudLLM(messages, orKey, true, groqKey, options?.chosenModel);
       return { text, modelUsed };
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} inference failed:`, (err as Error).message);
@@ -692,6 +713,7 @@ export async function generateAccountabilityMessages(
     streak: number;
     weakestTopics: string[];
     nemesisTopics: string[];
+    dueTopics: string[];
     lastStudied: string;
     daysToInicet: number;
     daysToNeetPg: number;
@@ -741,12 +763,14 @@ export async function chatWithGuru(
   question: string,
   topicName: string,
   history: Array<{ role: 'user' | 'guru'; text: string }>,
+  chosenModel?: string,
 ): Promise<{ reply: string }> {
   const historyStr = history.slice(-4).map(m => `${m.role === 'user' ? 'Student' : 'Guru'}: ${m.text}`).join('\n');
   const systemPrompt = `You are Guru, a conversational medical tutor. Respond in 2-4 sentences. Use clinical anchors and mnemonics where helpful. Be direct and warm. Never output JSON.`;
   const userPrompt = `Topic: ${topicName}${historyStr ? `\n\nConversation so far:\n${historyStr}` : ''}\n\nStudent asks: ${question}`;
   const { text } = await generateTextWithRouting(
     [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+    { chosenModel }
   );
   return { reply: text.trim() };
 }
@@ -760,6 +784,52 @@ export interface MedicalGroundingSource {
   publishedAt?: string;
   source: 'EuropePMC' | 'PubMed';
 }
+
+export async function generateWakeUpMessage(): Promise<{ title: string; body: string }> {
+  const systemPrompt = `You are Guru, an elite medical tutor. A student is waking up for another day of NEET-PG/INI-CET prep.
+Generate a short, sharp, and motivating wake-up call. Reference "Doctor" and the morning ahead.
+Return JSON: { "title": "...", "body": "..." }`;
+  try {
+    const { parsed } = await generateJSONWithRouting(
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: 'Wake up call.' }],
+      z.object({ title: z.string(), body: z.string() }),
+      'low'
+    );
+    return parsed;
+  } catch {
+    return { title: "Good Morning, Doctor. 🌅", body: "Time to rise and build some momentum. Tap here to wake up." };
+  }
+}
+
+export async function generateBreakEndMessages(): Promise<string[]> {
+  const systemPrompt = `You are Guru, an aggressive medical tutor. A student is on a 5-minute break and likely scrolling Instagram/reels instead of returning to study.
+Generate exactly 8 increasingly aggressive, sharp, and sarcastic one-line reminders to get them back to their tablet. 
+Mention INI-CET/NEET-PG pressure. Be blunt. No JSON, just one message per line.`;
+  const userPrompt = `The break is over. They are still on their phone. Give me 8 lines.`;
+  try {
+    const { text } = await generateTextWithRouting(
+      [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      { preferCloud: true }
+    );
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 5 && !l.startsWith('[') && !l.startsWith('{'));
+    if (lines.length >= 5) return lines.slice(0, 9);
+    return FALLBACK_BREAK_MESSAGES;
+  } catch {
+    return FALLBACK_BREAK_MESSAGES;
+  }
+}
+
+const FALLBACK_BREAK_MESSAGES = [
+  "🚨 BREAK IS OVER. Return to the tablet now.",
+  "Are you ignoring me? Close Instagram immediately.",
+  "Every second you waste is a lower INICET score.",
+  "I told you this would happen. Go back to studying.",
+  "Your 5 minutes are up. Stop scrolling.",
+  "Get up. Walk to the tablet. Press play.",
+  "This is pathetic. Drop the phone.",
+  "I will not stop buzzing. Resume the lecture.",
+  "Resume the lecture on the tablet to silence me."
+];
 
 interface GroundedGuruResponse {
   reply: string;
@@ -917,6 +987,7 @@ export async function chatWithGuruGrounded(
   question: string,
   topicName: string | undefined,
   history: Array<{ role: 'user' | 'guru'; text: string }>,
+  chosenModel?: string,
 ): Promise<GroundedGuruResponse> {
   const trimmedQuestion = compactWhitespace(question);
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
@@ -949,19 +1020,23 @@ ${sourcesBlock}
 
 Respond with medical teaching guidance grounded in the sources above.`;
 
-  const { text, modelUsed } = await generateTextWithRouting(
-    [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-    { preferCloud: true },
-  );
+  const msgs: Message[] = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ];
 
-  const reply = text.trim() || 'I could not produce a grounded answer right now. Please retry.';
-
-  return {
-    reply,
-    sources,
-    modelUsed,
-    searchQuery,
-  };
+  try {
+    const response = await generateTextWithRouting(msgs, { chosenModel });
+    return {
+      reply: response.text.trim(),
+      sources,
+      modelUsed: response.modelUsed,
+      searchQuery,
+    };
+  } catch (error: any) {
+    if (__DEV__) console.warn('[GuruGrounded] Generation failed:', error.message);
+    throw new Error('Guru was unable to generate a response. Please check your API keys in Settings.');
+  }
 }
 
 // Quick one-off question — for teach_back response evaluation

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  Animated, View, Text, ScrollView, TouchableOpacity, StyleSheet,
   StatusBar, Alert, AppState, ActivityIndicator, Modal, InteractionManager,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -29,8 +30,7 @@ import {
 import {
   buildQuickLectureNote,
   markTopicsFromLecture,
-  transcribeWithGroq,
-  transcribeWithLocalWhisper,
+  transcribeAudio,
 } from '../services/transcriptionService';
 import { getDb } from '../db/database';
 import type { TopicWithProgress } from '../types';
@@ -58,6 +58,14 @@ export default function HomeScreen() {
   const [uploadTranscript, setUploadTranscript] = useState('');
   const [showTranscriptModal, setShowTranscriptModal] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
+  const moreAnim = useRef(new Animated.Value(0)).current;
+
+  function toggleMore() {
+    const next = !moreExpanded;
+    setMoreExpanded(next);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Animated.timing(moreAnim, { toValue: next ? 1 : 0, duration: 220, useNativeDriver: false }).start();
+  }
   const [completedSessions, setCompletedSessions] = useState(0);
 
   // LectureReturnSheet state
@@ -336,17 +344,14 @@ export default function HomeScreen() {
       const uri = result.assets[0]?.uri;
       if (!uri) return;
 
-      const groqKey = profile?.groqApiKey?.trim() || '';
-      const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-      if (!groqKey && !hasLocalWhisper) {
-        Alert.alert('Transcription Required', 'Enable Local Whisper or add a Groq API key in Settings.');
+      setIsTranscribingUpload(true);
+      let analysis;
+      try {
+        analysis = await transcribeAudio(uri);
+      } catch (err: any) {
+        Alert.alert('Transcription Required', err?.message ?? 'Enable Local Whisper or add a Groq API key in Settings.');
         return;
       }
-
-      setIsTranscribingUpload(true);
-      const analysis = hasLocalWhisper
-        ? await transcribeWithLocalWhisper(uri, profile!.localWhisperPath!)
-        : await transcribeWithGroq(uri, groqKey);
 
       if (!analysis.transcript || analysis.lectureSummary === 'No medical content detected') {
         Alert.alert('No Speech Detected', 'No usable speech was found in this audio file.');
@@ -575,7 +580,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={item.key}
                 style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
-                onPress={item.onPress}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); item.onPress(); }}
                 activeOpacity={0.8}
               >
                 <View style={styles.criticalCardTop}>
@@ -590,17 +595,11 @@ export default function HomeScreen() {
 
           <View style={styles.coreActionsSection}>
             <Text style={styles.sectionLabel}>CORE TOOLS</Text>
-            <View style={styles.coreActionsRow}>
-              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('GuruChat')} activeOpacity={0.8}>
-                <Text style={styles.coreActionTitle}>Guru Chat</Text>
-                <Text style={styles.coreActionSub}>Ask grounded medical questions</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.coreActionCard} onPress={() => navigation.navigate('LectureMode', {})} activeOpacity={0.8} testID="lecture-mode-btn">
-                <Text style={styles.coreActionTitle}>Lecture Mode</Text>
-                <Text style={styles.coreActionSub}>Capture and summarize lectures</Text>
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.coreActionWide} onPress={() => navigation.navigate('FlaggedReview')} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.coreActionWide} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('LectureMode', {}); }} activeOpacity={0.8} testID="lecture-mode-btn">
+              <Text style={styles.coreActionWideTitle}>Lecture Mode</Text>
+              <Text style={styles.coreActionWideSub}>Capture and summarize lectures</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.coreActionWide, { marginTop: 12 }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('FlaggedReview'); }} activeOpacity={0.8}>
               <Text style={styles.coreActionWideTitle}>Flagged Review</Text>
               <Text style={styles.coreActionWideSub}>Return to topics you explicitly marked for later</Text>
             </TouchableOpacity>
@@ -645,38 +644,38 @@ export default function HomeScreen() {
           {/* ── 6. More — everything else, collapsed ── */}
           <TouchableOpacity
             style={styles.moreHeader}
-            onPress={() => setMoreExpanded(prev => !prev)}
+            onPress={toggleMore}
             activeOpacity={0.7}
             testID="more-header"
           >
             <Text style={styles.sectionLabel}>MORE</Text>
-            <Text style={styles.moreChevron}>{moreExpanded ? '▲' : '▼'}</Text>
+            <Animated.Text style={[styles.moreChevron, { transform: [{ rotate: moreAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }]}>▼</Animated.Text>
           </TouchableOpacity>
 
-          {moreExpanded && (
+          <Animated.View style={{ maxHeight: moreAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 800] }), opacity: moreAnim, overflow: 'hidden' }}>
             <View style={styles.moreContent}>
               <Text style={styles.moreGroupLabel}>QUICK START</Text>
               {/* Quick modes */}
               <View style={styles.moreRow}>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('Session', { mood, mode: 'sprint' })} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('Session', { mood, mode: 'sprint' }); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>⚡ 10m Sprint</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('MockTest')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('MockTest'); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>📝 Mock Test</Text>
                 </TouchableOpacity>
               </View>
               <View style={styles.moreRow}>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('DailyChallenge')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('DailyChallenge'); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>⚡ Daily Challenge</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.moreBtn} onPress={() => navigation.navigate('BossBattle')} activeOpacity={0.8}>
+                <TouchableOpacity style={styles.moreBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('BossBattle'); }} activeOpacity={0.8}>
                   <Text style={styles.moreBtnText}>👹 Boss Battle</Text>
                 </TouchableOpacity>
               </View>
 
               <Text style={styles.moreGroupLabel}>AI TOOLS</Text>
               {/* Tools */}
-              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('BrainDumpReview')}>
+              <TouchableOpacity style={styles.moreLink} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.getParent()?.navigate('BrainDumpReview'); }}>
                 <Text style={styles.moreLinkText}>🧠 Review Parked Thoughts</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -709,7 +708,7 @@ export default function HomeScreen() {
                 <Text style={styles.moreLinkText}>🐢 Task Paralysis Helper</Text>
               </TouchableOpacity>
             </View>
-          )}
+          </Animated.View>
 
           {/* Bottom breathing room */}
           <View style={{ height: 40 }} />
@@ -795,7 +794,7 @@ const styles = StyleSheet.create({
   statusRight: { alignItems: 'flex-end' },
   countdown: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
   countdownSecondary: { color: '#8F95A7', fontWeight: '700', fontSize: 12, marginTop: 2 },
-  todayMin: { color: '#A4A8B3', fontSize: 12, marginTop: 2 },
+  todayMin: { color: '#DCE6FF', fontSize: 13, marginTop: 2, fontWeight: '600' },
 
   // Streak repair
   repairNudge: {
@@ -851,9 +850,18 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 
-  // Task paralysis — subtle
-  paralysisLink: { alignSelf: 'center', marginBottom: 16 },
-  paralysisText: { color: '#BCC2D0', fontSize: 13, textDecorationLine: 'underline' },
+  // Task paralysis — pill button
+  paralysisLink: {
+    alignSelf: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: '#1A1A24',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
+  paralysisText: { color: '#BCC2D0', fontSize: 13 },
 
   criticalSection: { paddingHorizontal: 16, marginBottom: 18 },
   criticalCard: {
@@ -901,7 +909,7 @@ const styles = StyleSheet.create({
   coreActionWideSub: { color: '#99A2B6', fontSize: 12, lineHeight: 18 },
 
   // ── 5. Agenda ──
-  agendaSection: { paddingHorizontal: 16, marginBottom: 16 },
+  agendaSection: { paddingHorizontal: 16, marginBottom: 18 },
   sectionLabel: { color: '#9399AA', fontWeight: '800', fontSize: 11, letterSpacing: 1.5, marginBottom: 10 },
   agendaRow: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },
   agendaRowFirst: {},
@@ -930,7 +938,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   moreChevron: { color: '#A0A6B7', fontSize: 12 },
   moreContent: { paddingHorizontal: 16 },

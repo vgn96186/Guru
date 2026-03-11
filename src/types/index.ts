@@ -8,6 +8,8 @@ export type SessionMode = 'normal' | 'sprint' | 'gentle' | 'deep' | 'external';
 
 export type StudyResourceMode = 'standard' | 'btr' | 'dbmci_live' | 'hybrid';
 
+export type HarassmentTone = 'shame' | 'motivational' | 'tough_love';
+
 export interface Subject {
   id: number;
   name: string;
@@ -131,6 +133,7 @@ export interface UserProfile {
   quickStartStreak?: number;
   studyResourceMode?: StudyResourceMode;
   customSubjectLoadMultipliers?: Record<string, number>;
+  harassmentTone?: HarassmentTone;
 }
 
 // AI Content shapes

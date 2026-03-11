@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface Props {
   onPress: () => void;
@@ -7,6 +8,7 @@ interface Props {
   sublabel?: string;
   color?: string;
   disabled?: boolean;
+  disabledLabel?: string;
 }
 
 export default function StartButton({
@@ -15,12 +17,22 @@ export default function StartButton({
   sublabel,
   color = '#6C63FF',
   disabled = false,
+  disabledLabel = 'LOADING...',
 }: Props) {
   const scale = useRef(new Animated.Value(1)).current;
   const glow = useRef(new Animated.Value(0)).current;
 
+  function handlePress() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onPress();
+  }
+
   useEffect(() => {
-    if (disabled) return; // Don't animate when disabled
+    if (disabled) {
+      scale.setValue(1.0);
+      glow.setValue(0);
+      return;
+    }
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(scale, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
@@ -43,14 +55,14 @@ export default function StartButton({
       <View style={styles.glowWrapper}>
         <Animated.View style={[styles.glowLayer, { opacity: glow, backgroundColor: color }]} />
         <TouchableOpacity
-          onPress={onPress}
+          onPress={handlePress}
           disabled={disabled}
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel="Start study session"
           accessibilityState={{ disabled }}
           testID="start-session-btn"
-          style={[styles.button, { backgroundColor: disabled ? '#333' : color }]}
+          style={[styles.button, { backgroundColor: disabled ? '#333' : color }, disabled && { opacity: 0.6 }]}
         >
           <Text
             style={styles.label}
@@ -58,7 +70,7 @@ export default function StartButton({
             adjustsFontSizeToFit
             minimumFontScale={0.75}
           >
-            {label}
+            {disabled ? disabledLabel : label}
           </Text>
           {sublabel ? (
             <Text

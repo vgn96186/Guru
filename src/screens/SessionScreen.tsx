@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, BackHandler, Alert, Animated, AppState, Dimensions, ScrollView } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -175,6 +176,7 @@ export default function SessionScreen() {
       const sessionId = createSession(agenda.items.map(i => i.topic.id), mood, agenda.mode);
       store.setSessionId(sessionId);
       store.setAgenda(agenda);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       store.setSessionState('agenda_reveal');
       setTimeout(() => store.setSessionState('studying'), 3000);
     } catch (e: any) { setAiError(e?.message ?? 'Could not plan session'); }
@@ -390,10 +392,29 @@ export default function SessionScreen() {
             {isStudying && (
               <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
             )}
+            {store.sessionState === 'studying' && !store.isOnBreak && (
+              <TouchableOpacity
+                onPress={() => {
+                  const next = !store.isPaused;
+                  isPausedRef.current = next;
+                  store.setPaused(next);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }}
+                style={styles.pauseBtn}
+                testID="session-pause-btn"
+                accessibilityLabel={store.isPaused ? 'Resume session' : 'Pause session'}
+                accessibilityRole="button"
+              >
+                <Text style={styles.pauseBtnText}>{store.isPaused ? '▶' : '⏸'}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               onPress={() => setMenuVisible(true)}
               style={styles.menuBtn}
               testID="session-menu-btn"
+              accessibilityLabel="Session options menu"
+              accessibilityRole="button"
+              accessibilityHint="Opens menu with session options"
             >
               <Text style={styles.menuBtnText}>•••</Text>
             </TouchableOpacity>
@@ -405,17 +426,17 @@ export default function SessionScreen() {
           <View style={styles.menuOverlay}>
             <TouchableOpacity style={styles.menuBackdrop} onPress={() => setMenuVisible(false)} activeOpacity={1} />
             <View style={styles.menuDropdown}>
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleMarkForReview(); }}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleMarkForReview(); }} accessibilityRole="menuitem" accessibilityLabel="Mark current topic for review">
                 <Text style={styles.menuItemEmoji}>🚩</Text>
                 <Text style={styles.menuItemText}>Mark for Review</Text>
               </TouchableOpacity>
               <View style={styles.menuDivider} />
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleDowngrade(); }}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); handleDowngrade(); }} accessibilityRole="menuitem" accessibilityLabel="Downgrade session to sprint mode">
                 <Text style={styles.menuItemEmoji}>🆘</Text>
                 <Text style={styles.menuItemText}>Downgrade to Sprint</Text>
               </TouchableOpacity>
               <View style={styles.menuDivider} />
-              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); finishSession(); }} testID="end-session-btn">
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); finishSession(); }} testID="end-session-btn" accessibilityRole="menuitem" accessibilityLabel="End session and save progress">
                 <Text style={styles.menuItemEmoji}>🚪</Text>
                 <Text style={[styles.menuItemText, { color: '#F44336' }]}>End Session</Text>
               </TouchableOpacity>
@@ -510,6 +531,8 @@ const styles = StyleSheet.create({
   phaseBadge: { color: '#6C63FF', fontSize: 11, fontWeight: '700', backgroundColor: '#6C63FF22', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   topicName: { color: '#fff', fontWeight: '800', fontSize: 18 },
   subjectTag: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
+  pauseBtn: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginLeft: 8 },
+  pauseBtnText: { color: '#6C63FF', fontSize: 14, fontWeight: '700' },
   menuBtn: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 },
   menuBtnText: { color: '#9E9E9E', fontSize: 16, fontWeight: '700', letterSpacing: 2 },
   menuOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 },

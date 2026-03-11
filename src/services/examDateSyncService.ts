@@ -33,70 +33,53 @@ export interface ExamDateSyncResult {
   message: string;
 }
 
-const EXAM_SYNC_META_KEY = 'guru.exam_dates.sync.v1';
+const EXAM_SYNC_META_KEY = 'guru.exam_dates.sync.v2';
 
+// Using reliable educational platforms since official websites use Next.js SPA/Cloudflare which are hard to scrape from mobile
 const EXAM_SOURCES: ExamSourceConfig[] = [
   {
     exam: 'inicet',
     keyword: /ini[\s-]?cet|institute of national importance/i,
     urls: [
-      'https://www.aiimsexams.ac.in/',
-      'https://www.aiimsexams.ac.in/info/Course.html',
-      'https://www.aiimsexams.ac.in/info/Notice.html',
+      'https://medicine.careers360.com/articles/ini-cet-exam-date',
+      'https://medicine.careers360.com/articles/ini-cet-exam',
+      'https://www.shiksha.com/medicine-health-sciences/ini-cet-exam-dates',
+      'https://prepladder.com/neet-pg-study-material/notifications/ini-cet-exam',
     ],
   },
   {
     exam: 'neetpg',
     keyword: /neet[\s-]?pg|national eligibility cum entrance test/i,
     urls: [
-      'https://natboard.edu.in/',
-      'https://natboard.edu.in/viewnbeexam?exam=neetpg',
-      'https://natboard.edu.in/viewnotice?exam=neetpg',
+      'https://medicine.careers360.com/articles/neet-pg-exam-dates',
+      'https://medicine.careers360.com/articles/neet-pg-exam',
+      'https://www.shiksha.com/medicine-health-sciences/neet-pg-exam-dates',
     ],
   },
 ];
 
 const MONTHS: Record<string, number> = {
-  jan: 1,
-  january: 1,
-  feb: 2,
-  february: 2,
-  mar: 3,
-  march: 3,
-  apr: 4,
-  april: 4,
-  may: 5,
-  jun: 6,
-  june: 6,
-  jul: 7,
-  july: 7,
-  aug: 8,
-  august: 8,
-  sep: 9,
-  sept: 9,
-  september: 9,
-  oct: 10,
-  october: 10,
-  nov: 11,
-  november: 11,
-  dec: 12,
-  december: 12,
+  jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3,
+  apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7,
+  aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10,
+  october: 10, nov: 11, november: 11, dec: 12, december: 12,
 };
 
 const DATE_REGEX =
   /(\d{4}-\d{2}-\d{2})|(\d{1,2}[\/-]\d{1,2}[\/-]\d{4})|(\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t|tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?,?\s+\d{4})|((?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t|tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2}(?:st|nd|rd|th)?\,?\s+\d{4})/i;
 
 function normalizeIsoDate(year: number, month: number, day: number): string | null {
-  if (year < 2020 || year > 2035) return null;
+  const currentYear = new Date().getFullYear();
+  if (year < currentYear || year > currentYear + 3) return null;
   if (month < 1 || month > 12) return null;
   if (day < 1 || day > 31) return null;
-  const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day
-    .toString()
-    .padStart(2, '0')}`;
-  const parsed = new Date(`${iso}T00:00:00.000Z`);
-  if (Number.isNaN(parsed.getTime())) return null;
-  if (parsed.toISOString().slice(0, 10) !== iso) return null;
-  return iso;
+  
+  const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  const dt = new Date(year, month - 1, day);
+  if (dt.getFullYear() === year && dt.getMonth() === month - 1 && dt.getDate() === day) {
+    return iso;
+  }
+  return null;
 }
 
 function parseAnyDate(raw: string): string | null {
@@ -171,31 +154,36 @@ async function fetchWithTimeout(url: string, timeoutMs = 12000): Promise<string>
 }
 
 async function fetchSourceText(url: string): Promise<string> {
+  // Try direct fetch first
   try {
-    const direct = await fetchWithTimeout(url);
+    const direct = await fetchWithTimeout(url, 10000);
     const normalized = htmlToText(direct);
-    if (normalized.length > 500) return normalized;
+    if (normalized.length > 800) return normalized;
   } catch {
-    // Fallback below
+    // Fallback to proxy
   }
 
-  // Proxy fallback often works better for JS-heavy pages
-  const proxied = await fetchWithTimeout(`https://r.jina.ai/https://${url.replace(/^https?:\/\//i, '')}`, 15000);
-  return htmlToText(proxied);
+  // Fallback to proxy for better rendering and to bypass potential mobile-UA blocks
+  try {
+    const proxyUrl = `https://r.jina.ai/${url}`;
+    const proxied = await fetchWithTimeout(proxyUrl, 15000);
+    return htmlToText(proxied);
+  } catch {
+    return '';
+  }
 }
 
 function scoreHit(context: string, examKeyword: RegExp, sourceUrl: string): number {
   let score = 1;
   if (examKeyword.test(context)) score += 2;
-  if (/(exam date|scheduled|to be held|conducted on|notification|prospectus)/i.test(context)) score += 1;
-  if (/(neetpg|ini|cet|notice|course|exam)/i.test(sourceUrl)) score += 1;
+  if (/(exam date|scheduled|to be held|conducted on|exam is scheduled|will be conducted)/i.test(context)) score += 2;
+  if (/(expected|tentative)/i.test(context)) score -= 1; 
   return score;
 }
 
 function extractDateHits(text: string, sourceUrl: string, examKeyword: RegExp): DateHit[] {
   const hits: DateHit[] = [];
   const lower = text.toLowerCase();
-  // Create a new RegExp with /g flag per call to avoid shared lastIndex state
   const localRegex = new RegExp(DATE_REGEX.source, 'gi');
 
   let match: RegExpExecArray | null;
@@ -209,7 +197,6 @@ function extractDateHits(text: string, sourceUrl: string, examKeyword: RegExp): 
     const context = lower.slice(start, end);
     const score = scoreHit(context, examKeyword, sourceUrl);
 
-    // ignore weak/global dates that are probably unrelated posting dates
     if (score < 2) continue;
     hits.push({ date: iso, sourceUrl, score });
   }
@@ -218,11 +205,12 @@ function extractDateHits(text: string, sourceUrl: string, examKeyword: RegExp): 
 
 function resolveBestDate(hits: DateHit[]): { date: string; sources: string[] } | null {
   if (hits.length === 0) return null;
-  const byDate = new Map<string, { totalScore: number; sources: Set<string> }>();
+  const byDate = new Map<string, { totalScore: number; sources: Set<string>; hitCount: number }>();
   for (const hit of hits) {
-    const row = byDate.get(hit.date) ?? { totalScore: 0, sources: new Set<string>() };
+    const row = byDate.get(hit.date) ?? { totalScore: 0, sources: new Set<string>(), hitCount: 0 };
     row.totalScore += hit.score;
     row.sources.add(hit.sourceUrl);
+    row.hitCount += 1;
     byDate.set(hit.date, row);
   }
 
@@ -230,15 +218,17 @@ function resolveBestDate(hits: DateHit[]): { date: string; sources: string[] } |
     .sort((a, b) => {
       const bySources = b[1].sources.size - a[1].sources.size;
       if (bySources !== 0) return bySources;
+      const byHits = b[1].hitCount - a[1].hitCount;
+      if (byHits !== 0) return byHits;
       return b[1].totalScore - a[1].totalScore;
     });
 
   const [bestDate, best] = ranked[0];
   if (!bestDate) return null;
 
-  // Verification rule: either repeated across multiple official pages,
-  // or strong single-source evidence.
-  const isVerified = best.sources.size >= 2 || best.totalScore >= 3;
+  // Verification rule: either mentioned across multiple domains, 
+  // or mentioned multiple times on one domain with high contextual score.
+  const isVerified = best.sources.size >= 2 || (best.hitCount >= 2 && best.totalScore >= 5);
   if (!isVerified) return null;
 
   return { date: bestDate, sources: [...best.sources] };
@@ -249,8 +239,10 @@ async function syncOneExam(config: ExamSourceConfig): Promise<{ date?: string; s
   for (const url of config.urls) {
     try {
       const text = await fetchSourceText(url);
-      const hits = extractDateHits(text, url, config.keyword);
-      allHits.push(...hits);
+      if (text.length > 0) {
+        const hits = extractDateHits(text, url, config.keyword);
+        allHits.push(...hits);
+      }
     } catch {
       // Ignore individual source failures
     }

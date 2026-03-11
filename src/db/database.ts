@@ -125,6 +125,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     `UPDATE user_profile SET use_local_whisper = 1 WHERE use_local_whisper = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')`,
     `UPDATE user_profile SET study_resource_mode = 'hybrid' WHERE study_resource_mode IS NULL OR study_resource_mode = ''`,
     `UPDATE user_profile SET subject_load_overrides_json = '{}' WHERE subject_load_overrides_json IS NULL OR subject_load_overrides_json = ''`,
+    `ALTER TABLE user_profile ADD COLUMN harassment_tone TEXT NOT NULL DEFAULT 'shame'`,
     // lecture_notes expansion for full transcript storage
     `ALTER TABLE lecture_notes ADD COLUMN transcript TEXT`,
     `ALTER TABLE lecture_notes ADD COLUMN summary TEXT`,

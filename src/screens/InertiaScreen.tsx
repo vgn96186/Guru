@@ -1,12 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, Easing, Dimensions, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { fetchContent } from '../services/aiService';
+import { fetchWikipediaImage } from '../services/imageService';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
+
+function TopicImage({ topicName }: { topicName: string }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchWikipediaImage(topicName).then(setImageUrl);
+  }, [topicName]);
+
+  if (!imageUrl) return null;
+
+  return (
+    <Image 
+      source={{ uri: imageUrl }} 
+      style={styles.topicImage} 
+      resizeMode="contain"
+    />
+  );
+}
 import type { MnemonicContent, TopicWithProgress } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -23,6 +42,7 @@ export default function InertiaScreen() {
   const [breatheText, setBreatheText] = useState('Breathe in...');
   const [content, setContent] = useState<MnemonicContent | null>(null);
   const [topic, setTopic] = useState<TopicWithProgress | null>(null);
+  const [revealStep, setRevealStep] = useState(0);
   
   const [showSkip, setShowSkip] = useState(false);
   const [positionVerified, setPositionVerified] = useState(false);
@@ -98,7 +118,8 @@ export default function InertiaScreen() {
     // Pick an EASY or HIGH CONFIDENCE topic to guarantee a win, or a random seen one
     const topics = getAllTopicsWithProgress();
     const seen = topics.filter(t => t.progress.status === 'reviewed' || t.progress.status === 'mastered');
-    const pool = seen.length > 0 ? seen : topics;
+    // If we have fewer than 10 seen topics, mix in some unseen high-yield topics to increase variety
+    const pool = seen.length >= 10 ? seen : [...seen, ...topics.filter(t => t.inicetPriority >= 8)].slice(0, 50);
     const selected = pool[Math.floor(Math.random() * pool.length)];
     setTopic(selected);
 
@@ -125,6 +146,11 @@ export default function InertiaScreen() {
 
   function handleStartSprint() {
     navigation.navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: 5 });
+  }
+
+  function handleNextReveal() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRevealStep(prev => prev + 1);
   }
 
   function handleClose() {
@@ -205,21 +231,33 @@ export default function InertiaScreen() {
           <Text style={styles.bedTitle}>Bed Study Mode</Text>
           <Text style={styles.bedSub}>One card while lying down. Then we get up.</Text>
           
+          <TopicImage topicName={content.topicName} />
+          
           <View style={[styles.card, styles.bedCard]}>
             <Text style={styles.mnemonicText}>{content.mnemonic}</Text>
-            {content.expansion.map((line, i) => (
+            {revealStep >= 1 && content.expansion.map((line, i) => (
               <Text key={i} style={styles.expansionText}>• {line}</Text>
             ))}
-            <Text style={styles.tipText}>💡 {content.tip}</Text>
+            {revealStep >= 2 && (
+              <Text style={styles.tipText}>💡 {content.tip}</Text>
+            )}
           </View>
 
-          <TouchableOpacity style={styles.doneBtn} onPress={() => setPhase('sit_up_prompt')}>
-            <Text style={styles.doneBtnText}>Okay, I'm Ready to Sit Up →</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.stayBedBtn} onPress={handleWinComplete}>
-            <Text style={styles.stayBedBtnText}>Rest a bit more</Text>
-          </TouchableOpacity>
+          {revealStep < 2 ? (
+            <TouchableOpacity style={styles.doneBtn} onPress={handleNextReveal}>
+              <Text style={styles.doneBtnText}>{revealStep === 0 ? 'Decode it →' : 'Show tip →'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <>
+              <TouchableOpacity style={styles.doneBtn} onPress={() => setPhase('sit_up_prompt')}>
+                <Text style={styles.doneBtnText}>Okay, I'm Ready to Sit Up →</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.stayBedBtn} onPress={handleWinComplete}>
+                <Text style={styles.stayBedBtnText}>Rest a bit more</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </Animated.View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -235,17 +273,27 @@ export default function InertiaScreen() {
           <Text style={styles.winTitle}>Just read this one thing.</Text>
           <Text style={styles.winTopic}>{content.topicName}</Text>
           
+          <TopicImage topicName={content.topicName} />
+          
           <View style={styles.card}>
             <Text style={styles.mnemonicText}>{content.mnemonic}</Text>
-            {content.expansion.map((line, i) => (
+            {revealStep >= 1 && content.expansion.map((line, i) => (
               <Text key={i} style={styles.expansionText}>• {line}</Text>
             ))}
-            <Text style={styles.tipText}>💡 {content.tip}</Text>
+            {revealStep >= 2 && (
+              <Text style={styles.tipText}>💡 {content.tip}</Text>
+            )}
           </View>
 
-          <TouchableOpacity style={styles.doneBtn} onPress={handleWinComplete} activeOpacity={0.8}>
-            <Text style={styles.doneBtnText}>Okay, read it.</Text>
-          </TouchableOpacity>
+          {revealStep < 2 ? (
+            <TouchableOpacity style={styles.doneBtn} onPress={handleNextReveal} activeOpacity={0.8}>
+              <Text style={styles.doneBtnText}>{revealStep === 0 ? 'Decode it →' : 'Show tip →'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.doneBtn} onPress={handleWinComplete} activeOpacity={0.8}>
+              <Text style={styles.doneBtnText}>Okay, read it.</Text>
+            </TouchableOpacity>
+          )}
         </Animated.View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -288,6 +336,7 @@ export default function InertiaScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  topicImage: { width: '100%', height: 200, borderRadius: 12, marginBottom: 20, backgroundColor: '#1A1A24' },
   
   breatheTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8, textAlign: 'center' },
   breatheSub: { color: '#9E9E9E', fontSize: 16, marginBottom: 60, textAlign: 'center' },

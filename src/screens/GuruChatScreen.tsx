@@ -1,34 +1,42 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  StatusBar,
+  Alert,
   Animated,
   Easing,
+  FlatList,
   KeyboardAvoidingView,
-  Platform,
   Linking,
-  Clipboard,
-  Alert,
+  Platform,
+  Pressable,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  type ListRenderItemInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
-import type { HomeStackParamList } from '../navigation/types';
+import Clipboard from '@react-native-clipboard/clipboard';
+import type { ChatStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { chatWithGuruGrounded, type MedicalGroundingSource, GROQ_MODELS, OPENROUTER_FREE_MODELS, getApiKeys } from '../services/aiService';
+import {
+  chatWithGuruGrounded,
+  type MedicalGroundingSource,
+  GROQ_MODELS,
+  OPENROUTER_FREE_MODELS,
+  getApiKeys,
+} from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
-import { Modal } from 'react-native';
-import { saveChatMessage, getChatHistory, clearChatHistory } from '../db/queries/aiCache';
+import { clearChatHistory, getChatHistory, saveChatMessage } from '../db/queries/aiCache';
+import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
+import { theme } from '../constants/theme';
 
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'GuruChat'>;
-type ScreenRoute = RouteProp<HomeStackParamList, 'GuruChat'>;
+type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
+type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
 
 type ChatMessage = {
   id: string;
@@ -40,45 +48,70 @@ type ChatMessage = {
   timestamp: number;
 };
 
-const STARTERS = [
-  { icon: 'heart-outline', text: 'First-line treatment for HFrEF?' },
-  { icon: 'fitness-outline', text: 'GLP-1 agonists in obesity — key trials?' },
-  { icon: 'pulse-outline', text: 'Sepsis bundle essentials 2024' },
-  { icon: 'medical-outline', text: 'Hypertension guidelines — thresholds?' },
-  { icon: 'flask-outline', text: 'CKD staging and management approach' },
-  // Ionicons does not have "brain-outline"; use a valid medical icon instead.
-  { icon: 'medkit-outline', text: 'Migraine prophylaxis options ranked' },
-];
+type ModelOption = {
+  id: string;
+  name: string;
+  group: 'Local' | 'Groq' | 'OpenRouter';
+};
+
+type ChatItem =
+  | { id: string; type: 'message'; message: ChatMessage }
+  | { id: string; type: 'typing' };
+
+function getStartersForTopic(topicName: string) {
+  if (topicName === 'General Medicine' || !topicName) {
+    return [
+      { icon: 'heart-outline', text: 'First-line treatment for HFrEF?' },
+      { icon: 'fitness-outline', text: 'GLP-1 agonists in obesity - key trials?' },
+      { icon: 'pulse-outline', text: 'Sepsis bundle essentials 2024' },
+      { icon: 'medical-outline', text: 'Hypertension guidelines - thresholds?' },
+      { icon: 'flask-outline', text: 'CKD staging and management approach' },
+      { icon: 'medkit-outline', text: 'Migraine prophylaxis options ranked' },
+    ];
+  }
+
+  return [
+    { icon: 'book-outline', text: `What are the highest-yield exam concepts for ${topicName}?` },
+    { icon: 'help-circle-outline', text: `Give me a hard clinical vignette MCQ on ${topicName}.` },
+    { icon: 'bulb-outline', text: `Can you share a memory hook or mnemonic for ${topicName}?` },
+    { icon: 'list-outline', text: `What is the diagnostic algorithm or criteria for ${topicName}?` },
+    { icon: 'alert-circle-outline', text: `What are common pitfalls and mistakes when studying ${topicName}?` },
+    { icon: 'medkit-outline', text: `What is the first-line treatment and management for ${topicName}?` },
+  ];
+}
 
 function formatTime(ts: number) {
   const d = new Date(ts);
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-// Animated typing dots
 function TypingDots() {
-  const dots = [useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current, useRef(new Animated.Value(0)).current];
+  const dots = [
+    useRef(new Animated.Value(0)).current,
+    useRef(new Animated.Value(0)).current,
+    useRef(new Animated.Value(0)).current,
+  ];
 
   useEffect(() => {
-    const anims = dots.map((dot, i) =>
+    const anims = dots.map((dot, index) =>
       Animated.loop(
         Animated.sequence([
-          Animated.delay(i * 150),
+          Animated.delay(index * 150),
           Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
           Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true, easing: Easing.in(Easing.ease) }),
-          Animated.delay((2 - i) * 150),
+          Animated.delay((2 - index) * 150),
         ]),
       ),
     );
     Animated.parallel(anims).start();
-    return () => anims.forEach(a => a.stop());
-  }, []);
+    return () => anims.forEach((anim) => anim.stop());
+  }, [dots]);
 
   return (
     <View style={styles.dotsRow}>
-      {dots.map((dot, i) => (
+      {dots.map((dot, index) => (
         <Animated.View
-          key={i}
+          key={index}
           style={[
             styles.dot,
             {
@@ -92,10 +125,63 @@ function TypingDots() {
   );
 }
 
-interface ModelOption {
-  id: string;
-  name: string;
-  group: 'Local' | 'Groq' | 'OpenRouter';
+/** Renders Guru reply text with paragraphs, bold, bullets, and citation styling for readability */
+function FormattedGuruMessage({ text }: { text: string }) {
+  const paragraphs = text.split(/\n\n+/).filter((p) => p.trim());
+  const out: React.ReactNode[] = [];
+
+  paragraphs.forEach((block, blockIdx) => {
+    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+    lines.forEach((line, lineIdx) => {
+      const key = `${blockIdx}-${lineIdx}`;
+      const isBullet = /^[-•]\s/.test(line) || /^\d+\.\s/.test(line);
+      const bulletMatch = line.match(/^([-•]|\d+\.)\s/);
+      const bullet = bulletMatch ? bulletMatch[1] : null;
+      const rest = bullet ? line.slice(bulletMatch![0].length) : line;
+
+      const parts: React.ReactNode[] = [];
+      const segmentRegex = /(\*\*[^*]+\*\*|\[S\d+\])/g;
+      let lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = segmentRegex.exec(rest)) !== null) {
+        if (match.index > lastIndex) {
+          parts.push(rest.slice(lastIndex, match.index));
+        }
+        const raw = match[1];
+        if (raw.startsWith('**')) {
+          parts.push(<Text key={match.index} style={styles.guruBold}>{raw.slice(2, -2)}</Text>);
+        } else {
+          parts.push(<Text key={match.index} style={styles.guruCitation}>{raw}</Text>);
+        }
+        lastIndex = match.index + raw.length;
+      }
+      if (lastIndex < rest.length) {
+        parts.push(rest.slice(lastIndex));
+      }
+
+      const content = parts.length > 0 ? parts : [rest];
+      if (isBullet && bullet) {
+        const marker = /^\d+\.$/.test(bullet) ? bullet : bullet === '-' || bullet === '•' ? '•' : bullet;
+        out.push(
+          <View key={key} style={styles.guruListRow}>
+            <Text style={styles.guruListMarker}>{marker}</Text>
+            <Text style={styles.guruListText}>{content}</Text>
+          </View>,
+        );
+      } else {
+        out.push(
+          <Text key={key} style={styles.guruParagraph}>
+            {content}
+          </Text>,
+        );
+      }
+    });
+    if (blockIdx < paragraphs.length - 1) {
+      out.push(<View key={`space-${blockIdx}`} style={styles.guruParagraphGap} />);
+    }
+  });
+
+  return <View style={styles.guruFormattedWrap}>{out}</View>;
 }
 
 export default function GuruChatScreen() {
@@ -103,110 +189,142 @@ export default function GuruChatScreen() {
   const route = useRoute<ScreenRoute>();
   const topicName = route.params?.topicName ?? 'General Medicine';
   const { profile } = useAppStore();
+  const flatListRef = useRef<FlatList<ChatItem>>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(route.params?.initialQuestion ?? '');
+  const [loading, setLoading] = useState(false);
+  const [bannerVisible, setBannerVisible] = useState(true);
+  const [chosenModel, setChosenModel] = useState<string>('auto');
+  const [showModelPicker, setShowModelPicker] = useState(false);
+  const localLlmWarning = getLocalLlmRamWarning();
 
-  // Load persisted chat history on mount
   useEffect(() => {
     if (topicName && topicName !== 'General Medicine') {
       try {
         const history = getChatHistory(topicName, 20);
         if (history.length > 0) {
-          setMessages(history.map(h => ({
-            id: `hist-${h.id}`,
-            role: h.role,
-            text: h.message,
-            timestamp: h.timestamp,
-          })));
+          setMessages(
+            history.map((entry) => ({
+              id: `hist-${entry.id}`,
+              role: entry.role,
+              text: entry.message,
+              timestamp: entry.timestamp,
+            })),
+          );
           setBannerVisible(false);
         }
-      } catch { /* ignore DB errors */ }
+      } catch {
+        // Ignore DB failures and keep the chat usable.
+      }
     }
-  }, []);
-  const [loading, setLoading] = useState(false);
-  const [bannerVisible, setBannerVisible] = useState(true);
-  const [chosenModel, setChosenModel] = useState<string>('auto');
-  const [showModelPicker, setShowModelPicker] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
+  }, [topicName]);
 
   const availableModels = useMemo(() => {
     const { orKey, groqKey } = getApiKeys();
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
-    if (profile?.useLocalModel && profile?.localModelPath) {
+    if (profile?.useLocalModel && profile?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
       list.push({ id: 'local', name: 'On-Device LLM', group: 'Local' });
     }
 
     if (groqKey) {
-      GROQ_MODELS.forEach(m => {
-        list.push({ id: `groq/${m}`, name: m.split('-').slice(0, 2).join(' ').toUpperCase(), group: 'Groq' });
+      GROQ_MODELS.forEach((model) => {
+        const name = model.includes('/')
+          ? model.split('/').pop()!.replace(/-/g, ' ').toUpperCase()
+          : model.split('-').slice(0, 2).join(' ').toUpperCase();
+        list.push({ id: `groq/${model}`, name, group: 'Groq' });
       });
     }
 
     if (orKey) {
-      OPENROUTER_FREE_MODELS.forEach(m => {
-        list.push({ id: m, name: m.split('/')[1].split(':')[0].toUpperCase(), group: 'OpenRouter' });
+      OPENROUTER_FREE_MODELS.forEach((model) => {
+        list.push({ id: model, name: model.split('/')[1].split(':')[0].toUpperCase(), group: 'OpenRouter' });
       });
     }
 
     return list;
   }, [profile]);
 
+  useEffect(() => {
+    if (chosenModel === 'local' && !availableModels.some((model) => model.id === 'local')) {
+      setChosenModel('auto');
+    }
+  }, [availableModels, chosenModel]);
+
   const currentModelName = useMemo(() => {
-    const found = availableModels.find(m => m.id === chosenModel);
+    const found = availableModels.find((model) => model.id === chosenModel);
     return found ? found.name : 'Auto';
-  }, [chosenModel, availableModels]);
+  }, [availableModels, chosenModel]);
 
   const modelHistory = useMemo(
-    () => messages.map(m => ({ role: m.role, text: m.text })),
+    () => messages.map((message) => ({ role: message.role, text: message.text })),
     [messages],
   );
 
-  const scrollToBottom = useCallback((delay = 80) => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), delay);
+  const chatItems = useMemo<ChatItem[]>(() => {
+    const items: ChatItem[] = messages.map((message) => ({ id: message.id, type: 'message', message }));
+    if (loading) {
+      items.push({ id: 'typing-indicator', type: 'typing' });
+    }
+    return items.reverse();
+  }, [loading, messages]);
+
+  const scrollToLatest = useCallback((delay = 80) => {
+    setTimeout(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }, delay);
   }, []);
 
   async function openSource(url: string) {
     try {
-      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
-    } catch { /* no-op */ }
+      if (await Linking.canOpenURL(url)) {
+        await Linking.openURL(url);
+      }
+    } catch {
+      Alert.alert('Could not open source', 'The source link could not be opened.');
+    }
   }
 
-  function copyMessage(text: string) {
+  async function copyMessage(text: string) {
     Clipboard.setString(text);
     Alert.alert('Copied', 'Message copied to clipboard.');
   }
 
   async function handleSend(questionOverride?: string) {
-    const q = (questionOverride ?? input).trim();
-    if (!q || loading) return;
+    const question = (questionOverride ?? input).trim();
+    if (!question || loading) return;
 
     const userMessage: ChatMessage = {
       id: `u-${Date.now()}`,
       role: 'user',
-      text: q,
+      text: question,
       timestamp: Date.now(),
     };
 
-    const nextHistory = [...modelHistory, { role: 'user' as const, text: q }];
-    setMessages(prev => [...prev, userMessage]);
+    const nextHistory = [...modelHistory, { role: 'user' as const, text: question }];
+    setMessages((current) => [...current, userMessage]);
     setInput('');
     setBannerVisible(false);
     setLoading(true);
-    scrollToBottom();
-    try { saveChatMessage(topicName, 'user', q, Date.now()); } catch { /* ignore */ }
+    scrollToLatest();
+
+    try {
+      saveChatMessage(topicName, 'user', question, Date.now());
+    } catch {
+      // Persistence should not block the main conversation flow.
+    }
 
     try {
       const grounded = await chatWithGuruGrounded(
-        q, 
-        topicName, 
-        nextHistory, 
-        chosenModel === 'auto' ? undefined : chosenModel
+        question,
+        topicName,
+        nextHistory,
+        chosenModel === 'auto' ? undefined : chosenModel,
       );
       const guruTs = Date.now();
-      setMessages(prev => [
-        ...prev,
+      setMessages((current) => [
+        ...current,
         {
           id: `g-${guruTs}`,
           role: 'guru',
@@ -217,233 +335,281 @@ export default function GuruChatScreen() {
           timestamp: guruTs,
         },
       ]);
-      try { saveChatMessage(topicName, 'guru', grounded.reply, guruTs); } catch { /* ignore */ }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : 'Unknown error';
-      setMessages(prev => [
-        ...prev,
+      try {
+        saveChatMessage(topicName, 'guru', grounded.reply, guruTs);
+      } catch {
+        // Ignore persistence issues here too.
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      setMessages((current) => [
+        ...current,
         {
           id: `g-${Date.now()}`,
           role: 'guru',
-          text: `⚠️ ${errMsg}`,
+          text: `Warning: ${message}`,
           timestamp: Date.now(),
         },
       ]);
     } finally {
       setLoading(false);
-      scrollToBottom(120);
+      scrollToLatest(120);
     }
   }
 
-  function clearChat() {
-    Alert.alert('Clear Chat', 'Start a new conversation?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => {
-        setMessages([]);
-        setBannerVisible(true);
-        try { clearChatHistory(topicName); } catch { /* ignore */ }
-      }},
-    ]);
+  function startNewChat() {
+    if (messages.length > 0) {
+      Alert.alert('New chat', 'Start a new conversation? Current messages will be cleared.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'New chat',
+          onPress: () => {
+            setMessages([]);
+            setBannerVisible(true);
+            try {
+              clearChatHistory(topicName);
+            } catch {
+              // Ignore DB cleanup failures.
+            }
+          },
+        },
+      ]);
+    } else {
+      setMessages([]);
+      setBannerVisible(true);
+    }
   }
+
+  const renderMessage = useCallback(
+    ({ item }: ListRenderItemInfo<ChatItem>) => {
+      if (item.type === 'typing') {
+        return (
+          <View style={[styles.msgRow, styles.msgRowGuru]}>
+            <View style={styles.guruAvatarTiny}>
+              <Ionicons name="sparkles" size={11} color={theme.colors.primary} />
+            </View>
+            <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
+              <TypingDots />
+            </View>
+          </View>
+        );
+      }
+
+      const { message } = item;
+      return (
+        <View style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}>
+          {message.role === 'guru' ? (
+            <View style={styles.guruAvatarTiny}>
+              <Ionicons name="sparkles" size={11} color={theme.colors.primary} />
+            </View>
+          ) : null}
+
+          <View style={styles.msgContent}>
+            <Pressable onLongPress={() => copyMessage(message.text)} delayLongPress={400}>
+              <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.guruBubble]}>
+                {message.role === 'guru' ? (
+                  <FormattedGuruMessage text={message.text} />
+                ) : (
+                  <Text style={[styles.bubbleText, styles.userBubbleText]}>{message.text}</Text>
+                )}
+              </View>
+            </Pressable>
+
+            <Text style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}>
+              {formatTime(message.timestamp)}
+              {message.role === 'guru' && message.modelUsed ? `  ·  ${message.modelUsed.split('/').pop()}` : ''}
+            </Text>
+
+            {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
+              <View style={styles.sourcesWrap}>
+                <View style={styles.sourcesHeader}>
+                  <Ionicons name="documents-outline" size={13} color={theme.colors.primary} />
+                  <Text style={styles.sourcesLabel}>Sources ({message.sources.length})</Text>
+                </View>
+                {message.sources.map((source, index) => (
+                  <Pressable
+                    key={`${message.id}-${source.id}`}
+                    style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
+                    android_ripple={{ color: `${theme.colors.primary}22` }}
+                    onPress={() => openSource(source.url)}
+                  >
+                    <View style={styles.sourceNumBadge}>
+                      <Text style={styles.sourceNum}>{index + 1}</Text>
+                    </View>
+                    <View style={styles.sourceBody}>
+                      <Text style={styles.sourceTitle} numberOfLines={2}>
+                        {source.title}
+                      </Text>
+                      <Text style={styles.sourceMeta}>
+                        {source.source}
+                        {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
+                      </Text>
+                    </View>
+                    <Ionicons name="open-outline" size={13} color={theme.colors.textMuted} />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        </View>
+      );
+    },
+    [copyMessage],
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+        keyboardVerticalOffset={0}
       >
         <ResponsiveContainer style={styles.flex}>
-
-          {/* Header */}
           <View style={styles.header}>
             {navigation.canGoBack() ? (
-              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn} activeOpacity={0.7}>
+              <Pressable
+                style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
+                android_ripple={{ color: '#ffffff14', radius: 22 }}
+                onPress={() => navigation.goBack()}
+                accessibilityRole="button"
+                accessibilityLabel="Go back"
+              >
                 <Ionicons name="arrow-back" size={22} color="#AEB5C4" />
-              </TouchableOpacity>
+              </Pressable>
             ) : (
               <View style={styles.iconBtn} />
             )}
+
             <View style={styles.headerCenter}>
               <View style={styles.guruAvatarSmall}>
-                <Ionicons name="sparkles" size={14} color="#6C63FF" />
+                <Ionicons name="sparkles" size={14} color={theme.colors.primary} />
               </View>
-              <TouchableOpacity onPress={() => setShowModelPicker(true)} style={styles.modelSelector} activeOpacity={0.7}>
+              <Pressable
+                style={({ pressed }) => [styles.modelSelector, pressed && styles.pressed]}
+                onPress={() => setShowModelPicker(true)}
+              >
                 <View>
                   <Text style={styles.title}>Guru Chat</Text>
                   <View style={styles.modelBadge}>
                     <Text style={styles.modelBadgeText}>{currentModelName}</Text>
-                    <Ionicons name="chevron-down" size={10} color="#6C63FF" />
+                    <Ionicons name="chevron-down" size={10} color={theme.colors.primary} />
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </View>
-            {messages.length > 0 ? (
-              <TouchableOpacity onPress={clearChat} style={styles.iconBtn} activeOpacity={0.7}>
-                <Ionicons name="trash-outline" size={20} color="#666" />
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.iconBtn} />
-            )}
+
+            <Pressable
+              style={({ pressed }) => [styles.newChatBtn, pressed && styles.pressed]}
+              android_ripple={{ color: '#ffffff14', radius: 22 }}
+              onPress={startNewChat}
+              accessibilityRole="button"
+              accessibilityLabel="New chat"
+            >
+              <Ionicons name="create-outline" size={20} color={theme.colors.primary} />
+              <Text style={styles.newChatBtnText}>New chat</Text>
+            </Pressable>
           </View>
 
-          {/* Model Picker Modal */}
-          <Modal visible={showModelPicker} transparent animationType="slide" onRequestClose={() => setShowModelPicker(false)}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Choose Brain</Text>
-                <ScrollView>
-                  {['Local', 'Groq', 'OpenRouter'].map(group => {
-                    const groupModels = availableModels.filter(m => m.group === group);
+          {showModelPicker ? (
+            <View style={styles.sheetOverlay} pointerEvents="box-none">
+              <Pressable style={styles.sheetBackdrop} onPress={() => setShowModelPicker(false)} />
+              <View style={styles.sheetContent}>
+                <Text style={styles.sheetTitle}>Choose Brain</Text>
+                {localLlmWarning ? <Text style={styles.warningText}>{localLlmWarning}</Text> : null}
+                <FlatList
+                  data={['Local', 'Groq', 'OpenRouter']}
+                  keyExtractor={(group) => group}
+                  renderItem={({ item: group }) => {
+                    const groupModels = availableModels.filter((model) => model.group === group);
                     if (groupModels.length === 0) return null;
                     return (
-                      <View key={group} style={styles.modelGroup}>
+                      <View style={styles.modelGroup}>
                         <Text style={styles.modelGroupLabel}>{group}</Text>
-                        {groupModels.map(m => (
-                          <TouchableOpacity
-                            key={m.id}
-                            style={[styles.modelItem, chosenModel === m.id && styles.modelItemActive]}
-                            onPress={() => { setChosenModel(m.id); setShowModelPicker(false); }}
+                        {groupModels.map((model) => (
+                          <Pressable
+                            key={model.id}
+                            style={({ pressed }) => [
+                              styles.modelItem,
+                              chosenModel === model.id && styles.modelItemActive,
+                              pressed && styles.pressed,
+                            ]}
+                            android_ripple={{ color: `${theme.colors.primary}22` }}
+                            onPress={() => {
+                              setChosenModel(model.id);
+                              setShowModelPicker(false);
+                            }}
                           >
-                            <Text style={[styles.modelItemText, chosenModel === m.id && styles.modelItemTextActive]}>{m.name}</Text>
-                            {chosenModel === m.id && <Ionicons name="checkmark-circle" size={18} color="#6C63FF" />}
-                          </TouchableOpacity>
+                            <Text style={[styles.modelItemText, chosenModel === model.id && styles.modelItemTextActive]}>
+                              {model.name}
+                            </Text>
+                            {chosenModel === model.id ? (
+                              <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                            ) : null}
+                          </Pressable>
                         ))}
                       </View>
                     );
-                  })}
-                </ScrollView>
-                <TouchableOpacity onPress={() => setShowModelPicker(false)} style={styles.closeBtn}>
+                  }}
+                />
+                <Pressable style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]} onPress={() => setShowModelPicker(false)}>
                   <Text style={styles.closeBtnText}>Cancel</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
-          </Modal>
+          ) : null}
 
-          {/* Collapsible info banner */}
-          {bannerVisible && (
+          {bannerVisible ? (
             <View style={styles.infoBanner}>
-              <Ionicons name="library-outline" size={14} color="#6C63FF" style={{ marginTop: 1 }} />
-              <Text style={styles.infoText}>
-                Grounded with live Europe PMC + PubMed search. Sources cited inline.
-              </Text>
-              <TouchableOpacity onPress={() => setBannerVisible(false)} hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}>
-                <Ionicons name="close" size={14} color="#555" />
-              </TouchableOpacity>
+              <Ionicons name="library-outline" size={14} color={theme.colors.primary} style={styles.bannerIcon} />
+              <Text style={styles.infoText}>Grounded with Wikipedia, Europe PMC and PubMed. Sources cited inline.</Text>
+              <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
+                <Ionicons name="close" size={14} color={theme.colors.textMuted} />
+              </Pressable>
             </View>
+          ) : null}
+
+          {messages.length === 0 && !loading ? (
+            <View style={styles.emptyWrap}>
+              <View style={styles.guruAvatarLarge}>
+                <Ionicons name="sparkles" size={32} color={theme.colors.primary} />
+              </View>
+              <Text style={styles.emptyTitle}>What do you want to know?</Text>
+              <Text style={styles.emptyHint}>Try a question or pick a prompt below.</Text>
+              <View style={styles.starterGrid}>
+                {getStartersForTopic(topicName).map((starter) => (
+                  <Pressable
+                    key={starter.text}
+                    style={({ pressed }) => [styles.starterChip, pressed && styles.pressed]}
+                    android_ripple={{ color: `${theme.colors.primary}22` }}
+                    onPress={() => handleSend(starter.text)}
+                    disabled={loading}
+                  >
+                    <Ionicons name={starter.icon as keyof typeof Ionicons.glyphMap} size={16} color={theme.colors.primary} style={styles.starterIcon} />
+                    <Text style={styles.starterChipText}>{starter.text}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={chatItems}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item.id}
+              style={styles.messages}
+              contentContainerStyle={styles.messagesContent}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              inverted
+              maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+            />
           )}
 
-          {/* Messages */}
-          <ScrollView
-            ref={scrollRef}
-            style={styles.messages}
-            contentContainerStyle={styles.messagesContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Empty state */}
-            {messages.length === 0 && (
-              <View style={styles.emptyWrap}>
-                <View style={styles.guruAvatarLarge}>
-                  <Ionicons name="sparkles" size={32} color="#6C63FF" />
-                </View>
-                <Text style={styles.emptyTitle}>What do you want to know?</Text>
-                <Text style={styles.emptyHint}>Try a question or pick a topic below</Text>
-                <View style={styles.starterGrid}>
-                  {STARTERS.map(starter => (
-                    <TouchableOpacity
-                      key={starter.text}
-                      style={styles.starterChip}
-                      onPress={() => handleSend(starter.text)}
-                      activeOpacity={0.8}
-                      disabled={loading}
-                    >
-                      <Ionicons name={starter.icon as any} size={16} color="#6C63FF" style={styles.starterIcon} />
-                      <Text style={styles.starterChipText}>{starter.text}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* Message list */}
-            {messages.map(msg => (
-              <View key={msg.id} style={[styles.msgRow, msg.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}>
-                {msg.role === 'guru' && (
-                  <View style={styles.guruAvatarTiny}>
-                    <Ionicons name="sparkles" size={11} color="#6C63FF" />
-                  </View>
-                )}
-
-                <View style={styles.msgContent}>
-                  <TouchableOpacity
-                    onLongPress={() => copyMessage(msg.text)}
-                    activeOpacity={0.9}
-                    delayLongPress={400}
-                  >
-                    <View style={[styles.bubble, msg.role === 'user' ? styles.userBubble : styles.guruBubble]}>
-                      <Text style={[styles.bubbleText, msg.role === 'user' && styles.userBubbleText]}>
-                        {msg.text}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <Text style={[styles.timestamp, msg.role === 'user' && styles.timestampRight]}>
-                    {formatTime(msg.timestamp)}
-                    {msg.role === 'guru' && msg.modelUsed ? `  ·  ${msg.modelUsed.split('/').pop()}` : ''}
-                  </Text>
-
-                  {/* Sources */}
-                  {msg.role === 'guru' && msg.sources && msg.sources.length > 0 && (
-                    <View style={styles.sourcesWrap}>
-                      <View style={styles.sourcesHeader}>
-                        <Ionicons name="documents-outline" size={13} color="#6C63FF" />
-                        <Text style={styles.sourcesLabel}>Sources  ({msg.sources.length})</Text>
-                      </View>
-                      {msg.sources.map((src, idx) => (
-                        <TouchableOpacity
-                          key={`${msg.id}-${src.id}`}
-                          style={styles.sourceCard}
-                          onPress={() => openSource(src.url)}
-                          activeOpacity={0.8}
-                        >
-                          <View style={styles.sourceNumBadge}>
-                            <Text style={styles.sourceNum}>{idx + 1}</Text>
-                          </View>
-                          <View style={styles.sourceBody}>
-                            <Text style={styles.sourceTitle} numberOfLines={2}>{src.title}</Text>
-                            <Text style={styles.sourceMeta}>
-                              {src.source}{src.publishedAt ? `  ·  ${src.publishedAt}` : ''}
-                            </Text>
-                          </View>
-                          <Ionicons name="open-outline" size={13} color="#555" />
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              </View>
-            ))}
-
-            {/* Typing indicator */}
-            {loading && (
-              <View style={[styles.msgRow, styles.msgRowGuru]}>
-                <View style={styles.guruAvatarTiny}>
-                  <Ionicons name="sparkles" size={11} color="#6C63FF" />
-                </View>
-                <View style={[styles.bubble, styles.guruBubble, { paddingVertical: 14, paddingHorizontal: 18 }]}>
-                  <TypingDots />
-                </View>
-              </View>
-            )}
-          </ScrollView>
-
-          {/* Input row */}
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
-              placeholder="Ask a medical question…"
+              placeholder="Ask a medical question..."
               placeholderTextColor="#4A4F62"
               value={input}
               onChangeText={setInput}
@@ -452,16 +618,21 @@ export default function GuruChatScreen() {
               multiline
               maxLength={1000}
             />
-            <TouchableOpacity
-              style={[styles.sendBtn, (!input.trim() || loading) && styles.sendBtnDisabled]}
+            <Pressable
+              style={({ pressed }) => [
+                styles.sendBtn,
+                (!input.trim() || loading) && styles.sendBtnDisabled,
+                pressed && input.trim() && !loading && styles.pressed,
+              ]}
+              android_ripple={{ color: '#ffffff18', radius: 22 }}
               onPress={() => handleSend()}
-              activeOpacity={0.8}
               disabled={!input.trim() || loading}
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
             >
-              <Ionicons name="send" size={18} color="#fff" />
-            </TouchableOpacity>
+              <Ionicons name="send" size={18} color={theme.colors.textPrimary} />
+            </Pressable>
           </View>
-
         </ResponsiveContainer>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -469,10 +640,17 @@ export default function GuruChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
-  flex: { flex: 1 },
-
-  // Header
+  safe: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  flex: {
+    flex: 1,
+  },
+  pressed: {
+    opacity: theme.alpha.pressed,
+    transform: [{ scale: 0.98 }],
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -480,150 +658,434 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#1E1E2A',
+    borderBottomColor: theme.colors.divider,
   },
-  iconBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 4 },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 20,
+  },
+  newChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    height: 40,
+    borderRadius: 20,
+  },
+  newChatBtnText: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 4,
+  },
   guruAvatarSmall: {
-    width: 30, height: 30, borderRadius: 15,
-    backgroundColor: '#1A1630', borderWidth: 1, borderColor: '#3D37A0',
-    alignItems: 'center', justifyContent: 'center',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: theme.colors.primaryTint,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  title: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  subtitle: { color: '#6C63FF', fontSize: 11, fontWeight: '600', marginTop: 1 },
-
-  modelSelector: { flex: 1, paddingVertical: 2 },
-  modelBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
-  modelBadgeText: { color: '#6C63FF', fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-
-  // Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' },
-  modalContent: {
-    backgroundColor: '#1A1A24', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    padding: 24, maxHeight: '80%',
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
   },
-  modalTitle: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: 20, textAlign: 'center' },
-  modelGroup: { marginBottom: 20 },
-  modelGroupLabel: { color: '#555B78', fontSize: 11, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10, marginLeft: 4 },
+  modelSelector: {
+    flex: 1,
+    paddingVertical: 2,
+  },
+  modelBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 1,
+  },
+  modelBadgeText: {
+    color: theme.colors.primary,
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  sheetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 30,
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: theme.colors.backdropStrong,
+  },
+  sheetContent: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '80%',
+  },
+  sheetTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  warningText: {
+    color: '#FFD58A',
+    fontSize: 12,
+    lineHeight: 18,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modelGroup: {
+    marginBottom: 20,
+  },
+  modelGroupLabel: {
+    color: '#555B78',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+    marginLeft: 4,
+  },
   modelItem: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12,
-    backgroundColor: '#13131E', marginBottom: 8, borderWidth: 1, borderColor: '#23233A',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#13131E',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#23233A',
   },
-  modelItemActive: { backgroundColor: '#25205A', borderColor: '#4A43B0' },
-  modelItemText: { color: '#AEB5C4', fontSize: 15, fontWeight: '600' },
-  modelItemTextActive: { color: '#fff' },
-  closeBtn: { marginTop: 8, padding: 16, alignItems: 'center', backgroundColor: '#23233A', borderRadius: 14 },
-  closeBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-
-  // Banner
+  modelItemActive: {
+    backgroundColor: '#25205A',
+    borderColor: '#4A43B0',
+  },
+  modelItemText: {
+    color: '#AEB5C4',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  modelItemTextActive: {
+    color: theme.colors.textPrimary,
+  },
+  closeBtn: {
+    marginTop: 8,
+    padding: 16,
+    alignItems: 'center',
+    backgroundColor: '#23233A',
+    borderRadius: 14,
+  },
+  closeBtnText: {
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 15,
+  },
   infoBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    marginHorizontal: 12, marginVertical: 8,
-    backgroundColor: '#12121E', borderWidth: 1, borderColor: '#2A2A42',
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginHorizontal: 12,
+    marginVertical: 8,
+    backgroundColor: theme.colors.inputBg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
-  infoText: { color: '#7A80A0', fontSize: 11, lineHeight: 16, flex: 1 },
-
-  // Messages
-  messages: { flex: 1 },
-  messagesContent: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 20, gap: 16 },
-
-  msgRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  msgRowUser: { flexDirection: 'row-reverse' },
+  bannerIcon: {
+    marginTop: 1,
+  },
+  infoText: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    lineHeight: 16,
+    flex: 1,
+  },
+  messages: {
+    flex: 1,
+  },
+  messagesContent: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 20,
+    gap: 16,
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
+  msgRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+  },
+  msgRowUser: {
+    flexDirection: 'row-reverse',
+  },
   msgRowGuru: {},
-
   guruAvatarTiny: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: '#1A1630', borderWidth: 1, borderColor: '#3D37A0',
-    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primaryTint,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
     marginBottom: 2,
   },
-
-  msgContent: { flex: 1, maxWidth: '88%' },
-
+  msgContent: {
+    flex: 1,
+    maxWidth: '88%',
+  },
   bubble: {
-    borderRadius: 16, padding: 12,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
   },
   userBubble: {
-    backgroundColor: '#25205A', borderColor: '#4A43B0',
+    backgroundColor: theme.colors.primaryTint,
+    borderColor: theme.colors.primaryDark,
     borderBottomRightRadius: 4,
   },
   guruBubble: {
-    backgroundColor: '#13131E', borderColor: '#23233A',
+    backgroundColor: theme.colors.inputBg,
+    borderColor: theme.colors.border,
     borderBottomLeftRadius: 4,
   },
-  bubbleText: { color: '#D8DCE8', fontSize: 14, lineHeight: 22 },
-  userBubbleText: { color: '#E8ECFF' },
-
-  timestamp: { color: '#404560', fontSize: 10, marginTop: 4, marginLeft: 2 },
-  timestampRight: { textAlign: 'right', marginRight: 2 },
-
-  // Sources
+  typingBubble: {
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+  },
+  bubbleText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  userBubbleText: {
+    color: theme.colors.textPrimary,
+  },
+  guruFormattedWrap: {
+    gap: 2,
+  },
+  guruParagraph: {
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  guruParagraphGap: {
+    height: 10,
+  },
+  guruBold: {
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
+  },
+  guruCitation: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  guruListRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+    paddingLeft: 4,
+  },
+  guruListMarker: {
+    color: theme.colors.primary,
+    fontSize: 15,
+    lineHeight: 24,
+    marginRight: 8,
+    fontWeight: '600',
+  },
+  guruListText: {
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  timestamp: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    marginTop: 4,
+    marginLeft: 2,
+  },
+  timestampRight: {
+    textAlign: 'right',
+    marginRight: 2,
+  },
   sourcesWrap: {
-    marginTop: 8, borderRadius: 12,
-    backgroundColor: '#0E0E18', borderWidth: 1, borderColor: '#1E1E30',
+    marginTop: 8,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     overflow: 'hidden',
   },
   sourcesHeader: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 12, paddingTop: 10, paddingBottom: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
-  sourcesLabel: { color: '#6C63FF', fontSize: 12, fontWeight: '700' },
+  sourcesLabel: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   sourceCard: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    paddingHorizontal: 12, paddingVertical: 9,
-    borderTopWidth: 1, borderTopColor: '#1A1A28',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
   },
   sourceNumBadge: {
-    width: 20, height: 20, borderRadius: 10,
-    backgroundColor: '#1E1A40', alignItems: 'center', justifyContent: 'center',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primaryTint,
+    alignItems: 'center',
+    justifyContent: 'center',
     flexShrink: 0,
   },
-  sourceNum: { color: '#6C63FF', fontSize: 10, fontWeight: '800' },
-  sourceBody: { flex: 1 },
-  sourceTitle: { color: '#C8CEDF', fontSize: 12, lineHeight: 17, fontWeight: '600' },
-  sourceMeta: { color: '#555B78', fontSize: 10, marginTop: 2 },
-
-  // Typing dots
-  dotsRow: { flexDirection: 'row', gap: 5, alignItems: 'center', height: 16 },
-  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#6C63FF' },
-
-  // Input
+  sourceNum: {
+    color: theme.colors.primary,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  sourceBody: {
+    flex: 1,
+  },
+  sourceTitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '600',
+  },
+  sourceMeta: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 5,
+    alignItems: 'center',
+    height: 16,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: theme.colors.primary,
+  },
   inputRow: {
-    flexDirection: 'row', alignItems: 'flex-end', gap: 8,
-    paddingHorizontal: 12, paddingTop: 8, paddingBottom: 12,
-    borderTopWidth: 1, borderTopColor: '#1E1E2A',
-    backgroundColor: '#0F0F14',
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+    backgroundColor: theme.colors.background,
   },
   input: {
-    flex: 1, minHeight: 44, maxHeight: 120,
-    backgroundColor: '#13131E', borderWidth: 1, borderColor: '#252535',
-    borderRadius: 14, color: '#E8ECF2', fontSize: 14,
-    paddingHorizontal: 14, paddingVertical: 10,
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 120,
+    backgroundColor: theme.colors.inputBg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
   sendBtn: {
-    width: 44, height: 44, borderRadius: 12,
-    backgroundColor: '#6C63FF', alignItems: 'center', justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sendBtnDisabled: { backgroundColor: '#252535' },
-
-  // Empty state
-  emptyWrap: { alignItems: 'center', paddingTop: 24, paddingBottom: 12 },
+  sendBtnDisabled: {
+    backgroundColor: theme.colors.cardHover,
+  },
+  emptyWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingBottom: 24,
+  },
   guruAvatarLarge: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: '#1A1630', borderWidth: 2, borderColor: '#3D37A0',
-    alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: theme.colors.primaryTint,
+    borderWidth: 2,
+    borderColor: theme.colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
   },
-  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 6 },
-  emptyHint: { color: '#555B78', fontSize: 13, marginBottom: 20 },
-  starterGrid: { width: '100%', gap: 8 },
+  emptyTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  emptyHint: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    marginBottom: 20,
+  },
+  starterGrid: {
+    width: '100%',
+    gap: 8,
+  },
   starterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    borderRadius: 12, borderWidth: 1, borderColor: '#1E1E30',
-    backgroundColor: '#12121E', paddingHorizontal: 14, paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBg,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
-  starterIcon: { flexShrink: 0 },
-  starterChipText: { color: '#B8BDCF', fontSize: 13, flex: 1 },
+  starterIcon: {
+    flexShrink: 0,
+  },
+  starterChipText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    flex: 1,
+  },
 });

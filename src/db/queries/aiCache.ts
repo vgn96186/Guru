@@ -366,6 +366,7 @@ export function searchLectureNotes(query: string, limit = 20): LectureHistoryIte
 
 export function deleteLectureNote(id: number): void {
   const db = getDb();
+  db.runSync('UPDATE external_app_logs SET lecture_note_id = NULL WHERE lecture_note_id = ?', [id]);
   db.runSync('DELETE FROM lecture_notes WHERE id = ?', [id]);
 }
 

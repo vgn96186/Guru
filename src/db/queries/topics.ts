@@ -193,6 +193,10 @@ export function getSubjectCoverage(): Array<{ subjectId: number; total: number; 
             SUM(CASE WHEN p.status = 'mastered' THEN 1 ELSE 0 END) as mastered
      FROM topics t
      LEFT JOIN topic_progress p ON t.id = p.topic_id
+     WHERE NOT EXISTS (
+       SELECT 1 FROM topics c
+       WHERE c.parent_topic_id = t.id
+     )
      GROUP BY t.subject_id`,
   );
 // if (__DEV__) console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
@@ -338,6 +342,10 @@ export function getSubjectBreakdown(): SubjectBreakdownRow[] {
                 AND p.status IN ('seen','reviewed','mastered')   THEN 1 ELSE 0 END) AS high_yield_covered
      FROM subjects s
      LEFT JOIN topics t ON t.subject_id = s.id
+      AND NOT EXISTS (
+        SELECT 1 FROM topics c
+        WHERE c.parent_topic_id = t.id
+      )
      LEFT JOIN topic_progress p ON t.id = p.topic_id
      GROUP BY s.id
      ORDER BY s.name`,

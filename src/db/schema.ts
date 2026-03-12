@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS subjects (
 export const CREATE_TOPICS = `
 CREATE TABLE IF NOT EXISTS topics (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  subject_id INTEGER NOT NULL REFERENCES subjects(id),
-  parent_topic_id INTEGER REFERENCES topics(id),
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  parent_topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   estimated_minutes INTEGER DEFAULT 35,
   inicet_priority INTEGER DEFAULT 5,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS topics (
 
 export const CREATE_TOPIC_PROGRESS = `
 CREATE TABLE IF NOT EXISTS topic_progress (
-  topic_id INTEGER PRIMARY KEY REFERENCES topics(id),
+  topic_id INTEGER PRIMARY KEY REFERENCES topics(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'unseen'
     CHECK(status IN ('unseen','seen','reviewed','mastered')),
   confidence INTEGER NOT NULL DEFAULT 0,
@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS daily_log (
 export const CREATE_AI_CACHE = `
 CREATE TABLE IF NOT EXISTS ai_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  topic_id INTEGER NOT NULL REFERENCES topics(id),
+  topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
   content_type TEXT NOT NULL
     CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective')),
   content_json TEXT NOT NULL,
@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   idle_timeout_minutes INTEGER NOT NULL DEFAULT 2,
   break_duration_minutes INTEGER NOT NULL DEFAULT 5,
   notification_hour INTEGER NOT NULL DEFAULT 7,
+  guru_frequency TEXT NOT NULL DEFAULT 'normal'
+    CHECK(guru_frequency IN ('rare','normal','frequent','off')),
   focus_subject_ids TEXT NOT NULL DEFAULT '[]',
   focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
   visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
@@ -156,7 +158,7 @@ CREATE TABLE IF NOT EXISTS external_app_logs (
   transcription_status TEXT DEFAULT 'pending'
     CHECK(transcription_status IN ('pending','recording','transcribing','completed','failed','no_audio')),
   transcription_error TEXT,
-  lecture_note_id INTEGER REFERENCES lecture_notes(id),
+  lecture_note_id INTEGER REFERENCES lecture_notes(id) ON DELETE SET NULL,
   note_enhancement_status TEXT DEFAULT 'pending'
     CHECK(note_enhancement_status IN ('pending','completed','failed')),
   pipeline_metrics_json TEXT
@@ -183,22 +185,6 @@ CREATE TABLE IF NOT EXISTS offline_ai_queue (
   last_attempt_at INTEGER,
   error_message TEXT
 )`;
-
-export const MIGRATE_EXTERNAL_APP_LOGS_V2 = `
-ALTER TABLE external_app_logs ADD COLUMN transcription_status TEXT DEFAULT 'pending';
-`;
-export const MIGRATE_EXTERNAL_APP_LOGS_V3 = `
-ALTER TABLE external_app_logs ADD COLUMN transcription_error TEXT;
-`;
-export const MIGRATE_EXTERNAL_APP_LOGS_V4 = `
-ALTER TABLE external_app_logs ADD COLUMN lecture_note_id INTEGER;
-`;
-export const MIGRATE_EXTERNAL_APP_LOGS_V5 = `
-ALTER TABLE external_app_logs ADD COLUMN pipeline_metrics_json TEXT;
-`;
-export const MIGRATE_EXTERNAL_APP_LOGS_V6 = `
-ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'pending';
-`;
 
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [

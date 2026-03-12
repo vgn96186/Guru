@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
+import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { getAllSubjects } from '../db/queries/topics';
 import { searchLectureNotes, deleteLectureNote, type LectureHistoryItem } from '../db/queries/aiCache';
@@ -25,7 +25,8 @@ interface LectureNoteResult {
 type SearchResult = TopicNoteResult | LectureNoteResult;
 
 export default function NotesSearchScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
+  const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -47,8 +48,8 @@ export default function NotesSearchScreen() {
     setSelectedKeys([]);
   }
 
-  function getSubjectForTopic(topicName: string) {
-    return subjects.find(s => topicName.toLowerCase().includes(s.name.toLowerCase()));
+  function getSubjectById(subjectId: number) {
+    return subjects.find(s => s.id === subjectId);
   }
 
   function search(text: string) {
@@ -133,9 +134,9 @@ export default function NotesSearchScreen() {
       return;
     }
 
-    const subject = getSubjectForTopic(item.name);
+    const subject = getSubjectById(item.subject_id);
     if (subject) {
-      navigation.getParent()?.navigate('SyllabusTab', {
+      tabsNavigation?.navigate('SyllabusTab', {
         screen: 'TopicDetail',
         params: {
           subjectId: subject.id,

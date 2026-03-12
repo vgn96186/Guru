@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { EXTERNAL_APPS, type ExternalApp } from '../constants/externalApps';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
+import { theme } from '../constants/theme';
 
 interface Props {
   onLogSession: (appId: string) => void;
@@ -23,7 +24,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>OPEN LECTURE APP</Text>
-        <Text style={styles.subtitle}>Long-press to log manually</Text>
+        <Text style={styles.subtitle}>Tap to launch. Use the menu below each app to log manually if needed.</Text>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {EXTERNAL_APPS.map(app => (
@@ -35,6 +36,9 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             onLongPress={() => onLogSession(app.id)}
             delayLongPress={500}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`${app.name} lecture app`}
+            accessibilityHint="Tap to launch with capture. Long press to log a manual session."
           >
             <View style={[styles.iconBox, { backgroundColor: app.color + '22' }]}>
               <Text style={styles.icon}>{app.iconEmoji}</Text>
@@ -50,13 +54,13 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
 const styles = StyleSheet.create({
   container: { marginBottom: 8, marginTop: 4 },
   header: { paddingHorizontal: 16, marginBottom: 10 },
-  title: { color: '#9E9E9E', fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  subtitle: { color: '#444', fontSize: 10, marginTop: 2 },
+  title: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
+  subtitle: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 4, lineHeight: 16 },
   scroll: { paddingHorizontal: 16, gap: 10 },
   appBtn: {
     width: 76,
     alignItems: 'center',
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 6,
@@ -71,5 +75,5 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   icon: { fontSize: 22 },
-  appName: { color: '#fff', fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  appName: { color: theme.colors.textPrimary, fontSize: 11, fontWeight: '600', textAlign: 'center' },
 });

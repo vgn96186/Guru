@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getDb } from '../db/database';
+import { theme } from '../constants/theme';
 
 interface ReviewDay {
   date: string; // YYYY-MM-DD
@@ -123,7 +124,7 @@ export default function ReviewCalendar() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navBtn}>
-          <Ionicons name="chevron-back" size={20} color="#888" />
+          <Ionicons name="chevron-back" size={20} color={theme.colors.textMuted} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.monthText}>{MONTHS[month]} {year}</Text>
@@ -132,7 +133,7 @@ export default function ReviewCalendar() {
           </Text>
         </View>
         <TouchableOpacity onPress={() => changeMonth(1)} style={styles.navBtn}>
-          <Ionicons name="chevron-forward" size={20} color="#888" />
+          <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -165,6 +166,12 @@ export default function ReviewCalendar() {
                 ]}
                 onPress={() => review && setSelectedDay(isSelected ? null : review)}
                 activeOpacity={review ? 0.6 : 1}
+                accessibilityRole={review ? 'button' : undefined}
+                accessibilityLabel={
+                  review
+                    ? `${day} ${MONTHS[month]}, ${review.count} review${review.count === 1 ? '' : 's'} scheduled`
+                    : undefined
+                }
               >
                 <Text
                   numberOfLines={1}
@@ -183,13 +190,13 @@ export default function ReviewCalendar() {
                       Array.from({ length: review.count }).map((_, i) => (
                         <View key={i} style={[
                           styles.dot,
-                          isPast && { backgroundColor: '#F44336' },
+                          isPast && { backgroundColor: theme.colors.error },
                         ]} />
                       ))
                     ) : (
                       <>
-                        <View style={[styles.dot, isPast && { backgroundColor: '#F44336' }]} />
-                        <Text style={[styles.dotCount, isPast && { color: '#F44336' }]}>{review.count}</Text>
+                        <View style={[styles.dot, isPast && { backgroundColor: theme.colors.error }]} />
+                        <Text style={[styles.dotCount, isPast && { color: theme.colors.error }]}>{review.count}</Text>
                       </>
                     )}
                   </View>
@@ -225,10 +232,12 @@ export default function ReviewCalendar() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#1A1A24',
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -238,13 +247,13 @@ const styles = StyleSheet.create({
   },
   navBtn: { padding: 8 },
   headerCenter: { alignItems: 'center' },
-  monthText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  reviewCount: { color: '#888', fontSize: 11, marginTop: 2 },
+  monthText: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  reviewCount: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
   weekRow: { flexDirection: 'row' },
   dayHeader: {
     flex: 1,
     textAlign: 'center',
-    color: '#555',
+    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     paddingVertical: 6,
@@ -258,17 +267,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   todayCell: {
-    backgroundColor: '#6C63FF22',
+    backgroundColor: theme.colors.primaryTintSoft,
     borderRadius: 10,
   },
   selectedCell: {
-    backgroundColor: '#6C63FF44',
+    backgroundColor: theme.colors.primaryTintMedium,
     borderRadius: 10,
   },
-  dayText: { color: '#ccc', fontSize: 12, textAlign: 'center' },
-  todayText: { color: '#6C63FF', fontWeight: '800' },
-  selectedText: { color: '#fff', fontWeight: '800' },
-  pastText: { color: '#555' },
+  dayText: { color: theme.colors.textSecondary, fontSize: 12, textAlign: 'center' },
+  todayText: { color: theme.colors.primary, fontWeight: '800' },
+  selectedText: { color: theme.colors.textPrimary, fontWeight: '800' },
+  pastText: { color: theme.colors.textMuted },
   dotsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -279,10 +288,10 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
   },
   dotCount: {
-    color: '#6C63FF',
+    color: theme.colors.primary,
     fontSize: 9,
     fontWeight: '700',
     marginLeft: 1,
@@ -290,12 +299,12 @@ const styles = StyleSheet.create({
   detailSection: {
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#2A2A38',
+    borderTopColor: theme.colors.border,
     paddingTop: 12,
     maxHeight: 160,
   },
   detailTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -313,7 +322,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   topicName: {
-    color: '#ccc',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     flex: 1,
   },

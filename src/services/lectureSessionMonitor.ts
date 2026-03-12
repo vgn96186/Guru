@@ -29,6 +29,7 @@ import {
   markTopicsFromLecture,
   type LectureAnalysis,
 } from './transcriptionService';
+import { getApiKeys } from './aiService';
 import { getLectureNoteById, saveLectureTranscript, updateLectureTranscriptNote } from '../db/queries/aiCache';
 import { getUserProfile } from '../db/queries/progress';
 import {
@@ -355,7 +356,7 @@ export async function transcribeLectureWithRecovery(opts: {
 
   if (opts.logId) {
     updateSessionPipelineTelemetry(opts.logId, {
-      engine: opts.useLocalWhisper && opts.localWhisperPath ? 'local_whisper' : opts.groqKey ? 'groq' : 'unknown',
+      engine: opts.groqKey ? 'groq' : opts.useLocalWhisper && opts.localWhisperPath ? 'local_whisper' : 'unknown',
       audioSizeBytes: recordingInfo.sizeBytes,
       estimatedMinutes: recordingInfo.estimatedMinutes,
       usedChunking: recordingInfo.needsChunking,
@@ -368,17 +369,31 @@ export async function transcribeLectureWithRecovery(opts: {
       emitProgress(opts.onProgress, 'transcribing', 'Transcribing lecture audio');
       const transcribingStartedAt = stageStart(opts.logId, 'transcribing');
       let transcript = '';
-      if (opts.useLocalWhisper && opts.localWhisperPath) {
-        transcript = await transcribeRawWithLocalWhisper(opts.recordingPath, opts.localWhisperPath);
-      } else if (opts.groqKey) {
-        const groqResult = await transcribeWithGroqChunking(opts.recordingPath, opts.groqKey);
-        transcript = groqResult.transcript;
-        if (opts.logId) {
-          updateSessionPipelineTelemetry(opts.logId, {
-            usedChunking: groqResult.usedChunking,
-            chunkCount: groqResult.chunkCount,
-          });
+      if (opts.groqKey) {
+        try {
+          const groqResult = await transcribeWithGroqChunking(opts.recordingPath, opts.groqKey);
+          transcript = groqResult.transcript;
+          if (opts.logId) {
+            updateSessionPipelineTelemetry(opts.logId, {
+              usedChunking: groqResult.usedChunking,
+              chunkCount: groqResult.chunkCount,
+            });
+          }
+        } catch (groqError) {
+          if (opts.useLocalWhisper && opts.localWhisperPath) {
+            console.warn(`${LOG} Groq transcription failed, falling back to local Whisper`);
+            transcript = await transcribeRawWithLocalWhisper(opts.recordingPath, opts.localWhisperPath);
+            if (opts.logId) {
+              updateSessionPipelineTelemetry(opts.logId, {
+                engine: 'local_whisper',
+              });
+            }
+          } else {
+            throw groqError;
+          }
         }
+      } else if (opts.useLocalWhisper && opts.localWhisperPath) {
+        transcript = await transcribeRawWithLocalWhisper(opts.recordingPath, opts.localWhisperPath);
       } else {
         throw new Error('No transcription engine available');
       }
@@ -629,7 +644,7 @@ export async function retryFailedTranscriptions(): Promise<number> {
   console.log(`${LOG} Found ${pending.length} sessions to retry transcription`);
 
   const profile = getUserProfile();
-  const groqKey = profile.groqApiKey?.trim() || undefined;
+  const { groqKey } = getApiKeys();
   const useLocalWhisper = !!(profile.useLocalWhisper && profile.localWhisperPath);
   const localWhisperPath = profile.localWhisperPath || undefined;
 

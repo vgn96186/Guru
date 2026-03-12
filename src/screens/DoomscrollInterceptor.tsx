@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
+import type { RootStackParamList } from '../navigation/types';
 import { getDailyLog } from '../db/queries/progress';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -17,7 +17,7 @@ const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30; // 30-second delay before allowing access
 
 export default function DoomscrollInterceptor() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const appStateRef = React.useRef(AppState.currentState);
   const [doomscrollAttempts, setDoomscrollAttempts] = useState(0);
   const [isBlocking, setIsBlocking] = useState(false);
@@ -135,7 +135,12 @@ export default function DoomscrollInterceptor() {
   function handleGoBackToStudy() {
     setIsBlocking(false);
     setDoomscrollAttempts(0);
-    navigation.navigate('Inertia');
+    navigation.navigate('Tabs', {
+      screen: 'HomeTab',
+      params: {
+        screen: 'Inertia',
+      },
+    });
   }
 
   function handleForceProceed() {
@@ -163,7 +168,15 @@ export default function DoomscrollInterceptor() {
             <Text style={styles.subtitle}>
               Live app detection is not active yet on this device. Use App Hijack Setup to enable the guardrails, or go back to study now.
             </Text>
-            <TouchableOpacity style={styles.studyBtn} onPress={() => navigation.navigate('Inertia')}>
+            <TouchableOpacity
+              style={styles.studyBtn}
+              onPress={() => navigation.navigate('Tabs', {
+                screen: 'HomeTab',
+                params: {
+                  screen: 'Inertia',
+                },
+              })}
+            >
               <Text style={styles.studyBtnText}>📚 GO BACK TO STUDYING</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.proceedBtn} onPress={() => navigation.goBack()}>

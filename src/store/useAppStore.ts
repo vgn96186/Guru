@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { UserProfile, LevelInfo, StudyResourceMode } from '../types';
 import { getUserProfile, updateUserProfile, getDailyLog } from '../db/queries/progress';
 import { getLevelInfo } from '../services/xpService';
+import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
+import { showToast } from '../components/Toast';
 
 interface AppState {
   profile: UserProfile | null;
@@ -41,13 +43,27 @@ export const useAppStore = create<AppState>((set) => ({
   },
 
   refreshProfile: () => {
-    const profile = getUserProfile();
-    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+    const fresh = getUserProfile();
+    const freshLevel = getLevelInfo(fresh.totalXp, fresh.currentLevel);
     const todayLog = getDailyLog();
-    set({
-      profile,
-      levelInfo,
-      hasCheckedInToday: todayLog?.checkedIn ?? false,
+    const checkedIn = todayLog?.checkedIn ?? false;
+    set(prev => {
+      if (
+        prev.profile &&
+        prev.profile.totalXp === fresh.totalXp &&
+        prev.profile.currentLevel === fresh.currentLevel &&
+        prev.profile.streakCurrent === fresh.streakCurrent &&
+        prev.profile.lastActiveDate === fresh.lastActiveDate &&
+        prev.profile.useLocalModel === fresh.useLocalModel &&
+        prev.profile.useLocalWhisper === fresh.useLocalWhisper &&
+        prev.profile.groqApiKey === fresh.groqApiKey &&
+        prev.profile.dailyGoalMinutes === fresh.dailyGoalMinutes &&
+        prev.hasCheckedInToday === checkedIn &&
+        prev.levelInfo?.level === freshLevel.level
+      ) {
+        return prev;
+      }
+      return { profile: fresh, levelInfo: freshLevel, hasCheckedInToday: checkedIn };
     });
   },
 
@@ -92,6 +108,14 @@ export const useAppStore = create<AppState>((set) => ({
   setUseLocalModel: (use: boolean) => {
     set(state => {
       if (!state.profile) return state;
+      if (use && !isLocalLlmAllowedOnThisDevice()) {
+        showToast(
+          getLocalLlmRamWarning() ?? 'On-device text AI is disabled on this device to avoid low-memory crashes.',
+          'warning',
+        );
+        updateUserProfile({ useLocalModel: false });
+        return { profile: { ...state.profile, useLocalModel: false } };
+      }
       updateUserProfile({ useLocalModel: use });
       return { profile: { ...state.profile, useLocalModel: use } };
     });

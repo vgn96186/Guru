@@ -13,6 +13,7 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
+import { Ionicons } from '@expo/vector-icons';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
 import { useAppStore } from '../store/useAppStore';
 import { updateUserProfile, resetStudyProgress, clearAiCache } from '../db/queries/progress';
@@ -26,6 +27,7 @@ import { getExamDateSyncMeta, syncExamDatesFromInternet, type ExamDateSyncMeta }
 import { getDb } from '../db/database';
 import { getDefaultSubjectLoadMultiplier } from '../services/studyPlanner';
 import type { ContentType, Subject } from '../types';
+import { theme } from '../constants/theme';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'keypoints', label: 'Key Points' },
@@ -37,8 +39,9 @@ const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'detective', label: 'Detective' },
 ];
 
-const BACKUP_VERSION = 2;
+const BACKUP_VERSION = 3;
 const PLACEHOLDER_COLOR = '#7B8193';
+const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const JSON_BACKUP_TABLES = [
   'user_profile',
@@ -50,10 +53,83 @@ const JSON_BACKUP_TABLES = [
   'external_app_logs',
   'brain_dumps',
 ] as const;
+const JSON_BACKUP_DELETE_ORDER: BackupTableName[] = [
+  'external_app_logs',
+  'ai_cache',
+  'topic_progress',
+  'sessions',
+  'lecture_notes',
+  'daily_log',
+  'brain_dumps',
+  'user_profile',
+];
+const JSON_BACKUP_RESTORE_ORDER: BackupTableName[] = [
+  'daily_log',
+  'lecture_notes',
+  'topic_progress',
+  'ai_cache',
+  'sessions',
+  'external_app_logs',
+  'brain_dumps',
+  'user_profile',
+];
 
 type BackupTableName = typeof JSON_BACKUP_TABLES[number];
 type BackupRow = Record<string, unknown>;
 type BackupTableData = Record<BackupTableName, BackupRow[]>;
+type SubjectBackupRef = { shortCode: string; name: string };
+type TopicBackupRef = { subjectShortCode: string; topicName: string };
+type BackupMetadata = {
+  subjects: SubjectBackupRef[];
+  topics: TopicBackupRef[];
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function createTopicRefKey(ref: TopicBackupRef): string {
+  return `${ref.subjectShortCode}::${ref.topicName}`.toLowerCase();
+}
+
+function parseJsonNumberArray(value: unknown): number[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry));
+  }
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry))
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseTopicRefs(value: unknown): TopicBackupRef[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is TopicBackupRef => (
+    isRecord(entry)
+    && typeof entry.subjectShortCode === 'string'
+    && typeof entry.topicName === 'string'
+  )).map(entry => ({
+    subjectShortCode: entry.subjectShortCode,
+    topicName: entry.topicName,
+  }));
+}
+
+function parseTopicRef(value: unknown): TopicBackupRef | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.subjectShortCode !== 'string' || typeof value.topicName !== 'string') return null;
+  return { subjectShortCode: value.subjectShortCode, topicName: value.topicName };
+}
+
+function parseSubjectRef(value: unknown): SubjectBackupRef | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.shortCode !== 'string' || typeof value.name !== 'string') return null;
+  return { shortCode: value.shortCode, name: value.name };
+}
 
 type ValidationErrors = Partial<Record<'inicetDate' | 'neetDate' | 'sessionLength' | 'dailyGoal' | 'notifHour', string>>;
 
@@ -90,19 +166,70 @@ function normalizeUserDateInput(value: string): string | null {
 
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
+  const subjects = db.getAllSync<{ id: number; name: string; short_code: string }>(
+    'SELECT id, name, short_code FROM subjects',
+  );
+  const topics = db.getAllSync<{ id: number; name: string; subject_id: number; short_code: string }>(
+    `SELECT t.id, t.name, t.subject_id, s.short_code
+       FROM topics t
+       JOIN subjects s ON t.subject_id = s.id`,
+  );
+  const subjectRefsById = new Map<number, SubjectBackupRef>(
+    subjects.map(subject => [subject.id, { shortCode: subject.short_code, name: subject.name }]),
+  );
+  const topicRefsById = new Map<number, TopicBackupRef>(
+    topics.map(topic => [topic.id, { subjectShortCode: topic.short_code, topicName: topic.name }]),
+  );
+  const serializeBackupRow = (table: BackupTableName, row: BackupRow): BackupRow => {
+    const nextRow = { ...row };
+
+    if (table === 'topic_progress' || table === 'ai_cache') {
+      const topicId = typeof nextRow.topic_id === 'number' ? nextRow.topic_id : null;
+      const topicRef = topicId ? topicRefsById.get(topicId) : null;
+      if (topicRef) {
+        nextRow.topic_ref = topicRef;
+      }
+    }
+
+    if (table === 'lecture_notes') {
+      const subjectId = typeof nextRow.subject_id === 'number' ? nextRow.subject_id : null;
+      const subjectRef = subjectId ? subjectRefsById.get(subjectId) : null;
+      if (subjectRef) {
+        nextRow.subject_ref = subjectRef;
+      }
+    }
+
+    if (table === 'sessions') {
+      const plannedRefs = parseJsonNumberArray(nextRow.planned_topics)
+        .map(topicId => topicRefsById.get(topicId))
+        .filter((ref): ref is TopicBackupRef => !!ref);
+      const completedRefs = parseJsonNumberArray(nextRow.completed_topics)
+        .map(topicId => topicRefsById.get(topicId))
+        .filter((ref): ref is TopicBackupRef => !!ref);
+      nextRow.planned_topic_refs = plannedRefs;
+      nextRow.completed_topic_refs = completedRefs;
+    }
+
+    return nextRow;
+  };
   const tables = {} as BackupTableData;
   for (const table of JSON_BACKUP_TABLES) {
-    tables[table] = db.getAllSync<BackupRow>(`SELECT * FROM ${table}`);
+    tables[table] = db.getAllSync<BackupRow>(`SELECT * FROM ${table}`).map(row => serializeBackupRow(table, row));
   }
 
   const backup: {
     version: number;
     exportedAt: string;
     tables: BackupTableData;
+    metadata: BackupMetadata;
   } = {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     tables,
+    metadata: {
+      subjects: Array.from(subjectRefsById.values()),
+      topics: Array.from(topicRefsById.values()),
+    },
   };
 
   const json = JSON.stringify(backup, null, 2);
@@ -144,6 +271,20 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   }
 
   const db = getDb();
+  const subjects = db.getAllSync<{ id: number; name: string; short_code: string }>(
+    'SELECT id, name, short_code FROM subjects',
+  );
+  const topics = db.getAllSync<{ id: number; name: string; subject_id: number; short_code: string }>(
+    `SELECT t.id, t.name, t.subject_id, s.short_code
+       FROM topics t
+       JOIN subjects s ON t.subject_id = s.id`,
+  );
+  const subjectIdsByShortCode = new Map<string, number>(
+    subjects.map(subject => [subject.short_code.toLowerCase(), subject.id]),
+  );
+  const topicIdsByRefKey = new Map<string, number>(
+    topics.map(topic => [createTopicRefKey({ subjectShortCode: topic.short_code, topicName: topic.name }), topic.id]),
+  );
   const tablesFromBackup: Partial<Record<BackupTableName, BackupRow[]>> = (() => {
     if (backup.tables && typeof backup.tables === 'object') {
       const out: Partial<Record<BackupTableName, BackupRow[]>> = {};
@@ -191,11 +332,81 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
       return [];
     }
   };
+  const validTopicIds = new Set(
+    db.getAllSync<{ id: number }>('SELECT id FROM topics').map(row => row.id),
+  );
+  const validLectureNoteIds = new Set<number>();
+  const resolveTopicId = (row: BackupRow): number | null => {
+    const topicRef = parseTopicRef(row.topic_ref);
+    if (topicRef) {
+      return topicIdsByRefKey.get(createTopicRefKey(topicRef)) ?? null;
+    }
+    const legacyTopicId = typeof row.topic_id === 'number' ? row.topic_id : null;
+    return legacyTopicId && validTopicIds.has(legacyTopicId) ? legacyTopicId : null;
+  };
+  const sanitizeRow = (table: BackupTableName, rawRow: BackupRow): BackupRow | null => {
+    if (table === 'topic_progress' || table === 'ai_cache') {
+      const topicId = resolveTopicId(rawRow);
+      if (!topicId) return null;
+      return { ...rawRow, topic_id: topicId };
+    }
+    if (table === 'lecture_notes') {
+      const row = { ...rawRow };
+      const noteId = typeof row.id === 'number' ? row.id : null;
+      const subjectRef = parseSubjectRef(row.subject_ref);
+      if (subjectRef) {
+        row.subject_id = subjectIdsByShortCode.get(subjectRef.shortCode.toLowerCase()) ?? null;
+      } else if (typeof row.subject_id === 'number') {
+        const subjectExists = db.getFirstSync<{ id: number }>('SELECT id FROM subjects WHERE id = ? LIMIT 1', [row.subject_id]);
+        row.subject_id = subjectExists ? row.subject_id : null;
+      }
+      if (noteId) validLectureNoteIds.add(noteId);
+      return row;
+    }
+    if (table === 'sessions') {
+      const row = { ...rawRow };
+      const plannedRefs = parseTopicRefs(row.planned_topic_refs);
+      const completedRefs = parseTopicRefs(row.completed_topic_refs);
+      if (plannedRefs.length > 0) {
+        row.planned_topics = JSON.stringify(
+          plannedRefs
+            .map(ref => topicIdsByRefKey.get(createTopicRefKey(ref)))
+            .filter((topicId): topicId is number => typeof topicId === 'number'),
+        );
+      } else {
+        row.planned_topics = JSON.stringify(
+          parseJsonNumberArray(row.planned_topics).filter(topicId => validTopicIds.has(topicId)),
+        );
+      }
+      if (completedRefs.length > 0) {
+        row.completed_topics = JSON.stringify(
+          completedRefs
+            .map(ref => topicIdsByRefKey.get(createTopicRefKey(ref)))
+            .filter((topicId): topicId is number => typeof topicId === 'number'),
+        );
+      } else {
+        row.completed_topics = JSON.stringify(
+          parseJsonNumberArray(row.completed_topics).filter(topicId => validTopicIds.has(topicId)),
+        );
+      }
+      return row;
+    }
+    if (table === 'external_app_logs') {
+      const row = { ...rawRow };
+      const lectureNoteId = typeof row.lecture_note_id === 'number' ? row.lecture_note_id : null;
+      if (lectureNoteId && !validLectureNoteIds.has(lectureNoteId)) {
+        row.lecture_note_id = null;
+      }
+      return row;
+    }
+    return rawRow;
+  };
 
   try {
+    runSql('PRAGMA defer_foreign_keys = ON');
     runSql('BEGIN IMMEDIATE');
 
-    for (const table of JSON_BACKUP_TABLES) {
+    for (const table of JSON_BACKUP_DELETE_ORDER) {
       if (table === 'user_profile') continue;
       if (!(table in tablesFromBackup)) continue;
       const columns = getColumns(table);
@@ -217,7 +428,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
       restoredCounts.user_profile = 1;
     }
 
-    for (const table of JSON_BACKUP_TABLES) {
+    for (const table of JSON_BACKUP_RESTORE_ORDER) {
       if (table === 'user_profile') continue;
       const rows = tablesFromBackup[table];
       if (!rows || rows.length === 0) continue;
@@ -226,10 +437,12 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
       if (tableCols.length === 0) continue;
 
       for (const rawRow of rows) {
-        const cols = Object.keys(rawRow).filter(c => tableCols.includes(c));
+        const sanitizedRow = sanitizeRow(table, rawRow);
+        if (!sanitizedRow) continue;
+        const cols = Object.keys(sanitizedRow).filter(c => tableCols.includes(c));
         if (cols.length === 0) continue;
         const placeholders = cols.map(() => '?').join(', ');
-        const values = cols.map(c => toBindValue(rawRow[c]));
+        const values = cols.map(c => toBindValue(sanitizedRow[c]));
         db.runSync(
           `INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`,
           values,
@@ -586,7 +799,23 @@ export default function SettingsScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <ScrollView contentContainerStyle={styles.content} testID="settings-scroll">
         <ResponsiveContainer>
-        <Text style={styles.title}>Settings</Text>
+        <View style={styles.titleRow}>
+          {navigation.canGoBack() ? (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
+              <Ionicons name="arrow-back" size={18} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+          ) : null}
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>Settings</Text>
+            <Text style={styles.titleSubtitle}>Study preferences, AI routing, notifications, and backups.</Text>
+          </View>
+        </View>
         <View style={styles.saveStatusRow}>
           {saveState === 'saving' && (
             <>
@@ -613,7 +842,7 @@ export default function SettingsScreen() {
         <Section title="🤖 AI Configuration" initiallyExpanded>
           <TouchableOpacity 
             style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]} 
-            onPress={() => navigation.navigate('LocalModel' as any)} 
+            onPress={() => navigation.navigate('LocalModel')} 
             activeOpacity={0.8}
           >
             <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>🦙 Manage On-Device Models</Text>
@@ -625,7 +854,7 @@ export default function SettingsScreen() {
           <Label text="Groq API Key (primary cloud fallback)" />
           <TextInput
             style={styles.input}
-            placeholder="gsk_..."
+            placeholder={BUNDLED_GROQ_KEY ? 'Using key from .env (leave blank)' : 'gsk_...'}
             placeholderTextColor={PLACEHOLDER_COLOR}
             value={groqKey}
             onChangeText={setGroqKey}
@@ -633,7 +862,9 @@ export default function SettingsScreen() {
             autoCapitalize="none"
           />
           <Text style={styles.hint}>
-            Used when local model is unavailable or too slow for the task.
+            {BUNDLED_GROQ_KEY
+              ? 'Key loaded from .env (EXPO_PUBLIC_BUNDLED_GROQ_KEY). Leave blank to use it. Restart app after changing .env.'
+              : 'Used when local model is unavailable or too slow for the task. Or set EXPO_PUBLIC_BUNDLED_GROQ_KEY in .env to avoid entering here.'}
           </Text>
 
           <TouchableOpacity
@@ -1183,9 +1414,22 @@ function Label({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, paddingBottom: 60 },
-  title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 8, marginTop: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginTop: 8, marginBottom: 8 },
+  titleBlock: { flex: 1 },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  title: { color: theme.colors.textPrimary, fontSize: 26, fontWeight: '900', marginBottom: 4 },
+  titleSubtitle: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
   saveStatusRow: { minHeight: 22, marginBottom: 12, justifyContent: 'center' },
   saveStatusText: { fontSize: 12, fontWeight: '600' },
   saveStatusPending: { color: '#A6ADBE' },

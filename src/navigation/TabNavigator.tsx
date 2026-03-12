@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { TabParamList, HomeStackParamList, SyllabusStackParamList } from './types';
-
+import type {
+  ChatStackParamList,
+  HomeStackParamList,
+  MenuStackParamList,
+  SyllabusStackParamList,
+  TabParamList,
+} from './types';
 import HomeScreen from '../screens/HomeScreen';
 import SessionScreen from '../screens/SessionScreen';
 import LectureModeScreen from '../screens/LectureModeScreen';
@@ -24,13 +31,17 @@ import StudyPlanScreen from '../screens/StudyPlanScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
 import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
+import MenuScreen from '../screens/MenuScreen';
+import { EXTERNAL_APPS } from '../constants/externalApps';
+import { theme } from '../constants/theme';
+import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
+import { useAppStore } from '../store/useAppStore';
 
-// Navigation setup
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SyllabusStack = createNativeStackNavigator<SyllabusStackParamList>();
-const NotesStack = createNativeStackNavigator<HomeStackParamList>();
-const ChatStack = createNativeStackNavigator<HomeStackParamList>();
+const ChatStack = createNativeStackNavigator<ChatStackParamList>();
+const MenuStack = createNativeStackNavigator<MenuStackParamList>();
 
 function HomeStackNav() {
   return (
@@ -38,18 +49,13 @@ function HomeStackNav() {
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="Session" component={SessionScreen} />
       <HomeStack.Screen name="LectureMode" component={LectureModeScreen} />
-      <HomeStack.Screen name="GuruChat" component={GuruChatScreen} />
       <HomeStack.Screen name="MockTest" component={MockTestScreen} />
       <HomeStack.Screen name="Review" component={ReviewScreen} />
-      <HomeStack.Screen name="NotesHub" component={NotesHubScreen} />
-      <HomeStack.Screen name="NotesSearch" component={NotesSearchScreen} />
       <HomeStack.Screen name="BossBattle" component={BossBattleScreen} />
       <HomeStack.Screen name="Inertia" component={InertiaScreen} />
       <HomeStack.Screen name="ManualLog" component={ManualLogScreen} />
-      <HomeStack.Screen name="StudyPlan" component={StudyPlanScreen} />
       <HomeStack.Screen name="DailyChallenge" component={DailyChallengeScreen} />
       <HomeStack.Screen name="FlaggedReview" component={FlaggedReviewScreen} />
-      <HomeStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} options={{ title: 'Lecture History' }} />
     </HomeStack.Navigator>
   );
 }
@@ -63,18 +69,6 @@ function SyllabusStackNav() {
   );
 }
 
-function NotesStackNav() {
-  return (
-    <NotesStack.Navigator initialRouteName="NotesHub" screenOptions={{ headerShown: false }}>
-      <NotesStack.Screen name="NotesHub" component={NotesHubScreen} />
-      <NotesStack.Screen name="NotesSearch" component={NotesSearchScreen} />
-      <NotesStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} options={{ title: 'Lecture History' }} />
-      <NotesStack.Screen name="GuruChat" component={GuruChatScreen} />
-      <NotesStack.Screen name="LectureMode" component={LectureModeScreen} />
-    </NotesStack.Navigator>
-  );
-}
-
 function ChatStackNav() {
   return (
     <ChatStack.Navigator initialRouteName="GuruChat" screenOptions={{ headerShown: false }}>
@@ -83,52 +77,339 @@ function ChatStackNav() {
   );
 }
 
-export default function TabNavigator() {
-  const insets = useSafeAreaInsets();
-  const bottomInset = Math.max(insets.bottom, 8);
-
+function MenuStackNav() {
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarHideOnKeyboard: true,
-        tabBarShowLabel: true,
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '700',
-          marginTop: 0,
-          letterSpacing: 0.3,
-        },
-        tabBarStyle: {
-          backgroundColor: '#1A1A24',
-          borderTopColor: '#2A2A38',
-          paddingBottom: bottomInset,
-          height: 62 + bottomInset,
-          paddingTop: 4,
-        },
-        tabBarActiveTintColor: '#6C63FF',
-        tabBarInactiveTintColor: '#777',
-        tabBarIcon: ({ color, size, focused }) => {
-          const icons: Record<string, string> = {
-            HomeTab: focused ? 'home' : 'home-outline',
-            SyllabusTab: focused ? 'grid' : 'grid-outline',
-            NotesTab: focused ? 'book' : 'book-outline',
-            ChatTab: focused ? 'chatbubbles' : 'chatbubbles-outline',
-            PlanTab: focused ? 'calendar' : 'calendar-outline',
-            StatsTab: focused ? 'bar-chart' : 'bar-chart-outline',
-            SettingsTab: focused ? 'settings' : 'settings-outline',
-          };
-          return <Ionicons name={icons[route.name] as any} size={size} color={color} />;
-        },
-      })}
-    >
-      <Tab.Screen name="HomeTab" component={HomeStackNav} options={{ tabBarLabel: 'Home', tabBarButtonTestID: 'tab-home', tabBarAccessibilityLabel: 'Home tab' }} />
-      <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} options={{ tabBarLabel: 'Syllabus', tabBarButtonTestID: 'tab-syllabus', tabBarAccessibilityLabel: 'Syllabus tab' }} />
-      <Tab.Screen name="NotesTab" component={NotesStackNav} options={{ tabBarLabel: 'Notes', tabBarButtonTestID: 'tab-notes', tabBarAccessibilityLabel: 'Notes tab' }} />
-      <Tab.Screen name="ChatTab" component={ChatStackNav} options={{ tabBarLabel: 'Chat', tabBarButtonTestID: 'tab-chat', tabBarAccessibilityLabel: 'Guru Chat tab' }} />
-      <Tab.Screen name="PlanTab" component={StudyPlanScreen} options={{ tabBarLabel: 'Plan', tabBarButtonTestID: 'tab-plan', tabBarAccessibilityLabel: 'Study Plan tab' }} />
-      <Tab.Screen name="StatsTab" component={StatsScreen} options={{ tabBarLabel: 'Stats', tabBarButtonTestID: 'tab-stats', tabBarAccessibilityLabel: 'Statistics tab' }} />
-      <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ tabBarLabel: 'Settings', tabBarButtonTestID: 'tab-settings', tabBarAccessibilityLabel: 'Settings tab' }} />
-    </Tab.Navigator>
+    <MenuStack.Navigator initialRouteName="MenuHome" screenOptions={{ headerShown: false }}>
+      <MenuStack.Screen name="MenuHome" component={MenuScreen} />
+      <MenuStack.Screen name="StudyPlan" component={StudyPlanScreen} />
+      <MenuStack.Screen name="Stats" component={StatsScreen} />
+      <MenuStack.Screen name="Settings" component={SettingsScreen} />
+      <MenuStack.Screen name="NotesHub" component={NotesHubScreen} />
+      <MenuStack.Screen name="NotesSearch" component={NotesSearchScreen} />
+      <MenuStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} />
+    </MenuStack.Navigator>
   );
 }
+
+function ActionHubPlaceholder() {
+  return null;
+}
+
+export default function TabNavigator() {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const faceTrackingEnabled = useAppStore((state) => state.profile?.faceTrackingEnabled ?? false);
+  const [isActionHubOpen, setIsActionHubOpen] = useState(false);
+  const bottomInset = Math.max(insets.bottom, 8);
+
+  async function launchExternalAction(appId: SupportedMedicalApp) {
+    setIsActionHubOpen(false);
+    try {
+      await launchMedicalApp(appId, faceTrackingEnabled);
+    } catch (error: any) {
+      Alert.alert('Could not open app', error?.message ?? 'Please ensure the lecture app is installed.');
+    }
+  }
+
+  function openRoute(tab: keyof TabParamList, screen?: string, params?: object) {
+    setIsActionHubOpen(false);
+    if (screen) {
+      navigation.navigate(tab, { screen, params });
+      return;
+    }
+    navigation.navigate(tab);
+  }
+
+  return (
+    <View style={styles.flex}>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          tabBarHideOnKeyboard: true,
+          tabBarShowLabel: true,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '700',
+            marginTop: 0,
+            letterSpacing: 0.3,
+          },
+          tabBarItemStyle: {
+            paddingTop: 2,
+          },
+          tabBarStyle: {
+            backgroundColor: theme.colors.surface,
+            borderTopColor: theme.colors.border,
+            paddingBottom: bottomInset,
+            height: 66 + bottomInset,
+            paddingTop: 4,
+          },
+          tabBarActiveTintColor: theme.colors.primary,
+          tabBarInactiveTintColor: theme.colors.textMuted,
+          tabBarIcon: ({ color, size, focused }) => {
+            const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+              HomeTab: focused ? 'home' : 'home-outline',
+              SyllabusTab: focused ? 'grid' : 'grid-outline',
+              ActionHubTab: 'add',
+              ChatTab: focused ? 'chatbubbles' : 'chatbubbles-outline',
+              MenuTab: focused ? 'menu' : 'menu-outline',
+            };
+            return <Ionicons name={icons[route.name]} size={size} color={color} />;
+          },
+        })}
+      >
+        <Tab.Screen
+          name="HomeTab"
+          component={HomeStackNav}
+          options={{
+            tabBarLabel: 'Home',
+            tabBarButtonTestID: 'tab-home',
+            tabBarAccessibilityLabel: 'Home tab',
+          }}
+        />
+        <Tab.Screen
+          name="SyllabusTab"
+          component={SyllabusStackNav}
+          options={{
+            tabBarLabel: 'Syllabus',
+            tabBarButtonTestID: 'tab-syllabus',
+            tabBarAccessibilityLabel: 'Syllabus tab',
+          }}
+        />
+        <Tab.Screen
+          name="ActionHubTab"
+          component={ActionHubPlaceholder}
+          options={{
+            tabBarLabel: '',
+            tabBarAccessibilityLabel: 'Action hub',
+            tabBarButton: () => (
+              <Pressable
+                style={({ pressed }) => [styles.fabSlot, pressed && styles.actionPressed]}
+                onPress={() => setIsActionHubOpen((value) => !value)}
+                accessibilityRole="button"
+                accessibilityLabel="Open action hub"
+                accessibilityHint="Opens the quick actions sheet"
+              >
+                <View style={styles.fabButton}>
+                  <Ionicons name={isActionHubOpen ? 'close' : 'add'} size={28} color={theme.colors.textPrimary} />
+                </View>
+                <Text style={styles.fabLabel}>Actions</Text>
+              </Pressable>
+            ),
+          }}
+          listeners={{
+            tabPress: (event) => {
+              event.preventDefault();
+              setIsActionHubOpen((value) => !value);
+            },
+          }}
+        />
+        <Tab.Screen
+          name="ChatTab"
+          component={ChatStackNav}
+          options={{
+            tabBarLabel: 'Chat',
+            tabBarButtonTestID: 'tab-chat',
+            tabBarAccessibilityLabel: 'Guru chat tab',
+          }}
+        />
+        <Tab.Screen
+          name="MenuTab"
+          component={MenuStackNav}
+          options={{
+            tabBarLabel: 'Menu',
+            tabBarButtonTestID: 'tab-menu',
+            tabBarAccessibilityLabel: 'Menu tab',
+          }}
+        />
+      </Tab.Navigator>
+
+      {isActionHubOpen ? (
+        <View style={styles.sheetRoot} pointerEvents="box-none">
+          <Pressable style={styles.sheetBackdrop} onPress={() => setIsActionHubOpen(false)} />
+          <View style={[styles.sheet, { paddingBottom: bottomInset + theme.spacing.lg }]}>
+            <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
+            <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
+
+            <View style={styles.primaryActions}>
+              <Pressable
+                style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'LectureMode', {})}
+              >
+                <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
+                <Text style={styles.primaryActionTitle}>Record Lecture</Text>
+                <Text style={styles.primaryActionSubtitle}>Capture long-form audio and route it back safely.</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('MenuTab', 'NotesHub')}
+              >
+                <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
+                <Text style={styles.secondaryActionTitle}>Quick Note</Text>
+                <Text style={styles.secondaryActionSubtitle}>Jump into your notes vault and capture context.</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.externalHeader}>
+              <Text style={styles.externalTitle}>Launch External App</Text>
+              <Text style={styles.externalSubtitle}>Speaker capture and overlay stay wired into the flow.</Text>
+            </View>
+            <View style={styles.externalGrid}>
+              {EXTERNAL_APPS.slice(0, 6).map((app) => (
+                <Pressable
+                  key={app.id}
+                  style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
+                  android_ripple={{ color: `${app.color}22` }}
+                  onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
+                >
+                  <Text style={styles.externalEmoji}>{app.iconEmoji}</Text>
+                  <Text style={styles.externalChipLabel}>{app.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
+  fabSlot: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -18,
+  },
+  fabButton: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 4,
+    borderColor: theme.colors.background,
+    ...theme.shadows.glow(theme.colors.primary),
+  },
+  fabLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 4,
+    letterSpacing: 0.3,
+  },
+  sheetRoot: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(6, 8, 14, 0.72)',
+  },
+  sheet: {
+    backgroundColor: theme.colors.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.xl,
+    gap: theme.spacing.lg,
+  },
+  sheetEyebrow: {
+    color: theme.colors.primaryLight,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.6,
+  },
+  sheetTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '900',
+    lineHeight: 30,
+  },
+  primaryActions: {
+    gap: theme.spacing.md,
+  },
+  primaryAction: {
+    backgroundColor: theme.colors.primaryDark,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  secondaryAction: {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+  actionPressed: {
+    opacity: theme.alpha.pressed,
+    transform: [{ scale: 0.98 }],
+  },
+  primaryActionTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  primaryActionSubtitle: {
+    color: '#D9D4FF',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  secondaryActionTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  secondaryActionSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  externalHeader: {
+    gap: 4,
+  },
+  externalTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  externalSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+  },
+  externalGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.sm,
+  },
+  externalChip: {
+    minWidth: '30%',
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  externalEmoji: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
+  externalChipLabel: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+});

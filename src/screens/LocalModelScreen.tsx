@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
+import { theme } from '../constants/theme';
 
 const RECOMMENDED_MODELS = [
   {
@@ -45,6 +48,8 @@ const WHISPER_MODELS = [
 export default function LocalModelScreen() {
   const navigation = useNavigation();
   const { profile, setUseLocalModel, setLocalModelPath, setUseLocalWhisper, setLocalWhisperPath } = useAppStore();
+  const localLlmWarning = getLocalLlmRamWarning();
+  const localLlmBlocked = !isLocalLlmAllowedOnThisDevice();
   
   // LLM State
   const [downloadingLlm, setDownloadingLlm] = useState(false);
@@ -80,8 +85,13 @@ export default function LocalModelScreen() {
   const handleDownload = async (model: any, type: 'llm' | 'whisper') => {
     try {
       const isLlm = type === 'llm';
-      isLlm ? setDownloadingLlm(true) : setDownloadingWhisper(true);
-      isLlm ? setProgressLlm(0) : setProgressWhisper(0);
+      if (isLlm) {
+        setDownloadingLlm(true);
+        setProgressLlm(0);
+      } else {
+        setDownloadingWhisper(true);
+        setProgressWhisper(0);
+      }
 
       const targetUri = FileSystem.documentDirectory + model.name;
       const fileInfo = await FileSystem.getInfoAsync(targetUri);
@@ -89,7 +99,8 @@ export default function LocalModelScreen() {
       if (fileInfo.exists) {
         if (isLlm) setLocalModelPath(targetUri);
         else setLocalWhisperPath(targetUri);
-        isLlm ? setDownloadingLlm(false) : setDownloadingWhisper(false);
+        if (isLlm) setDownloadingLlm(false);
+        else setDownloadingWhisper(false);
         return;
       }
 
@@ -99,11 +110,13 @@ export default function LocalModelScreen() {
         {},
         (dp) => {
           const pc = dp.totalBytesWritten / dp.totalBytesExpectedToWrite;
-          isLlm ? setProgressLlm(pc) : setProgressWhisper(pc);
-        }
+          if (isLlm) setProgressLlm(pc);
+          else setProgressWhisper(pc);
+        },
       );
       
-      isLlm ? setTaskLlm(task) : setTaskWhisper(task);
+      if (isLlm) setTaskLlm(task);
+      else setTaskWhisper(task);
       const res = await task.downloadAsync();
       
       if (res && res.status === 200) {
@@ -159,7 +172,7 @@ export default function LocalModelScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>{'< Back'}</Text>
+          <Ionicons name="arrow-back" size={18} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.title}>On-Device AI Setup</Text>
       </View>
@@ -170,6 +183,12 @@ export default function LocalModelScreen() {
         <Text style={styles.desc}>
           Powers flashcards, summaries, and quizzes offline. 
         </Text>
+        {localLlmWarning ? (
+          <View style={styles.warningCard}>
+            <Text style={styles.warningTitle}>Low-RAM guardrail active</Text>
+            <Text style={styles.warningText}>{localLlmWarning}</Text>
+          </View>
+        ) : null}
 
         {isLlmDownloaded ? (
           <View style={styles.card}>
@@ -177,12 +196,22 @@ export default function LocalModelScreen() {
               <Text style={styles.statusText}>✅ Model is downloaded and ready</Text>
               <Text style={styles.modelName}>{localModelPath.split('/').pop()}</Text>
               <TouchableOpacity
-                style={[styles.toggleBtn, useLocalModel && styles.toggleBtnActive]}
-                onPress={() => setUseLocalModel(!useLocalModel)}
+                style={[styles.toggleBtn, useLocalModel && styles.toggleBtnActive, localLlmBlocked && styles.toggleBtnDisabled]}
+                onPress={() => {
+                  if (localLlmBlocked) {
+                    Alert.alert('Requires More RAM', localLlmWarning ?? 'This device cannot safely run the local text model.');
+                    return;
+                  }
+                  setUseLocalModel(!useLocalModel);
+                }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.toggleBtnText, useLocalModel && styles.toggleBtnTextActive]}>
-                  {useLocalModel ? 'Local Text AI Enabled' : 'Enable Local Text AI'}
+                <Text style={[styles.toggleBtnText, useLocalModel && styles.toggleBtnTextActive, localLlmBlocked && styles.toggleBtnTextDisabled]}>
+                  {localLlmBlocked
+                    ? 'Needs >= 4 GB RAM'
+                    : useLocalModel
+                      ? 'Local Text AI Enabled'
+                      : 'Enable Local Text AI'}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete('llm')}>
@@ -262,15 +291,26 @@ export default function LocalModelScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F0F14' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#222' },
-  backBtn: { marginRight: 20 },
-  backBtnText: { color: '#6C63FF', fontSize: 16, fontWeight: '600' },
-  title: { fontSize: 20, fontWeight: '700', color: '#FFF' },
+  container: { flex: 1, backgroundColor: theme.colors.background },
+  header: { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: theme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  title: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
   sectionHeader: { color: '#FFF', fontSize: 22, fontWeight: '900', marginBottom: 8 },
   divider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 30 },
   desc: { color: '#AAA', fontSize: 15, lineHeight: 22, marginBottom: 20 },
+  warningCard: { backgroundColor: '#2A1F10', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#A56D1F', marginBottom: 16 },
+  warningTitle: { color: '#FFD58A', fontSize: 15, fontWeight: '800', marginBottom: 6 },
+  warningText: { color: '#F6D7A8', fontSize: 13, lineHeight: 19 },
   card: { backgroundColor: '#1A1A22', borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#333' },
   modelName: { fontSize: 18, fontWeight: '600', color: '#FFF', marginBottom: 6 },
   modelDesc: { fontSize: 14, color: '#888', marginBottom: 20 },
@@ -286,8 +326,10 @@ const styles = StyleSheet.create({
   statusText: { color: '#4CAF50', fontWeight: '600', marginBottom: 20 },
   toggleBtn: { padding: 14, borderRadius: 8, borderWidth: 2, borderColor: '#555', alignItems: 'center', marginBottom: 8 },
   toggleBtnActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
+  toggleBtnDisabled: { backgroundColor: '#2F2F35', borderColor: '#3A3A3F' },
   toggleBtnText: { color: '#888', fontWeight: '700', fontSize: 16 },
   toggleBtnTextActive: { color: '#FFF' },
+  toggleBtnTextDisabled: { color: '#B79C72' },
   deleteBtn: { padding: 12, alignItems: 'center' },
   deleteBtnText: { color: '#FF5252', fontWeight: '600', fontSize: 14 },
 });

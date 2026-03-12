@@ -39,12 +39,33 @@ export const theme = {
     // Borders
     border: '#2A2A3C',
     borderLight: '#3A3A4C',
+    divider: '#1E1E2A',
+
+    // Semantic surfaces
+    panel: '#171722',
+    panelAlt: '#15151E',
+    inputBg: '#13131E',
+    overlay: 'rgba(6, 8, 14, 0.72)',
+    backdropStrong: 'rgba(0, 0, 0, 0.82)',
+    successSurface: '#1A2A1A',
+    warningSurface: '#2A1A0A',
+    errorSurface: '#2A1A1A',
+    primaryTint: '#25205A',
+    primaryTintSoft: '#6C63FF22',
+    primaryTintMedium: '#6C63FF44',
+    warningTintSoft: '#FF980022',
+    errorTintSoft: '#F4433622',
+    successTintSoft: '#4CAF5022',
 
     // Status
     unseen: '#606080',
     seen: '#2196F3',
     reviewed: '#FF9800',
     mastered: '#4CAF50',
+  },
+  alpha: {
+    pressed: 0.88,
+    subtlePressed: 0.94,
   },
 
   spacing: {

@@ -33,7 +33,8 @@ start_debug*.log
 .DS_Store
 *.pem
 
-# local env files
+# local env files (keep .env.example committed)
+.env
 .env*.local
 
 # typescript
@@ -62,3 +63,4 @@ android/.gradle/
 
 # UI dumps
 window_dump.xml
+.claude/

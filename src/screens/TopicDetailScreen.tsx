@@ -1,15 +1,33 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar, TextInput, Alert, Animated, Easing } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, StatusBar, TextInput, Alert, Animated, Easing, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation, useIsFocused } from '@react-navigation/native';
-import type { RouteProp } from '@react-navigation/native';
+import { useRoute, useNavigation, useIsFocused, type NavigationProp, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SyllabusStackParamList } from '../navigation/types';
-import { getTopicsBySubject, updateTopicNotes } from '../db/queries/topics';
+import type { SyllabusStackParamList, TabParamList } from '../navigation/types';
+import { getTopicsBySubject, updateTopicNotes, updateTopicProgress } from '../db/queries/topics';
 import { clearTopicCache } from '../db/queries/aiCache';
+import { fetchWikipediaImage } from '../services/imageService';
 import type { TopicWithProgress, TopicStatus } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import * as Haptics from 'expo-haptics';
+
+function TopicImage({ topicName }: { topicName: string }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchWikipediaImage(topicName).then(setImageUrl);
+  }, [topicName]);
+
+  if (!imageUrl) return null;
+
+  return (
+    <Image 
+      source={{ uri: imageUrl }} 
+      style={styles.topicImage} 
+      resizeMode="contain"
+    />
+  );
+}
 
 type Route = RouteProp<SyllabusStackParamList, 'TopicDetail'>;
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
@@ -51,6 +69,7 @@ export default function TopicDetailScreen() {
   const [noteText, setNoteText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<TopicFilter>('all');
+  const [milestoneText, setMilestoneText] = useState('');
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -176,12 +195,24 @@ export default function TopicDetailScreen() {
     setExpandedId(null);
   }
 
-  const done = allTopics.filter(t => t.progress.status !== 'unseen').length;
-  const pct = allTopics.length > 0 ? Math.round((done / allTopics.length) * 100) : 0;
+  function markTopicMastered(topic: TopicWithProgress) {
+    updateTopicProgress(topic.id, 'mastered', 5, 20);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setAllTopics(prev => prev.map(t =>
+      t.id === topic.id ? { ...t, progress: { ...t.progress, status: 'mastered', confidence: 5 } } : t,
+    ));
+    setExpandedId(null);
+  }
+
   const leafTopics = useMemo(
     () => allTopics.filter(topic => !allTopics.some(candidate => candidate.parentTopicId === topic.id)),
     [allTopics],
   );
+  const done = useMemo(
+    () => leafTopics.filter(t => t.progress.status !== 'unseen').length,
+    [leafTopics],
+  );
+  const pct = leafTopics.length > 0 ? Math.round((done / leafTopics.length) * 100) : 0;
   const dueTopics = useMemo(
     () => leafTopics.filter(topic => topic.progress.status !== 'unseen' && !!topic.progress.fsrsDue && topic.progress.fsrsDue.slice(0, 10) <= today),
     [leafTopics, today],
@@ -196,14 +227,28 @@ export default function TopicDetailScreen() {
   );
   const filterCounts = useMemo(() => {
     return {
-      all: allTopics.length,
+      all: leafTopics.length,
       due: dueTopics.length,
-      unseen: allTopics.filter(t => t.progress.status === 'unseen').length,
+      unseen: leafTopics.filter(t => t.progress.status === 'unseen').length,
       weak: weakTopics.length,
       high_yield: highYieldTopics.length,
-      notes: allTopics.filter(t => t.progress.userNotes.trim().length > 0).length,
+      notes: leafTopics.filter(t => t.progress.userNotes.trim().length > 0).length,
     } as Record<TopicFilter, number>;
-  }, [allTopics, dueTopics.length, highYieldTopics.length, weakTopics.length]);
+  }, [leafTopics, dueTopics.length, highYieldTopics.length, weakTopics.length]);
+
+  const prevDoneRef = useRef(0);
+  useEffect(() => {
+    const previous = prevDoneRef.current;
+    if (done > previous && previous > 0) {
+      const delta = done - previous;
+      setMilestoneText(`+${delta} micro-topic${delta > 1 ? 's' : ''} completed`);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const timeout = setTimeout(() => setMilestoneText(''), 2200);
+      prevDoneRef.current = done;
+      return () => clearTimeout(timeout);
+    }
+    prevDoneRef.current = done;
+  }, [done]);
 
   function launchBatch(topics: TopicWithProgress[], actionType: 'study' | 'review' | 'deep_dive') {
     const ids = topics.slice(0, actionType === 'review' ? 4 : 3).map(topic => topic.id);
@@ -211,7 +256,7 @@ export default function TopicDetailScreen() {
       Alert.alert('Nothing to study', 'There are no matching topics in this bucket yet.');
       return;
     }
-    (navigation as any).getParent()?.navigate('HomeTab', {
+    navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
       screen: 'Session',
       params: {
         mood: actionType === 'deep_dive' ? 'energetic' : 'good',
@@ -286,11 +331,12 @@ export default function TopicDetailScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.title}>{subjectName}</Text>
           <View style={styles.progressRow}>
-            <Text style={styles.subtitle}>{displayCount}/{allTopics.length} topics</Text>
+            <Text style={styles.subtitle}>{displayCount}/{leafTopics.length} micro-topics</Text>
             <View style={[styles.pctBadge, pct >= 50 && styles.pctBadgeGood, pct === 100 && styles.pctBadgeComplete]}>
               <Text style={[styles.pctText, pct >= 50 && { color: '#4CAF50' }, pct === 100 && { color: '#FFD700' }]}>{pct}%</Text>
             </View>
           </View>
+          {milestoneText ? <Text style={styles.milestoneText}>{milestoneText}</Text> : null}
           <View style={styles.progressTrack}>
             <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
           </View>
@@ -384,7 +430,7 @@ export default function TopicDetailScreen() {
                   {isParent && parentChildren.length > 0 && (
                     <View style={styles.parentSummaryRow}>
                       <Text style={styles.parentSummaryText}>
-                        {parentCompleted}/{parentChildren.length} covered
+                        {parentCompleted}/{parentChildren.length} micro-topics covered
                       </Text>
                       {parentDue > 0 && <Text style={styles.parentDueText}>{parentDue} due</Text>}
                       {parentHighYield > 0 && <Text style={styles.parentHighYieldText}>{parentHighYield} HY</Text>}
@@ -446,10 +492,11 @@ export default function TopicDetailScreen() {
               </TouchableOpacity>
               {expandedId === item.id && (
                 <View style={styles.notesExpanded}>
+                  <TopicImage topicName={item.name} />
                   <TouchableOpacity
                     style={styles.studyNowBtn}
                     onPress={() => {
-                      (navigation as any).getParent()?.navigate('HomeTab', {
+                      navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
                         screen: 'Session',
                         params: { mood: 'good', focusTopicId: item.id, preferredActionType: 'study' },
                       });
@@ -457,6 +504,13 @@ export default function TopicDetailScreen() {
                     activeOpacity={0.8}
                   >
                     <Text style={styles.studyNowText}>Study this topic now →</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.studyNowBtn, { backgroundColor: '#4CAF50', marginTop: 8 }]}
+                    onPress={() => markTopicMastered(item)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[styles.studyNowText, { color: '#000' }]}>Mark as Mastered ✓</Text>
                   </TouchableOpacity>
                   <Text style={styles.notesLabel}>Your Notes / Mnemonic</Text>
                   <TextInput
@@ -505,8 +559,10 @@ const styles = StyleSheet.create({
   backText: { color: '#6C63FF', fontSize: 22 },
   headerCenter: { flex: 1 },
   title: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  topicImage: { width: '100%', height: 180, borderRadius: 12, marginBottom: 12, backgroundColor: '#1A1A24' },
   progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
   subtitle: { color: '#9E9E9E', fontSize: 13 },
+  milestoneText: { color: '#7CFFB2', fontSize: 12, fontWeight: '700', marginBottom: 8 },
   pctBadge: { backgroundColor: '#2A2A38', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginLeft: 8 },
   pctBadgeGood: { backgroundColor: '#1A2A1A' },
   pctBadgeComplete: { backgroundColor: '#2A2A0A' },

@@ -5,9 +5,8 @@ import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildAgendaPrompt, buildAccountabili
 import { getCachedContent, setCachedContent } from '../db/queries/aiCache';
 import { getUserProfile } from '../db/queries/progress';
 import { initLlama, LlamaContext } from 'llama.rn';
-import { initWhisper } from 'whisper.rn';
-import { enqueueRequest } from './offlineQueue';
 import { isTransientNetworkError } from './offlineQueueErrors';
+import { getLocalLlmRamWarning, isLocalLlmUsable } from './deviceMemory';
 
 // Free OpenRouter models tried in order
 export const OPENROUTER_FREE_MODELS = [
@@ -18,7 +17,7 @@ export const OPENROUTER_FREE_MODELS = [
   'mistralai/mistral-7b-instruct:free',
 ];
 
-// Optional bundled Groq key from env, used as cloud fallback when provided
+// Optional bundled Groq key from env, used as primary cloud backend when provided
 const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
 
 /** Read API keys from the user profile. Keys are optional. */
@@ -236,14 +235,14 @@ async function callOpenRouter(
 
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
-  if (!text) throw new Error(`Empty response from OpenRouter model ${model}`);
+  if (!text || !text.trim()) throw new Error(`Empty response from OpenRouter model ${model}`);
   return text;
 }
 
-// Groq cloud models — fast inference, generous free tier
-// Order: best quality first, then fastest fallback
+// Groq cloud models — order: best quality first, then fallbacks
 export const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',    // Best quality, 131K context, ~280 tok/s
+  'openai/gpt-oss-120b',        // Best quality: 120B, reasoning, 131K context, ~500 tok/s
+  'llama-3.3-70b-versatile',    // Strong fallback, 131K context, ~280 tok/s
   'llama-3.1-8b-instant',       // Fast fallback, 131K context
 ];
 
@@ -278,7 +277,7 @@ async function callGroq(
 
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
-  if (!text) throw new Error(`Empty response from Groq model ${model}`);
+  if (!text || !text.trim()) throw new Error(`Empty response from Groq model ${model}`);
   return text;
 }
 
@@ -312,7 +311,7 @@ async function callGroqText(
 
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
-  if (!text) throw new Error(`Empty response from Groq model ${model}`);
+  if (!text || !text.trim()) throw new Error(`Empty response from Groq model ${model}`);
   return text;
 }
 
@@ -324,6 +323,9 @@ async function attemptLocalLLM(
   const isQwen = localModelPath.toLowerCase().includes('qwen');
   const modelUsed = isQwen ? 'local-qwen-2.5-3b' : 'local-llama-3.2-1b';
   const text = await callLocalLLM(messages, localModelPath, textMode);
+  if (!text || !text.trim()) {
+    throw new Error('Local model returned an empty response');
+  }
   return { text, modelUsed };
 }
 
@@ -334,30 +336,39 @@ async function attemptCloudLLM(
   groqKey?: string | undefined,
   chosenModel?: string,
 ): Promise<{ text: string; modelUsed: string }> {
-  // If a specific model is requested
-  if (chosenModel) {
-    if (chosenModel.startsWith('groq/') && groqKey) {
-      const modelName = chosenModel.replace('groq/', '');
+  const preferredGroqModel = chosenModel?.startsWith('groq/')
+    ? chosenModel.replace('groq/', '')
+    : undefined;
+  const preferredOpenRouterModel = chosenModel && !chosenModel.startsWith('groq/') && chosenModel !== 'local'
+    ? chosenModel
+    : undefined;
+
+  let lastCloudError: Error | null = null;
+
+  // If a specific Groq model is requested, try it first while preserving Groq-first policy.
+  if (preferredGroqModel && groqKey) {
+    try {
       const text = textMode
-        ? await callGroqText(messages, groqKey, modelName)
-        : await callGroq(messages, groqKey, modelName);
-      return { text, modelUsed: chosenModel };
-    }
-    if (orKey) {
-      const text = await callOpenRouter(messages, orKey, chosenModel);
-      return { text, modelUsed: chosenModel };
+        ? await callGroqText(messages, groqKey, preferredGroqModel)
+        : await callGroq(messages, groqKey, preferredGroqModel);
+      return { text, modelUsed: `groq/${preferredGroqModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+      if (__DEV__) console.warn(`[AI] Groq preferred model ${preferredGroqModel} failed:`, lastCloudError.message);
     }
   }
 
   // 1. Try Groq first — fastest inference, generous free tier
   if (groqKey) {
     for (const model of GROQ_MODELS) {
+      if (preferredGroqModel && model === preferredGroqModel) continue;
       try {
         const text = textMode
           ? await callGroqText(messages, groqKey, model)
           : await callGroq(messages, groqKey, model);
         return { text, modelUsed: `groq/${model}` };
       } catch (err) {
+        lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
         // Non-rate-limit error on first model — try next Groq model
         if (__DEV__) console.warn(`[AI] Groq ${model} failed:`, (err as Error).message);
@@ -368,14 +379,23 @@ async function attemptCloudLLM(
 
   // 2. Try OpenRouter free models
   if (orKey) {
-    for (const model of OPENROUTER_FREE_MODELS) {
+    const openRouterCandidates = Array.from(new Set([
+      ...(preferredOpenRouterModel ? [preferredOpenRouterModel] : []),
+      ...OPENROUTER_FREE_MODELS,
+    ]));
+    for (const model of openRouterCandidates) {
       try {
         const text = await callOpenRouter(messages, orKey, model);
         return { text, modelUsed: model };
-      } catch {
+      } catch (err) {
+        lastCloudError = err as Error;
         continue;
       }
     }
+  }
+
+  if (lastCloudError) {
+    throw lastCloudError;
   }
 
   throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
@@ -575,7 +595,7 @@ export async function generateJSONWithRouting<T>(
 ): Promise<{ parsed: T; modelUsed: string }> {
   const profile = getUserProfile();
   const { orKey, groqKey } = getApiKeys();
-  const hasLocal = profile.useLocalModel && !!profile.localModelPath;
+  const hasLocal = isLocalLlmUsable(profile);
   const isQwen = hasLocal && profile.localModelPath!.toLowerCase().includes('qwen');
   const hasCloud = !!orKey || !!groqKey;
 
@@ -604,12 +624,8 @@ export async function generateJSONWithRouting<T>(
     }
   }
 
-  if (queueOnFailure && lastError && isTransientNetworkError(lastError)) {
-    enqueueRequest('generate_json', {
-      messages,
-      taskComplexity,
-      queuedAt: Date.now(),
-    });
+  if (queueOnFailure && lastError && isTransientNetworkError(lastError) && __DEV__) {
+    console.warn('[AI] Skipping offline queue for structured generation because the original side effect cannot be replayed safely.');
   }
 
   throw lastError || new Error('All AI attempts failed');
@@ -622,24 +638,24 @@ export async function generateTextWithRouting(
 ): Promise<{ text: string; modelUsed: string }> {
   const profile = getUserProfile();
   const { orKey, groqKey } = getApiKeys();
-  const hasLocal = profile.useLocalModel && !!profile.localModelPath;
+  const hasLocal = isLocalLlmUsable(profile);
   const hasCloud = !!orKey || !!groqKey;
 
   // If a specific model is chosen and it's local (e.g., matching the local model path name or 'local')
+  if (options?.chosenModel === 'local' && profile.localModelPath && !hasLocal) {
+    throw new Error(
+      getLocalLlmRamWarning() ?? 'On-device text AI is disabled on this device to avoid low-memory crashes.',
+    );
+  }
   if (options?.chosenModel === 'local' && hasLocal) {
     return await attemptLocalLLM(messages, profile.localModelPath!, true);
   }
 
+  // Enforce consistent backend order for all text pipelines:
+  // Groq -> OpenRouter free models -> local model fallback.
   const attempts: ('local' | 'cloud')[] = [];
-  if (options?.chosenModel) {
-    attempts.push('cloud');
-  } else if (options?.preferCloud) {
-    if (hasCloud) attempts.push('cloud');
-    if (hasLocal) attempts.push('local');
-  } else {
-    if (hasCloud) attempts.push('cloud');
-    if (hasLocal) attempts.push('local');
-  }
+  if (hasCloud) attempts.push('cloud');
+  if (hasLocal) attempts.push('local');
 
   if (attempts.length === 0) throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
 
@@ -657,12 +673,8 @@ export async function generateTextWithRouting(
     }
   }
 
-  if (queueOnFailure && lastError && isTransientNetworkError(lastError)) {
-    enqueueRequest('generate_text', {
-      messages,
-      options: options ?? null,
-      queuedAt: Date.now(),
-    });
+  if (queueOnFailure && lastError && isTransientNetworkError(lastError) && __DEV__) {
+    console.warn('[AI] Skipping offline queue for text generation because the original side effect cannot be replayed safely.');
   }
 
   throw lastError || new Error('All AI attempts failed');
@@ -802,7 +814,7 @@ export interface MedicalGroundingSource {
   snippet: string;
   journal?: string;
   publishedAt?: string;
-  source: 'EuropePMC' | 'PubMed';
+  source: 'EuropePMC' | 'PubMed' | 'Wikipedia';
 }
 
 export async function generateWakeUpMessage(): Promise<{ title: string; body: string }> {
@@ -871,7 +883,7 @@ function clipText(raw: string, maxChars: number): string {
 function buildMedicalSearchQuery(question: string, topicName?: string): string {
   const base = compactWhitespace(`${topicName ?? ''} ${question}`.trim());
   const cleaned = base.replace(/[^\w\s\-(),./]/g, ' ');
-  return clipText(`${cleaned} clinical evidence`, 180);
+  return clipText(`${cleaned} (India OR Indian OR ICMR OR AIIMS OR WHO OR guidelines OR protocol OR diagnosis OR treatment OR "clinical presentation")`, 180);
 }
 
 async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 12000): Promise<T> {
@@ -901,9 +913,34 @@ function dedupeGroundingSources(sources: MedicalGroundingSource[]): MedicalGroun
   return deduped;
 }
 
+/** Wikipedia: curriculum-aligned summaries, good for NEET-PG/INICET concepts */
+async function searchWikipedia(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
+  const url = `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(query)}&limit=${maxResults}`;
+  const data = await fetchJsonWithTimeout<{ pages?: Array<{ id?: number; key?: string; title?: string; excerpt?: string; description?: string }> }>(url, 8000);
+  const pages = Array.isArray(data?.pages) ? data.pages : [];
+  return pages
+    .filter((p) => p?.title && p?.key)
+    .slice(0, maxResults)
+    .map((p) => {
+      const title = clipText(String(p.title), 220);
+      const key = String(p.key ?? p.title ?? '');
+      const excerpt = (p.excerpt ?? p.description ?? '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return {
+        id: `wiki-${p.id ?? key}`,
+        title,
+        url: `https://en.wikipedia.org/wiki/${encodeURIComponent(key)}`,
+        snippet: clipText(excerpt || title, 420),
+        source: 'Wikipedia' as const,
+      };
+    });
+}
+
 async function searchEuropePMC(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
-  const europeQuery = `(${query}) AND (HAS_ABSTRACT:y OR OPEN_ACCESS:y)`;
-  const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(europeQuery)}&format=json&pageSize=${maxResults}&sort_date:y`;
+  const europeQuery = `(${query}) AND (HAS_ABSTRACT:y OR OPEN_ACCESS:y) NOT (veterinary OR animal OR murine OR mice OR rat OR dog OR cat)`;
+  const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(europeQuery)}&format=json&pageSize=${maxResults}&sort=relevance`;
   const data = await fetchJsonWithTimeout<any>(url, 14000);
   const rows = Array.isArray(data?.resultList?.result) ? data.resultList.result : [];
 
@@ -933,7 +970,7 @@ async function searchEuropePMC(query: string, maxResults: number): Promise<Medic
 }
 
 async function searchPubMedFallback(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
-  const term = `${query} AND (english[Language])`;
+  const term = `${query} AND (english[Language]) NOT (veterinary OR animal OR murine OR mice OR rat OR dog OR cat)`;
   const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&sort=pub+date&retmax=${maxResults}&term=${encodeURIComponent(term)}`;
   const searchData = await fetchJsonWithTimeout<any>(searchUrl);
   const ids: string[] = Array.isArray(searchData?.esearchresult?.idlist) ? searchData.esearchresult.idlist : [];
@@ -967,17 +1004,26 @@ async function searchPubMedFallback(query: string, maxResults: number): Promise<
 
 export async function searchLatestMedicalSources(query: string, maxResults = 6): Promise<MedicalGroundingSource[]> {
   const collected: MedicalGroundingSource[] = [];
+  const wikiLimit = Math.min(3, maxResults);
+  const litLimit = maxResults;
 
   try {
-    const europe = await searchEuropePMC(query, maxResults);
+    const wiki = await searchWikipedia(query, wikiLimit);
+    collected.push(...wiki);
+  } catch (err) {
+    if (__DEV__) console.warn('[GuruGrounded] Wikipedia failed:', (err as Error).message);
+  }
+
+  try {
+    const europe = await searchEuropePMC(query, litLimit);
     collected.push(...europe);
   } catch (err) {
     if (__DEV__) console.warn('[GuruGrounded] EuropePMC failed:', (err as Error).message);
   }
 
-  if (collected.length < Math.min(3, maxResults)) {
+  if (collected.length < Math.min(4, maxResults)) {
     try {
-      const pubmed = await searchPubMedFallback(query, maxResults);
+      const pubmed = await searchPubMedFallback(query, litLimit);
       collected.push(...pubmed);
     } catch (err) {
       if (__DEV__) console.warn('[GuruGrounded] PubMed fallback failed:', (err as Error).message);
@@ -1022,9 +1068,9 @@ export async function chatWithGuruGrounded(
     ? renderSourcesForPrompt(sources)
     : 'No live web sources were retrieved for this query.';
 
-  const systemPrompt = `You are Guru, an evidence-grounded medical tutor.
+  const systemPrompt = `You are Guru, an evidence-grounded medical tutor for NEET-PG and INI-CET students.
 Rules:
-1) Base claims only on provided SOURCES.
+1) Base claims only on provided SOURCES, strongly prioritizing Indian guidelines (ICMR, MoHFW, NMC) or WHO standards when applicable.
 2) Add citations as [S1], [S2] inline where relevant.
 3) If evidence is limited, explicitly say so.
 4) Do not fabricate citations or studies.
@@ -1054,8 +1100,15 @@ Respond with medical teaching guidance grounded in the sources above.`;
       searchQuery,
     };
   } catch (error: any) {
-    if (__DEV__) console.warn('[GuruGrounded] Generation failed:', error.message);
-    throw new Error('Guru was unable to generate a response. Please check your API keys in Settings.');
+    const msg = error?.message ?? String(error);
+    if (__DEV__) console.warn('[GuruGrounded] Generation failed:', msg);
+    if (msg.toLowerCase().includes('invalid') && msg.toLowerCase().includes('key')) {
+      throw new Error('Invalid API key. Check Settings or .env (EXPO_PUBLIC_BUNDLED_GROQ_KEY). Restart with: npx expo start --clear');
+    }
+    if (msg.includes('429') || msg.toLowerCase().includes('rate limit')) {
+      throw new Error('Rate limit hit. Wait a minute or try again.');
+    }
+    throw new Error(`Guru couldn't respond: ${msg.slice(0, 120)}`);
   }
 }
 
@@ -1071,80 +1124,6 @@ export async function askGuru(
   ];
   const { parsed } = await generateJSONWithRouting(messages, schema, 'low');
   return JSON.stringify(parsed);
-}
-
-async function transcribeWithGroqCloud(
-  fileUri: string,
-  groqKey: string,
-): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', {
-    uri: fileUri,
-    name: 'audio.m4a',
-    type: 'audio/mp4',
-  } as any);
-  formData.append('model', 'whisper-large-v3-turbo');
-  // Don't hardcode language — let Whisper auto-detect for Hinglish lectures
-  formData.append('temperature', '0');
-
-  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${groqKey}`,
-    },
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Groq audio transcription error ${res.status}: ${err}`);
-  }
-
-  const data = await res.json();
-  return String(data?.text ?? '').trim();
-}
-
-export async function transcribeAndSummarizeAudio(
-  audioFilePath: string,
-): Promise<string> {
-  const profile = getUserProfile();
-  const { groqKey } = getApiKeys();
-  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
-
-  if (profile.useLocalWhisper && profile.localWhisperPath) {
-    // 1. Local Transcription using whisper.rn
-    const whisperContext = await initWhisper({ filePath: profile.localWhisperPath });
-    try {
-      const { result } = await whisperContext.transcribe(fileUri, { language: 'en' });
-      const rawTranscript = result.trim();
-      if (!rawTranscript) return 'NO_CONTENT';
-
-      // 2. Summarize using text routing (local first, then cloud)
-      const summarizeMessages: Message[] = [
-        { role: 'system', content: "You are a medical lecture assistant." },
-        { role: 'user', content: `Extract the absolute highest-yield medical facts from this lecture snippet. Return ONLY a concise, bulleted list of 1-3 key points. Transcript:\n\n${rawTranscript}` }
-      ];
-      const { text } = await generateTextWithRouting(summarizeMessages);
-      return text.trim();
-    } finally {
-      await whisperContext.release();
-    }
-  }
-
-  // Fallback to cloud Whisper transcription via Groq
-  if (!groqKey) {
-    throw new Error('Cloud audio transcription requires a Groq API key. Or download the local Whisper model.');
-  }
-
-  const rawTranscript = await transcribeWithGroqCloud(fileUri, groqKey);
-  if (!rawTranscript) return 'NO_CONTENT';
-
-  const summarizeMessages: Message[] = [
-    { role: 'system', content: 'You are a medical lecture assistant.' },
-    { role: 'user', content: `Extract the absolute highest-yield medical facts from this lecture snippet. Return ONLY a concise, bulleted list of 1-3 key points. Transcript:\n\n${rawTranscript}` },
-  ];
-  const { text } = await generateTextWithRouting(summarizeMessages);
-  return text.trim();
 }
 
 const CatalystSchema = z.object({

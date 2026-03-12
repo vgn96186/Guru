@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, StatusBar, Vibration, Animated,
-  AppState, Alert
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
+import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../store/useAppStore';
 import { getDailyLog } from '../db/queries/progress';
@@ -16,7 +16,7 @@ const HARASSMENT_INTERVAL = 5 * 60 * 1000; // Every 5 minutes
 const GUILT_CHECK_INTERVAL = 60 * 1000; // Check every minute
 
 export default function PunishmentMode() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { profile } = useAppStore();
   const [isActive, setIsActive] = useState(true);
   const [minutesIdle, setMinutesIdle] = useState(0);
@@ -138,13 +138,24 @@ export default function PunishmentMode() {
   function handleStartStudying() {
     setIsActive(false);
     setShowGuiltScreen(false);
-    navigation.navigate('Session', { mood: 'stressed', mode: 'sprint', forcedMinutes: 10 });
+    navigation.navigate('Tabs', {
+      screen: 'HomeTab',
+      params: {
+        screen: 'Session',
+        params: { mood: 'stressed', mode: 'sprint', forcedMinutes: 10 },
+      },
+    });
   }
 
   function handleQuickWin() {
     setIsActive(false);
     setShowGuiltScreen(false);
-    navigation.navigate('Inertia');
+    navigation.navigate('Tabs', {
+      screen: 'HomeTab',
+      params: {
+        screen: 'Inertia',
+      },
+    });
   }
 
   function handleDisable() {

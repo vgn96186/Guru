@@ -33,6 +33,9 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 
   const db = _db!;
 
+  // Keep FK checks disabled until legacy cleanup completes.
+  await db.execAsync('PRAGMA foreign_keys = OFF');
+
   // Create all tables
   for (const sql of ALL_SCHEMAS) {
     await db.execAsync(sql);
@@ -154,8 +157,28 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     try { await db.execAsync(sql); } catch (_) { /* already exists */ }
   }
 
+  // Repair legacy rows before enforcing foreign keys on the shared connection.
+  const integrityRepairs = [
+    `DELETE FROM topic_progress WHERE topic_id NOT IN (SELECT id FROM topics)`,
+    `DELETE FROM ai_cache WHERE topic_id NOT IN (SELECT id FROM topics)`,
+    `UPDATE lecture_notes SET subject_id = NULL WHERE subject_id IS NOT NULL AND subject_id NOT IN (SELECT id FROM subjects)`,
+    `UPDATE external_app_logs
+       SET lecture_note_id = NULL
+     WHERE lecture_note_id IS NOT NULL
+       AND lecture_note_id NOT IN (SELECT id FROM lecture_notes)`,
+  ];
+  for (const sql of integrityRepairs) {
+    try {
+      await db.execAsync(sql);
+    } catch (err) {
+      if (__DEV__) console.warn('[DB] Integrity repair failed:', sql, err);
+    }
+  }
+
   // FIX: Ensure all topics (including vault seeds) have a progress row
   await db.execAsync('INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics');
+
+  await db.execAsync('PRAGMA foreign_keys = ON');
 
   // Update streak on open
   await updateStreakOnOpen(db);
@@ -167,6 +190,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
  */
 export async function syncVaultSeedTopics(): Promise<void> {
   const db = getDb();
+  await seedTopics(db);
   await seedVaultTopics(db);
   await db.execAsync('INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics');
 }
@@ -182,90 +206,104 @@ async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {
 }
 
 async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
-  // Pass 1: Insert all topics without parent links (ensures parents exist)
-  for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
-    const result = await db.runAsync(
-      `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
-      [subjectId, name, priority, minutes],
-    );
-    if (result.lastInsertRowId > 0) {
-      await db.runAsync(
-        `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
-        [result.lastInsertRowId],
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    // Pass 1: Insert all topics without parent links (ensures parents exist)
+    for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
+      const result = db.runSync(
+        `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
+        [subjectId, name, priority, minutes],
       );
-    }
-  }
-
-  // Pass 2: Update parent links
-  for (const [subjectId, name, priority, minutes, parentName] of TOPICS_SEED) {
-    if (parentName) {
-      const parent = await db.getFirstAsync<{ id: number }>(
-        'SELECT id FROM topics WHERE subject_id = ? AND name = ?',
-        [subjectId, parentName]
-      );
-      if (parent) {
-        await db.runAsync(
-          'UPDATE topics SET parent_topic_id = ? WHERE subject_id = ? AND name = ?',
-          [parent.id, subjectId, name]
+      if (result.lastInsertRowId > 0) {
+        db.runSync(
+          `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
+          [result.lastInsertRowId],
         );
       }
     }
+
+    // Pass 2: Update parent links
+    for (const [subjectId, name, priority, minutes, parentName] of TOPICS_SEED) {
+      if (parentName) {
+        const parent = db.getFirstSync<{ id: number }>(
+          'SELECT id FROM topics WHERE subject_id = ? AND name = ?',
+          [subjectId, parentName]
+        );
+        if (parent) {
+          db.runSync(
+            'UPDATE topics SET parent_topic_id = ? WHERE subject_id = ? AND name = ?',
+            [parent.id, subjectId, name]
+          );
+        }
+      }
+    }
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (e) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw e;
   }
 }
 
 async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
-  let inserted = 0;
-  let ignored = 0;
-  const vaultTopicIds: number[] = [];
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    let inserted = 0;
+    let ignored = 0;
+    const vaultTopicIds: number[] = [];
 
-  for (const [subjectId, name, priority, minutes] of VAULT_TOPICS_SEED) {
-    const topicResult = await db.runAsync(
-      `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
-      [subjectId, name, priority, minutes],
-    );
-
-    let topicId = topicResult.lastInsertRowId;
-    if (topicResult.changes === 0) {
-      // Topic already exists, retrieve its ID
-      const existingTopic = await db.getFirstAsync<{ id: number }>(
-        `SELECT id FROM topics WHERE subject_id = ? AND name = ?`,
-        [subjectId, name]
+    for (const [subjectId, name, priority, minutes] of VAULT_TOPICS_SEED) {
+      const topicResult = db.runSync(
+        `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
+        [subjectId, name, priority, minutes],
       );
-      if (existingTopic) {
-        topicId = existingTopic.id;
-        ignored++;
+
+      let topicId = topicResult.lastInsertRowId;
+      if (topicResult.changes === 0) {
+        // Topic already exists, retrieve its ID
+        const existingTopic = db.getFirstSync<{ id: number }>(
+          `SELECT id FROM topics WHERE subject_id = ? AND name = ?`,
+          [subjectId, name]
+        );
+        if (existingTopic) {
+          topicId = existingTopic.id;
+          ignored++;
+        }
+      } else {
+        inserted++;
       }
-    } else {
-      inserted++;
+
+      if (topicId) { // Ensure we have a topicId
+        vaultTopicIds.push(topicId);
+        // Ensure progress row exists for new or existing topic, initially 'unseen'
+        db.runSync(
+          `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
+          [topicId],
+        );
+      }
     }
 
-    if (topicId) { // Ensure we have a topicId
-      vaultTopicIds.push(topicId);
-      // Ensure progress row exists for new or existing topic, initially 'unseen'
-      await db.runAsync(
-        `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
-        [topicId],
+    // LEVEL 1: Obsidian Import (BTR Finished)
+    // Update vault topics to at least 'seen' and confidence 1 if they are below that level.
+    if (vaultTopicIds.length > 0) {
+      const placeholders = vaultTopicIds.map(() => '?').join(',');
+      
+      // 1. Mark as 'seen' if currently 'unseen'
+      db.runSync(
+        `UPDATE topic_progress SET status = 'seen' WHERE topic_id IN (${placeholders}) AND status = 'unseen'`,
+        vaultTopicIds
+      );
+
+      // 2. Set Confidence to 1 (Level 1) if currently 0
+      // This signifies "BTR Finished" / Imported
+      db.runSync(
+        `UPDATE topic_progress SET confidence = 1 WHERE topic_id IN (${placeholders}) AND confidence = 0`,
+        vaultTopicIds
       );
     }
-  }
-
-  // LEVEL 1: Obsidian Import (BTR Finished)
-  // Update vault topics to at least 'seen' and confidence 1 if they are below that level.
-  if (vaultTopicIds.length > 0) {
-    const placeholders = vaultTopicIds.map(() => '?').join(',');
-    
-    // 1. Mark as 'seen' if currently 'unseen'
-    await db.runAsync(
-      `UPDATE topic_progress SET status = 'seen' WHERE topic_id IN (${placeholders}) AND status = 'unseen'`,
-      vaultTopicIds
-    );
-
-    // 2. Set Confidence to 1 (Level 1) if currently 0
-    // This signifies "BTR Finished" / Imported
-    await db.runAsync(
-      `UPDATE topic_progress SET confidence = 1 WHERE topic_id IN (${placeholders}) AND confidence = 0`,
-      vaultTopicIds
-    );
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (e) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw e;
   }
 // if (__DEV__) console.log(`[DB] Vault Seed: ${inserted} inserted, ${ignored} ignored`);
 }

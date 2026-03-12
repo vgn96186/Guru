@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { Subject } from '../types';
+import { theme } from '../constants/theme';
 
 interface Props {
   subject: Subject;
@@ -13,10 +14,11 @@ interface Props {
     withNotes: number;
     weak: number;
   };
+  matchingTopicsCount?: number;
   onPress: () => void;
 }
 
-export default function SubjectCard({ subject, coverage, metrics, onPress }: Props) {
+export default function SubjectCard({ subject, coverage, metrics, matchingTopicsCount, onPress }: Props) {
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -67,7 +69,14 @@ export default function SubjectCard({ subject, coverage, metrics, onPress }: Pro
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={handlePress}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={`${subject.name} subject`}
+        accessibilityHint={`Opens ${subject.name} micro-topics. ${coverage.seen} of ${coverage.total} covered.`}
+      >
         {/* Subtle background fill based on progress */}
         <View 
           style={[
@@ -80,14 +89,21 @@ export default function SubjectCard({ subject, coverage, metrics, onPress }: Pro
         <View style={styles.content}>
           <View style={styles.topRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.code}>{subject.shortCode}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={styles.code}>{subject.shortCode}</Text>
+                {matchingTopicsCount !== undefined && matchingTopicsCount > 0 && (
+                  <View style={styles.matchBadge}>
+                    <Text style={styles.matchBadgeText}>{matchingTopicsCount} matching topics</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.name} numberOfLines={2}>{subject.name}</Text>
             </View>
             <View style={styles.pctContainer}>
-              <Text style={[styles.pct, { color: pct >= 80 ? '#4CAF50' : pct >= 50 ? '#FF9800' : '#fff' }]}>
+              <Text style={[styles.pct, { color: pct >= 80 ? theme.colors.success : pct >= 50 ? theme.colors.warning : theme.colors.textPrimary }]}>
                 {pct}%
               </Text>
-              <Text style={styles.pctLabel}>{coverage.seen}/{coverage.total}</Text>
+              <Text style={styles.pctLabel}>{coverage.seen}/{coverage.total} micro</Text>
             </View>
           </View>
           
@@ -127,12 +143,14 @@ export default function SubjectCard({ subject, coverage, metrics, onPress }: Pro
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    backgroundColor: '#1A1A24',
-    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
     marginBottom: 10,
     overflow: 'hidden',
     elevation: 3,
     position: 'relative',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   backgroundFill: {
     position: 'absolute',
@@ -144,15 +162,30 @@ const styles = StyleSheet.create({
   colorBar: { width: 5 },
   content: { flex: 1, padding: 12 },
   topRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  code: { color: '#B8B8CC', fontSize: 11, fontWeight: '600', marginBottom: 2 },
-  name: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 6 },
+  code: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '600', marginBottom: 2 },
+  matchBadge: {
+    backgroundColor: '#6C63FF22',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 6,
+    marginBottom: 2,
+    borderWidth: 1,
+    borderColor: '#6C63FF55'
+  },
+  matchBadgeText: {
+    color: '#E7E4FF',
+    fontSize: 9,
+    fontWeight: '700'
+  },
+  name: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 15, marginBottom: 6 },
   pctContainer: { alignItems: 'flex-end', marginLeft: 12 },
   pct: { fontWeight: '900', fontSize: 20 },
-  pctLabel: { color: '#8888A4', fontSize: 10, marginTop: 2 },
+  pctLabel: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
   progressContainer: { marginVertical: 8 },
   progressTrack: { 
     height: 4, 
-    backgroundColor: '#2A2A38', 
+    backgroundColor: theme.colors.border, 
     borderRadius: 2, 
     overflow: 'hidden' 
   },
@@ -162,7 +195,7 @@ const styles = StyleSheet.create({
   },
   weightRow: { flexDirection: 'row', alignItems: 'center' },
   dot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
-  weight: { color: '#9E9E9E', fontSize: 11 },
+  weight: { color: theme.colors.textMuted, fontSize: 11 },
   metricsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -170,21 +203,21 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   metricBadge: {
-    color: '#B9C0D0',
+    color: theme.colors.textSecondary,
     fontSize: 10,
     fontWeight: '700',
     paddingHorizontal: 7,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: '#232433',
+    backgroundColor: theme.colors.cardHover,
   },
   metricBadgeUrgent: {
     color: '#FFD6D6',
-    backgroundColor: '#4A1F26',
+    backgroundColor: theme.colors.errorSurface,
   },
   completeBadge: { 
     marginLeft: 'auto', 
-    color: '#4CAF50', 
+    color: theme.colors.success, 
     fontSize: 11, 
     fontWeight: '700' 
   },

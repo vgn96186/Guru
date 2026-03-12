@@ -6,11 +6,7 @@ import { getCompletedSessionCount } from '../db/queries/sessions';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
 import type { TopicWithProgress } from '../types';
 
-interface UseHomeDashboardDataParams {
-  refreshProfile: () => void | Promise<void>;
-}
-
-export function useHomeDashboardData({ refreshProfile }: UseHomeDashboardDataParams) {
+export function useHomeDashboardData() {
   const [weakTopics, setWeakTopics] = useState<TopicWithProgress[]>([]);
   const [dueTopics, setDueTopics] = useState<TopicWithProgress[]>([]);
   const [todayTasks, setTodayTasks] = useState<TodayTask[]>([]);
@@ -21,9 +17,7 @@ export function useHomeDashboardData({ refreshProfile }: UseHomeDashboardDataPar
   const reload = useCallback(async () => {
     setIsLoading(true);
     try {
-      await refreshProfile();
       markNemesisTopics();
-      // Yield between sync DB calls to avoid long JS thread stalls.
       setWeakTopics(getWeakestTopics(3));
       await new Promise(resolve => setTimeout(resolve, 0));
       setDueTopics(getTopicsDueForReview(5));
@@ -38,7 +32,7 @@ export function useHomeDashboardData({ refreshProfile }: UseHomeDashboardDataPar
     } finally {
       setIsLoading(false);
     }
-  }, [refreshProfile]);
+  }, []);
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {

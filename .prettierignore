@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.expo
+android
+ios
+artifacts
+*.xapk
+

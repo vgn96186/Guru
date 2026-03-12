@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { theme } from '../constants/theme';
 
 interface Props {
   onPress: () => void;
@@ -15,7 +16,7 @@ export default function StartButton({
   onPress,
   label = 'START SESSION',
   sublabel,
-  color = '#6C63FF',
+  color = theme.colors.primary,
   disabled = false,
   disabledLabel = 'LOADING...',
 }: Props) {
@@ -62,7 +63,7 @@ export default function StartButton({
           accessibilityLabel="Start study session"
           accessibilityState={{ disabled }}
           testID="start-session-btn"
-          style={[styles.button, { backgroundColor: disabled ? '#333' : color }, disabled && { opacity: 0.6 }]}
+          style={[styles.button, { backgroundColor: disabled ? theme.colors.cardHover : color }, disabled && styles.buttonDisabled]}
         >
           <Text
             style={styles.label}
@@ -77,7 +78,7 @@ export default function StartButton({
               style={styles.sublabel}
               numberOfLines={2}
               adjustsFontSizeToFit
-              minimumFontScale={0.8}
+              minimumFontScale={0.85}
             >
               {sublabel}
             </Text>
@@ -88,45 +89,51 @@ export default function StartButton({
   );
 }
 
+const SIZE = 240;
+const RADIUS = SIZE / 2;
+
 const styles = StyleSheet.create({
   glowWrapper: {
-    width: 220,
-    height: 220,
+    width: SIZE,
+    height: SIZE,
     alignItems: 'center',
     justifyContent: 'center',
   },
   glowLayer: {
     position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    shadowColor: '#6C63FF',
+    width: SIZE,
+    height: SIZE,
+    borderRadius: RADIUS,
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 30,
+    shadowRadius: 35,
     shadowOpacity: 0.8,
     elevation: 20,
   },
   button: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: SIZE,
+    height: SIZE,
+    borderRadius: RADIUS,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 12,
+    paddingHorizontal: 24,
   },
+  buttonDisabled: { opacity: 0.6 },
   label: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 2,
+    fontSize: 22,
+    letterSpacing: 1.4,
     textAlign: 'center',
-    width: '80%',
+    width: '85%',
   },
   sublabel: {
-    color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    marginTop: 6,
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    marginTop: 8,
     textAlign: 'center',
-    width: '75%',
+    width: '90%',
+    lineHeight: 22,
   },
 });

@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
+import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
@@ -15,7 +15,7 @@ const STANDING_THRESHOLD = 0.7; // Z-axis value when standing (phone upright)
 const LYING_THRESHOLD = 0.3; // Z-axis value when lying down (phone flat)
 
 export default function BedLockScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [phase, setPhase] = useState<'detecting' | 'lying' | 'situp' | 'stand' | 'unlocked'>('detecting');
   const [positionZ, setPositionZ] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -190,14 +190,25 @@ export default function BedLockScreen() {
           
           <TouchableOpacity 
             style={styles.startBtn} 
-            onPress={() => navigation.navigate('Inertia')}
+            onPress={() => navigation.navigate('Tabs', {
+              screen: 'HomeTab',
+              params: {
+                screen: 'Inertia',
+              },
+            })}
           >
             <Text style={styles.startBtnText}>Start with 1 Easy Card →</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.sprintBtn} 
-            onPress={() => navigation.navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: 5 })}
+            onPress={() => navigation.navigate('Tabs', {
+              screen: 'HomeTab',
+              params: {
+                screen: 'Session',
+                params: { mood: 'distracted', mode: 'sprint', forcedMinutes: 5 },
+              },
+            })}
           >
             <Text style={styles.sprintBtnText}>⚡ 5-Min Sprint</Text>
           </TouchableOpacity>

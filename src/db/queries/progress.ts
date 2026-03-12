@@ -13,6 +13,7 @@ export function getUserProfile(): UserProfile {
     body_doubling_enabled: number; blocked_content_types: string;
     idle_timeout_minutes: number; break_duration_minutes: number;
     notification_hour: number; focus_subject_ids: string;
+    guru_frequency: UserProfile['guruFrequency'] | null;
     focus_audio_enabled: number; visual_timers_enabled: number; face_tracking_enabled: number;
     quiz_correct_count: number; last_backup_date: string | null;
     use_local_model: number; local_model_path: string | null;
@@ -32,7 +33,7 @@ export function getUserProfile(): UserProfile {
       notificationsEnabled: true, lastActiveDate: null, syncCode: null,
       strictModeEnabled: false, bodyDoublingEnabled: true,
       blockedContentTypes: [], idleTimeoutMinutes: 2,
-      breakDurationMinutes: 5, notificationHour: 7, focusSubjectIds: [],
+      breakDurationMinutes: 5, notificationHour: 7, guruFrequency: 'normal', focusSubjectIds: [],
       focusAudioEnabled: false, visualTimersEnabled: false, faceTrackingEnabled: false,
       quizCorrectCount: 0, lastBackupDate: null,
       useLocalModel: false, localModelPath: null,
@@ -66,6 +67,7 @@ export function getUserProfile(): UserProfile {
     idleTimeoutMinutes: r.idle_timeout_minutes ?? 2,
     breakDurationMinutes: r.break_duration_minutes ?? 5,
     notificationHour: r.notification_hour ?? 7,
+    guruFrequency: r.guru_frequency ?? 'normal',
     focusSubjectIds: (() => { try { return JSON.parse(r.focus_subject_ids ?? '[]'); } catch { return []; } })() as number[],
     focusAudioEnabled: (r.focus_audio_enabled ?? 0) === 1,
     visualTimersEnabled: (r.visual_timers_enabled ?? 0) === 1,
@@ -100,6 +102,7 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
     notificationsEnabled: 'notifications_enabled', lastActiveDate: 'last_active_date', syncCode: 'sync_code', strictModeEnabled: 'strict_mode_enabled',
     bodyDoublingEnabled: 'body_doubling_enabled', idleTimeoutMinutes: 'idle_timeout_minutes',
     breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
+    guruFrequency: 'guru_frequency',
     focusAudioEnabled: 'focus_audio_enabled', visualTimersEnabled: 'visual_timers_enabled',
     faceTrackingEnabled: 'face_tracking_enabled', quizCorrectCount: 'quiz_correct_count',
     lastBackupDate: 'last_backup_date', useLocalModel: 'use_local_model', localModelPath: 'local_model_path',
@@ -256,7 +259,26 @@ export function getDailyMinutesSeries(days = 7): number[] {
 
 export function resetStudyProgress(): void {
   const db = getDb();
-  db.runSync(`UPDATE topic_progress SET status = 'unseen', confidence = 0, last_studied_at = NULL, times_studied = 0, xp_earned = 0, next_review_date = NULL`);
+  db.runSync(
+    `UPDATE topic_progress SET
+       status = 'unseen',
+       confidence = 0,
+       last_studied_at = NULL,
+       times_studied = 0,
+       xp_earned = 0,
+       next_review_date = NULL,
+       fsrs_due = NULL,
+       fsrs_stability = 0,
+       fsrs_difficulty = 0,
+       fsrs_elapsed_days = 0,
+       fsrs_scheduled_days = 0,
+       fsrs_reps = 0,
+       fsrs_lapses = 0,
+       fsrs_state = 0,
+       fsrs_last_review = NULL,
+       wrong_count = 0,
+       is_nemesis = 0`,
+  );
   db.runSync(`UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`);
   db.runSync(`DELETE FROM daily_log`);
 }

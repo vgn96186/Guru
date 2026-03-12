@@ -23,6 +23,7 @@
         "backgroundColor": "#0F0F14"
       },
       "package": "com.anonymous.gurustudy",
+      "usesCleartextTraffic": true,
       "permissions": [
         "android.permission.CAMERA"
       ]

@@ -10,7 +10,7 @@ export type RootStackParamList = {
   DoomscrollGuide: undefined;
   Lockdown: { duration: number };
   CheckIn: undefined;
-  Tabs: undefined;
+  Tabs: NavigatorScreenParams<TabParamList> | undefined;
   BrainDumpReview: undefined;
   SleepMode: undefined;
   WakeUp: undefined;
@@ -21,6 +21,7 @@ export type HomeStackParamList = {
   Home: undefined;
   Session: {
     mood: Mood;
+    resume?: boolean;
     mode?: SessionMode;
     forcedMinutes?: number;
     focusTopicId?: number;
@@ -28,18 +29,13 @@ export type HomeStackParamList = {
     preferredActionType?: 'study' | 'review' | 'deep_dive';
   };
   LectureMode: { subjectId?: number };
-  GuruChat: { topicName?: string; initialQuestion?: string } | undefined;
   MockTest: undefined;
   Review: undefined;
-  NotesHub: undefined;
-  NotesSearch: undefined;
   BossBattle: undefined;
   Inertia: undefined;
   ManualLog: { appId?: string };
-  StudyPlan: undefined;
   DailyChallenge: undefined;
   FlaggedReview: undefined;
-  TranscriptHistory: { noteId?: number } | undefined;
 };
 
 export type SyllabusStackParamList = {
@@ -47,12 +43,24 @@ export type SyllabusStackParamList = {
   TopicDetail: { subjectId: number; subjectName: string; initialTopicId?: number; initialSearchQuery?: string };
 };
 
+export type ChatStackParamList = {
+  GuruChat: { topicName?: string; initialQuestion?: string } | undefined;
+};
+
+export type MenuStackParamList = {
+  MenuHome: undefined;
+  StudyPlan: undefined;
+  Stats: undefined;
+  Settings: undefined;
+  NotesHub: undefined;
+  NotesSearch: undefined;
+  TranscriptHistory: { noteId?: number } | undefined;
+};
+
 export type TabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
   SyllabusTab: NavigatorScreenParams<SyllabusStackParamList> | undefined;
-  NotesTab: undefined;
-  ChatTab: NavigatorScreenParams<HomeStackParamList> | undefined;
-  PlanTab: undefined;
-  StatsTab: undefined;
-  SettingsTab: undefined;
+  ActionHubTab: undefined;
+  ChatTab: NavigatorScreenParams<ChatStackParamList> | undefined;
+  MenuTab: NavigatorScreenParams<MenuStackParamList> | undefined;
 };

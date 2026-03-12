@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { generateTextWithRouting, type Message, transcribeAndSummarizeAudio } from './aiService';
-import { markCompleted, registerProcessor } from './offlineQueue';
+import type { Message } from './aiService';
+import { registerProcessor } from './offlineQueue';
 
 let bootstrapped = false;
 
@@ -15,8 +15,7 @@ export function registerOfflineQueueProcessors(): void {
     if (!messages || messages.length === 0) {
       throw new Error('Invalid queued generate_text payload');
     }
-    await generateTextWithRouting(messages, item.payload.options as any, false);
-    markCompleted(item.id);
+    throw new Error('Queued text generation from older app versions cannot be replayed safely. Please retry the original action.');
   });
 
   registerProcessor('generate_json', async (item) => {
@@ -24,12 +23,8 @@ export function registerOfflineQueueProcessors(): void {
     if (!messages || messages.length === 0) {
       throw new Error('Invalid queued generate_json payload');
     }
-
-    // Queue replay uses structural validation only; schema-specific validation
-    // is done in the original online request path.
-    const { text } = await generateTextWithRouting(messages, { preferCloud: true }, false);
-    UnknownJsonSchema.parse(JSON.parse(text));
-    markCompleted(item.id);
+    UnknownJsonSchema.parse(item.payload);
+    throw new Error('Queued structured generation from older app versions cannot be replayed safely. Please retry the original action.');
   });
 
   registerProcessor('transcribe', async (item) => {
@@ -39,7 +34,6 @@ export function registerOfflineQueueProcessors(): void {
     if (!audioFilePath) {
       throw new Error('Invalid queued transcribe payload');
     }
-    await transcribeAndSummarizeAudio(audioFilePath);
-    markCompleted(item.id);
+    throw new Error('Queued transcription from older app versions cannot be replayed safely. Please retry from lecture history or re-import the audio.');
   });
 }

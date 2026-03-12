@@ -8,15 +8,15 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { HomeStackParamList } from '../navigation/types';
+import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getDb } from '../db/database';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
 
-type Nav = NativeStackNavigationProp<HomeStackParamList, 'NotesHub'>;
+type Nav = NativeStackNavigationProp<MenuStackParamList, 'NotesHub'>;
 
 interface TopicNotePreview {
   topicId: number;
@@ -53,6 +53,7 @@ function formatDate(timestamp: number): string {
 
 export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
+  const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const [stats, setStats] = useState<NotesStats>({ lectureCount: 0, topicNoteCount: 0 });
   const [recentLectures, setRecentLectures] = useState<LectureHistoryItem[]>([]);
   const [topicNotes, setTopicNotes] = useState<TopicNotePreview[]>([]);
@@ -160,7 +161,10 @@ export default function NotesHubScreen() {
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => navigation.navigate('GuruChat')}
+              onPress={() => tabsNavigation?.navigate('ChatTab', {
+                screen: 'GuruChat',
+                params: { topicName: 'General Medicine' },
+              })}
               activeOpacity={0.85}
             >
               <Ionicons name="medkit-outline" size={20} color="#7ED6A7" />
@@ -178,7 +182,10 @@ export default function NotesHubScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyBtn}
-                onPress={() => navigation.navigate('LectureMode', {})}
+                onPress={() => tabsNavigation?.navigate('HomeTab', {
+                  screen: 'LectureMode',
+                  params: {},
+                })}
                 activeOpacity={0.8}
               >
                 <Text style={styles.emptyBtnText}>Start a lecture capture</Text>

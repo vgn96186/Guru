@@ -68,7 +68,13 @@ export default function LockdownScreen() {
 
         <TouchableOpacity 
           style={styles.studyBtn}
-          onPress={() => (navigation as any).navigate('Session', { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft/60) })}
+          onPress={() => navigation.navigate('Tabs', {
+            screen: 'HomeTab',
+            params: {
+              screen: 'Session',
+              params: { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft / 60) },
+            },
+          })}
         >
           <Text style={styles.studyBtnText}>Open Flashcards</Text>
         </TouchableOpacity>

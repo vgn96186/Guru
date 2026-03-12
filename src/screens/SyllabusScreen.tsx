@@ -10,6 +10,7 @@ import SubjectCard from '../components/SubjectCard';
 import type { Subject } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import * as Haptics from 'expo-haptics';
+import { theme } from '../constants/theme';
 
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'Syllabus'>;
 
@@ -63,6 +64,10 @@ export default function SyllabusScreen() {
          SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) AS weak
        FROM topics t
        LEFT JOIN topic_progress p ON p.topic_id = t.id
+       WHERE NOT EXISTS (
+         SELECT 1 FROM topics c
+         WHERE c.parent_topic_id = t.id
+       )
        GROUP BY t.subject_id`,
     );
     const metricMap = new Map(
@@ -112,8 +117,8 @@ export default function SyllabusScreen() {
 
   async function handleManualSync() {
     Alert.alert(
-      'Re-check vault topics?',
-      'This will safely sync new vault topics without deleting your progress.',
+      'Re-check syllabus topics?',
+      'This will safely sync new syllabus and vault topics without deleting your progress.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -123,7 +128,7 @@ export default function SyllabusScreen() {
             try {
               await syncVaultSeedTopics();
               await loadData();
-              Alert.alert('Synced', 'Guru re-checked your vault topics. 😏');
+              Alert.alert('Synced', 'Guru successfully re-checked your topics. 😏');
             } catch (e: any) {
               Alert.alert('Sync failed', e.message);
             } finally {
@@ -160,9 +165,24 @@ export default function SyllabusScreen() {
   const totalDue = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.due, 0);
   const totalHighYield = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.highYield, 0);
   const totalWithNotes = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.withNotes, 0);
+
+  const searchLower = searchQuery.trim().toLowerCase();
+  let matchingSubjectIds = new Set<number>();
+  let matchingCounts = new Map<number, number>();
+  if (searchLower) {
+    const db = getDb();
+    const rows = db.getAllSync<{ subject_id: number, c: number }>(
+      `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
+      [`%${searchLower}%`]
+    );
+    matchingSubjectIds = new Set(rows.map(r => r.subject_id));
+    rows.forEach(r => matchingCounts.set(r.subject_id, r.c));
+  }
+
   const filteredSubjects = subjects.filter(subject =>
-    subject.name.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
-    subject.shortCode.toLowerCase().includes(searchQuery.trim().toLowerCase()),
+    subject.name.toLowerCase().includes(searchLower) ||
+    subject.shortCode.toLowerCase().includes(searchLower) ||
+    matchingSubjectIds.has(subject.id)
   );
   
   // Animated progress
@@ -216,11 +236,19 @@ export default function SyllabusScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Syllabus</Text>
-            <Text style={styles.subtitle}>Break the exam down by subject, yield, due reviews, and note coverage.</Text>
+              <Text style={styles.subtitle}>Track exam prep through micro-topics, due reviews, and high-yield coverage.</Text>
+            {seenTopics === 0 ? (
+              <View style={styles.emptySummaryCard}>
+                <Text style={styles.emptySummaryTitle}>You are starting fresh</Text>
+                <Text style={styles.emptySummaryText}>
+                  Open any subject to mark topics, capture lectures, and build coverage momentum.
+                </Text>
+              </View>
+            ) : null}
             <View style={styles.statsRow}>
               <View style={styles.overallBadge}>
                 <Text style={styles.overallPct}>{displayCount}</Text>
-                <Text style={styles.overallLabel}>/{totalTopics} topics</Text>
+                <Text style={styles.overallLabel}>/{totalTopics} micro-topics</Text>
               </View>
               <View style={[styles.pctBadge, overallPct >= 50 && styles.pctBadgeGood]}>
                 <Text style={[styles.pctText, overallPct >= 50 && { color: '#4CAF50' }]}>{overallPct}%</Text>
@@ -286,7 +314,8 @@ export default function SyllabusScreen() {
               subject={item}
               coverage={coverage.get(item.id) ?? { total: 0, seen: 0 }}
               metrics={subjectMetrics.get(item.id)}
-              onPress={() => navigation.navigate('TopicDetail', { subjectId: item.id, subjectName: item.name })}
+              matchingTopicsCount={matchingCounts.get(item.id)}
+              onPress={() => navigation.navigate('TopicDetail', { subjectId: item.id, subjectName: item.name, initialSearchQuery: searchQuery.trim() })}
             />
           )}
         />
@@ -296,10 +325,20 @@ export default function SyllabusScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, paddingTop: 20 },
   title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 8 },
   subtitle: { color: '#8E94A5', fontSize: 13, lineHeight: 19, marginBottom: 10 },
+  emptySummaryCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    marginBottom: 12,
+  },
+  emptySummaryTitle: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '800', marginBottom: 4 },
+  emptySummaryText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
   statsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   overallBadge: { flexDirection: 'row', alignItems: 'baseline' },
   overallPct: { color: '#6C63FF', fontWeight: '900', fontSize: 24 },

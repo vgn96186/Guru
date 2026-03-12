@@ -6,7 +6,7 @@
  *  2. Groq Whisper (cloud) for transcription when local model is unavailable
  *
  * Transcript analysis/extraction is always routed through aiService
- * (local model first, then Groq/OpenRouter cloud fallback).
+ * (Groq first, then OpenRouter free models, then local fallback).
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
@@ -15,8 +15,9 @@ import { generateJSONWithRouting, generateTextWithRouting, getApiKeys } from './
 import { initWhisper } from 'whisper.rn';
 import { convertToWav } from '../../modules/app-launcher';
 import { getUserProfile } from '../db/queries/progress';
-import { enqueueRequest } from './offlineQueue';
 import { isTransientNetworkError } from './offlineQueueErrors';
+import { getInitialCard, reviewCardFromConfidence } from './fsrsService';
+import type { Card } from 'ts-fsrs';
 
 const LOG_TAG = '[Transcription]';
 
@@ -156,51 +157,6 @@ export async function transcribeWithGroq(
   return { ...analysis, transcript };
 }
 
-/** Engine 2: OpenAI Whisper → local/Groq extraction */
-export async function transcribeRawWithOpenAI(
-  audioFilePath: string,
-  openaiKey: string,
-): Promise<string> {
-  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
-  const formData = new FormData();
-  formData.append('file', {
-    uri: fileUri,
-    name: 'lecture.m4a',
-    type: 'audio/mp4',
-  } as any);
-  formData.append('model', 'whisper-1');
-  // Don't hardcode language — let Whisper auto-detect for Hinglish lectures
-  formData.append('prompt', WHISPER_MEDICAL_PROMPT);
-
-  const whisperRes = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${openaiKey}` },
-    body: formData,
-  });
-
-  if (!whisperRes.ok) {
-    const err = await whisperRes.text().catch(() => whisperRes.status.toString());
-    throw new Error(`Whisper API error ${whisperRes.status}: ${err}`);
-  }
-
-  const whisperData = await whisperRes.json();
-  const rawTranscript = String(whisperData?.text ?? '').trim();
-  return sanitizeTranscript(rawTranscript);
-}
-
-export async function transcribeWithOpenAI(
-  audioFilePath: string,
-  openaiKey: string,
-): Promise<LectureAnalysis> {
-  const transcript = await transcribeRawWithOpenAI(audioFilePath, openaiKey);
-  if (!transcript) {
-    return createEmptyAnalysis('No speech detected');
-  }
-
-  const analysis = await analyzeTranscript(transcript);
-  return { ...analysis, transcript };
-}
-
 /** Engine 3: Local Whisper.rn → Local Llama (via aiService routing) */
 export async function transcribeRawWithLocalWhisper(
   audioFilePath: string,
@@ -278,7 +234,7 @@ export async function transcribeWithLocalWhisper(
 
 /**
  * Unified transcription entry point — Groq first, local Whisper fallback.
- * Callers should use this instead of calling individual engines directly.
+ * This is the only app-facing transcription entrypoint. Do not bypass it.
  */
 export async function transcribeAudio(audioFilePath: string): Promise<LectureAnalysis> {
   const profile = getUserProfile();
@@ -297,12 +253,8 @@ export async function transcribeAudio(audioFilePath: string): Promise<LectureAna
     } catch (err) {
       console.warn(`${LOG_TAG} Groq transcription failed, falling back to local:`, (err as Error).message);
       if (!hasLocal) {
-        if (isTransientNetworkError(err)) {
-          enqueueRequest('transcribe', {
-            audioFilePath,
-            queuedAt: Date.now(),
-            source: 'transcribeAudio',
-          });
+        if (isTransientNetworkError(err) && __DEV__) {
+          console.warn(`${LOG_TAG} Skipping offline transcription queue because interactive transcription results cannot be replayed safely.`);
         }
         throw err;
       }
@@ -403,6 +355,147 @@ function buildFallbackAnalysis(transcript: string): LectureAnalysis {
   };
 }
 
+type StoredFsrsRow = {
+  next_review_date: string | null;
+  fsrs_due: string | null;
+  fsrs_stability: number;
+  fsrs_difficulty: number;
+  fsrs_elapsed_days: number;
+  fsrs_scheduled_days: number;
+  fsrs_reps: number;
+  fsrs_lapses: number;
+  fsrs_state: number;
+  fsrs_last_review: string | null;
+};
+
+function getStoredFsrsCard(
+  db: import('expo-sqlite').SQLiteDatabase,
+  topicId: number,
+): { row: StoredFsrsRow; card: Card | null } {
+  const row = db.getFirstSync<StoredFsrsRow>(
+    `SELECT next_review_date, fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days,
+            fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review
+       FROM topic_progress
+      WHERE topic_id = ?`,
+    [topicId],
+  ) ?? {
+    next_review_date: null,
+    fsrs_due: null,
+    fsrs_stability: 0,
+    fsrs_difficulty: 0,
+    fsrs_elapsed_days: 0,
+    fsrs_scheduled_days: 0,
+    fsrs_reps: 0,
+    fsrs_lapses: 0,
+    fsrs_state: 0,
+    fsrs_last_review: null,
+  };
+
+  if (!row.fsrs_last_review || !row.fsrs_due) {
+    return { row, card: null };
+  }
+
+  return {
+    row,
+    card: {
+      due: new Date(row.fsrs_due),
+      stability: row.fsrs_stability,
+      difficulty: row.fsrs_difficulty,
+      elapsed_days: row.fsrs_elapsed_days,
+      scheduled_days: row.fsrs_scheduled_days,
+      reps: row.fsrs_reps,
+      lapses: row.fsrs_lapses,
+      state: row.fsrs_state,
+      last_review: new Date(row.fsrs_last_review),
+    },
+  };
+}
+
+function applyLectureProgressToTopic(
+  db: import('expo-sqlite').SQLiteDatabase,
+  topicId: number,
+  confidence: number,
+  reviewedAtMs: number,
+  incrementTimesStudied = true,
+): void {
+  const safeConfidence = Math.max(1, Math.min(3, confidence));
+  const { row, card } = getStoredFsrsCard(db, topicId);
+  const nextDueCard = card ?? reviewCardFromConfidence(getInitialCard(), safeConfidence, new Date(reviewedAtMs)).card;
+  const nextReviewDate = row.next_review_date ?? nextDueCard.due.toISOString().slice(0, 10);
+  const nextDueIso = nextDueCard.due.toISOString();
+  const nextLastReviewIso = nextDueCard.last_review?.toISOString() ?? new Date(reviewedAtMs).toISOString();
+
+  if (incrementTimesStudied) {
+    db.runSync(
+      `UPDATE topic_progress SET
+         status = CASE WHEN status = 'unseen' THEN 'seen' ELSE status END,
+         confidence = MAX(confidence, ?),
+         times_studied = times_studied + 1,
+         last_studied_at = ?,
+         next_review_date = ?,
+         fsrs_due = COALESCE(fsrs_due, ?),
+         fsrs_stability = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_stability END,
+         fsrs_difficulty = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_difficulty END,
+         fsrs_elapsed_days = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_elapsed_days END,
+         fsrs_scheduled_days = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_scheduled_days END,
+         fsrs_reps = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_reps END,
+         fsrs_lapses = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_lapses END,
+         fsrs_state = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_state END,
+         fsrs_last_review = COALESCE(fsrs_last_review, ?)
+       WHERE topic_id = ?`,
+      [
+        safeConfidence,
+        reviewedAtMs,
+        nextReviewDate,
+        nextDueIso,
+        nextDueCard.stability,
+        nextDueCard.difficulty,
+        nextDueCard.elapsed_days,
+        nextDueCard.scheduled_days,
+        nextDueCard.reps,
+        nextDueCard.lapses,
+        nextDueCard.state,
+        nextLastReviewIso,
+        topicId,
+      ],
+    );
+    return;
+  }
+
+  db.runSync(
+    `UPDATE topic_progress SET
+       status = CASE WHEN status = 'unseen' THEN 'seen' ELSE status END,
+       confidence = MAX(confidence, ?),
+       last_studied_at = ?,
+       next_review_date = COALESCE(next_review_date, ?),
+       fsrs_due = COALESCE(fsrs_due, ?),
+       fsrs_stability = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_stability END,
+       fsrs_difficulty = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_difficulty END,
+       fsrs_elapsed_days = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_elapsed_days END,
+       fsrs_scheduled_days = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_scheduled_days END,
+       fsrs_reps = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_reps END,
+       fsrs_lapses = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_lapses END,
+       fsrs_state = CASE WHEN fsrs_last_review IS NULL THEN ? ELSE fsrs_state END,
+       fsrs_last_review = COALESCE(fsrs_last_review, ?)
+     WHERE topic_id = ?`,
+    [
+      safeConfidence,
+      reviewedAtMs,
+      nextReviewDate,
+      nextDueIso,
+      nextDueCard.stability,
+      nextDueCard.difficulty,
+      nextDueCard.elapsed_days,
+      nextDueCard.scheduled_days,
+      nextDueCard.reps,
+      nextDueCard.lapses,
+      nextDueCard.state,
+      nextLastReviewIso,
+      topicId,
+    ],
+  );
+}
+
 // ──────────────────────────────────────────────────
 // ADHD-Friendly Note Generation
 // ──────────────────────────────────────────────────
@@ -437,7 +530,7 @@ Return ONLY the formatted note. No preamble, no sign-off.`;
 
 /**
  * Generate an ADHD-friendly formatted note from a lecture analysis.
- * Uses the LLM routing chain (local → Groq → OpenRouter).
+ * Uses the LLM routing chain (Groq → OpenRouter → local).
  * Falls back to a basic formatted version if LLM fails.
  */
 export async function generateADHDNote(analysis: LectureAnalysis): Promise<string> {
@@ -501,9 +594,7 @@ export function markTopicsFromLecture(
   confidence: number,
   subjectName?: string,
 ): void {
-  const today = new Date().toISOString().slice(0, 10);
-  // +3 days default review for newly watched topics
-  const reviewDate = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const reviewedAtMs = Date.now();
 
   // Resolve subject ID for scoped matching
   let subjectId: number | null = null;
@@ -571,17 +662,7 @@ export function markTopicsFromLecture(
 
     if (!row || matched.has(row.id)) continue;
     matched.add(row.id);
-
-    db.runSync(
-      `UPDATE topic_progress SET
-        status = CASE WHEN status = 'unseen' THEN 'seen' ELSE status END,
-        confidence = MAX(confidence, ?),
-        times_studied = times_studied + 1,
-        last_studied_at = ?,
-        next_review_date = COALESCE(CASE WHEN next_review_date IS NULL THEN ? END, next_review_date)
-       WHERE topic_id = ?`,
-      [confidence, Date.now(), reviewDate, row.id],
-    );
+    applyLectureProgressToTopic(db, row.id, confidence, reviewedAtMs, true);
   }
 
   // Also mark the parent/umbrella topic for the subject as 'seen'
@@ -595,14 +676,7 @@ export function markTopicsFromLecture(
     );
     for (const pr of parentRows) {
       if (!matched.has(pr.parent_topic_id)) {
-        db.runSync(
-          `UPDATE topic_progress SET
-            status = CASE WHEN status = 'unseen' THEN 'seen' ELSE status END,
-            confidence = MAX(confidence, ?),
-            last_studied_at = ?
-           WHERE topic_id = ?`,
-          [confidence, Date.now(), pr.parent_topic_id],
-        );
+        applyLectureProgressToTopic(db, pr.parent_topic_id, confidence, reviewedAtMs, false);
       }
     }
   }

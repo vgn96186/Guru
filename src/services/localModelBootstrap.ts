@@ -14,6 +14,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { getUserProfile, updateUserProfile } from '../db/queries/progress';
 import { useAppStore } from '../store/useAppStore';
+import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
+import { showToast } from '../components/Toast';
 
 const LLM_MODEL = {
   name: 'qwen2.5-3b-instruct-q4_k_m.gguf',
@@ -36,10 +38,20 @@ export async function bootstrapLocalModels(): Promise<void> {
   // Auto-enable models if no path is configured yet.
   // This means fresh installs will start downloading models in the background
   // without requiring the user to first toggle \"use local model\" in Settings.
-  const needsLlm = !profile.localModelPath;
+  const llmAllowed = isLocalLlmAllowedOnThisDevice();
+  const needsLlm = llmAllowed && !profile.localModelPath;
   const needsWhisper = !profile.localWhisperPath;
 
   if (!needsLlm && !needsWhisper) return;
+
+  // If this is a fresh install on a low-RAM device, skip the heavy LLM download
+  // and surface a one-time warning so the user understands why.
+  if (!llmAllowed && !profile.localModelPath) {
+    const warning = getLocalLlmRamWarning();
+    if (warning) {
+      showToast(warning, 'warning');
+    }
+  }
 
   // Download Whisper first (75MB) — it's critical for transcription
   if (needsWhisper) {

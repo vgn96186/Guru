@@ -17,6 +17,8 @@ import { refreshAccountabilityNotifications } from './src/services/notificationS
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { registerOfflineQueueProcessors } from './src/services/offlineQueueBootstrap';
 import { processQueue } from './src/services/offlineQueue';
+import { enforceLocalLlmRamGuard } from './src/services/deviceMemory';
+import linking from './src/navigation/linking';
 
 export const navigationRef = createNavigationContainerRef<any>();
 
@@ -78,7 +80,7 @@ function AppContent() {
   }, [loadProfile, refreshProfile]);
 
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
       <RootNavigator />
       <ToastContainer />
     </NavigationContainer>
@@ -94,6 +96,7 @@ export default function App() {
       try {
         await SplashScreen.preventAutoHideAsync();
         await initDatabase();
+        enforceLocalLlmRamGuard();
         registerOfflineQueueProcessors();
         await processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
         await registerBackgroundFetch().catch((e: unknown) => console.log('Background task not registered:', e));

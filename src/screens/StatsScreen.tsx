@@ -10,6 +10,7 @@ import { useAppStore } from '../store/useAppStore';
 import LoadingOrb from '../components/LoadingOrb';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ReviewCalendar from '../components/ReviewCalendar';
+import { theme } from '../constants/theme';
 
 export default function StatsScreen() {
   const profile = useAppStore(s => s.profile);
@@ -103,6 +104,15 @@ export default function StatsScreen() {
           <Text style={styles.headerTitle}>Exam Readiness</Text>
           <Text style={styles.headerSub}>Focus on how far you've come.</Text>
         </View>
+
+        {stats.totalSessions === 0 ? (
+          <View style={styles.emptyHeroCard}>
+            <Text style={styles.emptyHeroTitle}>No study data yet</Text>
+            <Text style={styles.emptyHeroText}>
+              Your first session, lecture capture, or review block will unlock streaks, projections, and coverage trends here.
+            </Text>
+          </View>
+        ) : null}
 
         {/* The Big Projection Card */}
         <View style={styles.projectionCard}>
@@ -233,7 +243,11 @@ export default function StatsScreen() {
             <Text style={styles.masteredEmoji}>🔥</Text>
             <View style={styles.masteredInfo}>
               <Text style={styles.masteredTitle}>You know {stats.masteredCount} topics cold.</Text>
-              <Text style={styles.masteredSub}>Including: {stats.masteredTopics.join(', ')}{stats.masteredCount > 10 ? '...' : '.'}</Text>
+              <Text style={styles.masteredSub}>
+                {stats.masteredTopics.length > 0
+                  ? `Including: ${stats.masteredTopics.join(', ')}${stats.masteredCount > 10 ? '...' : '.'}`
+                  : 'Keep stacking strong reviews and this bank will grow quickly.'}
+              </Text>
             </View>
           </View>
         )}
@@ -311,8 +325,18 @@ const sparkStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
   container: { padding: 16 },
+  emptyHeroCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  emptyHeroTitle: { color: theme.colors.textPrimary, fontSize: 20, fontWeight: '800', marginBottom: 8 },
+  emptyHeroText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 21 },
   header: { marginBottom: 24, marginTop: 16 },
   headerTitle: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: 0.5 },
   headerSub: { color: '#9E9E9E', fontSize: 14, marginTop: 4 },

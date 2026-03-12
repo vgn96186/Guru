@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
+import type { MenuStackParamList } from '../navigation/types';
 import {
   getLectureHistory,
   searchLectureNotes,
@@ -153,8 +153,8 @@ function TranscriptSection({ transcript }: { transcript: string }) {
 }
 
 export default function TranscriptHistoryScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const route = useRoute<RouteProp<HomeStackParamList, 'TranscriptHistory'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
+  const route = useRoute<RouteProp<MenuStackParamList, 'TranscriptHistory'>>();
   const [notes, setNotes] = useState<LectureHistoryItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedNote, setSelectedNote] = useState<LectureHistoryItem | null>(null);

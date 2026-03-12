@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, Alert, ActivityIndicator,
+  StyleSheet, Alert, ActivityIndicator, Image
 } from 'react-native';
 import type {
   AIContent, KeyPointsContent, QuizContent, StoryContent,
@@ -10,8 +10,31 @@ import type {
 } from '../types';
 
 import { askGuru } from '../services/aiService';
+import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
+
+interface TopicImageProps {
+  topicName: string;
+}
+
+function TopicImage({ topicName }: TopicImageProps) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchWikipediaImage(topicName).then(setImageUrl);
+  }, [topicName]);
+
+  if (!imageUrl) return null;
+
+  return (
+    <Image 
+      source={{ uri: imageUrl }} 
+      style={s.topicImage} 
+      resizeMode="contain"
+    />
+  );
+}
 
 interface Props {
   content: AIContent;
@@ -107,24 +130,35 @@ const CONFIDENCE_LABELS: Record<number, string> = {
 // ── Key Points ────────────────────────────────────────────────────
 
 function KeyPointsCard({ content, onDone, onSkip }: { content: KeyPointsContent } & Omit<Props, 'content'>) {
+  const [revealIndex, setRevealIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
+  
+  const isFullyRevealed = revealIndex >= content.points.length;
+
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📌 KEY POINTS</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       <View style={s.pointsContainer}>
-        {content.points.map((pt, i) => (
+        {content.points.slice(0, revealIndex + 1).map((pt, i) => (
           <View key={i} style={s.pointRow}>
             <Text style={s.bullet}>→</Text>
             <Text style={s.pointText}>{pt}</Text>
           </View>
         ))}
       </View>
-      <View style={s.hookBox}>
-        <Text style={s.hookLabel}>💡 Memory Hook</Text>
-        <Text style={s.hookText}>{content.memoryHook}</Text>
-      </View>
-      {!showRating ? (
+      {isFullyRevealed && (
+        <View style={s.hookBox}>
+          <Text style={s.hookLabel}>💡 Memory Hook</Text>
+          <Text style={s.hookText}>{content.memoryHook}</Text>
+        </View>
+      )}
+      {!isFullyRevealed ? (
+        <TouchableOpacity style={s.doneBtn} onPress={() => setRevealIndex(i => i + 1)} activeOpacity={0.8}>
+          <Text style={s.doneBtnText}>Next Point →</Text>
+        </TouchableOpacity>
+      ) : !showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
           <Text style={s.doneBtnText}>Got it →</Text>
         </TouchableOpacity>
@@ -174,6 +208,7 @@ function QuizCard({ content, onDone, onSkip, onQuizAnswered, onQuizComplete }: {
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🎯 QUIZ  {currentQ + 1}/{content.questions.length}</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
@@ -223,6 +258,7 @@ function StoryCard({ content, onDone, onSkip }: { content: StoryContent } & Omit
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📖 CLINICAL STORY</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       <Text style={s.storyText}>{content.story}</Text>
       <View style={s.highlightsBox}>
         <Text style={s.highlightsLabel}>Key concepts in this story:</Text>
@@ -249,24 +285,33 @@ function StoryCard({ content, onDone, onSkip }: { content: StoryContent } & Omit
 // ── Mnemonic ──────────────────────────────────────────────────────
 
 function MnemonicCard({ content, onDone, onSkip }: { content: MnemonicContent } & Omit<Props, 'content'>) {
+  const [revealStep, setRevealStep] = useState(0);
   const [showRating, setShowRating] = useState(false);
+  
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🧠 MNEMONIC</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       <View style={s.mnemonicBox}>
         <Text style={s.mnemonicMain}>{content.mnemonic}</Text>
       </View>
       <View style={s.expansionList}>
-        {content.expansion.map((line, i) => (
+        {revealStep >= 1 && content.expansion.map((line, i) => (
           <Text key={i} style={s.expansionLine}>{line}</Text>
         ))}
       </View>
-      <View style={s.hookBox}>
-        <Text style={s.hookLabel}>💡 Tip</Text>
-        <Text style={s.hookText}>{content.tip}</Text>
-      </View>
-      {!showRating ? (
+      {revealStep >= 2 && (
+        <View style={s.hookBox}>
+          <Text style={s.hookLabel}>💡 Tip</Text>
+          <Text style={s.hookText}>{content.tip}</Text>
+        </View>
+      )}
+      {revealStep < 2 ? (
+        <TouchableOpacity style={s.doneBtn} onPress={() => setRevealStep(i => i + 1)} activeOpacity={0.8}>
+          <Text style={s.doneBtnText}>{revealStep === 0 ? 'Decode it →' : 'Show tip →'}</Text>
+        </TouchableOpacity>
+      ) : !showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
           <Text style={s.doneBtnText}>Got it →</Text>
         </TouchableOpacity>
@@ -309,6 +354,7 @@ function TeachBackCard({ content, onDone, onSkip }: { content: TeachBackContent 
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🎤 TEACH BACK</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       <Text style={s.questionText}>{content.prompt}</Text>
       {!submitted ? (
         <>
@@ -374,6 +420,7 @@ function ErrorHuntCard({ content, onDone, onSkip }: { content: ErrorHuntContent 
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🔍 ERROR HUNT</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       <Text style={s.questionText}>Find the 2 factual errors in this paragraph:</Text>
       <View style={s.paragraphBox}>
         <Text style={s.paragraphText}>{content.paragraph}</Text>
@@ -411,6 +458,7 @@ function DetectiveCard({ content, onDone, onSkip }: { content: DetectiveContent 
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🕵️ CLINICAL DETECTIVE</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       {content.clues.slice(0, revealedClues).map((clue, i) => (
         <View key={i} style={[s.clueBox, i === revealedClues - 1 && s.clueBoxNew]}>
           <Text style={s.clueNum}>Clue {i + 1}</Text>
@@ -457,6 +505,7 @@ function ManualReviewCard({ content, onDone, onSkip }: { content: ManualContent 
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
+      <TopicImage topicName={content.topicName} />
       
       <View style={s.offlineBox}>
         <Text style={s.offlineEmoji}>📡❌</Text>
@@ -492,6 +541,7 @@ const s = StyleSheet.create({
   container: { padding: 20, paddingBottom: 60 },
   cardType: { color: '#6C63FF', fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginBottom: 6 },
   cardTitle: { color: '#fff', fontWeight: '800', fontSize: 22, marginBottom: 20 },
+  topicImage: { width: '100%', height: 200, borderRadius: 12, marginBottom: 20, backgroundColor: '#1A1A24' },
   pointsContainer: { marginBottom: 16 },
   pointRow: { flexDirection: 'row', marginBottom: 12 },
   bullet: { color: '#6C63FF', fontSize: 16, marginRight: 10, marginTop: 1 },

@@ -28,6 +28,8 @@ export interface StudyPlanSummary {
   totalHoursLeft: number;
   daysRemaining: number;
   requiredHoursPerDay: number;
+  requiredHoursPerDayRaw: number;
+  hoursPerDayCapped: boolean;
   feasible: boolean;
   message: string;
   projectedFinishDate: string | null;
@@ -115,6 +117,8 @@ const RESOURCE_PROFILES: Record<StudyResourceMode, ResourceProfile> = {
     subjectWeightSensitivity: 0.85,
   },
 };
+
+const MAX_DAILY_DISPLAY_MINUTES = 24 * 60;
 
 export const SUBJECT_WORKLOAD_OVERRIDES: Record<string, number> = {
   MED: 1.35,
@@ -537,9 +541,11 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
   const left = allTopics.filter(t => t.progress.status !== 'mastered').length;
   
   // Total workload estimation includes the backlog + simulated reviews
-  const requiredMinutesPerDay = totalExpectedWorkloadMinutes > 0
+  const rawRequiredMinutesPerDay = totalExpectedWorkloadMinutes > 0
     ? Math.ceil(totalExpectedWorkloadMinutes / Math.max(1, studyDaysAvailable))
     : 0;
+  const requiredMinutesPerDay = Math.min(rawRequiredMinutesPerDay, MAX_DAILY_DISPLAY_MINUTES);
+  const hoursPerDayCapped = rawRequiredMinutesPerDay > MAX_DAILY_DISPLAY_MINUTES;
   const remainingFutureReviewMinutes = Array.from(futureReviews.entries())
     .filter(([dayOffset]) => dayOffset >= daysToPlan)
     .reduce((sum, [, items]) => sum + items.reduce((itemSum, item) => itemSum + item.duration, 0), 0);
@@ -548,7 +554,7 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
     + queueDeep.reduce((sum, item) => sum + item.duration, 0)
     + queueNew.reduce((sum, item) => sum + item.duration, 0)
     + remainingFutureReviewMinutes;
-  const isFeasible = remainingQueueMinutes === 0 && requiredMinutesPerDay <= (dailyGoal * 1.15);
+  const isFeasible = remainingQueueMinutes === 0 && rawRequiredMinutesPerDay <= (dailyGoal * 1.15);
   
   const lastPlannedDay = [...plan].reverse().find(day => day.totalMinutes > 0);
   const projectedFinishDate = remainingQueueMinutes > 0 ? null : (lastPlannedDay?.date ?? null);
@@ -561,7 +567,8 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
   if (mode === 'high_yield') message = 'High-yield mode: prioritizing the most exam-relevant topics first.';
   if (mode === 'exam_crunch') message = 'Exam crunch mode: review-heavy with only the highest-yield new topics.';
   if (remainingQueueMinutes > 0) message = `Course load exceeds the current horizon. Raise the daily goal or switch to a lighter resource profile.`;
-  else if (requiredMinutesPerDay > dailyGoal) message = `Heavy load! ${Number((requiredMinutesPerDay / 60).toFixed(1))}h/day required with ${resourceProfile.label}.`;
+  else if (hoursPerDayCapped) message = `Impossible timeline: needs ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day. Extend the exam date, reduce scope, or lower resource load.`;
+  else if (rawRequiredMinutesPerDay > dailyGoal) message = `Heavy load! ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day required with ${resourceProfile.label}.`;
   else if (projectedFinishDate) message = `Projected finish ${projectedFinishDate}${bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'}`;
   else message = "Plan looks solid. Stick to it!";
 
@@ -572,6 +579,8 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
       totalHoursLeft: Number((totalExpectedWorkloadMinutes / 60).toFixed(1)),
       daysRemaining: daysToExam,
       requiredHoursPerDay: Number((requiredMinutesPerDay / 60).toFixed(1)),
+      requiredHoursPerDayRaw: Number((rawRequiredMinutesPerDay / 60).toFixed(1)),
+      hoursPerDayCapped,
       feasible: isFeasible,
       message,
       projectedFinishDate,

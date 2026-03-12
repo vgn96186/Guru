@@ -32,6 +32,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
 type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
+const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
 
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
@@ -352,7 +353,7 @@ export default function LectureModeScreen() {
   }, [isRecordingEnabled, onBreak, recording, isTranscribing]);
 
   function toggleAutoScribe() {
-    const groqKey = profile?.groqApiKey?.trim() || '';
+    const groqKey = profile?.groqApiKey?.trim() || BUNDLED_GROQ_KEY;
     const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
     if (!isRecordingEnabled && !groqKey && !hasLocalWhisper) {
       Alert.alert('Transcription Required', 'Add a Groq API key or enable Local Whisper in Settings to use Auto-Scribe.');

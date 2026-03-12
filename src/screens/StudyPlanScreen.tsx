@@ -2,9 +2,9 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { generateStudyPlan, type DailyPlan, type StudyPlanSummary, type PlanMode } from '../services/studyPlanner';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
+import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,7 @@ import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTopicsDueForReview } from '../db/queries/topics';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 
-type Nav = NativeStackNavigationProp<HomeStackParamList>;
+type Nav = NativeStackNavigationProp<MenuStackParamList>;
 
 const PLAN_MODES: Array<{ key: PlanMode; label: string }> = [
   { key: 'balanced', label: 'Balanced' },
@@ -70,7 +70,7 @@ export default function StudyPlanScreen() {
   function handleStartPlannedTopic(day: DailyPlan, index: number) {
     const item = day.items[index];
     if (!item) return;
-    (navigation as any).navigate('HomeTab', {
+    navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
       screen: 'Session',
       params: {
         mood: item.type === 'deep_dive' ? 'energetic' : 'good',
@@ -84,7 +84,7 @@ export default function StudyPlanScreen() {
   function handleStartTopicSet(topics: TopicWithProgress[], actionType: 'study' | 'review' | 'deep_dive') {
     const ids = topics.slice(0, actionType === 'review' ? 4 : 3).map(topic => topic.id);
     if (ids.length === 0) return;
-    (navigation as any).navigate('HomeTab', {
+    navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
       screen: 'Session',
       params: {
         mood: actionType === 'deep_dive' ? 'energetic' : 'good',
@@ -155,6 +155,9 @@ export default function StudyPlanScreen() {
 
   const todayPlan = plan[0];
   const weekPlans = plan.slice(1, 7);
+  const requiredHoursDisplay = summary.hoursPerDayCapped
+    ? `${summary.requiredHoursPerDay}h+`
+    : `${summary.requiredHoursPerDay}h`;
 
   return (
     <SafeAreaView style={styles.safe} testID="plan-screen">
@@ -201,7 +204,7 @@ export default function StudyPlanScreen() {
           <Text style={styles.cardTitle}>Daily Target</Text>
           <Text style={styles.cardEyebrow}>{summary.resourceLabel}</Text>
           <View style={styles.cardRow}>
-            <Text style={styles.cardValue}>{summary.requiredHoursPerDay}h</Text>
+            <Text style={styles.cardValue}>{requiredHoursDisplay}</Text>
             <Text style={styles.cardLabel}>/ day needed</Text>
           </View>
           <Text style={styles.cardSub}>{summary.message}</Text>
@@ -228,7 +231,7 @@ export default function StudyPlanScreen() {
               <View 
                 style={[
                   styles.progressBarFill, 
-                  { width: `${summary.requiredHoursPerDay > 0 ? Math.min(100, (profile?.dailyGoalMinutes || 120) / (summary.requiredHoursPerDay * 60) * 100) : 100}%` },
+                  { width: `${summary.requiredHoursPerDayRaw > 0 ? Math.min(100, (profile?.dailyGoalMinutes || 120) / (summary.requiredHoursPerDayRaw * 60) * 100) : 100}%` },
                   !summary.feasible && { backgroundColor: '#FF9800' }
                 ]} 
               />

@@ -26,6 +26,7 @@ import { XP_REWARDS } from '../constants/gamification';
 import { useIdleTimer } from '../hooks/useIdleTimer';
 import { useGuruPresence } from '../hooks/useGuruPresence';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { theme } from '../constants/theme';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
@@ -35,6 +36,7 @@ export default function SessionScreen() {
   const route = useRoute<Route>();
   const {
     mood,
+    resume = false,
     mode: forcedMode,
     forcedMinutes,
     focusTopicId,
@@ -42,6 +44,7 @@ export default function SessionScreen() {
     preferredActionType,
   } = route.params as {
     mood: Mood;
+    resume?: boolean;
     mode?: SessionMode;
     forcedMinutes?: number;
     focusTopicId?: number;
@@ -126,14 +129,34 @@ export default function SessionScreen() {
   }, [startPlanning]);
 
   useEffect(() => {
-    storeRef.current.resetSession();
-    startPlanningRef.current();
+    const hasResumableSession =
+      Boolean(storeRef.current.sessionId) &&
+      Boolean(storeRef.current.agenda) &&
+      storeRef.current.sessionState !== 'session_done';
+
+    if (resume && hasResumableSession) {
+      const elapsed = storeRef.current.startedAt
+        ? Math.max(0, Math.floor((Date.now() - storeRef.current.startedAt) / 1000))
+        : Math.floor(storeRef.current.activeStudyDuration);
+      setElapsedSeconds(elapsed);
+      setActiveElapsedSeconds(Math.floor(storeRef.current.activeStudyDuration));
+      if (storeRef.current.sessionState === 'planning' || storeRef.current.sessionState === 'agenda_reveal') {
+        storeRef.current.setSessionState('studying');
+      }
+    } else {
+      storeRef.current.resetSession();
+      startPlanningRef.current();
+    }
+
     timerRef.current = setInterval(() => {
       setElapsedSeconds(s => s + 1);
-      if (!isPausedRef.current) setActiveElapsedSeconds(s => s + 1);
+      if (!isPausedRef.current) {
+        setActiveElapsedSeconds(s => s + 1);
+        storeRef.current.incrementActiveStudyDuration(1);
+      }
     }, 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+  }, [resume]);
 
   useEffect(() => {
     if (!store.isOnBreak) return;
@@ -192,6 +215,15 @@ export default function SessionScreen() {
       // This is more complex, for now just skip to home if no agenda
       navigation.goBack();
     }
+  }
+
+  function handleContinueWithoutAi() {
+    setAiError(null);
+    if (!store.agenda) {
+      handleStartManualReview();
+      return;
+    }
+    handleContentDone();
   }
 
   function handleContentDone() {
@@ -295,14 +327,18 @@ export default function SessionScreen() {
           <Text style={styles.errorEmoji}>⚠️</Text>
           <Text style={styles.errorTitle}>AI Unavailable</Text>
           <Text style={styles.errorMsg}>{aiError}</Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => { setAiError(null); !store.agenda ? startPlanning() : store.setCurrentContent(null); }}>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            onPress={() => {
+              setAiError(null);
+              if (!store.agenda) startPlanning();
+              else store.setCurrentContent(null);
+            }}
+          >
             <Text style={styles.retryBtnText}>Retry AI</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.manualBtn} onPress={handleStartManualReview}>
-            <Text style={styles.manualBtnText}>Manual Review (Offline)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.skipBtn} onPress={() => { setAiError(null); !store.agenda ? navigation.goBack() : handleContentDone(); }}>
-            <Text style={styles.skipBtnText}>Skip to Next</Text>
+          <TouchableOpacity style={styles.manualBtn} onPress={handleContinueWithoutAi}>
+            <Text style={styles.manualBtnText}>{store.agenda ? 'Continue Without AI' : 'Start Manual Review'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.leaveBtnText}>Leave Session</Text>
@@ -520,33 +556,33 @@ function SessionDoneScreen({ completedCount, elapsedSeconds, xpTotal, onClose }:
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
-  storyBarContainer: { height: 3, backgroundColor: '#2A2A38' },
-  storyBarFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 0 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#1A1A24' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
+  storyBarContainer: { height: 3, backgroundColor: theme.colors.border },
+  storyBarFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 0 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: theme.colors.surface },
   headerLeft: { flex: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   topicProgress: { color: '#9E9E9E', fontSize: 11, marginBottom: 2 },
   phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  phaseBadge: { color: '#6C63FF', fontSize: 11, fontWeight: '700', backgroundColor: '#6C63FF22', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  topicName: { color: '#fff', fontWeight: '800', fontSize: 18 },
-  subjectTag: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
-  pauseBtn: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginLeft: 8 },
-  pauseBtnText: { color: '#6C63FF', fontSize: 14, fontWeight: '700' },
-  menuBtn: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 },
+  phaseBadge: { color: theme.colors.primary, fontSize: 11, fontWeight: '700', backgroundColor: theme.colors.primaryTintSoft, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  subjectTag: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
+  pauseBtn: { backgroundColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, marginLeft: 8 },
+  pauseBtnText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
+  menuBtn: { backgroundColor: theme.colors.border, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 },
   menuBtnText: { color: '#9E9E9E', fontSize: 16, fontWeight: '700', letterSpacing: 2 },
   menuOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 },
   menuBackdrop: { flex: 1 },
-  menuDropdown: { position: 'absolute', top: 60, right: 16, backgroundColor: '#1A1A24', borderRadius: 12, borderWidth: 1, borderColor: '#2A2A38', paddingVertical: 4, minWidth: 200, elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, shadowOpacity: 0.4 },
+  menuDropdown: { position: 'absolute', top: 60, right: 16, backgroundColor: theme.colors.surface, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 4, minWidth: 200, elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowRadius: 12, shadowOpacity: 0.4 },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   menuItemEmoji: { fontSize: 16, marginRight: 10 },
   menuItemText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  menuDivider: { height: 1, backgroundColor: '#2A2A38', marginHorizontal: 12 },
-  contentTypeTabs: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: '#0F0F14' },
-  contentTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: '#2A2A38', borderWidth: 1, borderColor: '#333' },
-  contentTabActive: { backgroundColor: '#6C63FF', borderColor: '#6C63FF' },
-  contentTabDone: { backgroundColor: '#1A2A1A', borderColor: '#4CAF5044' },
-  contentTabText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  menuDivider: { height: 1, backgroundColor: theme.colors.border, marginHorizontal: 12 },
+  contentTypeTabs: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: theme.colors.background },
+  contentTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: theme.colors.border, borderWidth: 1, borderColor: theme.colors.borderLight },
+  contentTabActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+  contentTabDone: { backgroundColor: theme.colors.successSurface, borderColor: theme.colors.successTintSoft },
+  contentTabText: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '600' },
   revealContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   revealEmoji: { fontSize: 48, marginBottom: 16 },
   revealFocus: { color: '#fff', fontWeight: '800', fontSize: 20, textAlign: 'center', marginBottom: 12 },
@@ -576,16 +612,14 @@ const styles = StyleSheet.create({
   doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
   errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   errorEmoji: { fontSize: 48, marginBottom: 12 },
-  errorTitle: { color: '#fff', fontWeight: '800', fontSize: 22, marginBottom: 8 },
-  errorMsg: { color: '#9E9E9E', fontSize: 14, textAlign: 'center', marginBottom: 32, lineHeight: 20 },
-  retryBtn: { backgroundColor: '#6C63FF', borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center' },
-  retryBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  manualBtn: { backgroundColor: '#2A1A1A', borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#F4433644' },
-  manualBtnText: { color: '#F44336', fontWeight: '800', fontSize: 16 },
-  skipBtn: { backgroundColor: '#1A1A24', borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: '#FF9800' },
-  skipBtnText: { color: '#FF9800', fontWeight: '700', fontSize: 16 },
+  errorTitle: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 22, marginBottom: 8 },
+  errorMsg: { color: theme.colors.textSecondary, fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+  retryBtn: { backgroundColor: theme.colors.primary, borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center' },
+  retryBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
+  manualBtn: { backgroundColor: theme.colors.surface, borderRadius: 14, paddingHorizontal: 40, paddingVertical: 14, marginBottom: 10, width: '100%', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border },
+  manualBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
   leaveBtn: { paddingVertical: 12 },
-  leaveBtnText: { color: '#888', fontSize: 14 },
+  leaveBtnText: { color: theme.colors.textMuted, fontSize: 14 },
   guruDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#6C63FF', shadowColor: '#6C63FF', shadowRadius: 6, shadowOpacity: 0.9, elevation: 4, marginRight: 6 },
   guruToast: { position: 'absolute', top: 130, left: 16, right: 16, backgroundColor: '#1A1A2E', borderRadius: 12, borderLeftWidth: 3, borderLeftColor: '#6C63FF', borderWidth: 1, borderColor: '#6C63FF33', padding: 12, zIndex: 50, elevation: 8 },
   guruToastText: { color: '#D0C8FF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },

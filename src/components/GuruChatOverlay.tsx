@@ -3,6 +3,7 @@ import {
   Modal, View, Text, TouchableOpacity, TextInput, ScrollView,
   StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Animated,
 } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import { chatWithGuru } from '../services/aiService';
 
 interface ChatMessage { role: 'user' | 'guru'; text: string; }
@@ -73,7 +74,13 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
             )}
             {messages.map((msg, i) => (
               <View key={i} style={[s.bubble, msg.role === 'user' ? s.userBubble : s.guruBubble]}>
-                <Text style={s.bubbleText}>{msg.text}</Text>
+                {msg.role === 'guru' ? (
+                  <Markdown style={markdownStyles}>
+                    {msg.text}
+                  </Markdown>
+                ) : (
+                  <Text style={s.bubbleText}>{msg.text}</Text>
+                )}
               </View>
             ))}
             {loading && (
@@ -106,6 +113,88 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
     </Modal>
   );
 }
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    color: '#E0E0E0',
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  heading1: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  heading2: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginVertical: 8,
+  },
+  heading3: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginVertical: 6,
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 8,
+  },
+  code_inline: {
+    backgroundColor: '#2A2A38',
+    color: '#6C63FF',
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  code_block: {
+    backgroundColor: '#1E1E28',
+    color: '#E0E0E0',
+    borderRadius: 8,
+    padding: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginVertical: 8,
+  },
+  fence: {
+    backgroundColor: '#1E1E28',
+    color: '#E0E0E0',
+    borderRadius: 8,
+    padding: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    marginVertical: 8,
+  },
+  link: {
+    color: '#6C63FF',
+    textDecorationLine: 'underline',
+  },
+  list_item: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    marginBottom: 4,
+  },
+  bullet_list: {
+    marginBottom: 8,
+  },
+  ordered_list: {
+    marginBottom: 8,
+  },
+  strong: {
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  em: {
+    fontStyle: 'italic',
+  },
+  blockquote: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#6C63FF',
+    paddingLeft: 12,
+    opacity: 0.8,
+    marginVertical: 8,
+  },
+});
 
 const s = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFillObject },

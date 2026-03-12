@@ -1,0 +1,8 @@
+SettingsScreen.tsx (main container)
+├── SettingsSection.tsx (reusable section wrapper)
+├── ApiKeySection.tsx
+├── ExamDatesSection.tsx
+├── StudyPreferencesSection.tsx
+├── NotificationsSection.tsx
+├── DataManagementSection.tsx
+└── BackupSection.tsx

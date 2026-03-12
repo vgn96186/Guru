@@ -1,0 +1,18 @@
+// Create LlamaContextManager class
+class LlamaContextManager {
+  private contexts: Map<string, LlamaContext> = new Map();
+  private inUse: Set<string> = new Set();
+  private queue: Array<{resolve: (ctx: LlamaContext) => void; modelPath: string}> = [];
+  
+  async getContext(modelPath: string): Promise<LlamaContext> {
+    // Implement proper pooling with queue
+  }
+  
+  async releaseContext(modelPath: string): Promise<void> {
+    // Proper cleanup
+  }
+  
+  async shutdown(): Promise<void> {
+    // Cleanup all contexts
+  }
+}

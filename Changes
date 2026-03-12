@@ -1,0 +1,5 @@
+function validateAndCacheContent(topicId: number, contentType: ContentType, content: any): boolean {
+  // Validate against Zod schema
+  // Log validation failures
+  // Only cache if valid
+}

@@ -286,11 +286,11 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
 export function getMoodContentTypes(mood: Mood): ContentType[] {
   switch (mood) {
     case 'energetic': return ['quiz', 'error_hunt', 'detective', 'keypoints'];
-    case 'good': return ['keypoints', 'story', 'quiz', 'mnemonic'];
-    case 'okay': return ['keypoints', 'mnemonic', 'quiz', 'story'];
-    case 'tired': return ['mnemonic', 'story', 'keypoints'];
-    case 'stressed': return ['story', 'keypoints', 'mnemonic'];
+    case 'good': return ['keypoints', 'story', 'quiz', 'detective'];
+    case 'okay': return ['keypoints', 'detective', 'quiz', 'story'];
+    case 'tired': return ['story', 'keypoints', 'detective'];
+    case 'stressed': return ['story', 'keypoints', 'detective'];
     case 'distracted': return ['keypoints', 'detective'];
-    default: return ['keypoints', 'story', 'mnemonic', 'quiz'];
+    default: return ['keypoints', 'story', 'detective', 'quiz'];
   }
 }

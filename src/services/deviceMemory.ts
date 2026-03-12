@@ -1,6 +1,6 @@
 import * as Device from 'expo-device';
 import { showToast } from '../components/Toast';
-import { getUserProfile, updateUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import type { UserProfile } from '../types';
 
 export const MIN_LOCAL_LLM_RAM_BYTES = 4 * 1024 * 1024 * 1024;
@@ -37,13 +37,13 @@ export function isLocalLlmUsable(
   return !!(profile?.useLocalModel && profile.localModelPath && isLocalLlmAllowedOnThisDevice());
 }
 
-export function enforceLocalLlmRamGuard(notify = false): boolean {
-  const profile = getUserProfile();
+export async function enforceLocalLlmRamGuard(notify = false): Promise<boolean> {
+  const profile = await profileRepository.getProfile();
   if (!profile.useLocalModel || isLocalLlmAllowedOnThisDevice()) {
     return true;
   }
 
-  updateUserProfile({ useLocalModel: false });
+  await profileRepository.updateProfile({ useLocalModel: false });
   if (notify) {
     showToast(
       getLocalLlmRamWarning() ?? 'On-device text AI was disabled on this device to avoid low-memory crashes.',

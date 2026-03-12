@@ -23,11 +23,11 @@ Return JSON:
 {
   "type": "keypoints",
   "topicName": "${topicName}",
-  "points": ["fact1", "fact2", "fact3", "fact4", "fact5", "fact6"],
+  "points": ["fact1 with **critical keyword** highlighted", "fact2", "fact3", "fact4", "fact5", "fact6"],
   "memoryHook": "one catchy sentence to anchor this topic"
 }
 
-Focus on: frequently tested numbers, classic associations, clinical correlates.`;
+Focus on: frequently tested numbers, classic associations, clinical correlates. Use markdown bolding (**text**) to highlight the most high-yield keywords and concepts.`;
 }
 
 export function buildQuizPrompt(topicName: string, subjectName: string): string {
@@ -46,7 +46,7 @@ Return JSON:
       "question": "A [Age]-year-old [Sex] presents with [Symptoms]... [Relevant Exam findings, Labs/Imaging]... Which of the following is the most appropriate next step in management? (or similar targeted multi-step question)",
       "options": ["A. [Plausible distractor]", "B. [Plausible distractor]", "C. [Plausible distractor]", "D. [Plausible distractor]"],
       "correctIndex": 0,
-      "explanation": "Correct Answer: [Letter]. [Detailed explanation of why it is correct based on the vignette]. [Specific breakdown of why EACH of the other options is incorrect]."
+      "explanation": "Correct Answer: [Letter]. [Detailed explanation of why it is correct based on the vignette, highlighting the **most crucial mechanism** with markdown bolding]. [Specific breakdown of why EACH of the other options is incorrect, bolding **the distinguishing factor**]."
     }
   ]
 }
@@ -61,11 +61,11 @@ Return JSON:
 {
   "type": "story",
   "topicName": "${topicName}",
-  "story": "A patient presents... [story naturally embedding 3-5 testable facts]",
+  "story": "A patient presents... [story naturally embedding 3-5 testable facts. Use **markdown bolding** for high yield clues and keywords.]",
   "keyConceptHighlights": ["term1", "term2", "term3"]
 }
 
-Make it vivid, like a real case. The reader should learn by reading, not by being lectured.`;
+Make it vivid, like a real case. The reader should learn by reading, not by being lectured. Use markdown bolding (**text**) for crucial diagnostic clues and high-yield points.`;
 }
 
 export function buildMnemonicPrompt(topicName: string, subjectName: string): string {
@@ -76,7 +76,7 @@ Return JSON:
   "type": "mnemonic",
   "topicName": "${topicName}",
   "mnemonic": "ACRONYM or rhyme or visual",
-  "expansion": ["A = ...", "C = ...", "R = ..."],
+  "expansion": ["A = ...", "C = ...", "R = ... (Use **markdown bolding** for the pivotal word in each expansion)"],
   "tip": "when to use this in exam context"
 }
 
@@ -105,8 +105,8 @@ Return JSON:
   "topicName": "${topicName}",
   "paragraph": "A 3-5 sentence paragraph about the topic with exactly 2 factual errors embedded naturally",
   "errors": [
-    { "wrong": "exact wrong phrase", "correct": "what it should be", "explanation": "why" },
-    { "wrong": "exact wrong phrase", "correct": "what it should be", "explanation": "why" }
+    { "wrong": "exact wrong phrase", "correct": "what it should be", "explanation": "why (Use **markdown bolding** for the core fact)" },
+    { "wrong": "exact wrong phrase", "correct": "what it should be", "explanation": "why (Use **markdown bolding** for the core fact)" }
   ]
 }
 
@@ -127,7 +127,7 @@ Return JSON:
     "Clue 4: the classic association or exam finding"
   ],
   "answer": "Diagnosis: [condition]",
-  "explanation": "Why these clues point to this diagnosis + key NEET facts"
+  "explanation": "Why these clues point to this diagnosis + key NEET facts. Use **markdown bolding** for the clinching clues and keywords."
 }`;
 }
 

@@ -1,3 +1,5 @@
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
+
 export const CREATE_SUBJECTS = `
 CREATE TABLE IF NOT EXISTS subjects (
   id INTEGER PRIMARY KEY,
@@ -105,8 +107,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   streak_current INTEGER NOT NULL DEFAULT 0,
   streak_best INTEGER NOT NULL DEFAULT 0,
   daily_goal_minutes INTEGER NOT NULL DEFAULT 120,
-  inicet_date TEXT NOT NULL DEFAULT '2026-05-17',
-  neet_date TEXT NOT NULL DEFAULT '2026-08-30',
+  inicet_date TEXT NOT NULL DEFAULT '${DEFAULT_INICET_DATE}',
+  neet_date TEXT NOT NULL DEFAULT '${DEFAULT_NEET_DATE}',
   preferred_session_length INTEGER NOT NULL DEFAULT 45,
   openrouter_api_key TEXT NOT NULL DEFAULT '',
   openrouter_key TEXT NOT NULL DEFAULT '',

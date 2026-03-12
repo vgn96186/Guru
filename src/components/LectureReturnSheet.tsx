@@ -24,7 +24,7 @@ import {
   type LecturePipelineStage,
 } from '../services/lectureSessionMonitor';
 import { catalyzeTranscript } from '../services/aiService';
-import { addXp } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { updateSessionTranscriptionStatus } from '../db/queries/externalLogs';
 import { useAppStore } from '../store/useAppStore';
 
@@ -90,14 +90,14 @@ export default function LectureReturnSheet({
     } else if (visible && !recordingPath) {
       setIsExpanded(true);
       setErrorMsg('No lecture audio was captured for this session. Please retry with microphone permission enabled.');
-      updateSessionTranscriptionStatus(logId, 'no_audio', 'No recording file captured');
+      void updateSessionTranscriptionStatus(logId, 'no_audio', 'No recording file captured');
       setPhase('error');
     } else if (visible && recordingPath && !groqKey && !hasLocalWhisper) {
       setIsExpanded(true);
       setErrorMsg(
         'Local Whisper is unavailable. Enable Local Transcription or add a Groq API key in Settings.',
       );
-      updateSessionTranscriptionStatus(logId, 'failed', 'No transcription engine configured');
+      void updateSessionTranscriptionStatus(logId, 'failed', 'No transcription engine configured');
       setPhase('error');
     }
   }, [visible, recordingPath, groqKey, hasLocalWhisper, canTranscribe, logId]);
@@ -155,7 +155,7 @@ export default function LectureReturnSheet({
     setActiveStage('transcribing');
     setStageMessage('Transcribing lecture audio');
     try {
-      updateSessionTranscriptionStatus(logId, 'transcribing');
+      await updateSessionTranscriptionStatus(logId, 'transcribing');
       const result = await transcribeLectureWithRecovery({
         recordingPath: recordingPath!,
         groqKey: groqKey || undefined,
@@ -166,7 +166,7 @@ export default function LectureReturnSheet({
         onProgress: handlePipelineProgress,
       });
       if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+        await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
         return;
       }
       setAnalysis(result);
@@ -174,7 +174,7 @@ export default function LectureReturnSheet({
       setSessionSaved(false);
       setActiveStage(null);
       setStageMessage('');
-      updateSessionTranscriptionStatus(logId, 'pending');
+      await updateSessionTranscriptionStatus(logId, 'pending');
       setPhase('results');
       // Fire quiz generation in background while user reads results
       if (result.topics.length > 0) {
@@ -182,7 +182,7 @@ export default function LectureReturnSheet({
       }
     } catch (e: any) {
       if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+        await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
         return;
       }
       console.error('[Transcription] Error:', e);
@@ -190,7 +190,7 @@ export default function LectureReturnSheet({
       setActiveStage(null);
       setStageMessage('');
       setErrorMsg(`${message}. Audio has been preserved for auto-retry on next launch.`);
-      updateSessionTranscriptionStatus(logId, 'failed', message);
+      await updateSessionTranscriptionStatus(logId, 'failed', message);
       setPhase('error');
     }
   }
@@ -209,8 +209,8 @@ export default function LectureReturnSheet({
             setActiveStage(null);
             setStageMessage('');
             setPhase('intro');
-            updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
-            onDone();
+            void updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+            void cleanupAndClose();
           },
         },
       ],
@@ -278,7 +278,7 @@ Summary: ${result.lectureSummary}`;
   async function handleMarkStudied() {
     const saved = await saveSessionQuickly();
     if (saved) {
-      cleanupAndClose();
+      await cleanupAndClose();
     }
   }
 
@@ -296,7 +296,7 @@ Summary: ${result.lectureSummary}`;
   async function handleSaveAndClose() {
     const saved = await saveSessionQuickly();
     if (saved) {
-      cleanupAndClose();
+      await cleanupAndClose();
     }
   }
 
@@ -311,21 +311,21 @@ Summary: ${result.lectureSummary}`;
     }
   }
 
-  function handleNextQuestion() {
+  async function handleNextQuestion() {
     if (currentQ < quizQuestions.length - 1) {
       setCurrentQ(c => c + 1);
       setSelected(null);
       setShowExpl(false);
     } else {
       const bonusXp = score * 15;
-      if (bonusXp > 0) addXp(bonusXp);
+      if (bonusXp > 0) await profileRepository.addXp(bonusXp);
       setPhase('quiz_done');
     }
   }
 
-  function cleanupAndClose() {
+  async function cleanupAndClose() {
     if (!sessionSaved && transcriptionCompleted) {
-      updateSessionTranscriptionStatus(logId, 'pending');
+      await updateSessionTranscriptionStatus(logId, 'pending');
     }
     onDone();
   }
@@ -335,7 +335,7 @@ Summary: ${result.lectureSummary}`;
       setIsExpanded(false);
       return;
     }
-    cleanupAndClose();
+    void cleanupAndClose();
   }
 
   function getCompactTitle() {

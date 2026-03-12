@@ -15,7 +15,7 @@ import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession } from '../db/queries/sessions';
 import { updateTopicProgress, incrementWrongCount } from '../db/queries/topics';
 import { flagTopicForReview, setContentFlagged } from '../db/queries/aiCache';
-import { getDailyLog, updateStreak } from '../db/queries/progress';
+import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
 import ContentCard from './ContentCard';
@@ -196,7 +196,7 @@ export default function SessionScreen() {
         profile?.groqApiKey,
         { focusTopicId, focusTopicIds, preferredActionType },
       );
-      const sessionId = createSession(agenda.items.map(i => i.topic.id), mood, agenda.mode);
+      const sessionId = await createSession(agenda.items.map(i => i.topic.id), mood, agenda.mode);
       store.setSessionId(sessionId);
       store.setAgenda(agenda);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -248,12 +248,12 @@ export default function SessionScreen() {
     }
   }
 
-  function handleConfidenceRating(confidence: number) {
+  async function handleConfidenceRating(confidence: number) {
     const item = getCurrentAgendaItem(store);
     if (!item) return;
     const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
     const xp = item.topic.progress.status === 'unseen' ? XP_REWARDS.TOPIC_UNSEEN : XP_REWARDS.TOPIC_REVIEW;
-    updateTopicProgress(item.topic.id, status, confidence, xp);
+    await updateTopicProgress(item.topic.id, status, confidence, xp);
     setShowXp(xp);
     Animated.sequence([Animated.timing(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }), Animated.delay(800), Animated.timing(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true })]).start();
     if (confidence === 1) triggerEvent('again_rated');
@@ -287,17 +287,19 @@ export default function SessionScreen() {
       `Flag "${item.topic.name}" to review later in Flagged Review.`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Flag Topic', onPress: () => {
-          const flaggedType = store.currentContent?.type === 'manual'
-            ? flagTopicForReview(item.topic.id, item.topic.name)
-            : (() => {
-                const currentType = store.currentContent?.type;
-                if (currentType) {
-                  setContentFlagged(item.topic.id, currentType, true);
-                  return currentType;
-                }
-                return flagTopicForReview(item.topic.id, item.topic.name);
-              })();
+        { text: 'Flag Topic', onPress: async () => {
+          let flaggedType: string;
+          if (store.currentContent?.type === 'manual') {
+            flaggedType = await flagTopicForReview(item.topic.id, item.topic.name);
+          } else {
+            const currentType = store.currentContent?.type;
+            if (currentType) {
+              await setContentFlagged(item.topic.id, currentType, true);
+              flaggedType = currentType;
+            } else {
+              flaggedType = await flagTopicForReview(item.topic.id, item.topic.name);
+            }
+          }
           Alert.alert('Flagged', `Added to Flagged Review as ${flaggedType.replace('_', ' ')}.`);
         }}
       ]
@@ -310,12 +312,13 @@ export default function SessionScreen() {
     if (!sessionId) { navigation.goBack(); return; }
     const durationMin = Math.round(activeElapsedSeconds / 60);
     const completedTopics = (agenda?.items ?? []).filter(i => completedTopicIds.includes(i.topic.id)).map(i => i.topic);
-    const isFirstToday = (getDailyLog()?.sessionCount ?? 0) === 0;
-    const xpResult = calculateAndAwardSessionXp(completedTopics, quizResults, isFirstToday);
-    endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
-    updateStreak(durationMin >= 20);
+        const dailyLog = await dailyLogRepository.getDailyLog();
+    const isFirstToday = (dailyLog?.sessionCount ?? 0) === 0;
+    const xpResult = await calculateAndAwardSessionXp(completedTopics, quizResults, isFirstToday);
+    await endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
+    await profileRepository.updateStreak(durationMin >= 20);
     setSessionXpTotal(xpResult.total);
-    refreshProfile();
+    refreshProfile().catch(() => {});
     invalidatePlanCache();
     store.setSessionState('session_done');
   }
@@ -486,7 +489,7 @@ export default function SessionScreen() {
           </Animated.View>
         )}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 0 }}>
           <View style={styles.contentTypeTabs}>
             {item.contentTypes.map((ct, idx) => (
               <View key={ct} style={[styles.contentTab, idx === store.currentContentIndex && styles.contentTabActive, idx < store.currentContentIndex && styles.contentTabDone]}>
@@ -504,7 +507,7 @@ export default function SessionScreen() {
             onSkip={handleContentDone}
             onQuizAnswered={c => {
               triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
-              if (!c && item?.topic.id) incrementWrongCount(item.topic.id);
+              if (!c && item?.topic.id) void incrementWrongCount(item.topic.id);
             }}
             onQuizComplete={(correct, total) => {
               if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
@@ -578,7 +581,7 @@ const styles = StyleSheet.create({
   menuItemEmoji: { fontSize: 16, marginRight: 10 },
   menuItemText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   menuDivider: { height: 1, backgroundColor: theme.colors.border, marginHorizontal: 12 },
-  contentTypeTabs: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: theme.colors.background },
+  contentTypeTabs: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, gap: 8, backgroundColor: theme.colors.background },
   contentTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, backgroundColor: theme.colors.border, borderWidth: 1, borderColor: theme.colors.borderLight },
   contentTabActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
   contentTabDone: { backgroundColor: theme.colors.successSurface, borderColor: theme.colors.successTintSoft },

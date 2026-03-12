@@ -1,5 +1,6 @@
 import { XP_REWARDS, LEVELS } from '../constants/gamification';
-import { addXp } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
+import { getDb } from '../db/database';
 import type { TopicWithProgress, LevelInfo } from '../types';
 
 export interface XpBreakdown {
@@ -15,11 +16,17 @@ export interface SessionXpResult {
   newLevelName: string;
 }
 
-export function calculateAndAwardSessionXp(
+export async function grantXp(amount: number): Promise<{ leveledUp: boolean; newLevel: number }> {
+  if (amount <= 0) return { leveledUp: false, newLevel: 1 };
+  const { leveledUp, newLevel } = await profileRepository.addXp(amount);
+  return { leveledUp, newLevel };
+}
+
+export async function calculateAndAwardSessionXp(
   completedTopics: TopicWithProgress[],
   quizResults: Array<{ correct: number; total: number }>,
   isFirstSessionToday: boolean,
-): SessionXpResult {
+): Promise<SessionXpResult> {
   const breakdown: XpBreakdown[] = [];
   let totalQuizCorrect = 0;
 
@@ -40,8 +47,7 @@ export function calculateAndAwardSessionXp(
   }
 
   if (totalQuizCorrect > 0) {
-    const { getDb } = require('../db/database');
-    getDb().runSync('UPDATE user_profile SET quiz_correct_count = quiz_correct_count + ? WHERE id = 1', [totalQuizCorrect]);
+    await getDb().runAsync('UPDATE user_profile SET quiz_correct_count = quiz_correct_count + ? WHERE id = 1', [totalQuizCorrect]);
   }
 
   if (isFirstSessionToday) {
@@ -51,8 +57,7 @@ export function calculateAndAwardSessionXp(
   let total = breakdown.reduce((s, b) => s + b.amount, 0);
 
   // Streak bonus: 10% per streak day, max 50%
-  const { getUserProfile: _getUserProfile } = require('../db/queries/progress');
-  const _profile = _getUserProfile();
+  const _profile = await profileRepository.getProfile();
   const streakBonus = Math.min((_profile.streakCurrent ?? 0) * 0.1, 0.5);
   if (streakBonus > 0) {
     const bonus = Math.round(total * streakBonus);
@@ -60,7 +65,7 @@ export function calculateAndAwardSessionXp(
     breakdown.push({ label: `🔥 ${_profile.streakCurrent}-day streak (+${Math.round(streakBonus * 100)}%)`, amount: bonus });
   }
 
-  const { newTotal, leveledUp, newLevel } = addXp(total);
+  const { newTotal, leveledUp, newLevel } = await profileRepository.addXp(total);
 
   const levelInfo = LEVELS.find(l => l.level === newLevel) ?? LEVELS[0];
 

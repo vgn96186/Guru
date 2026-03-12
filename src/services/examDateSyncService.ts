@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUserProfile, updateUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 
 type ExamCode = 'inicet' | 'neetpg';
 
@@ -76,10 +76,20 @@ function normalizeIsoDate(year: number, month: number, day: number): string | nu
   
   const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   const dt = new Date(year, month - 1, day);
-  if (dt.getFullYear() === year && dt.getMonth() === month - 1 && dt.getDate() === day) {
-    return iso;
+  
+  // Verify it represents a valid Date object.
+  if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) {
+    return null;
   }
-  return null;
+  
+  // NEVER accept dates that are in the past. Exam dates are in the future!
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  if (dt.getTime() < now.getTime()) {
+    return null;
+  }
+
+  return iso;
 }
 
 function parseAnyDate(raw: string): string | null {
@@ -178,6 +188,7 @@ function scoreHit(context: string, examKeyword: RegExp, sourceUrl: string): numb
   if (examKeyword.test(context)) score += 2;
   if (/(exam date|scheduled|to be held|conducted on|exam is scheduled|will be conducted)/i.test(context)) score += 2;
   if (/(expected|tentative)/i.test(context)) score -= 1; 
+  if (/(updated on|published on|last updated|written on|edited on)/i.test(context)) score -= 10;
   return score;
 }
 
@@ -290,7 +301,7 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
     syncOneExam(EXAM_SOURCES[1]),
   ]);
 
-  const profile = getUserProfile();
+  const profile = await profileRepository.getProfile();
   const updates: { inicetDate?: string; neetDate?: string } = {};
 
   if (inicetSync.date && inicetSync.date !== profile.inicetDate) {
@@ -300,7 +311,7 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
     updates.neetDate = neetSync.date;
   }
   if (updates.inicetDate || updates.neetDate) {
-    updateUserProfile(updates);
+    await profileRepository.updateProfile(updates);
   }
 
   const nextMeta: ExamDateSyncMeta = {

@@ -4,7 +4,7 @@
  * Topics appear as dots on their review dates.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
@@ -25,14 +25,14 @@ function toLocalDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function getReviewCalendarData(year: number, month: number): ReviewDay[] {
+async function getReviewCalendarData(year: number, month: number): Promise<ReviewDay[]> {
   const db = getDb();
   const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const endDate = month === 11
     ? `${year + 1}-01-01`
     : `${year}-${String(month + 2).padStart(2, '0')}-01`;
 
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     review_date: string;
     topic_name: string;
     confidence: number;
@@ -79,8 +79,11 @@ export default function ReviewCalendar() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<ReviewDay | null>(null);
+  const [reviewData, setReviewData] = useState<ReviewDay[]>([]);
 
-  const reviewData = useMemo(() => getReviewCalendarData(year, month), [year, month]);
+  useEffect(() => {
+    void getReviewCalendarData(year, month).then(setReviewData);
+  }, [year, month]);
   const reviewMap = useMemo(() => {
     const m = new Map<string, ReviewDay>();
     for (const d of reviewData) m.set(d.date, d);

@@ -58,35 +58,37 @@ export default function NotesHubScreen() {
   const [recentLectures, setRecentLectures] = useState<LectureHistoryItem[]>([]);
   const [topicNotes, setTopicNotes] = useState<TopicNotePreview[]>([]);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
     const db = getDb();
-    const lectureCount =
-      db.getFirstSync<{ count: number }>('SELECT COUNT(*) AS count FROM lecture_notes')?.count ?? 0;
-    const topicNoteCount =
-      db.getFirstSync<{ count: number }>(
+    const [lectureCountRow, topicNoteCountRow, recentTopicNotes] = await Promise.all([
+      db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM lecture_notes'),
+      db.getFirstAsync<{ count: number }>(
         `SELECT COUNT(*) AS count
          FROM topic_progress
          WHERE TRIM(COALESCE(user_notes, '')) <> ''`,
-      )?.count ?? 0;
+      ),
+      db.getAllAsync<{
+        topic_id: number;
+        topic_name: string;
+        subject_id: number;
+        subject_name: string;
+        user_notes: string;
+      }>(
+        `SELECT t.id AS topic_id, t.name AS topic_name, s.id AS subject_id, s.name AS subject_name, p.user_notes
+         FROM topic_progress p
+         JOIN topics t ON t.id = p.topic_id
+         JOIN subjects s ON s.id = t.subject_id
+         WHERE TRIM(COALESCE(p.user_notes, '')) <> ''
+         ORDER BY COALESCE(p.last_studied_at, 0) DESC, t.name ASC
+         LIMIT 4`,
+      ),
+    ]);
 
-    const recentTopicNotes = db.getAllSync<{
-      topic_id: number;
-      topic_name: string;
-      subject_id: number;
-      subject_name: string;
-      user_notes: string;
-    }>(
-      `SELECT t.id AS topic_id, t.name AS topic_name, s.id AS subject_id, s.name AS subject_name, p.user_notes
-       FROM topic_progress p
-       JOIN topics t ON t.id = p.topic_id
-       JOIN subjects s ON s.id = t.subject_id
-       WHERE TRIM(COALESCE(p.user_notes, '')) <> ''
-       ORDER BY COALESCE(p.last_studied_at, 0) DESC, t.name ASC
-       LIMIT 4`,
-    );
-
-    setStats({ lectureCount, topicNoteCount });
-    setRecentLectures(getLectureHistory(4));
+    setStats({
+      lectureCount: lectureCountRow?.count ?? 0,
+      topicNoteCount: topicNoteCountRow?.count ?? 0,
+    });
+    void getLectureHistory(4).then(setRecentLectures);
     setTopicNotes(
       recentTopicNotes.map((row) => ({
         topicId: row.topic_id,
@@ -100,7 +102,7 @@ export default function NotesHubScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      void loadData();
     }, [loadData]),
   );
 

@@ -13,7 +13,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
     const [dumps, setDumps] = useState<BrainDumpLog[]>([]);
 
     useEffect(() => {
-        setDumps(getBrainDumps());
+        getBrainDumps().then(setDumps);
     }, []);
 
     const handleClear = () => {
@@ -25,8 +25,8 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
                 {
                     text: 'Clear All',
                     style: 'destructive',
-                    onPress: () => {
-                        clearBrainDumps();
+                    onPress: async () => {
+                        await clearBrainDumps();
                         setDumps([]);
                         navigation.goBack();
                     },

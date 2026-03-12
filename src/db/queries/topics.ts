@@ -15,9 +15,9 @@ type TopicRow = {
   subject_name: string; short_code: string; color_hex: string;
 };
 
-export function getAllSubjects(): Subject[] {
+export async function getAllSubjects(): Promise<Subject[]> {
   const db = getDb();
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     id: number; name: string; short_code: string; color_hex: string;
     inicet_weight: number; neet_weight: number; display_order: number;
   }>('SELECT * FROM subjects ORDER BY display_order');
@@ -28,9 +28,22 @@ export function getAllSubjects(): Subject[] {
   }));
 }
 
-export function getSubjectById(id: number): Subject | null {
+export async function getSubjectByName(name: string): Promise<Subject | null> {
   const db = getDb();
-  const r = db.getFirstSync<{
+  const r = await db.getFirstAsync<{
+    id: number; name: string; short_code: string; color_hex: string;
+    inicet_weight: number; neet_weight: number; display_order: number;
+  }>('SELECT * FROM subjects WHERE LOWER(name) = LOWER(?)', [name]);
+  if (!r) return null;
+  return {
+    id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
+    inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
+  };
+}
+
+export async function getSubjectById(id: number): Promise<Subject | null> {
+  const db = getDb();
+  const r = await db.getFirstAsync<{
     id: number; name: string; short_code: string; color_hex: string;
     inicet_weight: number; neet_weight: number; display_order: number;
   }>('SELECT * FROM subjects WHERE id = ?', [id]);
@@ -50,12 +63,12 @@ const TOPIC_SELECT = `SELECT
   p.wrong_count, p.is_nemesis,
   s.name as subject_name, s.short_code, s.color_hex`;
 
-export function getTopicsBySubject(subjectId: number | string): TopicWithProgress[] {
+export async function getTopicsBySubject(subjectId: number | string): Promise<TopicWithProgress[]> {
   const db = getDb();
   const id = Number(subjectId);
   if (isNaN(id)) return [];
 
-  const rows = db.getAllSync<TopicRow>(
+  const rows = await db.getAllAsync<TopicRow>(
     `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
@@ -68,9 +81,9 @@ export function getTopicsBySubject(subjectId: number | string): TopicWithProgres
   return rows.map(mapTopicRow);
 }
 
-export function getAllTopicsWithProgress(): TopicWithProgress[] {
+export async function getAllTopicsWithProgress(): Promise<TopicWithProgress[]> {
   const db = getDb();
-  const rows = db.getAllSync<TopicRow>(
+  const rows = await db.getAllAsync<TopicRow>(
     `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
@@ -80,9 +93,9 @@ export function getAllTopicsWithProgress(): TopicWithProgress[] {
   return rows.map(mapTopicRow);
 }
 
-export function getTopicById(id: number): TopicWithProgress | null {
+export async function getTopicById(id: number): Promise<TopicWithProgress | null> {
   const db = getDb();
-  const r = db.getFirstSync<TopicRow>(
+  const r = await db.getFirstAsync<TopicRow>(
     `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
@@ -94,17 +107,17 @@ export function getTopicById(id: number): TopicWithProgress | null {
   return mapTopicRow(r);
 }
 
-export function updateTopicProgress(
+export async function updateTopicProgress(
   topicId: number,
   status: TopicProgress['status'],
   confidence: number,
   xpToAdd: number,
-): void {
+): Promise<void> {
   const db = getDb();
   const now = Date.now();
   
   // Get existing FSRS data
-  const existing = db.getFirstSync<any>('SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?', [topicId]);
+  const existing = await db.getFirstAsync<any>('SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?', [topicId]);
   
   let card: Card;
   if (existing && existing.fsrs_last_review) {
@@ -127,7 +140,7 @@ export function updateTopicProgress(
   const updatedCard = log.card;
   const nextReview = updatedCard.due.toISOString().slice(0, 10);
   
-  db.runSync(
+  await db.runAsync(
     `INSERT INTO topic_progress (
        topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
        fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review
@@ -157,9 +170,9 @@ export function updateTopicProgress(
   );
 }
 
-export function updateTopicNotes(topicId: number, notes: string): void {
+export async function updateTopicNotes(topicId: number, notes: string): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     `INSERT INTO topic_progress (topic_id, user_notes)
      VALUES (?, ?)
      ON CONFLICT(topic_id) DO UPDATE SET user_notes = excluded.user_notes`,
@@ -167,10 +180,10 @@ export function updateTopicNotes(topicId: number, notes: string): void {
   );
 }
 
-export function getTopicsDueForReview(limit = 10): TopicWithProgress[] {
+export async function getTopicsDueForReview(limit = 10): Promise<TopicWithProgress[]> {
   const db = getDb();
   const today = todayStr();
-  const rows = db.getAllSync<TopicRow>(
+  const rows = await db.getAllAsync<TopicRow>(
     `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
@@ -184,9 +197,9 @@ export function getTopicsDueForReview(limit = 10): TopicWithProgress[] {
   return rows.map(mapTopicRow);
 }
 
-export function getSubjectCoverage(): Array<{ subjectId: number; total: number; seen: number; mastered: number }> {
+export async function getSubjectCoverage(): Promise<Array<{ subjectId: number; total: number; seen: number; mastered: number }>> {
   const db = getDb();
-  const rows = db.getAllSync<{ subjectId: number; total: number; seen: number; mastered: number }>(
+  const rows = await db.getAllAsync<{ subjectId: number; total: number; seen: number; mastered: number }>(
     `SELECT t.subject_id as subjectId,
             COUNT(t.id) as total,
             SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) as seen,
@@ -203,9 +216,9 @@ export function getSubjectCoverage(): Array<{ subjectId: number; total: number; 
   return rows;
 }
 
-export function getWeakestTopics(limit = 5): TopicWithProgress[] {
+export async function getWeakestTopics(limit = 5): Promise<TopicWithProgress[]> {
   const db = getDb();
-  const rows = db.getAllSync<TopicRow>(
+  const rows = await db.getAllAsync<TopicRow>(
     `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
@@ -260,9 +273,9 @@ function mapTopicRow(r: any): TopicWithProgress {
   };
 }
 
-export const getNemesisTopics = (): TopicWithProgress[] => {
+export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
   const db = getDb();
-  const rows = db.getAllSync<TopicRow>(
+  const rows = await db.getAllAsync<TopicRow>(
     `${TOPIC_SELECT}
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
@@ -274,25 +287,25 @@ export const getNemesisTopics = (): TopicWithProgress[] => {
   return rows.map(mapTopicRow);
 };
 
-export function markNemesisTopics(): void {
+export async function markNemesisTopics(): Promise<void> {
   const db = getDb();
   // Reset all nemesis flags
-  db.runSync('UPDATE topic_progress SET is_nemesis = 0');
+  await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
   // Mark topics with 3+ wrong answers and low confidence as nemesis
-  db.runSync(
+  await db.runAsync(
     `UPDATE topic_progress SET is_nemesis = 1
      WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
   );
 }
 
-export function incrementWrongCount(topicId: number): void {
+export async function incrementWrongCount(topicId: number): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     'UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?',
     [topicId],
   );
   // Auto-mark as nemesis if threshold reached
-  db.runSync(
+  await db.runAsync(
     `UPDATE topic_progress SET is_nemesis = 1
      WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
     [topicId],
@@ -316,9 +329,9 @@ export interface SubjectBreakdownRow {
  * Returns per-subject coverage stats using a single SQL aggregation query,
  * avoiding loading all 5000+ topic rows into JS memory.
  */
-export function getSubjectBreakdown(): SubjectBreakdownRow[] {
+export async function getSubjectBreakdown(): Promise<SubjectBreakdownRow[]> {
   const db = getDb();
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     id: number;
     name: string;
     short_code: string;

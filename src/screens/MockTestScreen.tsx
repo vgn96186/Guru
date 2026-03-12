@@ -32,12 +32,13 @@ export default function MockTestScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const all = getAllCachedQuestions();
-    setQuestions(all); // Store ALL initially
-    setAvailableCount(all.length);
-    // Auto-select max available if default 20 > available
-    setSelectedCount(all.length >= 20 ? 20 : all.length);
-    setPhase('setup');
+    void getAllCachedQuestions().then(all => {
+      setQuestions(all); // Store ALL initially
+      setAvailableCount(all.length);
+      // Auto-select max available if default 20 > available
+      setSelectedCount(all.length >= 20 ? 20 : all.length);
+      setPhase('setup');
+    });
   }, []);
 
   function startTest(count: number) {

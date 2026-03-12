@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchContent } from '../services/aiService';
 import { getTopicById } from '../db/queries/topics';
-import type { QuizContent } from '../types';
+import type { QuizContent, TopicWithProgress } from '../types';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import VisualTimer from '../components/VisualTimer';
 import { useAppStore } from '../store/useAppStore';
@@ -20,6 +20,7 @@ interface Props {
 
 export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, onEndSession }: Props) {
   const profile = useAppStore(s => s.profile);
+  const [topic, setTopic] = useState<TopicWithProgress | null>(null);
   const [quizQuestion, setQuizQuestion] = useState<{ question: string; options: string[]; correct: number } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -53,8 +54,16 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
       }
     }, 150);
   }
-  const topicName = topicId ? (getTopicById(topicId)?.name ?? 'General Medicine') : 'General Medicine';
+  const topicName = topic?.name ?? 'General Medicine';
   const duration = totalSeconds ?? 300;
+
+  useEffect(() => {
+    if (!topicId) {
+      setTopic(null);
+      return;
+    }
+    void getTopicById(topicId).then(setTopic);
+  }, [topicId]);
 
   useEffect(() => {
     // Block back button during break unless they want to end session early
@@ -76,8 +85,6 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
 
   // Load a quick quiz question during break
   useEffect(() => {
-    if (!topicId) return;
-    const topic = getTopicById(topicId);
     if (!topic) return;
     fetchContent(topic, 'quiz')
       .then(content => {
@@ -91,7 +98,7 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
         }
       })
       .catch(() => {});
-  }, []);
+  }, [topic]);
 
   const mins = Math.floor(countdown / 60);
   const secs = countdown % 60;

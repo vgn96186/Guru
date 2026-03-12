@@ -74,8 +74,7 @@ export default function TopicDetailScreen() {
 
   useEffect(() => {
     if (isFocused) {
-      const data = getTopicsBySubject(subjectId);
-      setAllTopics(data);
+      void getTopicsBySubject(subjectId).then(setAllTopics);
     }
   }, [isFocused, subjectId, subjectName]);
 
@@ -187,16 +186,16 @@ export default function TopicDetailScreen() {
     }
   }
 
-  function handleSaveNote(topicId: number) {
-    updateTopicNotes(topicId, noteText.trim());
+  async function handleSaveNote(topicId: number) {
+    await updateTopicNotes(topicId, noteText.trim());
     setAllTopics(prev => prev.map(t =>
       t.id === topicId ? { ...t, progress: { ...t.progress, userNotes: noteText.trim() } } : t,
     ));
     setExpandedId(null);
   }
 
-  function markTopicMastered(topic: TopicWithProgress) {
-    updateTopicProgress(topic.id, 'mastered', 5, 20);
+  async function markTopicMastered(topic: TopicWithProgress) {
+    await updateTopicProgress(topic.id, 'mastered', 5, 20);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setAllTopics(prev => prev.map(t =>
       t.id === topic.id ? { ...t, progress: { ...t.progress, status: 'mastered', confidence: 5 } } : t,
@@ -533,8 +532,8 @@ export default function TopicDetailScreen() {
                   <TouchableOpacity style={[styles.notesCancel, { backgroundColor: '#2A0A0A', marginTop: 12 }]} onPress={() => {
                       Alert.alert('Clear AI Cache?', 'This will remove cached AI content for this topic. It will be regenerated next time you study it.', [
                         { text: 'Cancel', style: 'cancel' },
-                        { text: 'Clear', style: 'destructive', onPress: () => {
-                            clearTopicCache(item.id);
+                        { text: 'Clear', style: 'destructive', onPress: async () => {
+                            await clearTopicCache(item.id);
                             Alert.alert('Success', 'AI content cache cleared for this topic.');
                         }},
                       ]);

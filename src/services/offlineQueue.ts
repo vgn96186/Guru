@@ -33,13 +33,13 @@ export interface OfflineQueueItem {
 const MAX_ATTEMPTS = 5;
 
 /** Enqueue a failed request for later retry. */
-export function enqueueRequest(
+export async function enqueueRequest(
   requestType: OfflineRequestType,
   payload: Record<string, unknown>,
-): void {
+): Promise<void> {
   try {
     const db = getDb();
-    db.runSync(
+    await db.runAsync(
       `INSERT INTO offline_ai_queue (request_type, payload, status, attempts, created_at)
        VALUES (?, ?, 'pending', 0, ?)`,
       [requestType, JSON.stringify(payload), nowTs()],
@@ -50,10 +50,10 @@ export function enqueueRequest(
 }
 
 /** Returns all pending/failed requests that haven't exhausted retries. */
-export function getPendingRequests(): OfflineQueueItem[] {
+export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
   try {
     const db = getDb();
-    const rows = db.getAllSync<{
+    const rows = await db.getAllAsync<{
       id: number;
       request_type: string;
       payload: string;
@@ -85,9 +85,9 @@ export function getPendingRequests(): OfflineQueueItem[] {
 }
 
 /** Mark a queued item as processing (optimistic lock). */
-function markProcessing(id: number): void {
+async function markProcessing(id: number): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     `UPDATE offline_ai_queue SET status = 'processing', last_attempt_at = ?, attempts = attempts + 1
      WHERE id = ?`,
     [nowTs(), id],
@@ -95,10 +95,10 @@ function markProcessing(id: number): void {
 }
 
 /** Mark an item as completed and remove it from the active queue. */
-export function markCompleted(id: number): void {
+export async function markCompleted(id: number): Promise<void> {
   try {
     const db = getDb();
-    db.runSync(
+    await db.runAsync(
       `UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?`,
       [id],
     );
@@ -108,10 +108,10 @@ export function markCompleted(id: number): void {
 }
 
 /** Mark an item as failed with an error message. */
-export function markFailed(id: number, errorMessage: string): void {
+export async function markFailed(id: number, errorMessage: string): Promise<void> {
   try {
     const db = getDb();
-    db.runSync(
+    await db.runAsync(
       `UPDATE offline_ai_queue SET status = 'failed', error_message = ? WHERE id = ?`,
       [errorMessage, id],
     );
@@ -121,11 +121,11 @@ export function markFailed(id: number, errorMessage: string): void {
 }
 
 /** Delete completed items older than 7 days to prevent queue bloat. */
-export function pruneCompletedItems(): void {
+export async function pruneCompletedItems(): Promise<void> {
   try {
     const db = getDb();
     const cutoff = nowTs() - 7 * 24 * 60 * 60 * 1000;
-    db.runSync(
+    await db.runAsync(
       `DELETE FROM offline_ai_queue WHERE status = 'completed' AND created_at < ?`,
       [cutoff],
     );
@@ -162,7 +162,7 @@ export async function processQueue(): Promise<void> {
   if (isProcessing) return;
   isProcessing = true;
   try {
-    const items = getPendingRequests();
+    const items = await getPendingRequests();
     if (items.length === 0) return;
 
     console.log(`[OfflineQueue] Processing ${items.length} queued request(s)`);
@@ -170,15 +170,15 @@ export async function processQueue(): Promise<void> {
       const processor = processorRegistry[item.requestType];
       if (!processor) continue;
 
-      markProcessing(item.id);
+      await markProcessing(item.id);
       try {
         await processor(item);
       } catch (err: any) {
-        markFailed(item.id, err?.message ?? String(err));
+        await markFailed(item.id, err?.message ?? String(err));
         console.warn(`[OfflineQueue] Request ${item.id} failed (attempt ${item.attempts}):`, err);
       }
     }
-    pruneCompletedItems();
+    await pruneCompletedItems();
   } finally {
     isProcessing = false;
   }

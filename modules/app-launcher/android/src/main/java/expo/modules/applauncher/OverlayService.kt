@@ -123,11 +123,10 @@ class OverlayService : Service(), LifecycleOwner {
                 appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "Lecture"
                 faceTrackingEnabled = intent.getBooleanExtra(EXTRA_FACE_TRACKING, false)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val fgsType = if (faceTrackingEnabled) {
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA or
-                            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-                    } else {
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    var fgsType = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    if (faceTrackingEnabled) {
+                        fgsType = fgsType or ServiceInfo.FOREGROUND_SERVICE_TYPE_CAMERA
                     }
                     startForeground(NOTIF_ID, buildNotification(), fgsType)
                 } else {

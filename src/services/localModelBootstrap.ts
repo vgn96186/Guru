@@ -12,7 +12,7 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
-import { getUserProfile, updateUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
 import { showToast } from '../components/Toast';
@@ -33,7 +33,7 @@ const WHISPER_MODEL = {
  * Safe to call multiple times — idempotent.
  */
 export async function bootstrapLocalModels(): Promise<void> {
-  const profile = getUserProfile();
+  const profile = await profileRepository.getProfile();
 
   // Auto-enable models if no path is configured yet.
   // This means fresh installs will start downloading models in the background
@@ -84,11 +84,11 @@ async function downloadModel(
     if (info.exists && (info as any).size >= minSize) {
       // File exists and meets minimum size threshold
       if (type === 'llm') {
-        updateUserProfile({ localModelPath: targetUri, useLocalModel: true });
+        await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
       } else {
-        updateUserProfile({ localWhisperPath: targetUri, useLocalWhisper: true });
+        await profileRepository.updateProfile({ localWhisperPath: targetUri, useLocalWhisper: true });
       }
-      useAppStore.getState().refreshProfile();
+      await useAppStore.getState().refreshProfile();
       console.log(`[Bootstrap] ${type} model already downloaded at ${targetUri}`);
       return;
     }
@@ -129,11 +129,11 @@ async function downloadModel(
       await FileSystem.moveAsync({ from: partialUri, to: targetUri });
 
       if (type === 'llm') {
-        updateUserProfile({ localModelPath: targetUri, useLocalModel: true });
+        await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
       } else {
-        updateUserProfile({ localWhisperPath: targetUri, useLocalWhisper: true });
+        await profileRepository.updateProfile({ localWhisperPath: targetUri, useLocalWhisper: true });
       }
-      useAppStore.getState().refreshProfile();
+      await useAppStore.getState().refreshProfile();
       console.log(`[Bootstrap] ${type} model downloaded successfully`);
     } else {
       console.warn(`[Bootstrap] ${type} download failed with status ${result?.status}`);

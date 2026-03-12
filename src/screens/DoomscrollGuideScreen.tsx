@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { scheduleHarassment, requestNotificationPermissions } from '../services/notificationService';
-import { updateUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { HarassmentTone } from '../types';
@@ -23,10 +23,10 @@ export default function DoomscrollGuideScreen() {
   const [harassmentActive, setHarassmentActive] = useState(false);
   const [selectedTone, setSelectedTone] = useState<HarassmentTone>(profile?.harassmentTone ?? 'shame');
 
-  function handleToneSelect(tone: HarassmentTone) {
+  async function handleToneSelect(tone: HarassmentTone) {
     setSelectedTone(tone);
-    updateUserProfile({ harassmentTone: tone });
-    refreshProfile();
+    await profileRepository.updateProfile({ harassmentTone: tone });
+    await refreshProfile();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 

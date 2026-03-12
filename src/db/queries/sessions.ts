@@ -7,29 +7,29 @@ type WeeklyStatsBucket = {
   topics: number;
 };
 
-export function getTotalStudyMinutes(): number {
+export async function getTotalStudyMinutes(): Promise<number> {
   const db = getDb();
-  const r = db.getFirstSync<{ total: number }>(
+  const r = await db.getFirstAsync<{ total: number }>(
     'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM sessions WHERE ended_at IS NOT NULL',
   );
   return r?.total ?? 0;
 }
 
-export function getCompletedSessionCount(): number {
+export async function getCompletedSessionCount(): Promise<number> {
   const db = getDb();
-  const r = db.getFirstSync<{ cnt: number }>(
+  const r = await db.getFirstAsync<{ cnt: number }>(
     'SELECT COUNT(*) as cnt FROM sessions WHERE ended_at IS NOT NULL',
   );
   return r?.cnt ?? 0;
 }
 
-export function createSession(
+export async function createSession(
   plannedTopics: number[],
   mood: Mood | null,
   mode: SessionMode,
-): number {
+): Promise<number> {
   const db = getDb();
-  const result = db.runSync(
+  const result = await db.runAsync(
     `INSERT INTO sessions (started_at, planned_topics, mood, mode)
      VALUES (?, ?, ?, ?)`,
     [nowTs(), JSON.stringify(plannedTopics), mood, mode],
@@ -37,15 +37,15 @@ export function createSession(
   return result.lastInsertRowId;
 }
 
-export function endSession(
+export async function endSession(
   sessionId: number,
   completedTopics: number[],
   xpEarned: number,
   durationMinutes: number,
   notes?: string,
-): void {
+): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     `UPDATE sessions
      SET ended_at = ?, completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
      WHERE id = ?`,
@@ -53,7 +53,7 @@ export function endSession(
   );
 
   // Update daily log
-  db.runSync(
+  await db.runAsync(
     `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
      VALUES (?, 1, ?, ?)
      ON CONFLICT(date) DO UPDATE SET
@@ -64,9 +64,9 @@ export function endSession(
   );
 }
 
-export function getRecentSessions(limit = 7): StudySession[] {
+export async function getRecentSessions(limit = 7): Promise<StudySession[]> {
   const db = getDb();
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     id: number; started_at: number; ended_at: number | null;
     planned_topics: string; completed_topics: string;
     total_xp_earned: number; duration_minutes: number | null;
@@ -88,30 +88,30 @@ export function getRecentSessions(limit = 7): StudySession[] {
   }));
 }
 
-export function getRecentlyStudiedTopicNames(sessionCount = 3): string[] {
+export async function getRecentlyStudiedTopicNames(sessionCount = 3): Promise<string[]> {
   const db = getDb();
-  const rows = db.getAllSync<{ completed_topics: string }>(
+  const rows = await db.getAllAsync<{ completed_topics: string }>(
     'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL ORDER BY started_at DESC LIMIT ?',
     [sessionCount],
   );
   const topicIds = rows.flatMap(r => JSON.parse(r.completed_topics) as number[]);
   if (topicIds.length === 0) return [];
   const placeholders = topicIds.map(() => '?').join(',');
-  const nameRows = db.getAllSync<{ name: string }>(
+  const nameRows = await db.getAllAsync<{ name: string }>(
     `SELECT name FROM topics WHERE id IN (${placeholders})`,
     topicIds,
   );
   return nameRows.map(r => r.name);
 }
 
-export function getCompletedTopicIdsBetween(startTs: number, endTs?: number): number[] {
+export async function getCompletedTopicIdsBetween(startTs: number, endTs?: number): Promise<number[]> {
   const db = getDb();
   const rows = endTs == null
-    ? db.getAllSync<{ completed_topics: string }>(
+    ? await db.getAllAsync<{ completed_topics: string }>(
         'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ?',
         [startTs],
       )
-    : db.getAllSync<{ completed_topics: string }>(
+    : await db.getAllAsync<{ completed_topics: string }>(
         'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND started_at < ?',
         [startTs, endTs],
       );
@@ -125,13 +125,13 @@ export function getCompletedTopicIdsBetween(startTs: number, endTs?: number): nu
   });
 }
 
-export function getPreferredStudyHours(): number[] {
+export async function getPreferredStudyHours(): Promise<number[]> {
   const db = getDb();
   // Get all session start times
-  const rows = db.getAllSync<{ started_at: number }>(
+  const rows = await db.getAllAsync<{ started_at: number }>(
     'SELECT started_at FROM sessions WHERE duration_minutes >= 10 ORDER BY started_at DESC LIMIT 50'
   );
-  
+
   if (rows.length === 0) return [9, 14, 19]; // Default: 9am, 2pm, 7pm
 
   const hourCounts: Record<number, number> = {};
@@ -144,26 +144,26 @@ export function getPreferredStudyHours(): number[] {
   const sorted = Object.entries(hourCounts)
     .sort(([, a], [, b]) => b - a)
     .map(([h]) => parseInt(h, 10));
-    
+
   // If we have enough history, return top 3 unique hours
   if (sorted.length >= 3) return sorted.slice(0, 3);
-  
+
   // Otherwise mix with defaults, ensuring uniqueness
   const defaults = [9, 19, 21];
   const uniqueHours: number[] = [];
-  
+
   for (const hour of [...sorted, ...defaults]) {
     if (!uniqueHours.includes(hour)) {
       uniqueHours.push(hour);
     }
     if (uniqueHours.length >= 3) break;
   }
-  
+
   return uniqueHours.sort((a, b) => a - b);
 }
 
 /** Get weekly stats: this week vs last week */
-export function getWeeklyComparison(): { thisWeek: WeeklyStatsBucket; lastWeek: WeeklyStatsBucket } {
+export async function getWeeklyComparison(): Promise<{ thisWeek: WeeklyStatsBucket; lastWeek: WeeklyStatsBucket }> {
   const db = getDb();
   const now = Date.now();
   const dayMs = 86_400_000;
@@ -179,7 +179,7 @@ export function getWeeklyComparison(): { thisWeek: WeeklyStatsBucket; lastWeek: 
   const thisWeekStart = now - mondayOffset * dayMs - midnightOffsetMs;
   const lastWeekStart = thisWeekStart - 7 * dayMs;
 
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     bucket: 'thisWeek' | 'lastWeek';
     minutes: number;
     sessions: number;
@@ -231,11 +231,11 @@ export function getWeeklyComparison(): { thisWeek: WeeklyStatsBucket; lastWeek: 
 }
 
 /** Calculate current streak from daily_log */
-export function calculateCurrentStreak(): number {
+export async function calculateCurrentStreak(): Promise<number> {
   const db = getDb();
   const today = todayStr();
   const yesterday = dateStr(new Date(Date.now() - 86_400_000));
-  const result = db.getFirstSync<{ streak: number }>(
+  const result = await db.getFirstAsync<{ streak: number }>(
     `WITH RECURSIVE
        anchor(day) AS (
          SELECT CASE

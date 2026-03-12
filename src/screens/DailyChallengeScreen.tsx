@@ -9,7 +9,7 @@ import type { HomeStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { getTopicsDueForReview, getWeakestTopics, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
-import { updateStreak } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
 import type { QuizContent, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -62,8 +62,7 @@ export default function DailyChallengeScreen() {
 
   async function loadQuestions() {
     setLoading(true);
-    const due = getTopicsDueForReview(3);
-    const weak = getWeakestTopics(5);
+    const [due, weak] = await Promise.all([getTopicsDueForReview(3), getWeakestTopics(5)]);
     const seen = new Set(due.map(t => t.id));
     const combined: TopicWithProgress[] = [...due, ...weak.filter(t => !seen.has(t.id))].slice(0, QUESTION_COUNT);
 
@@ -142,16 +141,16 @@ export default function DailyChallengeScreen() {
   async function finishChallenge(finalScore: number, finalCorrect: number[], finalWrong: number[]) {
     try {
       const totalXp = finalScore * XP_PER_CORRECT;
-      const sessionId = createSession([], 'good', 'normal');
-      endSession(sessionId, finalCorrect, totalXp, Math.ceil(questions.length * 1.5));
-      updateStreak(true);
+      const sessionId = await createSession([], 'good', 'normal');
+      await endSession(sessionId, finalCorrect, totalXp, Math.ceil(questions.length * 1.5));
+      await profileRepository.updateStreak(true);
 
       // Update SRS for each answered topic
       for (const topicId of finalCorrect) {
-        updateTopicProgress(topicId, 'reviewed', 3, XP_PER_CORRECT);
+        await updateTopicProgress(topicId, 'reviewed', 3, XP_PER_CORRECT);
       }
       for (const topicId of finalWrong) {
-        updateTopicProgress(topicId, 'seen', 2, 10);
+        await updateTopicProgress(topicId, 'seen', 2, 10);
       }
 
       await refreshProfile();

@@ -13,6 +13,7 @@ import { askGuru } from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
+import { MarkdownRender } from '../components/MarkdownRender';
 
 interface TopicImageProps {
   topicName: string;
@@ -51,7 +52,7 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
 
   useEffect(() => {
     if (topicId) {
-      setFlagged(isContentFlagged(topicId, content.type));
+      void isContentFlagged(topicId, content.type).then(setFlagged);
     } else {
       setFlagged(false);
     }
@@ -61,7 +62,7 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
     if (!topicId) return;
     const newFlagged = !flagged;
     setFlagged(newFlagged);
-    setContentFlagged(topicId, content.type, newFlagged);
+    void setContentFlagged(topicId, content.type, newFlagged);
     if (newFlagged) Alert.alert('Flagged for review', 'This content has been flagged. You can review all flagged items in the Flagged Review section.');
   }
 
@@ -144,7 +145,9 @@ function KeyPointsCard({ content, onDone, onSkip }: { content: KeyPointsContent 
         {content.points.slice(0, revealIndex + 1).map((pt, i) => (
           <View key={i} style={s.pointRow}>
             <Text style={s.bullet}>→</Text>
-            <Text style={s.pointText}>{pt}</Text>
+            <View style={{ flex: 1 }}>
+              <MarkdownRender content={pt} compact />
+            </View>
           </View>
         ))}
       </View>
@@ -233,7 +236,9 @@ function QuizCard({ content, onDone, onSkip, onQuizAnswered, onQuizComplete }: {
       {showExpl && (
         <View style={s.explBox}>
           <Text style={s.explLabel}>{selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}</Text>
-          <Text style={s.explText}>{q.explanation}</Text>
+          <View>
+            <MarkdownRender content={q.explanation} compact />
+          </View>
         </View>
       )}
       {showExpl && (
@@ -259,7 +264,9 @@ function StoryCard({ content, onDone, onSkip }: { content: StoryContent } & Omit
       <Text style={s.cardType}>📖 CLINICAL STORY</Text>
       <Text style={s.cardTitle}>{content.topicName}</Text>
       <TopicImage topicName={content.topicName} />
-      <Text style={s.storyText}>{content.story}</Text>
+      <View style={{ marginBottom: 20 }}>
+        <MarkdownRender content={content.story} />
+      </View>
       <View style={s.highlightsBox}>
         <Text style={s.highlightsLabel}>Key concepts in this story:</Text>
         <View style={s.highlightChips}>
@@ -298,7 +305,9 @@ function MnemonicCard({ content, onDone, onSkip }: { content: MnemonicContent } 
       </View>
       <View style={s.expansionList}>
         {revealStep >= 1 && content.expansion.map((line, i) => (
-          <Text key={i} style={s.expansionLine}>{line}</Text>
+          <View key={i} style={{ paddingLeft: 8 }}>
+            <MarkdownRender content={line} compact />
+          </View>
         ))}
       </View>
       {revealStep >= 2 && (
@@ -436,7 +445,9 @@ function ErrorHuntCard({ content, onDone, onSkip }: { content: ErrorHuntContent 
               <Text style={s.explLabel}>Error {i + 1}:</Text>
               <Text style={[s.explText, { color: '#F44336' }]}>❌ "{err.wrong}"</Text>
               <Text style={[s.explText, { color: '#4CAF50' }]}>✅ Should be: "{err.correct}"</Text>
-              <Text style={s.explText}>{err.explanation}</Text>
+              <View style={{ marginTop: 4 }}>
+                <MarkdownRender content={err.explanation} />
+              </View>
             </View>
           ))}
           <ConfidenceRating onRate={onDone} />
@@ -485,7 +496,9 @@ function DetectiveCard({ content, onDone, onSkip }: { content: DetectiveContent 
           <View style={s.explBox}>
             <Text style={s.explLabel}>Diagnosis:</Text>
             <Text style={[s.explText, { color: '#4CAF50', fontSize: 18, fontWeight: '700' }]}>{content.answer}</Text>
-            <Text style={s.explText}>{content.explanation}</Text>
+            <View style={{ marginTop: 4 }}>
+              <MarkdownRender content={content.explanation} />
+            </View>
           </View>
           <ConfidenceRating onRate={onDone} />
         </>

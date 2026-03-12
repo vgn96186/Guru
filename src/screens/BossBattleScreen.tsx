@@ -7,9 +7,10 @@ import type { HomeStackParamList } from '../navigation/types';
 import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { fetchContent } from '../services/aiService';
-import { addXp } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import type { Subject } from '../types';
 
 const BOSS_HP = 100;
 const PLAYER_HP = 3;
@@ -29,23 +30,28 @@ export default function BossBattleScreen() {
   
   const [bossHp, setBossHp] = useState(BOSS_HP);
   const [playerHp, setPlayerHp] = useState(PLAYER_HP);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    void getAllSubjects().then(setSubjects);
+  }, []);
+
   async function startBattle(subjectName: string) {
-    let subjectQs = getAllCachedQuestions().filter(q => q.subjectName === subjectName);
+    let subjectQs = (await getAllCachedQuestions()).filter(q => q.subjectName === subjectName);
     
     if (subjectQs.length < 5) {
       // Generate fresh questions from studied topics
       setPhase('loading');
-      const subjects = getAllSubjects();
+      const subjects = await getAllSubjects();
       const subject = subjects.find(s => s.name === subjectName);
       if (subject) {
-        const topics = getTopicsBySubject(subject.id).filter(t => t.progress.timesStudied > 0).slice(0, 3);
+        const topics = (await getTopicsBySubject(subject.id)).filter(t => t.progress.timesStudied > 0).slice(0, 3);
         await Promise.allSettled(
           topics.map(t => fetchContent(t, 'quiz'))
         );
-        subjectQs = getAllCachedQuestions().filter(q => q.subjectName === subjectName);
+        subjectQs = (await getAllCachedQuestions()).filter(q => q.subjectName === subjectName);
       }
     }
 
@@ -76,8 +82,7 @@ export default function BossBattleScreen() {
       setBossHp(newBossHp);
       if (newBossHp === 0) {
         setPhase('victory');
-        addXp(500);
-        refreshProfile();
+        profileRepository.addXp(500).then(() => refreshProfile());
       } else {
         setPhase('answer_feedback');
       }
@@ -139,7 +144,6 @@ export default function BossBattleScreen() {
   }
 
   if (phase === 'select') {
-    const subjects = getAllSubjects();
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />

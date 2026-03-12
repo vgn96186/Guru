@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, InteractionManager } from 'react-native';
-import { getDailyLog } from '../db/queries/progress';
+import { dailyLogRepository } from '../db/repositories';
 import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics } from '../db/queries/topics';
 import { getCompletedSessionCount } from '../db/queries/sessions';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
@@ -17,14 +17,13 @@ export function useHomeDashboardData() {
   const reload = useCallback(async () => {
     setIsLoading(true);
     try {
-      markNemesisTopics();
-      setWeakTopics(getWeakestTopics(3));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      setDueTopics(getTopicsDueForReview(5));
-      await new Promise(resolve => setTimeout(resolve, 0));
-      setTodayTasks(getTodaysAgendaWithTimes().slice(0, 2));
-      setCompletedSessions(getCompletedSessionCount());
-      const log = getDailyLog();
+      await markNemesisTopics();
+      const [weak, due] = await Promise.all([getWeakestTopics(3), getTopicsDueForReview(5)]);
+      setWeakTopics(weak);
+      setDueTopics(due);
+      setTodayTasks((await getTodaysAgendaWithTimes()).slice(0, 2));
+      setCompletedSessions(await getCompletedSessionCount());
+      const log = await dailyLogRepository.getDailyLog();
       setTodayMinutes(log?.totalMinutes ?? 0);
     } catch (err: any) {
       console.error('[Home] Failed to load initial data:', err);

@@ -24,8 +24,9 @@ export default function FlaggedReviewScreen() {
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    setItems(getFlaggedContent());
+  const load = useCallback(async () => {
+    const items = await getFlaggedContent();
+    setItems(items);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -34,9 +35,9 @@ export default function FlaggedReviewScreen() {
     Alert.alert('Remove flag?', `Unflag "${item.topicName}" (${CONTENT_TYPE_LABELS[item.contentType]})?`, [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Unflag', style: 'destructive', onPress: () => {
-          setContentFlagged(item.topicId, item.contentType, false);
-          load();
+        text: 'Unflag', style: 'destructive', onPress: async () => {
+          await setContentFlagged(item.topicId, item.contentType, false);
+          await load();
         },
       },
     ]);

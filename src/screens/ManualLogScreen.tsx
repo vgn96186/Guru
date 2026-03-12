@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { getAllSubjects, getTopicsBySubject, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
-import { updateStreak } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import type { Subject, TopicWithProgress } from '../types';
@@ -19,7 +19,7 @@ export default function ManualLogScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
   const refreshProfile = useAppStore(s => s.refreshProfile);
-  const [subjects] = useState<Subject[]>(getAllSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   
   const [selectedAppId, setSelectedAppId] = useState<string | null>(route.params?.appId ?? null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
@@ -29,10 +29,15 @@ export default function ManualLogScreen() {
   const [topicName, setTopicName] = useState('');
 
   useEffect(() => {
+    void getAllSubjects().then(setSubjects);
+  }, []);
+
+  useEffect(() => {
     if (selectedSubjectId) {
-      const topics = getTopicsBySubject(selectedSubjectId).filter(t => !t.parentTopicId).slice(0, 8);
-      setSubjectTopics(topics);
-      setSelectedTopicId(null);
+      void getTopicsBySubject(selectedSubjectId).then(topics => {
+        setSubjectTopics(topics.filter(t => !t.parentTopicId).slice(0, 8));
+        setSelectedTopicId(null);
+      });
     } else {
       setSubjectTopics([]);
     }
@@ -46,28 +51,24 @@ export default function ManualLogScreen() {
     }
 
     // Log the session
-    const sessionId = createSession([], 'good', 'external'); // external mode
-    
+    const sessionId = await createSession([], 'good', 'external'); // external mode
+
     // Calculate XP: 10 XP per minute for external study (slightly less than Guru active study)
     const xp = mins * 10;
-    
-    // Note context
-    const appName = EXTERNAL_APPS.find(a => a.id === selectedAppId)?.name ?? 'External App';
-    const note = `Studied ${topicName || 'General'} on ${appName}`;
-    
+
     // End immediately (it's a retroactive log)
-    // We pass [] as completed topic IDs since we don't track granular topics externally yet, 
+    // We pass [] as completed topic IDs since we don't track granular topics externally yet,
     // unless we create a dummy topic? For now, just log XP and time.
-    endSession(sessionId, [], xp, mins);
+    await endSession(sessionId, [], xp, mins);
 
     // Update SRS for selected topic if applicable
     if (selectedTopicId) {
       const confidence = mins >= 60 ? 4 : mins >= 30 ? 3 : 2;
-      updateTopicProgress(selectedTopicId, 'seen', confidence, xp);
+      await updateTopicProgress(selectedTopicId, 'seen', confidence, xp);
     }
 
     // Update streak if > 20 mins
-    updateStreak(mins >= 20);
+    await profileRepository.updateStreak(mins >= 20);
 
     await refreshProfile();
     navigation.goBack();

@@ -1,0 +1,87 @@
+/**
+ * Versioned database migrations.
+ * Uses PRAGMA user_version to track applied migrations — only pending ones run on boot.
+ * migration_history table (v59+) provides an audit trail of applied migrations.
+ * Fresh installs (topicCount === 0) skip migrations; schema comes from CREATE TABLE.
+ * Exam date defaults come from appConfig for consistency.
+ */
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
+
+export interface Migration {
+  version: number;
+  sql: string;
+  description?: string;
+}
+
+export const MIGRATIONS: Migration[] = [
+  { version: 1, sql: `ALTER TABLE topics ADD COLUMN parent_topic_id INTEGER REFERENCES topics(id)` },
+  { version: 2, sql: `ALTER TABLE topic_progress ADD COLUMN next_review_date TEXT` },
+  { version: 3, sql: `ALTER TABLE topic_progress ADD COLUMN user_notes TEXT NOT NULL DEFAULT ''` },
+  { version: 4, sql: `ALTER TABLE external_app_logs ADD COLUMN recording_path TEXT` },
+  { version: 5, sql: `ALTER TABLE external_app_logs ADD COLUMN transcription_status TEXT DEFAULT 'pending'` },
+  { version: 6, sql: `ALTER TABLE external_app_logs ADD COLUMN transcription_error TEXT` },
+  { version: 7, sql: `ALTER TABLE external_app_logs ADD COLUMN lecture_note_id INTEGER` },
+  { version: 8, sql: `ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'pending'` },
+  { version: 9, sql: `ALTER TABLE external_app_logs ADD COLUMN pipeline_metrics_json TEXT` },
+  { version: 10, sql: `ALTER TABLE user_profile ADD COLUMN strict_mode_enabled INTEGER DEFAULT 0` },
+  { version: 11, sql: `ALTER TABLE user_profile ADD COLUMN streak_shield_available INTEGER DEFAULT 1` },
+  { version: 12, sql: `ALTER TABLE user_profile ADD COLUMN openrouter_key TEXT NOT NULL DEFAULT ''` },
+  { version: 13, sql: `ALTER TABLE user_profile ADD COLUMN body_doubling_enabled INTEGER NOT NULL DEFAULT 1` },
+  { version: 14, sql: `ALTER TABLE user_profile ADD COLUMN blocked_content_types TEXT NOT NULL DEFAULT '[]'` },
+  { version: 15, sql: `ALTER TABLE user_profile ADD COLUMN idle_timeout_minutes INTEGER NOT NULL DEFAULT 2` },
+  { version: 16, sql: `ALTER TABLE user_profile ADD COLUMN break_duration_minutes INTEGER NOT NULL DEFAULT 5` },
+  { version: 17, sql: `ALTER TABLE user_profile ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 7` },
+  { version: 18, sql: `ALTER TABLE user_profile ADD COLUMN focus_subject_ids TEXT NOT NULL DEFAULT '[]'` },
+  { version: 19, sql: `ALTER TABLE user_profile ADD COLUMN focus_audio_enabled INTEGER NOT NULL DEFAULT 0` },
+  { version: 20, sql: `ALTER TABLE user_profile ADD COLUMN visual_timers_enabled INTEGER NOT NULL DEFAULT 0` },
+  { version: 21, sql: `ALTER TABLE user_profile ADD COLUMN face_tracking_enabled INTEGER NOT NULL DEFAULT 0` },
+  { version: 22, sql: `ALTER TABLE topic_progress ADD COLUMN wrong_count INTEGER NOT NULL DEFAULT 0` },
+  { version: 23, sql: `ALTER TABLE topic_progress ADD COLUMN is_nemesis INTEGER NOT NULL DEFAULT 0` },
+  { version: 24, sql: `ALTER TABLE user_profile ADD COLUMN quiz_correct_count INTEGER NOT NULL DEFAULT 0` },
+  { version: 25, sql: `ALTER TABLE user_profile ADD COLUMN last_backup_date TEXT` },
+  { version: 26, sql: `ALTER TABLE user_profile ADD COLUMN guru_frequency TEXT NOT NULL DEFAULT 'normal'` },
+  { version: 27, sql: `ALTER TABLE user_profile ADD COLUMN use_local_model INTEGER NOT NULL DEFAULT 1` },
+  { version: 28, sql: `ALTER TABLE user_profile ADD COLUMN local_model_path TEXT` },
+  { version: 29, sql: `ALTER TABLE user_profile ADD COLUMN use_local_whisper INTEGER NOT NULL DEFAULT 1` },
+  { version: 30, sql: `ALTER TABLE user_profile ADD COLUMN local_whisper_path TEXT` },
+  { version: 31, sql: `ALTER TABLE user_profile ADD COLUMN quick_start_streak INTEGER NOT NULL DEFAULT 0` },
+  { version: 32, sql: `ALTER TABLE user_profile ADD COLUMN groq_api_key TEXT NOT NULL DEFAULT ''` },
+  { version: 33, sql: `ALTER TABLE user_profile ADD COLUMN study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'` },
+  { version: 34, sql: `ALTER TABLE user_profile ADD COLUMN subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'` },
+  { version: 35, sql: `ALTER TABLE user_profile ADD COLUMN inicet_date TEXT NOT NULL DEFAULT '${DEFAULT_INICET_DATE}'` },
+  { version: 36, sql: `ALTER TABLE user_profile ADD COLUMN neet_date TEXT NOT NULL DEFAULT '${DEFAULT_NEET_DATE}'` },
+  { version: 37, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_due TEXT` },
+  { version: 38, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_stability REAL DEFAULT 0` },
+  { version: 39, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_difficulty REAL DEFAULT 0` },
+  { version: 40, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_elapsed_days INTEGER DEFAULT 0` },
+  { version: 41, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_scheduled_days INTEGER DEFAULT 0` },
+  { version: 42, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_reps INTEGER DEFAULT 0` },
+  { version: 43, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_lapses INTEGER DEFAULT 0` },
+  { version: 44, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_state INTEGER DEFAULT 0` },
+  { version: 45, sql: `ALTER TABLE topic_progress ADD COLUMN fsrs_last_review TEXT` },
+  { version: 46, sql: `UPDATE user_profile SET inicet_date = '${DEFAULT_INICET_DATE}' WHERE inicet_date IS NULL OR inicet_date = '' OR inicet_date = '2026-05-01'` },
+  { version: 47, sql: `UPDATE user_profile SET neet_date = '${DEFAULT_NEET_DATE}' WHERE neet_date IS NULL OR neet_date = '' OR neet_date = '2026-08-01'` },
+  { version: 48, sql: `UPDATE user_profile SET use_local_model = 1 WHERE use_local_model = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')` },
+  { version: 49, sql: `UPDATE user_profile SET use_local_whisper = 1 WHERE use_local_whisper = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')` },
+  { version: 50, sql: `UPDATE user_profile SET study_resource_mode = 'hybrid' WHERE study_resource_mode IS NULL OR study_resource_mode = ''` },
+  { version: 51, sql: `UPDATE user_profile SET subject_load_overrides_json = '{}' WHERE subject_load_overrides_json IS NULL OR subject_load_overrides_json = ''` },
+  { version: 52, sql: `ALTER TABLE user_profile ADD COLUMN harassment_tone TEXT NOT NULL DEFAULT 'shame'` },
+  { version: 53, sql: `ALTER TABLE lecture_notes ADD COLUMN transcript TEXT` },
+  { version: 54, sql: `ALTER TABLE lecture_notes ADD COLUMN summary TEXT` },
+  { version: 55, sql: `ALTER TABLE lecture_notes ADD COLUMN topics_json TEXT` },
+  { version: 56, sql: `ALTER TABLE lecture_notes ADD COLUMN app_name TEXT` },
+  { version: 57, sql: `ALTER TABLE lecture_notes ADD COLUMN duration_minutes INTEGER` },
+  { version: 58, sql: `ALTER TABLE lecture_notes ADD COLUMN confidence INTEGER DEFAULT 2` },
+  {
+    version: 59,
+    sql: `CREATE TABLE IF NOT EXISTS migration_history (
+  version INTEGER PRIMARY KEY,
+  applied_at INTEGER NOT NULL,
+  description TEXT
+)`,
+    description: 'migration_history audit table',
+  },
+];
+
+/** Latest schema version. Bump when adding new migrations. */
+export const LATEST_VERSION = 59;

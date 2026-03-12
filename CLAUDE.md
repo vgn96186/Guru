@@ -15,15 +15,20 @@ src/
   db/
     schema.ts       # All CREATE TABLE statements
     database.ts     # getDb() singleton (expo-sqlite)
+    migrations.ts   # Versioned migrations + migration_history audit
     queries/        # One file per domain (topics, progress, sessions, aiCache, externalLogs, brainDumps)
-  hooks/            # useGuruPresence, useResponsive, useFaceTracking, useIdleTimer
+    repositories/   # profileRepository, dailyLogRepository — abstraction for stores
+  hooks/            # useAppInitialization, useAppBootstrap, useGuruPresence, useResponsive, useFaceTracking, useIdleTimer
   navigation/
     types.ts        # All stack param lists
     RootNavigator   # Root modal stack (overlays BedLock, Punishment, etc.)
     TabNavigator    # 5 tabs: Home, Syllabus, Plan, Stats, Settings
   store/
     useAppStore.ts  # Zustand store — profile, levelInfo, refreshProfile
-  types/index.ts    # All shared TS interfaces
+  types/index.ts    # Re-exports from schemas + remaining interfaces
+  schemas/          # Zod schemas — single source of truth (Mood, DailyLog, ContentType, etc.)
+  config/
+    appConfig.ts    # Exam dates, AI model lists, env vars (DEFAULT_INICET_DATE, GROQ_MODELS)
   constants/
     prompts.ts      # All LLM prompts
     syllabus.ts     # Seeded NEET-PG topic tree
@@ -42,13 +47,26 @@ modules/
 ## Key Architectural Rules
 
 ### Database
-- All DB access is **synchronous** via `expo-sqlite` (`getDb()` from `src/db/database.ts`).
-- Never use async DB calls. Use `db.runSync`, `db.getFirstSync`, `db.getAllSync`.
+- DB access via `expo-sqlite` (`getDb()` from `src/db/database.ts`).
+- **Async-only** — prefer `db.runAsync`, `db.getFirstAsync`, `db.getAllAsync` to keep the UI responsive. Sync methods have been removed.
+- **Versioned migrations** — `src/db/migrations.ts` uses PRAGMA user_version; `migration_history` table (v59+) provides an audit trail.
+- **Repository layer** — `src/db/repositories/` decouples Zustand stores from persistence. Use `profileRepository` and `dailyLogRepository` instead of importing queries directly.
 - `nowTs()` from `database.ts` = `Date.now()` (milliseconds epoch).
 - `topic_progress` is the central progress table. `status` = `'unseen' | 'seen' | 'reviewed' | 'mastered'`.
 - `confidence` (0–3) maps to estimatedConfidence (1–3) from AI.
 
-### AI Service Routing (`src/services/aiService.ts`)
+### App Bootstrap (replaces scripts/ patching)
+- **Cold start:** `src/services/appBootstrap.ts` — `runAppBootstrap()` orchestrates DB init, offline queue, background fetch, confidence decay, local model download. Called once from `App.tsx`.
+- **Post-mount:** `src/hooks/useAppBootstrap.ts` — profile load, exam date sync, accountability notifications, WakeUp notification routing, AppState listeners. Used by `AppContent`.
+- `src/navigation/navigationRef.ts` — shared `navigationRef` for imperative navigation (e.g. WakeUp from notification tap).
+
+### Configuration & Schemas
+- **appConfig** (`src/config/appConfig.ts`) — `DEFAULT_INICET_DATE`, `DEFAULT_NEET_DATE` (env: `EXPO_PUBLIC_DEFAULT_*`), `OPENROUTER_FREE_MODELS`, `GROQ_MODELS`, `BUNDLED_GROQ_KEY`. Used by schema, migrations, progress, SettingsScreen, ai/config.
+- **Schemas** (`src/schemas/core.ts`) — Zod schemas for Mood, ContentType, DailyLog, TopicStatus, etc. Types derived via `z.infer`. `types/index.ts` re-exports.
+
+### AI Service Routing (`src/services/aiService.ts` and `src/services/ai/`)
+- Implementation lives in `src/services/ai/` (config, types, schemas, jsonRepair, llmRouting, generate, medicalSearch, content, planning, chat, notifications, catalyze). `aiService.ts` is a thin barrel re-exporting the public API.
+- **Module aliases:** LlmRouter = llmRouting, JsonRepair = jsonRepair, MedicalGrounding = medicalSearch, ContentGeneration = content.
 - Local LLM: llama.rn / Qwen via `profile.localModelPath` when `profile.useLocalModel = true`.
 - Default local model: **Qwen-2.5-3B** (reliable JSON, good medical reasoning).
 - Local Whisper: whisper.rn via `profile.localWhisperPath` when `profile.useLocalWhisper = true`.
@@ -202,3 +220,4 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 - `ai_cache` stores both AI-generated content cards AND lecture notes (via `saveLectureNote()`).
 - DB `confidence` column (0–3 int) vs `LectureAnalysis.estimatedConfidence` (1–3 int) — compatible, pass directly.
 - `useLocalWhisper` / `localWhisperPath` on profile = on-device Whisper model (whisper.rn). Separate from `useLocalModel` / `localModelPath` which is the LLM (llama.rn).
+- The `scripts/archive/` folder contains deprecated regex-based patch scripts. All their changes are already in source. Do not run them or create new patch scripts.

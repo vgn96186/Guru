@@ -1,0 +1,172 @@
+import { z } from 'zod';
+
+function stripJsonCodeFences(raw: string): string {
+  return raw
+    .replace(/^\uFEFF/, '')
+    .replace(/```json\s*/gi, '')
+    .replace(/```/g, '')
+    .trim();
+}
+
+function extractBalancedJson(raw: string): string {
+  const objectStart = raw.indexOf('{');
+  const arrayStart = raw.indexOf('[');
+  const start = objectStart === -1
+    ? arrayStart
+    : arrayStart === -1
+      ? objectStart
+      : Math.min(objectStart, arrayStart);
+
+  if (start === -1) return raw.trim();
+
+  const stack: string[] = [];
+  let inString = false;
+  let quoteChar = '';
+  let escaped = false;
+
+  for (let i = start; i < raw.length; i += 1) {
+    const char = raw[i];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (char === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (char === quoteChar) {
+        inString = false;
+        quoteChar = '';
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      quoteChar = char;
+      continue;
+    }
+
+    if (char === '{') stack.push('}');
+    else if (char === '[') stack.push(']');
+    else if ((char === '}' || char === ']') && stack.length > 0) {
+      const expected = stack.pop();
+      if (char !== expected) return raw.slice(start).trim();
+      if (stack.length === 0) {
+        return raw.slice(start, i + 1).trim();
+      }
+    }
+  }
+
+  return raw.slice(start).trim();
+}
+
+function repairCommonJsonIssues(raw: string): string {
+  let s = raw
+    .replace(/[\u201C\u201D]/g, '"')   // Smart double quotes -> regular
+    .replace(/[\u2018\u2019]/g, "'")   // Smart single quotes -> regular
+    .replace(/^json\s*/i, '');          // Strip leading "json" prefix
+
+  // Phase 1: Protect existing double-quoted strings with placeholders
+  const strings: string[] = [];
+  s = s.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
+    strings.push(match);
+    return `\x00S${strings.length - 1}\x00`;
+  });
+
+  // Phase 2: Structural repairs (no double-quoted strings present, safe to regex)
+
+  // Strip // line comments
+  s = s.replace(/\/\/[^\n]*/g, '');
+
+  // Fix single-quoted keys: { 'key': value }
+  s = s.replace(/([{,]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(\s*:)/g,
+    (_m: string, pre: string, key: string, suf: string) =>
+      `${pre}"${key.replace(/"/g, '\\"')}"${suf}`);
+
+  // Fix single-quoted values: : 'value'
+  s = s.replace(/(:\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(?=\s*[,}\]\x00])/g,
+    (_m: string, pre: string, val: string) =>
+      `${pre}"${val.replace(/"/g, '\\"')}"`);
+
+  // Fix unquoted keys (now safe - real strings are placeholders so won't be corrupted)
+  s = s.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)/g, '$1"$2"$3');
+
+  // Insert missing commas between properties:
+  //   placeholder or } or ] or digit at end, then newline, then placeholder or "key"
+  s = s.replace(/(\x00)(\s*\n\s*)(\x00|")/g, '$1,$2$3');
+  s = s.replace(/([\]}\d])(\s*\n\s*)(\x00|")/g, '$1,$2$3');
+  s = s.replace(/(true|false|null)(\s*\n\s*)(\x00|")/g, '$1,$2$3');
+
+  // Fix trailing commas
+  s = s.replace(/,\s*([}\]])/g, '$1');
+
+  // Phase 3: Restore original strings
+  s = s.replace(/\x00S(\d+)\x00/g, (_: string, idx: string) => strings[parseInt(idx, 10)]);
+
+  return s.trim();
+}
+
+function repairTruncatedJson(raw: string): string {
+  let inString = false;
+  let escaped = false;
+  const stack: string[] = [];
+
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (inString) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === '\\') { escaped = true; continue; }
+      if (ch === '"') { inString = false; }
+      continue;
+    }
+    if (ch === '"') { inString = true; continue; }
+    if (ch === '{') stack.push('}');
+    else if (ch === '[') stack.push(']');
+    else if (ch === '}' || ch === ']') {
+      if (stack.length > 0 && stack[stack.length - 1] === ch) stack.pop();
+    }
+  }
+
+  if (stack.length === 0) return raw;
+
+  // If we were inside an unclosed string, close it first
+  let suffix = inString ? '"' : '';
+  // Close all open braces/brackets in reverse order
+  while (stack.length > 0) suffix += stack.pop();
+  return raw + suffix;
+}
+
+export function parseStructuredJson<T>(raw: string, schema: z.ZodType<T>): T {
+  if (__DEV__) console.log('[AI] Raw text for JSON parsing (first 600 chars):', raw.slice(0, 600));
+
+  const cleaned = stripJsonCodeFences(raw);
+  const extracted = extractBalancedJson(cleaned);
+
+  const candidates = Array.from(new Set([
+    cleaned,
+    extracted,
+    repairCommonJsonIssues(cleaned),
+    repairCommonJsonIssues(extracted),
+    // Also try repairing truncated JSON (local model can hit token limit)
+    repairCommonJsonIssues(repairTruncatedJson(cleaned)),
+    repairCommonJsonIssues(repairTruncatedJson(extracted)),
+  ].filter(Boolean)));
+
+  let lastError: Error | null = null;
+  for (const candidate of candidates) {
+    try {
+      return schema.parse(JSON.parse(candidate));
+    } catch (err) {
+      lastError = err as Error;
+    }
+  }
+
+  if (__DEV__) {
+    console.warn('[AI] All JSON parse candidates failed. Candidates tried:', candidates.map(c => c.slice(0, 200)));
+  }
+
+  throw lastError || new Error('Failed to parse structured JSON response');
+}

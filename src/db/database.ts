@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { ALL_SCHEMAS, DB_INDEXES } from './schema';
+import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 
@@ -90,71 +91,39 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   const topicCountAfterRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM topics');
 // if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
 
-  // Schema migrations (safe — fail silently if column already exists)
-  const migrations = [
-    `ALTER TABLE topics ADD COLUMN parent_topic_id INTEGER REFERENCES topics(id)`,
-    `ALTER TABLE topic_progress ADD COLUMN next_review_date TEXT`,
-    `ALTER TABLE topic_progress ADD COLUMN user_notes TEXT NOT NULL DEFAULT ''`,
-    `ALTER TABLE external_app_logs ADD COLUMN recording_path TEXT`,
-    `ALTER TABLE external_app_logs ADD COLUMN transcription_status TEXT DEFAULT 'pending'`,
-    `ALTER TABLE external_app_logs ADD COLUMN transcription_error TEXT`,
-    `ALTER TABLE external_app_logs ADD COLUMN lecture_note_id INTEGER`,
-    `ALTER TABLE external_app_logs ADD COLUMN note_enhancement_status TEXT DEFAULT 'pending'`,
-    `ALTER TABLE external_app_logs ADD COLUMN pipeline_metrics_json TEXT`,
-    `ALTER TABLE user_profile ADD COLUMN strict_mode_enabled INTEGER DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN streak_shield_available INTEGER DEFAULT 1`,
-    `ALTER TABLE user_profile ADD COLUMN openrouter_key TEXT NOT NULL DEFAULT ''`,
-    `ALTER TABLE user_profile ADD COLUMN body_doubling_enabled INTEGER NOT NULL DEFAULT 1`,
-    `ALTER TABLE user_profile ADD COLUMN blocked_content_types TEXT NOT NULL DEFAULT '[]'`,
-    `ALTER TABLE user_profile ADD COLUMN idle_timeout_minutes INTEGER NOT NULL DEFAULT 2`,
-    `ALTER TABLE user_profile ADD COLUMN break_duration_minutes INTEGER NOT NULL DEFAULT 5`,
-    `ALTER TABLE user_profile ADD COLUMN notification_hour INTEGER NOT NULL DEFAULT 7`,
-    `ALTER TABLE user_profile ADD COLUMN focus_subject_ids TEXT NOT NULL DEFAULT '[]'`,
-    `ALTER TABLE user_profile ADD COLUMN focus_audio_enabled INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN visual_timers_enabled INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN face_tracking_enabled INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN wrong_count INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN is_nemesis INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN quiz_correct_count INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN last_backup_date TEXT`,
-    `ALTER TABLE user_profile ADD COLUMN guru_frequency TEXT NOT NULL DEFAULT 'normal'`,
-    `ALTER TABLE user_profile ADD COLUMN use_local_model INTEGER NOT NULL DEFAULT 1`,
-    `ALTER TABLE user_profile ADD COLUMN local_model_path TEXT`,
-    `ALTER TABLE user_profile ADD COLUMN use_local_whisper INTEGER NOT NULL DEFAULT 1`,
-    `ALTER TABLE user_profile ADD COLUMN local_whisper_path TEXT`,
-    `ALTER TABLE user_profile ADD COLUMN quick_start_streak INTEGER NOT NULL DEFAULT 0`,
-    `ALTER TABLE user_profile ADD COLUMN groq_api_key TEXT NOT NULL DEFAULT ''`,
-    `ALTER TABLE user_profile ADD COLUMN study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'`,
-    `ALTER TABLE user_profile ADD COLUMN subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'`,
-    `ALTER TABLE user_profile ADD COLUMN inicet_date TEXT NOT NULL DEFAULT '2026-05-17'`,
-    `ALTER TABLE user_profile ADD COLUMN neet_date TEXT NOT NULL DEFAULT '2026-08-30'`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_due TEXT`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_stability REAL DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_difficulty REAL DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_elapsed_days INTEGER DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_scheduled_days INTEGER DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_reps INTEGER DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_lapses INTEGER DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_state INTEGER DEFAULT 0`,
-    `ALTER TABLE topic_progress ADD COLUMN fsrs_last_review TEXT`,
-    `UPDATE user_profile SET inicet_date = '2026-05-17' WHERE inicet_date IS NULL OR inicet_date = '' OR inicet_date = '2026-05-01'`,
-    `UPDATE user_profile SET neet_date = '2026-08-30' WHERE neet_date IS NULL OR neet_date = '' OR neet_date = '2026-08-01'`,
-    // Enable local-first for existing users who haven't set API keys
-    `UPDATE user_profile SET use_local_model = 1 WHERE use_local_model = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')`,
-    `UPDATE user_profile SET use_local_whisper = 1 WHERE use_local_whisper = 0 AND (openrouter_api_key IS NULL OR openrouter_api_key = '')`,
-    `UPDATE user_profile SET study_resource_mode = 'hybrid' WHERE study_resource_mode IS NULL OR study_resource_mode = ''`,
-    `UPDATE user_profile SET subject_load_overrides_json = '{}' WHERE subject_load_overrides_json IS NULL OR subject_load_overrides_json = ''`,
-    `ALTER TABLE user_profile ADD COLUMN harassment_tone TEXT NOT NULL DEFAULT 'shame'`,
-    // lecture_notes expansion for full transcript storage
-    `ALTER TABLE lecture_notes ADD COLUMN transcript TEXT`,
-    `ALTER TABLE lecture_notes ADD COLUMN summary TEXT`,
-    `ALTER TABLE lecture_notes ADD COLUMN topics_json TEXT`,
-    `ALTER TABLE lecture_notes ADD COLUMN app_name TEXT`,
-    `ALTER TABLE lecture_notes ADD COLUMN duration_minutes INTEGER`,
-    `ALTER TABLE lecture_notes ADD COLUMN confidence INTEGER DEFAULT 2`,
-  ];
-  for (const sql of migrations) {
-    try { await db.execAsync(sql); } catch (_) { /* already exists */ }
+  // Versioned migrations — only run pending ones; fresh installs skip entirely
+  const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
+  const currentVersion = versionRow?.user_version ?? 0;
+
+  if (topicCount === 0) {
+    // Fresh install: schema already complete from CREATE TABLE; mark as up-to-date
+    await db.execAsync(`PRAGMA user_version = ${LATEST_VERSION}`);
+  } else {
+    for (const m of MIGRATIONS) {
+      if (m.version > currentVersion) {
+        try {
+          await db.execAsync(m.sql);
+        } catch (err: any) {
+          // If the column already exists, we can safely skip this migration step
+          const msg = err?.message || '';
+          if (msg.includes('duplicate column name')) {
+            if (__DEV__) console.log(`[DB] Migration ${m.version} column already exists, skipping.`);
+          } else {
+            if (__DEV__) console.error('[DB] Migration failed:', m.version, m.sql, err);
+            throw err;
+          }
+        }
+        await db.execAsync(`PRAGMA user_version = ${m.version}`);
+        try {
+          await db.runAsync(
+            'INSERT INTO migration_history (version, applied_at, description) VALUES (?, ?, ?)',
+            [m.version, Math.floor(Date.now() / 1000), m.description ?? ''],
+          );
+        } catch {
+          // migration_history exists only from v59 onward
+        }
+      }
+    }
   }
 
   // Repair legacy rows before enforcing foreign keys on the shared connection.
@@ -210,12 +179,12 @@ async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
   try {
     // Pass 1: Insert all topics without parent links (ensures parents exist)
     for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
-      const result = db.runSync(
+      const result = await db.runAsync(
         `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
         [subjectId, name, priority, minutes],
       );
       if (result.lastInsertRowId > 0) {
-        db.runSync(
+        await db.runAsync(
           `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
           [result.lastInsertRowId],
         );
@@ -225,14 +194,14 @@ async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
     // Pass 2: Update parent links
     for (const [subjectId, name, priority, minutes, parentName] of TOPICS_SEED) {
       if (parentName) {
-        const parent = db.getFirstSync<{ id: number }>(
+        const parent = await db.getFirstAsync<{ id: number }>(
           'SELECT id FROM topics WHERE subject_id = ? AND name = ?',
-          [subjectId, parentName]
+          [subjectId, parentName],
         );
         if (parent) {
-          db.runSync(
+          await db.runAsync(
             'UPDATE topics SET parent_topic_id = ? WHERE subject_id = ? AND name = ?',
-            [parent.id, subjectId, name]
+            [parent.id, subjectId, name],
           );
         }
       }
@@ -252,17 +221,16 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
     const vaultTopicIds: number[] = [];
 
     for (const [subjectId, name, priority, minutes] of VAULT_TOPICS_SEED) {
-      const topicResult = db.runSync(
+      const topicResult = await db.runAsync(
         `INSERT OR IGNORE INTO topics (subject_id, name, inicet_priority, estimated_minutes) VALUES (?, ?, ?, ?)`,
         [subjectId, name, priority, minutes],
       );
 
       let topicId = topicResult.lastInsertRowId;
       if (topicResult.changes === 0) {
-        // Topic already exists, retrieve its ID
-        const existingTopic = db.getFirstSync<{ id: number }>(
+        const existingTopic = await db.getFirstAsync<{ id: number }>(
           `SELECT id FROM topics WHERE subject_id = ? AND name = ?`,
-          [subjectId, name]
+          [subjectId, name],
         );
         if (existingTopic) {
           topicId = existingTopic.id;
@@ -272,32 +240,24 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
         inserted++;
       }
 
-      if (topicId) { // Ensure we have a topicId
+      if (topicId) {
         vaultTopicIds.push(topicId);
-        // Ensure progress row exists for new or existing topic, initially 'unseen'
-        db.runSync(
+        await db.runAsync(
           `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
           [topicId],
         );
       }
     }
 
-    // LEVEL 1: Obsidian Import (BTR Finished)
-    // Update vault topics to at least 'seen' and confidence 1 if they are below that level.
     if (vaultTopicIds.length > 0) {
       const placeholders = vaultTopicIds.map(() => '?').join(',');
-      
-      // 1. Mark as 'seen' if currently 'unseen'
-      db.runSync(
+      await db.runAsync(
         `UPDATE topic_progress SET status = 'seen' WHERE topic_id IN (${placeholders}) AND status = 'unseen'`,
-        vaultTopicIds
+        vaultTopicIds,
       );
-
-      // 2. Set Confidence to 1 (Level 1) if currently 0
-      // This signifies "BTR Finished" / Imported
-      db.runSync(
+      await db.runAsync(
         `UPDATE topic_progress SET confidence = 1 WHERE topic_id IN (${placeholders}) AND confidence = 0`,
-        vaultTopicIds
+        vaultTopicIds,
       );
     }
     await db.execAsync('COMMIT TRANSACTION');
@@ -305,7 +265,6 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
     await db.execAsync('ROLLBACK TRANSACTION');
     throw e;
   }
-// if (__DEV__) console.log(`[DB] Vault Seed: ${inserted} inserted, ${ignored} ignored`);
 }
 
 async function seedUserProfile(db: SQLite.SQLiteDatabase): Promise<void> {

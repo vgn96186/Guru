@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSubjectBreakdown } from '../db/queries/topics';
-import { getDaysToExam, getActiveStudyDays, getDailyMinutesSeries } from '../db/queries/progress';
+import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { getTotalStudyMinutes, getCompletedSessionCount, getWeeklyComparison, calculateCurrentStreak } from '../db/queries/sessions';
 import { getTotalExternalStudyMinutes } from '../db/queries/externalLogs';
 import { useAppStore } from '../store/useAppStore';
@@ -41,9 +41,9 @@ export default function StatsScreen() {
     loadStats();
   }, []);
 
-  function loadStats() {
+  async function loadStats() {
     // Use SQL aggregation — avoids loading all 5000+ topic rows into JS
-    const breakdown = getSubjectBreakdown();
+    const breakdown = await getSubjectBreakdown();
 
     const covered = breakdown.reduce((s, r) => s + r.covered, 0);
     const mastered = breakdown.reduce((s, r) => s + r.mastered, 0);
@@ -54,15 +54,17 @@ export default function StatsScreen() {
     const highYieldPercent = totalHighYield > 0 ? Math.round((highYieldCovered / totalHighYield) * 100) : 0;
     const projectedScore = Math.min(300, Math.round(50 + (highYieldPercent * 2.5)));
 
-    const totalAppMinutes = getTotalStudyMinutes();
-    const totalExternalMinutes = getTotalExternalStudyMinutes();
-    const totalSessions = getCompletedSessionCount();
-    const activeDays30 = getActiveStudyDays(30);
-    const last7DayMinutes = getDailyMinutesSeries(7);
+    const [totalAppMinutes, totalExternalMinutes, totalSessions, activeDays30, last7DayMinutes, currentStreak, weeklyComp] = await Promise.all([
+      getTotalStudyMinutes(),
+      getTotalExternalStudyMinutes(),
+      getCompletedSessionCount(),
+      dailyLogRepository.getActiveStudyDays(30),
+      dailyLogRepository.getDailyMinutesSeries(7),
+      calculateCurrentStreak(),
+      getWeeklyComparison(),
+    ]);
 
-    const currentStreak = calculateCurrentStreak();
     const bestStreak = profile?.streakBest ?? currentStreak;
-    const weeklyComp = getWeeklyComparison();
 
     const remaining = totalTopics - covered;
     const avgTopicsPerDay = activeDays30 > 0 ? covered / activeDays30 : 1;
@@ -94,7 +96,7 @@ export default function StatsScreen() {
 
   if (loading) return <LoadingOrb message="Calculating your progress..." />;
 
-  const daysToInicet = profile?.inicetDate ? getDaysToExam(profile.inicetDate) : 0;
+  const daysToInicet = profile?.inicetDate ? profileRepository.getDaysToExam(profile.inicetDate) : 0;
 
   return (
     <SafeAreaView style={styles.safe} testID="stats-screen">

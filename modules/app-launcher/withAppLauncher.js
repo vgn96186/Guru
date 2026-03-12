@@ -24,6 +24,8 @@ function withAppLauncher(config) {
       'android.permission.FOREGROUND_SERVICE_MICROPHONE',
       'android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION',
       'android.permission.FOREGROUND_SERVICE_CAMERA',
+      'android.permission.FOREGROUND_SERVICE_SPECIAL_USE',
+      'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
     ];
     for (const perm of needed) {
       if (!perms.some((p) => p.$?.['android:name'] === perm)) {
@@ -75,9 +77,15 @@ function withAppLauncher(config) {
       filtered.push({
         $: {
           'android:name': overlaySvcName,
-          'android:foregroundServiceType': 'camera',
+          'android:foregroundServiceType': 'camera|microphone|specialUse|dataSync',
           'android:exported': 'false',
         },
+        'property': [{
+          $: {
+            'android:name': 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE',
+            'android:value': 'Timer overlay for study sessions'
+          }
+        }]
       });
       app.service = filtered;
     }

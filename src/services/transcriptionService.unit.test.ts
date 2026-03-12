@@ -35,11 +35,14 @@ async function loadTranscriptionService(opts?: {
   jest.doMock('../../modules/app-launcher', () => ({
     convertToWav: jest.fn(async () => null),
   }));
-  jest.doMock('../db/queries/progress', () => ({
-    getUserProfile: jest.fn(() => ({
-      useLocalWhisper: opts?.useLocalWhisper ?? true,
-      localWhisperPath: opts?.localWhisperPath ?? '/models/whisper.bin',
-    })),
+  jest.doMock('../db/repositories', () => ({
+    profileRepository: {
+      getProfile: jest.fn(() => Promise.resolve({
+        useLocalWhisper: opts?.useLocalWhisper ?? true,
+        localWhisperPath: opts?.localWhisperPath ?? '/models/whisper.bin',
+      })),
+    },
+    dailyLogRepository: {},
   }));
   jest.doMock('./aiService', () => ({
     getApiKeys: jest.fn(() => ({ groqKey: opts?.groqKey, orKey: undefined })),

@@ -44,15 +44,18 @@ export default function StudyPlanScreen() {
     }, [planMode, resourceMode]),
   );
 
-  function refreshPlan() {
-    const { plan: p, summary: s } = generateStudyPlan({ mode: planMode, resourceMode });
+  async function refreshPlan() {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const dayOfWeek = now.getDay();
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const startOfWeek = startOfToday - mondayOffset * 86400000;
     const todayStr = now.toISOString().slice(0, 10);
-    const overdue = getTopicsDueForReview(1000).filter(topic => {
+    const [{ plan: p, summary: s }, overdueRaw] = await Promise.all([
+      generateStudyPlan({ mode: planMode, resourceMode }),
+      getTopicsDueForReview(1000),
+    ]);
+    const overdue = overdueRaw.filter(topic => {
       const dueDate = topic.progress.fsrsDue?.slice(0, 10);
       if (!dueDate || dueDate >= todayStr) return false;
       if (planMode === 'high_yield') return topic.inicetPriority >= 8;
@@ -60,10 +63,14 @@ export default function StudyPlanScreen() {
       return true;
     });
 
+    const [completedToday, completedWeek] = await Promise.all([
+      getCompletedTopicIdsBetween(startOfToday),
+      getCompletedTopicIdsBetween(startOfWeek),
+    ]);
     setPlan(p);
     setSummary(s);
-    setCompletedTodayIds(new Set(getCompletedTopicIdsBetween(startOfToday)));
-    setCompletedWeekIds(new Set(getCompletedTopicIdsBetween(startOfWeek)));
+    setCompletedTodayIds(new Set(completedToday));
+    setCompletedWeekIds(new Set(completedWeek));
     setMissedTopics(overdue.slice(0, 8));
   }
 

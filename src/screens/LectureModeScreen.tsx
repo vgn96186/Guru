@@ -11,7 +11,8 @@ import * as DocumentPicker from 'expo-document-picker';
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
-import { transcribeAudio, markTopicsFromLecture } from '../services/transcriptionService';
+import { transcribeAudio } from '../services/transcriptionService';
+import { markTopicsFromLecture } from '../services/transcription/matching';
 import { getDb } from '../db/database';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -20,14 +21,14 @@ import type { HomeStackParamList } from '../navigation/types';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { saveLectureNote } from '../db/queries/aiCache';
 import { createSession, endSession } from '../db/queries/sessions';
-import { updateStreak } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
 import BreakScreen from './BreakScreen';
 import FocusAudioPlayer from '../components/FocusAudioPlayer';
 import { useFaceTracking } from '../hooks/useFaceTracking';
-import type { Subject } from '../types';
+import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
@@ -45,7 +46,7 @@ export default function LectureModeScreen() {
   const refreshProfile = useAppStore(s => s.refreshProfile);
   const profile = useAppStore(s => s.profile);
   
-  const [subjects] = useState<Subject[]>(getAllSubjects);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(route.params?.subjectId ?? null);
   
   const [elapsed, setElapsed] = useState(0);
@@ -72,6 +73,19 @@ export default function LectureModeScreen() {
   useEffect(() => {
     if (!profile) refreshProfile();
   }, [profile]);
+
+  useEffect(() => {
+    void getAllSubjects().then(setSubjects);
+  }, []);
+
+  const [breakTopics, setBreakTopics] = useState<TopicWithProgress[]>([]);
+  useEffect(() => {
+    if (onBreak && selectedSubjectId) {
+      void getTopicsBySubject(selectedSubjectId).then(setBreakTopics);
+    } else {
+      setBreakTopics([]);
+    }
+  }, [onBreak, selectedSubjectId]);
 
   useEffect(() => {
     if (profile?.syncCode) {
@@ -204,9 +218,9 @@ export default function LectureModeScreen() {
     setResumeCountdown(3); // 3s auto-start
   }
 
-  function saveNote() {
+  async function saveNote() {
     if (!currentNote.trim()) return;
-    saveLectureNote(selectedSubjectId, currentNote.trim());
+    await saveLectureNote(selectedSubjectId, currentNote.trim());
     setNotes(n => [...n, currentNote.trim()]);
     setCurrentNote('');
     
@@ -267,7 +281,7 @@ export default function LectureModeScreen() {
 
       if (uri) {
         const analysis = await transcribeAudio(uri);
-        applyLectureAnalysis(analysis);
+        await applyLectureAnalysis(analysis);
 
         await FileSystem.deleteAsync(uri, { idempotent: true });
       }
@@ -281,7 +295,7 @@ export default function LectureModeScreen() {
     }
   }
 
-  function applyLectureAnalysis(analysis: {
+  async function applyLectureAnalysis(analysis: {
     topics: string[];
     estimatedConfidence: 1 | 2 | 3;
     subject: string;
@@ -289,7 +303,7 @@ export default function LectureModeScreen() {
     keyConcepts: string[];
   }) {
     if (analysis.topics.length > 0) {
-      markTopicsFromLecture(getDb(), analysis.topics, analysis.estimatedConfidence, analysis.subject);
+      await markTopicsFromLecture(getDb(), analysis.topics, analysis.estimatedConfidence, analysis.subject);
     }
 
     const hasContent = analysis.lectureSummary && analysis.lectureSummary !== 'No medical content detected';
@@ -299,7 +313,7 @@ export default function LectureModeScreen() {
       ? '\n' + analysis.keyConcepts.map(c => `• ${c}`).join('\n')
       : '';
     const noteText = `[${analysis.subject}] ${analysis.lectureSummary}${conceptsText}`;
-    saveLectureNote(selectedSubjectId, noteText);
+    void saveLectureNote(selectedSubjectId, noteText);
     setNotes(n => [...n, noteText]);
     setProofOfLifeActive(false);
   }
@@ -319,7 +333,7 @@ export default function LectureModeScreen() {
       setIsTranscribing(true);
       const analysis = await transcribeAudio(tempUri);
 
-      applyLectureAnalysis(analysis);
+      await applyLectureAnalysis(analysis);
       Alert.alert('Transcription Complete', analysis.lectureSummary || 'Done');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to transcribe imported audio.';
@@ -369,18 +383,18 @@ export default function LectureModeScreen() {
     ]);
   }
 
-  function stopLecture() {
+  async function stopLecture() {
     if (timerRef.current) clearInterval(timerRef.current);
     if (currentNote.trim()) saveNote();
     
     const mins = Math.floor(elapsed / 60);
     if (mins > 0) {
-      const sessionId = createSession([], null, 'normal');
+      const sessionId = await createSession([], null, 'normal');
       const noteBonus = notes.length * 50;
       const totalXp = (mins * 15) + noteBonus;
-      endSession(sessionId, [], totalXp, mins);
-      updateStreak(mins >= 20);
-      refreshProfile();
+      await endSession(sessionId, [], totalXp, mins);
+      await profileRepository.updateStreak(mins >= 20);
+      await refreshProfile();
     }
     navigation.goBack();
   }
@@ -389,7 +403,7 @@ export default function LectureModeScreen() {
   const secs = elapsed % 60;
 
   if (onBreak) {
-    const topics = selectedSubjectId ? getTopicsBySubject(selectedSubjectId) : [];
+    const topics = breakTopics;
     const randomTopicId = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)].id : undefined;
 
     if (resumeCountdown >= 0) {

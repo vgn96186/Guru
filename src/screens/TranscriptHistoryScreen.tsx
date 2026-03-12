@@ -164,8 +164,8 @@ export default function TranscriptHistoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const loadNotes = useCallback(() => {
-    const items = getLectureHistory(100);
+  const loadNotes = useCallback(async () => {
+    const items = await getLectureHistory(100);
     setNotes(items);
     setSelectedIds(prev => prev.filter(id => items.some(item => item.id === id)));
   }, []);
@@ -174,7 +174,7 @@ export default function TranscriptHistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadNotes();
+      void loadNotes();
       return () => {
         // Clean up search debounce timer on unmount/blur
         if (searchTimeout.current) {
@@ -189,33 +189,33 @@ export default function TranscriptHistoryScreen() {
     useCallback(() => {
       const noteId = route.params?.noteId;
       if (!noteId) return;
-      const target = getLectureNoteById(noteId);
-      if (target) {
-        setSelectedNote(target);
-        navigation.setParams({ noteId: undefined });
-      }
+      void getLectureNoteById(noteId).then(target => {
+        if (target) {
+          setSelectedNote(target);
+          navigation.setParams({ noteId: undefined });
+        }
+      });
     }, [navigation, route.params?.noteId]),
   );
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => {
+    searchTimeout.current = setTimeout(async () => {
       if (query.trim()) {
-        const results = searchLectureNotes(query.trim());
+        const results = await searchLectureNotes(query.trim());
         setNotes(results);
       } else {
-        loadNotes();
+        await loadNotes();
       }
     }, 300);
   };
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     setSearchQuery('');
-    loadNotes();
-    // Use setTimeout to let the FlatList show the refresh indicator
-    setTimeout(() => setRefreshing(false), 300);
+    await loadNotes();
+    setRefreshing(false);
   }, [loadNotes]);
 
   const handleDelete = (id: number) => {
@@ -227,10 +227,10 @@ export default function TranscriptHistoryScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            deleteLectureNote(id);
-            loadNotes();
+            await deleteLectureNote(id);
+            await loadNotes();
             setSelectedNote(null);
           },
         },
@@ -267,14 +267,16 @@ export default function TranscriptHistoryScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-            idsToDelete.forEach(id => deleteLectureNote(id));
+            for (const id of idsToDelete) {
+              await deleteLectureNote(id);
+            }
             setSelectedIds([]);
             if (selectedNote && idsToDelete.includes(selectedNote.id)) {
               setSelectedNote(null);
             }
-            loadNotes();
+            await loadNotes();
           },
         },
       ],
@@ -290,14 +292,14 @@ export default function TranscriptHistoryScreen() {
     setShowRenameEditor(true);
   };
 
-  const saveRename = () => {
+  const saveRename = async () => {
     if (!selectedNote) return;
     const next = renameText.trim();
-    updateLectureTranscriptSummary(selectedNote.id, next.length > 0 ? next : null);
+    await updateLectureTranscriptSummary(selectedNote.id, next.length > 0 ? next : null);
     setSelectedNote({ ...selectedNote, summary: next.length > 0 ? next : null });
     setShowRenameEditor(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    loadNotes();
+    await loadNotes();
   };
 
   const formatDate = (timestamp: number): string => {

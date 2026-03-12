@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { getDailyLog } from '../db/queries/progress';
+import { dailyLogRepository } from '../db/repositories';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
@@ -24,7 +24,12 @@ export default function DoomscrollInterceptor() {
   const [blockAppName, setBlockAppName] = useState('');
   const [delayRemaining, setDelayRemaining] = useState(0);
   const [shameLevel, setShameLevel] = useState(0);
-  
+  const [sessionCount, setSessionCount] = useState(0);
+
+  useEffect(() => {
+    dailyLogRepository.getDailyLog().then(log => setSessionCount(log?.sessionCount ?? 0));
+  }, []);
+
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
   const shakeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -238,7 +243,7 @@ export default function DoomscrollInterceptor() {
         
         <View style={styles.statsContainer}>
           <Text style={styles.statsText}>Doomscroll attempts today: {doomscrollAttempts}</Text>
-          <Text style={styles.statsSub}>Study sessions today: {getDailyLog()?.sessionCount ?? 0}</Text>
+          <Text style={styles.statsSub}>Study sessions today: {sessionCount}</Text>
         </View>
       </Animated.View>
       </ResponsiveContainer>

@@ -9,4 +9,7 @@ module.exports = {
   resetMocks: true,
   restoreMocks: true,
   testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(expo-sqlite|expo-av|expo-file-system|expo-constants)/)'
+  ],
 };

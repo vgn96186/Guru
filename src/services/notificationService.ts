@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
-import { getUserProfile, getDaysToExam, getLast30DaysLog } from '../db/queries/progress';
+import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { getWeakestTopics, getTopicsDueForReview, getNemesisTopics, getSubjectBreakdown } from '../db/queries/topics';
 import { todayStr } from '../db/database';
 import type { Mood } from '../types';
@@ -265,23 +265,25 @@ export async function cancelAllNotifications(): Promise<void> {
 
 export async function refreshAccountabilityNotifications(): Promise<void> {
   if (!areNotificationsSupported) return;
-  const profile = getUserProfile();
+  const profile = await profileRepository.getProfile();
   if (!profile.notificationsEnabled) return;
 
   const notifHour = profile.notificationHour ?? 7;
   const guruFrequency = profile.guruFrequency ?? 'normal';
 
   // Real syllabus coverage from subject breakdown
-  const breakdown = getSubjectBreakdown();
+  const [breakdown, nemesisTopics, weakTopicsRaw, dueTopics] = await Promise.all([
+    getSubjectBreakdown(),
+    getNemesisTopics(),
+    getWeakestTopics(3),
+    getTopicsDueForReview(1),
+  ]);
   const totalTopics = breakdown.reduce((s, r) => s + r.total, 0);
   const coveredTopics = breakdown.reduce((s, r) => s + r.covered, 0);
   const masteredCount = breakdown.reduce((s, r) => s + r.mastered, 0);
   const coveragePercent = totalTopics > 0 ? Math.round((coveredTopics / totalTopics) * 100) : 0;
-
-  const nemesisTopics = getNemesisTopics();
-  const weakTopics = getWeakestTopics(3).map(t => t.name);
-  const dueTopics = getTopicsDueForReview(1);
-  const logs = getLast30DaysLog();
+  const weakTopics = weakTopicsRaw.map(t => t.name);
+  const logs = await dailyLogRepository.getLast30DaysLog();
   const lastMood = logs[0]?.mood ?? null;
 
   // Human-readable "last studied" relative to today
@@ -295,8 +297,8 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     : daysSince === 1 ? 'yesterday'
     : `${daysSince} days ago`;
 
-  const daysToInicet = getDaysToExam(profile.inicetDate);
-  const daysToNeetPg = getDaysToExam(profile.neetDate);
+  const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate);
+  const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate);
 
   try {
     // Badge = nemesis count + 1 if nothing studied today (nudge anxiety)

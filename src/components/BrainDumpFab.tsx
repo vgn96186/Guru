@@ -10,9 +10,9 @@ export default function BrainDumpFab() {
     const [modalVisible, setModalVisible] = useState(false);
     const [note, setNote] = useState('');
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (note.trim().length > 0) {
-            addBrainDump(note);
+            await addBrainDump(note);
         }
         setNote('');
         setModalVisible(false);

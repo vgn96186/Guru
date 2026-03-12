@@ -1,12 +1,12 @@
 import { getDb, nowTs } from '../database';
 import type { AIContent, ContentType } from '../../types';
 
-export function getCachedContent(
+export async function getCachedContent(
   topicId: number,
   contentType: ContentType,
-): AIContent | null {
+): Promise<AIContent | null> {
   const db = getDb();
-  const r = db.getFirstSync<{ content_json: string }>(
+  const r = await db.getFirstAsync<{ content_json: string }>(
     'SELECT content_json FROM ai_cache WHERE topic_id = ? AND content_type = ?',
     [topicId, contentType],
   );
@@ -18,14 +18,14 @@ export function getCachedContent(
   }
 }
 
-export function setCachedContent(
+export async function setCachedContent(
   topicId: number,
   contentType: ContentType,
   content: AIContent,
   modelUsed: string,
-): void {
+): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     `INSERT INTO ai_cache (topic_id, content_type, content_json, model_used, created_at)
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(topic_id, content_type) DO UPDATE SET
@@ -45,9 +45,9 @@ export interface MockQuestion {
   subjectName: string;
 }
 
-export function getAllCachedQuestions(): MockQuestion[] {
+export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
   const db = getDb();
-  const rows = db.getAllSync<{ content_json: string; topic_name: string; subject_name: string }>(
+  const rows = await db.getAllAsync<{ content_json: string; topic_name: string; subject_name: string }>(
     `SELECT c.content_json, t.name as topic_name, s.name as subject_name
      FROM ai_cache c
      JOIN topics t ON c.topic_id = t.id
@@ -72,17 +72,17 @@ export function getAllCachedQuestions(): MockQuestion[] {
   return all;
 }
 
-export function setContentFlagged(topicId: number, contentType: ContentType, flagged: boolean): void {
+export async function setContentFlagged(topicId: number, contentType: ContentType, flagged: boolean): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     'UPDATE ai_cache SET is_flagged = ? WHERE topic_id = ? AND content_type = ?',
     [flagged ? 1 : 0, topicId, contentType],
   );
 }
 
-export function flagTopicForReview(topicId: number, topicName: string): ContentType {
+export async function flagTopicForReview(topicId: number, topicName: string): Promise<ContentType> {
   const db = getDb();
-  const existing = db.getFirstSync<{ content_type: ContentType }>(
+  const existing = await db.getFirstAsync<{ content_type: ContentType }>(
     `SELECT content_type
      FROM ai_cache
      WHERE topic_id = ?
@@ -94,7 +94,7 @@ export function flagTopicForReview(topicId: number, topicName: string): ContentT
   const contentType = existing?.content_type ?? 'keypoints';
 
   if (!existing) {
-    setCachedContent(
+    await setCachedContent(
       topicId,
       contentType,
       {
@@ -110,13 +110,13 @@ export function flagTopicForReview(topicId: number, topicName: string): ContentT
     );
   }
 
-  setContentFlagged(topicId, contentType, true);
+  await setContentFlagged(topicId, contentType, true);
   return contentType;
 }
 
-export function isContentFlagged(topicId: number, contentType: ContentType): boolean {
+export async function isContentFlagged(topicId: number, contentType: ContentType): Promise<boolean> {
   const db = getDb();
-  const row = db.getFirstSync<{ is_flagged: number }>(
+  const row = await db.getFirstAsync<{ is_flagged: number }>(
     'SELECT is_flagged FROM ai_cache WHERE topic_id = ? AND content_type = ?',
     [topicId, contentType],
   );
@@ -133,9 +133,9 @@ export interface FlaggedItem {
   createdAt: number;
 }
 
-export function getFlaggedContent(): FlaggedItem[] {
+export async function getFlaggedContent(): Promise<FlaggedItem[]> {
   const db = getDb();
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     topic_id: number; topic_name: string; subject_name: string;
     content_type: string; content_json: string; model_used: string; created_at: number;
   }>(
@@ -158,15 +158,15 @@ export function getFlaggedContent(): FlaggedItem[] {
   }));
 }
 
-export function clearTopicCache(topicId: number): void {
+export async function clearTopicCache(topicId: number): Promise<void> {
   const db = getDb();
-  db.runSync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);
+  await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);
 }
 
-export function getCacheStats(): { totalCached: number; byType: Record<string, number> } {
+export async function getCacheStats(): Promise<{ totalCached: number; byType: Record<string, number> }> {
   const db = getDb();
-  const total = db.getFirstSync<{ count: number }>('SELECT COUNT(*) as count FROM ai_cache');
-  const byTypeRows = db.getAllSync<{ content_type: string; count: number }>(
+  const total = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM ai_cache');
+  const byTypeRows = await db.getAllAsync<{ content_type: string; count: number }>(
     'SELECT content_type, COUNT(*) as count FROM ai_cache GROUP BY content_type',
   );
   const byType: Record<string, number> = {};
@@ -174,9 +174,9 @@ export function getCacheStats(): { totalCached: number; byType: Record<string, n
   return { totalCached: total?.count ?? 0, byType };
 }
 
-export function saveLectureNote(subjectId: number | null, note: string): void {
+export async function saveLectureNote(subjectId: number | null, note: string): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     'INSERT INTO lecture_notes (subject_id, note, created_at) VALUES (?, ?, ?)',
     [subjectId, note, nowTs()],
   );
@@ -194,11 +194,11 @@ export interface LectureNoteData {
   confidence?: number;
 }
 
-export function saveLectureTranscript(data: LectureNoteData): number {
+export async function saveLectureTranscript(data: LectureNoteData): Promise<number> {
   // If transcript is long and not a URI, we should ideally save it to file first.
   // We assume callers now pass the file URI if they want it on disk.
   const db = getDb();
-  const result = db.runSync(
+  const result = await db.runAsync(
     `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -213,20 +213,20 @@ export function saveLectureTranscript(data: LectureNoteData): number {
       data.confidence ?? 2,
     ],
   );
-  return result.lastInsertRowId;
+  return result.lastInsertRowId as number;
 }
 
-export function updateLectureTranscriptNote(noteId: number, note: string): void {
+export async function updateLectureTranscriptNote(noteId: number, note: string): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     'UPDATE lecture_notes SET note = ? WHERE id = ?',
     [note, noteId],
   );
 }
 
-export function updateLectureTranscriptSummary(noteId: number, summary: string | null): void {
+export async function updateLectureTranscriptSummary(noteId: number, summary: string | null): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     'UPDATE lecture_notes SET summary = ? WHERE id = ?',
     [summary, noteId],
   );
@@ -246,9 +246,9 @@ export interface LectureHistoryItem {
   createdAt: number;
 }
 
-export function getLectureNoteById(noteId: number): LectureHistoryItem | null {
+export async function getLectureNoteById(noteId: number): Promise<LectureHistoryItem | null> {
   const db = getDb();
-  const row = db.getFirstSync<{
+  const row = await db.getFirstAsync<{
     id: number;
     subject_id: number | null;
     subject_name: string | null;
@@ -286,9 +286,9 @@ export function getLectureNoteById(noteId: number): LectureHistoryItem | null {
   };
 }
 
-export function getLectureHistory(limit = 50): LectureHistoryItem[] {
+export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[]> {
   const db = getDb();
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     id: number;
     subject_id: number | null;
     subject_name: string | null;
@@ -324,10 +324,10 @@ export function getLectureHistory(limit = 50): LectureHistoryItem[] {
   }));
 }
 
-export function searchLectureNotes(query: string, limit = 20): LectureHistoryItem[] {
+export async function searchLectureNotes(query: string, limit = 20): Promise<LectureHistoryItem[]> {
   const db = getDb();
   const likeQuery = `%${query}%`;
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     id: number;
     subject_id: number | null;
     subject_name: string | null;
@@ -364,10 +364,10 @@ export function searchLectureNotes(query: string, limit = 20): LectureHistoryIte
   }));
 }
 
-export function deleteLectureNote(id: number): void {
+export async function deleteLectureNote(id: number): Promise<void> {
   const db = getDb();
-  db.runSync('UPDATE external_app_logs SET lecture_note_id = NULL WHERE lecture_note_id = ?', [id]);
-  db.runSync('DELETE FROM lecture_notes WHERE id = ?', [id]);
+  await db.runAsync('UPDATE external_app_logs SET lecture_note_id = NULL WHERE lecture_note_id = ?', [id]);
+  await db.runAsync('DELETE FROM lecture_notes WHERE id = ?', [id]);
 }
 
 // ── Chat History ──────────────────────────────────────────────────
@@ -380,17 +380,17 @@ export interface ChatHistoryMessage {
   timestamp: number;
 }
 
-export function saveChatMessage(topicName: string, role: 'user' | 'guru', message: string, timestamp: number): void {
+export async function saveChatMessage(topicName: string, role: 'user' | 'guru', message: string, timestamp: number): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     'INSERT INTO chat_history (topic_name, role, message, timestamp) VALUES (?, ?, ?, ?)',
     [topicName, role, message, timestamp],
   );
 }
 
-export function getChatHistory(topicName: string, limit = 20): ChatHistoryMessage[] {
+export async function getChatHistory(topicName: string, limit = 20): Promise<ChatHistoryMessage[]> {
   const db = getDb();
-  const rows = db.getAllSync<{ id: number; topic_name: string; role: string; message: string; timestamp: number }>(
+  const rows = await db.getAllAsync<{ id: number; topic_name: string; role: string; message: string; timestamp: number }>(
     'SELECT * FROM chat_history WHERE topic_name = ? ORDER BY timestamp ASC LIMIT ?',
     [topicName, limit],
   );
@@ -403,7 +403,7 @@ export function getChatHistory(topicName: string, limit = 20): ChatHistoryMessag
   }));
 }
 
-export function clearChatHistory(topicName: string): void {
+export async function clearChatHistory(topicName: string): Promise<void> {
   const db = getDb();
-  db.runSync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
+  await db.runAsync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
 }

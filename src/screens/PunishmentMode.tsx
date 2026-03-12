@@ -9,7 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '../store/useAppStore';
-import { getDailyLog } from '../db/queries/progress';
+import { dailyLogRepository } from '../db/repositories';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const HARASSMENT_INTERVAL = 5 * 60 * 1000; // Every 5 minutes
@@ -29,20 +29,21 @@ export default function PunishmentMode() {
 
   // Initialize idle tracking
   useEffect(() => {
-    const dailyLog = getDailyLog();
-    const todayMinutes = dailyLog?.totalMinutes ?? 0;
-    const goalMinutes = profile?.dailyGoalMinutes ?? 120;
-    
-    // Assume idle since start of day if no activity
-    setMinutesIdle(Math.max(0, todayMinutes > 0 ? 0 : Math.floor((new Date().getHours() * 60 + new Date().getMinutes()) / 2)));
-    setLastStudyTime(todayMinutes);
+    dailyLogRepository.getDailyLog().then(dailyLog => {
+      const todayMinutes = dailyLog?.totalMinutes ?? 0;
+      const goalMinutes = profile?.dailyGoalMinutes ?? 120;
+
+      // Assume idle since start of day if no activity
+      setMinutesIdle(Math.max(0, todayMinutes > 0 ? 0 : Math.floor((new Date().getHours() * 60 + new Date().getMinutes()) / 2)));
+      setLastStudyTime(todayMinutes);
     
     // Calculate shame level based on goal progress
-    const progress = todayMinutes / goalMinutes;
-    if (progress < 0.1) setShameLevel(3); // < 10% = maximum shame
-    else if (progress < 0.5) setShameLevel(2); // < 50% = high shame
-    else if (progress < 0.8) setShameLevel(1); // < 80% = mild shame
-    else setShameLevel(0); // Good progress
+      const progress = todayMinutes / goalMinutes;
+      if (progress < 0.1) setShameLevel(3); // < 10% = maximum shame
+      else if (progress < 0.5) setShameLevel(2); // < 50% = high shame
+      else if (progress < 0.8) setShameLevel(1); // < 80% = mild shame
+      else setShameLevel(0); // Good progress
+    });
   }, []);
 
   // Harassment mode - periodic vibrations

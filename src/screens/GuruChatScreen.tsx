@@ -4,6 +4,7 @@ import {
   Animated,
   Easing,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Linking,
   Platform,
@@ -34,6 +35,7 @@ import { useAppStore } from '../store/useAppStore';
 import { clearChatHistory, getChatHistory, saveChatMessage } from '../db/queries/aiCache';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { theme } from '../constants/theme';
+import { MarkdownRender } from '../components/MarkdownRender';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
 type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
@@ -127,61 +129,7 @@ function TypingDots() {
 
 /** Renders Guru reply text with paragraphs, bold, bullets, and citation styling for readability */
 function FormattedGuruMessage({ text }: { text: string }) {
-  const paragraphs = text.split(/\n\n+/).filter((p) => p.trim());
-  const out: React.ReactNode[] = [];
-
-  paragraphs.forEach((block, blockIdx) => {
-    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
-    lines.forEach((line, lineIdx) => {
-      const key = `${blockIdx}-${lineIdx}`;
-      const isBullet = /^[-•]\s/.test(line) || /^\d+\.\s/.test(line);
-      const bulletMatch = line.match(/^([-•]|\d+\.)\s/);
-      const bullet = bulletMatch ? bulletMatch[1] : null;
-      const rest = bullet ? line.slice(bulletMatch![0].length) : line;
-
-      const parts: React.ReactNode[] = [];
-      const segmentRegex = /(\*\*[^*]+\*\*|\[S\d+\])/g;
-      let lastIndex = 0;
-      let match: RegExpExecArray | null;
-      while ((match = segmentRegex.exec(rest)) !== null) {
-        if (match.index > lastIndex) {
-          parts.push(rest.slice(lastIndex, match.index));
-        }
-        const raw = match[1];
-        if (raw.startsWith('**')) {
-          parts.push(<Text key={match.index} style={styles.guruBold}>{raw.slice(2, -2)}</Text>);
-        } else {
-          parts.push(<Text key={match.index} style={styles.guruCitation}>{raw}</Text>);
-        }
-        lastIndex = match.index + raw.length;
-      }
-      if (lastIndex < rest.length) {
-        parts.push(rest.slice(lastIndex));
-      }
-
-      const content = parts.length > 0 ? parts : [rest];
-      if (isBullet && bullet) {
-        const marker = /^\d+\.$/.test(bullet) ? bullet : bullet === '-' || bullet === '•' ? '•' : bullet;
-        out.push(
-          <View key={key} style={styles.guruListRow}>
-            <Text style={styles.guruListMarker}>{marker}</Text>
-            <Text style={styles.guruListText}>{content}</Text>
-          </View>,
-        );
-      } else {
-        out.push(
-          <Text key={key} style={styles.guruParagraph}>
-            {content}
-          </Text>,
-        );
-      }
-    });
-    if (blockIdx < paragraphs.length - 1) {
-      out.push(<View key={`space-${blockIdx}`} style={styles.guruParagraphGap} />);
-    }
-  });
-
-  return <View style={styles.guruFormattedWrap}>{out}</View>;
+  return <MarkdownRender content={text} />;
 }
 
 export default function GuruChatScreen() {
@@ -201,27 +149,28 @@ export default function GuruChatScreen() {
 
   useEffect(() => {
     if (topicName && topicName !== 'General Medicine') {
-      try {
-        const history = getChatHistory(topicName, 20);
-        if (history.length > 0) {
-          setMessages(
-            history.map((entry) => ({
-              id: `hist-${entry.id}`,
-              role: entry.role,
-              text: entry.message,
-              timestamp: entry.timestamp,
-            })),
-          );
-          setBannerVisible(false);
-        }
-      } catch {
-        // Ignore DB failures and keep the chat usable.
-      }
+      void getChatHistory(topicName, 20)
+        .then(history => {
+          if (history.length > 0) {
+            setMessages(
+              history.map((entry) => ({
+                id: `hist-${entry.id}`,
+                role: entry.role,
+                text: entry.message,
+                timestamp: entry.timestamp,
+              })),
+            );
+            setBannerVisible(false);
+          }
+        })
+        .catch(() => {
+          // Ignore DB failures and keep the chat usable.
+        });
     }
   }, [topicName]);
 
   const availableModels = useMemo(() => {
-    const { orKey, groqKey } = getApiKeys();
+    const { orKey, groqKey } = getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
     if (profile?.useLocalModel && profile?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
@@ -310,7 +259,7 @@ export default function GuruChatScreen() {
     scrollToLatest();
 
     try {
-      saveChatMessage(topicName, 'user', question, Date.now());
+      await saveChatMessage(topicName, 'user', question, Date.now());
     } catch {
       // Persistence should not block the main conversation flow.
     }
@@ -336,7 +285,7 @@ export default function GuruChatScreen() {
         },
       ]);
       try {
-        saveChatMessage(topicName, 'guru', grounded.reply, guruTs);
+        await saveChatMessage(topicName, 'guru', grounded.reply, guruTs);
       } catch {
         // Ignore persistence issues here too.
       }
@@ -363,11 +312,11 @@ export default function GuruChatScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'New chat',
-          onPress: () => {
+          onPress: async () => {
             setMessages([]);
             setBannerVisible(true);
             try {
-              clearChatHistory(topicName);
+              await clearChatHistory(topicName);
             } catch {
               // Ignore DB cleanup failures.
             }
@@ -436,6 +385,9 @@ export default function GuruChatScreen() {
                     <View style={styles.sourceNumBadge}>
                       <Text style={styles.sourceNum}>{index + 1}</Text>
                     </View>
+                    {source.imageUrl ? (
+                      <Image source={{ uri: source.imageUrl }} style={styles.sourceImage} />
+                    ) : null}
                     <View style={styles.sourceBody}>
                       <Text style={styles.sourceTitle} numberOfLines={2}>
                         {source.title}
@@ -974,6 +926,13 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontSize: 10,
     fontWeight: '800',
+  },
+  sourceImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    flexShrink: 0,
+    backgroundColor: theme.colors.surfaceAlt,
   },
   sourceBody: {
     flex: 1,

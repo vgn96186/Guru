@@ -1,5 +1,5 @@
 import { getAllTopicsWithProgress, getAllSubjects, getTopicsDueForReview } from '../db/queries/topics';
-import { getUserProfile, getDaysToExam } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { getPreferredStudyHours } from '../db/queries/sessions';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
@@ -256,8 +256,8 @@ export function invalidatePlanCache() {
   lastCacheKey = null;
 }
 
-export function getTodaysAgendaWithTimes(): TodayTask[] {
-  const { plan } = generateStudyPlan();
+export async function getTodaysAgendaWithTimes(): Promise<TodayTask[]> {
+  const { plan } = await generateStudyPlan();
   const todayPlan = plan[0];
   if (!todayPlan || todayPlan.items.length === 0) return [];
 
@@ -299,7 +299,7 @@ export function getTodaysAgendaWithTimes(): TodayTask[] {
     items = fittingItems;
   }
 
-  const preferredHours = getPreferredStudyHours();
+  const preferredHours = await getPreferredStudyHours();
   const now = new Date();
   const currentHour = now.getHours();
   
@@ -338,10 +338,10 @@ export function getTodaysAgendaWithTimes(): TodayTask[] {
   return schedule;
 }
 
-export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyPlan[]; summary: StudyPlanSummary } {
+export async function generateStudyPlan(options?: GeneratePlanOptions): Promise<{ plan: DailyPlan[]; summary: StudyPlanSummary }> {
   const todayStr = new Date().toISOString().slice(0, 10);
   const mode = options?.mode ?? 'balanced';
-  const profile = getUserProfile();
+  const profile = await profileRepository.getProfile();
   const resourceMode = options?.resourceMode ?? profile.studyResourceMode ?? 'hybrid';
   const customSubjectLoads = profile.customSubjectLoadMultipliers ?? {};
   const resourceProfile = getResourceProfile(resourceMode);
@@ -350,13 +350,12 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
     return cachedPlan;
   }
 
-  const allTopics = getAllTopicsWithProgress();
-  const subjects = getAllSubjects();
+  const [allTopics, subjects] = await Promise.all([getAllTopicsWithProgress(), getAllSubjects()]);
   const subjectWeights = new Map(subjects.map(s => [s.id, s.inicetWeight]));
 
   // 1. Initial State
   const today = new Date();
-  const daysToExam = getDaysToExam(profile.inicetDate);
+  const daysToExam = profileRepository.getDaysToExam(profile.inicetDate);
   const dailyGoal = profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 120;
   
   // Get exam dates to mark as rest days
@@ -371,7 +370,7 @@ export function generateStudyPlan(options?: GeneratePlanOptions): { plan: DailyP
   // 2. Identify Tasks
   
   // A. Overdue Reviews (Priority 1)
-  const due = getTopicsDueForReview(1000); // Get all due
+  const due = await getTopicsDueForReview(1000); // Get all due
   for (const t of due) {
     pendingActions.push(createPlanItem(`rev_${t.id}_init`, t, 'review', estimateActionDuration(t, 'review', resourceMode, customSubjectLoads), todayStr));
   }

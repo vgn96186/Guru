@@ -1,7 +1,7 @@
 import type { Agenda, AgendaItem, Mood, SessionMode, TopicWithProgress, ContentType } from '../types';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { getRecentlyStudiedTopicNames } from '../db/queries/sessions';
-import { getUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { planSessionWithAI } from './aiService';
 import { getMoodContentTypes } from '../constants/prompts';
 
@@ -115,12 +115,12 @@ export async function buildSession(
   groqKey?: string,
   options?: BuildSessionOptions,
 ): Promise<Agenda> {
-  const profile = getUserProfile();
+  const profile = await profileRepository.getProfile();
   const focusSubjectIds = profile.focusSubjectIds ?? [];
   const blockedContentTypes = new Set<ContentType>(profile.blockedContentTypes ?? []);
 
-  const allTopics = getAllTopicsWithProgress();
-  const recentTopics = getRecentlyStudiedTopicNames(3);
+  const allTopics = await getAllTopicsWithProgress();
+  const recentTopics = await getRecentlyStudiedTopicNames(3);
 
   const sessionMinutes = getSessionLength(mood, preferredMinutes);
   const mode = getSessionMode(mood);

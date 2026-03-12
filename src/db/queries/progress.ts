@@ -1,10 +1,21 @@
 import { getDb, todayStr, dateStr } from '../database';
 import type { UserProfile, DailyLog, Mood, ContentType, StudyResourceMode, HarassmentTone } from '../../types';
 import { LEVELS } from '../../constants/gamification';
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
 
-export function getUserProfile(): UserProfile {
+function isValidFutureDate(dateStr: string | null): boolean {
+  if (!dateStr || typeof dateStr !== 'string') return false;
+  const exam = new Date(dateStr);
+  if (isNaN(exam.getTime())) return false;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  exam.setHours(0, 0, 0, 0);
+  return exam.getTime() >= now.getTime();
+}
+
+export async function getUserProfile(): Promise<UserProfile> {
   const db = getDb();
-  const r = db.getFirstSync<{
+  const r = await db.getFirstAsync<{
     display_name: string; total_xp: number; current_level: number;
     streak_current: number; streak_best: number; daily_goal_minutes: number;
     inicet_date: string; neet_date: string; preferred_session_length: number;
@@ -28,7 +39,7 @@ export function getUserProfile(): UserProfile {
     return {
       displayName: 'Doctor', totalXp: 0, currentLevel: 1,
       streakCurrent: 0, streakBest: 0, dailyGoalMinutes: 120,
-      inicetDate: '2026-05-17', neetDate: '2026-08-30',
+      inicetDate: DEFAULT_INICET_DATE, neetDate: DEFAULT_NEET_DATE,
       preferredSessionLength: 45, openrouterApiKey: '', openrouterKey: '', groqApiKey: '',
       notificationsEnabled: true, lastActiveDate: null, syncCode: null,
       strictModeEnabled: false, bodyDoublingEnabled: true,
@@ -52,8 +63,8 @@ export function getUserProfile(): UserProfile {
     streakCurrent: r.streak_current,
     streakBest: r.streak_best,
     dailyGoalMinutes: r.daily_goal_minutes,
-    inicetDate: r.inicet_date || '2026-05-17',
-    neetDate: r.neet_date || '2026-08-30',
+    inicetDate: isValidFutureDate(r.inicet_date) ? r.inicet_date : DEFAULT_INICET_DATE,
+    neetDate: isValidFutureDate(r.neet_date) ? r.neet_date : DEFAULT_NEET_DATE,
     preferredSessionLength: r.preferred_session_length,
     openrouterApiKey: r.openrouter_api_key,
     openrouterKey: r.openrouter_key ?? '',
@@ -92,7 +103,7 @@ export function getUserProfile(): UserProfile {
   };
 }
 
-export function updateUserProfile(updates: Partial<UserProfile>): void {
+export async function updateUserProfile(updates: Partial<UserProfile>): Promise<void> {
   const db = getDb();
   const map: Record<string, string> = {
     displayName: 'display_name', totalXp: 'total_xp', currentLevel: 'current_level',
@@ -139,12 +150,12 @@ export function updateUserProfile(updates: Partial<UserProfile>): void {
 
   if (setClauses.length === 0) return;
   values.push(1);
-  db.runSync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
+  await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
 }
 
-export function addXp(amount: number): { newTotal: number; leveledUp: boolean; newLevel: number } {
+export async function addXp(amount: number): Promise<{ newTotal: number; leveledUp: boolean; newLevel: number }> {
   const db = getDb();
-  const currentProfile = db.getFirstSync<{ total_xp: number, current_level: number }>('SELECT total_xp, current_level FROM user_profile WHERE id = 1');
+  const currentProfile = await db.getFirstAsync<{ total_xp: number; current_level: number }>('SELECT total_xp, current_level FROM user_profile WHERE id = 1');
   const oldTotal = currentProfile?.total_xp ?? 0;
   const oldLevel = currentProfile?.current_level ?? 1;
   const newTotal = oldTotal + amount;
@@ -155,19 +166,19 @@ export function addXp(amount: number): { newTotal: number; leveledUp: boolean; n
   }
 
   const leveledUp = newLevel > oldLevel;
-  db.runSync('UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1', [amount, newLevel]);
+  await db.runAsync('UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1', [amount, newLevel]);
   return { newTotal, leveledUp, newLevel };
 }
 
-export function updateStreak(studiedToday: boolean, useShield = false): void {
+export async function updateStreak(studiedToday: boolean, useShield = false): Promise<void> {
   const db = getDb();
   const today = todayStr();
-  const profile = getUserProfile();
+  const profile = await getUserProfile();
 
   if (profile.lastActiveDate === today) return;
 
   if (useShield && profile.streakCurrent > 0) {
-    db.runSync('UPDATE user_profile SET streak_shield_available = 0, last_active_date = ? WHERE id = 1', [today]);
+    await db.runAsync('UPDATE user_profile SET streak_shield_available = 0, last_active_date = ? WHERE id = 1', [today]);
     return;
   }
 
@@ -178,41 +189,43 @@ export function updateStreak(studiedToday: boolean, useShield = false): void {
   const newBest = Math.max(newStreak, profile.streakBest);
   const shieldAvailable = newStreak === 1 ? 1 : (profile.streakCurrent === 0 ? 1 : 0);
 
-  db.runSync('UPDATE user_profile SET streak_current = ?, streak_best = ?, last_active_date = ?, streak_shield_available = ? WHERE id = 1', [newStreak, newBest, today, shieldAvailable]);
+  await db.runAsync('UPDATE user_profile SET streak_current = ?, streak_best = ?, last_active_date = ?, streak_shield_available = ? WHERE id = 1', [newStreak, newBest, today, shieldAvailable]);
 }
 
-export function useStreakShield(): boolean {
+export async function useStreakShield(): Promise<boolean> {
   const db = getDb();
-  const profile = getUserProfile();
-  const raw = (getDb().getFirstSync<{ streak_shield_available: number }>('SELECT streak_shield_available FROM user_profile WHERE id = 1'))?.streak_shield_available;
+  const profile = await getUserProfile();
+  const raw = (await db.getFirstAsync<{ streak_shield_available: number }>('SELECT streak_shield_available FROM user_profile WHERE id = 1'))?.streak_shield_available;
   if (profile.streakCurrent === 0 || raw !== 1) return false;
-  updateStreak(false, true);
+  await updateStreak(false, true);
   return true;
 }
 
-export function getDailyLog(date?: string): DailyLog | null {
+export async function getDailyLog(date?: string): Promise<DailyLog | null> {
   const db = getDb();
   const d = date ?? todayStr();
-  const r = db.getFirstSync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>('SELECT * FROM daily_log WHERE date = ?', [d]);
+  const r = await db.getFirstAsync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>('SELECT * FROM daily_log WHERE date = ?', [d]);
   if (!r) return null;
   return { date: r.date, checkedIn: r.checked_in === 1, mood: r.mood as Mood | null, totalMinutes: r.total_minutes, xpEarned: r.xp_earned, sessionCount: r.session_count };
 }
 
-export function checkinToday(mood: Mood): void {
+export async function checkinToday(mood: Mood): Promise<void> {
   const db = getDb();
   const today = todayStr();
-  db.runSync(`INSERT INTO daily_log (date, checked_in, mood) VALUES (?, 1, ?) ON CONFLICT(date) DO UPDATE SET checked_in = 1, mood = excluded.mood`, [today, mood]);
+  await db.runAsync(`INSERT INTO daily_log (date, checked_in, mood) VALUES (?, 1, ?) ON CONFLICT(date) DO UPDATE SET checked_in = 1, mood = excluded.mood`, [today, mood]);
 }
 
-export function getLast30DaysLog(): DailyLog[] { return getActivityHistory(30); }
+export async function getLast30DaysLog(): Promise<DailyLog[]> {
+  return getActivityHistory(30);
+}
 
-export function getActivityHistory(days = 90): DailyLog[] {
+export async function getActivityHistory(days = 90): Promise<DailyLog[]> {
   const db = getDb();
-  const rows = db.getAllSync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>(`SELECT * FROM daily_log ORDER BY date DESC LIMIT ?`, [days]);
+  const rows = await db.getAllAsync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>(`SELECT * FROM daily_log ORDER BY date DESC LIMIT ?`, [days]);
   return rows.map(r => ({ date: r.date, checkedIn: r.checked_in === 1, mood: r.mood as Mood | null, totalMinutes: r.total_minutes, xpEarned: r.xp_earned, sessionCount: r.session_count }));
 }
 
-export function getActiveStudyDays(days = 30): number {
+export async function getActiveStudyDays(days = 30): Promise<number> {
   if (days <= 0) return 0;
 
   const db = getDb();
@@ -220,7 +233,7 @@ export function getActiveStudyDays(days = 30): number {
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
 
-  const row = db.getFirstSync<{ count: number }>(
+  const row = await db.getFirstAsync<{ count: number }>(
     `SELECT COUNT(*) AS count
      FROM daily_log
      WHERE date >= ?
@@ -231,7 +244,7 @@ export function getActiveStudyDays(days = 30): number {
   return row?.count ?? 0;
 }
 
-export function getDailyMinutesSeries(days = 7): number[] {
+export async function getDailyMinutesSeries(days = 7): Promise<number[]> {
   if (days <= 0) return [];
 
   const db = getDb();
@@ -239,7 +252,7 @@ export function getDailyMinutesSeries(days = 7): number[] {
   start.setHours(0, 0, 0, 0);
   start.setDate(start.getDate() - (days - 1));
 
-  const rows = db.getAllSync<{ total_minutes: number }>(
+  const rows = await db.getAllAsync<{ total_minutes: number }>(
     `WITH RECURSIVE date_span(day, remaining) AS (
        SELECT ?, ?
        UNION ALL
@@ -257,9 +270,9 @@ export function getDailyMinutesSeries(days = 7): number[] {
   return rows.map((row) => row.total_minutes ?? 0);
 }
 
-export function resetStudyProgress(): void {
+export async function resetStudyProgress(): Promise<void> {
   const db = getDb();
-  db.runSync(
+  await db.runAsync(
     `UPDATE topic_progress SET
        status = 'unseen',
        confidence = 0,
@@ -279,18 +292,42 @@ export function resetStudyProgress(): void {
        wrong_count = 0,
        is_nemesis = 0`,
   );
-  db.runSync(`UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`);
-  db.runSync(`DELETE FROM daily_log`);
+  await db.runAsync(`UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`);
+  await db.runAsync(`DELETE FROM daily_log`);
 }
 
-export function clearAiCache(): void {
-  getDb().runSync('DELETE FROM ai_cache');
+export async function clearAiCache(): Promise<void> {
+  await getDb().runAsync('DELETE FROM ai_cache');
 }
 
 export function getDaysToExam(examDateStr: string): number {
-  const exam = new Date(examDateStr).getTime();
-  const now = Date.now();
-  return Math.max(0, Math.ceil((exam - now) / 86400000));
+  if (!examDateStr) return 0;
+  
+  let examTime = 0;
+  const parts = examDateStr.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+      examTime = new Date(y, m, d).getTime();
+    }
+  }
+  
+  if (!examTime) {
+    examTime = new Date(examDateStr).getTime();
+  }
+  
+  if (isNaN(examTime) || examTime === 0) return 0;
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0); // Calculate from local midnight
+  
+  // Also adjust examTime to be local midnight if it's not already
+  const exam = new Date(examTime);
+  exam.setHours(0, 0, 0, 0);
+  
+  return Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / 86400000));
 }
 
 /**
@@ -298,18 +335,17 @@ export function getDaysToExam(examDateStr: string): number {
  * Called on app open. Only decays topics that:
  * - Have an fsrs_due date in the past (overdue)
  * - Have confidence > 0
- * 
+ *
  * Decay rules:
  * - 1-7 days overdue: confidence drops by 1 (min 0)
  * - 8-30 days overdue: confidence drops by 2 (min 0)
  * - 30+ days overdue: confidence resets to 0, status → 'seen'
  */
-export function applyConfidenceDecay(): { decayed: number } {
+export async function applyConfidenceDecay(): Promise<{ decayed: number }> {
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
-  
-  // Get overdue topics with current confidence > 0
-  const overdue = db.getAllSync<{
+
+  const overdue = await db.getAllAsync<{
     topic_id: number;
     confidence: number;
     fsrs_due: string;
@@ -338,7 +374,7 @@ export function applyConfidenceDecay(): { decayed: number } {
     }
 
     if (newConf !== row.confidence || newStatus !== row.status) {
-      db.runSync(
+      await db.runAsync(
         `UPDATE topic_progress SET confidence = ?, status = ? WHERE topic_id = ?`,
         [newConf, newStatus, row.topic_id],
       );
@@ -352,17 +388,17 @@ export function applyConfidenceDecay(): { decayed: number } {
 /**
  * Get topics due for review today or overdue, grouped by subject.
  */
-export function getReviewDueTopics(): Array<{
+export async function getReviewDueTopics(): Promise<Array<{
   topicId: number;
   topicName: string;
   subjectName: string;
   confidence: number;
   nextReviewDate: string;
   daysOverdue: number;
-}> {
+}>> {
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
-  const rows = db.getAllSync<{
+  const rows = await db.getAllAsync<{
     topic_id: number;
     topic_name: string;
     subject_name: string;

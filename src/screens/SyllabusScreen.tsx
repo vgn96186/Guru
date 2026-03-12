@@ -40,14 +40,15 @@ export default function SyllabusScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SubjectSortMode>('weight');
+  const [searchMatchIds, setSearchMatchIds] = useState<Set<number>>(new Set());
+  const [searchMatchCounts, setSearchMatchCounts] = useState<Map<number, number>>(new Map());
 
   async function loadData() {
-    const subs = getAllSubjects();
-    const cov = getSubjectCoverage();
+    const [subs, cov] = await Promise.all([getAllSubjects(), getSubjectCoverage()]);
     // Force numeric keys in the map to prevent string/number mismatch
     const map = new Map(cov.map(c => [Number(c.subjectId), { total: c.total, seen: c.seen }]));
     const db = getDb();
-    const metricRows = db.getAllSync<{
+    const metricRows = await db.getAllAsync<{
       subjectId: number;
       due: number;
       highYield: number;
@@ -115,6 +116,23 @@ export default function SyllabusScreen() {
     }
   }, [isFocused, sortMode]);
 
+  useEffect(() => {
+    const searchLower = searchQuery.trim().toLowerCase();
+    if (!searchLower) {
+      setSearchMatchIds(new Set());
+      setSearchMatchCounts(new Map());
+      return;
+    }
+    const db = getDb();
+    void db.getAllAsync<{ subject_id: number; c: number }>(
+      `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
+      [`%${searchLower}%`],
+    ).then(rows => {
+      setSearchMatchIds(new Set(rows.map(r => r.subject_id)));
+      setSearchMatchCounts(new Map(rows.map(r => [r.subject_id, r.c])));
+    });
+  }, [searchQuery]);
+
   async function handleManualSync() {
     Alert.alert(
       'Re-check syllabus topics?',
@@ -140,13 +158,14 @@ export default function SyllabusScreen() {
     );
   }
 
-  function runDiagnostics() {
+  async function runDiagnostics() {
     const db = getDb();
-    const count = db.getFirstSync<{ c: number }>('SELECT COUNT(*) as c FROM topics')?.c;
-    const subjects = db.getAllSync<any>('SELECT id, name FROM subjects');
-    const coverage = db.getAllSync<any>('SELECT subject_id, COUNT(*) as c FROM topics GROUP BY subject_id');
-    
-    // Create a readable summary of topics per subject
+    const [countRow, subjects, coverage] = await Promise.all([
+      db.getFirstAsync<{ c: number }>('SELECT COUNT(*) as c FROM topics'),
+      db.getAllAsync<any>('SELECT id, name FROM subjects'),
+      db.getAllAsync<any>('SELECT subject_id, COUNT(*) as c FROM topics GROUP BY subject_id'),
+    ]);
+    const count = countRow?.c;
     const subjectMap = new Map(subjects.map((s: any) => [s.id, s.name]));
     const summary = coverage.map((c: any) => `${subjectMap.get(c.subject_id) || `ID ${c.subject_id} (NOT IN SUBJECTS)`}: ${c.c} topics`).join('\n');
 
@@ -167,22 +186,10 @@ export default function SyllabusScreen() {
   const totalWithNotes = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.withNotes, 0);
 
   const searchLower = searchQuery.trim().toLowerCase();
-  let matchingSubjectIds = new Set<number>();
-  let matchingCounts = new Map<number, number>();
-  if (searchLower) {
-    const db = getDb();
-    const rows = db.getAllSync<{ subject_id: number, c: number }>(
-      `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
-      [`%${searchLower}%`]
-    );
-    matchingSubjectIds = new Set(rows.map(r => r.subject_id));
-    rows.forEach(r => matchingCounts.set(r.subject_id, r.c));
-  }
-
   const filteredSubjects = subjects.filter(subject =>
     subject.name.toLowerCase().includes(searchLower) ||
     subject.shortCode.toLowerCase().includes(searchLower) ||
-    matchingSubjectIds.has(subject.id)
+    searchMatchIds.has(subject.id)
   );
   
   // Animated progress
@@ -314,7 +321,7 @@ export default function SyllabusScreen() {
               subject={item}
               coverage={coverage.get(item.id) ?? { total: 0, seen: 0 }}
               metrics={subjectMetrics.get(item.id)}
-              matchingTopicsCount={matchingCounts.get(item.id)}
+              matchingTopicsCount={searchMatchCounts.get(item.id)}
               onPress={() => navigation.navigate('TopicDetail', { subjectId: item.id, subjectName: item.name, initialSearchQuery: searchQuery.trim() })}
             />
           )}

@@ -116,7 +116,7 @@ export default function InertiaScreen() {
 
   async function fetchMicroWin() {
     // Pick an EASY or HIGH CONFIDENCE topic to guarantee a win, or a random seen one
-    const topics = getAllTopicsWithProgress();
+    const topics = await getAllTopicsWithProgress();
     const seen = topics.filter(t => t.progress.status === 'reviewed' || t.progress.status === 'mastered');
     // If we have fewer than 10 seen topics, mix in some unseen high-yield topics to increase variety
     const pool = seen.length >= 10 ? seen : [...seen, ...topics.filter(t => t.inicetPriority >= 8)].slice(0, 50);

@@ -63,7 +63,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
 
   const checkForReturnedSession = useCallback(async (showPrompt: boolean) => {
     try {
-      const session = getIncompleteExternalSession();
+      const session = await getIncompleteExternalSession();
       if (!session || handledReturnLogRef.current === session.id) return;
 
       const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
@@ -72,12 +72,12 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
       stopRecordingHealthCheck();
 
       if (!showPrompt && !session.recordingPath) {
-        finishExternalAppSession(logId, durationMinutes, 'Recovered silently on cold app launch');
+        await finishExternalAppSession(logId, durationMinutes, 'Recovered silently on cold app launch');
         return;
       }
 
       if (!showPrompt) {
-        finishExternalAppSession(logId, durationMinutes, 'Stale session cleaned on cold launch');
+        await finishExternalAppSession(logId, durationMinutes, 'Stale session cleaned on cold launch');
         return;
       }
 
@@ -99,14 +99,14 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
 
       if (recordingPath) {
         const validation = await validateRecordingWithBackoff(recordingPath, validateRecordingFile);
-        updateSessionPipelineTelemetry(logId, {
+        await updateSessionPipelineTelemetry(logId, {
           validationAttempts: validation.attemptsUsed,
         });
         if (!validation.validated) {
           try {
             const finalInfo = await validateRecordingFile(recordingPath);
             if (!finalInfo.exists || finalInfo.size <= 100) {
-              updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
+              await updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
               showToast(
                 "Recording file isn't ready yet — it may appear when you reopen the app.",
                 'warning',
@@ -120,7 +120,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
 
       try { await hideOverlay(); } catch (err) { console.warn('[Home] hideOverlay failed:', err); }
 
-      finishExternalAppSession(logId, durationMinutes);
+      await finishExternalAppSession(logId, durationMinutes);
       onRecovered({
         appName: session.appName,
         durationMinutes,

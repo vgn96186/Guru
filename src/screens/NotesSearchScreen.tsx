@@ -8,6 +8,7 @@ import { getDb } from '../db/database';
 import { getAllSubjects } from '../db/queries/topics';
 import { searchLectureNotes, deleteLectureNote, type LectureHistoryItem } from '../db/queries/aiCache';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import type { Subject } from '../types';
 
 interface TopicNoteResult {
   type: 'topic';
@@ -30,7 +31,10 @@ export default function NotesSearchScreen() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  const subjects = React.useMemo(() => getAllSubjects(), []);
+  const [subjects, setSubjects] = React.useState<Subject[]>([]);
+  React.useEffect(() => {
+    void getAllSubjects().then(setSubjects);
+  }, []);
   const isSelectionMode = selectedKeys.length > 0;
 
   function getResultKey(item: SearchResult): string {
@@ -52,7 +56,7 @@ export default function NotesSearchScreen() {
     return subjects.find(s => s.id === subjectId);
   }
 
-  function search(text: string) {
+  async function search(text: string) {
     setQuery(text);
     setSelectedKeys([]);
     if (text.length < 2) {
@@ -62,7 +66,7 @@ export default function NotesSearchScreen() {
     const db = getDb();
 
     // Search topic notes
-    const topicRows = db.getAllSync<{ id: number; name: string; user_notes: string; subject_id: number }>(
+    const topicRows = await db.getAllAsync<{ id: number; name: string; user_notes: string; subject_id: number }>(
       `SELECT t.id, t.name, p.user_notes, t.subject_id
        FROM topics t
        JOIN topic_progress p ON t.id = p.topic_id
@@ -72,7 +76,7 @@ export default function NotesSearchScreen() {
     const topicResults: SearchResult[] = topicRows.map(r => ({ type: 'topic' as const, ...r }));
 
     // Search lecture notes (transcripts, summaries, ADHD notes)
-    const lectureRows = searchLectureNotes(text, 25);
+    const lectureRows = await searchLectureNotes(text, 25);
     const lectureResults: SearchResult[] = lectureRows.map(item => ({ type: 'lecture' as const, item }));
 
     // Merge: lecture notes first (more likely what user wants), then topic notes
@@ -100,9 +104,9 @@ export default function NotesSearchScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            deleteLectureNote(id);
-            search(query);
+          onPress: async () => {
+            await deleteLectureNote(id);
+            await search(query);
           },
         },
       ],
@@ -118,10 +122,10 @@ export default function NotesSearchScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             const db = getDb();
-            db.runSync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', topicId]);
-            search(query);
+            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', topicId]);
+            await search(query);
           },
         },
       ],
@@ -159,21 +163,21 @@ export default function NotesSearchScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             const db = getDb();
-            keysToDelete.forEach(key => {
+            for (const key of keysToDelete) {
               if (key.startsWith('lec-')) {
                 const id = Number(key.replace('lec-', ''));
-                if (!Number.isNaN(id)) deleteLectureNote(id);
+                if (!Number.isNaN(id)) await deleteLectureNote(id);
               } else if (key.startsWith('topic-')) {
                 const id = Number(key.replace('topic-', ''));
                 if (!Number.isNaN(id)) {
-                  db.runSync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', id]);
+                  await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', id]);
                 }
               }
-            });
+            }
             setSelectedKeys([]);
-            search(query);
+            await search(query);
           },
         },
       ],

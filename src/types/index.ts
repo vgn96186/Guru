@@ -1,14 +1,15 @@
-export type ContentType = 'keypoints' | 'quiz' | 'story' | 'mnemonic' | 'teach_back' | 'error_hunt' | 'detective' | 'manual';
-
-export type TopicStatus = 'unseen' | 'seen' | 'reviewed' | 'mastered';
-
-export type Mood = 'energetic' | 'good' | 'okay' | 'tired' | 'stressed' | 'distracted';
-
-export type SessionMode = 'normal' | 'sprint' | 'gentle' | 'deep' | 'external';
-
-export type StudyResourceMode = 'standard' | 'btr' | 'dbmci_live' | 'hybrid';
-
-export type HarassmentTone = 'shame' | 'motivational' | 'tough_love';
+/** Re-exported from schemas — single source of truth. */
+import type {
+  ContentType,
+  TopicStatus,
+  Mood,
+  SessionMode,
+  StudyResourceMode,
+  HarassmentTone,
+  GuruFrequency,
+  DailyLog,
+} from '../schemas';
+export type { ContentType, TopicStatus, Mood, SessionMode, StudyResourceMode, HarassmentTone, GuruFrequency, DailyLog };
 
 export interface Subject {
   id: number;
@@ -88,15 +89,6 @@ export interface Agenda {
   guruMessage: string;
 }
 
-export interface DailyLog {
-  date: string;
-  checkedIn: boolean;
-  mood: Mood | null;
-  totalMinutes: number;
-  xpEarned: number;
-  sessionCount: number;
-}
-
 export interface UserProfile {
   displayName: string;
   totalXp: number;
@@ -122,7 +114,7 @@ export interface UserProfile {
   idleTimeoutMinutes: number;
   breakDurationMinutes: number;
   notificationHour: number;
-  guruFrequency?: 'rare' | 'normal' | 'frequent' | 'off';
+  guruFrequency?: GuruFrequency;
   focusSubjectIds: number[];
   quizCorrectCount?: number;
   lastBackupDate?: string | null;

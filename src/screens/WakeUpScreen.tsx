@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { checkinToday } from '../db/queries/progress';
+import { dailyLogRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
@@ -65,12 +65,12 @@ export default function WakeUpScreen() {
     return () => { cancelled = true; timers.forEach(clearTimeout); };
   }, [phase]);
 
-  function handleFogCheck(level: 'clear' | 'hazy' | 'foggy') {
+  async function handleFogCheck(level: 'clear' | 'hazy' | 'foggy') {
     if (level === 'foggy') {
       // Very foggy → auto check-in as tired, gentle session defaults
-      checkinToday('tired');
+      await dailyLogRepository.checkinToday('tired');
       setDailyAvailability(20);
-      refreshProfile();
+      await refreshProfile();
       navigation.replace('Tabs');
     } else {
       // Clear or hazy → normal check-in

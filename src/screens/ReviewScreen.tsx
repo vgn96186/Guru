@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
-import { addXp } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, AIContent, ContentType } from '../types';
@@ -51,8 +51,7 @@ export default function ReviewScreen() {
   const handleRateRef = useRef<(rating: typeof RATINGS[0]) => void>(() => {});
 
   useEffect(() => {
-    const due = getTopicsDueForReview(20);
-    setQueue(due);
+    void getTopicsDueForReview(20).then(setQueue);
     return () => { Speech.stop(); };
   }, []);
 
@@ -136,7 +135,7 @@ export default function ReviewScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
-  function handleRate(rating: typeof RATINGS[0]) {
+  async function handleRate(rating: typeof RATINGS[0]) {
     Speech.stop();
     if (!currentTopic) return;
 
@@ -146,15 +145,15 @@ export default function ReviewScreen() {
     let xp = 10 * newConf;
     if (currentTopic.progress.isNemesis) xp += 50;
 
-    updateTopicProgress(
+    await updateTopicProgress(
       currentTopic.id,
       newConf >= 4 ? 'mastered' : newConf >= 2 ? 'reviewed' : 'seen',
       newConf,
       xp
     );
 
-    addXp(xp);
-    refreshProfile();
+    await profileRepository.addXp(xp);
+    await refreshProfile();
 
     if (currentIdx < queue.length - 1) {
       setCurrentIdx(i => i + 1);

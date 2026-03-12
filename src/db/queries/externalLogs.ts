@@ -41,18 +41,18 @@ export interface ExternalAppLog {
     pipelineTelemetry?: SessionPipelineTelemetry | null;
 }
 
-export function startExternalAppSession(appName: string, recordingPath?: string): number {
+export async function startExternalAppSession(appName: string, recordingPath?: string): Promise<number> {
     const db = getDb();
     const now = Date.now();
     try {
-        const result = db.runSync(
+        const result = await db.runAsync(
             'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
             [appName, now, recordingPath ?? null, 'recording']
         );
         return result.lastInsertRowId;
     } catch {
         // Fallback for old schema without transcription_status column
-        const result = db.runSync(
+        const result = await db.runAsync(
             'INSERT INTO external_app_logs (app_name, launched_at, recording_path) VALUES (?, ?, ?)',
             [appName, now, recordingPath ?? null]
         );
@@ -60,24 +60,24 @@ export function startExternalAppSession(appName: string, recordingPath?: string)
     }
 }
 
-export function finishExternalAppSession(logId: number, durationMinutes: number, notes?: string): void {
+export async function finishExternalAppSession(logId: number, durationMinutes: number, notes?: string): Promise<void> {
     const db = getDb();
     const now = Date.now();
-    db.runSync(
+    await db.runAsync(
         'UPDATE external_app_logs SET returned_at = ?, duration_minutes = ?, notes = ? WHERE id = ?',
         [now, durationMinutes, notes || null, logId]
     );
 }
 
-export function updateSessionTranscriptionStatus(
+export async function updateSessionTranscriptionStatus(
     logId: number,
     status: TranscriptionStatus,
     error?: string,
     lectureNoteId?: number,
-): void {
+): Promise<void> {
     const db = getDb();
     try {
-        db.runSync(
+        await db.runAsync(
             `UPDATE external_app_logs SET
                 transcription_status = ?,
                 transcription_error = ?,
@@ -90,13 +90,13 @@ export function updateSessionTranscriptionStatus(
     }
 }
 
-export function updateSessionNoteEnhancementStatus(
+export async function updateSessionNoteEnhancementStatus(
     logId: number,
     status: NoteEnhancementStatus,
-): void {
+): Promise<void> {
     const db = getDb();
     try {
-        db.runSync(
+        await db.runAsync(
             'UPDATE external_app_logs SET note_enhancement_status = ? WHERE id = ?',
             [status, logId]
         );
@@ -128,18 +128,18 @@ function mergeTelemetry(
     };
 }
 
-export function updateSessionPipelineTelemetry(
+export async function updateSessionPipelineTelemetry(
     logId: number,
     patch: Partial<SessionPipelineTelemetry>,
-): void {
+): Promise<void> {
     const db = getDb();
     try {
-        const row = db.getFirstSync<{ pipeline_metrics_json: string | null }>(
+        const row = await db.getFirstAsync<{ pipeline_metrics_json: string | null }>(
             'SELECT pipeline_metrics_json FROM external_app_logs WHERE id = ?',
             [logId]
         );
         const merged = mergeTelemetry(parseTelemetry(row?.pipeline_metrics_json), patch);
-        db.runSync(
+        await db.runAsync(
             'UPDATE external_app_logs SET pipeline_metrics_json = ? WHERE id = ?',
             [JSON.stringify(merged), logId]
         );
@@ -148,18 +148,18 @@ export function updateSessionPipelineTelemetry(
     }
 }
 
-export function getIncompleteExternalSession(): ExternalAppLog | null {
+export async function getIncompleteExternalSession(): Promise<ExternalAppLog | null> {
     const db = getDb();
     let r: {
         id: number; app_name: string; launched_at: number; recording_path?: string | null;
     } | null = null;
 
     try {
-        r = db.getFirstSync<{
+        r = await db.getFirstAsync<{
             id: number; app_name: string; launched_at: number; recording_path: string | null;
         }>('SELECT id, app_name, launched_at, recording_path FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1');
     } catch {
-        r = db.getFirstSync<{
+        r = await db.getFirstAsync<{
             id: number; app_name: string; launched_at: number;
         }>('SELECT id, app_name, launched_at FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1');
     }
@@ -178,10 +178,10 @@ export function getIncompleteExternalSession(): ExternalAppLog | null {
  * Get sessions where audio was recorded but transcription failed or never ran.
  * Used for retry-on-launch recovery.
  */
-export function getFailedOrPendingTranscriptions(): ExternalAppLog[] {
+export async function getFailedOrPendingTranscriptions(): Promise<ExternalAppLog[]> {
     const db = getDb();
     try {
-        const rows = db.getAllSync<{
+        const rows = await db.getAllAsync<{
             id: number; app_name: string; launched_at: number; returned_at: number;
             duration_minutes: number | null; recording_path: string | null;
             transcription_status: string; transcription_error: string | null; lecture_note_id: number | null;
@@ -217,10 +217,10 @@ export function getFailedOrPendingTranscriptions(): ExternalAppLog[] {
     }
 }
 
-export function getSessionsNeedingNoteEnhancement(): ExternalAppLog[] {
+export async function getSessionsNeedingNoteEnhancement(): Promise<ExternalAppLog[]> {
     const db = getDb();
     try {
-        const rows = db.getAllSync<{
+        const rows = await db.getAllAsync<{
             id: number; app_name: string; launched_at: number; returned_at: number | null;
             duration_minutes: number | null; recording_path: string | null;
             transcription_status: string; transcription_error: string | null; lecture_note_id: number | null;
@@ -253,9 +253,9 @@ export function getSessionsNeedingNoteEnhancement(): ExternalAppLog[] {
     }
 }
 
-export function getTotalExternalStudyMinutes(): number {
+export async function getTotalExternalStudyMinutes(): Promise<number> {
     const db = getDb();
-    const r = db.getFirstSync<{ total: number }>(
+    const r = await db.getFirstAsync<{ total: number }>(
         'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM external_app_logs WHERE duration_minutes IS NOT NULL AND duration_minutes > 0'
     );
     return r?.total ?? 0;

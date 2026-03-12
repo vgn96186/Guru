@@ -116,7 +116,7 @@ export async function importDatabase() {
     try {
       const { getDb } = require('../db/database');
       const testDb = getDb();
-      testDb.getFirstSync('SELECT COUNT(*) FROM subjects');
+      await testDb.getFirstAsync('SELECT COUNT(*) FROM subjects');
       // DB is valid — clean up rollback
       await FileSystem.deleteAsync(rollbackPath, { idempotent: true });
     } catch (validationError) {

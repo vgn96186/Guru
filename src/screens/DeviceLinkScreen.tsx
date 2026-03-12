@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
-import { updateUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 export default function DeviceLinkScreen() {
@@ -14,9 +14,10 @@ export default function DeviceLinkScreen() {
   const refreshProfile = useAppStore(s => s.refreshProfile);
   const [code, setCode] = useState(profile?.syncCode || '');
 
-  function handleSave() {
+  async function handleSave() {
     const cleanCode = code.trim().toUpperCase();
-    updateUserProfile({ syncCode: cleanCode || null }); refreshProfile();
+    await profileRepository.updateProfile({ syncCode: cleanCode || null });
+    await refreshProfile();
     navigation.goBack();
   }
 

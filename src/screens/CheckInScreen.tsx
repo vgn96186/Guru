@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { checkinToday, getDaysToExam, updateUserProfile, getDailyLog } from '../db/queries/progress';
+import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import type { Mood } from '../types';
 import { MOOD_LABELS } from '../constants/gamification';
@@ -52,7 +52,7 @@ export default function CheckInScreen() {
   const fadeOut = useRef(new Animated.Value(1)).current;
 
   const profile = useAppStore(s => s.profile);
-  const daysToInicet = profile ? getDaysToExam(profile.inicetDate) : 0;
+  const daysToInicet = profile ? profileRepository.getDaysToExam(profile.inicetDate) : 0;
 
   useEffect(() => {
     Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }).start();
@@ -60,8 +60,7 @@ export default function CheckInScreen() {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().slice(0, 10);
-    const yLog = getDailyLog(yStr);
-    if (yLog?.mood) setYesterdayMood(yLog.mood);
+    dailyLogRepository.getDailyLog(yStr).then(yLog => { if (yLog?.mood) setYesterdayMood(yLog.mood); });
   }, []);
 
   function handleMoodSelect(mood: Mood) {
@@ -74,26 +73,26 @@ export default function CheckInScreen() {
     });
   }
 
-  function handleQuickStart() {
+  async function handleQuickStart() {
     // Quick start with default mood and 30min availability
-    checkinToday('good');
+    await dailyLogRepository.checkinToday('good');
     setDailyAvailability(30);
     // Track consecutive Quick Start usage for auto-skip
     const currentStreak = profile?.quickStartStreak ?? 0;
-    updateUserProfile({ quickStartStreak: currentStreak + 1 });
+    await profileRepository.updateProfile({ quickStartStreak: currentStreak + 1 });
     invalidatePlanCache();
-    refreshProfile();
+    await refreshProfile();
     navigation.replace('Tabs');
   }
 
-  function handleTimeSelect(minutes: number) {
+  async function handleTimeSelect(minutes: number) {
     if (selectedMood) {
-      checkinToday(selectedMood);
+      await dailyLogRepository.checkinToday(selectedMood);
       setDailyAvailability(minutes);
       // Reset Quick Start streak when user manually picks mood
-      updateUserProfile({ quickStartStreak: 0 });
+      await profileRepository.updateProfile({ quickStartStreak: 0 });
       invalidatePlanCache();
-      refreshProfile();
+      await refreshProfile();
       navigation.replace('Tabs');
     }
   }

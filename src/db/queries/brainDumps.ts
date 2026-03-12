@@ -6,20 +6,20 @@ export interface BrainDumpLog {
     createdAt: number;
 }
 
-export function addBrainDump(note: string): number {
+export async function addBrainDump(note: string): Promise<number> {
     if (!note.trim()) return -1;
     const db = getDb();
     const now = Date.now();
-    const result = db.runSync(
+    const result = await db.runAsync(
         'INSERT INTO brain_dumps (note, created_at) VALUES (?, ?)',
         [note, now]
     );
     return result.lastInsertRowId;
 }
 
-export function getBrainDumps(): BrainDumpLog[] {
+export async function getBrainDumps(): Promise<BrainDumpLog[]> {
     const db = getDb();
-    const rows = db.getAllSync<{
+    const rows = await db.getAllAsync<{
         id: number;
         note: string;
         created_at: number;
@@ -32,7 +32,7 @@ export function getBrainDumps(): BrainDumpLog[] {
     }));
 }
 
-export function clearBrainDumps(): void {
+export async function clearBrainDumps(): Promise<void> {
     const db = getDb();
-    db.runSync('DELETE FROM brain_dumps');
+    await db.runAsync('DELETE FROM brain_dumps');
 }

@@ -2,7 +2,7 @@ import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { prefetchTopicContent } from './aiService';
-import { getUserProfile } from '../db/queries/progress';
+import { profileRepository } from '../db/repositories';
 import { refreshAccountabilityNotifications } from './notificationService';
 import { getMoodContentTypes } from '../constants/prompts';
 import type { ContentType } from '../types';
@@ -12,9 +12,9 @@ const PREFETCH_TASK = 'PREFETCH_AI_CONTENT';
 try {
   TaskManager.defineTask(PREFETCH_TASK, async () => {
     try {
-      const profile = getUserProfile();
+      const profile = await profileRepository.getProfile();
 
-      const allTopics = getAllTopicsWithProgress();
+      const allTopics = await getAllTopicsWithProgress();
       const candidates = allTopics
         .filter((t: any) => t.progress.status === 'unseen' || (t.progress.fsrsDue && new Date(t.progress.fsrsDue).getTime() <= Date.now()))
         .sort((a: any, b: any) => b.inicetPriority - a.inicetPriority)

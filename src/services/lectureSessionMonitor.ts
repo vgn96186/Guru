@@ -7,7 +7,11 @@ import {
   buildQuickLectureNote,
   type LectureAnalysis,
 } from './transcriptionService';
-import { updateLectureTranscriptNote, getLectureNoteById } from '../db/queries/aiCache';
+import {
+  updateLectureTranscriptNote,
+  getLectureNoteById,
+  getLegacyLectureNotes,
+} from '../db/queries/aiCache';
 import {
   updateSessionTranscriptionStatus,
   updateSessionNoteEnhancementStatus,
@@ -21,6 +25,9 @@ import { transcribeWithGroqChunking } from './lecture/transcription';
 import { saveLecturePersistence } from './lecture/persistence';
 import { notifyTranscriptionFailure, notifyTranscriptionRecovered } from './notificationService';
 import { transcribeRawWithLocalWhisper } from './transcription/engines';
+import { getTranscriptText } from './transcriptStorage';
+import { generateEmbedding } from './ai/embeddingService';
+import { profileRepository } from '../db/repositories';
 
 export type LecturePipelineStage = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export interface LecturePipelineProgress {
@@ -72,6 +79,7 @@ export async function transcribeLectureWithRecovery(opts: {
       lectureSummary: 'No speech detected',
       estimatedConfidence: 1,
       transcript: '',
+      highYieldPoints: [],
     };
   }
 
@@ -106,13 +114,15 @@ export async function retryPendingNoteEnhancements(): Promise<number> {
     if (session.id && session.lectureNoteId) {
       const note = await getLectureNoteById(session.lectureNoteId);
       if (note) {
+        const transcriptText = await getTranscriptText(note.transcript);
         const analysis: LectureAnalysis = {
           subject: note.subjectName || 'Unknown',
           topics: note.topics || [],
           keyConcepts: [],
+          highYieldPoints: [],
           lectureSummary: note.summary || '',
           estimatedConfidence: (note.confidence || 2) as 1 | 2 | 3,
-          transcript: note.transcript || '',
+          transcript: transcriptText ?? '',
         };
         await enhanceNoteInBackground(session.lectureNoteId, session.id, analysis);
         recovered++;
@@ -143,10 +153,13 @@ export async function runFullTranscriptionPipeline(opts: {
   const { recordingPath, appName, durationMinutes, logId, onProgress } = opts;
 
   try {
+    const profile = await profileRepository.getProfile();
     await updateSessionTranscriptionStatus(logId, 'transcribing');
     const analysis = await transcribeLectureWithRecovery({
       recordingPath,
       groqKey: opts.groqKey,
+      useLocalWhisper: !!(profile.useLocalWhisper && profile.localWhisperPath),
+      localWhisperPath: profile.localWhisperPath || undefined,
       logId,
       onProgress,
     });
@@ -157,12 +170,21 @@ export async function runFullTranscriptionPipeline(opts: {
     }
 
     const quickNote = buildQuickLectureNote(analysis);
+    let embedding: number[] | null | undefined;
+    if (analysis.lectureSummary?.trim()) {
+      try {
+        embedding = await generateEmbedding(analysis.lectureSummary);
+      } catch {
+        embedding = null;
+      }
+    }
     const noteId = await saveLecturePersistence({
       analysis,
       appName,
       durationMinutes,
       logId,
       quickNote,
+      embedding,
     });
 
     void enhanceNoteInBackground(noteId as number, logId, analysis);
@@ -184,4 +206,50 @@ async function enhanceNoteInBackground(noteId: number, logId: number, analysis: 
   } catch {
     await updateSessionNoteEnhancementStatus(logId, 'failed');
   }
+}
+
+/**
+ * Automatically repairs legacy or incomplete notes by re-analyzing their transcripts.
+ */
+export async function autoRepairLegacyNotes(): Promise<number> {
+  const legacy = await getLegacyLectureNotes(3); // Small batch
+  if (legacy.length === 0) return 0;
+
+  let repaired = 0;
+  for (const note of legacy) {
+    const transcriptText = await getTranscriptText(note.transcript);
+    if (!transcriptText?.trim()) continue;
+    try {
+      console.log(`[Repair] Repairing note ${note.id}...`);
+      const analysis = await analyzeTranscript(transcriptText);
+      if (
+        analysis.subject === 'Unknown' &&
+        analysis.lectureSummary === 'Lecture content recorded'
+      ) {
+        continue; // Failed to get better results
+      }
+
+      // 1. Update the note text with the new quick format
+      const newNote = buildQuickLectureNote(analysis);
+      await updateLectureTranscriptNote(note.id, newNote);
+
+      // 2. Update metadata in the DB if possible
+      const db = (await import('../db/database')).getDb();
+      await db.runAsync(
+        'UPDATE lecture_notes SET summary = ?, topics_json = ?, confidence = ?, subject_id = (SELECT id FROM subjects WHERE name = ? LIMIT 1) WHERE id = ?',
+        [
+          analysis.lectureSummary,
+          JSON.stringify(analysis.topics),
+          analysis.estimatedConfidence,
+          analysis.subject,
+          note.id,
+        ],
+      );
+
+      repaired++;
+    } catch (err) {
+      console.warn(`[Repair] Failed to repair note ${note.id}:`, err);
+    }
+  }
+  return repaired;
 }

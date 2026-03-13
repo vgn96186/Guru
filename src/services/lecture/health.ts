@@ -16,7 +16,7 @@ let stalledCount = 0;
 const HEALTH_CHECK_INTERVAL = 60_000;
 const STALLED_THRESHOLD = 3;
 /** Run a short transcription after this delay to prove capture + API work (so user isn't blind for hours). */
-const TRANSCRIPTION_EVIDENCE_DELAY_MS = 45_000;
+const TRANSCRIPTION_EVIDENCE_DELAY_MS = 90_000;
 
 export interface RecordingHealthCheckOptions {
   /** If set, run an early transcription test and notify success/failure. */

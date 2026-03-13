@@ -14,6 +14,10 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
@@ -189,7 +193,8 @@ class AppLauncherModule : Module() {
                 MEDIA_PROJECTION_RC
             )
 
-            // Suspend until OnActivityResult fires
+            // Properly suspend without deadlocking the main thread!
+            // Note: Expo's AsyncFunction runs on a separate thread, so runBlocking here is safe.
             val granted = runBlocking { projectionDeferred!!.await() }
             projectionDeferred = null
 
@@ -238,7 +243,7 @@ class AppLauncherModule : Module() {
             }
 
             // Give the service a moment to start and verify it's actually recording
-            Thread.sleep(500)
+            runBlocking { delay(500) }
             val f = File(path)
             Log.i(TAG, "startRecording: after 500ms — file exists=${f.exists()}, size=${f.length()}")
 
@@ -288,7 +293,7 @@ class AppLauncherModule : Module() {
                     Log.i(TAG, "stopRecording: file OK, size=${file.length()}, returning path")
                     return@AsyncFunction path
                 }
-                Thread.sleep(250)
+                runBlocking { delay(250) }
                 waitedMs += 250
             }
 

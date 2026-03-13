@@ -2,7 +2,7 @@ import { getDb, nowTs } from '../../db/database';
 import { grantXp } from '../xpService';
 import { markTopicsFromLecture } from '../transcription/matching';
 import { saveTranscriptToFile } from '../transcriptStorage';
-import { updateSessionTranscriptionStatus, updateSessionNoteEnhancementStatus } from '../../db/queries/externalLogs';
+import { embeddingToBlob } from '../ai/embeddingService';
 
 export async function saveLecturePersistence(opts: {
   analysis: any;
@@ -10,6 +10,7 @@ export async function saveLecturePersistence(opts: {
   durationMinutes: number;
   logId: number;
   quickNote: string;
+  embedding?: number[] | null;
 }) {
   const db = getDb();
   const { analysis } = opts;
@@ -17,9 +18,16 @@ export async function saveLecturePersistence(opts: {
 
   await db.execAsync('BEGIN IMMEDIATE');
   try {
-    if (analysis.topics.length > 0) {
-      await markTopicsFromLecture(db, analysis.topics, analysis.estimatedConfidence, analysis.subject);
-      await grantXp(analysis.topics.length * 8);
+    if (analysis.topics.length > 0 || analysis.lectureSummary) {
+      await markTopicsFromLecture(
+        db,
+        analysis.topics,
+        analysis.estimatedConfidence,
+        analysis.subject,
+        analysis.lectureSummary,
+        opts.embedding ?? null,
+      );
+      if (analysis.topics.length > 0) await grantXp(analysis.topics.length * 8);
     }
 
     const subj = await db.getFirstAsync<{ id: number }>(
@@ -28,8 +36,8 @@ export async function saveLecturePersistence(opts: {
     );
 
     const result = await db.runAsync(
-      `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         subj?.id ?? null,
         opts.quickNote,
@@ -40,11 +48,15 @@ export async function saveLecturePersistence(opts: {
         opts.appName,
         opts.durationMinutes,
         analysis.estimatedConfidence,
+        opts.embedding ? embeddingToBlob(opts.embedding) : null,
       ],
     );
 
     const noteId = result.lastInsertRowId;
-    await db.runAsync('UPDATE external_app_logs SET transcription_status = ?, lecture_note_id = ? WHERE id = ?', ['completed', noteId, opts.logId]);
+    await db.runAsync(
+      'UPDATE external_app_logs SET transcription_status = ?, lecture_note_id = ? WHERE id = ?',
+      ['completed', noteId, opts.logId],
+    );
     await db.execAsync('COMMIT');
     return noteId;
   } catch (e) {
@@ -55,5 +67,7 @@ export async function saveLecturePersistence(opts: {
 
 export async function getFailedTranscriptions() {
   const db = getDb();
-  return db.getAllAsync<any>("SELECT * FROM external_app_logs WHERE returned_at IS NOT NULL AND recording_path IS NOT NULL AND transcription_status IN ('pending', 'failed', 'transcribing')");
+  return db.getAllAsync<any>(
+    "SELECT * FROM external_app_logs WHERE returned_at IS NOT NULL AND recording_path IS NOT NULL AND transcription_status IN ('pending', 'failed', 'transcribing')",
+  );
 }

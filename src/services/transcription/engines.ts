@@ -11,13 +11,23 @@ const WHISPER_MEDICAL_PROMPT =
   'Hindi-English mix (Hinglish). Toh, matlab, yahan pe, dekhiye, samajh lo.';
 
 function sanitizeTranscript(rawTranscript: string): string {
-  const NOISE_PATTERNS = /^\s*(\(.*?\)|\[.*?\]|\*.*?\*)\s*$/i;
-  return rawTranscript
+  // Only filter out common Whisper hallucination noise or non-speech tags
+  // but keep the line if it's the only thing there and doesn't look like a hallucination.
+  const NOISE_PATTERNS = /^\s*(\(background noise\)|\[music\]|\*silence\*|\[inaudible\])\s*$/i;
+
+  const cleaned = rawTranscript
     .split('\n')
-    .map(l => l.trim())
-    .filter(l => l && !NOISE_PATTERNS.test(l))
+    .map((l) => l.trim())
+    .filter((l) => l && !NOISE_PATTERNS.test(l))
     .join('\n')
     .trim();
+
+  // If we cleaned everything away but the original wasn't empty,
+  // maybe it was just short speech. Let's be less aggressive.
+  if (!cleaned && rawTranscript.trim().length > 0) {
+    return rawTranscript.trim();
+  }
+  return cleaned;
 }
 
 /** Cloud fallback: Groq Whisper transcription */
@@ -95,7 +105,9 @@ export async function transcribeRawWithLocalWhisper(
     if (whisperInputUri !== fileUri) {
       try {
         await FileSystem.deleteAsync(whisperInputUri, { idempotent: true });
-      } catch { /* best effort */ }
+      } catch {
+        /* best effort */
+      }
     }
   }
 }

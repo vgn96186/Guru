@@ -17,18 +17,20 @@ export async function moveFileToRecovery(fileUri: string): Promise<string> {
 }
 
 export async function saveTranscriptToFile(transcriptText: string): Promise<string> {
-  if (!transcriptText) return '';
-  if (transcriptText.startsWith('file://')) return transcriptText;
+  const normalized = transcriptText.trim();
+  if (!normalized) return '';
+  if (normalized.startsWith('file://')) return normalized;
 
   await FileSystem.makeDirectoryAsync(TRANSCRIPT_DIR, { intermediates: true });
   const fileName =
     'transcript_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9) + '.txt';
   const fileUri = TRANSCRIPT_DIR + fileName;
 
-  await FileSystem.writeAsStringAsync(fileUri, transcriptText, {
+  await FileSystem.writeAsStringAsync(fileUri, normalized, {
     encoding: FileSystem.EncodingType.UTF8,
   });
-  return fileUri;
+  // Ensure loadTranscriptFromFile can recognize this as a file URI
+  return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;
 }
 
 export async function loadTranscriptFromFile(
@@ -46,4 +48,13 @@ export async function loadTranscriptFromFile(
     console.warn('[TranscriptStorage] Failed to read transcript file:', err);
     return 'Transcript file could not be loaded.';
   }
+}
+
+/**
+ * Resolves transcript column value (file URI or raw text) to actual transcript text.
+ * Use when re-analyzing or enhancing notes so the LLM always receives text, not a path.
+ */
+export async function getTranscriptText(uriOrText: string | null): Promise<string | null> {
+  if (uriOrText == null || uriOrText.trim() === '') return null;
+  return loadTranscriptFromFile(uriOrText);
 }

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS topics (
   name TEXT NOT NULL,
   estimated_minutes INTEGER DEFAULT 35,
   inicet_priority INTEGER DEFAULT 5,
+  embedding BLOB,
   UNIQUE(subject_id, name)
 )`;
 
@@ -72,7 +73,8 @@ CREATE TABLE IF NOT EXISTS lecture_notes (
   topics_json TEXT,
   app_name TEXT,
   duration_minutes INTEGER,
-  confidence INTEGER DEFAULT 2
+  confidence INTEGER DEFAULT 2,
+  embedding BLOB
 )`;
 
 export const CREATE_DAILY_LOG = `

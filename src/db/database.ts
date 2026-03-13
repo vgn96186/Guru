@@ -3,6 +3,7 @@ import { ALL_SCHEMAS, DB_INDEXES } from './schema';
 import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
+import { generateEmbedding, embeddingToBlob } from '../services/ai/embeddingService';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -17,11 +18,11 @@ export function getDb(): SQLite.SQLiteDatabase {
 export async function initDatabase(forceSeed = false): Promise<void> {
   const g = global as any;
   // Use provided forceSeed parameter (default false)
-  const actualForce = forceSeed; 
-  
+  const actualForce = forceSeed;
+
   if (g.__GURU_DB__ && !actualForce) {
     _db = g.__GURU_DB__;
-// if (__DEV__) console.log('[DB] Using existing global DB instance');
+    // if (__DEV__) console.log('[DB] Using existing global DB instance');
     // We don't return here, we want to ensure tables and migrations are checked
   }
 
@@ -64,14 +65,16 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   }
 
   // Check topic count BEFORE seeding subjects (to detect fresh install)
-  const topicCountRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM topics');
+  const topicCountRes = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM topics',
+  );
   const topicCount = topicCountRes?.count ?? 0;
 
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
 
   if (topicCount === 0 || actualForce) {
-// if (__DEV__) console.log(`[DB] Seeding topics (force: ${actualForce})`);
+    // if (__DEV__) console.log(`[DB] Seeding topics (force: ${actualForce})`);
     if (actualForce) {
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
@@ -82,14 +85,26 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await seedUserProfile(db);
   } else {
     // Ensure user_profile row exists
-    const profile = await db.getFirstAsync<{ id: number }>('SELECT id FROM user_profile WHERE id = 1');
+    const profile = await db.getFirstAsync<{ id: number; groq_key: string | null }>(
+      'SELECT id, groq_key FROM user_profile WHERE id = 1',
+    );
     if (!profile) await seedUserProfile(db);
+
+    // Run background maintenance
+    const { retryFailedTasks, autoRepairLegacyNotes } =
+      await import('../services/lectureSessionMonitor');
+    void retryFailedTasks(profile?.groq_key || undefined);
+    void autoRepairLegacyNotes();
+
+    return;
   }
 
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
   await seedVaultTopics(db);
-  const topicCountAfterRes = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM topics');
-// if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
+  const topicCountAfterRes = await db.getFirstAsync<{ count: number }>(
+    'SELECT COUNT(*) as count FROM topics',
+  );
+  // if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
 
   // Versioned migrations — only run pending ones; fresh installs skip entirely
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -107,7 +122,8 @@ export async function initDatabase(forceSeed = false): Promise<void> {
           // If the column already exists, we can safely skip this migration step
           const msg = err?.message || '';
           if (msg.includes('duplicate column name')) {
-            if (__DEV__) console.log(`[DB] Migration ${m.version} column already exists, skipping.`);
+            if (__DEV__)
+              console.log(`[DB] Migration ${m.version} column already exists, skipping.`);
           } else {
             if (__DEV__) console.error('[DB] Migration failed:', m.version, m.sql, err);
             throw err;
@@ -151,6 +167,37 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 
   // Update streak on open
   await updateStreakOnOpen(db);
+
+  // Pre-seed missing topic embeddings in background
+  seedMissingTopicEmbeddings(db).catch((e) => {
+    if (__DEV__) console.warn('[DB] Embedding pre-seed failed:', e);
+  });
+}
+
+/**
+ * Background task to fill in missing embeddings for syllabus topics.
+ * Processes in small batches to avoid blocking.
+ */
+async function seedMissingTopicEmbeddings(db: SQLite.SQLiteDatabase) {
+  const rows = await db.getAllAsync<{ id: number; name: string }>(
+    'SELECT id, name FROM topics WHERE embedding IS NULL LIMIT 20',
+  );
+  if (rows.length === 0) return;
+
+  if (__DEV__) console.log(`[DB] Pre-seeding ${rows.length} topic embeddings...`);
+
+  for (const row of rows) {
+    try {
+      const vec = await generateEmbedding(row.name);
+      if (!vec) continue;
+      await db.runAsync('UPDATE topics SET embedding = ? WHERE id = ?', [
+        embeddingToBlob(vec),
+        row.id,
+      ]);
+    } catch (e) {
+      if (__DEV__) console.warn(`[DB] Failed to embed topic ${row.name}:`, e);
+    }
+  }
 }
 
 /**
@@ -184,10 +231,9 @@ async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
         [subjectId, name, priority, minutes],
       );
       if (result.lastInsertRowId > 0) {
-        await db.runAsync(
-          `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
-          [result.lastInsertRowId],
-        );
+        await db.runAsync(`INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`, [
+          result.lastInsertRowId,
+        ]);
       }
     }
 
@@ -242,10 +288,7 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
 
       if (topicId) {
         vaultTopicIds.push(topicId);
-        await db.runAsync(
-          `INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`,
-          [topicId],
-        );
+        await db.runAsync(`INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)`, [topicId]);
       }
     }
 
@@ -268,16 +311,16 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
 }
 
 async function seedUserProfile(db: SQLite.SQLiteDatabase): Promise<void> {
-  await db.runAsync(
-    `INSERT OR IGNORE INTO user_profile (id) VALUES (1)`,
-  );
+  await db.runAsync(`INSERT OR IGNORE INTO user_profile (id) VALUES (1)`);
 }
 
 async function updateStreakOnOpen(db: SQLite.SQLiteDatabase): Promise<void> {
   const today = todayStr();
-  const profile = await db.getFirstAsync<{ last_active_date: string | null; streak_current: number; streak_best: number }>(
-    'SELECT last_active_date, streak_current, streak_best FROM user_profile WHERE id = 1',
-  );
+  const profile = await db.getFirstAsync<{
+    last_active_date: string | null;
+    streak_current: number;
+    streak_best: number;
+  }>('SELECT last_active_date, streak_current, streak_best FROM user_profile WHERE id = 1');
   if (!profile) return;
 
   const last = profile.last_active_date;

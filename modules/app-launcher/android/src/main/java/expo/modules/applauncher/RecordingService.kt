@@ -322,13 +322,19 @@ class RecordingService : Service() {
     private fun startMicRecording(path: String) {
         // VOICE_RECOGNITION first — it typically has NO echo cancellation,
         // which is critical for capturing speaker audio played on the same device.
+        // UNPROCESSED is ideal for raw capture without system filtering (Android 7+).
         // MIC source on Samsung/OneUI has aggressive AEC that strips speaker audio.
-        val audioSources = intArrayOf(
+        val audioSources = mutableListOf(
             MediaRecorder.AudioSource.VOICE_RECOGNITION,
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            audioSources.add(MediaRecorder.AudioSource.UNPROCESSED)
+        }
+        audioSources.addAll(listOf(
             MediaRecorder.AudioSource.CAMCORDER,
             MediaRecorder.AudioSource.MIC,
             MediaRecorder.AudioSource.DEFAULT,
-        )
+        ))
 
         for (source in audioSources) {
             try {
@@ -336,6 +342,7 @@ class RecordingService : Service() {
                     MediaRecorder.AudioSource.MIC -> "MIC"
                     MediaRecorder.AudioSource.VOICE_RECOGNITION -> "VOICE_RECOGNITION"
                     MediaRecorder.AudioSource.CAMCORDER -> "CAMCORDER"
+                    9 -> "UNPROCESSED" // MediaRecorder.AudioSource.UNPROCESSED
                     else -> "DEFAULT"
                 }
                 Log.i(TAG, "Trying mic recording with source=$sourceName → $path")

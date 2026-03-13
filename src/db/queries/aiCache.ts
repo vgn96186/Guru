@@ -1,5 +1,7 @@
 import { getDb, nowTs } from '../database';
 import type { AIContent, ContentType } from '../../types';
+import { embeddingToBlob } from '../../services/ai/embeddingService';
+import { saveTranscriptToFile } from '../../services/transcriptStorage';
 
 export async function getCachedContent(
   topicId: number,
@@ -47,7 +49,11 @@ export interface MockQuestion {
 
 export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
   const db = getDb();
-  const rows = await db.getAllAsync<{ content_json: string; topic_name: string; subject_name: string }>(
+  const rows = await db.getAllAsync<{
+    content_json: string;
+    topic_name: string;
+    subject_name: string;
+  }>(
     `SELECT c.content_json, t.name as topic_name, s.name as subject_name
      FROM ai_cache c
      JOIN topics t ON c.topic_id = t.id
@@ -58,11 +64,20 @@ export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
   const all: MockQuestion[] = [];
   for (const row of rows) {
     try {
-      const quiz = JSON.parse(row.content_json) as { questions: Array<{ question: string; options: [string,string,string,string]; correctIndex: number; explanation: string }> };
+      const quiz = JSON.parse(row.content_json) as {
+        questions: Array<{
+          question: string;
+          options: [string, string, string, string];
+          correctIndex: number;
+          explanation: string;
+        }>;
+      };
       for (const q of quiz.questions ?? []) {
         all.push({ ...q, topicName: row.topic_name, subjectName: row.subject_name });
       }
-    } catch { /* skip malformed */ }
+    } catch {
+      /* skip malformed */
+    }
   }
   // Shuffle
   for (let i = all.length - 1; i > 0; i--) {
@@ -72,12 +87,17 @@ export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
   return all;
 }
 
-export async function setContentFlagged(topicId: number, contentType: ContentType, flagged: boolean): Promise<void> {
+export async function setContentFlagged(
+  topicId: number,
+  contentType: ContentType,
+  flagged: boolean,
+): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    'UPDATE ai_cache SET is_flagged = ? WHERE topic_id = ? AND content_type = ?',
-    [flagged ? 1 : 0, topicId, contentType],
-  );
+  await db.runAsync('UPDATE ai_cache SET is_flagged = ? WHERE topic_id = ? AND content_type = ?', [
+    flagged ? 1 : 0,
+    topicId,
+    contentType,
+  ]);
 }
 
 export async function flagTopicForReview(topicId: number, topicName: string): Promise<ContentType> {
@@ -114,7 +134,10 @@ export async function flagTopicForReview(topicId: number, topicName: string): Pr
   return contentType;
 }
 
-export async function isContentFlagged(topicId: number, contentType: ContentType): Promise<boolean> {
+export async function isContentFlagged(
+  topicId: number,
+  contentType: ContentType,
+): Promise<boolean> {
   const db = getDb();
   const row = await db.getFirstAsync<{ is_flagged: number }>(
     'SELECT is_flagged FROM ai_cache WHERE topic_id = ? AND content_type = ?',
@@ -136,8 +159,13 @@ export interface FlaggedItem {
 export async function getFlaggedContent(): Promise<FlaggedItem[]> {
   const db = getDb();
   const rows = await db.getAllAsync<{
-    topic_id: number; topic_name: string; subject_name: string;
-    content_type: string; content_json: string; model_used: string; created_at: number;
+    topic_id: number;
+    topic_name: string;
+    subject_name: string;
+    content_type: string;
+    content_json: string;
+    model_used: string;
+    created_at: number;
   }>(
     `SELECT c.topic_id, t.name AS topic_name, s.name AS subject_name,
             c.content_type, c.content_json, c.model_used, c.created_at
@@ -147,7 +175,7 @@ export async function getFlaggedContent(): Promise<FlaggedItem[]> {
      WHERE c.is_flagged = 1
      ORDER BY c.created_at DESC`,
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     topicId: r.topic_id,
     topicName: r.topic_name,
     subjectName: r.subject_name,
@@ -163,7 +191,10 @@ export async function clearTopicCache(topicId: number): Promise<void> {
   await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);
 }
 
-export async function getCacheStats(): Promise<{ totalCached: number; byType: Record<string, number> }> {
+export async function getCacheStats(): Promise<{
+  totalCached: number;
+  byType: Record<string, number>;
+}> {
   const db = getDb();
   const total = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM ai_cache');
   const byTypeRows = await db.getAllAsync<{ content_type: string; count: number }>(
@@ -174,11 +205,15 @@ export async function getCacheStats(): Promise<{ totalCached: number; byType: Re
   return { totalCached: total?.count ?? 0, byType };
 }
 
-export async function saveLectureNote(subjectId: number | null, note: string): Promise<void> {
+export async function saveLectureNote(
+  subjectId: number | null,
+  note: string,
+  embedding?: number[] | null,
+): Promise<void> {
   const db = getDb();
   await db.runAsync(
-    'INSERT INTO lecture_notes (subject_id, note, created_at) VALUES (?, ?, ?)',
-    [subjectId, note, nowTs()],
+    'INSERT INTO lecture_notes (subject_id, note, created_at, embedding) VALUES (?, ?, ?, ?)',
+    [subjectId, note, nowTs(), embedding ? embeddingToBlob(embedding) : null],
   );
 }
 
@@ -194,23 +229,25 @@ export interface LectureNoteData {
   confidence?: number;
 }
 
-export async function saveLectureTranscript(data: LectureNoteData): Promise<number> {
-  // If transcript is long and not a URI, we should ideally save it to file first.
-  // We assume callers now pass the file URI if they want it on disk.
+export async function saveLectureTranscript(
+  data: LectureNoteData & { embedding?: number[] | null },
+): Promise<number> {
   const db = getDb();
+  const transcriptValue = data.transcript ? await saveTranscriptToFile(data.transcript) : null;
   const result = await db.runAsync(
-    `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.subjectId,
       data.note,
       nowTs(),
-      data.transcript ?? null,
+      transcriptValue,
       data.summary ?? null,
       data.topics ? JSON.stringify(data.topics) : null,
       data.appName ?? null,
       data.durationMinutes ?? null,
       data.confidence ?? 2,
+      data.embedding ? embeddingToBlob(data.embedding) : null,
     ],
   );
   return result.lastInsertRowId as number;
@@ -218,18 +255,15 @@ export async function saveLectureTranscript(data: LectureNoteData): Promise<numb
 
 export async function updateLectureTranscriptNote(noteId: number, note: string): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    'UPDATE lecture_notes SET note = ? WHERE id = ?',
-    [note, noteId],
-  );
+  await db.runAsync('UPDATE lecture_notes SET note = ? WHERE id = ?', [note, noteId]);
 }
 
-export async function updateLectureTranscriptSummary(noteId: number, summary: string | null): Promise<void> {
+export async function updateLectureTranscriptSummary(
+  noteId: number,
+  summary: string | null,
+): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    'UPDATE lecture_notes SET summary = ? WHERE id = ?',
-    [summary, noteId],
-  );
+  await db.runAsync('UPDATE lecture_notes SET summary = ? WHERE id = ?', [summary, noteId]);
 }
 
 export interface LectureHistoryItem {
@@ -309,7 +343,7 @@ export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[
     [limit],
   );
 
-  return rows.map(r => ({
+  return rows.map((r) => ({
     id: r.id,
     subjectId: r.subject_id,
     subjectName: r.subject_name,
@@ -349,7 +383,50 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
     [likeQuery, likeQuery, likeQuery, likeQuery, limit],
   );
 
-  return rows.map(r => ({
+  return rows.map((r) => ({
+    id: r.id,
+    subjectId: r.subject_id,
+    subjectName: r.subject_name,
+    note: r.note,
+    transcript: r.transcript,
+    summary: r.summary,
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
+    appName: r.app_name,
+    durationMinutes: r.duration_minutes,
+    confidence: r.confidence ?? 2,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function getLegacyLectureNotes(limit = 5): Promise<LectureHistoryItem[]> {
+  const db = getDb();
+  // Legacy notes are ones that:
+  // 1. Don't have the 🎯 Subject marker (meaning they use old format)
+  // 2. OR have a transcript but no summary/topics (meaning they were never fully analyzed)
+  const rows = await db.getAllAsync<{
+    id: number;
+    subject_id: number | null;
+    subject_name: string | null;
+    note: string;
+    transcript: string | null;
+    summary: string | null;
+    topics_json: string | null;
+    app_name: string | null;
+    duration_minutes: number | null;
+    confidence: number | null;
+    created_at: number;
+  }>(
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+     FROM lecture_notes ln
+     LEFT JOIN subjects s ON ln.subject_id = s.id
+     WHERE (ln.note NOT LIKE '🎯 %' AND ln.transcript IS NOT NULL)
+        OR (ln.transcript IS NOT NULL AND ln.summary IS NULL)
+     ORDER BY ln.created_at DESC
+     LIMIT ?`,
+    [limit],
+  );
+
+  return rows.map((r) => ({
     id: r.id,
     subjectId: r.subject_id,
     subjectName: r.subject_name,
@@ -366,7 +443,10 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
 
 export async function deleteLectureNote(id: number): Promise<void> {
   const db = getDb();
-  await db.runAsync('UPDATE external_app_logs SET lecture_note_id = NULL WHERE lecture_note_id = ?', [id]);
+  await db.runAsync(
+    'UPDATE external_app_logs SET lecture_note_id = NULL WHERE lecture_note_id = ?',
+    [id],
+  );
   await db.runAsync('DELETE FROM lecture_notes WHERE id = ?', [id]);
 }
 
@@ -380,7 +460,12 @@ export interface ChatHistoryMessage {
   timestamp: number;
 }
 
-export async function saveChatMessage(topicName: string, role: 'user' | 'guru', message: string, timestamp: number): Promise<void> {
+export async function saveChatMessage(
+  topicName: string,
+  role: 'user' | 'guru',
+  message: string,
+  timestamp: number,
+): Promise<void> {
   const db = getDb();
   await db.runAsync(
     'INSERT INTO chat_history (topic_name, role, message, timestamp) VALUES (?, ?, ?, ?)',
@@ -390,11 +475,17 @@ export async function saveChatMessage(topicName: string, role: 'user' | 'guru', 
 
 export async function getChatHistory(topicName: string, limit = 20): Promise<ChatHistoryMessage[]> {
   const db = getDb();
-  const rows = await db.getAllAsync<{ id: number; topic_name: string; role: string; message: string; timestamp: number }>(
-    'SELECT * FROM chat_history WHERE topic_name = ? ORDER BY timestamp ASC LIMIT ?',
-    [topicName, limit],
-  );
-  return rows.map(r => ({
+  const rows = await db.getAllAsync<{
+    id: number;
+    topic_name: string;
+    role: string;
+    message: string;
+    timestamp: number;
+  }>('SELECT * FROM chat_history WHERE topic_name = ? ORDER BY timestamp ASC LIMIT ?', [
+    topicName,
+    limit,
+  ]);
+  return rows.map((r) => ({
     id: r.id,
     topicName: r.topic_name,
     role: r.role as 'user' | 'guru',

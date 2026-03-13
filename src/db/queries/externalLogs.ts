@@ -1,177 +1,202 @@
 import { getDb } from '../database';
 
-export type TranscriptionStatus = 'pending' | 'recording' | 'transcribing' | 'completed' | 'failed' | 'no_audio';
+export type TranscriptionStatus =
+  | 'pending'
+  | 'recording'
+  | 'transcribing'
+  | 'completed'
+  | 'failed'
+  | 'no_audio';
 export type PipelineStageName = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export type NoteEnhancementStatus = 'pending' | 'completed' | 'failed';
 
 export interface PipelineStageTelemetry {
-    startedAt?: number;
-    completedAt?: number;
-    durationMs?: number;
+  startedAt?: number;
+  completedAt?: number;
+  durationMs?: number;
 }
 
 export interface SessionPipelineTelemetry {
-    engine?: 'local_whisper' | 'groq' | 'unknown';
-    audioSizeBytes?: number;
-    estimatedMinutes?: number;
-    validationAttempts?: number;
-    usedChunking?: boolean;
-    chunkCount?: number;
-    transcriptChars?: number;
-    topicsDetected?: number;
-    keyConceptsDetected?: number;
-    errorStage?: 'validation' | 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
-    totalForegroundMs?: number;
-    enhancementSucceeded?: boolean;
-    stages?: Partial<Record<PipelineStageName, PipelineStageTelemetry>>;
+  engine?: 'local_whisper' | 'groq' | 'unknown';
+  audioSizeBytes?: number;
+  estimatedMinutes?: number;
+  validationAttempts?: number;
+  usedChunking?: boolean;
+  chunkCount?: number;
+  transcriptChars?: number;
+  topicsDetected?: number;
+  keyConceptsDetected?: number;
+  errorStage?: 'validation' | 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
+  totalForegroundMs?: number;
+  enhancementSucceeded?: boolean;
+  stages?: Partial<Record<PipelineStageName, PipelineStageTelemetry>>;
 }
 
 export interface ExternalAppLog {
-    id?: number;
-    appName: string;
-    launchedAt: number;
-    returnedAt?: number | null;
-    durationMinutes?: number | null;
-    notes?: string;
-    recordingPath?: string | null;
-    transcriptionStatus?: TranscriptionStatus;
-    transcriptionError?: string | null;
-    lectureNoteId?: number | null;
-    noteEnhancementStatus?: NoteEnhancementStatus | null;
-    pipelineTelemetry?: SessionPipelineTelemetry | null;
+  id?: number;
+  appName: string;
+  launchedAt: number;
+  returnedAt?: number | null;
+  durationMinutes?: number | null;
+  notes?: string;
+  recordingPath?: string | null;
+  transcriptionStatus?: TranscriptionStatus;
+  transcriptionError?: string | null;
+  lectureNoteId?: number | null;
+  noteEnhancementStatus?: NoteEnhancementStatus | null;
+  pipelineTelemetry?: SessionPipelineTelemetry | null;
 }
 
-export async function startExternalAppSession(appName: string, recordingPath?: string): Promise<number> {
-    const db = getDb();
-    const now = Date.now();
-    try {
-        const result = await db.runAsync(
-            'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
-            [appName, now, recordingPath ?? null, 'recording']
-        );
-        return result.lastInsertRowId;
-    } catch {
-        // Fallback for old schema without transcription_status column
-        const result = await db.runAsync(
-            'INSERT INTO external_app_logs (app_name, launched_at, recording_path) VALUES (?, ?, ?)',
-            [appName, now, recordingPath ?? null]
-        );
-        return result.lastInsertRowId;
-    }
-}
-
-export async function finishExternalAppSession(logId: number, durationMinutes: number, notes?: string): Promise<void> {
-    const db = getDb();
-    const now = Date.now();
-    await db.runAsync(
-        'UPDATE external_app_logs SET returned_at = ?, duration_minutes = ?, notes = ? WHERE id = ?',
-        [now, durationMinutes, notes || null, logId]
+export async function startExternalAppSession(
+  appName: string,
+  recordingPath?: string,
+): Promise<number> {
+  const db = getDb();
+  const now = Date.now();
+  try {
+    const result = await db.runAsync(
+      'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
+      [appName, now, recordingPath ?? null, 'recording'],
     );
+    return result.lastInsertRowId;
+  } catch {
+    // Fallback for old schema without transcription_status column
+    const result = await db.runAsync(
+      'INSERT INTO external_app_logs (app_name, launched_at, recording_path) VALUES (?, ?, ?)',
+      [appName, now, recordingPath ?? null],
+    );
+    return result.lastInsertRowId;
+  }
+}
+
+export async function finishExternalAppSession(
+  logId: number,
+  durationMinutes: number,
+  notes?: string,
+): Promise<void> {
+  const db = getDb();
+  const now = Date.now();
+  await db.runAsync(
+    'UPDATE external_app_logs SET returned_at = ?, duration_minutes = ?, notes = ? WHERE id = ?',
+    [now, durationMinutes, notes || null, logId],
+  );
 }
 
 export async function updateSessionTranscriptionStatus(
-    logId: number,
-    status: TranscriptionStatus,
-    error?: string,
-    lectureNoteId?: number,
+  logId: number,
+  status: TranscriptionStatus,
+  error?: string,
+  lectureNoteId?: number,
 ): Promise<void> {
-    const db = getDb();
-    try {
-        await db.runAsync(
-            `UPDATE external_app_logs SET
+  const db = getDb();
+  try {
+    await db.runAsync(
+      `UPDATE external_app_logs SET
                 transcription_status = ?,
                 transcription_error = ?,
                 lecture_note_id = ?
              WHERE id = ?`,
-            [status, error ?? null, lectureNoteId ?? null, logId]
-        );
-    } catch {
-        // Old schema — silently ignore
-    }
+      [status, error ?? null, lectureNoteId ?? null, logId],
+    );
+  } catch {
+    // Old schema — silently ignore
+  }
 }
 
 export async function updateSessionNoteEnhancementStatus(
-    logId: number,
-    status: NoteEnhancementStatus,
+  logId: number,
+  status: NoteEnhancementStatus,
 ): Promise<void> {
-    const db = getDb();
-    try {
-        await db.runAsync(
-            'UPDATE external_app_logs SET note_enhancement_status = ? WHERE id = ?',
-            [status, logId]
-        );
-    } catch {
-        // Old schema — silently ignore
-    }
+  const db = getDb();
+  try {
+    await db.runAsync('UPDATE external_app_logs SET note_enhancement_status = ? WHERE id = ?', [
+      status,
+      logId,
+    ]);
+  } catch {
+    // Old schema — silently ignore
+  }
 }
 
 function parseTelemetry(raw: string | null | undefined): SessionPipelineTelemetry | null {
-    if (!raw) return null;
-    try {
-        return JSON.parse(raw) as SessionPipelineTelemetry;
-    } catch {
-        return null;
-    }
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as SessionPipelineTelemetry;
+  } catch {
+    return null;
+  }
 }
 
 function mergeTelemetry(
-    current: SessionPipelineTelemetry | null,
-    patch: Partial<SessionPipelineTelemetry>,
+  current: SessionPipelineTelemetry | null,
+  patch: Partial<SessionPipelineTelemetry>,
 ): SessionPipelineTelemetry {
-    return {
-        ...(current ?? {}),
-        ...patch,
-        stages: {
-            ...(current?.stages ?? {}),
-            ...(patch.stages ?? {}),
-        },
-    };
+  return {
+    ...(current ?? {}),
+    ...patch,
+    stages: {
+      ...(current?.stages ?? {}),
+      ...(patch.stages ?? {}),
+    },
+  };
 }
 
 export async function updateSessionPipelineTelemetry(
-    logId: number,
-    patch: Partial<SessionPipelineTelemetry>,
+  logId: number,
+  patch: Partial<SessionPipelineTelemetry>,
 ): Promise<void> {
-    const db = getDb();
-    try {
-        const row = await db.getFirstAsync<{ pipeline_metrics_json: string | null }>(
-            'SELECT pipeline_metrics_json FROM external_app_logs WHERE id = ?',
-            [logId]
-        );
-        const merged = mergeTelemetry(parseTelemetry(row?.pipeline_metrics_json), patch);
-        await db.runAsync(
-            'UPDATE external_app_logs SET pipeline_metrics_json = ? WHERE id = ?',
-            [JSON.stringify(merged), logId]
-        );
-    } catch {
-        // Old schema — silently ignore
-    }
+  const db = getDb();
+  try {
+    const row = await db.getFirstAsync<{ pipeline_metrics_json: string | null }>(
+      'SELECT pipeline_metrics_json FROM external_app_logs WHERE id = ?',
+      [logId],
+    );
+    const merged = mergeTelemetry(parseTelemetry(row?.pipeline_metrics_json), patch);
+    await db.runAsync('UPDATE external_app_logs SET pipeline_metrics_json = ? WHERE id = ?', [
+      JSON.stringify(merged),
+      logId,
+    ]);
+  } catch {
+    // Old schema — silently ignore
+  }
 }
 
 export async function getIncompleteExternalSession(): Promise<ExternalAppLog | null> {
-    const db = getDb();
-    let r: {
-        id: number; app_name: string; launched_at: number; recording_path?: string | null;
-    } | null = null;
+  const db = getDb();
+  let r: {
+    id: number;
+    app_name: string;
+    launched_at: number;
+    recording_path?: string | null;
+  } | null = null;
 
-    try {
-        r = await db.getFirstAsync<{
-            id: number; app_name: string; launched_at: number; recording_path: string | null;
-        }>('SELECT id, app_name, launched_at, recording_path FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1');
-    } catch {
-        r = await db.getFirstAsync<{
-            id: number; app_name: string; launched_at: number;
-        }>('SELECT id, app_name, launched_at FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1');
-    }
+  try {
+    r = await db.getFirstAsync<{
+      id: number;
+      app_name: string;
+      launched_at: number;
+      recording_path: string | null;
+    }>(
+      'SELECT id, app_name, launched_at, recording_path FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1',
+    );
+  } catch {
+    r = await db.getFirstAsync<{
+      id: number;
+      app_name: string;
+      launched_at: number;
+    }>(
+      'SELECT id, app_name, launched_at FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1',
+    );
+  }
 
-    if (!r) return null;
+  if (!r) return null;
 
-    return {
-        id: r.id,
-        appName: r.app_name,
-        launchedAt: r.launched_at,
-        recordingPath: r.recording_path ?? null,
-    };
+  return {
+    id: r.id,
+    appName: r.app_name,
+    launchedAt: r.launched_at,
+    recordingPath: r.recording_path ?? null,
+  };
 }
 
 /**
@@ -179,16 +204,22 @@ export async function getIncompleteExternalSession(): Promise<ExternalAppLog | n
  * Used for retry-on-launch recovery.
  */
 export async function getFailedOrPendingTranscriptions(): Promise<ExternalAppLog[]> {
-    const db = getDb();
-    try {
-        const rows = await db.getAllAsync<{
-            id: number; app_name: string; launched_at: number; returned_at: number;
-            duration_minutes: number | null; recording_path: string | null;
-            transcription_status: string; transcription_error: string | null; lecture_note_id: number | null;
-            note_enhancement_status: string | null;
-            pipeline_metrics_json: string | null;
-        }>(
-            `SELECT id, app_name, launched_at, returned_at, duration_minutes, recording_path,
+  const db = getDb();
+  try {
+    const rows = await db.getAllAsync<{
+      id: number;
+      app_name: string;
+      launched_at: number;
+      returned_at: number;
+      duration_minutes: number | null;
+      recording_path: string | null;
+      transcription_status: string;
+      transcription_error: string | null;
+      lecture_note_id: number | null;
+      note_enhancement_status: string | null;
+      pipeline_metrics_json: string | null;
+    }>(
+      `SELECT id, app_name, launched_at, returned_at, duration_minutes, recording_path,
                     transcription_status, transcription_error, lecture_note_id, note_enhancement_status, pipeline_metrics_json
              FROM external_app_logs
              WHERE returned_at IS NOT NULL
@@ -198,65 +229,72 @@ export async function getFailedOrPendingTranscriptions(): Promise<ExternalAppLog
                     OR (transcription_status = 'completed' AND lecture_note_id IS NULL)
                )
              ORDER BY launched_at DESC
-             LIMIT 10`
-        );
-        return rows.map(r => ({
-            id: r.id,
-            appName: r.app_name,
-            launchedAt: r.launched_at,
-            returnedAt: r.returned_at,
-            durationMinutes: r.duration_minutes,
-            recordingPath: r.recording_path,
-            transcriptionStatus: r.transcription_status as TranscriptionStatus,
-            transcriptionError: r.transcription_error,
-            noteEnhancementStatus: (r.note_enhancement_status as NoteEnhancementStatus | null) ?? null,
-            pipelineTelemetry: parseTelemetry(r.pipeline_metrics_json),
-        }));
-    } catch {
-        return []; // Old schema
-    }
+             LIMIT 20`,
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      appName: r.app_name,
+      launchedAt: r.launched_at,
+      returnedAt: r.returned_at,
+      durationMinutes: r.duration_minutes,
+      recordingPath: r.recording_path,
+      transcriptionStatus: r.transcription_status as TranscriptionStatus,
+      transcriptionError: r.transcription_error,
+      noteEnhancementStatus: (r.note_enhancement_status as NoteEnhancementStatus | null) ?? null,
+      pipelineTelemetry: parseTelemetry(r.pipeline_metrics_json),
+    }));
+  } catch {
+    return []; // Old schema
+  }
 }
 
 export async function getSessionsNeedingNoteEnhancement(): Promise<ExternalAppLog[]> {
-    const db = getDb();
-    try {
-        const rows = await db.getAllAsync<{
-            id: number; app_name: string; launched_at: number; returned_at: number | null;
-            duration_minutes: number | null; recording_path: string | null;
-            transcription_status: string; transcription_error: string | null; lecture_note_id: number | null;
-            note_enhancement_status: string | null; pipeline_metrics_json: string | null;
-        }>(
-            `SELECT id, app_name, launched_at, returned_at, duration_minutes, recording_path,
+  const db = getDb();
+  try {
+    const rows = await db.getAllAsync<{
+      id: number;
+      app_name: string;
+      launched_at: number;
+      returned_at: number | null;
+      duration_minutes: number | null;
+      recording_path: string | null;
+      transcription_status: string;
+      transcription_error: string | null;
+      lecture_note_id: number | null;
+      note_enhancement_status: string | null;
+      pipeline_metrics_json: string | null;
+    }>(
+      `SELECT id, app_name, launched_at, returned_at, duration_minutes, recording_path,
                     transcription_status, transcription_error, lecture_note_id, note_enhancement_status, pipeline_metrics_json
              FROM external_app_logs
              WHERE lecture_note_id IS NOT NULL
                AND transcription_status = 'completed'
                AND COALESCE(note_enhancement_status, 'pending') IN ('pending', 'failed')
              ORDER BY launched_at DESC
-             LIMIT 10`
-        );
-        return rows.map(r => ({
-            id: r.id,
-            appName: r.app_name,
-            launchedAt: r.launched_at,
-            returnedAt: r.returned_at,
-            durationMinutes: r.duration_minutes,
-            recordingPath: r.recording_path,
-            transcriptionStatus: r.transcription_status as TranscriptionStatus,
-            transcriptionError: r.transcription_error,
-            lectureNoteId: r.lecture_note_id,
-            noteEnhancementStatus: (r.note_enhancement_status as NoteEnhancementStatus | null) ?? null,
-            pipelineTelemetry: parseTelemetry(r.pipeline_metrics_json),
-        }));
-    } catch {
-        return [];
-    }
+             LIMIT 10`,
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      appName: r.app_name,
+      launchedAt: r.launched_at,
+      returnedAt: r.returned_at,
+      durationMinutes: r.duration_minutes,
+      recordingPath: r.recording_path,
+      transcriptionStatus: r.transcription_status as TranscriptionStatus,
+      transcriptionError: r.transcription_error,
+      lectureNoteId: r.lecture_note_id,
+      noteEnhancementStatus: (r.note_enhancement_status as NoteEnhancementStatus | null) ?? null,
+      pipelineTelemetry: parseTelemetry(r.pipeline_metrics_json),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export async function getTotalExternalStudyMinutes(): Promise<number> {
-    const db = getDb();
-    const r = await db.getFirstAsync<{ total: number }>(
-        'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM external_app_logs WHERE duration_minutes IS NOT NULL AND duration_minutes > 0'
-    );
-    return r?.total ?? 0;
+  const db = getDb();
+  const r = await db.getFirstAsync<{ total: number }>(
+    'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM external_app_logs WHERE duration_minutes IS NOT NULL AND duration_minutes > 0',
+  );
+  return r?.total ?? 0;
 }

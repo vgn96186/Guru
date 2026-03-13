@@ -188,7 +188,7 @@ export async function notifyTranscriptionEvidenceOk(appName: string): Promise<vo
 export async function notifyTranscriptionEvidenceNoSpeech(appName: string): Promise<void> {
   await sendImmediateNag(
     '⚠️ No speech detected',
-    `${appName}: Use device speaker so the mic can hear the lecture. Check now to avoid empty transcription.`,
+    `${appName}: Use device speakers at 50%+ volume. Recording DOES NOT work with headphones as in-app capture is blocked by medical apps.`,
   );
 }
 

@@ -43,9 +43,7 @@ function withAppLauncher(config) {
       'com.prepladder.learningapp',
       'com.dbmci.bhatia',
     ];
-    const existingPackages = (queries[0]?.package ?? []).map(
-      (p) => p.$?.['android:name']
-    );
+    const existingPackages = (queries[0]?.package ?? []).map((p) => p.$?.['android:name']);
     for (const pkg of packages) {
       if (!existingPackages.includes(pkg)) {
         queries[0].package = queries[0].package ?? [];
@@ -59,13 +57,14 @@ function withAppLauncher(config) {
     if (app) {
       app.$ = app.$ ?? {};
       app.$['android:networkSecurityConfig'] = '@xml/network_security_config';
+      app.$['android:usesCleartextTraffic'] = 'true';
 
       const services = app.service ?? [];
       const svcName = 'expo.modules.applauncher.RecordingService';
       const overlaySvcName = 'expo.modules.applauncher.OverlayService';
       // Remove existing entries if present (to update)
-      let filtered = services.filter(
-        (s) => s.$?.['android:name'] !== svcName && s.$?.['android:name'] !== overlaySvcName
+      const filtered = services.filter(
+        (s) => s.$?.['android:name'] !== svcName && s.$?.['android:name'] !== overlaySvcName,
       );
       filtered.push({
         $: {
@@ -80,12 +79,14 @@ function withAppLauncher(config) {
           'android:foregroundServiceType': 'camera|microphone|specialUse|dataSync',
           'android:exported': 'false',
         },
-        'property': [{
-          $: {
-            'android:name': 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE',
-            'android:value': 'Timer overlay for study sessions'
-          }
-        }]
+        property: [
+          {
+            $: {
+              'android:name': 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE',
+              'android:value': 'Timer overlay for study sessions',
+            },
+          },
+        ],
       });
       app.service = filtered;
     }
@@ -103,10 +104,12 @@ function withAppLauncher(config) {
       fs.mkdirSync(xmlDir, { recursive: true });
       const networkSecurityConfig = `<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+  <base-config cleartextTrafficPermitted="true" />
   <domain-config cleartextTrafficPermitted="true">
     <domain includeSubdomains="true">10.0.2.2</domain>
     <domain includeSubdomains="true">localhost</domain>
     <domain includeSubdomains="true">127.0.0.1</domain>
+    <domain includeSubdomains="true">192.168.1.20</domain>
   </domain-config>
 </network-security-config>
 `;

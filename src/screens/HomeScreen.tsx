@@ -1,7 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated, View, Text, ScrollView, TouchableOpacity,
-  StyleSheet, StatusBar, Alert, ActivityIndicator, Pressable, useWindowDimensions
+  Animated,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  Alert,
+  ActivityIndicator,
+  Pressable,
+  useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,13 +32,13 @@ import { getSubjectById, getSubjectByName } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
 import * as DocumentPicker from 'expo-document-picker';
 import { saveLectureTranscript } from '../db/queries/aiCache';
-import { saveTranscriptToFile } from '../services/transcriptStorage';
 import { buildQuickLectureNote, transcribeAudio } from '../services/transcriptionService';
-import { markTopicsFromLecture } from '../services/transcription/matching';
-import { getDb } from '../db/database';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
-import { useLectureReturnRecovery, type LectureReturnSheetData } from '../hooks/useLectureReturnRecovery';
+import {
+  useLectureReturnRecovery,
+  type LectureReturnSheetData,
+} from '../hooks/useLectureReturnRecovery';
 import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 import type { Mood } from '../types';
@@ -42,10 +51,15 @@ export default function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const { profile, levelInfo, refreshProfile } = useAppStore();
-  
+
   const {
-    weakTopics, dueTopics, todayTasks, todayMinutes, completedSessions,
-    isLoading, reload: reloadHomeDashboard,
+    weakTopics,
+    dueTopics,
+    todayTasks,
+    todayMinutes,
+    completedSessions,
+    isLoading,
+    reload: reloadHomeDashboard,
   } = useHomeDashboardData();
 
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
@@ -60,40 +74,78 @@ export default function HomeScreen() {
   useLectureReturnRecovery({ onRecovered: setReturnSheet });
 
   useEffect(() => {
-    dailyLogRepository.getDailyLog().then(log => setMood((log?.mood as Mood) ?? 'good'));
+    dailyLogRepository.getDailyLog().then((log) => setMood((log?.mood as Mood) ?? 'good'));
     profileRepository.getReviewDueTopics().then(setReviewDue);
   }, []);
 
   useEffect(() => {
     if (!profile?.syncCode) return;
     return connectToRoom(profile.syncCode, async (msg: any) => {
-      if (msg.type === 'BREAK_STARTED') navigation.getParent()?.navigate('BreakEnforcer', { durationSeconds: msg.durationSeconds });
+      if (msg.type === 'BREAK_STARTED')
+        navigation.getParent()?.navigate('BreakEnforcer', { durationSeconds: msg.durationSeconds });
       if (msg.type === 'LECTURE_STARTED') {
         const sub = await getSubjectById(msg.subjectId);
-        Alert.alert('Lecture Detected', `Tablet started ${sub?.name || 'lecture'}. Entering Hostage Mode.`,
-          [{ text: 'Okay', onPress: () => navigation.navigate('LectureMode', { subjectId: msg.subjectId }) }]);
+        Alert.alert(
+          'Lecture Detected',
+          `Tablet started ${sub?.name || 'lecture'}. Entering Hostage Mode.`,
+          [
+            {
+              text: 'Okay',
+              onPress: () => navigation.navigate('LectureMode', { subjectId: msg.subjectId }),
+            },
+          ],
+        );
       }
     });
   }, [profile?.syncCode]);
 
   if (isLoading || !profile || !levelInfo) {
-    return <SafeAreaView style={styles.safe}><LoadingOrb message="Loading progress..." /></SafeAreaView>;
+    return (
+      <SafeAreaView style={styles.safe}>
+        <LoadingOrb message="Loading progress..." />
+      </SafeAreaView>
+    );
   }
 
-  const progressClamped = Math.min(100, Math.max(0, Math.round((todayMinutes / (profile.dailyGoalMinutes || 120)) * 100)));
-  const greeting = new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening';
+  const progressClamped = Math.min(
+    100,
+    Math.max(0, Math.round((todayMinutes / (profile.dailyGoalMinutes || 120)) * 100)),
+  );
+  const greeting =
+    new Date().getHours() < 12
+      ? 'Good morning'
+      : new Date().getHours() < 18
+        ? 'Good afternoon'
+        : 'Good evening';
   const firstName = profile.displayName?.split(' ')[0] || 'Doctor';
 
   const heroCta = (() => {
     const session = useSessionStore.getState();
     if (session.sessionId && session.sessionState !== 'session_done') {
-      return { label: 'CONTINUE SESSION', sublabel: 'Pick up where you left off', onPress: () => navigation.navigate('Session', { mood, resume: true }) };
+      return {
+        label: 'CONTINUE SESSION',
+        sublabel: 'Pick up where you left off',
+        onPress: () => navigation.navigate('Session', { mood, resume: true }),
+      };
     }
     if (todayTasks.length > 0) {
       const next = todayTasks[0];
-      return { label: 'START NEXT TASK', sublabel: next.topic.name, onPress: () => navigation.navigate('Session', { mood, focusTopicId: next.topic.id, preferredActionType: next.type }) };
+      return {
+        label: 'START NEXT TASK',
+        sublabel: next.topic.name,
+        onPress: () =>
+          navigation.navigate('Session', {
+            mood,
+            focusTopicId: next.topic.id,
+            preferredActionType: next.type,
+          }),
+      };
     }
-    return { label: 'START SESSION', sublabel: `~${profile.preferredSessionLength} min`, onPress: () => navigation.navigate('Session', { mood }) };
+    return {
+      label: 'START SESSION',
+      sublabel: `~${profile.preferredSessionLength} min`,
+      onPress: () => navigation.navigate('Session', { mood }),
+    };
   })();
 
   const handleAudioUpload = async () => {
@@ -102,14 +154,39 @@ export default function HomeScreen() {
     setIsTranscribingUpload(true);
     try {
       const analysis = await transcribeAudio(res.assets[0].uri);
-      const db = getDb();
-      if (analysis.topics.length > 0) await markTopicsFromLecture(db, analysis.topics, analysis.estimatedConfidence, analysis.subject);
+      const hasTranscript = !!analysis.transcript?.trim();
+      const hasMeaningfulSummary =
+        !!analysis.lectureSummary &&
+        ![
+          'No audio recorded (empty file)',
+          'No speech detected (silent audio)',
+          'No speech detected',
+          'Lecture content recorded',
+          'No medical content detected',
+        ].includes(analysis.lectureSummary);
+      if (!hasTranscript || !hasMeaningfulSummary) {
+        throw new Error('No usable lecture content was detected in this recording.');
+      }
       const note = buildQuickLectureNote(analysis);
       const sub = await getSubjectByName(analysis.subject);
-      await saveLectureTranscript({ subjectId: sub?.id ?? null, note, transcript: analysis.transcript, summary: analysis.lectureSummary, topics: analysis.topics, appName: 'Upload', confidence: analysis.estimatedConfidence });
-      setUploadTranscript(note); setShowTranscriptModal(true); reloadHomeDashboard();
-    } catch (e: any) { Alert.alert('Error', e.message); }
-    finally { setIsTranscribingUpload(false); }
+      await saveLectureTranscript({
+        subjectId: sub?.id ?? null,
+        note,
+        transcript: analysis.transcript,
+        summary: analysis.lectureSummary,
+        topics: analysis.topics,
+        appName: 'Upload',
+        confidence: analysis.estimatedConfidence,
+        embedding: analysis.embedding,
+      });
+      setUploadTranscript(note);
+      setShowTranscriptModal(true);
+      reloadHomeDashboard();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setIsTranscribingUpload(false);
+    }
   };
 
   return (
@@ -117,26 +194,62 @@ export default function HomeScreen() {
       <StatusBar barStyle="light-content" />
       <ScrollView showsVerticalScrollIndicator={false}>
         <ResponsiveContainer style={styles.content}>
-          <HeroCard greeting={greeting} firstName={firstName} daysToInicet={profileRepository.getDaysToExam(profile.inicetDate)} daysToNeetPg={profileRepository.getDaysToExam(profile.neetDate)} />
-          <QuickStatsCard progressPercent={progressClamped} todayMinutes={todayMinutes} dailyGoal={profile.dailyGoalMinutes || 120} streak={profile.streakCurrent} level={levelInfo.level} completedSessions={completedSessions} />
-          
-          <View style={styles.startArea}><StartButton onPress={heroCta.onPress} label={heroCta.label} sublabel={heroCta.sublabel} /></View>
+          <HeroCard
+            greeting={greeting}
+            firstName={firstName}
+            daysToInicet={profileRepository.getDaysToExam(profile.inicetDate)}
+            daysToNeetPg={profileRepository.getDaysToExam(profile.neetDate)}
+          />
+          <QuickStatsCard
+            progressPercent={progressClamped}
+            todayMinutes={todayMinutes}
+            dailyGoal={profile.dailyGoalMinutes || 120}
+            streak={profile.streakCurrent}
+            level={levelInfo.level}
+            completedSessions={completedSessions}
+          />
+
+          <View style={styles.startArea}>
+            <StartButton
+              onPress={heroCta.onPress}
+              label={heroCta.label}
+              sublabel={heroCta.sublabel}
+            />
+          </View>
 
           <View style={isTabletLandscape ? styles.gridLandscape : null}>
             <View style={isTabletLandscape ? { flex: 1.1 } : null}>
               <Section label="DO THIS NOW">
-                {weakTopics.slice(0, 1).map(t => <AgendaItem key={t.id} time="Now" title={t.name} type="deep_dive" subjectName={t.subjectName} priority={10} onPress={() => navigation.navigate('Session', { mood, focusTopicId: t.id, mode: 'deep' })} />)}
+                {weakTopics.slice(0, 1).map((t) => (
+                  <AgendaItem
+                    key={t.id}
+                    time="Now"
+                    title={t.name}
+                    type="deep_dive"
+                    subjectName={t.subjectName}
+                    priority={10}
+                    onPress={() =>
+                      navigation.navigate('Session', { mood, focusTopicId: t.id, mode: 'deep' })
+                    }
+                  />
+                ))}
               </Section>
               <Section label="UP NEXT">
                 {todayTasks.slice(0, 2).map((t, i) => (
-                  <AgendaItem 
-                    key={i} 
-                    time={t.timeLabel.split(' ')[0]} 
-                    title={t.topic.name} 
-                    type={t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')} 
-                    subjectName={t.topic.subjectName} 
-                    priority={t.topic.inicetPriority} 
-                    onPress={() => navigation.navigate('Session', { mood, focusTopicId: t.topic.id, preferredActionType: t.type })} 
+                  <AgendaItem
+                    key={i}
+                    time={t.timeLabel.split(' ')[0]}
+                    title={t.topic.name}
+                    type={t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')}
+                    subjectName={t.topic.subjectName}
+                    priority={t.topic.inicetPriority}
+                    onPress={() =>
+                      navigation.navigate('Session', {
+                        mood,
+                        focusTopicId: t.topic.id,
+                        preferredActionType: t.type,
+                      })
+                    }
                   />
                 ))}
               </Section>
@@ -144,44 +257,115 @@ export default function HomeScreen() {
             <View style={isTabletLandscape ? { flex: 0.9 } : null}>
               <Section label="QUICK ACCESS">
                 <View style={styles.shortcutGrid}>
-                  <ShortcutTile title="Study Plan" icon="calendar-outline" accent={theme.colors.primary} onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })} />
-                  <ShortcutTile title="Notes Vault" icon="library-outline" accent={theme.colors.success} onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesHub' })} />
-                  <ShortcutTile title="Inertia" icon="flash-outline" accent={theme.colors.warning} onPress={() => navigation.navigate('Inertia')} />
+                  <ShortcutTile
+                    title="Study Plan"
+                    icon="calendar-outline"
+                    accent={theme.colors.primary}
+                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                  />
+                  <ShortcutTile
+                    title="Notes Vault"
+                    icon="library-outline"
+                    accent={theme.colors.success}
+                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesHub' })}
+                  />
+                  <ShortcutTile
+                    title="Inertia"
+                    icon="flash-outline"
+                    accent={theme.colors.warning}
+                    onPress={() => navigation.navigate('Inertia')}
+                  />
                 </View>
               </Section>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.moreHeader} onPress={() => { setMoreExpanded(!moreExpanded); Animated.timing(moreAnim, { toValue: moreExpanded ? 0 : 1, duration: 200, useNativeDriver: true }).start(); }}>
+          <TouchableOpacity
+            style={styles.moreHeader}
+            onPress={() => {
+              setMoreExpanded(!moreExpanded);
+              Animated.timing(moreAnim, {
+                toValue: moreExpanded ? 0 : 1,
+                duration: 200,
+                useNativeDriver: true,
+              }).start();
+            }}
+          >
             <Text style={styles.sectionLabel}>TOOLS & ADVANCED</Text>
-            <Animated.Text style={{ transform: [{ rotate: moreAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>▼</Animated.Text>
+            <Animated.Text
+              style={{
+                transform: [
+                  {
+                    rotate: moreAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '180deg'],
+                    }),
+                  },
+                ],
+              }}
+            >
+              ▼
+            </Animated.Text>
           </TouchableOpacity>
 
           {moreExpanded && (
             <View style={styles.moreContent}>
-              <TouchableOpacity style={styles.moreLink} onPress={handleAudioUpload} disabled={isTranscribingUpload}>
-                <Text style={styles.moreLinkText}>{isTranscribingUpload ? 'Transcribing...' : 'Transcribe Audio'}</Text>
+              <TouchableOpacity
+                style={styles.moreLink}
+                onPress={handleAudioUpload}
+                disabled={isTranscribingUpload}
+              >
+                <Text style={styles.moreLinkText}>
+                  {isTranscribingUpload ? 'Transcribing...' : 'Transcribe Audio'}
+                </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.moreLink} onPress={() => navigation.getParent()?.navigate('SleepMode')}><Text style={styles.moreLinkText}>Nightstand Mode</Text></TouchableOpacity>
+              <TouchableOpacity
+                style={styles.moreLink}
+                onPress={() => navigation.getParent()?.navigate('SleepMode')}
+              >
+                <Text style={styles.moreLinkText}>Nightstand Mode</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ResponsiveContainer>
       </ScrollView>
 
-      {returnSheet && <LectureReturnSheet visible appName={returnSheet.appName} durationMinutes={returnSheet.durationMinutes} recordingPath={returnSheet.recordingPath} logId={returnSheet.logId} groqKey={profile.groqApiKey || BUNDLED_GROQ_KEY} onDone={() => setReturnSheet(null)} onStudyNow={() => setReturnSheet(null)} />}
+      {returnSheet && (
+        <LectureReturnSheet
+          visible
+          appName={returnSheet.appName}
+          durationMinutes={returnSheet.durationMinutes}
+          recordingPath={returnSheet.recordingPath}
+          logId={returnSheet.logId}
+          groqKey={profile.groqApiKey || BUNDLED_GROQ_KEY}
+          onDone={() => setReturnSheet(null)}
+          onStudyNow={() => setReturnSheet(null)}
+        />
+      )}
     </SafeAreaView>
   );
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return <View style={styles.section}><Text style={styles.sectionLabel}>{label}</Text>{children}</View>;
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionLabel}>{label}</Text>
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16 },
   section: { marginBottom: 20 },
-  sectionLabel: { color: theme.colors.textMuted, fontWeight: '800', fontSize: 11, letterSpacing: 1.5, marginBottom: 10 },
+  sectionLabel: {
+    color: theme.colors.textMuted,
+    fontWeight: '800',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    marginBottom: 10,
+  },
   startArea: { paddingVertical: 30, alignItems: 'center' },
   gridLandscape: { flexDirection: 'row', gap: 16 },
   shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

@@ -4,6 +4,7 @@ const react = require('eslint-plugin-react');
 const reactHooks = require('eslint-plugin-react-hooks');
 const jest = require('eslint-plugin-jest');
 const prettier = require('eslint-config-prettier');
+const globals = require('globals');
 
 module.exports = [
   {
@@ -47,7 +48,10 @@ module.exports = [
       '@typescript-eslint/no-empty-object-type': 'off',
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-expressions': 'warn',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       'no-constant-condition': 'warn',
       'no-control-regex': 'warn',
       'no-empty': 'warn',
@@ -56,6 +60,20 @@ module.exports = [
       'prefer-const': 'warn',
       'preserve-caught-error': 'warn',
       'react-hooks/exhaustive-deps': 'warn',
+    },
+  },
+  {
+    files: [
+      'modules/app-launcher/withAppLauncher.js',
+      'app.config.js',
+      'metro.config.js',
+      'babel.config.js',
+      'eslint.config.js',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
     },
   },
 

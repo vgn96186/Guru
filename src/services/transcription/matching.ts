@@ -1,33 +1,55 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { getDb } from '../../db/database';
 import { updateTopicProgress } from '../../db/queries/topics';
+import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
 
 /**
- * markTopicsFromLecture matching strategy (5 levels):
+ * markTopicsFromLecture matching strategy:
  * 1. Exact match within detected subject
  * 2. LIKE contains within subject
  * 3. Reverse contains within subject (DB name inside AI topic string)
- * 4. Cross-subject exact match fallback
- * 5. Cross-subject LIKE fallback
+ * 4. Semantic matching fallback (Cosine similarity vs cached topic embeddings)
+ * 5. Cross-subject fallback
  */
 export async function markTopicsFromLecture(
   db: SQLiteDatabase,
   topics: string[],
   confidence: number,
   subjectName?: string,
+  lectureSummary?: string,
+  summaryEmbedding?: number[] | null,
 ) {
-  if (!topics || topics.length === 0) return;
+  if ((!topics || topics.length === 0) && !lectureSummary) return;
 
   const matchedTopicIds = new Set<number>();
 
+  // 1-3: Keyword matching
   for (const topicName of topics) {
     const sanitized = topicName.trim().toLowerCase();
     if (!sanitized) continue;
 
-    let match = await findTopicId(db, sanitized, subjectName);
+    const match = await findTopicIdByKeywords(db, sanitized, subjectName);
     if (match) {
       matchedTopicIds.add(match);
       await applyLectureProgressToTopic(db, match, confidence);
+    }
+  }
+
+  // 4: Semantic Matching (if summary available)
+  if (lectureSummary) {
+    try {
+      const effectiveEmbedding =
+        summaryEmbedding === undefined ? await generateEmbedding(lectureSummary) : summaryEmbedding;
+      if (effectiveEmbedding) {
+        const semanticMatches = await findSemanticMatches(db, effectiveEmbedding, subjectName);
+        for (const matchId of semanticMatches) {
+          if (!matchedTopicIds.has(matchId)) {
+            matchedTopicIds.add(matchId);
+            await applyLectureProgressToTopic(db, matchId, confidence);
+          }
+        }
+      }
+    } catch (err) {
+      if (__DEV__) console.warn('[Matching] Semantic matching failed:', err);
     }
   }
 
@@ -35,7 +57,7 @@ export async function markTopicsFromLecture(
   if (matchedTopicIds.size > 0) {
     const ids = Array.from(matchedTopicIds).join(',');
     const parents = await db.getAllAsync<{ parent_topic_id: number }>(
-      `SELECT DISTINCT parent_topic_id FROM topics WHERE id IN (${ids}) AND parent_topic_id IS NOT NULL`
+      `SELECT DISTINCT parent_topic_id FROM topics WHERE id IN (${ids}) AND parent_topic_id IS NOT NULL`,
     );
     for (const p of parents) {
       if (!matchedTopicIds.has(p.parent_topic_id)) {
@@ -45,51 +67,61 @@ export async function markTopicsFromLecture(
   }
 }
 
-async function findTopicId(db: SQLiteDatabase, name: string, subjectName?: string): Promise<number | null> {
-  // 1. Exact match within subject
+async function findTopicIdByKeywords(
+  db: SQLiteDatabase,
+  name: string,
+  subjectName?: string,
+): Promise<number | null> {
+  // Exact match within subject
   if (subjectName) {
     const r1 = await db.getFirstAsync<{ id: number }>(
       `SELECT t.id FROM topics t 
        JOIN subjects s ON t.subject_id = s.id 
        WHERE LOWER(t.name) = ? AND LOWER(s.name) = ? LIMIT 1`,
-      [name, subjectName.toLowerCase()]
+      [name, subjectName.toLowerCase()],
     );
     if (r1) return r1.id;
 
-    // 2. LIKE match within subject
     const r2 = await db.getFirstAsync<{ id: number }>(
       `SELECT t.id FROM topics t 
        JOIN subjects s ON t.subject_id = s.id 
        WHERE LOWER(t.name) LIKE ? AND LOWER(s.name) = ? LIMIT 1`,
-      [`%${name}%`, subjectName.toLowerCase()]
+      [`%${name}%`, subjectName.toLowerCase()],
     );
     if (r2) return r2.id;
-
-    // 3. Reverse LIKE match
-    const r3 = await db.getFirstAsync<{ id: number }>(
-      `SELECT t.id FROM topics t 
-       JOIN subjects s ON t.subject_id = s.id 
-       WHERE ? LIKE '%' || LOWER(t.name) || '%' AND LOWER(s.name) = ? LIMIT 1`,
-      [name, subjectName.toLowerCase()]
-    );
-    if (r3) return r3.id;
   }
 
-  // 4. Cross-subject exact
   const r4 = await db.getFirstAsync<{ id: number }>(
     'SELECT id FROM topics WHERE LOWER(name) = ? LIMIT 1',
-    [name]
+    [name],
   );
   if (r4) return r4.id;
 
-  // 5. Cross-subject LIKE
-  const r5 = await db.getFirstAsync<{ id: number }>(
-    'SELECT id FROM topics WHERE LOWER(name) LIKE ? LIMIT 1',
-    [`%${name}%`]
-  );
-  if (r5) return r5.id;
-
   return null;
+}
+
+async function findSemanticMatches(
+  db: SQLiteDatabase,
+  targetEmbedding: number[],
+  subjectName?: string,
+  threshold = 0.82,
+): Promise<number[]> {
+  const query = subjectName
+    ? `SELECT t.id, t.embedding FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE LOWER(s.name) = ? AND t.embedding IS NOT NULL`
+    : `SELECT id, embedding FROM topics WHERE embedding IS NOT NULL`;
+  const params = subjectName ? [subjectName.toLowerCase()] : [];
+
+  const rows = await db.getAllAsync<{ id: number; embedding: Uint8Array }>(query, params);
+  const matchedIds: number[] = [];
+
+  for (const row of rows) {
+    const topicVec = blobToEmbedding(row.embedding);
+    const sim = cosineSimilarity(targetEmbedding, topicVec);
+    if (sim >= threshold) {
+      matchedIds.push(row.id);
+    }
+  }
+  return matchedIds;
 }
 
 async function applyLectureProgressToTopic(
@@ -98,9 +130,6 @@ async function applyLectureProgressToTopic(
   confidence: number,
   isDirectMatch = true,
 ) {
-  const status = isDirectMatch ? (confidence >= 2 ? 'seen' : 'seen') : 'seen'; 
-  // Simplified: just update progress using existing query logic but adapted for direct DB call if needed.
-  // We use the exported updateTopicProgress but it expects an XP amount.
-  // For lecture matches, we award XP in the persistence layer, so we pass 0 here.
+  const status = 'seen';
   await updateTopicProgress(topicId, status, confidence, 0);
 }

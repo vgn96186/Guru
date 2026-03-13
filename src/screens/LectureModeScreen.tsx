@@ -21,10 +21,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { transcribeAudio } from '../services/transcriptionService';
-import { markTopicsFromLecture } from '../services/transcription/matching';
 import { moveFileToRecovery } from '../services/transcriptStorage';
 import { enqueueRequest } from '../services/offlineQueue';
-import { getDb } from '../db/database';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
@@ -263,6 +261,9 @@ export default function LectureModeScreen() {
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: true,
           playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+          staysActiveInBackground: true,
         });
       }
     })();
@@ -273,30 +274,63 @@ export default function LectureModeScreen() {
       if (recordingRef.current) {
         try {
           await recordingRef.current.stopAndUnloadAsync();
-        } catch {
-          // Ignore stale recorder lifecycle errors and continue with a fresh instance.
+        } catch (e) {
+          if (__DEV__) console.warn('[LectureMode] Could not stop previous recording:', e);
         }
       }
       recordingRef.current = null;
       setRecording(null);
 
-      const { recording: newRec } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
+      const recordingOptions = {
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 16000,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {},
+      };
+
+      const { recording: newRec } = await Audio.Recording.createAsync(recordingOptions);
       recordingRef.current = newRec;
       setRecording(newRec);
+      if (__DEV__) console.log('[LectureMode] Fresh recording started:', newRec.getURI());
     } catch (err) {
-      if (__DEV__) console.error('Failed to start recording', err);
+      if (__DEV__) console.error('[LectureMode] Failed to start recording:', err);
+      Alert.alert('Recording Error', 'Could not start microphone. Check permissions.');
     }
   }
 
   async function processRecording() {
-    if (!recording) return;
+    if (!recording) {
+      if (__DEV__) console.log('[LectureMode] No recording instance to process');
+      return;
+    }
     setIsTranscribing(true);
 
     try {
+      const status = await recording.getStatusAsync();
+      if (!status.canRecord) {
+        if (__DEV__) console.warn('[LectureMode] Recording instance is not active');
+      }
+
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      if (__DEV__) console.log('[LectureMode] Recording stopped. URI:', uri);
+
       recordingRef.current = null;
       setRecording(null);
 
@@ -339,26 +373,47 @@ export default function LectureModeScreen() {
     subject: string;
     lectureSummary: string;
     keyConcepts: string[];
+    highYieldPoints: string[];
+    transcript?: string;
+    embedding?: number[];
   }) {
-    if (analysis.topics.length > 0) {
-      await markTopicsFromLecture(
-        getDb(),
-        analysis.topics,
-        analysis.estimatedConfidence,
-        analysis.subject,
-      );
+    const hasTranscript = !!analysis.transcript?.trim();
+    const hasMeaningfulSummary =
+      !!analysis.lectureSummary &&
+      ![
+        'No audio recorded (empty file)',
+        'No speech detected (silent audio)',
+        'No speech detected',
+        'Lecture content recorded',
+        'No medical content detected',
+      ].includes(analysis.lectureSummary);
+    if (!hasTranscript || !hasMeaningfulSummary) {
+      throw new Error('No usable lecture content was detected in this recording.');
     }
-
-    const hasContent =
-      analysis.lectureSummary && analysis.lectureSummary !== 'No medical content detected';
-    if (!hasContent) return;
 
     const conceptsText =
       analysis.keyConcepts.length > 0
-        ? '\n' + analysis.keyConcepts.map((c) => `• ${c}`).join('\n')
+        ? '\n\n💡 **Key Concepts**\n' + analysis.keyConcepts.map((c) => `• ${c}`).join('\n')
         : '';
-    const noteText = `[${analysis.subject}] ${analysis.lectureSummary}${conceptsText}`;
-    void saveLectureNote(selectedSubjectId, noteText);
+    const hyText =
+      analysis.highYieldPoints.length > 0
+        ? '\n\n🚀 **High-Yield**\n' + analysis.highYieldPoints.map((p) => `• ${p}`).join('\n')
+        : '';
+
+    const noteText = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
+
+    // Use extended save for full pipeline tracking
+    const { saveLectureTranscript } = await import('../db/queries/aiCache');
+    await saveLectureTranscript({
+      subjectId: selectedSubjectId,
+      note: noteText,
+      transcript: analysis.transcript,
+      summary: analysis.lectureSummary,
+      topics: analysis.topics,
+      confidence: analysis.estimatedConfidence,
+      embedding: analysis.embedding,
+    });
+
     setNotes((n) => [...n, noteText]);
     setProofOfLifeActive(false);
   }

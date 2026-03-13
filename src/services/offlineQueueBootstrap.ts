@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import type { Message } from './aiService';
-import { registerProcessor } from './offlineQueue';
+import { registerProcessor, markCompleted } from './offlineQueue';
+import { runFullTranscriptionPipeline } from './lectureSessionMonitor';
+import { profileRepository } from '../db/repositories';
+import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 
 let bootstrapped = false;
 
@@ -11,29 +14,36 @@ export function registerOfflineQueueProcessors(): void {
   bootstrapped = true;
 
   registerProcessor('generate_text', async (item) => {
-    const messages = Array.isArray(item.payload.messages) ? item.payload.messages as Message[] : null;
-    if (!messages || messages.length === 0) {
-      throw new Error('Invalid queued generate_text payload');
-    }
-    throw new Error('Queued text generation from older app versions cannot be replayed safely. Please retry the original action.');
+    // Legacy/Transient tasks: skip for now as they usually depend on live UI state
+    throw new Error('Real-time task cannot be replayed safely.');
   });
 
   registerProcessor('generate_json', async (item) => {
-    const messages = Array.isArray(item.payload.messages) ? item.payload.messages as Message[] : null;
-    if (!messages || messages.length === 0) {
-      throw new Error('Invalid queued generate_json payload');
-    }
-    UnknownJsonSchema.parse(item.payload);
-    throw new Error('Queued structured generation from older app versions cannot be replayed safely. Please retry the original action.');
+    throw new Error('Real-time task cannot be replayed safely.');
   });
 
   registerProcessor('transcribe', async (item) => {
-    const audioFilePath = typeof item.payload.audioFilePath === 'string'
-      ? item.payload.audioFilePath
-      : null;
-    if (!audioFilePath) {
-      throw new Error('Invalid queued transcribe payload');
+    const { audioFilePath, appName, durationMinutes, logId } = item.payload;
+
+    if (typeof audioFilePath !== 'string' || !logId) {
+      throw new Error('Invalid transcription payload');
     }
-    throw new Error('Queued transcription from older app versions cannot be replayed safely. Please retry from lecture history or re-import the audio.');
+
+    const profile = await profileRepository.getProfile();
+    const groqKey = profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY;
+
+    const result = await runFullTranscriptionPipeline({
+      recordingPath: audioFilePath,
+      appName: (appName as string) || 'Manual Upload',
+      durationMinutes: (durationMinutes as number) || 0,
+      logId: logId as number,
+      groqKey: groqKey || undefined,
+    });
+
+    if (result.success) {
+      await markCompleted(item.id);
+    } else {
+      throw new Error(result.error || 'Transcription failed during retry');
+    }
   });
 }

@@ -36,6 +36,7 @@ import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
+import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -98,16 +99,26 @@ function ActionHubPlaceholder() {
 export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const faceTrackingEnabled = useAppStore((state) => state.profile?.faceTrackingEnabled ?? false);
+  const profile = useAppStore((state) => state.profile);
+  const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
+  const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
+  const localWhisperPath =
+    profile?.useLocalWhisper && profile?.localWhisperPath ? profile.localWhisperPath : undefined;
   const [isActionHubOpen, setIsActionHubOpen] = useState(false);
   const bottomInset = Math.max(insets.bottom, 8);
 
   async function launchExternalAction(appId: SupportedMedicalApp) {
     setIsActionHubOpen(false);
     try {
-      await launchMedicalApp(appId, faceTrackingEnabled);
+      await launchMedicalApp(appId, faceTrackingEnabled, {
+        groqKey: groqKey || undefined,
+        localWhisperPath,
+      });
     } catch (error: any) {
-      Alert.alert('Could not open app', error?.message ?? 'Please ensure the lecture app is installed.');
+      Alert.alert(
+        'Could not open app',
+        error?.message ?? 'Please ensure the lecture app is installed.',
+      );
     }
   }
 
@@ -190,7 +201,11 @@ export default function TabNavigator() {
                 accessibilityHint="Opens the quick actions sheet"
               >
                 <View style={styles.fabButton}>
-                  <Ionicons name={isActionHubOpen ? 'close' : 'add'} size={28} color={theme.colors.textPrimary} />
+                  <Ionicons
+                    name={isActionHubOpen ? 'close' : 'add'}
+                    size={28}
+                    color={theme.colors.textPrimary}
+                  />
                 </View>
                 <Text style={styles.fabLabel}>Actions</Text>
               </Pressable>
@@ -238,7 +253,9 @@ export default function TabNavigator() {
               >
                 <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
                 <Text style={styles.primaryActionTitle}>Record Lecture</Text>
-                <Text style={styles.primaryActionSubtitle}>Capture long-form audio and route it back safely.</Text>
+                <Text style={styles.primaryActionSubtitle}>
+                  Capture long-form audio and route it back safely.
+                </Text>
               </Pressable>
 
               <Pressable
@@ -248,13 +265,17 @@ export default function TabNavigator() {
               >
                 <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
                 <Text style={styles.secondaryActionTitle}>Quick Note</Text>
-                <Text style={styles.secondaryActionSubtitle}>Jump into your notes vault and capture context.</Text>
+                <Text style={styles.secondaryActionSubtitle}>
+                  Jump into your notes vault and capture context.
+                </Text>
               </Pressable>
             </View>
 
             <View style={styles.externalHeader}>
               <Text style={styles.externalTitle}>Launch External App</Text>
-              <Text style={styles.externalSubtitle}>Speaker capture and overlay stay wired into the flow.</Text>
+              <Text style={styles.externalSubtitle}>
+                Speaker capture and overlay stay wired into the flow.
+              </Text>
             </View>
             <View style={styles.externalGrid}>
               {EXTERNAL_APPS.slice(0, 6).map((app) => (

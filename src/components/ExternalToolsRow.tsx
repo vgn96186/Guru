@@ -4,17 +4,32 @@ import { EXTERNAL_APPS, type ExternalApp } from '../constants/externalApps';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
 import { theme } from '../constants/theme';
+import { showToast } from './Toast';
+import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 
 interface Props {
   onLogSession: (appId: string) => void;
 }
 
 export default function ExternalToolsRow({ onLogSession }: Props) {
-  const faceTrackingEnabled = useAppStore(s => s.profile?.faceTrackingEnabled ?? false);
+  const profile = useAppStore((s) => s.profile);
+  const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
+  const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
+  const localWhisperPath =
+    profile?.useLocalWhisper && profile?.localWhisperPath ? profile.localWhisperPath : undefined;
 
   async function launchApp(app: ExternalApp) {
     try {
-      await launchMedicalApp(app.id as SupportedMedicalApp, faceTrackingEnabled);
+      await launchMedicalApp(app.id as SupportedMedicalApp, faceTrackingEnabled, {
+        onMicUsed: () => {
+          showToast(
+            'Using microphone. Keep device speaker on so we can capture the lecture.',
+            'info',
+          );
+        },
+        groqKey: groqKey || undefined,
+        localWhisperPath,
+      });
     } catch (e: any) {
       Alert.alert('Could not open app', e?.message ?? `Please ensure ${app.name} is installed.`);
     }
@@ -24,10 +39,16 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>OPEN LECTURE APP</Text>
-        <Text style={styles.subtitle}>Tap to launch. Use the menu below each app to log manually if needed.</Text>
+        <Text style={styles.subtitle}>
+          Tap to launch. Use the menu below each app to log manually if needed.
+        </Text>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {EXTERNAL_APPS.map(app => (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
+        {EXTERNAL_APPS.map((app) => (
           <TouchableOpacity
             key={app.id}
             testID={`external-app-${app.id}`}
@@ -43,7 +64,9 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             <View style={[styles.iconBox, { backgroundColor: app.color + '22' }]}>
               <Text style={styles.icon}>{app.iconEmoji}</Text>
             </View>
-            <Text style={styles.appName} numberOfLines={1}>{app.name}</Text>
+            <Text style={styles.appName} numberOfLines={1}>
+              {app.name}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -75,5 +98,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   icon: { fontSize: 22 },
-  appName: { color: theme.colors.textPrimary, fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  appName: {
+    color: theme.colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });

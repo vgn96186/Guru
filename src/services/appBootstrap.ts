@@ -11,6 +11,7 @@ import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { registerOfflineQueueProcessors } from './offlineQueueBootstrap';
 import { processQueue } from './offlineQueue';
 import { enforceLocalLlmRamGuard } from './deviceMemory';
+import { retryFailedTasks } from './lectureSessionMonitor';
 
 export interface BootstrapResult {
   success: true;
@@ -48,8 +49,11 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     await initDatabase();
     await enforceLocalLlmRamGuard();
     registerOfflineQueueProcessors();
-    await processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
-    await registerBackgroundFetch().catch((e: unknown) => console.log('Background task not registered:', e));
+    processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
+    retryFailedTasks().catch((e) => console.warn('[AppBootstrap] Transcription retry failed:', e));
+    await registerBackgroundFetch().catch((e: unknown) =>
+      console.log('Background task not registered:', e),
+    );
 
     try {
       const { decayed } = await profileRepository.applyConfidenceDecay();

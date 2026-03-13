@@ -1,7 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, TextInput,
-  StyleSheet, StatusBar, BackHandler, Alert, Vibration, AppState
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  StatusBar,
+  BackHandler,
+  Alert,
+  Vibration,
+  AppState,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -13,6 +22,8 @@ import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import { transcribeAudio } from '../services/transcriptionService';
 import { markTopicsFromLecture } from '../services/transcription/matching';
+import { moveFileToRecovery } from '../services/transcriptStorage';
+import { enqueueRequest } from '../services/offlineQueue';
 import { getDb } from '../db/database';
 
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -43,20 +54,22 @@ export default function LectureModeScreen() {
 
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
-  const refreshProfile = useAppStore(s => s.refreshProfile);
-  const profile = useAppStore(s => s.profile);
-  
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
+  const profile = useAppStore((s) => s.profile);
+
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(route.params?.subjectId ?? null);
-  
+  const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(
+    route.params?.subjectId ?? null,
+  );
+
   const [elapsed, setElapsed] = useState(0);
   const [notes, setNotes] = useState<string[]>([]);
   const [currentNote, setCurrentNote] = useState('');
-  
+
   const [onBreak, setOnBreak] = useState(false);
   const [breakCountdown, setBreakCountdown] = useState(300);
   const [resumeCountdown, setResumeCountdown] = useState(-1);
-  
+
   const [proofOfLifeActive, setProofOfLifeActive] = useState(false);
   const [proofOfLifeCountdown, setProofOfLifeCountdown] = useState(0);
 
@@ -111,20 +124,24 @@ export default function LectureModeScreen() {
 
   // Handle App sending to background (doomscrolling attempt)
   const hasTriggeredDoomscrollRef = useRef(false);
-  
+
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
       if (nextAppState === 'active') {
         hasTriggeredDoomscrollRef.current = false;
       }
-      if ((nextAppState === 'background' || nextAppState === 'inactive') && !onBreak && elapsed > 0) {
+      if (
+        (nextAppState === 'background' || nextAppState === 'inactive') &&
+        !onBreak &&
+        elapsed > 0
+      ) {
         if (!hasTriggeredDoomscrollRef.current) {
           hasTriggeredDoomscrollRef.current = true;
           // They put the phone down or switched to Instagram
           sendSyncMessage({ type: 'DOOMSCROLL_DETECTED' });
           sendImmediateNag(
-            "🚨 DOOMSCROLL DETECTED",
-            "You're supposed to be watching a lecture! Put the phone down and look at your tablet!"
+            '🚨 DOOMSCROLL DETECTED',
+            "You're supposed to be watching a lecture! Put the phone down and look at your tablet!",
           );
           Vibration.vibrate([0, 500, 200, 500]);
         }
@@ -136,7 +153,7 @@ export default function LectureModeScreen() {
   // Main Timer loop
   useEffect(() => {
     timerRef.current = setInterval(() => {
-      setElapsed(e => {
+      setElapsed((e) => {
         const newE = e + 1;
         // Trigger Proof of Life every 15 mins
         if (newE > 0 && newE % PROOF_OF_LIFE_INTERVAL === 0 && !onBreak) {
@@ -148,19 +165,24 @@ export default function LectureModeScreen() {
         return newE;
       });
     }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current);
-    if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => {});
-    setIsRecordingEnabled(false); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      setIsRecordingEnabled(false);
+    };
   }, [onBreak]);
 
   // Proof of Life Countdown
   useEffect(() => {
     if (proofOfLifeActive && proofOfLifeCountdown > 0) {
       const t = setInterval(() => {
-        setProofOfLifeCountdown(c => {
+        setProofOfLifeCountdown((c) => {
           if (c <= 1) {
             // FAILED PROOF OF LIFE
-            sendImmediateNag("🚨 WAKE UP", "You zoned out! What is the professor saying right now?!");
+            sendImmediateNag(
+              '🚨 WAKE UP',
+              'You zoned out! What is the professor saying right now?!',
+            );
             Vibration.vibrate(1000);
             return 0;
           }
@@ -186,7 +208,7 @@ export default function LectureModeScreen() {
   // Break countdown logic
   useEffect(() => {
     if (onBreak && breakCountdown > 0) {
-      const t = setInterval(() => setBreakCountdown(c => c - 1), 1000);
+      const t = setInterval(() => setBreakCountdown((c) => c - 1), 1000);
       return () => clearInterval(t);
     } else if (onBreak && breakCountdown <= 0) {
       handleBreakDone();
@@ -196,7 +218,7 @@ export default function LectureModeScreen() {
   // Resume logic
   useEffect(() => {
     if (resumeCountdown > 0) {
-      const t = setInterval(() => setResumeCountdown(c => c - 1), 1000);
+      const t = setInterval(() => setResumeCountdown((c) => c - 1), 1000);
       return () => clearInterval(t);
     } else if (resumeCountdown === 0) {
       setResumeCountdown(-1);
@@ -221,9 +243,9 @@ export default function LectureModeScreen() {
   async function saveNote() {
     if (!currentNote.trim()) return;
     await saveLectureNote(selectedSubjectId, currentNote.trim());
-    setNotes(n => [...n, currentNote.trim()]);
+    setNotes((n) => [...n, currentNote.trim()]);
     setCurrentNote('');
-    
+
     // Clear proof of life
     if (proofOfLifeActive) {
       setProofOfLifeActive(false);
@@ -231,7 +253,6 @@ export default function LectureModeScreen() {
     }
   }
 
-  
   // Request permissions on mount
   useEffect(() => {
     (async () => {
@@ -258,9 +279,9 @@ export default function LectureModeScreen() {
       }
       recordingRef.current = null;
       setRecording(null);
-      
+
       const { recording: newRec } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
       recordingRef.current = newRec;
       setRecording(newRec);
@@ -280,10 +301,27 @@ export default function LectureModeScreen() {
       setRecording(null);
 
       if (uri) {
-        const analysis = await transcribeAudio(uri);
-        await applyLectureAnalysis(analysis);
+        try {
+          const analysis = await transcribeAudio(uri);
+          await applyLectureAnalysis(analysis);
+          await FileSystem.deleteAsync(uri, { idempotent: true });
+        } catch (err) {
+          console.warn('[LectureMode] Chunk transcription failed, moving to recovery:', err);
+          const recoveryUri = await moveFileToRecovery(uri);
 
-        await FileSystem.deleteAsync(uri, { idempotent: true });
+          // Create a recovery log entry to track this chunk in the unified pipeline
+          const { startExternalAppSession } = await import('../db/queries/externalLogs');
+          const recoveryLogId = await startExternalAppSession('Hostage Mode (Chunk)', recoveryUri);
+
+          await enqueueRequest('transcribe', {
+            audioFilePath: recoveryUri,
+            appName: 'Hostage Mode (Chunk)',
+            durationMinutes: 3,
+            logId: recoveryLogId,
+          });
+
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        }
       }
     } catch (err) {
       if (__DEV__) console.error('Transcription failed:', err);
@@ -303,18 +341,25 @@ export default function LectureModeScreen() {
     keyConcepts: string[];
   }) {
     if (analysis.topics.length > 0) {
-      await markTopicsFromLecture(getDb(), analysis.topics, analysis.estimatedConfidence, analysis.subject);
+      await markTopicsFromLecture(
+        getDb(),
+        analysis.topics,
+        analysis.estimatedConfidence,
+        analysis.subject,
+      );
     }
 
-    const hasContent = analysis.lectureSummary && analysis.lectureSummary !== 'No medical content detected';
+    const hasContent =
+      analysis.lectureSummary && analysis.lectureSummary !== 'No medical content detected';
     if (!hasContent) return;
 
-    const conceptsText = analysis.keyConcepts.length > 0
-      ? '\n' + analysis.keyConcepts.map(c => `• ${c}`).join('\n')
-      : '';
+    const conceptsText =
+      analysis.keyConcepts.length > 0
+        ? '\n' + analysis.keyConcepts.map((c) => `• ${c}`).join('\n')
+        : '';
     const noteText = `[${analysis.subject}] ${analysis.lectureSummary}${conceptsText}`;
     void saveLectureNote(selectedSubjectId, noteText);
-    setNotes(n => [...n, noteText]);
+    setNotes((n) => [...n, noteText]);
     setProofOfLifeActive(false);
   }
 
@@ -350,18 +395,21 @@ export default function LectureModeScreen() {
       if (!recording && !isTranscribing) {
         startRecording();
       }
-      
+
       // Every 3 minutes (180 seconds), process the chunk
       const interval = setInterval(() => {
         if (recording) {
           processRecording();
         }
       }, 180 * 1000);
-      
+
       return () => clearInterval(interval);
     } else if (!isRecordingEnabled || onBreak) {
       if (recording) {
-        recording.stopAndUnloadAsync().then(() => setRecording(null)).catch(() => {});
+        recording
+          .stopAndUnloadAsync()
+          .then(() => setRecording(null))
+          .catch(() => {});
       }
     }
   }, [isRecordingEnabled, onBreak, recording, isTranscribing]);
@@ -370,7 +418,10 @@ export default function LectureModeScreen() {
     const groqKey = profile?.groqApiKey?.trim() || BUNDLED_GROQ_KEY;
     const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
     if (!isRecordingEnabled && !groqKey && !hasLocalWhisper) {
-      Alert.alert('Transcription Required', 'Add a Groq API key or enable Local Whisper in Settings to use Auto-Scribe.');
+      Alert.alert(
+        'Transcription Required',
+        'Add a Groq API key or enable Local Whisper in Settings to use Auto-Scribe.',
+      );
       return;
     }
     setIsRecordingEnabled(!isRecordingEnabled);
@@ -386,12 +437,12 @@ export default function LectureModeScreen() {
   async function stopLecture() {
     if (timerRef.current) clearInterval(timerRef.current);
     if (currentNote.trim()) saveNote();
-    
+
     const mins = Math.floor(elapsed / 60);
     if (mins > 0) {
       const sessionId = await createSession([], null, 'normal');
       const noteBonus = notes.length * 50;
-      const totalXp = (mins * 15) + noteBonus;
+      const totalXp = mins * 15 + noteBonus;
       await endSession(sessionId, [], totalXp, mins);
       await profileRepository.updateStreak(mins >= 20);
       await refreshProfile();
@@ -404,7 +455,8 @@ export default function LectureModeScreen() {
 
   if (onBreak) {
     const topics = breakTopics;
-    const randomTopicId = topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)].id : undefined;
+    const randomTopicId =
+      topics.length > 0 ? topics[Math.floor(Math.random() * topics.length)].id : undefined;
 
     if (resumeCountdown >= 0) {
       return (
@@ -431,19 +483,53 @@ export default function LectureModeScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, proofOfLifeActive && styles.safeWarn]} testID="lecture-mode-screen">
-
+    <SafeAreaView
+      style={[styles.safe, proofOfLifeActive && styles.safeWarn]}
+      testID="lecture-mode-screen"
+    >
       {partnerDoomscrolling && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,0,0,0.9)', zIndex: 999, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+        <View
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(255,0,0,0.9)',
+            zIndex: 999,
+            justifyContent: 'center',
+            alignItems: 'center',
+            padding: 32,
+          }}
+        >
           <Text style={{ fontSize: 80, marginBottom: 20 }}>📱❌</Text>
-          <Text style={{ color: '#fff', fontSize: 32, fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' }}>PUT YOUR PHONE DOWN.</Text>
-          <Text style={{ color: '#fff', fontSize: 20, textAlign: 'center', marginTop: 20 }}>You are doomscrolling instead of watching this lecture!</Text>
+          <Text
+            style={{
+              color: '#fff',
+              fontSize: 32,
+              fontWeight: '900',
+              textAlign: 'center',
+              textTransform: 'uppercase',
+            }}
+          >
+            PUT YOUR PHONE DOWN.
+          </Text>
+          <Text style={{ color: '#fff', fontSize: 20, textAlign: 'center', marginTop: 20 }}>
+            You are doomscrolling instead of watching this lecture!
+          </Text>
         </View>
       )}
-<StatusBar barStyle="light-content" backgroundColor={proofOfLifeActive ? "#2A0A0A" : "#0A0A14"} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={proofOfLifeActive ? '#2A0A0A' : '#0A0A14'}
+      />
       <ResponsiveContainer>
         <View style={styles.header}>
-          <TouchableOpacity onPress={confirmStopLecture} style={styles.backBtn} testID="lecture-end-btn">
+          <TouchableOpacity
+            onPress={confirmStopLecture}
+            style={styles.backBtn}
+            testID="lecture-end-btn"
+          >
             <Text style={styles.backText}>← End</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>📺 Hostage Mode</Text>
@@ -451,7 +537,6 @@ export default function LectureModeScreen() {
         </View>
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-          
           {focusState !== 'focused' && !onBreak && (
             <View style={[styles.hostageInfo, { borderColor: '#F44336' }]}>
               <Text style={styles.hostageEmoji}>👀</Text>
@@ -460,19 +545,23 @@ export default function LectureModeScreen() {
               </Text>
             </View>
           )}
-          
+
           {/* Hostage Instructions */}
           {!proofOfLifeActive && elapsed < 60 && (
             <View style={styles.hostageInfo}>
               <Text style={styles.hostageEmoji}>📱❌</Text>
               <Text style={styles.hostageText}>
-                Put this phone face up on your desk. Watch the lecture on your tablet. If you close this app to doomscroll, your phone will scream at you.
+                Put this phone face up on your desk. Watch the lecture on your tablet. If you close
+                this app to doomscroll, your phone will scream at you.
               </Text>
             </View>
           )}
 
           {/* Timer */}
-          <View style={[styles.timerBox, proofOfLifeActive && styles.timerBoxWarn]} testID="lecture-timer">
+          <View
+            style={[styles.timerBox, proofOfLifeActive && styles.timerBoxWarn]}
+            testID="lecture-timer"
+          >
             <Text style={styles.timerLabel}>Lecture Time</Text>
             <Text style={[styles.timer, proofOfLifeActive && styles.timerWarn]}>
               {mins}:{secs.toString().padStart(2, '0')}
@@ -485,7 +574,8 @@ export default function LectureModeScreen() {
               <Text style={styles.proofEmoji}>🚨</Text>
               <Text style={styles.proofTitle}>ACTIVE LISTENING CHECK</Text>
               <Text style={styles.proofSub}>
-                You have {proofOfLifeCountdown}s to type one thing the professor just said. Are you zoning out?
+                You have {proofOfLifeCountdown}s to type one thing the professor just said. Are you
+                zoning out?
               </Text>
             </View>
           )}
@@ -495,14 +585,16 @@ export default function LectureModeScreen() {
             <View style={styles.subjectSection}>
               <Text style={styles.sectionLabel}>What subject are you watching?</Text>
               <View style={styles.subjectGrid}>
-                {subjects.map(s => (
+                {subjects.map((s) => (
                   <TouchableOpacity
                     key={s.id}
                     style={[styles.subjectChip, { borderColor: s.colorHex }]}
                     onPress={() => setSelectedSubjectId(s.id)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.subjectChipText, { color: s.colorHex }]}>{s.shortCode}</Text>
+                    <Text style={[styles.subjectChipText, { color: s.colorHex }]}>
+                      {s.shortCode}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -510,7 +602,7 @@ export default function LectureModeScreen() {
           ) : (
             <View style={styles.selectedSubject}>
               <Text style={styles.selectedSubjectText}>
-                {subjects.find(s => s.id === selectedSubjectId)?.name}
+                {subjects.find((s) => s.id === selectedSubjectId)?.name}
               </Text>
               <TouchableOpacity onPress={() => setSelectedSubjectId(null)}>
                 <Text style={styles.changeBtn}>Change</Text>
@@ -527,9 +619,11 @@ export default function LectureModeScreen() {
             testID="auto-scribe-btn"
           >
             <Text style={styles.transcribeBtnText}>
-              {isRecordingEnabled ? '🎙️ AUTO-SCRIBE ACTIVE (Listening...)' : '🎙️ Enable Auto-Scribe'}
+              {isRecordingEnabled
+                ? '🎙️ AUTO-SCRIBE ACTIVE (Listening...)'
+                : '🎙️ Enable Auto-Scribe'}
             </Text>
-            {isTranscribing && <Text style={{color:'#fff', fontSize: 10}}>Processing...</Text>}
+            {isTranscribing && <Text style={{ color: '#fff', fontSize: 10 }}>Processing...</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -544,22 +638,32 @@ export default function LectureModeScreen() {
           <View style={styles.noteSection}>
             <TextInput
               style={[styles.noteInput, proofOfLifeActive && styles.noteInputWarn]}
-              placeholder={proofOfLifeActive ? "Type here immediately to dismiss alarm..." : "Type a key concept to prove you're listening..."}
-              placeholderTextColor={proofOfLifeActive ? "#FF980088" : "#444"}
+              placeholder={
+                proofOfLifeActive
+                  ? 'Type here immediately to dismiss alarm...'
+                  : "Type a key concept to prove you're listening..."
+              }
+              placeholderTextColor={proofOfLifeActive ? '#FF980088' : '#444'}
               multiline
               value={currentNote}
               onChangeText={setCurrentNote}
               testID="lecture-note-input"
             />
             <TouchableOpacity
-              style={[styles.saveBtn, !currentNote.trim() && styles.saveBtnDisabled, proofOfLifeActive && styles.saveBtnWarn]}
+              style={[
+                styles.saveBtn,
+                !currentNote.trim() && styles.saveBtnDisabled,
+                proofOfLifeActive && styles.saveBtnWarn,
+              ]}
               onPress={saveNote}
               activeOpacity={0.8}
               testID="save-note-btn"
             >
-              <Text style={styles.saveBtnText}>{proofOfLifeActive ? 'CONFIRM LISTENING' : 'Save Note'}</Text>
+              <Text style={styles.saveBtnText}>
+                {proofOfLifeActive ? 'CONFIRM LISTENING' : 'Save Note'}
+              </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.breakTriggerBtn} onPress={startBreak}>
               <Text style={styles.breakTriggerText}>☕ Take 5m Break</Text>
             </TouchableOpacity>
@@ -586,64 +690,173 @@ export default function LectureModeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A14' },
   safeWarn: { backgroundColor: '#2A0A0A' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, paddingTop: 20 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: 20,
+  },
   backBtn: { padding: 4 },
   backText: { color: '#F44336', fontSize: 16, fontWeight: '700' },
-  headerTitle: { color: '#fff', fontWeight: '900', fontSize: 17, textTransform: 'uppercase', letterSpacing: 1 },
+  headerTitle: {
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 17,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   placeholder: { width: 60 },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 60 },
-  
-  hostageInfo: { backgroundColor: '#1A1A24', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#333', marginBottom: 20, flexDirection: 'row', alignItems: 'center' },
+
+  hostageInfo: {
+    backgroundColor: '#1A1A24',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   hostageEmoji: { fontSize: 28, marginRight: 12 },
   hostageText: { color: '#9E9E9E', flex: 1, fontSize: 13, lineHeight: 18 },
 
-  timerBox: { alignItems: 'center', backgroundColor: '#1A1A24', borderRadius: 20, padding: 24, marginBottom: 24 },
+  timerBox: {
+    alignItems: 'center',
+    backgroundColor: '#1A1A24',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
+  },
   timerBoxWarn: { backgroundColor: '#3A0A0A', borderWidth: 2, borderColor: '#F44336' },
-  timerLabel: { color: '#9E9E9E', fontSize: 12, marginBottom: 6, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  timerLabel: {
+    color: '#9E9E9E',
+    fontSize: 12,
+    marginBottom: 6,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
   timer: { color: '#fff', fontWeight: '900', fontSize: 64, fontVariant: ['tabular-nums'] },
   timerWarn: { color: '#F44336' },
-  
-  proofOfLifeBox: { backgroundColor: '#F4433622', padding: 20, borderRadius: 16, borderWidth: 1, borderColor: '#F44336', alignItems: 'center', marginBottom: 20 },
+
+  proofOfLifeBox: {
+    backgroundColor: '#F4433622',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F44336',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   proofEmoji: { fontSize: 40, marginBottom: 8 },
   proofTitle: { color: '#F44336', fontWeight: '900', fontSize: 18, marginBottom: 8 },
-  proofSub: { color: '#FF9800', textAlign: 'center', fontWeight: '600', fontSize: 14, lineHeight: 20 },
+  proofSub: {
+    color: '#FF9800',
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 14,
+    lineHeight: 20,
+  },
 
   subjectSection: { marginBottom: 20 },
-  sectionLabel: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, marginBottom: 10, textTransform: 'uppercase' },
+  sectionLabel: {
+    color: '#9E9E9E',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
   subjectGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  subjectChip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, backgroundColor: '#1A1A24' },
+  subjectChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    backgroundColor: '#1A1A24',
+  },
   subjectChipText: { fontWeight: '700', fontSize: 13 },
-  selectedSubject: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, backgroundColor: '#1A1A24', padding: 16, borderRadius: 12 },
+  selectedSubject: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: '#1A1A24',
+    padding: 16,
+    borderRadius: 12,
+  },
   selectedSubjectText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   changeBtn: { color: '#6C63FF', fontSize: 14, fontWeight: '700' },
-  
-  
-  transcribeBtn: { backgroundColor: '#1A1A24', padding: 16, borderRadius: 12, borderWidth: 1, borderColor: '#6C63FF', marginBottom: 12, alignItems: 'center' },
+
+  transcribeBtn: {
+    backgroundColor: '#1A1A24',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6C63FF',
+    marginBottom: 12,
+    alignItems: 'center',
+  },
   transcribeBtnActive: { backgroundColor: '#2A1A1A', borderColor: '#F44336' },
   transcribeBtnText: { color: '#6C63FF', fontWeight: '800', fontSize: 14 },
   importTranscribeBtn: { marginTop: -4 },
 
   noteSection: { marginBottom: 20 },
-  noteInput: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 16, color: '#fff', fontSize: 16, minHeight: 100, textAlignVertical: 'top', borderWidth: 1, borderColor: '#2A2A38', marginBottom: 12 },
+  noteInput: {
+    backgroundColor: '#1A1A24',
+    borderRadius: 12,
+    padding: 16,
+    color: '#fff',
+    fontSize: 16,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    marginBottom: 12,
+  },
   noteInputWarn: { backgroundColor: '#2A0A0A', borderColor: '#F44336', borderWidth: 2 },
-  
+
   saveBtn: { backgroundColor: '#6C63FF', borderRadius: 12, padding: 16, alignItems: 'center' },
   saveBtnDisabled: { backgroundColor: '#333' },
   saveBtnWarn: { backgroundColor: '#F44336' },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 16, textTransform: 'uppercase', letterSpacing: 1 },
-  
+  saveBtnText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 16,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+
   breakTriggerBtn: { padding: 16, alignItems: 'center', marginTop: 8 },
   breakTriggerText: { color: '#9E9E9E', fontWeight: '700', fontSize: 14 },
-  
+
   savedNotes: { marginTop: 8 },
-  noteRow: { flexDirection: 'row', marginBottom: 8, backgroundColor: '#1A1A24', padding: 12, borderRadius: 8 },
+  noteRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+    backgroundColor: '#1A1A24',
+    padding: 12,
+    borderRadius: 8,
+  },
   noteDot: { color: '#6C63FF', fontSize: 20, marginRight: 8, lineHeight: 22, fontWeight: '900' },
   noteText: { color: '#E0E0E0', fontSize: 14, flex: 1, lineHeight: 22 },
-  
-  resumeContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A14' },
+
+  resumeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0A0A14',
+  },
   resumeTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 16 },
   resumeTimer: { color: '#6C63FF', fontSize: 80, fontWeight: '900', marginBottom: 40 },
-  resumeBtn: { backgroundColor: '#6C63FF', borderRadius: 16, paddingHorizontal: 40, paddingVertical: 16 },
+  resumeBtn: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 16,
+    paddingHorizontal: 40,
+    paddingVertical: 16,
+  },
   resumeBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
 });

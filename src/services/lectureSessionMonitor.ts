@@ -1,14 +1,19 @@
 /**
  * lectureSessionMonitor.ts — Facade for lecture session health and recovery.
  */
-import { analyzeTranscript, generateADHDNote, buildQuickLectureNote, type LectureAnalysis } from './transcriptionService';
+import {
+  analyzeTranscript,
+  generateADHDNote,
+  buildQuickLectureNote,
+  type LectureAnalysis,
+} from './transcriptionService';
 import { updateLectureTranscriptNote, getLectureNoteById } from '../db/queries/aiCache';
-import { 
-  updateSessionTranscriptionStatus, 
+import {
+  updateSessionTranscriptionStatus,
   updateSessionNoteEnhancementStatus,
   getFailedOrPendingTranscriptions,
   getSessionsNeedingNoteEnhancement,
-  updateSessionPipelineTelemetry
+  updateSessionPipelineTelemetry,
 } from '../db/queries/externalLogs';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lecture/health';
 import { getRecordingInfo } from './lecture/transcription';
@@ -42,9 +47,9 @@ export async function transcribeLectureWithRecovery(opts: {
   onProgress?: (progress: LecturePipelineProgress) => void;
 }): Promise<LectureAnalysis> {
   const { recordingPath, groqKey, useLocalWhisper, localWhisperPath, logId, onProgress } = opts;
-  
+
   onProgress?.({ stage: 'transcribing', message: 'Transcribing lecture audio' });
-  
+
   let transcript = '';
   if (groqKey) {
     try {
@@ -60,7 +65,14 @@ export async function transcribeLectureWithRecovery(opts: {
   }
 
   if (!transcript) {
-    return { subject: 'Unknown', topics: [], keyConcepts: [], lectureSummary: 'No speech detected', estimatedConfidence: 1, transcript: '' };
+    return {
+      subject: 'Unknown',
+      topics: [],
+      keyConcepts: [],
+      lectureSummary: 'No speech detected',
+      estimatedConfidence: 1,
+      transcript: '',
+    };
   }
 
   onProgress?.({ stage: 'analyzing', message: 'Extracting topics and concepts' });
@@ -100,7 +112,7 @@ export async function retryPendingNoteEnhancements(): Promise<number> {
           keyConcepts: [],
           lectureSummary: note.summary || '',
           estimatedConfidence: (note.confidence || 2) as 1 | 2 | 3,
-          transcript: note.transcript || ''
+          transcript: note.transcript || '',
         };
         await enhanceNoteInBackground(session.lectureNoteId, session.id, analysis);
         recovered++;
@@ -111,8 +123,13 @@ export async function retryPendingNoteEnhancements(): Promise<number> {
 }
 
 export async function retryFailedTasks(groqKey?: string) {
-  await retryFailedTranscriptions(groqKey);
-  await retryPendingNoteEnhancements();
+  const recoveredTx = await retryFailedTranscriptions(groqKey);
+  const recoveredEnh = await retryPendingNoteEnhancements();
+  if (recoveredTx > 0 || recoveredEnh > 0) {
+    console.log(
+      `[Recovery] Recovered ${recoveredTx} transcripts and ${recoveredEnh} note enhancements.`,
+    );
+  }
 }
 
 export async function runFullTranscriptionPipeline(opts: {
@@ -131,7 +148,7 @@ export async function runFullTranscriptionPipeline(opts: {
       recordingPath,
       groqKey: opts.groqKey,
       logId,
-      onProgress
+      onProgress,
     });
 
     if (!analysis.transcript?.trim()) {
@@ -145,7 +162,7 @@ export async function runFullTranscriptionPipeline(opts: {
       appName,
       durationMinutes,
       logId,
-      quickNote
+      quickNote,
     });
 
     void enhanceNoteInBackground(noteId as number, logId, analysis);

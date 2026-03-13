@@ -77,6 +77,7 @@ class OverlayService : Service(), LifecycleOwner {
     private var overlayView: InteractiveTimerOverlay? = null
     private val handler = Handler(Looper.getMainLooper())
     private var elapsedSeconds = 0
+    private var isPaused = false
     private var appName = "Lecture"
 
     // Face tracking
@@ -92,8 +93,10 @@ class OverlayService : Service(), LifecycleOwner {
 
     private val tickRunnable = object : Runnable {
         override fun run() {
-            elapsedSeconds++
-            overlayView?.updateTime(elapsedSeconds)
+            if (!isPaused) {
+                elapsedSeconds++
+                overlayView?.updateTime(elapsedSeconds)
+            }
             handler.postDelayed(this, 1000)
         }
     }
@@ -101,6 +104,8 @@ class OverlayService : Service(), LifecycleOwner {
     companion object {
         const val ACTION_SHOW = "guru.overlay.SHOW"
         const val ACTION_HIDE = "guru.overlay.HIDE"
+        const val ACTION_PAUSE = "guru.overlay.PAUSE"
+        const val ACTION_RESUME = "guru.overlay.RESUME"
         const val EXTRA_APP_NAME = "appName"
         const val EXTRA_FACE_TRACKING = "faceTracking"
         const val CHANNEL_ID = "guru_overlay_channel"
@@ -135,6 +140,14 @@ class OverlayService : Service(), LifecycleOwner {
                 showOverlay()
                 startTimer()
                 if (faceTrackingEnabled) startCamera()
+            }
+            ACTION_PAUSE -> {
+                isPaused = true
+                overlayView?.setPaused(true)
+            }
+            ACTION_RESUME -> {
+                isPaused = false
+                overlayView?.setPaused(false)
             }
             ACTION_HIDE -> {
                 stopCamera()
@@ -390,19 +403,24 @@ class OverlayService : Service(), LifecycleOwner {
         private val menuLayout = android.widget.LinearLayout(context).apply {
             orientation = HORIZONTAL
             visibility = View.VISIBLE
-            setPadding(16, 10, 16, 10)
+            setPadding(dpToPx(16, context), dpToPx(10, context), dpToPx(16, context), dpToPx(10, context))
             gravity = Gravity.CENTER_VERTICAL
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#F0171C28"))
-                cornerRadius = 42f
-                setStroke(2, Color.parseColor("#33425A8A"))
+                orientation = android.graphics.drawable.GradientDrawable.Orientation.TL_BR
+                colors = intArrayOf(
+                    Color.parseColor("#EE1A1F2B"), // Deep charcoal
+                    Color.parseColor("#F20F121A")  // Near black
+                )
+                cornerRadius = dpToPx(16, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#26FFFFFF")) // Subtle glass border
             }
-            elevation = 12f
+            elevation = 20f
+            translationZ = 10f
         }
 
         private val infoStack = android.widget.LinearLayout(context).apply {
             orientation = VERTICAL
-            setPadding(0, 0, 16, 0)
+            setPadding(0, 0, dpToPx(16, context), 0)
         }
 
         private val appLabelView = android.widget.TextView(context).apply {
@@ -418,11 +436,11 @@ class OverlayService : Service(), LifecycleOwner {
             text = if (faceTracking) "Face focus on" else "Timer mode"
             textSize = 10f
             setTextColor(Color.parseColor("#A9B5D0"))
-            setPadding(12, 6, 12, 6)
+            setPadding(dpToPx(12, context), dpToPx(6, context), dpToPx(12, context), dpToPx(6, context))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.parseColor("#162133"))
                 cornerRadius = 999f
-                setStroke(1, Color.parseColor("#2D3952"))
+                setStroke(dpToPx(1, context), Color.parseColor("#2D3952"))
             }
         }
 
@@ -433,18 +451,30 @@ class OverlayService : Service(), LifecycleOwner {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
             minWidth = dpToPx(58, context)
-            setPadding(16, 14, 16, 14)
+            setPadding(dpToPx(16, context), dpToPx(14, context), dpToPx(16, context), dpToPx(14, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#222B3D"))
-                cornerRadius = 28f
-                setStroke(1, Color.parseColor("#31405D"))
+                orientation = android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM
+                colors = intArrayOf(
+                    Color.parseColor("#313D57"), // Lighter top
+                    Color.parseColor("#1D2536")  // Darker bottom
+                )
+                cornerRadius = dpToPx(16, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#4DFFFFFF"))
             }
             setOnClickListener {
                 isRecordingPaused = !isRecordingPaused
                 text = if (isRecordingPaused) "Resume" else "Pause"
-                val action = if (isRecordingPaused) RecordingService.ACTION_PAUSE else RecordingService.ACTION_RESUME
-                val intent = Intent(context, RecordingService::class.java).apply { this.action = action }
-                context.startService(intent)
+                
+                // Pause/Resume recording
+                val recAction = if (isRecordingPaused) RecordingService.ACTION_PAUSE else RecordingService.ACTION_RESUME
+                val recIntent = Intent(context, RecordingService::class.java).apply { action = recAction }
+                context.startService(recIntent)
+
+                // Pause/Resume overlay timer
+                val ovAction = if (isRecordingPaused) OverlayService.ACTION_PAUSE else OverlayService.ACTION_RESUME
+                val ovIntent = Intent(context, OverlayService::class.java).apply { action = ovAction }
+                context.startService(ovIntent)
+
                 vibrateLight(context)
             }
         }
@@ -456,11 +486,15 @@ class OverlayService : Service(), LifecycleOwner {
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
             minWidth = dpToPx(58, context)
-            setPadding(16, 14, 16, 14)
+            setPadding(dpToPx(16, context), dpToPx(14, context), dpToPx(16, context), dpToPx(14, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#3A1D24"))
-                cornerRadius = 28f
-                setStroke(1, Color.parseColor("#6C3642"))
+                orientation = android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM
+                colors = intArrayOf(
+                    Color.parseColor("#5A2D39"), // Lighter red top
+                    Color.parseColor("#3A1D24")  // Darker red bottom
+                )
+                cornerRadius = dpToPx(16, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#33FFCCCC"))
             }
             setOnClickListener {
                 vibrateLight(context)
@@ -475,14 +509,14 @@ class OverlayService : Service(), LifecycleOwner {
 
             infoStack.addView(appLabelView)
             infoStack.addView(modeChip, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                topMargin = 8
+                topMargin = dpToPx(8, context)
             })
             menuLayout.addView(infoStack, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = 12
+                marginEnd = dpToPx(12, context)
             })
 
             menuLayout.addView(pauseBtn, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = 12
+                marginEnd = dpToPx(12, context)
             })
             menuLayout.addView(returnBtn)
 
@@ -490,7 +524,7 @@ class OverlayService : Service(), LifecycleOwner {
             addView(bubbleView, bubbleParams)
 
             val menuParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginStart = 8
+                marginStart = dpToPx(8, context)
             }
             addView(menuLayout, menuParams)
             
@@ -515,6 +549,11 @@ class OverlayService : Service(), LifecycleOwner {
 
         fun updateTime(secs: Int) { bubbleView.updateTime(secs) }
         fun updateFocusState(state: FocusState) { bubbleView.updateFocusState(state) }
+
+        fun setPaused(paused: Boolean) {
+            isRecordingPaused = paused
+            pauseBtn.text = if (paused) "Resume" else "Pause"
+        }
 
         private fun toggleMenu() {
             isMenuExpanded = !isMenuExpanded
@@ -575,6 +614,11 @@ class OverlayService : Service(), LifecycleOwner {
         val onTap: () -> Unit
     ) : View(context) {
 
+        private val density = context.resources.displayMetrics.density
+        private val scaledDensity = context.resources.displayMetrics.scaledDensity
+        private fun dpToPx(dp: Float) = dp * density
+        private fun spToPx(sp: Float) = sp * scaledDensity
+
         private var seconds = 0
         private var focusState = FocusState.NEUTRAL
         private var prevFocusState = FocusState.NEUTRAL
@@ -619,39 +663,31 @@ class OverlayService : Service(), LifecycleOwner {
         }
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 6f
             strokeCap = Paint.Cap.ROUND
         }
         private val ringBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 6f
-            color = Color.parseColor("#33FFFFFF")
+            color = Color.parseColor("#22FFFFFF")
         }
         private val breathePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 2f
         }
         private val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.parseColor("#E8EEFF")
-            textSize = 10f
             textAlign = Paint.Align.CENTER
             isFakeBoldText = true
         }
         private val timePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
-            textSize = 24f
             textAlign = Paint.Align.CENTER
             isFakeBoldText = true
-            setShadowLayer(4f, 0f, 2f, Color.parseColor("#88000000"))
         }
         private val msgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 10f
             textAlign = Paint.Align.CENTER
             color = Color.parseColor("#CBD4E8")
             isFakeBoldText = true
         }
         private val xpPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 9f
             textAlign = Paint.Align.CENTER
             color = Color.parseColor("#6C63FF")
             isFakeBoldText = true
@@ -678,6 +714,14 @@ class OverlayService : Service(), LifecycleOwner {
 
         init {
             setLayerType(LAYER_TYPE_SOFTWARE, null) // Needed for blur effects
+            headerPaint.textSize = spToPx(10f)
+            timePaint.textSize = spToPx(22f)
+            msgPaint.textSize = spToPx(10f)
+            xpPaint.textSize = spToPx(9f)
+            ringPaint.strokeWidth = dpToPx(3f)
+            ringBgPaint.strokeWidth = dpToPx(3f)
+            breathePaint.strokeWidth = dpToPx(1f)
+            timePaint.setShadowLayer(dpToPx(4f), 0f, dpToPx(2f), Color.parseColor("#AA000000"))
             handler.post(animationRunnable)
         }
 
@@ -751,11 +795,11 @@ class OverlayService : Service(), LifecycleOwner {
         
         private fun getStateColor(state: FocusState): Int {
             return when (state) {
-                FocusState.FOCUSED    -> Color.parseColor("#4CAF50")
-                FocusState.DISTRACTED -> Color.parseColor("#FF9800")
-                FocusState.DROWSY     -> Color.parseColor("#FF9800")
-                FocusState.ABSENT     -> Color.parseColor("#F44336")
-                FocusState.NEUTRAL    -> Color.parseColor("#6C63FF")
+                FocusState.FOCUSED    -> Color.parseColor("#10B981") // Emerald 500
+                FocusState.DISTRACTED -> Color.parseColor("#F59E0B") // Amber 500
+                FocusState.DROWSY     -> Color.parseColor("#F59E0B") 
+                FocusState.ABSENT     -> Color.parseColor("#EF4444") // Red 500
+                FocusState.NEUTRAL    -> Color.parseColor("#8B5CF6") // Violet 500
             }
         }
         
@@ -786,7 +830,7 @@ class OverlayService : Service(), LifecycleOwner {
             // Outer glow effect
             val breatheIntensity = ((sin(breathePhase.toDouble()) + 1.0) / 2.0 * 0.5 + 0.3).toFloat()
             glowPaint.color = Color.argb((80 * breatheIntensity).toInt(), Color.red(ringColor), Color.green(ringColor), Color.blue(ringColor))
-            canvas.drawCircle(cx, cy, r + 6f, glowPaint)
+            canvas.drawCircle(cx, cy, r + dpToPx(3f), glowPaint)
 
             // Background with gradient
             val bgGradient = RadialGradient(
@@ -806,11 +850,21 @@ class OverlayService : Service(), LifecycleOwner {
             bgPaint.shader = bgGradient
             canvas.drawCircle(cx, cy, r, bgPaint)
             bgPaint.shader = null
+            
+            // Rim light (inner glow)
+            val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = dpToPx(1.5f)
+                shader = LinearGradient(0f, 0f, 0f, height.toFloat(),
+                    intArrayOf(Color.parseColor("#66FFFFFF"), Color.TRANSPARENT),
+                    floatArrayOf(0f, 0.4f), Shader.TileMode.CLAMP)
+            }
+            canvas.drawCircle(cx, cy, r - dpToPx(1f), rimPaint)
 
             // Breathing pulse ring
             val breatheAlpha = (breatheIntensity * 120).toInt()
             breathePaint.color = Color.argb(breatheAlpha, Color.red(ringColor), Color.green(ringColor), Color.blue(ringColor))
-            val breatheRadius = r + 3f + sin(breathePhase.toDouble()).toFloat() * 2f
+            val breatheRadius = r + dpToPx(1.5f) + sin(breathePhase.toDouble()).toFloat() * dpToPx(1f)
             canvas.drawCircle(cx, cy, breatheRadius, breathePaint)
 
             // Progress ring background track
@@ -822,51 +876,125 @@ class OverlayService : Service(), LifecycleOwner {
             val sweep = (seconds % 60) / 60f * 360f
             canvas.drawArc(oval, -90f, sweep, false, ringPaint)
             
-            // Floating particles for focused state
-            if (focusState == FocusState.FOCUSED || isMilestone) {
-                drawParticles(canvas, cx, cy, r, ringColor, isMilestone)
-            }
+            // Draw Face
+            drawFace(canvas, cx, cy, r, ringColor)
 
             // Header app badge
-            canvas.drawText(getAppBadge(), cx, cy - 18f, headerPaint)
+            canvas.drawText(getAppBadge(), cx, cy - r * 0.45f, headerPaint)
 
             // Time
             val mins = seconds / 60
             val secs = seconds % 60
-            canvas.drawText("${mins}:${secs.toString().padStart(2, '0')}", cx, cy + 8f, timePaint)
+            canvas.drawText("${mins}:${secs.toString().padStart(2, '0')}", cx, cy + dpToPx(4f), timePaint)
 
             // Status chip
             val statusLabel = if (isMilestone) "Milestone" else getStatusLabel()
             val chipWidth = r * 1.35f
-            val chipTop = cy + 16f
-            val chipBottom = chipTop + 18f
+            val chipTop = cy + dpToPx(8f)
+            val chipBottom = chipTop + dpToPx(9f)
             chipPaint.color = if (isMilestone) Color.parseColor("#4A3B00") else Color.parseColor("#162133")
-            canvas.drawRoundRect(RectF(cx - chipWidth / 2, chipTop, cx + chipWidth / 2, chipBottom), 14f, 14f, chipPaint)
+            canvas.drawRoundRect(RectF(cx - chipWidth / 2, chipTop, cx + chipWidth / 2, chipBottom), dpToPx(7f), dpToPx(7f), chipPaint)
             msgPaint.color = if (isMilestone) Color.parseColor("#FFD700") else Color.parseColor("#C9D3E8")
-            canvas.drawText(statusLabel, cx, chipBottom - 5f, msgPaint)
+            canvas.drawText(statusLabel, cx, chipBottom - dpToPx(2.5f), msgPaint)
 
             // Encouragement / milestone line
             val msg = getMessage()
             msgPaint.color = if (isMilestone) Color.parseColor("#FFE69A") else Color.parseColor("#9FAAC4")
-            canvas.drawText(msg, cx, cy + r - 10f, msgPaint)
+            canvas.drawText(msg, cx, cy + r - dpToPx(5f), msgPaint)
             
             // XP indicator at very bottom
             if (xpEarned > 0 && !isMilestone) {
-                canvas.drawText("+${xpEarned} XP", cx, cy + r + 5f, xpPaint)
+                canvas.drawText("+${xpEarned} XP", cx, cy + r + dpToPx(2.5f), xpPaint)
+            }
+            
+            // Re-draw particles on top if milestone
+            if (focusState == FocusState.FOCUSED || isMilestone) {
+                drawParticles(canvas, cx, cy, r, ringColor, isMilestone)
+            }
+        }
+
+        private fun drawFace(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int) {
+            val eyeSpacing = r * 0.45f
+            val eyeY = cy - r * 0.12f
+            val eyeSize = r * 0.07f
+            
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = Color.WHITE
+                style = Paint.Style.FILL
+            }
+
+            // Blinking logic
+            val isBlinking = (System.currentTimeMillis() % 4000) > 3800
+
+            when {
+                focusState == FocusState.ABSENT -> {
+                    // Closed eyes (arcs)
+                    paint.style = Paint.Style.STROKE
+                    paint.strokeWidth = 3f
+                    paint.color = Color.parseColor("#88FFFFFF")
+                    val ovalL = RectF(cx - eyeSpacing / 2 - eyeSize, eyeY - eyeSize, cx - eyeSpacing / 2 + eyeSize, eyeY + eyeSize)
+                    val ovalR = RectF(cx + eyeSpacing / 2 - eyeSize, eyeY - eyeSize, cx + eyeSpacing / 2 + eyeSize, eyeY + eyeSize)
+                    canvas.drawArc(ovalL, 0f, 180f, false, paint)
+                    canvas.drawArc(ovalR, 0f, 180f, false, paint)
+                }
+                focusState == FocusState.DROWSY -> {
+                    // Heavy eyelids
+                    val rectL = RectF(cx - eyeSpacing / 2 - eyeSize, eyeY, cx - eyeSpacing / 2 + eyeSize, eyeY + 3f)
+                    val rectR = RectF(cx + eyeSpacing / 2 - eyeSize, eyeY, cx + eyeSpacing / 2 + eyeSize, eyeY + 3f)
+                    canvas.drawRect(rectL, paint)
+                    canvas.drawRect(rectR, paint)
+                }
+                focusState == FocusState.DISTRACTED -> {
+                    // Looking sideways
+                    val offset = 4f
+                    canvas.drawCircle(cx - eyeSpacing / 2 + offset, eyeY, eyeSize, paint)
+                    canvas.drawCircle(cx + eyeSpacing / 2 + offset, eyeY, eyeSize, paint)
+                }
+                isBlinking -> {
+                    // Blink!
+                    val rectL = RectF(cx - eyeSpacing / 2 - eyeSize, eyeY, cx - eyeSpacing / 2 + eyeSize, eyeY + 2f)
+                    val rectR = RectF(cx + eyeSpacing / 2 - eyeSize, eyeY, cx + eyeSpacing / 2 + eyeSize, eyeY + 2f)
+                    canvas.drawRect(rectL, paint)
+                    canvas.drawRect(rectR, paint)
+                }
+                else -> {
+                    // Focused / Neutral
+                    canvas.drawCircle(cx - eyeSpacing / 2, eyeY, eyeSize, paint)
+                    canvas.drawCircle(cx + eyeSpacing / 2, eyeY, eyeSize, paint)
+                    
+                    // Add tiny pupils for 'FOCUSED' state depth
+                    if (focusState == FocusState.FOCUSED) {
+                        paint.color = color
+                        canvas.drawCircle(cx - eyeSpacing / 2, eyeY, eyeSize * 0.4f, paint)
+                        canvas.drawCircle(cx + eyeSpacing / 2, eyeY, eyeSize * 0.4f, paint)
+                    }
+                }
             }
         }
         
         private fun drawParticles(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int, isMilestone: Boolean) {
-            val numParticles = if (isMilestone) 8 else 4
+            val numParticles = if (isMilestone) 12 else 6
             for (i in 0 until numParticles) {
-                val angle = (particlePhase + i * (Math.PI * 2 / numParticles)).toFloat()
-                val dist = r + 8f + sin((particlePhase * 2 + i).toDouble()).toFloat() * 6f
+                val phaseOffset = i * (Math.PI * 2 / numParticles)
+                val angle = (particlePhase + phaseOffset).toFloat()
+                
+                // Orbiting with slight wobble
+                val wobble = sin((particlePhase * 1.5 + i).toDouble()).toFloat() * 10f
+                val dist = r + 12f + wobble
+                
                 val px = cx + cos(angle.toDouble()).toFloat() * dist
                 val py = cy + sin(angle.toDouble()).toFloat() * dist
-                val size = 2f + sin((particlePhase * 3 + i).toDouble()).toFloat() * 1.5f
-                val alpha = (150 + sin((particlePhase * 2 + i).toDouble()) * 80).toInt().coerceIn(80, 220)
+                
+                // Pulsing size
+                val size = 3f + sin((particlePhase * 4 + i).toDouble()).toFloat() * 2f
+                
+                val alpha = (180 + sin((particlePhase * 2.5 + i).toDouble()) * 70).toInt().coerceIn(0, 255)
                 particlePaint.color = Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
+                
+                // Add tiny glow to each particle
+                particlePaint.setShadowLayer(5f, 0f, 0f, color)
                 canvas.drawCircle(px, py, size, particlePaint)
+                particlePaint.clearShadowLayer()
             }
         }
         

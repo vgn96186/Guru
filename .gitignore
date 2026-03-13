@@ -64,3 +64,13 @@ android/.gradle/
 # UI dumps
 window_dump.xml
 .claude/
+
+# IDE / editor (do not commit)
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
+*~

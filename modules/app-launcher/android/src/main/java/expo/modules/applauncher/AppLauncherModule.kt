@@ -304,19 +304,33 @@ class AppLauncherModule : Module() {
 
         AsyncFunction("pauseRecording") { ->
             val context = appContext.reactContext ?: return@AsyncFunction false
-            val intent = Intent(context, RecordingService::class.java).apply {
+            
+            val intentRec = Intent(context, RecordingService::class.java).apply {
                 action = RecordingService.ACTION_PAUSE
             }
-            context.startService(intent)
+            context.startService(intentRec)
+
+            val intentOv = Intent(context, OverlayService::class.java).apply {
+                action = OverlayService.ACTION_PAUSE
+            }
+            context.startService(intentOv)
+
             return@AsyncFunction true
         }
 
         AsyncFunction("resumeRecording") { ->
             val context = appContext.reactContext ?: return@AsyncFunction false
-            val intent = Intent(context, RecordingService::class.java).apply {
+
+            val intentRec = Intent(context, RecordingService::class.java).apply {
                 action = RecordingService.ACTION_RESUME
             }
-            context.startService(intent)
+            context.startService(intentRec)
+
+            val intentOv = Intent(context, OverlayService::class.java).apply {
+                action = OverlayService.ACTION_RESUME
+            }
+            context.startService(intentOv)
+
             return@AsyncFunction true
         }
 

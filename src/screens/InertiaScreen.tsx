@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, Easing, Dimensions, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  Animated,
+  Easing,
+  Dimensions,
+  Image,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,13 +35,7 @@ function TopicImage({ topicName }: { topicName: string }) {
 
   if (!imageUrl) return null;
 
-  return (
-    <Image 
-      source={{ uri: imageUrl }} 
-      style={styles.topicImage} 
-      resizeMode="contain"
-    />
-  );
+  return <Image source={{ uri: imageUrl }} style={styles.topicImage} resizeMode="contain" />;
 }
 
 type Phase = 'breathe' | 'sit_up_prompt' | 'fetching' | 'micro_win_bed' | 'micro_win' | 'pivot';
@@ -45,7 +49,7 @@ export default function InertiaScreen() {
   const [revealStep, setRevealStep] = useState(1);
   const [isSolved, setIsSolved] = useState(false);
   const [showSkip, setShowSkip] = useState(false);
-  
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -69,8 +73,8 @@ export default function InertiaScreen() {
           duration: 4000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
-        })
-      ])
+        }),
+      ]),
     ).start();
 
     setTimeout(() => setBreatheText('Hold...'), 4000);
@@ -93,7 +97,12 @@ export default function InertiaScreen() {
     try {
       const topics = await getAllTopicsWithProgress();
       const pool = topics
-        .filter(t => t.progress.status === 'reviewed' || t.progress.status === 'mastered' || t.inicetPriority >= 8)
+        .filter(
+          (t) =>
+            t.progress.status === 'reviewed' ||
+            t.progress.status === 'mastered' ||
+            t.inicetPriority >= 8,
+        )
         .slice(0, 50);
       const selected = pool[Math.floor(Math.random() * pool.length)] || topics[0];
       setTopic(selected);
@@ -121,7 +130,7 @@ export default function InertiaScreen() {
     if (!content) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (revealStep < content.clues.length) {
-      setRevealStep(prev => prev + 1);
+      setRevealStep((prev) => prev + 1);
     } else {
       setIsSolved(true);
     }
@@ -141,10 +150,18 @@ export default function InertiaScreen() {
     navigation.goBack();
   }
 
-  const DetectiveDisplay = ({ content, revealStep, isSolved }: { content: DetectiveContent, revealStep: number, isSolved: boolean }) => (
+  const DetectiveDisplay = ({
+    content,
+    revealStep,
+    isSolved,
+  }: {
+    content: DetectiveContent;
+    revealStep: number;
+    isSolved: boolean;
+  }) => (
     <View style={styles.card}>
       <Text style={styles.cardHeader}>CLINICAL MYSTERY</Text>
-      
+
       {content.clues.slice(0, revealStep).map((clue, i) => (
         <View key={i} style={[styles.clueBox, i === revealStep - 1 && styles.newClue]}>
           <Text style={styles.clueLabel}>Visual / Sign {i + 1}</Text>
@@ -223,9 +240,9 @@ export default function InertiaScreen() {
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.winTitle}>Solve the Mystery</Text>
             <Text style={styles.winTopic}>{content.topicName}</Text>
-            
+
             <TopicImage topicName={content.topicName} />
-            
+
             <DetectiveDisplay content={content} revealStep={revealStep} isSolved={isSolved} />
 
             {!isSolved ? (
@@ -242,7 +259,10 @@ export default function InertiaScreen() {
                 )}
               </View>
             ) : (
-              <TouchableOpacity style={[styles.doneBtn, { backgroundColor: theme.colors.success, marginTop: 20 }]} onPress={handleWinComplete}>
+              <TouchableOpacity
+                style={[styles.doneBtn, { backgroundColor: theme.colors.success, marginTop: 20 }]}
+                onPress={handleWinComplete}
+              >
                 <Text style={styles.doneBtnText}>Boom. I'm moving. →</Text>
               </TouchableOpacity>
             )}
@@ -263,9 +283,7 @@ export default function InertiaScreen() {
               You just diagnosed a case. The hardest part is over.
             </Text>
             <View style={styles.offerBox}>
-              <Text style={styles.offerText}>
-                Keep this momentum for just 5 minutes?
-              </Text>
+              <Text style={styles.offerText}>Keep this momentum for just 5 minutes?</Text>
             </View>
             <TouchableOpacity style={styles.sprintBtn} onPress={handleStartSprint}>
               <Text style={styles.sprintBtnText}>🚀 Start 5-Min Sprint</Text>
@@ -285,54 +303,197 @@ export default function InertiaScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  topicImage: { width: '100%', height: 160, borderRadius: 16, marginBottom: 20, backgroundColor: theme.colors.surface },
-  
-  breatheTitle: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 8, textAlign: 'center' },
-  breatheSub: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 60, textAlign: 'center' },
+  topicImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    marginBottom: 20,
+    backgroundColor: theme.colors.surface,
+  },
+
+  breatheTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  breatheSub: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    marginBottom: 60,
+    textAlign: 'center',
+  },
   circleContainer: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center' },
-  pulseCircle: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: theme.colors.primaryTintSoft, borderWidth: 2, borderColor: theme.colors.primary },
+  pulseCircle: {
+    position: 'absolute',
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
+    elevation: 10,
+  },
   breatheText: { color: '#fff', fontSize: 20, fontWeight: '700', textAlign: 'center' },
-  skipBtn: { marginTop: 40, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, borderWidth: 1, borderColor: theme.colors.border },
+  skipBtn: {
+    marginTop: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   skipBtnText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
 
   emoji: { fontSize: 64, marginBottom: 20 },
-  winTitle: { color: theme.colors.primaryLight, fontSize: 14, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
-  winTopic: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 24, textAlign: 'center' },
-  
-  card: { backgroundColor: theme.colors.surface, padding: 20, borderRadius: 24, width: '100%', borderWidth: 1, borderColor: theme.colors.border },
-  cardHeader: { color: theme.colors.primary, fontSize: 12, fontWeight: '900', letterSpacing: 1.5, marginBottom: 16 },
-  clueBox: { backgroundColor: '#13131A', padding: 16, borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: '#252535' },
+  winTitle: {
+    color: theme.colors.primaryLight,
+    fontSize: 14,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
+  winTopic: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+
+  card: {
+    backgroundColor: theme.colors.surface,
+    padding: 20,
+    borderRadius: 24,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  cardHeader: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1.5,
+    marginBottom: 16,
+  },
+  clueBox: {
+    backgroundColor: '#13131A',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#252535',
+  },
   newClue: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
   clueLabel: { color: theme.colors.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 4 },
   clueText: { color: theme.colors.textPrimary, fontSize: 16, lineHeight: 22 },
-  
-  solutionBox: { marginTop: 8, padding: 16, backgroundColor: '#1A2A1A', borderRadius: 16, borderWidth: 1, borderColor: '#2D4A2D' },
+
+  solutionBox: {
+    marginTop: 8,
+    padding: 16,
+    backgroundColor: '#1A2A1A',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2D4A2D',
+  },
   solutionLabel: { color: theme.colors.success, fontSize: 11, fontWeight: '800', marginBottom: 4 },
   solutionValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginBottom: 12 },
   divider: { height: 1, backgroundColor: '#2D4A2D', marginVertical: 12 },
-  
-  doneBtn: { backgroundColor: theme.colors.primary, width: '100%', paddingVertical: 18, borderRadius: 16, alignItems: 'center', ...theme.shadows.glow(theme.colors.primary) },
+
+  doneBtn: {
+    backgroundColor: theme.colors.primary,
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    ...theme.shadows.glow(theme.colors.primary),
+  },
   doneBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   giveUpBtn: { padding: 16, alignItems: 'center' },
   giveUpText: { color: theme.colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
 
-  pivotTitle: { color: '#fff', fontSize: 32, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
-  pivotSub: { color: theme.colors.textSecondary, fontSize: 16, textAlign: 'center', lineHeight: 24, marginBottom: 32 },
-  offerBox: { backgroundColor: theme.colors.primaryTintSoft, padding: 20, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.primaryTint, marginBottom: 32 },
-  offerText: { color: theme.colors.primaryLight, fontSize: 16, fontWeight: '700', textAlign: 'center', lineHeight: 24 },
-  
-  sprintBtn: { backgroundColor: theme.colors.primary, width: '100%', paddingVertical: 20, borderRadius: 16, alignItems: 'center', marginBottom: 16 },
+  pivotTitle: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: '900',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  pivotSub: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  offerBox: {
+    backgroundColor: theme.colors.primaryTintSoft,
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryTint,
+    marginBottom: 32,
+  },
+  offerText: {
+    color: theme.colors.primaryLight,
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+
+  sprintBtn: {
+    backgroundColor: theme.colors.primary,
+    width: '100%',
+    paddingVertical: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sprintBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   closeBtn: { padding: 16 },
   closeBtnText: { color: theme.colors.textMuted, fontSize: 16, fontWeight: '600' },
-  
+
   sitUpEmoji: { fontSize: 64, marginBottom: 20 },
-  sitUpTitle: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
-  sitUpSub: { color: theme.colors.textSecondary, fontSize: 16, textAlign: 'center', marginBottom: 40, lineHeight: 24 },
+  sitUpTitle: {
+    color: '#fff',
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  sitUpSub: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 40,
+    lineHeight: 24,
+  },
   choiceBox: { alignItems: 'center', width: '100%' },
-  sitUpBtn: { backgroundColor: theme.colors.success, width: '100%', paddingVertical: 18, borderRadius: 16, alignItems: 'center', marginBottom: 16 },
+  sitUpBtn: {
+    backgroundColor: theme.colors.success,
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sitUpBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
   orText: { color: theme.colors.textMuted, fontSize: 14, marginVertical: 12 },
-  bedBtn: { backgroundColor: theme.colors.surface, width: '100%', paddingVertical: 18, borderRadius: 16, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border },
+  bedBtn: {
+    backgroundColor: theme.colors.surface,
+    width: '100%',
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   bedBtnText: { color: theme.colors.textSecondary, fontSize: 16, fontWeight: '700' },
 });

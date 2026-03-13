@@ -83,20 +83,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     }
     await seedTopics(db);
     await seedUserProfile(db);
-  } else {
-    // Ensure user_profile row exists
-    const profile = await db.getFirstAsync<{ id: number; groq_key: string | null }>(
-      'SELECT id, groq_key FROM user_profile WHERE id = 1',
-    );
-    if (!profile) await seedUserProfile(db);
-
-    // Run background maintenance
-    const { retryFailedTasks, autoRepairLegacyNotes } =
-      await import('../services/lectureSessionMonitor');
-    void retryFailedTasks(profile?.groq_key || undefined);
-    void autoRepairLegacyNotes();
-
-    return;
   }
 
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
@@ -160,10 +146,24 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     }
   }
 
-  // FIX: Ensure all topics (including vault seeds) have a progress row
+  // Ensure all topics (including vault seeds) have a progress row
   await db.execAsync('INSERT OR IGNORE INTO topic_progress (topic_id) SELECT id FROM topics');
 
   await db.execAsync('PRAGMA foreign_keys = ON');
+
+  // Ensure user_profile row exists and run maintenance (now safe as migrations are done)
+  const profile = await db.getFirstAsync<{ id: number; groq_api_key: string | null }>(
+    'SELECT id, groq_api_key FROM user_profile WHERE id = 1',
+  );
+  if (!profile) {
+    await seedUserProfile(db);
+  } else {
+    // Run background maintenance
+    const { retryFailedTasks, autoRepairLegacyNotes } =
+      await import('../services/lectureSessionMonitor');
+    void retryFailedTasks(profile.groq_api_key || undefined);
+    void autoRepairLegacyNotes();
+  }
 
   // Update streak on open
   await updateStreakOnOpen(db);

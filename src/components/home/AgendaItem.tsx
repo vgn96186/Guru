@@ -29,7 +29,7 @@ export default function AgendaItem({ time, title, type, subjectName, priority, o
         type === 'review' && styles.review,
         type === 'deep_dive' && styles.deep
       ]}>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>{type.toUpperCase().replace('_', ' ')} · {subjectName}</Text>
         <View style={styles.badgeRow}>
           {type === 'review' && <Text style={styles.badge}>Due now</Text>}

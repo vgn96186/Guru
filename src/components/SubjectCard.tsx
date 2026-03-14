@@ -97,7 +97,7 @@ export default function SubjectCard({ subject, coverage, metrics, matchingTopics
                   </View>
                 )}
               </View>
-              <Text style={styles.name} numberOfLines={2}>{subject.name}</Text>
+              <Text style={styles.name}>{subject.name}</Text>
             </View>
             <View style={styles.pctContainer}>
               <Text style={[styles.pct, { color: pct >= 80 ? theme.colors.success : pct >= 50 ? theme.colors.warning : theme.colors.textPrimary }]}>

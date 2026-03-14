@@ -216,7 +216,7 @@ export default function NotesHubScreen() {
                       <Text style={styles.lectureSubject}>{lecture.subjectName ?? 'Lecture note'}</Text>
                       <Text style={styles.lectureDate}>{formatDate(lecture.createdAt)}</Text>
                     </View>
-                    <Text style={styles.lecturePreview} numberOfLines={3}>
+                    <Text style={styles.lecturePreview} numberOfLines={4}>
                       {extractPreview(lecture.summary || lecture.note)}
                     </Text>
                     <View style={styles.inlineMetaRow}>
@@ -246,7 +246,7 @@ export default function NotesHubScreen() {
                   >
                     <Text style={styles.topicSubject}>{topic.subjectName}</Text>
                     <Text style={styles.topicTitle}>{topic.topicName}</Text>
-                    <Text style={styles.topicPreview} numberOfLines={2}>
+                    <Text style={styles.topicPreview} numberOfLines={3}>
                       {extractPreview(topic.userNotes)}
                     </Text>
                   </TouchableOpacity>

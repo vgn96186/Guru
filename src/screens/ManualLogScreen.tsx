@@ -130,7 +130,7 @@ export default function ManualLogScreen() {
                   style={[styles.subjectChip, selectedTopicId === t.id && { backgroundColor: '#6C63FF' }]}
                   onPress={() => setSelectedTopicId(t.id === selectedTopicId ? null : t.id)}
                 >
-                  <Text style={[styles.subjectText, selectedTopicId === t.id && { color: '#fff' }]} numberOfLines={1}>
+                  <Text style={[styles.subjectText, selectedTopicId === t.id && { color: '#fff' }]}>
                     {t.name}
                   </Text>
                 </TouchableOpacity>

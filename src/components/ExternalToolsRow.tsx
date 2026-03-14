@@ -64,7 +64,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             <View style={[styles.iconBox, { backgroundColor: app.color + '22' }]}>
               <Text style={styles.icon}>{app.iconEmoji}</Text>
             </View>
-            <Text style={styles.appName} numberOfLines={1}>
+            <Text style={styles.appName} numberOfLines={2}>
               {app.name}
             </Text>
           </TouchableOpacity>

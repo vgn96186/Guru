@@ -115,7 +115,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
               </View>
               <View style={s.headerText}>
                 <Text style={s.headerTitle}>Study Guru</Text>
-                <Text style={s.headerSub} numberOfLines={1}>
+                <Text style={s.headerSub}>
                   {topicName}
                 </Text>
               </View>

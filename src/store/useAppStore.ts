@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { UserProfile, LevelInfo, StudyResourceMode } from '../types';
+import { DailyPlan } from '../services/ai';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { getLevelInfo } from '../services/xpService';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
@@ -11,9 +12,12 @@ interface AppState {
   levelInfo: LevelInfo | null;
   hasCheckedInToday: boolean;
   dailyAvailability: number | null;
+  todayPlan: DailyPlan | null;
+  planGeneratedAt: number | null;
   loadProfile: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setDailyAvailability: (mins: number) => void;
+  setTodayPlan: (plan: DailyPlan | null) => void;
   toggleFocusAudio: () => Promise<void>;
   toggleVisualTimers: () => Promise<void>;
   toggleFaceTracking: () => Promise<void>;
@@ -41,6 +45,8 @@ export const useAppStore = create<AppState>((set) => {
     levelInfo: null,
     hasCheckedInToday: false,
     dailyAvailability: null,
+    todayPlan: null,
+    planGeneratedAt: null,
 
     loadProfile: async () => {
       const profile = await profileRepository.getProfile();
@@ -58,6 +64,10 @@ export const useAppStore = create<AppState>((set) => {
 
     setDailyAvailability: (mins: number) => {
       set({ dailyAvailability: mins });
+    },
+
+    setTodayPlan: (plan: DailyPlan | null) => {
+      set({ todayPlan: plan, planGeneratedAt: plan ? Date.now() : null });
     },
 
     toggleFocusAudio: async () => {

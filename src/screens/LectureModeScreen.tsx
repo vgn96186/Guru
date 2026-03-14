@@ -12,6 +12,7 @@ import {
   Vibration,
   AppState,
   Platform,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -77,6 +78,10 @@ export default function LectureModeScreen() {
 
   const [proofOfLifeActive, setProofOfLifeActive] = useState(false);
   const [proofOfLifeCountdown, setProofOfLifeCountdown] = useState(0);
+  
+  // Animation for proof of life warning
+  const proofPulseAnim = useRef(new Animated.Value(1)).current;
+  const proofGlowAnim = useRef(new Animated.Value(0)).current;
 
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const recordingRef = useRef<Audio.Recording | null>(null);
@@ -292,7 +297,7 @@ export default function LectureModeScreen() {
     };
   }, [onBreak]);
 
-  // Proof of Life Countdown - with proper cleanup
+  // Proof of Life Countdown - with proper cleanup and animations
   useEffect(() => {
     if (proofOfLifeActive && proofOfLifeCountdown > 0) {
       proofOfLifeTimerRef.current = setInterval(() => {
@@ -318,6 +323,34 @@ export default function LectureModeScreen() {
       };
     }
   }, [proofOfLifeActive, proofOfLifeCountdown]);
+
+  // Animations for proof of life warning
+  useEffect(() => {
+    if (proofOfLifeActive) {
+      // Pulsing glow effect
+      const glowLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(proofGlowAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+          Animated.timing(proofGlowAnim, { toValue: 0.6, duration: 1000, useNativeDriver: true }),
+        ])
+      );
+      glowLoop.start();
+
+      // Pulse the entire warning
+      const pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(proofPulseAnim, { toValue: 1.02, duration: 800, useNativeDriver: true }),
+          Animated.timing(proofPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        ])
+      );
+      pulseLoop.start();
+
+      return () => {
+        glowLoop.stop();
+        pulseLoop.stop();
+      };
+    }
+  }, [proofOfLifeActive]);
 
   const stopLecture = useCallback(async () => {
     if (timerRef.current) {
@@ -769,16 +802,57 @@ export default function LectureModeScreen() {
             </Text>
           </View>
 
-          {/* Proof of Life Challenge */}
+          {/* Proof of Life Challenge - Enhanced with animation */}
           {proofOfLifeActive && (
-            <View style={styles.proofOfLifeBox}>
-              <Text style={styles.proofEmoji}>🚨</Text>
+            <Animated.View 
+              style={[
+                styles.proofOfLifeBox,
+                proofOfLifeActive && styles.proofOfLifeBoxActive,
+                {
+                  transform: [{ scale: proofPulseAnim }],
+                  shadowOpacity: 0.4 + proofGlowAnim._value * 0.4,
+                }
+              ]}
+            >
+              <View style={styles.proofIconContainer}>
+                <Text style={styles.proofEmoji}>🚨</Text>
+                <Animated.View 
+                  style={[
+                    styles.proofPulseRing,
+                    {
+                      opacity: proofGlowAnim,
+                      transform: [
+                        { scale: proofGlowAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [1, 1.3],
+                        }) }
+                      ],
+                    }
+                  ]} 
+                />
+              </View>
+              
               <Text style={styles.proofTitle}>ACTIVE LISTENING CHECK</Text>
               <Text style={styles.proofSub}>
-                You have {proofOfLifeCountdown}s to type one thing the professor just said. Are you
-                zoning out?
+                You have {proofOfLifeCountdown}s to type one thing the professor just said.
               </Text>
-            </View>
+              
+              <View style={styles.proofTimerContainer}>
+                <View style={styles.proofTimerCircle}>
+                  <Text style={[
+                    styles.proofTimerText,
+                    proofOfLifeCountdown <= 10 && styles.proofTimerTextUrgent
+                  ]}>
+                    {proofOfLifeCountdown}
+                  </Text>
+                </View>
+                <Text style={styles.proofTimerLabel}>seconds remaining</Text>
+              </View>
+              
+              <Text style={styles.proofWarning}>
+                Are you zoning out? Type a note above to dismiss this alert.
+              </Text>
+            </Animated.View>
           )}
 
           {/* Subject selector */}
@@ -838,7 +912,11 @@ export default function LectureModeScreen() {
 
           <View style={styles.noteSection}>
             <TextInput
-              style={[styles.noteInput, proofOfLifeActive && styles.noteInputWarn]}
+              style={[
+                styles.noteInput, 
+                proofOfLifeActive && styles.noteInputWarn,
+                currentNote.trim() && proofOfLifeActive && styles.noteInputActive
+              ]}
               placeholder={
                 proofOfLifeActive
                   ? 'Type here immediately to dismiss alarm...'
@@ -890,7 +968,7 @@ export default function LectureModeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A14' },
-  safeWarn: { backgroundColor: '#2A0A0A' },
+  safeWarn: { backgroundColor: '#1A0505' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -931,7 +1009,11 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 24,
   },
-  timerBoxWarn: { backgroundColor: '#3A0A0A', borderWidth: 2, borderColor: '#F44336' },
+  timerBoxWarn: { 
+    backgroundColor: '#2A0A0A', 
+    borderWidth: 2, 
+    borderColor: '#F44336' 
+  },
   timerLabel: {
     color: '#9E9E9E',
     fontSize: 12,
@@ -944,22 +1026,94 @@ const styles = StyleSheet.create({
   timerWarn: { color: '#F44336' },
 
   proofOfLifeBox: {
-    backgroundColor: '#F4433622',
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F44336',
+    backgroundColor: '#2A0A0A',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24,
     alignItems: 'center',
-    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#F44336',
+    position: 'relative',
+    overflow: 'hidden',
   },
-  proofEmoji: { fontSize: 40, marginBottom: 8 },
-  proofTitle: { color: '#F44336', fontWeight: '900', fontSize: 18, marginBottom: 8 },
+  proofOfLifeBoxActive: {
+    // Additional glow effect via shadow
+  },
+  proofIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#3A1515',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    position: 'relative',
+  },
+  proofPulseRing: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(244, 67, 54, 0.4)',
+  },
+  proofEmoji: { 
+    fontSize: 32, 
+    zIndex: 1 
+  },
+  proofTitle: { 
+    color: '#F44336', 
+    fontWeight: '900', 
+    fontSize: 20, 
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
   proofSub: {
     color: '#FF9800',
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 14,
     lineHeight: 20,
+    marginBottom: 20,
+  },
+  proofTimerContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  proofTimerCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#1A0505',
+    borderWidth: 3,
+    borderColor: '#F44336',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  proofTimerText: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+  },
+  proofTimerTextUrgent: {
+    color: '#F44336',
+  },
+  proofTimerLabel: {
+    color: '#9E9E9E',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  proofWarning: {
+    color: '#FFCDD2',
+    fontSize: 13,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 18,
+    maxWidth: '90%',
   },
 
   subjectSection: { marginBottom: 20 },
@@ -1018,8 +1172,15 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A38',
     marginBottom: 12,
   },
-  noteInputWarn: { backgroundColor: '#2A0A0A', borderColor: '#F44336', borderWidth: 2 },
-
+  noteInputWarn: { 
+    backgroundColor: '#2A0A0A', 
+    borderColor: '#F44336', 
+    borderWidth: 2,
+  },
+  noteInputActive: {
+    borderColor: '#4CAF50',
+    borderWidth: 2,
+  },
   saveBtn: { backgroundColor: '#6C63FF', borderRadius: 12, padding: 16, alignItems: 'center' },
   saveBtnDisabled: { backgroundColor: '#333' },
   saveBtnWarn: { backgroundColor: '#F44336' },

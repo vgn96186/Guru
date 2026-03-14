@@ -275,27 +275,40 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
                 ]}
               >
                 {msg.role === 'guru' && (
-                  <View style={s.avatarSmall}>
+                  <View style={[s.avatar, s.guruAvatar]}>
                     <Text style={s.avatarText}>G</Text>
                   </View>
                 )}
-                <View style={[s.bubble, msg.role === 'user' ? s.userBubble : s.guruBubble]}>
+                <View style={[
+                  s.bubble, 
+                  msg.role === 'user' ? s.userBubble : s.guruBubble,
+                  msg.role === 'user' ? s.userBubbleTail : s.guruBubbleTail
+                ]}>
                   {msg.role === 'guru' ? (
                     <MarkdownRender content={msg.text} />
                   ) : (
                     <Text style={s.userBubbleText}>{msg.text}</Text>
                   )}
                 </View>
+                {msg.role === 'user' && (
+                  <View style={[s.avatar, s.userAvatar]}>
+                    <Ionicons name="person" size={16} color="#fff" />
+                  </View>
+                )}
               </View>
             ))}
 
             {loading && (
               <View style={s.guruContainer}>
-                <View style={s.avatarSmall}>
+                <View style={[s.avatar, s.guruAvatar]}>
                   <ActivityIndicator size="small" color={theme.colors.primary} />
                 </View>
                 <View style={[s.bubble, s.guruBubble, s.loadingBubble]}>
-                  <Text style={s.loadingText}>Thinking...</Text>
+                  <View style={s.typingIndicator}>
+                    <Animated.View style={[s.typingDot, { opacity: pulseAnim }]} />
+                    <Animated.View style={[s.typingDot, { opacity: pulseAnim }]} />
+                    <Animated.View style={[s.typingDot, { opacity: pulseAnim }]} />
+                  </View>
                 </View>
               </View>
             )}
@@ -440,7 +453,7 @@ const s = StyleSheet.create({
   messagesContent: {
     padding: 20,
     paddingBottom: 40,
-    gap: 20,
+    gap: 16,
   },
   emptyContainer: {
     flex: 1,
@@ -474,8 +487,9 @@ const s = StyleSheet.create({
 
   bubbleContainer: {
     flexDirection: 'row',
-    maxWidth: '90%',
+    maxWidth: '85%',
     alignItems: 'flex-end',
+    position: 'relative',
   },
   userContainer: {
     alignSelf: 'flex-end',
@@ -485,19 +499,27 @@ const s = StyleSheet.create({
     alignSelf: 'flex-start',
     justifyContent: 'flex-start',
   },
-  avatarSmall: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
+  avatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
-    marginBottom: 4,
+    marginHorizontal: 8,
+  },
+  guruAvatar: {
+    backgroundColor: theme.colors.primary,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  userAvatar: {
+    backgroundColor: theme.colors.primary,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
   },
   avatarText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '900',
   },
   bubble: {
@@ -506,18 +528,32 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 4,
   },
   userBubble: {
     backgroundColor: theme.colors.primary,
     borderBottomRightRadius: 4,
+    borderTopRightRadius: 20,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
   },
   guruBubble: {
     backgroundColor: theme.colors.surfaceAlt,
     borderBottomLeftRadius: 4,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
     borderWidth: 1,
     borderColor: theme.colors.border,
+  },
+  userBubbleTail: {
+    // Tail effect for user messages (pointing left)
+    borderLeftWidth: 0,
+  },
+  guruBubbleTail: {
+    // Tail effect for guru messages (pointing right)
+    borderRightWidth: 0,
   },
   userBubbleText: {
     color: '#fff',
@@ -529,12 +565,18 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
+    minWidth: 80,
   },
-  loadingText: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-    marginLeft: 8,
-    fontStyle: 'italic',
+  typingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  typingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.textMuted,
   },
 
   errorContainer: {

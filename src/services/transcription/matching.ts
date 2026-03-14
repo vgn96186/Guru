@@ -30,7 +30,7 @@ export async function markTopicsFromLecture(
     const match = await findTopicIdByKeywords(db, sanitized, subjectName);
     if (match) {
       matchedTopicIds.add(match);
-      await applyLectureProgressToTopic(db, match, confidence);
+      await applyLectureProgressToTopic(db, match, confidence, true, lectureSummary);
     }
   }
 
@@ -44,7 +44,7 @@ export async function markTopicsFromLecture(
         for (const matchId of semanticMatches) {
           if (!matchedTopicIds.has(matchId)) {
             matchedTopicIds.add(matchId);
-            await applyLectureProgressToTopic(db, matchId, confidence);
+            await applyLectureProgressToTopic(db, matchId, confidence, true, lectureSummary);
           }
         }
       }
@@ -129,7 +129,8 @@ async function applyLectureProgressToTopic(
   topicId: number,
   confidence: number,
   isDirectMatch = true,
+  summary?: string,
 ) {
   const status = 'seen';
-  await updateTopicProgress(topicId, status, confidence, 0);
+  await updateTopicProgress(topicId, status, confidence, 0, summary);
 }

@@ -112,6 +112,7 @@ export async function updateTopicProgress(
   status: TopicProgress['status'],
   confidence: number,
   xpToAdd: number,
+  noteToAppend?: string,
 ): Promise<void> {
   const db = getDb();
   const now = Date.now();
@@ -145,9 +146,10 @@ export async function updateTopicProgress(
     await db.runAsync(
       `INSERT INTO topic_progress (
          topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
-         fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review
+         fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review,
+         user_notes
        )
-       VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(topic_id) DO UPDATE SET
          status = excluded.status,
          confidence = excluded.confidence,
@@ -163,11 +165,21 @@ export async function updateTopicProgress(
          fsrs_reps = excluded.fsrs_reps,
          fsrs_lapses = excluded.fsrs_lapses,
          fsrs_state = excluded.fsrs_state,
-         fsrs_last_review = excluded.fsrs_last_review`,
+         fsrs_last_review = excluded.fsrs_last_review,
+         user_notes = CASE 
+           WHEN excluded.user_notes IS NOT NULL AND excluded.user_notes != '' THEN 
+             CASE WHEN user_notes IS NULL OR user_notes = '' 
+                  THEN excluded.user_notes 
+                  ELSE user_notes || '\n\n---\n' || excluded.user_notes 
+             END
+           ELSE user_notes 
+         END`,
       [
         topicId, status, confidence, now, xpToAdd, nextReview,
-        updatedCard.due.toISOString(), updatedCard.stability, updatedCard.difficulty, updatedCard.elapsed_days, 
-        updatedCard.scheduled_days, updatedCard.reps, updatedCard.lapses, updatedCard.state, updatedCard.last_review?.toISOString() ?? null
+        updatedCard.due.toISOString(), updatedCard.stability, updatedCard.difficulty,
+        updatedCard.elapsed_days, updatedCard.scheduled_days, updatedCard.reps,
+        updatedCard.lapses, updatedCard.state, updatedCard.last_review?.toISOString() ?? null,
+        noteToAppend ?? null
       ]
     );
     await db.execAsync('COMMIT TRANSACTION');

@@ -110,15 +110,15 @@ export default function FlaggedReviewScreen() {
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const load = useCallback(async (active: { current: boolean }) => {
+  const load = useCallback(async (active: boolean) => {
     const items = await getFlaggedContent();
-    if (active.current) setItems(items);
+    if (active) setItems(items);
   }, []);
 
   useEffect(() => {
-    const active = { current: true };
+    let active = true;
     void load(active);
-    return () => { active.current = false; };
+    return () => { active = false; };
   }, [load]);
 
   const handleUnflag = useCallback((item: FlaggedItem) => {
@@ -127,7 +127,7 @@ export default function FlaggedReviewScreen() {
       {
         text: 'Unflag', style: 'destructive', onPress: async () => {
           await setContentFlagged(item.topicId, item.contentType, false);
-          void load({ current: true });
+          void load(true);
         },
       },
     ]);

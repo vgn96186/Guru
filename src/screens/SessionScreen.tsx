@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, BackHandler, Alert, Animated, AppState, Dimensions, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, BackHandler, Alert, Animated, AppState, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,7 +8,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { useSessionStore, getCurrentAgendaItem, getCurrentContentType } from '../store/useSessionStore';
 import { useAppStore } from '../store/useAppStore';
-import { getTodaysAgendaWithTimes, invalidatePlanCache, type TodayTask } from '../services/studyPlanner';
+import { invalidatePlanCache } from '../services/studyPlanner';
 import { buildSession } from '../services/sessionPlanner';
 import { fetchContent, prefetchTopicContent } from '../services/aiService';
 import { sendImmediateNag } from '../services/notificationService';
@@ -106,7 +106,7 @@ export default function SessionScreen() {
       return true;
     });
     return () => handler.remove();
-  }, []);
+  }, [finishSession]);
 
   const appState = useRef(AppState.currentState);
   useEffect(() => {
@@ -123,67 +123,7 @@ export default function SessionScreen() {
     isPausedRef.current = store.isPaused;
   }, [store.isPaused]);
 
-  const startPlanningRef = useRef<() => void>(() => {});
-
-  useEffect(() => {
-    startPlanningRef.current = startPlanning;
-  }, [startPlanning]);
-
-  useEffect(() => {
-    const hasResumableSession =
-      Boolean(storeRef.current.sessionId) &&
-      Boolean(storeRef.current.agenda) &&
-      storeRef.current.sessionState !== 'session_done';
-
-    if (resume && hasResumableSession) {
-      const elapsed = storeRef.current.startedAt
-        ? Math.max(0, Math.floor((Date.now() - storeRef.current.startedAt) / 1000))
-        : Math.floor(storeRef.current.activeStudyDuration);
-      setElapsedSeconds(elapsed);
-      setActiveElapsedSeconds(Math.floor(storeRef.current.activeStudyDuration));
-      if (storeRef.current.sessionState === 'planning' || storeRef.current.sessionState === 'agenda_reveal') {
-        storeRef.current.setSessionState('studying');
-      }
-    } else {
-      storeRef.current.resetSession();
-      startPlanningRef.current();
-    }
-
-    timerRef.current = setInterval(() => {
-      setElapsedSeconds(s => s + 1);
-      if (!isPausedRef.current) {
-        setActiveElapsedSeconds(s => s + 1);
-        storeRef.current.incrementActiveStudyDuration(1);
-      }
-    }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [resume]);
-
-  useEffect(() => {
-    if (!store.isOnBreak) return;
-    const t = setInterval(() => store.tickBreak(), 1000);
-    return () => clearInterval(t);
-  }, [store.isOnBreak]);
-
-  useEffect(() => {
-    if (store.sessionState !== 'studying') return;
-    const item = getCurrentAgendaItem(store);
-    const contentType = getCurrentContentType(store);
-    if (!item || !contentType || store.currentContent) return;
-    setAiError(null);
-    store.setLoadingContent(true);
-    fetchContent(item.topic, contentType)
-      .then(content => { store.setCurrentContent(content); store.setLoadingContent(false); })
-      .catch(e => { store.setLoadingContent(false); setAiError(e?.message ?? 'AI content failed'); });
-  }, [store.sessionState, store.currentItemIndex, store.currentContentIndex]);
-
-  useEffect(() => {
-    if (!store.agenda) return;
-    const nextItem = store.agenda.items[store.currentItemIndex + 1];
-    if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes);
-  }, [store.currentItemIndex]);
-
-  async function startPlanning() {
+  const startPlanning = useCallback(async () => {
     setAiError(null);
     store.setSessionState('planning');
     try {
@@ -204,7 +144,61 @@ export default function SessionScreen() {
       store.setSessionState('agenda_reveal');
       setTimeout(() => store.setSessionState('studying'), 3000);
     } catch (e: any) { setAiError(e?.message ?? 'Could not plan session'); }
-  }
+  }, [mood, forcedMinutes, forcedMode, dailyAvailability, profile, focusTopicId, focusTopicIds, preferredActionType, store]);
+
+  useEffect(() => {
+    const hasResumableSession =
+      Boolean(storeRef.current.sessionId) &&
+      Boolean(storeRef.current.agenda) &&
+      storeRef.current.sessionState !== 'session_done';
+
+    if (resume && hasResumableSession) {
+      const elapsed = storeRef.current.startedAt
+        ? Math.max(0, Math.floor((Date.now() - storeRef.current.startedAt) / 1000))
+        : Math.floor(storeRef.current.activeStudyDuration);
+      setElapsedSeconds(elapsed);
+      setActiveElapsedSeconds(Math.floor(storeRef.current.activeStudyDuration));
+      if (storeRef.current.sessionState === 'planning' || storeRef.current.sessionState === 'agenda_reveal') {
+        storeRef.current.setSessionState('studying');
+      }
+    } else {
+      storeRef.current.resetSession();
+      startPlanning();
+    }
+
+    timerRef.current = setInterval(() => {
+      setElapsedSeconds(s => s + 1);
+      if (!isPausedRef.current) {
+        setActiveElapsedSeconds(s => s + 1);
+        storeRef.current.incrementActiveStudyDuration(1);
+      }
+    }, 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [resume, startPlanning]);
+
+  useEffect(() => {
+    if (!store.isOnBreak) return;
+    const t = setInterval(() => store.tickBreak(), 1000);
+    return () => clearInterval(t);
+  }, [store]);
+
+  useEffect(() => {
+    if (store.sessionState !== 'studying') return;
+    const item = getCurrentAgendaItem(store);
+    const contentType = getCurrentContentType(store);
+    if (!item || !contentType || store.currentContent) return;
+    setAiError(null);
+    store.setLoadingContent(true);
+    fetchContent(item.topic, contentType)
+      .then(content => { store.setCurrentContent(content); store.setLoadingContent(false); })
+      .catch(e => { store.setLoadingContent(false); setAiError(e?.message ?? 'AI content failed'); });
+  }, [store]);
+
+  useEffect(() => {
+    if (!store.agenda) return;
+    const nextItem = store.agenda.items[store.currentItemIndex + 1];
+    if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes);
+  }, [store]);
 
   function handleStartManualReview() {
     setAiError(null);
@@ -307,7 +301,7 @@ export default function SessionScreen() {
     );
   }
 
-  async function finishSession() {
+  const finishSession = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     const { sessionId, completedTopicIds, quizResults, agenda } = store;
     if (!sessionId) { navigation.goBack(); return; }
@@ -322,7 +316,7 @@ export default function SessionScreen() {
     refreshProfile().catch((err) => console.error('[Session] Post-session profile refresh failed:', err));
     invalidatePlanCache();
     store.setSessionState('session_done');
-  }
+  }, [store, activeElapsedSeconds, navigation, refreshProfile]);
 
   if (aiError) {
     return (

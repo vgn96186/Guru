@@ -81,7 +81,7 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
     if (countdown <= 0) {
       onDone();
     }
-  }, [countdown]);
+  }, [countdown, onDone]);
 
   // Load a quick quiz question during break
   useEffect(() => {
@@ -133,7 +133,6 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
             {quizQuestion.options.map((opt, idx) => {
               const anim = getOptionAnim(idx);
               const isCorrectOption = idx === quizQuestion.correct;
-              const isSelectedOption = selected === idx;
               const bgColor = anim.bg.interpolate({
                 inputRange: [0, 1],
                 outputRange: ['#1A1A24', isCorrectOption ? '#1A2A1A' : '#2A0A0A'],

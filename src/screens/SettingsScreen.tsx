@@ -117,10 +117,8 @@ export default function SettingsScreen() {
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjectLoadOverrides, setSubjectLoadOverrides] = useState<Record<string, string>>({});
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [examSyncMeta, setExamSyncMeta] = useState<ExamDateSyncMeta | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [saveError, setSaveError] = useState('');
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -169,10 +167,9 @@ export default function SettingsScreen() {
     if (isFocused) {
       checkPermissions();
       getExamDateSyncMeta()
-        .then(setExamSyncMeta)
+        .then(() => {}) // We don't use the meta in UI yet, but we check if it works
         .catch((err) => {
           console.warn('[Settings] Failed to load exam sync meta:', err);
-          setExamSyncMeta(null);
         });
     }
   }, [isFocused]);
@@ -256,6 +253,8 @@ export default function SettingsScreen() {
     guruFrequency,
     focusSubjectIds,
     subjectLoadOverrides,
+    markDirty,
+    profile
   ]);
 
   async function save() {
@@ -266,7 +265,6 @@ export default function SettingsScreen() {
     }
     setSaving(true);
     setSaveState('saving');
-    setSaveError('');
 
     const nextErrors: ValidationErrors = {};
     const normalizedInicet = normalizeUserDateInput(inicetDate);
@@ -290,7 +288,6 @@ export default function SettingsScreen() {
     if (Object.keys(nextErrors).length > 0) {
       setValidationErrors(nextErrors);
       setSaveState('error');
-      setSaveError('Fix highlighted fields');
       setSaving(false);
       return;
     }
@@ -329,7 +326,7 @@ export default function SettingsScreen() {
       saveStateTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2200);
     } catch (err: any) {
       setSaveState('error');
-      setSaveError(err?.message ?? 'Save failed');
+      console.error('[Settings] Save failed:', err);
     } finally {
       setSaving(false);
     }
@@ -344,7 +341,6 @@ export default function SettingsScreen() {
       if (res.inicetDate) setInicetDate(res.inicetDate);
       if (res.neetDate) setNeetDate(res.neetDate);
       await refreshProfile();
-      setExamSyncMeta(await getExamDateSyncMeta());
       Alert.alert(res.updated ? 'Updated' : 'Checked', res.message);
     } catch (err: any) {
       Alert.alert('Sync Failed', err.message);

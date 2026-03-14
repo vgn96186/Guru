@@ -8,13 +8,9 @@ import {
   StyleSheet,
   StatusBar,
   Alert,
-  ActivityIndicator,
-  Pressable,
   useWindowDimensions,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
@@ -50,11 +46,10 @@ export default function HomeScreen() {
   const isTabletLandscape = width >= 900 && width > height;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const { profile, levelInfo, refreshProfile } = useAppStore();
+  const { profile, levelInfo } = useAppStore();
 
   const {
     weakTopics,
-    dueTopics,
     todayTasks,
     todayMinutes,
     completedSessions,
@@ -64,10 +59,7 @@ export default function HomeScreen() {
 
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
   const [mood, setMood] = useState<Mood>('good');
-  const [reviewDue, setReviewDue] = useState<any[]>([]);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
-  const [uploadTranscript, setUploadTranscript] = useState('');
-  const [showTranscriptModal, setShowTranscriptModal] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
 
@@ -75,7 +67,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     dailyLogRepository.getDailyLog().then((log) => setMood((log?.mood as Mood) ?? 'good'));
-    profileRepository.getReviewDueTopics().then(setReviewDue);
   }, []);
 
   useEffect(() => {
@@ -97,7 +88,7 @@ export default function HomeScreen() {
         );
       }
     });
-  }, [profile?.syncCode]);
+  }, [profile?.syncCode, navigation]);
 
   if (isLoading || !profile || !levelInfo) {
     return (
@@ -179,9 +170,8 @@ export default function HomeScreen() {
         confidence: analysis.estimatedConfidence,
         embedding: analysis.embedding,
       });
-      setUploadTranscript(note);
-      setShowTranscriptModal(true);
       reloadHomeDashboard();
+      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {

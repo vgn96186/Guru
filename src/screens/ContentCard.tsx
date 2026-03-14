@@ -63,17 +63,19 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
   const [chatOpen, setChatOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
 
+  if (!topicId && flagged) {
+    setFlagged(false);
+  }
+
   useEffect(() => {
     let active = true;
     if (topicId) {
       void isContentFlagged(topicId, content.type).then(val => {
         if (active && val !== flagged) setFlagged(val);
       });
-    } else if (flagged) {
-      setFlagged(false);
     }
     return () => { active = false; };
-  }, [topicId, content.type, flagged]);
+  }, [topicId, content.type]);
 
   function handleFlag() {
     if (!topicId) return;
@@ -140,10 +142,6 @@ function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
     </View>
   );
 }
-
-const CONFIDENCE_LABELS: Record<number, string> = {
-  1: '😬', 2: '😕', 3: '😐', 4: '😊', 5: '🔥',
-};
 
 // ── Key Points ────────────────────────────────────────────────────
 
@@ -368,7 +366,7 @@ function TeachBackCard({ content, onDone, onSkip }: { content: TeachBackContent 
       const parsed = JSON.parse(raw);
       setGuruFeedback(parsed);
       setSubmitted(true);
-    } catch (e) {
+    } catch {
       // Fallback if AI fails
       setSubmitted(true);
     } finally {

@@ -23,10 +23,13 @@ export default function ManualLogScreen() {
   
   const [selectedAppId, setSelectedAppId] = useState<string | null>(route.params?.appId ?? null);
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | null>(null);
-  const [subjectTopics, setSubjectTopics] = useState<TopicWithProgress[]>([]);
   const [selectedTopicId, setSelectedTopicId] = useState<number | null>(null);
-  const [duration, setDuration] = useState('45');
-  const [topicName, setTopicName] = useState('');
+  const [subjectTopics, setSubjectTopics] = useState<Topic[]>([]);
+
+  if (!selectedSubjectId) {
+    if (subjectTopics.length > 0) setSubjectTopics([]);
+    if (selectedTopicId !== null) setSelectedTopicId(null);
+  }
 
   useEffect(() => {
     let active = true;
@@ -43,9 +46,6 @@ export default function ManualLogScreen() {
         setSubjectTopics(filtered);
         setSelectedTopicId(null);
       });
-    } else {
-      setSubjectTopics([]);
-      setSelectedTopicId(null);
     }
     return () => { active = false; };
   }, [selectedSubjectId]);
@@ -80,8 +80,6 @@ export default function ManualLogScreen() {
     await refreshProfile();
     navigation.goBack();
   }
-
-  const selectedApp = EXTERNAL_APPS.find(a => a.id === selectedAppId);
 
   return (
     <SafeAreaView style={styles.safe}>

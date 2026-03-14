@@ -278,40 +278,31 @@ export default function LectureModeScreen() {
     }
   }, [proofOfLifeActive, proofOfLifeCountdown]);
 
-  // Block Back Button
-  useEffect(() => {
-    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
-      Alert.alert('Ready to wrap up?', 'You can always come back and continue later.', [
-        { text: 'Keep watching', style: 'cancel' },
-        { text: 'Finish', onPress: stopLecture, style: 'destructive' },
-      ]);
-      return true;
-    });
-    return () => handler.remove();
-  }, [notes, currentNote, elapsed]);
-
-  // Break countdown logic
-  useEffect(() => {
-    if (onBreak && breakCountdown > 0) {
-      const t = setInterval(() => setBreakCountdown((c) => c - 1), 1000);
-      return () => clearInterval(t);
-    } else if (onBreak && breakCountdown <= 0) {
-      handleBreakDone();
+  const stopLecture = useCallback(async () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (currentNote.trim()) {
+      await saveLectureNote(selectedSubjectId, currentNote.trim());
+      setNotes((n) => [...n, currentNote.trim()]);
     }
-  }, [onBreak, breakCountdown]);
 
-  // Resume logic
-  useEffect(() => {
-    if (resumeCountdown > 0) {
-      const t = setInterval(() => setResumeCountdown((c) => c - 1), 1000);
-      return () => clearInterval(t);
-    } else if (resumeCountdown === 0) {
-      setResumeCountdown(-1);
-      setOnBreak(false);
-      sendSyncMessage({ type: 'LECTURE_RESUMED' });
-      // Main timer resumes automatically via the [onBreak] dependency above
+    const mins = Math.floor(elapsed / 60);
+    if (mins > 0) {
+      const noteBonus = notes.length * 50;
+      const totalXp = mins * 15 + noteBonus;
+
+      if (sessionIdRef.current) {
+        await endSession(sessionIdRef.current, [], totalXp, mins, notes.join('\n\n'));
+      } else {
+        const sessionId = await createSession([], null, 'normal');
+        await endSession(sessionId, [], totalXp, mins, notes.join('\n\n'));
+      }
+
+      await profileRepository.updateStreak(mins >= 20);
+      await refreshProfile();
     }
-  }, [resumeCountdown]);
+    await AsyncStorage.removeItem(LECTURE_STATE_KEY);
+    navigation.goBack();
+  }, [elapsed, notes, currentNote, selectedSubjectId, navigation, refreshProfile]);
 
   function startBreak() {
     setOnBreak(true);
@@ -401,7 +392,7 @@ export default function LectureModeScreen() {
     }
   }
 
-  async function processRecording() {
+  const processRecording = useCallback(async () => {
     if (!recording) {
       if (__DEV__) console.log('[LectureMode] No recording instance to process');
       return;
@@ -452,7 +443,7 @@ export default function LectureModeScreen() {
         startRecording();
       }
     }
-  }
+  }, [recording, isRecordingEnabled, onBreak, elapsed]);
 
   async function applyLectureAnalysis(analysis: {
     topics: string[];
@@ -531,33 +522,6 @@ export default function LectureModeScreen() {
     }
   }
 
-  // Effect to handle the 3-minute recording loop
-  useEffect(() => {
-    if (isRecordingEnabled && !onBreak) {
-      if (!recording && !isTranscribing) {
-        startRecording();
-      }
-
-      // Every 3 minutes (180 seconds), process the chunk
-      const interval = setInterval(() => {
-        if (recording) {
-          processRecording();
-        }
-      }, 180 * 1000);
-
-      return () => clearInterval(interval);
-    } else if (!isRecordingEnabled || onBreak) {
-      if (recording) {
-        recording
-          .stopAndUnloadAsync()
-          .then(() => setRecording(null))
-          .catch((err) => {
-            console.error('[LectureMode] Failed to stop recording on loop pause:', err);
-          });
-      }
-    }
-  }, [isRecordingEnabled, onBreak, recording, isTranscribing]);
-
   function toggleAutoScribe() {
     const groqKey = profile?.groqApiKey?.trim() || BUNDLED_GROQ_KEY;
     const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
@@ -578,28 +542,40 @@ export default function LectureModeScreen() {
     ]);
   }
 
-  async function stopLecture() {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (currentNote.trim()) await saveNote();
+  // Block Back Button
+  useEffect(() => {
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+      Alert.alert('Ready to wrap up?', 'You can always come back and continue later.', [
+        { text: 'Keep watching', style: 'cancel' },
+        { text: 'Finish', onPress: stopLecture, style: 'destructive' },
+      ]);
+      return true;
+    });
+    return () => handler.remove();
+  }, [stopLecture]);
 
-    const mins = Math.floor(elapsed / 60);
-    if (mins > 0) {
-      const noteBonus = notes.length * 50;
-      const totalXp = mins * 15 + noteBonus;
-
-      if (sessionIdRef.current) {
-        await endSession(sessionIdRef.current, [], totalXp, mins, notes.join('\n\n'));
-      } else {
-        const sessionId = await createSession([], null, 'normal');
-        await endSession(sessionId, [], totalXp, mins, notes.join('\n\n'));
-      }
-
-      await profileRepository.updateStreak(mins >= 20);
-      await refreshProfile();
+  // Break countdown logic
+  useEffect(() => {
+    if (onBreak && breakCountdown > 0) {
+      const t = setInterval(() => setBreakCountdown((c) => c - 1), 1000);
+      return () => clearInterval(t);
+    } else if (onBreak && breakCountdown <= 0) {
+      handleBreakDone();
     }
-    await AsyncStorage.removeItem(LECTURE_STATE_KEY);
-    navigation.goBack();
-  }
+  }, [onBreak, breakCountdown]);
+
+  // Resume logic
+  useEffect(() => {
+    if (resumeCountdown > 0) {
+      const t = setInterval(() => setResumeCountdown((c) => c - 1), 1000);
+      return () => clearInterval(t);
+    } else if (resumeCountdown === 0) {
+      setResumeCountdown(-1);
+      setOnBreak(false);
+      sendSyncMessage({ type: 'LECTURE_RESUMED' });
+      // Main timer resumes automatically via the [onBreak] dependency above
+    }
+  }, [resumeCountdown]);
 
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;

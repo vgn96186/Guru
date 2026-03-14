@@ -191,6 +191,25 @@ CREATE TABLE IF NOT EXISTS offline_ai_queue (
   error_message TEXT
 )`;
 
+export const CREATE_DAILY_PLAN = `
+CREATE TABLE IF NOT EXISTS daily_plan (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL UNIQUE,
+  plan_json TEXT NOT NULL,
+  source TEXT DEFAULT 'guru',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`;
+
+export const CREATE_PLAN_EVENTS = `
+CREATE TABLE IF NOT EXISTS plan_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
@@ -211,6 +230,10 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_topics_parent ON topics(parent_topic_id)`,
   // Topic-to-subject join
   `CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject_id)`,
+  // Daily plan lookups
+  `CREATE INDEX IF NOT EXISTS idx_daily_plan_date ON daily_plan(date)`,
+  // Plan events lookup by date
+  `CREATE INDEX IF NOT EXISTS idx_plan_events_date ON plan_events(date)`,
 ];
 
 export const ALL_SCHEMAS = [
@@ -226,4 +249,6 @@ export const ALL_SCHEMAS = [
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
   CREATE_CHAT_HISTORY,
+  CREATE_DAILY_PLAN,
+  CREATE_PLAN_EVENTS,
 ];

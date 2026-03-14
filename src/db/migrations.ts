@@ -187,7 +187,40 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN backup_directory_uri TEXT`,
     description: 'Add cloud/public backup directory URI',
   },
+  {
+    version: 63,
+    sql: `CREATE TABLE IF NOT EXISTS daily_plan (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL UNIQUE,
+  plan_json TEXT NOT NULL,
+  source TEXT DEFAULT 'guru',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`,
+    description: 'Add daily_plan table for AI study twin',
+  },
+  {
+    version: 64,
+    sql: `CREATE TABLE IF NOT EXISTS plan_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`,
+    description: 'Add plan_events table for AI study twin',
+  },
+  {
+    version: 65,
+    sql: `CREATE INDEX IF NOT EXISTS idx_daily_plan_date ON daily_plan(date)`,
+    description: 'Add index for daily_plan date',
+  },
+  {
+    version: 66,
+    sql: `CREATE INDEX IF NOT EXISTS idx_plan_events_date ON plan_events(date)`,
+    description: 'Add index for plan_events date',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 62;
+export const LATEST_VERSION = 66;

@@ -220,7 +220,60 @@ export const MIGRATIONS: Migration[] = [
     sql: `CREATE INDEX IF NOT EXISTS idx_plan_events_date ON plan_events(date)`,
     description: 'Add index for plan_events date',
   },
+  // ── Lecture Recording Pipeline Improvements ─────────────────────────────────────
+  {
+    version: 67,
+    sql: `ALTER TABLE lecture_notes ADD COLUMN recording_path TEXT`,
+    description: 'Store path to recording file for cleanup',
+  },
+  {
+    version: 68,
+    sql: `ALTER TABLE lecture_notes ADD COLUMN recording_duration_seconds INTEGER`,
+    description: 'Store actual recording duration in seconds',
+  },
+  {
+    version: 69,
+    sql: `ALTER TABLE lecture_notes ADD COLUMN transcription_confidence REAL`,
+    description: 'Store confidence score (0-1) from transcription',
+  },
+  {
+    version: 70,
+    sql: `ALTER TABLE lecture_notes ADD COLUMN processing_metrics_json TEXT`,
+    description: 'Store timing metrics: {transcriptionMs, totalMs, modelUsed}',
+  },
+  {
+    version: 71,
+    sql: `ALTER TABLE lecture_notes ADD COLUMN retry_count INTEGER DEFAULT 0`,
+    description: 'Track how many times transcription was retried',
+  },
+  {
+    version: 72,
+    sql: `ALTER TABLE lecture_notes ADD COLUMN last_error TEXT`,
+    description: 'Store last error message if transcription failed',
+  },
+  {
+    version: 73,
+    sql: `CREATE TABLE IF NOT EXISTS lecture_learned_topics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  lecture_note_id INTEGER NOT NULL REFERENCES lecture_notes(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  confidence_at_time INTEGER NOT NULL DEFAULT 2,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  UNIQUE(lecture_note_id, topic_id)
+)`,
+    description: 'Track which topics were learned from each lecture',
+  },
+  {
+    version: 74,
+    sql: `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_lecture ON lecture_learned_topics(lecture_note_id)`,
+    description: 'Index for finding topics from a lecture',
+  },
+  {
+    version: 75,
+    sql: `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_topic ON lecture_learned_topics(topic_id)`,
+    description: 'Index for finding lectures that covered a topic',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 66;
+export const LATEST_VERSION = 75;

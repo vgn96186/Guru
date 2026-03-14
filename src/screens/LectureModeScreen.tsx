@@ -30,8 +30,8 @@ import { enqueueRequest } from '../services/offlineQueue';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
-import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
-import { saveLectureNote } from '../db/queries/aiCache';
+import { getAllSubjects, getTopicsBySubject, getTopicById } from '../db/queries/topics';
+import { saveLectureTranscript, getLectureTranscriptsBySubject } from '../db/queries/aiCache';
 import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
@@ -42,6 +42,7 @@ import FocusAudioPlayer from '../components/FocusAudioPlayer';
 import { useFaceTracking } from '../hooks/useFaceTracking';
 import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { getDb } from '../db/database';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
 type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
@@ -50,6 +51,8 @@ const LECTURE_STATE_KEY = 'current_lecture_state';
 
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
+const MAX_RECORDING_RETRIES = 3;
+const RECORDING_RETRY_DELAY = 2000;
 
 // Throttle state persistence to avoid excessive writes
 let lastStateSave = 0;
@@ -87,6 +90,7 @@ export default function LectureModeScreen() {
   const recordingRef = useRef<Audio.Recording | null>(null);
   const [isRecordingEnabled, setIsRecordingEnabled] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [recordingRetryCount, setRecordingRetryCount] = useState(0);
 
   const [partnerDoomscrolling, setPartnerDoomscrolling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -95,6 +99,7 @@ export default function LectureModeScreen() {
   const appStateSubscriptionRef = useRef<any>(null);
   const backHandlerRef = useRef<any>(null);
   const proofOfLifeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordingStartTimeRef = useRef<number>(0);
 
   const { focusState } = useFaceTracking();
 
@@ -491,6 +496,7 @@ export default function LectureModeScreen() {
       const { recording: newRec } = await Audio.Recording.createAsync(recordingOptions);
       recordingRef.current = newRec;
       setRecording(newRec);
+      recordingStartTimeRef.current = Date.now();
       if (__DEV__) console.log('[LectureMode] Fresh recording started:', newRec.getURI());
     } catch (err) {
       if (__DEV__) console.error('[LectureMode] Failed to start recording:', err);
@@ -513,15 +519,33 @@ export default function LectureModeScreen() {
 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
-      if (__DEV__) console.log('[LectureMode] Recording stopped. URI:', uri);
+      const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
+      
+      if (__DEV__) console.log('[LectureMode] Recording stopped. URI:', uri, 'Duration:', recordingDuration);
 
       recordingRef.current = null;
       setRecording(null);
 
       if (uri) {
         try {
+          const startTime = Date.now();
           const analysis = await transcribeAudio(uri);
-          await applyLectureAnalysis(analysis);
+          const transcriptionTime = Date.now() - startTime;
+          
+          // Save lecture with enhanced metadata
+          await applyLectureAnalysis(analysis, {
+            recordingPath: uri,
+            recordingDurationSeconds: Math.round(recordingDuration),
+            transcriptionConfidence: analysis.estimatedConfidence ? analysis.estimatedConfidence / 3 : null, // Convert 1-3 to 0-1
+            processingMetricsJson: JSON.stringify({
+              transcriptionMs: transcriptionTime,
+              totalMs: transcriptionTime,
+              modelUsed: analysis.modelUsed || 'unknown',
+            }),
+            retryCount: recordingRetryCount,
+          });
+          
+          // Clean up recording file after successful save
           await FileSystem.deleteAsync(uri, { idempotent: true });
         } catch (err) {
           console.warn('[LectureMode] Chunk transcription failed, moving to recovery:', err);
@@ -536,6 +560,9 @@ export default function LectureModeScreen() {
             appName: 'Hostage Mode (Chunk)',
             durationMinutes: 3,
             logId: recoveryLogId,
+            recordingDurationSeconds: Math.round(recordingDuration),
+            retryCount: recordingRetryCount + 1,
+            error: err instanceof Error ? err.message : String(err),
           });
 
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -545,22 +572,34 @@ export default function LectureModeScreen() {
       if (__DEV__) console.error('Transcription failed:', err);
     } finally {
       setIsTranscribing(false);
+      setRecordingRetryCount(0);
       if (isRecordingEnabled && !onBreak && elapsed > 0) {
         startRecording();
       }
     }
-  }, [recording, isRecordingEnabled, onBreak, elapsed]);
+  }, [recording, isRecordingEnabled, onBreak, elapsed, recordingRetryCount]);
 
-  async function applyLectureAnalysis(analysis: {
-    topics: string[];
-    estimatedConfidence: 1 | 2 | 3;
-    subject: string;
-    lectureSummary: string;
-    keyConcepts: string[];
-    highYieldPoints: string[];
-    transcript?: string;
-    embedding?: number[];
-  }) {
+  async function applyLectureAnalysis(
+    analysis: {
+      topics: string[];
+      estimatedConfidence: 1 | 2 | 3;
+      subject: string;
+      lectureSummary: string;
+      keyConcepts: string[];
+      highYieldPoints: string[];
+      transcript?: string;
+      embedding?: number[];
+      modelUsed?: string;
+    },
+    metadata: {
+      recordingPath?: string;
+      recordingDurationSeconds?: number;
+      transcriptionConfidence?: number | null;
+      processingMetricsJson?: string;
+      retryCount?: number;
+      lastError?: string;
+    } = {}
+  ) {
     const hasTranscript = !!analysis.transcript?.trim();
     const hasMeaningfulSummary =
       !!analysis.lectureSummary &&
@@ -586,9 +625,8 @@ export default function LectureModeScreen() {
 
     const noteText = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
 
-    // Use extended save for full pipeline tracking
-    const { saveLectureTranscript } = await import('../db/queries/aiCache');
-    await saveLectureTranscript({
+    // Save lecture transcript with enhanced metadata
+    const lectureNoteId = await saveLectureTranscript({
       subjectId: selectedSubjectId,
       note: noteText,
       transcript: analysis.transcript,
@@ -596,10 +634,80 @@ export default function LectureModeScreen() {
       topics: analysis.topics,
       confidence: analysis.estimatedConfidence,
       embedding: analysis.embedding,
+      ...metadata,
     });
+
+    // Automatically mark topics as studied based on lecture content
+    if (selectedSubjectId && analysis.topics.length > 0) {
+      await markTopicsAsStudied(selectedSubjectId, analysis.topics, lectureNoteId);
+    }
 
     setNotes((n) => [...n, noteText]);
     setProofOfLifeActive(false);
+  }
+
+  /**
+   * Mark topics as studied based on lecture content
+   * Uses deduplication to avoid double-counting
+   */
+  async function markTopicsAsStudied(subjectId: number, topicNames: string[], lectureNoteId: number) {
+    try {
+      const db = getDb();
+      
+      // Get all topics for this subject to match by name
+      const allTopics = await getAllSubjects();
+      const subjectTopics = allTopics
+        .flatMap(subj => subj.topics || [])
+        .filter(topic => topic.subjectId === subjectId);
+      
+      // Match topic names (case-insensitive, partial match)
+      const matchedTopicIds = new Set<number>();
+      for (const topicName of topicNames) {
+        const normalizedName = topicName.toLowerCase().trim();
+        const match = subjectTopics.find(t => 
+          t.name.toLowerCase().includes(normalizedName) ||
+          normalizedName.includes(t.name.toLowerCase())
+        );
+        if (match) {
+          matchedTopicIds.add(match.id);
+        }
+      }
+
+      // Mark each unique topic as studied
+      for (const topicId of matchedTopicIds) {
+        try {
+          // Check if already marked from this lecture (deduplication)
+          const existing = await db.getFirstAsync<{ id: number }>(
+            `SELECT id FROM lecture_learned_topics WHERE lecture_note_id = ? AND topic_id = ?`,
+            [lectureNoteId, topicId]
+          );
+          
+          if (!existing) {
+            await db.runAsync(
+              `INSERT INTO lecture_learned_topics (lecture_note_id, topic_id, confidence_at_time) 
+               VALUES (?, ?, ?)`,
+              [lectureNoteId, topicId, 2] // Default confidence
+            );
+            
+            // Update topic_progress status to 'seen' if it was 'unseen'
+            await db.runAsync(
+              `UPDATE topic_progress 
+               SET status = 'seen', times_studied = times_studied + 1, last_studied_at = ?
+               WHERE topic_id = ? AND status = 'unseen'`,
+              [Date.now(), topicId]
+            );
+          }
+        } catch (err) {
+          console.warn('[LectureMode] Failed to mark topic as studied:', topicId, err);
+        }
+      }
+      
+      if (matchedTopicIds.size > 0 && __DEV__) {
+        console.log(`[LectureMode] Marked ${matchedTopicIds.size} topics as studied from lecture`);
+      }
+    } catch (err) {
+      console.error('[LectureMode] Failed to update topic progress:', err);
+    }
   }
 
   async function importAndTranscribeAudio() {

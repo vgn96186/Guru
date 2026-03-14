@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, KeyboardAvo
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addBrainDump } from '../db/queries/brainDumps';
+import { theme } from '../constants/theme';
 
 export default function BrainDumpFab() {
     const insets = useSafeAreaInsets();
@@ -41,7 +42,7 @@ export default function BrainDumpFab() {
                         <View style={styles.header}>
                             <Text style={styles.title}>Park a Thought 🧠</Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#9E9E9E" />
+                                <Ionicons name="close" size={24} color={theme.colors.textMuted} />
                             </TouchableOpacity>
                         </View>
 
@@ -52,7 +53,7 @@ export default function BrainDumpFab() {
                         <TextInput
                             style={styles.input}
                             placeholder="e.g., Pay electricity bill..."
-                            placeholderTextColor="#666"
+                            placeholderTextColor={theme.colors.textMuted}
                             value={note}
                             onChangeText={setNote}
                             multiline
@@ -81,22 +82,22 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#6C63FF',
+        backgroundColor: theme.colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 5,
-        shadowColor: '#6C63FF',
+        shadowColor: theme.colors.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(15, 15, 20, 0.8)',
+        backgroundColor: theme.colors.overlay,
         justifyContent: 'flex-end',
     },
     modalContent: {
-        backgroundColor: '#1A1A24',
+        backgroundColor: theme.colors.surface,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         padding: 24,
@@ -111,36 +112,36 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: theme.colors.textPrimary,
     },
     subtitle: {
         fontSize: 14,
-        color: '#9E9E9E',
+        color: theme.colors.textMuted,
         marginBottom: 20,
     },
     input: {
-        backgroundColor: '#0F0F14',
+        backgroundColor: theme.colors.background,
         borderRadius: 12,
         padding: 16,
-        color: '#FFF',
+        color: theme.colors.textPrimary,
         fontSize: 16,
         minHeight: 100,
         textAlignVertical: 'top',
         marginBottom: 24,
         borderWidth: 1,
-        borderColor: '#333344',
+        borderColor: theme.colors.border,
     },
     saveButton: {
-        backgroundColor: '#4CAF50',
+        backgroundColor: theme.colors.success,
         borderRadius: 12,
         padding: 16,
         alignItems: 'center',
     },
     saveButtonDisabled: {
-        backgroundColor: '#333344',
+        backgroundColor: theme.colors.border,
     },
     saveText: {
-        color: '#FFF',
+        color: theme.colors.textPrimary,
         fontSize: 16,
         fontWeight: 'bold',
     }

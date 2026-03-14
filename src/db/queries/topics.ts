@@ -383,3 +383,51 @@ export async function getSubjectBreakdown(): Promise<SubjectBreakdownRow[]> {
     percent: r.total > 0 ? Math.round(((r.covered ?? 0) / r.total) * 100) : 0,
   }));
 }
+
+export interface ReviewDay {
+  date: string; // YYYY-MM-DD
+  count: number;
+  topics: Array<{ name: string; confidence: number }>;
+}
+
+export async function getReviewCalendarData(year: number, month: number): Promise<ReviewDay[]> {
+  const db = getDb();
+  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const endDate = month === 11
+    ? `${year + 1}-01-01`
+    : `${year}-${String(month + 2).padStart(2, '0')}-01`;
+
+  const rows = await db.getAllAsync<{
+    review_date: string;
+    topic_name: string;
+    confidence: number;
+  }>(
+    `SELECT DATE(tp.fsrs_due) as review_date,
+            t.name as topic_name,
+            tp.confidence
+     FROM topic_progress tp
+     JOIN topics t ON tp.topic_id = t.id
+     WHERE tp.status != 'unseen'
+       AND tp.fsrs_due IS NOT NULL
+       AND DATE(tp.fsrs_due) >= ?
+       AND DATE(tp.fsrs_due) < ?
+     ORDER BY review_date ASC`,
+    [startDate, endDate],
+  );
+
+  const byDate = new Map<string, ReviewDay>();
+  for (const r of rows) {
+    const existing = byDate.get(r.review_date);
+    if (existing) {
+      existing.count++;
+      existing.topics.push({ name: r.topic_name, confidence: r.confidence });
+    } else {
+      byDate.set(r.review_date, {
+        date: r.review_date,
+        count: 1,
+        topics: [{ name: r.topic_name, confidence: r.confidence }],
+      });
+    }
+  }
+  return Array.from(byDate.values());
+}

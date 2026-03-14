@@ -9,62 +9,14 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getDb } from '../db/database';
+import { getReviewCalendarData, type ReviewDay } from '../db/queries/topics';
 import { theme } from '../constants/theme';
-
-interface ReviewDay {
-  date: string; // YYYY-MM-DD
-  count: number;
-  topics: Array<{ name: string; confidence: number }>;
-}
 
 function toLocalDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
-}
-
-async function getReviewCalendarData(year: number, month: number): Promise<ReviewDay[]> {
-  const db = getDb();
-  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const endDate = month === 11
-    ? `${year + 1}-01-01`
-    : `${year}-${String(month + 2).padStart(2, '0')}-01`;
-
-  const rows = await db.getAllAsync<{
-    review_date: string;
-    topic_name: string;
-    confidence: number;
-  }>(
-    `SELECT DATE(tp.fsrs_due) as review_date,
-            t.name as topic_name,
-            tp.confidence
-     FROM topic_progress tp
-     JOIN topics t ON tp.topic_id = t.id
-     WHERE tp.status != 'unseen'
-       AND tp.fsrs_due IS NOT NULL
-       AND DATE(tp.fsrs_due) >= ?
-       AND DATE(tp.fsrs_due) < ?
-     ORDER BY review_date ASC`,
-    [startDate, endDate],
-  );
-
-  const byDate = new Map<string, ReviewDay>();
-  for (const r of rows) {
-    const existing = byDate.get(r.review_date);
-    if (existing) {
-      existing.count++;
-      existing.topics.push({ name: r.topic_name, confidence: r.confidence });
-    } else {
-      byDate.set(r.review_date, {
-        date: r.review_date,
-        count: 1,
-        topics: [{ name: r.topic_name, confidence: r.confidence }],
-      });
-    }
-  }
-  return Array.from(byDate.values());
 }
 
 const MONTHS = [
@@ -230,7 +182,7 @@ export default React.memo(function ReviewCalendar() {
             {selectedDay.topics.map((t, i) => (
               <View key={i} style={styles.topicRow}>
                 <View style={[styles.confDot, {
-                  backgroundColor: t.confidence >= 3 ? '#4CAF50' : t.confidence >= 2 ? '#FF9800' : '#F44336',
+                  backgroundColor: t.confidence >= 3 ? theme.colors.success : t.confidence >= 2 ? theme.colors.warning : theme.colors.error,
                 }]} />
                 <Text style={styles.topicName}>{t.name}</Text>
               </View>

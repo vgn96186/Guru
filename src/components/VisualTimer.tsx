@@ -9,6 +9,7 @@ import Animated, {
     interpolateColor,
     useAnimatedStyle
 } from 'react-native-reanimated';
+import { theme } from '../constants/theme';
 
 // Create animated wrapper for Svg Circle
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -27,8 +28,8 @@ export default function VisualTimer({
     remainingSeconds,
     size = 120,
     strokeWidth = 12,
-    color = '#6C63FF',
-    dangerColor = '#F44336'
+    color = theme.colors.primary,
+    dangerColor = theme.colors.error
 }: VisualTimerProps) {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
@@ -70,7 +71,7 @@ export default function VisualTimer({
                         cx={size / 2}
                         cy={size / 2}
                         r={radius}
-                        stroke="#1A1A24"
+                        stroke={theme.colors.surface}
                         strokeWidth={strokeWidth}
                         fill="transparent"
                     />
@@ -108,7 +109,7 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#FFF',
+        color: theme.colors.textPrimary,
         fontVariant: ['tabular-nums'],
     }
 });

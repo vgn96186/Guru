@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { theme } from '../constants/theme';
 
 const Updates = (() => {
   try {
@@ -65,7 +66,7 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
@@ -75,26 +76,26 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   title: {
-    color: '#F44336',
+    color: theme.colors.error,
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 12,
   },
   sub: {
-    color: '#9E9E9E',
+    color: theme.colors.textMuted,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
   },
   retryBtn: {
     marginTop: 24,
-    backgroundColor: '#7C4DFF',
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryText: {
-    color: '#FFF',
+    color: theme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },

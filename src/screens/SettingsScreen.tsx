@@ -18,7 +18,7 @@ import { Audio } from 'expo-av';
 import { useAppStore } from '../store/useAppStore';
 import { profileRepository } from '../db/repositories';
 import { exportDatabase, importDatabase } from '../services/backupService';
-import { importJsonBackup } from '../services/jsonBackupService';
+import { exportJsonBackup, importJsonBackup } from '../services/jsonBackupService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import {
   requestNotificationPermissions,
@@ -170,26 +170,35 @@ export default function SettingsScreen() {
       checkPermissions();
       getExamDateSyncMeta()
         .then(setExamSyncMeta)
-        .catch(() => setExamSyncMeta(null));
+        .catch((err) => {
+          console.warn('[Settings] Failed to load exam sync meta:', err);
+          setExamSyncMeta(null);
+        });
     }
   }, [isFocused]);
 
   async function checkPermissions() {
-    const n = await Notifications.getPermissionsAsync();
-    const m = await Audio.getPermissionsAsync();
-    let o = 'undetermined';
-    if (Platform.OS === 'android') {
-      const { canDrawOverlays } = require('../../modules/app-launcher');
-      const hasOverlay = await canDrawOverlays();
-      o = hasOverlay ? 'granted' : 'denied';
+    try {
+      const n = await Notifications.getPermissionsAsync();
+      const m = await Audio.getPermissionsAsync();
+      let o = 'undetermined';
+      if (Platform.OS === 'android') {
+        const { canDrawOverlays } = require('../../modules/app-launcher');
+        const hasOverlay = await canDrawOverlays();
+        o = hasOverlay ? 'granted' : 'denied';
+      }
+      setPermStatus({ notifs: n.status, mic: m.status, overlay: o });
+    } catch (err) {
+      console.error('[Settings] Permission check failed:', err);
     }
-    setPermStatus({ notifs: n.status, mic: m.status, overlay: o });
   }
 
   useEffect(() => {
     void getAllSubjects()
       .then(setSubjects)
-      .catch(() => {});
+      .catch((err) => {
+        console.error('[Settings] Failed to load subjects:', err);
+      });
     if (profile) {
       setApiKey(profile.openrouterApiKey?.split('|')[0] ?? '');
       setOrKey(profile.openrouterKey ?? '');
@@ -405,12 +414,20 @@ export default function SettingsScreen() {
             <PermissionRow
               label="Notifications"
               status={permStatus.notifs}
-              onFix={() => Notifications.requestPermissionsAsync().then(checkPermissions)}
+              onFix={() =>
+                Notifications.requestPermissionsAsync()
+                  .then(checkPermissions)
+                  .catch((err) => console.error('[Settings] Notif permission request failed:', err))
+              }
             />
             <PermissionRow
               label="Microphone"
               status={permStatus.mic}
-              onFix={() => Audio.requestPermissionsAsync().then(checkPermissions)}
+              onFix={() =>
+                Audio.requestPermissionsAsync()
+                  .then(checkPermissions)
+                  .catch((err) => console.error('[Settings] Mic permission request failed:', err))
+              }
             />
             {Platform.OS === 'android' && (
               <PermissionRow

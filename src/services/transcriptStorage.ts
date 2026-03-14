@@ -81,6 +81,7 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
   });
 
   // CRITICAL: AUTO-BACKUP to Public/Cloud Storage
+  if (!profile) return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;
 
   // 1. Cloud/SAF Backup
   if (Platform.OS === 'android' && profile.backupDirectoryUri) {

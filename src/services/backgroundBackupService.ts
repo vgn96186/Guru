@@ -2,10 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
 
-const PUBLIC_BACKUP_DIR =
-  Platform.OS === 'android'
-    ? 'file:///sdcard/Documents/Guru/Backups/'
-    : FileSystem.documentDirectory + 'backups/db/';
+const PUBLIC_BACKUP_DIR = FileSystem.documentDirectory + 'backups/db/';
 
 /**
  * Automatically triggers a JSON backup of the entire database
@@ -41,8 +38,8 @@ export async function runAutoPublicBackup() {
       }
     }
 
-    // 2. Secondary Backup: Local Public /sdcard/Documents/Guru/ (Survives partial updates)
-    // Ensure public dir exists
+    // 2. Secondary Backup: Local Private Document Directory (Survives app updates)
+    // Ensure backup dir exists
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_BACKUP_DIR);
     if (!dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(PUBLIC_BACKUP_DIR, { intermediates: true });

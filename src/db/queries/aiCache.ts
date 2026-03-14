@@ -15,7 +15,8 @@ export async function getCachedContent(
   if (!r) return null;
   try {
     return JSON.parse(r.content_json) as AIContent;
-  } catch {
+  } catch (err) {
+    if (__DEV__) console.warn('[aiCache] Failed to parse cached content:', err);
     return null;
   }
 }
@@ -75,7 +76,8 @@ export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
       for (const q of quiz.questions ?? []) {
         all.push({ ...q, topicName: row.topic_name, subjectName: row.subject_name });
       }
-    } catch {
+    } catch (err) {
+      if (__DEV__) console.warn('[aiCache] Skipping malformed quiz row:', err);
       /* skip malformed */
     }
   }

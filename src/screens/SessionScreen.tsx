@@ -19,6 +19,7 @@ import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
 import ContentCard from './ContentCard';
+import ErrorBoundary from '../components/ErrorBoundary';
 import BreakScreen from './BreakScreen';
 import BrainDumpFab from '../components/BrainDumpFab';
 import type { Mood, SessionMode } from '../types';
@@ -318,7 +319,7 @@ export default function SessionScreen() {
     await endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
     await profileRepository.updateStreak(durationMin >= 20);
     setSessionXpTotal(xpResult.total);
-    refreshProfile().catch(() => {});
+    refreshProfile().catch((err) => console.error('[Session] Post-session profile refresh failed:', err));
     invalidatePlanCache();
     store.setSessionState('session_done');
   }
@@ -500,19 +501,21 @@ export default function SessionScreen() {
         </ScrollView>
 
         {store.isLoadingContent ? <LoadingOrb message="Fetching content..." /> : store.currentContent ? (
-          <ContentCard
-            content={store.currentContent}
-            topicId={item?.topic.id}
-            onDone={handleConfidenceRating}
-            onSkip={handleContentDone}
-            onQuizAnswered={c => {
-              triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
-              if (!c && item?.topic.id) void incrementWrongCount(item.topic.id);
-            }}
-            onQuizComplete={(correct, total) => {
-              if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
-            }}
-          />
+          <ErrorBoundary>
+            <ContentCard
+              content={store.currentContent}
+              topicId={item?.topic.id}
+              onDone={handleConfidenceRating}
+              onSkip={handleContentDone}
+              onQuizAnswered={c => {
+                triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
+                if (!c && item?.topic.id) void incrementWrongCount(item.topic.id);
+              }}
+              onQuizComplete={(correct, total) => {
+                if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
+              }}
+            />
+          </ErrorBoundary>
         ) : <LoadingOrb message="Loading..." />}
 
         <Animated.View style={[styles.xpPop, { opacity: xpAnim, transform: [{ translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) }] }]}>

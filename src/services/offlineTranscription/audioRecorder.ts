@@ -271,7 +271,9 @@ export class AudioRecorder {
   destroy(): void {
     if (this.state === 'recording' || this.state === 'paused') {
       // Best-effort stop without waiting
-      this.stopRecording().catch(() => {});
+      this.stopRecording().catch((error) => {
+        console.warn('[AudioRecorder] Background stopRecording failed during destroy:', error);
+      });
     }
     this.pcmCallback = null;
     this.stateCallback = null;

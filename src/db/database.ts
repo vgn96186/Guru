@@ -44,14 +44,17 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
     g.__GURU_DB__ = _db;
+
+    // Migrate legacy public files to private storage on startup
+    // DEPRECATED: Handled by lectureSessionMonitor scanAndRecoverOrphanedTranscripts
   } else {
     _db = g.__GURU_DB__;
   }
 
   const db = _db!;
 
-  // Keep FK checks disabled until legacy cleanup completes.
-  await db.execAsync('PRAGMA foreign_keys = OFF');
+  // Enable Foreign Key constraints
+  await db.execAsync('PRAGMA foreign_keys = ON');
 
   // Create all tables
   for (const sql of ALL_SCHEMAS) {
@@ -180,10 +183,16 @@ export async function initDatabase(forceSeed = false): Promise<void> {
       scanAndRecoverOrphanedTranscripts,
       scanAndRecoverOrphanedRecordings,
     } = await import('../services/lectureSessionMonitor');
-    void retryFailedTasks(profile.groq_api_key || undefined);
-    void autoRepairLegacyNotes();
-    void scanAndRecoverOrphanedTranscripts();
-    void scanAndRecoverOrphanedRecordings();
+    void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
+      console.error('[DB] retryFailedTasks failed:', e),
+    );
+    void autoRepairLegacyNotes().catch((e) => console.error('[DB] autoRepairLegacyNotes failed:', e));
+    void scanAndRecoverOrphanedTranscripts().catch((e) =>
+      console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
+    );
+    void scanAndRecoverOrphanedRecordings().catch((e) =>
+      console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
+    );
   }
 
   // Update streak on open

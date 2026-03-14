@@ -66,7 +66,8 @@ function parseJsonNumberArray(value: unknown): number[] {
     return Array.isArray(parsed)
       ? parsed.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry))
       : [];
-  } catch {
+  } catch (err) {
+    console.warn('[Backup] Failed to parse number array:', err);
     return [];
   }
 }
@@ -155,7 +156,8 @@ export async function exportJsonBackup(): Promise<boolean> {
     try {
       await Sharing.shareAsync(filePath, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
       return true;
-    } catch {
+    } catch (err) {
+      console.error('[Backup] Sharing failed:', err);
       return false;
     }
   } else {
@@ -172,7 +174,8 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   let backup: any;
   try {
     backup = JSON.parse(content);
-  } catch {
+  } catch (err) {
+    console.error('[Backup] JSON parse failed during import:', err);
     return { ok: false, message: 'Invalid JSON file' };
   }
 
@@ -209,7 +212,10 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
     try {
       const info = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
       return info.map(c => c.name);
-    } catch { return []; }
+    } catch (err) { 
+      console.error(`[Backup] Failed to get columns for ${table}:`, err);
+      return []; 
+    }
   };
 
   const sanitizeRow = (table: BackupTableName, rawRow: BackupRow): BackupRow | null => {
@@ -288,8 +294,9 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
       }
     }
     await db.execAsync('COMMIT');
-  } catch (e) {
-    try { await db.execAsync('ROLLBACK'); } catch {}
+  } catch (err) {
+    console.error('[Backup] Restore transaction failed:', err);
+    try { await db.execAsync('ROLLBACK'); } catch (rbErr) { console.warn('[Backup] Rollback also failed:', rbErr); }
     return { ok: false, message: 'Import failed during restore.' };
   }
 

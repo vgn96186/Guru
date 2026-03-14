@@ -232,8 +232,14 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
 
   if (setClauses.length === 0) return;
   values.push(1);
-  await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
-  notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+  try {
+    await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
+    notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to update profile: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function addXp(
@@ -256,12 +262,21 @@ export async function addXp(
   }
 
   const leveledUp = newLevel > oldLevel;
-  await db.runAsync(
-    'UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1',
-    [amount, newLevel],
-  );
-  notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
-  return { newTotal, leveledUp, newLevel };
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync(
+      'UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1',
+      [amount, newLevel],
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+    notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+    return { newTotal, leveledUp, newLevel };
+  } catch (err: any) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to update XP: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function updateStreak(studiedToday: boolean, useShield = false): Promise<void> {
@@ -272,12 +287,18 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
   if (profile.lastActiveDate === today) return;
 
   if (useShield && profile.streakCurrent > 0) {
-    await db.runAsync(
-      'UPDATE user_profile SET streak_shield_available = 0, last_active_date = ? WHERE id = 1',
-      [today],
-    );
-    notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
-    return;
+    try {
+      await db.runAsync(
+        'UPDATE user_profile SET streak_shield_available = 0, last_active_date = ? WHERE id = 1',
+        [today],
+      );
+      notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+      return;
+    } catch (err: any) {
+      const { showToast } = require('../../components/Toast');
+      showToast(`Failed to use shield: ${err.message || 'Unknown error'}`, 'error');
+      throw err;
+    }
   }
 
   if (!studiedToday) return;
@@ -287,11 +308,17 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
   const newBest = Math.max(newStreak, profile.streakBest);
   const shieldAvailable = newStreak === 1 ? 1 : profile.streakCurrent === 0 ? 1 : 0;
 
-  await db.runAsync(
-    'UPDATE user_profile SET streak_current = ?, streak_best = ?, last_active_date = ?, streak_shield_available = ? WHERE id = 1',
-    [newStreak, newBest, today, shieldAvailable],
-  );
-  notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+  try {
+    await db.runAsync(
+      'UPDATE user_profile SET streak_current = ?, streak_best = ?, last_active_date = ?, streak_shield_available = ? WHERE id = 1',
+      [newStreak, newBest, today, shieldAvailable],
+    );
+    notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to update streak: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function useStreakShield(): Promise<boolean> {
@@ -332,11 +359,17 @@ export async function getDailyLog(date?: string): Promise<DailyLog | null> {
 export async function checkinToday(mood: Mood): Promise<void> {
   const db = getDb();
   const today = todayStr();
-  await db.runAsync(
-    `INSERT INTO daily_log (date, checked_in, mood) VALUES (?, 1, ?) ON CONFLICT(date) DO UPDATE SET checked_in = 1, mood = excluded.mood`,
-    [today, mood],
-  );
-  notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  try {
+    await db.runAsync(
+      `INSERT INTO daily_log (date, checked_in, mood) VALUES (?, 1, ?) ON CONFLICT(date) DO UPDATE SET checked_in = 1, mood = excluded.mood`,
+      [today, mood],
+    );
+    notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Check-in failed: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function getLast30DaysLog(): Promise<DailyLog[]> {
@@ -410,35 +443,50 @@ export async function getDailyMinutesSeries(days = 7): Promise<number[]> {
 
 export async function resetStudyProgress(): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    `UPDATE topic_progress SET
-       status = 'unseen',
-       confidence = 0,
-       last_studied_at = NULL,
-       times_studied = 0,
-       xp_earned = 0,
-       next_review_date = NULL,
-       fsrs_due = NULL,
-       fsrs_stability = 0,
-       fsrs_difficulty = 0,
-       fsrs_elapsed_days = 0,
-       fsrs_scheduled_days = 0,
-       fsrs_reps = 0,
-       fsrs_lapses = 0,
-       fsrs_state = 0,
-       fsrs_last_review = NULL,
-       wrong_count = 0,
-       is_nemesis = 0`,
-  );
-  await db.runAsync(
-    `UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`,
-  );
-  await db.runAsync(`DELETE FROM daily_log`);
-  notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync(
+      `UPDATE topic_progress SET
+         status = 'unseen',
+         confidence = 0,
+         last_studied_at = NULL,
+         times_studied = 0,
+         xp_earned = 0,
+         next_review_date = NULL,
+         fsrs_due = NULL,
+         fsrs_stability = 0,
+         fsrs_difficulty = 0,
+         fsrs_elapsed_days = 0,
+         fsrs_scheduled_days = 0,
+         fsrs_reps = 0,
+         fsrs_lapses = 0,
+         fsrs_state = 0,
+         fsrs_last_review = NULL,
+         wrong_count = 0,
+         is_nemesis = 0`,
+    );
+    await db.runAsync(
+      `UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`,
+    );
+    await db.runAsync(`DELETE FROM daily_log`);
+    await db.execAsync('COMMIT TRANSACTION');
+    notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  } catch (err: any) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to reset progress: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function clearAiCache(): Promise<void> {
-  await getDb().runAsync('DELETE FROM ai_cache');
+  try {
+    await getDb().runAsync('DELETE FROM ai_cache');
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to clear AI cache: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export function getDaysToExam(examDateStr: string): number {

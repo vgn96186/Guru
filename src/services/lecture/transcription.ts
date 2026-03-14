@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { convertToWav, splitWavIntoChunks } from '../../../modules/app-launcher';
 import { transcribeRawWithGroq } from '../transcription/engines';
+import { showToast } from '../../components/Toast';
 
 const GROQ_MAX_FILE_SIZE = 24 * 1024 * 1024;
 const GROQ_TARGET_CHUNK_BYTES = 18 * 1024 * 1024;
@@ -18,19 +19,44 @@ export async function transcribeWithGroqChunking(recordingPath: string, groqKey:
   const info = await getRecordingInfo(recordingPath);
   if (!info.needsChunking) return { transcript: await transcribeRawWithGroq(recordingPath, groqKey), usedChunking: false };
 
-  const wavPath = await convertToWav(recordingPath);
-  if (!wavPath) throw new Error('WAV conversion failed');
+  let wavPath: string | null = null;
+  let nativeChunks: { path: string }[] = [];
 
-  const chunkBytes = Math.floor(GROQ_TARGET_CHUNK_BYTES / WAV_BYTES_PER_SECOND) * WAV_BYTES_PER_SECOND;
-  const nativeChunks = await splitWavIntoChunks(wavPath, chunkBytes, chunkBytes, WAV_BYTES_PER_SECOND);
-  
-  const transcripts = [];
-  for (const chunk of nativeChunks) {
-    const t = await transcribeRawWithGroq(chunk.path, groqKey);
-    if (t.trim()) transcripts.push(t);
-    await FileSystem.deleteAsync(chunk.path.startsWith('file://') ? chunk.path : `file://${chunk.path}`, { idempotent: true });
+  try {
+    wavPath = await convertToWav(recordingPath);
+    if (!wavPath) throw new Error('WAV conversion failed');
+
+    const chunkBytes = Math.floor(GROQ_TARGET_CHUNK_BYTES / WAV_BYTES_PER_SECOND) * WAV_BYTES_PER_SECOND;
+    nativeChunks = await splitWavIntoChunks(wavPath, chunkBytes, chunkBytes, WAV_BYTES_PER_SECOND);
+    
+    const transcripts = [];
+    for (const chunk of nativeChunks) {
+      const t = await transcribeRawWithGroq(chunk.path, groqKey);
+      if (t.trim()) transcripts.push(t);
+    }
+
+    return { transcript: transcripts.join('\n\n'), usedChunking: true };
+  } catch (error: any) {
+    showToast(`Transcription failed: ${error.message || 'Unknown error'}`, 'error');
+    throw error;
+  } finally {
+    // Cleanup temporary files
+    if (nativeChunks.length > 0) {
+      for (const chunk of nativeChunks) {
+        try {
+          await FileSystem.deleteAsync(chunk.path.startsWith('file://') ? chunk.path : `file://${chunk.path}`, { idempotent: true });
+        } catch (e) {
+          console.warn('[Transcription] Failed to delete chunk:', chunk.path, e);
+        }
+      }
+    }
+    if (wavPath) {
+      try {
+        await FileSystem.deleteAsync(wavPath.startsWith('file://') ? wavPath : `file://${wavPath}`, { idempotent: true });
+      } catch (e) {
+        console.warn('[Transcription] Failed to delete wavPath:', wavPath, e);
+      }
+    }
   }
-  await FileSystem.deleteAsync(wavPath.startsWith('file://') ? wavPath : `file://${wavPath}`, { idempotent: true });
-
-  return { transcript: transcripts.join('\n\n'), usedChunking: true };
 }
+

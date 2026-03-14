@@ -43,22 +43,36 @@ describe('deviceSyncService', () => {
 
     const unsubscribeA = connectToRoom('room-123', listenerA);
     const unsubscribeB = connectToRoom('room-123', listenerB);
-    await Promise.resolve();
+
+    // Wait for async ensureConnected to register the 'connect' handler
+    while (!handlers.connect) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
 
     expect(connectMock).toHaveBeenCalledTimes(1);
 
+    // Simulate connection success and topic subscription
+    handlers.connect();
+    
+    // Wait for subscribe to be called
+    while (mockClient.subscribe.mock.calls.length === 0) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+
+    const subscribedTopic = mockClient.subscribe.mock.calls[0][0];
+
     handlers.message?.(
-      'guru/v2/room/room-123',
+      subscribedTopic,
       { toString: () => JSON.stringify({ payload: { type: 'BREAK_STARTED', durationSeconds: 90 }, ts: Date.now(), msgId: 'm1' }) },
     );
-    await Promise.resolve();
+    await Promise.resolve(); // allow decryptPayload to resolve
 
     expect(listenerA).toHaveBeenCalledWith({ type: 'BREAK_STARTED', durationSeconds: 90 });
     expect(listenerB).toHaveBeenCalledWith({ type: 'BREAK_STARTED', durationSeconds: 90 });
 
     unsubscribeA();
     handlers.message?.(
-      'guru/v2/room/room-123',
+      subscribedTopic,
       { toString: () => JSON.stringify({ payload: { type: 'LECTURE_RESUMED' }, ts: Date.now(), msgId: 'm2' }) },
     );
     await Promise.resolve();

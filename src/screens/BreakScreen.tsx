@@ -97,7 +97,7 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
           });
         }
       })
-      .catch(() => {});
+      .catch((err) => console.warn('[BreakScreen] Failed to fetch break quiz:', err));
   }, [topic]);
 
   const mins = Math.floor(countdown / 60);

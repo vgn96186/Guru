@@ -21,6 +21,8 @@ const MAX_RECENT_MESSAGE_IDS = 300;
 const seenMessageIds = new Map<string, number>();
 const subscribers = new Map<string, (msg: SyncMessage) => void>();
 let nextSubscriberId = 0;
+const outgoingQueue: SyncMessage[] = [];
+let isConnected = false;
 
 function markAndCheckReplay(msgId: string, ts: number): boolean {
   const now = Date.now();
@@ -73,7 +75,11 @@ let connectingRoomCode: string | null = null;
 
 function closeClient(): void {
   if (client) {
-    try { client.end(true); } catch {}
+    try {
+      client.end(true);
+    } catch (error) {
+      console.warn('[DeviceSyncService] Failed to end MQTT client:', error);
+    }
   }
   client = null;
   currentRoomCode = null;
@@ -81,6 +87,21 @@ function closeClient(): void {
   connectPromise = null;
   connectingRoomCode = null;
   seenMessageIds.clear();
+}
+
+async function getRoomTopic(code: string): Promise<string> {
+  const cleanCode = code.trim().toUpperCase();
+  const raw = new TextEncoder().encode(cleanCode + '::topic-v2');
+  const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', raw);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return ROOM_PREFIX + hashHex.slice(0, 16);
+}
+
+function generateSecureId(prefix: string): string {
+  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(4));
+  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  return prefix + '_' + hex;
 }
 
 async function ensureConnected(code: string): Promise<void> {
@@ -102,12 +123,17 @@ async function ensureConnected(code: string): Promise<void> {
     if (!mqtt) return;
     if (client && currentRoomCode === code) return;
 
-    const clientId = 'guru_' + Math.random().toString(16).slice(2, 8);
+    const clientId = generateSecureId('guru');
     const nextClient = mqtt.connect(BROKER_URL, { clientId });
-    const topic = ROOM_PREFIX + code;
+    const topic = await getRoomTopic(code);
 
     nextClient.on('connect', () => {
+      isConnected = true;
       nextClient.subscribe(topic);
+      while (outgoingQueue.length > 0) {
+        const msg = outgoingQueue.shift();
+        if (msg) sendSyncMessage(msg);
+      }
     });
 
     nextClient.on('message', (receivedTopic: string, message: any) => {
@@ -131,18 +157,23 @@ async function ensureConnected(code: string): Promise<void> {
             console.warn('[DeviceSync] subscriber callback failed:', err);
           }
         }
-      }).catch(() => { /* ignore */ });
+      }).catch((err) => {
+        if (__DEV__) console.debug('[DeviceSync] Failed to decrypt or process message:', err);
+      });
     });
 
     nextClient.on('error', (err: any) => {
+      isConnected = false;
       console.warn('[DeviceSync] MQTT error:', err?.message ?? err);
     });
 
     nextClient.on('offline', () => {
+      isConnected = false;
       console.warn('[DeviceSync] MQTT went offline');
     });
 
     nextClient.on('close', () => {
+      isConnected = false;
       if (client === nextClient) {
         client = null;
       }
@@ -174,16 +205,26 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
     if (subscribers.size === 0) {
       clearKeyCache();
       closeClient();
+      isConnected = false;
     }
   };
 }
 
 export function sendSyncMessage(msg: SyncMessage) {
-  if (!client || !currentRoomCode || !activeTopic) return;
+  if (!isConnected || !client || !currentRoomCode || !activeTopic) {
+    if (outgoingQueue.length < 50) {
+      outgoingQueue.push(msg);
+    }
+    return;
+  }
   const code = currentRoomCode;
   // Encrypt async, then publish
   encryptPayload(code, msg).then(envelope => {
-    client?.publish(activeTopic, envelope);
+    if (client && isConnected) {
+      client.publish(activeTopic, envelope);
+    } else {
+      outgoingQueue.push(msg);
+    }
   }).catch(err => {
     console.warn('[DeviceSync] encrypt failed, dropping message:', err);
   });

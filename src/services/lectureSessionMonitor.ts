@@ -28,7 +28,7 @@ import { transcribeRawWithLocalWhisper } from './transcription/engines';
 import { getTranscriptText, backupNoteToPublic } from './transcriptStorage';
 import { generateEmbedding } from './ai/embeddingService';
 import { profileRepository } from '../db/repositories';
-import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
+import { notifyDbUpdate, DB_EVENT_KEYS } from './databaseEvents';
 
 export type LecturePipelineStage = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export interface LecturePipelineProgress {
@@ -54,21 +54,40 @@ export async function transcribeLectureWithRecovery(opts: {
   logId?: number;
   onProgress?: (progress: LecturePipelineProgress) => void;
 }): Promise<LectureAnalysis> {
-  const { recordingPath, groqKey, useLocalWhisper, localWhisperPath, logId, onProgress } = opts;
+  const {
+    recordingPath,
+    groqKey,
+    useLocalWhisper,
+    localWhisperPath,
+    onProgress,
+    maxRetries = 2,
+  } = opts;
 
   onProgress?.({ stage: 'transcribing', message: 'Transcribing lecture audio' });
 
   let transcript = '';
   if (groqKey) {
-    try {
-      const res = await transcribeWithGroqChunking(recordingPath, groqKey);
-      transcript = res.transcript;
-    } catch (err) {
-      if (!useLocalWhisper || !localWhisperPath) throw err;
+    let attempt = 0;
+    while (attempt <= maxRetries) {
+      try {
+        const res = await transcribeWithGroqChunking(recordingPath, groqKey);
+        transcript = res.transcript;
+        if (transcript) break;
+      } catch (err) {
+        attempt++;
+        if (attempt > maxRetries) {
+          console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
+          if (!useLocalWhisper || !localWhisperPath) throw err;
+        } else {
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      }
     }
   }
 
   if (!transcript && useLocalWhisper && localWhisperPath) {
+    onProgress?.({ stage: 'transcribing', message: 'Using local transcription engine...' });
     transcript = await transcribeRawWithLocalWhisper(recordingPath, localWhisperPath);
   }
 
@@ -188,7 +207,9 @@ export async function runFullTranscriptionPipeline(opts: {
       embedding,
     });
 
-    void enhanceNoteInBackground(noteId as number, logId, analysis);
+    void enhanceNoteInBackground(noteId as number, logId, analysis).catch(err => {
+      console.error('[SessionMonitor] Note enhancement failed:', err);
+    });
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
   } catch (e: any) {
     await updateSessionTranscriptionStatus(logId, 'failed', e?.message);
@@ -224,7 +245,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
     if (Platform.OS !== 'android') return 0;
 
-    const PUBLIC_REC_DIR = 'file:///sdcard/Documents/Guru/Recordings/';
+    const PUBLIC_REC_DIR = FileSystem.documentDirectory + 'recordings/';
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_REC_DIR);
     if (!dirInfo.exists) return 0;
 
@@ -253,7 +274,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
       // Create a dummy log entry
       const logResult = await db.runAsync(
-        'INSERT INTO external_app_logs (app_name, started_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
+        'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
         ['Recovered Audio', Date.now(), fileUri, 'pending'],
       );
 
@@ -265,6 +286,8 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
         appName: 'Recovered Audio',
         durationMinutes: 0,
         logId: logId as number,
+      }).catch(err => {
+        console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
       });
 
       referencedFiles.add(fileName);
@@ -339,10 +362,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
     const { Platform } = await import('react-native');
 
     const TRANSCRIPT_DIR = FileSystem.documentDirectory + 'transcripts/';
-    const PUBLIC_BACKUP_DIR =
-      Platform.OS === 'android'
-        ? 'file:///sdcard/Documents/Guru/Transcripts/'
-        : FileSystem.documentDirectory + 'backups/transcripts/';
+    const PUBLIC_BACKUP_DIR = FileSystem.documentDirectory + 'backups/Transcripts/';
 
     // Get all referenced transcripts
     const rows = await db.getAllAsync<{ transcript: string }>(

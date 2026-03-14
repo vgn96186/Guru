@@ -5,11 +5,20 @@ module.exports = {
   roots: ['<rootDir>/src'],
   testMatch: ['**/*.unit.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
+  globals: {
+    __DEV__: true,
+  },
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
   testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { module: 'commonjs' } }],
+    '^.+\\.(js|jsx)$': 'babel-jest',
+    'node_modules/.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+  },
   transformIgnorePatterns: [
-    'node_modules/(?!(expo-sqlite|expo-av|expo-file-system|expo-constants)/)'
+    "node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*)/)"
   ],
 };

@@ -29,18 +29,25 @@ export default function ManualLogScreen() {
   const [topicName, setTopicName] = useState('');
 
   useEffect(() => {
-    void getAllSubjects().then(setSubjects);
+    let active = true;
+    void getAllSubjects().then(res => { if (active) setSubjects(res); });
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
+    let active = true;
     if (selectedSubjectId) {
       void getTopicsBySubject(selectedSubjectId).then(topics => {
-        setSubjectTopics(topics.filter(t => !t.parentTopicId).slice(0, 8));
+        if (!active) return;
+        const filtered = topics.filter(t => !t.parentTopicId).slice(0, 8);
+        setSubjectTopics(filtered);
         setSelectedTopicId(null);
       });
     } else {
       setSubjectTopics([]);
+      setSelectedTopicId(null);
     }
+    return () => { active = false; };
   }, [selectedSubjectId]);
 
   async function handleSubmit() {

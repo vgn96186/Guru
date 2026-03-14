@@ -79,7 +79,8 @@ export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
       lastAttemptAt: r.last_attempt_at,
       errorMessage: r.error_message,
     }));
-  } catch {
+  } catch (err) {
+    console.error('[OfflineQueue] Failed to get pending requests:', err);
     return [];
   }
 }
@@ -129,7 +130,9 @@ export async function pruneCompletedItems(): Promise<void> {
       `DELETE FROM offline_ai_queue WHERE status = 'completed' AND created_at < ?`,
       [cutoff],
     );
-  } catch {}
+  } catch (error) {
+    console.warn('[OfflineQueue] Failed to prune completed items:', error);
+  }
 }
 
 type RequestProcessor = (item: OfflineQueueItem) => Promise<void>;
@@ -187,6 +190,8 @@ export async function processQueue(): Promise<void> {
 // Auto-process queue when app returns to foreground
 AppState.addEventListener('change', (state: AppStateStatus) => {
   if (state === 'active') {
-    processQueue().catch(() => {});
+    processQueue().catch((error) => {
+      console.error('[OfflineQueue] background processQueue failed:', error);
+    });
   }
 });

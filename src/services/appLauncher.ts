@@ -3,7 +3,7 @@
  * in-app audio capture (like screenshots), so we default to mic + speaker — user keeps
  * device speaker on so the mic can capture the lecture.
  */
-import { Linking, Platform } from 'react-native';
+import { Linking, Platform, Alert } from 'react-native';
 import { startExternalAppSession } from '../db/queries/externalLogs';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lectureSessionMonitor';
 import {
@@ -16,8 +16,6 @@ import {
 import { requestRecordingPermissions } from './appLauncher/permissions';
 import {
   ensureOverlayPermission,
-  canDrawOverlays,
-  requestOverlayPermission,
 } from './appLauncher/overlay';
 
 export type SupportedMedicalApp =
@@ -70,20 +68,6 @@ export async function launchMedicalApp(
   faceTracking = false,
   options?: LaunchMedicalAppOptions,
 ): Promise<boolean> {
-  // #region agent log
-  fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-    body: JSON.stringify({
-      sessionId: '03c55c',
-      location: 'appLauncher.ts:launchMedicalApp',
-      message: 'entry',
-      data: { appKey, faceTracking, platform: Platform.OS },
-      timestamp: Date.now(),
-      hypothesisId: 'H1',
-    }),
-  }).catch(() => {});
-  // #endregion
   if (_launchInProgress) return false;
   _launchInProgress = true;
   try {
@@ -103,20 +87,7 @@ async function _launchMedicalAppInner(
 
   let targetPackage = app.androidStore;
   let installed = await isAppInstalled(targetPackage);
-  // #region agent log
-  fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-    body: JSON.stringify({
-      sessionId: '03c55c',
-      location: 'appLauncher.ts:after isAppInstalled',
-      message: 'install check',
-      data: { appKey, targetPackage, installed },
-      timestamp: Date.now(),
-      hypothesisId: 'H1',
-    }),
-  }).catch(() => {});
-  // #endregion
+
   if (appKey === 'youtube') {
     installed = false;
     for (const pkg of YOUTUBE_PREFERRED_PACKAGES) {
@@ -136,20 +107,6 @@ async function _launchMedicalAppInner(
       if (micGranted) {
         options?.onMicUsed?.();
         try {
-          // #region agent log
-          fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-            body: JSON.stringify({
-              sessionId: '03c55c',
-              location: 'appLauncher.ts:before startRecording',
-              message: 'before native startRecording',
-              data: { targetPackage, useInternal: false },
-              timestamp: Date.now(),
-              hypothesisId: 'H2',
-            }),
-          }).catch(() => {});
-          // #endregion
           recordingPath = await startRecording('');
           if (recordingPath) {
             const groqKey = options?.groqKey?.trim();
@@ -162,85 +119,45 @@ async function _launchMedicalAppInner(
           }
         } catch (e) {
           console.warn('[AppLauncher] Recording start failed:', e);
+          Alert.alert('Recording Failed', 'Could not start background recording. Audio will not be captured.');
         }
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-        body: JSON.stringify({
-          sessionId: '03c55c',
-          location: 'appLauncher.ts:before ensureOverlay',
-          message: 'before overlay',
-          data: { appName: app.name },
-          timestamp: Date.now(),
-          hypothesisId: 'H3',
-        }),
-      }).catch(() => {});
-      // #endregion
       const hasOverlay = await ensureOverlayPermission();
       if (hasOverlay) {
-        await showOverlay(app.name, faceTracking);
+        try {
+          await showOverlay(app.name, faceTracking);
+        } catch (overlayErr) {
+          console.error('[AppLauncher] Overlay failed:', overlayErr);
+        }
       }
 
-      // #region agent log
-      fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-        body: JSON.stringify({
-          sessionId: '03c55c',
-          location: 'appLauncher.ts:before launchApp',
-          message: 'before native launchApp',
-          data: { targetPackage },
-          timestamp: Date.now(),
-          hypothesisId: 'H2',
-        }),
-      }).catch(() => {});
-      // #endregion
       await launchApp(targetPackage);
-      // #region agent log
-      fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-        body: JSON.stringify({
-          sessionId: '03c55c',
-          location: 'appLauncher.ts:before startExternalAppSession',
-          message: 'before DB insert',
-          data: { appName: app.name },
-          timestamp: Date.now(),
-          hypothesisId: 'H4',
-        }),
-      }).catch(() => {});
-      // #endregion
       await startExternalAppSession(app.name, recordingPath);
       return true;
     } catch (err: any) {
-      // #region agent log
-      fetch('http://127.0.0.1:7577/ingest/cf45e1bf-3934-4bc4-b4d9-3a9c3a75ee92', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '03c55c' },
-        body: JSON.stringify({
-          sessionId: '03c55c',
-          location: 'appLauncher.ts:catch',
-          message: 'installed path error',
-          data: { errMessage: String(err?.message), errName: String(err?.name) },
-          timestamp: Date.now(),
-          hypothesisId: 'H5',
-        }),
-      }).catch(() => {});
-      // #endregion
+      console.error('[AppLauncher] Launch sequence failed:', err);
+      Alert.alert('Launch Error', `Failed to open ${app.name}: ${err?.message || 'Unknown error'}`);
+      
       stopRecordingHealthCheck();
       try {
         await nativeStopRecording();
-      } catch {}
+      } catch (stopErr) {
+        console.warn('[AppLauncher] Failed to stop recording after launch error:', stopErr);
+      }
     }
   }
 
   try {
     await Linking.openURL(`market://details?id=${app.androidStore}`);
-  } catch {
-    await Linking.openURL(`https://play.google.com/store/apps/details?id=${app.androidStore}`);
+  } catch (marketErr) {
+    console.warn('[AppLauncher] Market link failed, trying browser:', marketErr);
+    try {
+      await Linking.openURL(`https://play.google.com/store/apps/details?id=${app.androidStore}`);
+    } catch (browserErr) {
+      console.error('[AppLauncher] Browser link also failed:', browserErr);
+      Alert.alert('Error', 'Could not open Play Store to install the app.');
+    }
   }
   return false;
 }

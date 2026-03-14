@@ -39,7 +39,11 @@ async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
 export async function releaseLlamaContext(): Promise<void> {
   if (contextInUse) return; // don't interrupt in-flight generation
   if (llamaContext) {
-    try { await llamaContext.release(); } catch {}
+    try {
+      await llamaContext.release();
+    } catch (err) {
+      console.warn('[LLM] Failed to release native context:', err);
+    }
     llamaContext = null;
     currentLlamaPath = null;
   }

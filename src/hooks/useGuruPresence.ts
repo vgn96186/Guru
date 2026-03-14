@@ -34,7 +34,7 @@ export function useGuruPresence({ topicNames, isActive, frequency = 'normal' }: 
     lastGeneratedKeyRef.current = topicsKey;
     generateGuruPresenceMessages(topicNames, topicNames)
       .then(msgs => { messagesRef.current = msgs; })
-      .catch(() => {});
+      .catch(err => console.warn('[useGuruPresence] Failed to generate ambient messages:', err));
   }, [topicsKey, topicNames]);
 
   // Pulse animation — run when active, pause otherwise

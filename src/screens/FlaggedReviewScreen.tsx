@@ -19,72 +19,123 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
   detective: 'Detective',
 };
 
+function renderPreview(item: FlaggedItem) {
+  const c = item.content as any;
+  if (item.contentType === 'keypoints') {
+    return (c.points as string[]).slice(0, 3).map((p: string, i: number) => (
+      <Text key={i} style={styles.previewLine}>• {p}</Text>
+    ));
+  }
+  if (item.contentType === 'quiz') {
+    const q = c.questions?.[0];
+    if (!q) return null;
+    return (
+      <>
+        <Text style={styles.previewLine}>Q: {q.question}</Text>
+        <Text style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</Text>
+        <Text style={styles.previewExplain}>{q.explanation}</Text>
+      </>
+    );
+  }
+  if (item.contentType === 'mnemonic') {
+    return (
+      <>
+        <Text style={styles.previewLine}>{c.mnemonic}</Text>
+        {(c.expansion as string[]).slice(0, 3).map((e: string, i: number) => (
+          <Text key={i} style={styles.previewSub}>  {e}</Text>
+        ))}
+      </>
+    );
+  }
+  if (item.contentType === 'story') {
+    return <Text style={styles.previewLine} numberOfLines={4}>{c.story}</Text>;
+  }
+  if (item.contentType === 'error_hunt') {
+    return (c.errors as any[]).slice(0, 2).map((e: any, i: number) => (
+      <Text key={i} style={styles.previewLine}>✗ {e.wrong} → {e.correct}</Text>
+    ));
+  }
+  return null;
+}
+
+const FlaggedItemCard = React.memo(({ 
+  item, 
+  isExpanded, 
+  onToggle, 
+  onUnflag 
+}: { 
+  item: FlaggedItem; 
+  isExpanded: boolean; 
+  onToggle: () => void; 
+  onUnflag: () => void; 
+}) => {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <TouchableOpacity 
+          style={styles.cardMeta} 
+          onPress={onToggle} 
+          activeOpacity={0.85}
+        >
+          <Text style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</Text>
+          <Text style={styles.cardSubject}>{item.subjectName}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.unflagBtn} 
+          onPress={onUnflag} 
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.unflagText}>✕</Text>
+        </TouchableOpacity>
+      </View>
+      
+      <TouchableOpacity onPress={onToggle} activeOpacity={0.85}>
+        <Text style={styles.cardTopic}>{item.topicName}</Text>
+        <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
+
+        {isExpanded && (
+          <View style={styles.preview}>
+            {renderPreview(item)}
+          </View>
+        )}
+        <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+});
+
 export default function FlaggedReviewScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (active: { current: boolean }) => {
     const items = await getFlaggedContent();
-    setItems(items);
+    if (active.current) setItems(items);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const active = { current: true };
+    void load(active);
+    return () => { active.current = false; };
+  }, [load]);
 
-  function handleUnflag(item: FlaggedItem) {
+  const handleUnflag = useCallback((item: FlaggedItem) => {
     Alert.alert('Remove flag?', `Unflag "${item.topicName}" (${CONTENT_TYPE_LABELS[item.contentType]})?`, [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Unflag', style: 'destructive', onPress: async () => {
           await setContentFlagged(item.topicId, item.contentType, false);
-          await load();
+          void load({ current: true });
         },
       },
     ]);
-  }
+  }, [load]);
 
-  function toggleExpand(key: string) {
+  const toggleExpand = useCallback((key: string) => {
     setExpanded(prev => prev === key ? null : key);
-  }
-
-  function renderPreview(item: FlaggedItem) {
-    const c = item.content as any;
-    if (item.contentType === 'keypoints') {
-      return (c.points as string[]).slice(0, 3).map((p: string, i: number) => (
-        <Text key={i} style={styles.previewLine}>• {p}</Text>
-      ));
-    }
-    if (item.contentType === 'quiz') {
-      const q = c.questions?.[0];
-      if (!q) return null;
-      return (
-        <>
-          <Text style={styles.previewLine}>Q: {q.question}</Text>
-          <Text style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</Text>
-          <Text style={styles.previewExplain}>{q.explanation}</Text>
-        </>
-      );
-    }
-    if (item.contentType === 'mnemonic') {
-      return (
-        <>
-          <Text style={styles.previewLine}>{c.mnemonic}</Text>
-          {(c.expansion as string[]).slice(0, 3).map((e: string, i: number) => (
-            <Text key={i} style={styles.previewSub}>  {e}</Text>
-          ))}
-        </>
-      );
-    }
-    if (item.contentType === 'story') {
-      return <Text style={styles.previewLine} numberOfLines={4}>{c.story}</Text>;
-    }
-    if (item.contentType === 'error_hunt') {
-      return (c.errors as any[]).slice(0, 2).map((e: any, i: number) => (
-        <Text key={i} style={styles.previewLine}>✗ {e.wrong} → {e.correct}</Text>
-      ));
-    }
-    return null;
-  }
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -109,42 +160,14 @@ export default function FlaggedReviewScreen() {
             <Text style={styles.hint}>Tap a card to expand. These are AI-generated — verify against textbooks before relying on them for exams.</Text>
             {items.map(item => {
               const key = `${item.topicId}-${item.contentType}`;
-              const isExpanded = expanded === key;
               return (
-                <View key={key} style={styles.card}>
-                  {/* Card header with unflag button - separate touch zone */}
-                  <View style={styles.cardHeader}>
-                    <TouchableOpacity 
-                      style={styles.cardMeta} 
-                      onPress={() => toggleExpand(key)} 
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</Text>
-                      <Text style={styles.cardSubject}>{item.subjectName}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.unflagBtn} 
-                      onPress={() => handleUnflag(item)} 
-                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.unflagText}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                  
-                  {/* Main card body - tap to expand */}
-                  <TouchableOpacity onPress={() => toggleExpand(key)} activeOpacity={0.85}>
-                    <Text style={styles.cardTopic}>{item.topicName}</Text>
-                    <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
-
-                    {isExpanded && (
-                      <View style={styles.preview}>
-                        {renderPreview(item)}
-                      </View>
-                    )}
-                    <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
-                  </TouchableOpacity>
-                </View>
+                <FlaggedItemCard
+                  key={key}
+                  item={item}
+                  isExpanded={expanded === key}
+                  onToggle={() => toggleExpand(key)}
+                  onUnflag={() => handleUnflag(item)}
+                />
               );
             })}
           </ScrollView>

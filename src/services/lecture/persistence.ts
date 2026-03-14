@@ -68,8 +68,10 @@ export async function saveLecturePersistence(opts: {
     runAutoPublicBackup().catch((e) => console.warn('[AutoBackup] Trigger failed:', e));
 
     return noteId;
-  } catch (e) {
+  } catch (e: any) {
     await db.execAsync('ROLLBACK');
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to save lecture: ${e.message || 'Unknown error'}`, 'error');
     throw e;
   }
 }

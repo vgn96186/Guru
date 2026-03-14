@@ -89,7 +89,9 @@ export async function importDatabase() {
       const { getDb } = require('../db/database');
       const db = getDb();
       db.closeSync();
-    } catch {}
+    } catch (err) {
+      if (__DEV__) console.warn('[Backup] Failed to close DB before import:', err);
+    }
     (global as any).__GURU_DB__ = null;
 
     const existing = await FileSystem.getInfoAsync(DB_PATH);

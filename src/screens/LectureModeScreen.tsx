@@ -121,7 +121,9 @@ export default function LectureModeScreen() {
       isRecordingEnabled,
       timestamp: Date.now(),
     };
-    AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state)).catch(() => {});
+    AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state)).catch((err) => {
+      console.warn('[LectureMode] Failed to save state:', err);
+    });
   }, [elapsed, notes, selectedSubjectId, isRecordingEnabled]);
 
   // ── Session Management ───────────────────────────────────────────────────
@@ -131,9 +133,13 @@ export default function LectureModeScreen() {
 
     // Create session early (after 10s of activity)
     if (elapsed > 10 && !sessionIdRef.current) {
-      createSession([], null, 'normal').then((id) => {
-        sessionIdRef.current = id;
-      });
+      createSession([], null, 'normal')
+        .then((id) => {
+          sessionIdRef.current = id;
+        })
+        .catch((err) => {
+          console.error('[LectureMode] Failed to create session:', err);
+        });
     }
 
     // Periodic progress updates (every 60s) to survive app kills
@@ -141,7 +147,11 @@ export default function LectureModeScreen() {
       const mins = Math.floor(elapsed / 60);
       const noteBonus = notes.length * 50;
       const totalXp = mins * 15 + noteBonus;
-      void updateSessionProgress(sessionIdRef.current, mins, totalXp, [], notes.join('\n\n'));
+      void updateSessionProgress(sessionIdRef.current, mins, totalXp, [], notes.join('\n\n')).catch(
+        (err) => {
+          console.error('[LectureMode] Failed to update session progress:', err);
+        },
+      );
     }
   }, [elapsed]);
 
@@ -152,13 +162,21 @@ export default function LectureModeScreen() {
   }, [profile]);
 
   useEffect(() => {
-    void getAllSubjects().then(setSubjects);
+    void getAllSubjects()
+      .then(setSubjects)
+      .catch((err) => {
+        console.error('[LectureMode] Failed to load subjects:', err);
+      });
   }, []);
 
   const [breakTopics, setBreakTopics] = useState<TopicWithProgress[]>([]);
   useEffect(() => {
     if (onBreak && selectedSubjectId) {
-      void getTopicsBySubject(selectedSubjectId).then(setBreakTopics);
+      void getTopicsBySubject(selectedSubjectId)
+        .then(setBreakTopics)
+        .catch((err) => {
+          console.error('[LectureMode] Failed to load break topics:', err);
+        });
     } else {
       setBreakTopics([]);
     }
@@ -231,7 +249,10 @@ export default function LectureModeScreen() {
     }, 1000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (recordingRef.current) recordingRef.current.stopAndUnloadAsync().catch(() => {});
+      if (recordingRef.current)
+        recordingRef.current.stopAndUnloadAsync().catch((err) => {
+          console.error('[LectureMode] Cleanup: Failed to unload recording:', err);
+        });
       setIsRecordingEnabled(false);
     };
   }, [onBreak]);
@@ -530,7 +551,9 @@ export default function LectureModeScreen() {
         recording
           .stopAndUnloadAsync()
           .then(() => setRecording(null))
-          .catch(() => {});
+          .catch((err) => {
+            console.error('[LectureMode] Failed to stop recording on loop pause:', err);
+          });
       }
     }
   }, [isRecordingEnabled, onBreak, recording, isTranscribing]);

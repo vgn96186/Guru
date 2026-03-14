@@ -281,7 +281,9 @@ export class WhisperModelManager {
    */
   cancelDownload(): void {
     if (this.downloadResumable) {
-      this.downloadResumable.pauseAsync().catch(() => {});
+      this.downloadResumable.pauseAsync().catch((error) => {
+        console.warn('[WhisperModelManager] Failed to cancel/pause download:', error);
+      });
       this.downloadResumable = null;
     }
     this.isDownloading = false;

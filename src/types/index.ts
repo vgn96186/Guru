@@ -9,7 +9,16 @@ import type {
   GuruFrequency,
   DailyLog,
 } from '../schemas';
-export type { ContentType, TopicStatus, Mood, SessionMode, StudyResourceMode, HarassmentTone, GuruFrequency, DailyLog };
+export type {
+  ContentType,
+  TopicStatus,
+  Mood,
+  SessionMode,
+  StudyResourceMode,
+  HarassmentTone,
+  GuruFrequency,
+  DailyLog,
+};
 
 export interface Subject {
   id: number;
@@ -104,9 +113,9 @@ export interface UserProfile {
   visualTimersEnabled?: boolean;
   faceTrackingEnabled?: boolean;
   syncCode: string | null;
-  openrouterApiKey: string;  // Legacy API key field (kept for backward compatibility)
-  openrouterKey: string;     // Actual OpenRouter key for free model fallbacks
-  groqApiKey: string;        // Groq API key for fast cloud inference fallback
+  openrouterApiKey: string; // Legacy API key field (kept for backward compatibility)
+  openrouterKey: string; // Actual OpenRouter key for free model fallbacks
+  groqApiKey: string; // Groq API key for fast cloud inference fallback
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
   bodyDoublingEnabled: boolean;
@@ -126,6 +135,7 @@ export interface UserProfile {
   studyResourceMode?: StudyResourceMode;
   customSubjectLoadMultipliers?: Record<string, number>;
   harassmentTone?: HarassmentTone;
+  backupDirectoryUri?: string | null;
 }
 
 // AI Content shapes

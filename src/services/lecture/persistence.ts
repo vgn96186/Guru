@@ -3,6 +3,8 @@ import { grantXp } from '../xpService';
 import { markTopicsFromLecture } from '../transcription/matching';
 import { saveTranscriptToFile } from '../transcriptStorage';
 import { embeddingToBlob } from '../ai/embeddingService';
+import { runAutoPublicBackup } from '../backgroundBackupService';
+import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
 
 export async function saveLecturePersistence(opts: {
   analysis: any;
@@ -58,6 +60,13 @@ export async function saveLecturePersistence(opts: {
       ['completed', noteId, opts.logId],
     );
     await db.execAsync('COMMIT');
+
+    // Notify UI to refresh stats and progress
+    notifyDbUpdate(DB_EVENT_KEYS.LECTURE_SAVED);
+
+    // Silent background backup to public storage after every successful lecture save
+    runAutoPublicBackup().catch((e) => console.warn('[AutoBackup] Trigger failed:', e));
+
     return noteId;
   } catch (e) {
     await db.execAsync('ROLLBACK');

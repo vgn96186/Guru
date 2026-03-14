@@ -20,3 +20,13 @@ export {
   type GuruFrequency,
   type DailyLog,
 } from './core';
+
+export {
+  QuizQuestionSchema,
+  QuizContentSchema,
+  KeyPointsContentSchema,
+  LectureAnalysisSchema,
+  type LectureAnalysis,
+  type QuizContent,
+  type KeyPointsContent,
+} from './ai';

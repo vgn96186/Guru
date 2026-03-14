@@ -41,6 +41,8 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     }
 
     _db = await SQLite.openDatabaseAsync('neet_study.db');
+    // Enable WAL mode for better concurrency (simultaneous reads and writes)
+    await _db.execAsync('PRAGMA journal_mode = WAL');
     g.__GURU_DB__ = _db;
   } else {
     _db = g.__GURU_DB__;
@@ -172,11 +174,16 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await seedUserProfile(db);
   } else {
     // Run background maintenance
-    const { retryFailedTasks, autoRepairLegacyNotes, scanAndRecoverOrphanedTranscripts } =
-      await import('../services/lectureSessionMonitor');
+    const {
+      retryFailedTasks,
+      autoRepairLegacyNotes,
+      scanAndRecoverOrphanedTranscripts,
+      scanAndRecoverOrphanedRecordings,
+    } = await import('../services/lectureSessionMonitor');
     void retryFailedTasks(profile.groq_api_key || undefined);
     void autoRepairLegacyNotes();
     void scanAndRecoverOrphanedTranscripts();
+    void scanAndRecoverOrphanedRecordings();
   }
 
   // Update streak on open

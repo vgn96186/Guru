@@ -4,6 +4,7 @@ import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { getLevelInfo } from '../services/xpService';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { showToast } from '../components/Toast';
+import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 
 interface AppState {
   profile: UserProfile | null;
@@ -23,92 +24,105 @@ interface AppState {
   setStudyResourceMode: (mode: StudyResourceMode) => Promise<void>;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  profile: null,
-  levelInfo: null,
-  hasCheckedInToday: false,
-  dailyAvailability: null,
+export const useAppStore = create<AppState>((set) => {
+  // Setup global event listener for background updates
+  dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, () => {
+    useAppStore.getState().refreshProfile();
+  });
+  dbEvents.on(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, () => {
+    useAppStore.getState().refreshProfile();
+  });
+  dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, () => {
+    useAppStore.getState().refreshProfile();
+  });
 
-  loadProfile: async () => {
-    const profile = await profileRepository.getProfile();
-    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
-    const todayLog = await dailyLogRepository.getDailyLog();
-    set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
-  },
+  return {
+    profile: null,
+    levelInfo: null,
+    hasCheckedInToday: false,
+    dailyAvailability: null,
 
-  refreshProfile: async () => {
-    const profile = await profileRepository.getProfile();
-    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
-    const todayLog = await dailyLogRepository.getDailyLog();
-    set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
-  },
+    loadProfile: async () => {
+      const profile = await profileRepository.getProfile();
+      const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+      const todayLog = await dailyLogRepository.getDailyLog();
+      set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
+    },
 
-  setDailyAvailability: (mins: number) => {
-    set({ dailyAvailability: mins });
-  },
+    refreshProfile: async () => {
+      const profile = await profileRepository.getProfile();
+      const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+      const todayLog = await dailyLogRepository.getDailyLog();
+      set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
+    },
 
-  toggleFocusAudio: async () => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    const newValue = !state.profile.focusAudioEnabled;
-    await profileRepository.updateProfile({ focusAudioEnabled: newValue });
-    set({ profile: { ...state.profile, focusAudioEnabled: newValue } });
-  },
+    setDailyAvailability: (mins: number) => {
+      set({ dailyAvailability: mins });
+    },
 
-  toggleVisualTimers: async () => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    const newValue = !state.profile.visualTimersEnabled;
-    await profileRepository.updateProfile({ visualTimersEnabled: newValue });
-    set({ profile: { ...state.profile, visualTimersEnabled: newValue } });
-  },
+    toggleFocusAudio: async () => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      const newValue = !state.profile.focusAudioEnabled;
+      await profileRepository.updateProfile({ focusAudioEnabled: newValue });
+      set({ profile: { ...state.profile, focusAudioEnabled: newValue } });
+    },
 
-  toggleFaceTracking: async () => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    const newValue = !state.profile.faceTrackingEnabled;
-    await profileRepository.updateProfile({ faceTrackingEnabled: newValue });
-    set({ profile: { ...state.profile, faceTrackingEnabled: newValue } });
-  },
+    toggleVisualTimers: async () => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      const newValue = !state.profile.visualTimersEnabled;
+      await profileRepository.updateProfile({ visualTimersEnabled: newValue });
+      set({ profile: { ...state.profile, visualTimersEnabled: newValue } });
+    },
 
-  setUseLocalModel: async (use: boolean) => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    if (use && !isLocalLlmAllowedOnThisDevice()) {
-      showToast(getLocalLlmRamWarning() ?? 'On-device AI disabled.', 'warning');
-      await profileRepository.updateProfile({ useLocalModel: false });
-      set({ profile: { ...state.profile, useLocalModel: false } });
-      return;
-    }
-    await profileRepository.updateProfile({ useLocalModel: use });
-    set({ profile: { ...state.profile, useLocalModel: use } });
-  },
+    toggleFaceTracking: async () => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      const newValue = !state.profile.faceTrackingEnabled;
+      await profileRepository.updateProfile({ faceTrackingEnabled: newValue });
+      set({ profile: { ...state.profile, faceTrackingEnabled: newValue } });
+    },
 
-  setLocalModelPath: async (path: string | null) => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    await profileRepository.updateProfile({ localModelPath: path });
-    set({ profile: { ...state.profile, localModelPath: path } });
-  },
+    setUseLocalModel: async (use: boolean) => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      if (use && !isLocalLlmAllowedOnThisDevice()) {
+        showToast(getLocalLlmRamWarning() ?? 'On-device AI disabled.', 'warning');
+        await profileRepository.updateProfile({ useLocalModel: false });
+        set({ profile: { ...state.profile, useLocalModel: false } });
+        return;
+      }
+      await profileRepository.updateProfile({ useLocalModel: use });
+      set({ profile: { ...state.profile, useLocalModel: use } });
+    },
 
-  setUseLocalWhisper: async (use: boolean) => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    await profileRepository.updateProfile({ useLocalWhisper: use });
-    set({ profile: { ...state.profile, useLocalWhisper: use } });
-  },
+    setLocalModelPath: async (path: string | null) => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      await profileRepository.updateProfile({ localModelPath: path });
+      set({ profile: { ...state.profile, localModelPath: path } });
+    },
 
-  setLocalWhisperPath: async (path: string | null) => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    await profileRepository.updateProfile({ localWhisperPath: path });
-    set({ profile: { ...state.profile, localWhisperPath: path } });
-  },
+    setUseLocalWhisper: async (use: boolean) => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      await profileRepository.updateProfile({ useLocalWhisper: use });
+      set({ profile: { ...state.profile, useLocalWhisper: use } });
+    },
 
-  setStudyResourceMode: async (mode: StudyResourceMode) => {
-    const state = useAppStore.getState();
-    if (!state.profile) return;
-    await profileRepository.updateProfile({ studyResourceMode: mode });
-    set({ profile: { ...state.profile, studyResourceMode: mode } });
-  },
-}));
+    setLocalWhisperPath: async (path: string | null) => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      await profileRepository.updateProfile({ localWhisperPath: path });
+      set({ profile: { ...state.profile, localWhisperPath: path } });
+    },
+
+    setStudyResourceMode: async (mode: StudyResourceMode) => {
+      const state = useAppStore.getState();
+      if (!state.profile) return;
+      await profileRepository.updateProfile({ studyResourceMode: mode });
+      set({ profile: { ...state.profile, studyResourceMode: mode } });
+    },
+  };
+});

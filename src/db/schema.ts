@@ -141,6 +141,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'
     CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
   , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'
+  , backup_directory_uri TEXT
 )`;
 
 export const CREATE_BRAIN_DUMPS = `

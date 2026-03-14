@@ -182,7 +182,12 @@ export const MIGRATIONS: Migration[] = [
   },
   { version: 60, sql: `ALTER TABLE lecture_notes ADD COLUMN embedding BLOB` },
   { version: 61, sql: `ALTER TABLE topics ADD COLUMN embedding BLOB` },
+  {
+    version: 62,
+    sql: `ALTER TABLE user_profile ADD COLUMN backup_directory_uri TEXT`,
+    description: 'Add cloud/public backup directory URI',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 61;
+export const LATEST_VERSION = 62;

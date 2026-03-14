@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, Platform, Linking
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -12,9 +18,12 @@ import { Audio } from 'expo-av';
 import { useAppStore } from '../store/useAppStore';
 import { profileRepository } from '../db/repositories';
 import { exportDatabase, importDatabase } from '../services/backupService';
-import { exportJsonBackup, importJsonBackup } from '../services/jsonBackupService';
+import { importJsonBackup } from '../services/jsonBackupService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
+import {
+  requestNotificationPermissions,
+  refreshAccountabilityNotifications,
+} from '../services/notificationService';
 import ApiKeySection from '../components/settings/ApiKeySection';
 import StudyGoalsSection from '../components/settings/StudyGoalsSection';
 import AdvancedToolsSection from '../components/settings/AdvancedToolsSection';
@@ -24,7 +33,11 @@ import NotificationSection from '../components/settings/NotificationSection';
 import StudyPreferencesSection from '../components/settings/StudyPreferencesSection';
 import ContentPreferencesSection from '../components/settings/ContentPreferencesSection';
 import { isSyncAvailable } from '../services/deviceSyncService';
-import { getExamDateSyncMeta, syncExamDatesFromInternet, type ExamDateSyncMeta } from '../services/examDateSyncService';
+import {
+  getExamDateSyncMeta,
+  syncExamDatesFromInternet,
+  type ExamDateSyncMeta,
+} from '../services/examDateSyncService';
 import { getAllSubjects } from '../db/queries/topics';
 import type { ContentType, Subject } from '../types';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
@@ -40,7 +53,9 @@ const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'detective', label: 'Detective' },
 ];
 
-type ValidationErrors = Partial<Record<'inicetDate' | 'neetDate' | 'sessionLength' | 'dailyGoal' | 'notifHour', string>>;
+type ValidationErrors = Partial<
+  Record<'inicetDate' | 'neetDate' | 'sessionLength' | 'dailyGoal' | 'notifHour', string>
+>;
 
 function normalizeUserDateInput(value: string): string | null {
   const raw = value.trim();
@@ -48,11 +63,15 @@ function normalizeUserDateInput(value: string): string | null {
   let y: number, m: number, d: number;
   const ymd = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (ymd) {
-    y = Number(ymd[1]); m = Number(ymd[2]); d = Number(ymd[3]);
+    y = Number(ymd[1]);
+    m = Number(ymd[2]);
+    d = Number(ymd[3]);
   } else {
     const dmy = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
     if (dmy) {
-      d = Number(dmy[1]); m = Number(dmy[2]); y = Number(dmy[3]);
+      d = Number(dmy[1]);
+      m = Number(dmy[2]);
+      y = Number(dmy[3]);
     } else return null;
   }
   if (y < 2020 || y > 2035 || m < 1 || m > 12 || d < 1 || d > 31) return null;
@@ -67,8 +86,12 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isFocused = useIsFocused();
   const { profile, refreshProfile } = useAppStore();
-  
-  const [permStatus, setPermStatus] = useState({ notifs: 'undetermined', overlay: 'undetermined', mic: 'undetermined' });
+
+  const [permStatus, setPermStatus] = useState({
+    notifs: 'undetermined',
+    overlay: 'undetermined',
+    mic: 'undetermined',
+  });
   const [apiKey, setApiKey] = useState('');
   const [orKey, setOrKey] = useState('');
   const [groqKey, setGroqKey] = useState('');
@@ -88,7 +111,9 @@ export default function SettingsScreen() {
   const [breakDuration, setBreakDuration] = useState('5');
   const [visualTimersEnabled, setVisualTimersEnabled] = useState(false);
   const [notifHour, setNotifHour] = useState('7');
-  const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>('normal');
+  const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>(
+    'normal',
+  );
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjectLoadOverrides, setSubjectLoadOverrides] = useState<Record<string, string>>({});
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -97,7 +122,7 @@ export default function SettingsScreen() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState('');
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  
+
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveRef = useRef<() => void>(() => {});
@@ -106,11 +131,13 @@ export default function SettingsScreen() {
     setIsDirty(true);
     if (saveState !== 'saving') setSaveState('idle');
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-    autoSaveRef.current = setTimeout(() => { saveRef.current(); }, 2000);
+    autoSaveRef.current = setTimeout(() => {
+      saveRef.current();
+    }, 2000);
   }, [saveState]);
 
   const clearFieldError = useCallback((field: keyof ValidationErrors) => {
-    setValidationErrors(prev => {
+    setValidationErrors((prev) => {
       if (!prev[field]) return prev;
       const next = { ...prev };
       delete next[field];
@@ -118,11 +145,14 @@ export default function SettingsScreen() {
     });
   }, []);
 
-  const clampInt = useCallback((raw: string, fallback: number, min: number, max: number): number => {
-    const parsed = Number.parseInt(raw, 10);
-    if (Number.isNaN(parsed)) return fallback;
-    return Math.max(min, Math.min(max, parsed));
-  }, []);
+  const clampInt = useCallback(
+    (raw: string, fallback: number, min: number, max: number): number => {
+      const parsed = Number.parseInt(raw, 10);
+      if (Number.isNaN(parsed)) return fallback;
+      return Math.max(min, Math.min(max, parsed));
+    },
+    [],
+  );
 
   useEffect(() => {
     return () => {
@@ -138,7 +168,9 @@ export default function SettingsScreen() {
   useEffect(() => {
     if (isFocused) {
       checkPermissions();
-      getExamDateSyncMeta().then(setExamSyncMeta).catch(() => setExamSyncMeta(null));
+      getExamDateSyncMeta()
+        .then(setExamSyncMeta)
+        .catch(() => setExamSyncMeta(null));
     }
   }, [isFocused]);
 
@@ -155,7 +187,9 @@ export default function SettingsScreen() {
   }
 
   useEffect(() => {
-    void getAllSubjects().then(setSubjects).catch(() => {});
+    void getAllSubjects()
+      .then(setSubjects)
+      .catch(() => {});
     if (profile) {
       setApiKey(profile.openrouterApiKey?.split('|')[0] ?? '');
       setOrKey(profile.openrouterKey ?? '');
@@ -176,21 +210,54 @@ export default function SettingsScreen() {
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
       setSubjectLoadOverrides(
-        Object.fromEntries(Object.entries(profile.customSubjectLoadMultipliers ?? {}).map(([c, v]) => [c, String(v)]))
+        Object.fromEntries(
+          Object.entries(profile.customSubjectLoadMultipliers ?? {}).map(([c, v]) => [
+            c,
+            String(v),
+          ]),
+        ),
       );
     }
   }, [profile]);
 
   const initialLoadDone = useRef(false);
   useEffect(() => {
-    if (!initialLoadDone.current) { if (profile) initialLoadDone.current = true; return; }
+    if (!initialLoadDone.current) {
+      if (profile) initialLoadDone.current = true;
+      return;
+    }
     markDirty();
-  }, [apiKey, orKey, groqKey, name, inicetDate, neetDate, sessionLength, dailyGoal, notifs, strictMode, bodyDoubling, blockedTypes, idleTimeout, breakDuration, visualTimersEnabled, notifHour, guruFrequency, focusSubjectIds, subjectLoadOverrides]);
+  }, [
+    apiKey,
+    orKey,
+    groqKey,
+    name,
+    inicetDate,
+    neetDate,
+    sessionLength,
+    dailyGoal,
+    notifs,
+    strictMode,
+    bodyDoubling,
+    blockedTypes,
+    idleTimeout,
+    breakDuration,
+    visualTimersEnabled,
+    notifHour,
+    guruFrequency,
+    focusSubjectIds,
+    subjectLoadOverrides,
+  ]);
 
   async function save() {
     if (saving) return;
-    if (autoSaveRef.current) { clearTimeout(autoSaveRef.current); autoSaveRef.current = null; }
-    setSaving(true); setSaveState('saving'); setSaveError('');
+    if (autoSaveRef.current) {
+      clearTimeout(autoSaveRef.current);
+      autoSaveRef.current = null;
+    }
+    setSaving(true);
+    setSaveState('saving');
+    setSaveError('');
 
     const nextErrors: ValidationErrors = {};
     const normalizedInicet = normalizeUserDateInput(inicetDate);
@@ -212,29 +279,51 @@ export default function SettingsScreen() {
     }
 
     if (Object.keys(nextErrors).length > 0) {
-      setValidationErrors(nextErrors); setSaveState('error'); setSaveError('Fix highlighted fields');
-      setSaving(false); return;
+      setValidationErrors(nextErrors);
+      setSaveState('error');
+      setSaveError('Fix highlighted fields');
+      setSaving(false);
+      return;
     }
 
     try {
       await profileRepository.updateProfile({
-        openrouterApiKey: apiKey.trim(), openrouterKey: orKey.trim(), groqApiKey: groqKey.trim(),
-        displayName: name.trim() || 'Doctor', inicetDate: finalInicet!, neetDate: finalNeet!,
+        openrouterApiKey: apiKey.trim(),
+        openrouterKey: orKey.trim(),
+        groqApiKey: groqKey.trim(),
+        displayName: name.trim() || 'Doctor',
+        inicetDate: finalInicet!,
+        neetDate: finalNeet!,
         preferredSessionLength: clampInt(sessionLength, 45, 10, 240),
         dailyGoalMinutes: clampInt(dailyGoal, 120, 30, 720),
-        notificationsEnabled: notifs, strictModeEnabled: strictMode, bodyDoublingEnabled: bodyDoubling,
-        blockedContentTypes: blockedTypes, idleTimeoutMinutes: clampInt(idleTimeout, 2, 1, 60),
+        notificationsEnabled: notifs,
+        strictModeEnabled: strictMode,
+        bodyDoublingEnabled: bodyDoubling,
+        blockedContentTypes: blockedTypes,
+        idleTimeoutMinutes: clampInt(idleTimeout, 2, 1, 60),
         breakDurationMinutes: clampInt(breakDuration, 5, 1, 30),
-        visualTimersEnabled, notificationHour: clampInt(notifHour, 7, 0, 23),
-        guruFrequency, focusSubjectIds,
-        customSubjectLoadMultipliers: Object.fromEntries(Object.entries(subjectLoadOverrides).map(([c, v]) => [c, parseFloat(v) || 1.0]))
+        visualTimersEnabled,
+        notificationHour: clampInt(notifHour, 7, 0, 23),
+        guruFrequency,
+        focusSubjectIds,
+        customSubjectLoadMultipliers: Object.fromEntries(
+          Object.entries(subjectLoadOverrides).map(([c, v]) => [c, parseFloat(v) || 1.0]),
+        ),
       });
-      if (notifs) { const g = await requestNotificationPermissions(); if (g) await refreshAccountabilityNotifications(); }
-      await refreshProfile(); setIsDirty(false); setSaveState('saved');
+      if (notifs) {
+        const g = await requestNotificationPermissions();
+        if (g) await refreshAccountabilityNotifications();
+      }
+      await refreshProfile();
+      setIsDirty(false);
+      setSaveState('saved');
       saveStateTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2200);
     } catch (err: any) {
-      setSaveState('error'); setSaveError(err?.message ?? 'Save failed');
-    } finally { setSaving(false); }
+      setSaveState('error');
+      setSaveError(err?.message ?? 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   }
   saveRef.current = save;
 
@@ -248,9 +337,33 @@ export default function SettingsScreen() {
       await refreshProfile();
       setExamSyncMeta(await getExamDateSyncMeta());
       Alert.alert(res.updated ? 'Updated' : 'Checked', res.message);
-    } catch (err: any) { Alert.alert('Sync Failed', err.message); }
-    finally { setExamSyncBusy(false); }
+    } catch (err: any) {
+      Alert.alert('Sync Failed', err.message);
+    } finally {
+      setExamSyncBusy(false);
+    }
   }
+
+  const handleSelectBackupDir = async () => {
+    if (Platform.OS !== 'android') {
+      Alert.alert('Not supported', 'This feature is only available on Android.');
+      return;
+    }
+    try {
+      const { StorageAccessFramework } = await import('expo-file-system/legacy');
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (permissions.granted) {
+        await profileRepository.updateProfile({ backupDirectoryUri: permissions.directoryUri });
+        await refreshProfile();
+        Alert.alert(
+          'Success',
+          'Backup directory configured! Your data will now stay synced there.',
+        );
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to configure backup directory.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -260,94 +373,178 @@ export default function SettingsScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>Settings</Text>
             <Text style={styles.saveStatus}>
-              {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved' : isDirty ? 'Unsaved changes' : ''}
+              {saveState === 'saving'
+                ? 'Saving...'
+                : saveState === 'saved'
+                  ? 'Saved'
+                  : isDirty
+                    ? 'Unsaved changes'
+                    : ''}
             </Text>
           </View>
 
           <Section title="👤 Profile">
-            <ProfileSection 
-              name={name} onNameChange={setName} 
-              isSyncAvailable={isSyncAvailable()} 
-              onLinkDevice={() => navigation.navigate('DeviceLink')} 
+            <ProfileSection
+              name={name}
+              onNameChange={setName}
+              isSyncAvailable={isSyncAvailable()}
+              onLinkDevice={() => navigation.navigate('DeviceLink')}
             />
           </Section>
 
           <Section title="🤖 AI Configuration">
-            <ApiKeySection groqKey={groqKey} onGroqKeyChange={setGroqKey} openRouterKey={orKey} onOpenRouterKeyChange={setOrKey} />
+            <ApiKeySection
+              groqKey={groqKey}
+              onGroqKeyChange={setGroqKey}
+              openRouterKey={orKey}
+              onOpenRouterKeyChange={setOrKey}
+            />
           </Section>
 
           <Section title="✅ Permissions">
-            <PermissionRow label="Notifications" status={permStatus.notifs} onFix={() => Notifications.requestPermissionsAsync().then(checkPermissions)} />
-            <PermissionRow label="Microphone" status={permStatus.mic} onFix={() => Audio.requestPermissionsAsync().then(checkPermissions)} />
+            <PermissionRow
+              label="Notifications"
+              status={permStatus.notifs}
+              onFix={() => Notifications.requestPermissionsAsync().then(checkPermissions)}
+            />
+            <PermissionRow
+              label="Microphone"
+              status={permStatus.mic}
+              onFix={() => Audio.requestPermissionsAsync().then(checkPermissions)}
+            />
             {Platform.OS === 'android' && (
-              <PermissionRow 
-                label="Draw Over Apps" status={permStatus.overlay} 
-                onFix={async () => { 
+              <PermissionRow
+                label="Draw Over Apps"
+                status={permStatus.overlay}
+                onFix={async () => {
                   const { requestOverlayPermission } = require('../../modules/app-launcher');
-                  await requestOverlayPermission(); 
+                  await requestOverlayPermission();
                   Alert.alert('Overlay', 'Enable Guru in settings and return.');
-                }} 
+                }}
+              />
+            )}
+            {Platform.OS === 'android' && (
+              <PermissionRow
+                label="Persistent Backup Folder"
+                status={profile?.backupDirectoryUri ? 'granted' : 'undetermined'}
+                onFix={handleSelectBackupDir}
               />
             )}
           </Section>
 
           <Section title="📅 Study Goals">
-            <StudyGoalsSection 
-              inicetDate={inicetDate} neetDate={neetDate} sessionLength={sessionLength} dailyGoal={dailyGoal}
-              onInicetDateChange={(t) => { setInicetDate(t); clearFieldError('inicetDate'); }} 
-              onNeetDateChange={(t) => { setNeetDate(t); clearFieldError('neetDate'); }} 
-              onSessionLengthChange={setSessionLength} onDailyGoalChange={setDailyGoal} 
-              errorInicet={validationErrors.inicetDate} errorNeet={validationErrors.neetDate}
+            <StudyGoalsSection
+              inicetDate={inicetDate}
+              neetDate={neetDate}
+              sessionLength={sessionLength}
+              dailyGoal={dailyGoal}
+              onInicetDateChange={(t) => {
+                setInicetDate(t);
+                clearFieldError('inicetDate');
+              }}
+              onNeetDateChange={(t) => {
+                setNeetDate(t);
+                clearFieldError('neetDate');
+              }}
+              onSessionLengthChange={setSessionLength}
+              onDailyGoalChange={setDailyGoal}
+              errorInicet={validationErrors.inicetDate}
+              errorNeet={validationErrors.neetDate}
             />
-            <TouchableOpacity style={styles.testBtn} onPress={syncExamDatesNow} disabled={examSyncBusy}>
-              <Text style={styles.testBtnText}>{examSyncBusy ? 'Checking...' : 'Verify Dates from Internet'}</Text>
+            <TouchableOpacity
+              style={styles.testBtn}
+              onPress={syncExamDatesNow}
+              disabled={examSyncBusy}
+            >
+              <Text style={styles.testBtnText}>
+                {examSyncBusy ? 'Checking...' : 'Verify Dates from Internet'}
+              </Text>
             </TouchableOpacity>
           </Section>
 
           <Section title="⚙️ Study Preferences">
-            <StudyPreferencesSection 
-              strictMode={strictMode} onStrictModeChange={setStrictMode}
-              visualTimers={visualTimersEnabled} onVisualTimersChange={setVisualTimersEnabled}
-              bodyDoubling={bodyDoubling} onBodyDoublingChange={setBodyDoubling}
+            <StudyPreferencesSection
+              strictMode={strictMode}
+              onStrictModeChange={setStrictMode}
+              visualTimers={visualTimersEnabled}
+              onVisualTimersChange={setVisualTimersEnabled}
+              bodyDoubling={bodyDoubling}
+              onBodyDoublingChange={setBodyDoubling}
             />
           </Section>
 
           <Section title="🔔 Notifications">
-            <NotificationSection 
-              enabled={notifs} onEnabledChange={setNotifs}
-              hour={notifHour} onHourChange={(t) => { setNotifHour(t); clearFieldError('notifHour'); }}
-              frequency={guruFrequency} onFrequencyChange={setGuruFrequency}
+            <NotificationSection
+              enabled={notifs}
+              onEnabledChange={setNotifs}
+              hour={notifHour}
+              onHourChange={(t) => {
+                setNotifHour(t);
+                clearFieldError('notifHour');
+              }}
+              frequency={guruFrequency}
+              onFrequencyChange={setGuruFrequency}
               onTest={() => refreshAccountabilityNotifications().then(() => Alert.alert('Done'))}
               error={validationErrors.notifHour}
             />
           </Section>
 
           <Section title="🃏 Content & Subjects">
-            <ContentPreferencesSection 
-              subjects={subjects} focusSubjectIds={focusSubjectIds}
-              onFocusSubjectToggle={(id) => setFocusSubjectIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])}
+            <ContentPreferencesSection
+              subjects={subjects}
+              focusSubjectIds={focusSubjectIds}
+              onFocusSubjectToggle={(id) =>
+                setFocusSubjectIds((prev) =>
+                  prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+                )
+              }
               onClearFocus={() => setFocusSubjectIds([])}
-              allContentTypes={ALL_CONTENT_TYPES} blockedTypes={blockedTypes}
-              onContentTypeToggle={(type) => setBlockedTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])}
+              allContentTypes={ALL_CONTENT_TYPES}
+              blockedTypes={blockedTypes}
+              onContentTypeToggle={(type) =>
+                setBlockedTypes((prev) =>
+                  prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type],
+                )
+              }
             />
           </Section>
 
           <AdvancedToolsSection
-            onExportBackup={exportDatabase} onImportBackup={importDatabase}
-            onExportJsonBackup={async () => { setBackupBusy(true); await exportJsonBackup(); setBackupBusy(false); }}
-            onImportJsonBackup={async () => {
-              setBackupBusy(true); const res = await importJsonBackup(); setBackupBusy(false);
-              if (res.ok) { Alert.alert('Restored', res.message); await refreshProfile(); }
-              else Alert.alert('Error', res.message);
+            onExportBackup={exportDatabase}
+            onImportBackup={importDatabase}
+            onExportJsonBackup={async () => {
+              setBackupBusy(true);
+              await exportJsonBackup();
+              setBackupBusy(false);
             }}
-            onClearCache={async () => { await profileRepository.clearAiCache(); Alert.alert('Cleared'); }}
+            onImportJsonBackup={async () => {
+              setBackupBusy(true);
+              const res = await importJsonBackup();
+              setBackupBusy(false);
+              if (res.ok) {
+                Alert.alert('Restored', res.message);
+                await refreshProfile();
+              } else Alert.alert('Error', res.message);
+            }}
+            onClearCache={async () => {
+              await profileRepository.clearAiCache();
+              Alert.alert('Cleared');
+            }}
             onResetProgress={async () => {
               Alert.alert('Reset All?', 'Sure?', [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Reset', style: 'destructive', onPress: async () => { await profileRepository.resetStudyProgress(); await refreshProfile(); } }
+                {
+                  text: 'Reset',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await profileRepository.resetStudyProgress();
+                    await refreshProfile();
+                  },
+                },
               ]);
             }}
-            isExporting={backupBusy} isImporting={backupBusy}
+            isExporting={backupBusy}
+            isImporting={backupBusy}
           />
         </ResponsiveContainer>
       </ScrollView>
@@ -367,13 +564,39 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, paddingBottom: 60 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
   title: { color: theme.colors.textPrimary, fontSize: 28, fontWeight: '900' },
   saveStatus: { color: theme.colors.textSecondary, fontSize: 12 },
   section: { marginBottom: 24 },
-  sectionTitle: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '800', letterSpacing: 1, marginBottom: 10, textTransform: 'uppercase' },
-  sectionContent: { backgroundColor: theme.colors.panel, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.colors.border },
+  sectionTitle: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  sectionContent: {
+    backgroundColor: theme.colors.panel,
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   label: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  testBtn: { marginTop: 12, backgroundColor: theme.colors.surfaceAlt, borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border },
+  testBtn: {
+    marginTop: 12,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   testBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
 });

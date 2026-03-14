@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Modal,
   View,
@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Animated,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -34,69 +35,184 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  
   const scrollRef = useRef<ScrollView>(null);
+  const isMountedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(300)).current;
+  const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const slideAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
 
+  // Track if component is mounted to prevent state updates after unmount
+  useEffect(() => {
+    isMountedRef.current = visible;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, [visible]);
+
+  // Cleanup animations and abort controller on unmount
+  useEffect(() => {
+    return () => {
+      if (pulseAnimationRef.current) {
+        pulseAnimationRef.current.stop();
+      }
+      if (slideAnimationRef.current) {
+        slideAnimationRef.current.stop();
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Handle animations when visibility changes
   useEffect(() => {
     if (visible) {
+      // Reset animations
       slideAnim.setValue(300);
       pulseAnim.setValue(1);
       
-      Animated.spring(slideAnim, {
+      // Slide in animation
+      slideAnimationRef.current = Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
         tension: 65,
         friction: 11,
-      }).start();
+      });
+      slideAnimationRef.current.start();
 
-      const anim = Animated.loop(
+      // Pulse animation for the indicator
+      pulseAnimationRef.current = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.4, duration: 1200, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
         ]),
       );
-      anim.start();
-      return () => anim.stop();
+      pulseAnimationRef.current.start();
+
+      // Reset error state when opening
+      setError(null);
+      setRetryCount(0);
+    } else {
+      // Stop animations when closing
+      if (pulseAnimationRef.current) {
+        pulseAnimationRef.current.stop();
+      }
+      if (slideAnimationRef.current) {
+        slideAnimationRef.current.stop();
+      }
+      // Abort any in-flight request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
     }
-  }, [visible]);
+  }, [visible, slideAnim, pulseAnim]);
+
+  const scrollToEnd = useCallback(() => {
+    if (scrollRef.current && isMountedRef.current) {
+      setTimeout(() => {
+        scrollRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, []);
 
   async function handleSend() {
     const q = input.trim();
     if (!q || loading) return;
 
+    // Prevent sending while another request is in flight
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const userMsg: ChatMessage = { role: 'user', text: q };
     const next = [...messages, userMsg];
+    
+    // Update state immediately
     setMessages(next);
     setInput('');
     setLoading(true);
+    setError(null);
+    
+    scrollToEnd();
 
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
 
     try {
-      const { reply } = await chatWithGuru(q, topicName, next.slice(-10));
-      setMessages((prev) => [...prev, { role: 'guru', text: reply }]);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {
-      setMessages((prev) => [...prev, { role: 'guru', text: "Couldn't connect. Try again." }]);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      const { reply } = await chatWithGuru(q, topicName, next.slice(-10), {
+        signal: abortControllerRef.current.signal,
+      });
+      
+      if (isMountedRef.current) {
+        setMessages((prev) => [...prev, { role: 'guru', text: reply }]);
+        setRetryCount(0);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        scrollToEnd();
+      }
+    } catch (err: any) {
+      if (isMountedRef.current) {
+        if (err.name === 'AbortError') {
+          console.log('[GuruChatOverlay] Request aborted');
+          return;
+        }
+        
+        const errorMessage = err.message || "Couldn't connect. Try again.";
+        setError(errorMessage);
+        setRetryCount(prev => prev + 1);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
     } finally {
-      setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      if (isMountedRef.current) {
+        setLoading(false);
+        abortControllerRef.current = null;
+      }
     }
   }
 
+  const handleRetry = useCallback(() => {
+    if (messages.length > 0 && messages[messages.length - 1].role === 'user') {
+      // Retry the last user message
+      const lastUserMessage = messages[messages.length - 1].text;
+      setInput(lastUserMessage);
+      setError(null);
+    }
+  }, [messages]);
+
+  const handleClose = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    Haptics.selectionAsync();
+    onClose();
+  }, [onClose]);
+
+  // Clear input when modal closes
+  useEffect(() => {
+    if (!visible) {
+      setInput('');
+      setError(null);
+    }
+  }, [visible]);
+
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="none"
+      onRequestClose={handleClose}
+    >
       <StatusBar barStyle="light-content" />
       <TouchableOpacity
         style={s.backdrop}
         activeOpacity={1}
-        onPress={() => {
-          Haptics.selectionAsync();
-          onClose();
-        }}
+        onPress={handleClose}
       >
         <View style={s.backdropOverlay} />
       </TouchableOpacity>
@@ -123,10 +239,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
             </View>
 
             <TouchableOpacity
-              onPress={() => {
-                Haptics.selectionAsync();
-                onClose();
-              }}
+              onPress={handleClose}
               style={s.closeBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
@@ -139,6 +252,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
             style={s.messages}
             contentContainerStyle={s.messagesContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             {messages.length === 0 && (
               <View style={s.emptyContainer}>
@@ -155,7 +269,10 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
             {messages.map((msg, i) => (
               <View
                 key={i}
-                style={[s.bubbleContainer, msg.role === 'user' ? s.userContainer : s.guruContainer]}
+                style={[
+                  s.bubbleContainer, 
+                  msg.role === 'user' ? s.userContainer : s.guruContainer
+                ]}
               >
                 {msg.role === 'guru' && (
                   <View style={s.avatarSmall}>
@@ -182,12 +299,23 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
                 </View>
               </View>
             )}
+
+            {error && !loading && (
+              <View style={s.errorContainer}>
+                <Text style={s.errorText}>{error}</Text>
+                {retryCount > 0 && (
+                  <TouchableOpacity style={s.retryBtn} onPress={handleRetry}>
+                    <Text style={s.retryBtnText}>Retry ({retryCount})</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </ScrollView>
 
           <View style={s.inputWrapper}>
             <View style={s.inputRow}>
               <TextInput
-                style={s.input}
+                style={[s.input, error && s.inputError]}
                 placeholder="Ask a question..."
                 placeholderTextColor={theme.colors.textMuted}
                 value={input}
@@ -195,19 +323,36 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
                 onSubmitEditing={handleSend}
                 returnKeyType="send"
                 multiline={false}
+                maxLength={500}
+                editable={!loading}
+                importantForAutofill="no"
+                autoComplete="off"
+                autoCorrect={false}
               />
               <TouchableOpacity
-                style={[s.sendBtn, (!input.trim() || loading) && s.sendBtnDisabled]}
+                style={[
+                  s.sendBtn, 
+                  (!input.trim() || loading) && s.sendBtnDisabled
+                ]}
                 onPress={handleSend}
                 disabled={!input.trim() || loading}
               >
-                <Ionicons
-                  name="arrow-up"
-                  size={20}
-                  color={!input.trim() || loading ? theme.colors.textMuted : '#fff'}
-                />
+                {loading ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Ionicons
+                    name="arrow-up"
+                    size={20}
+                    color={!input.trim() ? theme.colors.textMuted : '#fff'}
+                  />
+                )}
               </TouchableOpacity>
             </View>
+            {error && (
+              <Text style={s.inputErrorHint}>
+                Connection failed. Check your internet or API keys in Settings.
+              </Text>
+            )}
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -392,6 +537,33 @@ const s = StyleSheet.create({
     fontStyle: 'italic',
   },
 
+  errorContainer: {
+    alignSelf: 'center',
+    backgroundColor: theme.colors.error + '15',
+    padding: 12,
+    borderRadius: 12,
+    marginVertical: 8,
+    alignItems: 'center',
+    maxWidth: '90%',
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  retryBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  retryBtnText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
   inputWrapper: {
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -417,6 +589,15 @@ const s = StyleSheet.create({
     fontSize: 15,
     maxHeight: 100,
     paddingVertical: 8,
+  },
+  inputError: {
+    borderColor: theme.colors.error,
+  },
+  inputErrorHint: {
+    color: theme.colors.error,
+    fontSize: 11,
+    marginTop: 4,
+    marginLeft: 12,
   },
   sendBtn: {
     backgroundColor: theme.colors.primary,

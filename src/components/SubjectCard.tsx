@@ -18,7 +18,7 @@ interface Props {
   onPress: () => void;
 }
 
-export default function SubjectCard({ subject, coverage, metrics, matchingTopicsCount, onPress }: Props) {
+export default React.memo(function SubjectCard({ subject, coverage, metrics, matchingTopicsCount, onPress }: Props) {
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -75,7 +75,7 @@ export default function SubjectCard({ subject, coverage, metrics, matchingTopics
         activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel={`${subject.name} subject`}
-        accessibilityHint={`Opens ${subject.name} micro-topics. ${coverage.seen} of ${coverage.total} covered.`}
+        accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
       >
         {/* Subtle background fill based on progress */}
         <View 

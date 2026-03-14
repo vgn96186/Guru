@@ -171,10 +171,15 @@ export default function LectureReturnSheet({
         logId,
         onProgress: handlePipelineProgress,
       });
-      if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+      
+      // Safety check: component might have unmounted or a new run started
+      if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
+        // If still visible but runId changed, don't do anything (new run will handle it)
+        // If not visible, ensure status is preserved as pending
+        if (!visible) await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription backgrounded');
         return;
       }
+
       if (!result.transcript?.trim()) {
         setActiveStage(null);
         setStageMessage('');
@@ -201,8 +206,7 @@ export default function LectureReturnSheet({
         generateQuiz(result);
       }
     } catch (e: any) {
-      if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
+      if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
         return;
       }
       console.error('[Transcription] Error:', e);

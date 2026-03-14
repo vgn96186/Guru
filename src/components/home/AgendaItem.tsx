@@ -11,7 +11,7 @@ interface AgendaItemProps {
   onPress: () => void;
 }
 
-export default function AgendaItem({ time, title, type, subjectName, priority, onPress }: AgendaItemProps) {
+export default React.memo(function AgendaItem({ time, title, type, subjectName, priority, onPress }: AgendaItemProps) {
   return (
     <TouchableOpacity
       style={styles.row}

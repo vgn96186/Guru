@@ -40,6 +40,9 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
 
   useEffect(() => {
     if (visible) {
+      slideAnim.setValue(300);
+      pulseAnim.setValue(1);
+      
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
@@ -55,8 +58,6 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
       );
       anim.start();
       return () => anim.stop();
-    } else {
-      slideAnim.setValue(300);
     }
   }, [visible]);
 
@@ -101,7 +102,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
       </TouchableOpacity>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={s.kvWrapper}
       >
         <Animated.View style={[s.panel, { transform: [{ translateY: slideAnim }] }]}>

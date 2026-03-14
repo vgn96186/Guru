@@ -11,7 +11,7 @@ interface Props {
   onLogSession: (appId: string) => void;
 }
 
-export default function ExternalToolsRow({ onLogSession }: Props) {
+export default React.memo(function ExternalToolsRow({ onLogSession }: Props) {
   const profile = useAppStore((s) => s.profile);
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
@@ -20,6 +20,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
 
   async function launchApp(app: ExternalApp) {
     try {
+      Haptics.selectionAsync();
       await launchMedicalApp(app.id as SupportedMedicalApp, faceTrackingEnabled, {
         onMicUsed: () => {
           showToast(
@@ -35,12 +36,17 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
     }
   }
 
+  function handleLongPress(appId: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onLogSession(appId);
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>OPEN LECTURE APP</Text>
         <Text style={styles.subtitle}>
-          Tap to launch. Use the menu below each app to log manually if needed.
+          Tap to launch capture. Long press to log manually.
         </Text>
       </View>
       <ScrollView
@@ -54,7 +60,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             testID={`external-app-${app.id}`}
             style={[styles.appBtn, { borderColor: app.color + '55' }]}
             onPress={() => launchApp(app)}
-            onLongPress={() => onLogSession(app.id)}
+            onLongPress={() => handleLongPress(app.id)}
             delayLongPress={500}
             activeOpacity={0.7}
             accessibilityRole="button"

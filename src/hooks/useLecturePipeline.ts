@@ -186,6 +186,7 @@ Summary: ${result.lectureSummary}`;
         durationMinutes,
         logId,
         recordingPath,
+        embedding: (analysis as any).embedding,
         onProgress: handlePipelineProgress,
       });
 

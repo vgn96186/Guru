@@ -104,37 +104,47 @@ async function _launchMedicalAppInner(
       let recordingPath: string | undefined;
 
       const micGranted = await requestRecordingPermissions();
-      if (micGranted) {
-        options?.onMicUsed?.();
-        try {
-          recordingPath = await startRecording('');
-          if (recordingPath) {
-            const groqKey = options?.groqKey?.trim();
-            const localWhisperPath = options?.localWhisperPath?.trim();
-            startRecordingHealthCheck(
-              recordingPath,
-              app.name,
-              groqKey || localWhisperPath ? { groqKey, localWhisperPath } : undefined,
-            );
-          }
-        } catch (e) {
-          console.warn('[AppLauncher] Recording start failed:', e);
-          Alert.alert('Recording Failed', 'Could not start background recording. Audio will not be captured.');
-        }
+      if (!micGranted) {
+        Alert.alert('Microphone Required', 'Guru needs microphone access to capture the lecture audio while you use another app.');
+        return false;
       }
 
       const hasOverlay = await ensureOverlayPermission();
-      if (hasOverlay) {
-        try {
-          await showOverlay(app.name, faceTracking);
-        } catch (overlayErr) {
-          console.error('[AppLauncher] Overlay failed:', overlayErr);
-        }
+      if (!hasOverlay) {
+        // user was likely already alerted by ensureOverlayPermission
+        return false;
       }
 
-      await launchApp(targetPackage);
-      await startExternalAppSession(app.name, recordingPath);
-      return true;
+      options?.onMicUsed?.();
+      try {
+        recordingPath = await startRecording('');
+        if (recordingPath) {
+          const groqKey = options?.groqKey?.trim();
+          const localWhisperPath = options?.localWhisperPath?.trim();
+          startRecordingHealthCheck(
+            recordingPath,
+            app.name,
+            groqKey || localWhisperPath ? { groqKey, localWhisperPath } : undefined,
+          );
+        }
+      } catch (e) {
+        console.warn('[AppLauncher] Recording start failed:', e);
+        Alert.alert('Recording Failed', 'Could not start background recording. Audio will not be captured.');
+      }
+
+      try {
+        await showOverlay(app.name, faceTracking);
+      } catch (overlayErr) {
+        console.error('[AppLauncher] Overlay failed:', overlayErr);
+      }
+
+      const opened = await launchApp(targetPackage);
+      if (opened) {
+        await startExternalAppSession(app.name, recordingPath);
+        return true;
+      } else {
+        throw new Error(`Could not launch ${app.name}.`);
+      }
     } catch (err: any) {
       console.error('[AppLauncher] Launch sequence failed:', err);
       Alert.alert('Launch Error', `Failed to open ${app.name}: ${err?.message || 'Unknown error'}`);

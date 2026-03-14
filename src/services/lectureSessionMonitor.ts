@@ -5,6 +5,7 @@ import {
   analyzeTranscript,
   generateADHDNote,
   buildQuickLectureNote,
+  transcribeAudio,
   type LectureAnalysis,
 } from './transcriptionService';
 import {
@@ -21,10 +22,8 @@ import {
 } from '../db/queries/externalLogs';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lecture/health';
 import { getRecordingInfo } from './lecture/transcription';
-import { transcribeWithGroqChunking } from './lecture/transcription';
 import { saveLecturePersistence } from './lecture/persistence';
 import { notifyTranscriptionFailure, notifyTranscriptionRecovered } from './notificationService';
-import { transcribeRawWithLocalWhisper } from './transcription/engines';
 import { getTranscriptText, backupNoteToPublic } from './transcriptStorage';
 import { generateEmbedding } from './ai/embeddingService';
 import { profileRepository } from '../db/repositories';
@@ -53,59 +52,19 @@ export async function transcribeLectureWithRecovery(opts: {
   maxRetries?: number;
   logId?: number;
   onProgress?: (progress: LecturePipelineProgress) => void;
-}): Promise<LectureAnalysis> {
-  const {
-    recordingPath,
-    groqKey,
-    useLocalWhisper,
-    localWhisperPath,
-    onProgress,
-    maxRetries = 2,
-  } = opts;
-
-  onProgress?.({ stage: 'transcribing', message: 'Transcribing lecture audio' });
-
-  let transcript = '';
-  if (groqKey) {
-    let attempt = 0;
-    while (attempt <= maxRetries) {
-      try {
-        const res = await transcribeWithGroqChunking(recordingPath, groqKey);
-        transcript = res.transcript;
-        if (transcript) break;
-      } catch (err) {
-        attempt++;
-        if (attempt > maxRetries) {
-          console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
-          if (!useLocalWhisper || !localWhisperPath) throw err;
-        } else {
-          const delay = Math.pow(2, attempt) * 1000;
-          await new Promise((resolve) => setTimeout(resolve, delay));
-        }
-      }
-    }
-  }
-
-  if (!transcript && useLocalWhisper && localWhisperPath) {
-    onProgress?.({ stage: 'transcribing', message: 'Using local transcription engine...' });
-    transcript = await transcribeRawWithLocalWhisper(recordingPath, localWhisperPath);
-  }
-
-  if (!transcript) {
-    return {
-      subject: 'Unknown',
-      topics: [],
-      keyConcepts: [],
-      lectureSummary: 'No speech detected',
-      estimatedConfidence: 1,
-      transcript: '',
-      highYieldPoints: [],
-    };
-  }
-
-  onProgress?.({ stage: 'analyzing', message: 'Extracting topics and concepts' });
-  const analysis = await analyzeTranscript(transcript);
-  return { ...analysis, transcript };
+}): Promise<LectureAnalysis & { embedding?: number[] }> {
+  return transcribeAudio({
+    audioFilePath: opts.recordingPath,
+    groqKey: opts.groqKey,
+    useLocalWhisper: opts.useLocalWhisper,
+    localWhisperPath: opts.localWhisperPath,
+    maxRetries: opts.maxRetries,
+    onProgress: (p) => {
+      // Map transcriptionService stages to pipeline stages
+      const stage = p.stage === 'transcribing' ? 'transcribing' : 'analyzing';
+      opts.onProgress?.({ stage, message: p.message });
+    },
+  });
 }
 
 export async function retryFailedTranscriptions(groqKey?: string): Promise<number> {

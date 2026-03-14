@@ -6,6 +6,75 @@ import { embeddingToBlob } from '../ai/embeddingService';
 import { runAutoPublicBackup } from '../backgroundBackupService';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
 
+/** Dictionary for fuzzy subject name mapping */
+const SUBJECT_MAPPINGS: Record<string, string> = {
+  anat: 'Anatomy',
+  physio: 'Physiology',
+  phys: 'Physiology',
+  biochem: 'Biochemistry',
+  bio: 'Biochemistry',
+  path: 'Pathology',
+  patho: 'Pathology',
+  micro: 'Microbiology',
+  microbio: 'Microbiology',
+  pharm: 'Pharmacology',
+  phar: 'Pharmacology',
+  pharma: 'Pharmacology',
+  fmt: 'Forensic Medicine',
+  forensic: 'Forensic Medicine',
+  med: 'Medicine',
+  surg: 'Surgery',
+  peds: 'Pediatrics',
+  paeds: 'Pediatrics',
+  paediatrics: 'Pediatrics',
+  ortho: 'Orthopedics',
+  optha: 'Ophthalmology',
+  opthal: 'Ophthalmology',
+  ophthal: 'Ophthalmology',
+  psych: 'Psychiatry',
+  derm: 'Dermatology',
+  derma: 'Dermatology',
+  radio: 'Radiology',
+  anes: 'Anesthesia',
+  anaes: 'Anesthesia',
+  psm: 'Community Medicine',
+  community: 'Community Medicine',
+  obg: 'OBG',
+  obgy: 'OBG',
+  gyne: 'OBG',
+  gyn: 'OBG',
+  obs: 'OBG',
+};
+
+async function findSubjectId(name: string): Promise<number | null> {
+  const db = getDb();
+  const normalized = name.toLowerCase().trim();
+
+  // 1. Direct match
+  let res = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?)',
+    [normalized],
+  );
+  if (res) return res.id;
+
+  // 2. Fuzzy mapping match
+  const mapped = SUBJECT_MAPPINGS[normalized];
+  if (mapped) {
+    res = await db.getFirstAsync<{ id: number }>(
+      'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?)',
+      [mapped],
+    );
+    if (res) return res.id;
+  }
+
+  // 3. Partial substring match (fallback)
+  res = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM subjects WHERE LOWER(name) LIKE ?',
+    [`%${normalized}%`],
+  );
+  return res?.id ?? null;
+}
+
 export async function saveLecturePersistence(opts: {
   analysis: any;
   appName: string;
@@ -32,16 +101,13 @@ export async function saveLecturePersistence(opts: {
       if (analysis.topics.length > 0) await grantXp(analysis.topics.length * 8);
     }
 
-    const subj = await db.getFirstAsync<{ id: number }>(
-      'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?)',
-      [analysis.subject],
-    );
+    const subjectId = await findSubjectId(analysis.subject);
 
     const result = await db.runAsync(
       `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        subj?.id ?? null,
+        subjectId,
         opts.quickNote,
         nowTs(),
         transcriptUri ?? analysis.transcript ?? null,

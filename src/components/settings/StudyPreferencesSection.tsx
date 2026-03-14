@@ -11,7 +11,7 @@ interface StudyPreferencesSectionProps {
   onBodyDoublingChange: (value: boolean) => void;
 }
 
-export default function StudyPreferencesSection({
+function StudyPreferencesSection({
   strictMode, onStrictModeChange,
   visualTimers, onVisualTimersChange,
   bodyDoubling, onBodyDoublingChange
@@ -44,6 +44,8 @@ export default function StudyPreferencesSection({
     </View>
   );
 }
+
+export default React.memo(StudyPreferencesSection);
 
 const styles = StyleSheet.create({
   container: { gap: 16 },

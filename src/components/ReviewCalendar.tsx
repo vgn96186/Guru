@@ -74,7 +74,7 @@ const MONTHS = [
 
 const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-export default function ReviewCalendar() {
+export default React.memo(function ReviewCalendar() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -93,30 +93,39 @@ export default function ReviewCalendar() {
   const todayStr = toLocalDateKey(now);
 
   // Build calendar grid
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weeks: (number | null)[][] = [];
-  let currentWeek: (number | null)[] = Array(firstDay).fill(null);
+  const weeks = useMemo(() => {
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const grid: (number | null)[][] = [];
+    let currentWeek: (number | null)[] = Array(firstDay).fill(null);
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    currentWeek.push(d);
-    if (currentWeek.length === 7) {
-      weeks.push(currentWeek);
-      currentWeek = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      currentWeek.push(d);
+      if (currentWeek.length === 7) {
+        grid.push(currentWeek);
+        currentWeek = [];
+      }
     }
-  }
-  if (currentWeek.length > 0) {
-    while (currentWeek.length < 7) currentWeek.push(null);
-    weeks.push(currentWeek);
-  }
+    if (currentWeek.length > 0) {
+      while (currentWeek.length < 7) currentWeek.push(null);
+      grid.push(currentWeek);
+    }
+    return grid;
+  }, [year, month]);
 
   const changeMonth = (delta: number) => {
-    let m = month + delta;
-    let y = year;
-    if (m < 0) { m = 11; y--; }
-    if (m > 11) { m = 0; y++; }
-    setMonth(m);
-    setYear(y);
+    setMonth((prevM) => {
+      let nextM = prevM + delta;
+      if (nextM < 0) {
+        setYear((prevY) => prevY - 1);
+        return 11;
+      }
+      if (nextM > 11) {
+        setYear((prevY) => prevY + 1);
+        return 0;
+      }
+      return nextM;
+    });
     setSelectedDay(null);
   };
 
@@ -149,9 +158,9 @@ export default function ReviewCalendar() {
 
       {/* Calendar grid */}
       {weeks.map((week, wi) => (
-        <View key={wi} style={styles.weekRow}>
+        <View key={`${year}-${month}-w${wi}`} style={styles.weekRow}>
           {week.map((day, di) => {
-            if (day === null) return <View key={di} style={styles.dayCell} />;
+            if (day === null) return <View key={`empty-${di}`} style={styles.dayCell} />;
 
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const review = reviewMap.get(dateStr);
@@ -161,7 +170,7 @@ export default function ReviewCalendar() {
 
             return (
               <TouchableOpacity
-                key={di}
+                key={dateStr}
                 style={[
                   styles.dayCell,
                   isToday && styles.todayCell,
@@ -173,7 +182,7 @@ export default function ReviewCalendar() {
                 accessibilityLabel={
                   review
                     ? `${day} ${MONTHS[month]}, ${review.count} review${review.count === 1 ? '' : 's'} scheduled`
-                    : undefined
+                    : `${day} ${MONTHS[month]}, no reviews scheduled`
                 }
               >
                 <Text

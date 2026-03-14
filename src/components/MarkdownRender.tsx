@@ -8,7 +8,7 @@ interface MarkdownRenderProps {
   compact?: boolean;
 }
 
-export function MarkdownRender({ content, compact }: MarkdownRenderProps) {
+export const MarkdownRender = React.memo(function MarkdownRender({ content, compact }: MarkdownRenderProps) {
   const mergedStyles = compact
     ? { ...markdownStyles, paragraph: { marginBottom: 0, marginTop: 0 }, body: { ...markdownStyles.body, marginBottom: 0 } }
     : markdownStyles;

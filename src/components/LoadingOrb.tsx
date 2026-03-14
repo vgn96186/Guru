@@ -18,7 +18,7 @@ function getRandomVariation(message: string): string {
   return variations[Math.floor(Math.random() * variations.length)];
 }
 
-export default function LoadingOrb({ message = 'Hey there! Let me think...' }: Props) {
+export default React.memo(function LoadingOrb({ message = 'Hey there! Let me think...' }: Props) {
   const [displayMessage, setDisplayMessage] = React.useState(message);
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0.4)).current;

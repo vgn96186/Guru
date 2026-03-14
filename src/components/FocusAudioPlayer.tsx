@@ -11,21 +11,27 @@ export default function FocusAudioPlayer() {
     const soundRef = useRef<Audio.Sound | null>(null);
 
     useEffect(() => {
+        let isMounted = true;
         async function initAudio() {
-            await Audio.setAudioModeAsync({
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                shouldDuckAndroid: true,
-            });
-
             try {
+                await Audio.setAudioModeAsync({
+                    playsInSilentModeIOS: true,
+                    staysActiveInBackground: false,
+                    shouldDuckAndroid: true,
+                });
+
                 // Use bundled asset; falls back to white noise generation if missing
                 const { sound: newSound } = await Audio.Sound.createAsync(
                     require('../../assets/rain.mp3'),
                     { shouldPlay: false, isLooping: true, volume: 0.5 }
                 );
-                soundRef.current = newSound;
-                setSound(newSound);
+                
+                if (isMounted) {
+                    soundRef.current = newSound;
+                    setSound(newSound);
+                } else {
+                    await newSound.unloadAsync();
+                }
             } catch {
                 // Asset missing — silently disable audio feature
             }
@@ -34,6 +40,7 @@ export default function FocusAudioPlayer() {
         initAudio();
 
         return () => {
+            isMounted = false;
             if (soundRef.current) {
                 soundRef.current.unloadAsync();
             }

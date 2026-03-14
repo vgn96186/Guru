@@ -9,7 +9,7 @@ interface ProfileSectionProps {
   onLinkDevice: () => void;
 }
 
-export default function ProfileSection({ name, onNameChange, isSyncAvailable, onLinkDevice }: ProfileSectionProps) {
+function ProfileSection({ name, onNameChange, isSyncAvailable, onLinkDevice }: ProfileSectionProps) {
   return (
     <View style={styles.container}>
       {!isSyncAvailable && (
@@ -38,6 +38,8 @@ export default function ProfileSection({ name, onNameChange, isSyncAvailable, on
     </View>
   );
 }
+
+export default React.memo(ProfileSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },

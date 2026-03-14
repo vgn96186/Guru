@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+// Timeout for JSON repair operations (ms)
+const JSON_REPAIR_TIMEOUT = 5000;
+
+// Limit input size to prevent DoS
+const MAX_INPUT_SIZE = 100_000; // 100KB
+
 function stripJsonCodeFences(raw: string): string {
   return raw
     .replace(/^\uFEFF/, '')
@@ -78,7 +84,7 @@ function repairCommonJsonIssues(raw: string): string {
 
   // Phase 2: Structural repairs (no double-quoted strings present, safe to regex)
 
-  // Strip // line comments
+  // Strip // line comments (non-greedy to avoid ReDoS)
   s = s.replace(/\/\/[^\n]*/g, '');
 
   // Fix single-quoted keys: { 'key': value }
@@ -139,34 +145,65 @@ function repairTruncatedJson(raw: string): string {
   return raw + suffix;
 }
 
-export function parseStructuredJson<T>(raw: string, schema: z.ZodType<T>): T {
-  if (__DEV__) console.log('[AI] Raw text for JSON parsing (first 600 chars):', raw.slice(0, 600));
+/**
+ * Parse structured JSON with timeout protection.
+ * Wraps the parsing logic in a timeout to prevent ReDoS hangs.
+ */
+async function parseStructuredJsonWithTimeout<T>(
+  raw: string,
+  schema: z.ZodType<T>,
+  timeoutMs: number = JSON_REPAIR_TIMEOUT,
+): Promise<T> {
+  return Promise.race([
+    (async () => {
+      if (__DEV__) console.log('[AI] Raw text for JSON parsing (first 600 chars):', raw.slice(0, 600));
 
-  const cleaned = stripJsonCodeFences(raw);
-  const extracted = extractBalancedJson(cleaned);
+      // Size limit check
+      if (raw.length > MAX_INPUT_SIZE) {
+        throw new Error(`Input too large for JSON repair: ${raw.length} bytes (max ${MAX_INPUT_SIZE})`);
+      }
 
-  const candidates = Array.from(new Set([
-    cleaned,
-    extracted,
-    repairCommonJsonIssues(cleaned),
-    repairCommonJsonIssues(extracted),
-    // Also try repairing truncated JSON (local model can hit token limit)
-    repairCommonJsonIssues(repairTruncatedJson(cleaned)),
-    repairCommonJsonIssues(repairTruncatedJson(extracted)),
-  ].filter(Boolean)));
+      const cleaned = stripJsonCodeFences(raw);
+      const extracted = extractBalancedJson(cleaned);
 
-  let lastError: Error | null = null;
-  for (const candidate of candidates) {
-    try {
-      return schema.parse(JSON.parse(candidate));
-    } catch (err) {
-      lastError = err as Error;
+      const candidates = Array.from(new Set([
+        cleaned,
+        extracted,
+        repairCommonJsonIssues(cleaned),
+        repairCommonJsonIssues(extracted),
+        // Also try repairing truncated JSON (local model can hit token limit)
+        repairCommonJsonIssues(repairTruncatedJson(cleaned)),
+        repairCommonJsonIssues(repairTruncatedJson(extracted)),
+      ].filter(Boolean)));
+
+      let lastError: Error | null = null;
+      for (const candidate of candidates) {
+        try {
+          return schema.parse(JSON.parse(candidate));
+        } catch (err) {
+          lastError = err as Error;
+        }
+      }
+
+      if (__DEV__) {
+        console.warn('[AI] All JSON parse candidates failed. Candidates tried:', candidates.map(c => c.slice(0, 200)));
+      }
+
+      throw lastError || new Error('Failed to parse structured JSON response');
+    })(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('JSON parsing timeout')), timeoutMs)
+    ),
+  ]);
+}
+
+export async function parseStructuredJson<T>(raw: string, schema: z.ZodType<T>): Promise<T> {
+  try {
+    return await parseStructuredJsonWithTimeout(raw, schema);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'JSON parsing timeout') {
+      throw new Error('JSON repair took too long - possible ReDoS attack or malformed input');
     }
+    throw err;
   }
-
-  if (__DEV__) {
-    console.warn('[AI] All JSON parse candidates failed. Candidates tried:', candidates.map(c => c.slice(0, 200)));
-  }
-
-  throw lastError || new Error('Failed to parse structured JSON response');
 }

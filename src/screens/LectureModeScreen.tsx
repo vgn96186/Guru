@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
   Vibration,
   AppState,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -49,6 +50,10 @@ const LECTURE_STATE_KEY = 'current_lecture_state';
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
 
+// Throttle state persistence to avoid excessive writes
+let lastStateSave = 0;
+const STATE_SAVE_THROTTLE = 5000; // Save at most every 5 seconds
+
 export default function LectureModeScreen() {
   useKeepAwake(); // Keep phone screen on like a dashboard
 
@@ -82,37 +87,62 @@ export default function LectureModeScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef<number | null>(null);
   const isHydratedRef = useRef(false);
+  const appStateSubscriptionRef = useRef<any>(null);
+  const backHandlerRef = useRef<any>(null);
+  const proofOfLifeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { focusState } = useFaceTracking();
 
   // ── Hydration & Persistence ──────────────────────────────────────────────
 
   useEffect(() => {
+    let isMounted = true;
     (async () => {
-      const saved = await AsyncStorage.getItem(LECTURE_STATE_KEY);
-      if (saved) {
-        try {
-          const state = JSON.parse(saved);
-          // Only hydrate if the state is less than 4 hours old
-          if (Date.now() - state.timestamp < 4 * 60 * 60 * 1000) {
-            setElapsed(state.elapsed);
-            setNotes(state.notes);
-            setSelectedSubjectId(state.selectedSubjectId);
-            sessionIdRef.current = state.sessionId;
-            if (state.isRecordingEnabled) setIsRecordingEnabled(true);
-          } else {
+      try {
+        const saved = await AsyncStorage.getItem(LECTURE_STATE_KEY);
+        if (saved) {
+          try {
+            const state = JSON.parse(saved);
+            // Only hydrate if the state is less than 4 hours old
+            if (Date.now() - state.timestamp < 4 * 60 * 60 * 1000) {
+              if (isMounted) {
+                setElapsed(state.elapsed);
+                setNotes(state.notes);
+                setSelectedSubjectId(state.selectedSubjectId);
+                sessionIdRef.current = state.sessionId;
+                if (state.isRecordingEnabled) setIsRecordingEnabled(true);
+              }
+            } else {
+              await AsyncStorage.removeItem(LECTURE_STATE_KEY);
+            }
+          } catch (e) {
+            console.warn('[LectureMode] State hydration failed:', e);
             await AsyncStorage.removeItem(LECTURE_STATE_KEY);
           }
-        } catch (e) {
-          console.warn('[LectureMode] State hydration failed:', e);
+        }
+      } catch (err) {
+        console.warn('[LectureMode] Failed to load state:', err);
+      } finally {
+        if (isMounted) {
+          isHydratedRef.current = true;
         }
       }
-      isHydratedRef.current = true;
     })();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
+  // Throttled state persistence
   useEffect(() => {
     if (!isHydratedRef.current) return;
+    
+    const now = Date.now();
+    if (now - lastStateSave < STATE_SAVE_THROTTLE) return;
+    
+    lastStateSave = now;
+    
     const state = {
       elapsed,
       notes,
@@ -121,6 +151,7 @@ export default function LectureModeScreen() {
       isRecordingEnabled,
       timestamp: Date.now(),
     };
+    
     AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state)).catch((err) => {
       console.warn('[LectureMode] Failed to save state:', err);
     });
@@ -229,7 +260,12 @@ export default function LectureModeScreen() {
         }
       }
     });
-    return () => subscription.remove();
+    
+    appStateSubscriptionRef.current = subscription;
+    
+    return () => {
+      subscription.remove();
+    };
   }, [onBreak, elapsed]);
 
   // Main Timer loop
@@ -247,20 +283,19 @@ export default function LectureModeScreen() {
         return newE;
       });
     }, 1000);
+    
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (recordingRef.current)
-        recordingRef.current.stopAndUnloadAsync().catch((err) => {
-          console.error('[LectureMode] Cleanup: Failed to unload recording:', err);
-        });
-      setIsRecordingEnabled(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
   }, [onBreak]);
 
-  // Proof of Life Countdown
+  // Proof of Life Countdown - with proper cleanup
   useEffect(() => {
     if (proofOfLifeActive && proofOfLifeCountdown > 0) {
-      const t = setInterval(() => {
+      proofOfLifeTimerRef.current = setInterval(() => {
         setProofOfLifeCountdown((c) => {
           if (c <= 1) {
             // FAILED PROOF OF LIFE
@@ -274,15 +309,33 @@ export default function LectureModeScreen() {
           return c - 1;
         });
       }, 1000);
-      return () => clearInterval(t);
+      
+      return () => {
+        if (proofOfLifeTimerRef.current) {
+          clearInterval(proofOfLifeTimerRef.current);
+          proofOfLifeTimerRef.current = null;
+        }
+      };
     }
   }, [proofOfLifeActive, proofOfLifeCountdown]);
 
   const stopLecture = useCallback(async () => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (proofOfLifeTimerRef.current) {
+      clearInterval(proofOfLifeTimerRef.current);
+      proofOfLifeTimerRef.current = null;
+    }
+    
     if (currentNote.trim()) {
-      await saveLectureNote(selectedSubjectId, currentNote.trim());
-      setNotes((n) => [...n, currentNote.trim()]);
+      try {
+        await saveLectureNote(selectedSubjectId, currentNote.trim());
+        setNotes((n) => [...n, currentNote.trim()]);
+      } catch (err) {
+        console.error('[LectureMode] Failed to save note:', err);
+      }
     }
 
     const mins = Math.floor(elapsed / 60);
@@ -290,17 +343,27 @@ export default function LectureModeScreen() {
       const noteBonus = notes.length * 50;
       const totalXp = mins * 15 + noteBonus;
 
-      if (sessionIdRef.current) {
-        await endSession(sessionIdRef.current, [], totalXp, mins, notes.join('\n\n'));
-      } else {
-        const sessionId = await createSession([], null, 'normal');
-        await endSession(sessionId, [], totalXp, mins, notes.join('\n\n'));
-      }
+      try {
+        if (sessionIdRef.current) {
+          await endSession(sessionIdRef.current, [], totalXp, mins, notes.join('\n\n'));
+        } else {
+          const sessionId = await createSession([], null, 'normal');
+          await endSession(sessionId, [], totalXp, mins, notes.join('\n\n'));
+        }
 
-      await profileRepository.updateStreak(mins >= 20);
-      await refreshProfile();
+        await profileRepository.updateStreak(mins >= 20);
+        await refreshProfile();
+      } catch (err) {
+        console.error('[LectureMode] Failed to finalize session:', err);
+      }
     }
-    await AsyncStorage.removeItem(LECTURE_STATE_KEY);
+    
+    try {
+      await AsyncStorage.removeItem(LECTURE_STATE_KEY);
+    } catch (err) {
+      console.warn('[LectureMode] Failed to clear state:', err);
+    }
+    
     navigation.goBack();
   }, [elapsed, notes, currentNote, selectedSubjectId, navigation, refreshProfile]);
 
@@ -318,31 +381,41 @@ export default function LectureModeScreen() {
 
   async function saveNote() {
     if (!currentNote.trim()) return;
-    await saveLectureNote(selectedSubjectId, currentNote.trim());
-    setNotes((n) => [...n, currentNote.trim()]);
-    setCurrentNote('');
+    
+    try {
+      await saveLectureNote(selectedSubjectId, currentNote.trim());
+      setNotes((n) => [...n, currentNote.trim()]);
+      setCurrentNote('');
 
-    // Clear proof of life
-    if (proofOfLifeActive) {
-      setProofOfLifeActive(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Clear proof of life
+      if (proofOfLifeActive) {
+        setProofOfLifeActive(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+    } catch (err) {
+      console.error('[LectureMode] Failed to save note:', err);
+      Alert.alert('Error', 'Failed to save note. Please try again.');
     }
   }
 
   // Request permissions on mount
   useEffect(() => {
     (async () => {
-      const { status } = await Audio.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Microphone Access', 'Need microphone to auto-transcribe lectures.');
-      } else {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: true,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: false,
-          staysActiveInBackground: true,
-        });
+      try {
+        const { status } = await Audio.requestPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Microphone Access', 'Need microphone to auto-transcribe lectures.');
+        } else {
+          await Audio.setAudioModeAsync({
+            allowsRecordingIOS: true,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: true,
+            playThroughEarpieceAndroid: false,
+            staysActiveInBackground: true,
+          });
+        }
+      } catch (err) {
+        console.error('[LectureMode] Audio permission request failed:', err);
       }
     })();
   }, []);
@@ -355,9 +428,9 @@ export default function LectureModeScreen() {
         } catch (e) {
           if (__DEV__) console.warn('[LectureMode] Could not stop previous recording:', e);
         }
+        recordingRef.current = null;
+        setRecording(null);
       }
-      recordingRef.current = null;
-      setRecording(null);
 
       const recordingOptions = {
         android: {
@@ -551,6 +624,7 @@ export default function LectureModeScreen() {
       ]);
       return true;
     });
+    backHandlerRef.current = handler;
     return () => handler.remove();
   }, [stopLecture]);
 

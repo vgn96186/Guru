@@ -17,6 +17,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -29,7 +30,7 @@ import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { saveLectureNote } from '../db/queries/aiCache';
-import { createSession, endSession } from '../db/queries/sessions';
+import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { sendImmediateNag } from '../services/notificationService';
@@ -43,6 +44,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
 type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
 const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
+const LECTURE_STATE_KEY = 'current_lecture_state';
 
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
@@ -78,8 +80,72 @@ export default function LectureModeScreen() {
 
   const [partnerDoomscrolling, setPartnerDoomscrolling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const sessionIdRef = useRef<number | null>(null);
+  const isHydratedRef = useRef(false);
 
   const { focusState } = useFaceTracking();
+
+  // ── Hydration & Persistence ──────────────────────────────────────────────
+
+  useEffect(() => {
+    (async () => {
+      const saved = await AsyncStorage.getItem(LECTURE_STATE_KEY);
+      if (saved) {
+        try {
+          const state = JSON.parse(saved);
+          // Only hydrate if the state is less than 4 hours old
+          if (Date.now() - state.timestamp < 4 * 60 * 60 * 1000) {
+            setElapsed(state.elapsed);
+            setNotes(state.notes);
+            setSelectedSubjectId(state.selectedSubjectId);
+            sessionIdRef.current = state.sessionId;
+            if (state.isRecordingEnabled) setIsRecordingEnabled(true);
+          } else {
+            await AsyncStorage.removeItem(LECTURE_STATE_KEY);
+          }
+        } catch (e) {
+          console.warn('[LectureMode] State hydration failed:', e);
+        }
+      }
+      isHydratedRef.current = true;
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!isHydratedRef.current) return;
+    const state = {
+      elapsed,
+      notes,
+      selectedSubjectId,
+      sessionId: sessionIdRef.current,
+      isRecordingEnabled,
+      timestamp: Date.now(),
+    };
+    AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state)).catch(() => {});
+  }, [elapsed, notes, selectedSubjectId, isRecordingEnabled]);
+
+  // ── Session Management ───────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isHydratedRef.current) return;
+
+    // Create session early (after 10s of activity)
+    if (elapsed > 10 && !sessionIdRef.current) {
+      createSession([], null, 'normal').then((id) => {
+        sessionIdRef.current = id;
+      });
+    }
+
+    // Periodic progress updates (every 60s) to survive app kills
+    if (elapsed > 0 && elapsed % 60 === 0 && sessionIdRef.current) {
+      const mins = Math.floor(elapsed / 60);
+      const noteBonus = notes.length * 50;
+      const totalXp = mins * 15 + noteBonus;
+      void updateSessionProgress(sessionIdRef.current, mins, totalXp, [], notes.join('\n\n'));
+    }
+  }, [elapsed]);
+
+  // ── Lifecycle & Data ─────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!profile) refreshProfile();
@@ -201,7 +267,7 @@ export default function LectureModeScreen() {
       return true;
     });
     return () => handler.remove();
-  }, [notes, currentNote]);
+  }, [notes, currentNote, elapsed]);
 
   // Break countdown logic
   useEffect(() => {
@@ -491,17 +557,24 @@ export default function LectureModeScreen() {
 
   async function stopLecture() {
     if (timerRef.current) clearInterval(timerRef.current);
-    if (currentNote.trim()) saveNote();
+    if (currentNote.trim()) await saveNote();
 
     const mins = Math.floor(elapsed / 60);
     if (mins > 0) {
-      const sessionId = await createSession([], null, 'normal');
       const noteBonus = notes.length * 50;
       const totalXp = mins * 15 + noteBonus;
-      await endSession(sessionId, [], totalXp, mins);
+
+      if (sessionIdRef.current) {
+        await endSession(sessionIdRef.current, [], totalXp, mins, notes.join('\n\n'));
+      } else {
+        const sessionId = await createSession([], null, 'normal');
+        await endSession(sessionId, [], totalXp, mins, notes.join('\n\n'));
+      }
+
       await profileRepository.updateStreak(mins >= 20);
       await refreshProfile();
     }
+    await AsyncStorage.removeItem(LECTURE_STATE_KEY);
     navigation.goBack();
   }
 

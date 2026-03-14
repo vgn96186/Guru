@@ -59,14 +59,7 @@ enum class FocusState { NEUTRAL, FOCUSED, DISTRACTED, DROWSY, ABSENT }
  * Floating overlay bubble that acts as a virtual study companion (body double)
  * while the user watches a lecture in another app.
  *
- * The companion reacts to the user's focus state, shows encouragement,
- * and celebrates milestones — creating the feeling of studying with someone.
- *
- * Focus state ring colours:
- *   Purple  = timer only (neutral/no face tracking)
- *   Green   = face detected, focused
- *   Orange  = drowsy or looking away
- *   Red     = face absent (sends notification after 15s)
+ * Visually overhauled for a premium experience.
  */
 class OverlayService : Service(), LifecycleOwner {
 
@@ -87,7 +80,6 @@ class OverlayService : Service(), LifecycleOwner {
     private var faceDetector: FaceDetector? = null
     private var noFaceSince = 0L
     private var lastAbsentNotifAt = 0L
-    // Throttle ML Kit to 1 analysis per 2 seconds to save battery during long lectures
     private var lastFaceAnalysisTime = 0L
     private val FACE_ANALYSIS_INTERVAL_MS = 2000L
 
@@ -213,7 +205,7 @@ class OverlayService : Service(), LifecycleOwner {
             provider.unbindAll()
             provider.bindToLifecycle(this, CameraSelector.DEFAULT_FRONT_CAMERA, analysis)
         } catch (e: Exception) {
-            // Camera unavailable — degrade gracefully
+            // Graceful degradation
         }
     }
 
@@ -403,98 +395,84 @@ class OverlayService : Service(), LifecycleOwner {
         private val menuLayout = android.widget.LinearLayout(context).apply {
             orientation = HORIZONTAL
             visibility = View.VISIBLE
-            setPadding(dpToPx(16, context), dpToPx(10, context), dpToPx(16, context), dpToPx(10, context))
+            setPadding(dpToPx(12, context), dpToPx(8, context), dpToPx(12, context), dpToPx(8, context))
             gravity = Gravity.CENTER_VERTICAL
             background = android.graphics.drawable.GradientDrawable().apply {
                 orientation = android.graphics.drawable.GradientDrawable.Orientation.TL_BR
                 colors = intArrayOf(
-                    Color.parseColor("#EE1A1F2B"), // Deep charcoal
-                    Color.parseColor("#F20F121A")  // Near black
+                    Color.parseColor("#F21A1A24"), // theme.colors.surface
+                    Color.parseColor("#F20F0F14")  // theme.colors.background
                 )
-                cornerRadius = dpToPx(16, context).toFloat()
-                setStroke(dpToPx(1, context), Color.parseColor("#26FFFFFF")) // Subtle glass border
+                cornerRadius = dpToPx(24, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#33FFFFFF"))
             }
-            elevation = 20f
-            translationZ = 10f
+            elevation = 24f
         }
 
         private val infoStack = android.widget.LinearLayout(context).apply {
             orientation = VERTICAL
-            setPadding(0, 0, dpToPx(16, context), 0)
+            setPadding(dpToPx(8, context), 0, dpToPx(12, context), 0)
         }
 
         private val appLabelView = android.widget.TextView(context).apply {
             text = appLabel.uppercase()
-            textSize = 10f
-            setTextColor(Color.parseColor("#E7ECFF"))
+            textSize = 11f
+            setTextColor(Color.WHITE)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            letterSpacing = 0.08f
+            letterSpacing = 0.1f
             maxLines = 1
         }
 
         private val modeChip = android.widget.TextView(context).apply {
-            text = if (faceTracking) "Face focus on" else "Timer mode"
-            textSize = 10f
-            setTextColor(Color.parseColor("#A9B5D0"))
-            setPadding(dpToPx(12, context), dpToPx(6, context), dpToPx(12, context), dpToPx(6, context))
+            text = if (faceTracking) "LIVE FOCUS" else "TIMER"
+            textSize = 9f
+            setTextColor(Color.parseColor("#6C63FF"))
+            setPadding(dpToPx(8, context), dpToPx(2, context), dpToPx(8, context), dpToPx(2, context))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#162133"))
+                setColor(Color.parseColor("#1A6C63FF"))
                 cornerRadius = 999f
-                setStroke(dpToPx(1, context), Color.parseColor("#2D3952"))
             }
         }
 
         private val pauseBtn = android.widget.TextView(context).apply {
             text = "Pause"
             textSize = 12f
-            setTextColor(Color.parseColor("#F4F6FF"))
+            setTextColor(Color.WHITE)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            minWidth = dpToPx(58, context)
-            setPadding(dpToPx(16, context), dpToPx(14, context), dpToPx(16, context), dpToPx(14, context))
+            minWidth = dpToPx(64, context)
+            setPadding(dpToPx(12, context), dpToPx(10, context), dpToPx(12, context), dpToPx(10, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                orientation = android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM
-                colors = intArrayOf(
-                    Color.parseColor("#313D57"), // Lighter top
-                    Color.parseColor("#1D2536")  // Darker bottom
-                )
+                setColor(Color.parseColor("#2A2A3C"))
                 cornerRadius = dpToPx(16, context).toFloat()
-                setStroke(dpToPx(1, context), Color.parseColor("#4DFFFFFF"))
             }
             setOnClickListener {
                 isRecordingPaused = !isRecordingPaused
                 text = if (isRecordingPaused) "Resume" else "Pause"
+                setTextColor(if (isRecordingPaused) Color.parseColor("#6C63FF") else Color.WHITE)
                 
-                // Pause/Resume recording
                 val recAction = if (isRecordingPaused) RecordingService.ACTION_PAUSE else RecordingService.ACTION_RESUME
-                val recIntent = Intent(context, RecordingService::class.java).apply { action = recAction }
-                context.startService(recIntent)
+                context.startService(Intent(context, RecordingService::class.java).apply { action = recAction })
 
-                // Pause/Resume overlay timer
                 val ovAction = if (isRecordingPaused) OverlayService.ACTION_PAUSE else OverlayService.ACTION_RESUME
-                val ovIntent = Intent(context, OverlayService::class.java).apply { action = ovAction }
-                context.startService(ovIntent)
+                context.startService(Intent(context, OverlayService::class.java).apply { action = ovAction })
 
                 vibrateLight(context)
             }
         }
 
         private val returnBtn = android.widget.TextView(context).apply {
-            text = "Return"
+            text = "Finish"
             textSize = 12f
-            setTextColor(Color.parseColor("#FFD7D7"))
+            setTextColor(Color.WHITE)
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            minWidth = dpToPx(58, context)
-            setPadding(dpToPx(16, context), dpToPx(14, context), dpToPx(16, context), dpToPx(14, context))
+            minWidth = dpToPx(64, context)
+            setPadding(dpToPx(12, context), dpToPx(10, context), dpToPx(12, context), dpToPx(10, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                orientation = android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM
-                colors = intArrayOf(
-                    Color.parseColor("#5A2D39"), // Lighter red top
-                    Color.parseColor("#3A1D24")  // Darker red bottom
-                )
+                setColor(Color.parseColor("#F44336"))
                 cornerRadius = dpToPx(16, context).toFloat()
-                setStroke(dpToPx(1, context), Color.parseColor("#33FFCCCC"))
             }
             setOnClickListener {
                 vibrateLight(context)
@@ -505,22 +483,20 @@ class OverlayService : Service(), LifecycleOwner {
         init {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            elevation = 16f
+            elevation = 20f
 
             infoStack.addView(appLabelView)
             infoStack.addView(modeChip, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dpToPx(8, context)
+                topMargin = dpToPx(2, context)
             })
-            menuLayout.addView(infoStack, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = dpToPx(12, context)
-            })
+            menuLayout.addView(infoStack)
 
             menuLayout.addView(pauseBtn, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = dpToPx(12, context)
+                marginEnd = dpToPx(8, context)
             })
             menuLayout.addView(returnBtn)
 
-            val bubbleParams = LayoutParams(dpToPx(104, context), dpToPx(104, context))
+            val bubbleParams = LayoutParams(dpToPx(96, context), dpToPx(96, context))
             addView(bubbleView, bubbleParams)
 
             val menuParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
@@ -528,14 +504,13 @@ class OverlayService : Service(), LifecycleOwner {
             }
             addView(menuLayout, menuParams)
             
-            // Entry animation
-            scaleX = 0.3f
-            scaleY = 0.3f
+            scaleX = 0.5f
+            scaleY = 0.5f
             alpha = 0f
             animate()
                 .scaleX(1f).scaleY(1f).alpha(1f)
-                .setDuration(400)
-                .setInterpolator(OvershootInterpolator(1.2f))
+                .setDuration(500)
+                .setInterpolator(OvershootInterpolator(1.1f))
                 .start()
         }
 
@@ -553,6 +528,7 @@ class OverlayService : Service(), LifecycleOwner {
         fun setPaused(paused: Boolean) {
             isRecordingPaused = paused
             pauseBtn.text = if (paused) "Resume" else "Pause"
+            pauseBtn.setTextColor(if (paused) Color.parseColor("#6C63FF") else Color.WHITE)
         }
 
         private fun toggleMenu() {
@@ -561,26 +537,19 @@ class OverlayService : Service(), LifecycleOwner {
             
             if (isMenuExpanded) {
                 menuLayout.visibility = View.VISIBLE
-                menuLayout.scaleX = 0.5f
+                menuLayout.translationX = -dpToPx(20, context).toFloat()
                 menuLayout.alpha = 0f
                 menuLayout.animate()
-                    .scaleX(1f).alpha(1f)
-                    .setDuration(200)
+                    .translationX(0f).alpha(1f)
+                    .setDuration(300)
                     .setInterpolator(OvershootInterpolator())
                     .start()
             } else {
                 menuLayout.animate()
-                    .scaleX(0.5f).alpha(0f)
-                    .setDuration(150)
+                    .translationX(-dpToPx(20, context).toFloat()).alpha(0f)
+                    .setDuration(200)
                     .withEndAction { menuLayout.visibility = View.GONE }
                     .start()
-            }
-
-            val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-            val params = layoutParams as? WindowManager.LayoutParams
-            if (params != null) {
-                params.width = WindowManager.LayoutParams.WRAP_CONTENT
-                wm.updateViewLayout(this, params)
             }
         }
         
@@ -603,10 +572,6 @@ class OverlayService : Service(), LifecycleOwner {
         }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // Companion Bubble — a body-double study companion with enhanced visuals
-    // ════════════════════════════════════════════════════════════════
-
     class CompanionBubbleView(
         context: Context,
         private val appLabel: String,
@@ -622,147 +587,75 @@ class OverlayService : Service(), LifecycleOwner {
         private var seconds = 0
         private var focusState = FocusState.NEUTRAL
         private var prevFocusState = FocusState.NEUTRAL
-        private var lastMilestone = 0 // last milestone minute announced
-        private var milestoneFlashUntil = 0L // show milestone message until this time
-        private var stateTransitionProgress = 1f // 0..1 for smooth color transitions
-        private var pulseScale = 1f
-        private var xpEarned = 0 // XP accumulated this session (2 XP per minute)
-        
-        // Animation values
+        private var lastMilestone = 0
+        private var milestoneFlashUntil = 0L
+        private var stateTransitionProgress = 1f
         private val handler = Handler(Looper.getMainLooper())
         private var breathePhase = 0f
         private var particlePhase = 0f
 
-        // Companion encouragement messages by state
-        private val encourageFocused = arrayOf(
-            "In the zone 🔥", "Crushing it!", "Locked in", "Flow state ✨", "Nice focus", "Legend", "On fire"
-        )
-        private val encourageNeutral = arrayOf(
-            "I'm here 👋", "We got this", "Let's go", "Right here", "Together", "Side by side"
-        )
-        private val encourageDistracted = arrayOf(
-            "Hey, back here", "Eyes up 👀", "Come back", "Stay with me", "Focus"
-        )
-        private val encourageDrowsy = arrayOf(
-            "Wake up! ☕", "Splash water?", "Stand up!", "Stay awake", "Energy!"
-        )
-        private val encourageAbsent = arrayOf(
-            "Where'd you go?", "Come back! 😢", "Miss you", "Still here...", "Hello?"
-        )
-        private val milestoneMessages = arrayOf(
-            "15 min! 🌟", "30 min! ⭐", "45 min! 💫", "1 HOUR! 🏆", "1h 15m! 🔥", "1h 30m! 💪", "1h 45m! 🚀", "2 HOURS! 👑"
-        )
+        private val encourageFocused = arrayOf("Focused", "Locked in", "Good job!", "Flow state", "Keep it up", "Doing great")
+        private val encourageNeutral = arrayOf("Watching", "With you", "Let's go", "Together")
+        private val encourageDistracted = arrayOf("Eyes up 👀", "Come back", "Stay with me", "Refocus")
+        private val encourageDrowsy = arrayOf("Wake up! ☕", "Stand up!", "Stay awake", "Energy!")
+        private val encourageAbsent = arrayOf("Where'd you go?", "Miss you", "Still here...", "Hello?")
+        private val milestoneMessages = arrayOf("15m! 🌟", "30m! ⭐", "45m! 💫", "1 HOUR! 🏆", "1h 15m! 🔥", "1h 30m! 💪")
 
-        // Paints
-        private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-        }
-        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            maskFilter = BlurMaskFilter(20f, BlurMaskFilter.Blur.OUTER)
-        }
-        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeCap = Paint.Cap.ROUND
-        }
-        private val ringBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            color = Color.parseColor("#22FFFFFF")
-        }
-        private val breathePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-        }
-        private val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.parseColor("#E8EEFF")
-            textAlign = Paint.Align.CENTER
-            isFakeBoldText = true
-        }
-        private val timePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textAlign = Paint.Align.CENTER
-            isFakeBoldText = true
-        }
-        private val msgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textAlign = Paint.Align.CENTER
-            color = Color.parseColor("#CBD4E8")
-            isFakeBoldText = true
-        }
-        private val xpPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textAlign = Paint.Align.CENTER
-            color = Color.parseColor("#6C63FF")
-            isFakeBoldText = true
-        }
-        private val chipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = Color.parseColor("#162133")
-        }
-        private val particlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-        }
+        private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; maskFilter = BlurMaskFilter(30f, BlurMaskFilter.Blur.OUTER) }
+        private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
+        private val ringBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.parseColor("#1AFFFFFF") }
+        private val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#B8B8D0"); textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)) }
+        private val timePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)) }
+        private val msgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)) }
+        private val particlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
 
         private val animationRunnable = object : Runnable {
             override fun run() {
-                breathePhase += 0.05f
+                breathePhase += 0.04f
                 particlePhase += 0.03f
-                if (stateTransitionProgress < 1f) {
-                    stateTransitionProgress = (stateTransitionProgress + 0.1f).coerceAtMost(1f)
-                }
+                if (stateTransitionProgress < 1f) stateTransitionProgress = (stateTransitionProgress + 0.08f).coerceAtMost(1f)
                 invalidate()
-                handler.postDelayed(this, 33) // ~30fps
+                handler.postDelayed(this, 30)
             }
         }
 
         init {
-            setLayerType(LAYER_TYPE_SOFTWARE, null) // Needed for blur effects
-            headerPaint.textSize = spToPx(10f)
-            timePaint.textSize = spToPx(22f)
+            setLayerType(LAYER_TYPE_SOFTWARE, null)
+            headerPaint.textSize = spToPx(9f)
+            timePaint.textSize = spToPx(18f)
             msgPaint.textSize = spToPx(10f)
-            xpPaint.textSize = spToPx(9f)
-            ringPaint.strokeWidth = dpToPx(3f)
-            ringBgPaint.strokeWidth = dpToPx(3f)
-            breathePaint.strokeWidth = dpToPx(1f)
-            timePaint.setShadowLayer(dpToPx(4f), 0f, dpToPx(2f), Color.parseColor("#AA000000"))
+            ringPaint.strokeWidth = dpToPx(4f)
+            ringBgPaint.strokeWidth = dpToPx(4f)
             handler.post(animationRunnable)
         }
 
-        fun updateTime(secs: Int) {
-            seconds = secs
-            xpEarned = (secs / 60) * 2 // 2 XP per minute
-            
-            // Check milestones at 15-min intervals
-            val mins = secs / 60
+        fun updateTime(s: Int) {
+            seconds = s
+            val mins = s / 60
             if (mins > 0 && mins % 15 == 0 && mins != lastMilestone) {
                 lastMilestone = mins
-                milestoneFlashUntil = System.currentTimeMillis() + 5000 // show for 5s
-                // Pulse animation for milestone
-                pulseScale = 1.15f
-                animate().scaleX(1f).scaleY(1f).setDuration(300).setInterpolator(OvershootInterpolator()).start()
+                milestoneFlashUntil = System.currentTimeMillis() + 5000
                 vibrateMilestone()
             }
             invalidate()
         }
 
-        fun updateFocusState(state: FocusState) {
-            if (state != focusState) {
+        fun updateFocusState(s: FocusState) {
+            if (s != focusState) {
                 prevFocusState = focusState
-                focusState = state
+                focusState = s
                 stateTransitionProgress = 0f
-                
-                // Haptic feedback on state change
-                if (state == FocusState.ABSENT || state == FocusState.DROWSY) {
-                    vibrateAlert()
-                }
+                if (s == FocusState.ABSENT || s == FocusState.DROWSY) vibrateAlert()
             }
             invalidate()
         }
 
         private fun getMessage(): String {
-            val now = System.currentTimeMillis()
-            if (now < milestoneFlashUntil) {
+            if (System.currentTimeMillis() < milestoneFlashUntil) {
                 val idx = (lastMilestone / 15 - 1).coerceIn(0, milestoneMessages.size - 1)
                 return milestoneMessages[idx]
             }
-            // Rotate messages based on elapsed seconds (change every 10s)
             val pool = when (focusState) {
                 FocusState.FOCUSED    -> encourageFocused
                 FocusState.NEUTRAL    -> encourageNeutral
@@ -773,40 +666,18 @@ class OverlayService : Service(), LifecycleOwner {
             return pool[(seconds / 10) % pool.size]
         }
 
-        private fun getStatusLabel(): String {
-            if (!faceTracking) return "Timer mode"
-            return when (focusState) {
-                FocusState.FOCUSED -> "Focused"
-                FocusState.NEUTRAL -> "Watching"
-                FocusState.DISTRACTED -> "Refocus"
-                FocusState.DROWSY -> "Wake up"
-                FocusState.ABSENT -> "Come back"
-            }
+        private fun getStateColor(s: FocusState): Int = when (s) {
+            FocusState.FOCUSED    -> Color.parseColor("#4CAF50")
+            FocusState.DISTRACTED -> Color.parseColor("#FF9800")
+            FocusState.DROWSY     -> Color.parseColor("#FF9800")
+            FocusState.ABSENT     -> Color.parseColor("#F44336")
+            FocusState.NEUTRAL    -> Color.parseColor("#6C63FF")
         }
 
-        private fun getAppBadge(): String {
-            return appLabel
-                .split(" ")
-                .filter { it.isNotBlank() }
-                .take(2)
-                .joinToString("") { it.first().uppercaseChar().toString() }
-                .ifBlank { "G" }
-        }
-        
-        private fun getStateColor(state: FocusState): Int {
-            return when (state) {
-                FocusState.FOCUSED    -> Color.parseColor("#10B981") // Emerald 500
-                FocusState.DISTRACTED -> Color.parseColor("#F59E0B") // Amber 500
-                FocusState.DROWSY     -> Color.parseColor("#F59E0B") 
-                FocusState.ABSENT     -> Color.parseColor("#EF4444") // Red 500
-                FocusState.NEUTRAL    -> Color.parseColor("#8B5CF6") // Violet 500
-            }
-        }
-        
-        private fun interpolateColor(from: Int, to: Int, t: Float): Int {
-            val r = (Color.red(from) + (Color.red(to) - Color.red(from)) * t).toInt()
-            val g = (Color.green(from) + (Color.green(to) - Color.green(from)) * t).toInt()
-            val b = (Color.blue(from) + (Color.blue(to) - Color.blue(from)) * t).toInt()
+        private fun interpolateColor(f: Int, t: Int, p: Float): Int {
+            val r = (Color.red(f) + (Color.red(t) - Color.red(f)) * p).toInt()
+            val g = (Color.green(f) + (Color.green(t) - Color.green(f)) * p).toInt()
+            val b = (Color.blue(f) + (Color.blue(t) - Color.blue(f)) * p).toInt()
             return Color.rgb(r, g, b)
         }
 
@@ -814,331 +685,188 @@ class OverlayService : Service(), LifecycleOwner {
             super.onDraw(canvas)
             val cx = width / 2f
             val cy = height / 2f
-            val r = (width / 2f) - 10f
+            val r = (width / 2f) - dpToPx(12f)
             val now = System.currentTimeMillis()
             val isMilestone = now < milestoneFlashUntil
 
-            // Smooth color transition
-            val prevColor = getStateColor(prevFocusState)
-            val currColor = getStateColor(focusState)
-            val ringColor = if (isMilestone) {
-                Color.parseColor("#FFD700") // gold for milestones
-            } else {
-                interpolateColor(prevColor, currColor, stateTransitionProgress)
-            }
+            val ringColor = if (isMilestone) Color.parseColor("#FFD700") 
+                            else interpolateColor(getStateColor(prevFocusState), getStateColor(focusState), stateTransitionProgress)
 
-            // Outer glow effect
-            val breatheIntensity = ((sin(breathePhase.toDouble()) + 1.0) / 2.0 * 0.5 + 0.3).toFloat()
-            glowPaint.color = Color.argb((80 * breatheIntensity).toInt(), Color.red(ringColor), Color.green(ringColor), Color.blue(ringColor))
-            canvas.drawCircle(cx, cy, r + dpToPx(3f), glowPaint)
+            val breathe = (sin(breathePhase.toDouble()).toFloat() + 1f) / 2f
+            glowPaint.color = Color.argb((60 * breathe + 20).toInt(), Color.red(ringColor), Color.green(ringColor), Color.blue(ringColor))
+            canvas.drawCircle(cx, cy, r + dpToPx(2f), glowPaint)
 
-            // Background with gradient
-            val bgGradient = RadialGradient(
-                cx, cy - r * 0.3f, r * 1.5f,
-                intArrayOf(
-                    Color.parseColor(when {
-                        isMilestone              -> "#3D3D00"
-                        focusState == FocusState.ABSENT  -> "#3A1515"
-                        focusState == FocusState.FOCUSED -> "#153A15"
-                        else                     -> "#1A1A2E"
-                    }),
-                    Color.parseColor("#0A0A14")
-                ),
-                floatArrayOf(0f, 1f),
-                Shader.TileMode.CLAMP
-            )
-            bgPaint.shader = bgGradient
+            bgPaint.shader = RadialGradient(cx, cy, r, intArrayOf(Color.parseColor("#1A1A24"), Color.parseColor("#0F0F14")), null, Shader.TileMode.CLAMP)
             canvas.drawCircle(cx, cy, r, bgPaint)
             bgPaint.shader = null
-            
-            // Rim light (inner glow)
+
             val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 style = Paint.Style.STROKE
-                strokeWidth = dpToPx(1.5f)
-                shader = LinearGradient(0f, 0f, 0f, height.toFloat(),
-                    intArrayOf(Color.parseColor("#66FFFFFF"), Color.TRANSPARENT),
-                    floatArrayOf(0f, 0.4f), Shader.TileMode.CLAMP)
+                strokeWidth = dpToPx(1f)
+                color = Color.parseColor("#1AFFFFFF")
             }
-            canvas.drawCircle(cx, cy, r - dpToPx(1f), rimPaint)
+            canvas.drawCircle(cx, cy, r - dpToPx(0.5f), rimPaint)
 
-            // Breathing pulse ring
-            val breatheAlpha = (breatheIntensity * 120).toInt()
-            breathePaint.color = Color.argb(breatheAlpha, Color.red(ringColor), Color.green(ringColor), Color.blue(ringColor))
-            val breatheRadius = r + dpToPx(1.5f) + sin(breathePhase.toDouble()).toFloat() * dpToPx(1f)
-            canvas.drawCircle(cx, cy, breatheRadius, breathePaint)
-
-            // Progress ring background track
             val oval = RectF(cx - r, cy - r, cx + r, cy + r)
             canvas.drawArc(oval, -90f, 360f, false, ringBgPaint)
 
-            // Progress ring arc (fills per minute)
             ringPaint.color = ringColor
-            val sweep = (seconds % 60) / 60f * 360f
-            canvas.drawArc(oval, -90f, sweep, false, ringPaint)
+            canvas.drawArc(oval, -90f, (seconds % 60) / 60f * 360f, false, ringPaint)
             
-            // Draw Face
-            drawFace(canvas, cx, cy, r, ringColor)
+            drawCompanion(canvas, cx, cy, r, ringColor)
 
-            // Header app badge
-            canvas.drawText(getAppBadge(), cx, cy - r * 0.45f, headerPaint)
-
-            // Time
             val mins = seconds / 60
             val secs = seconds % 60
-            canvas.drawText("${mins}:${secs.toString().padStart(2, '0')}", cx, cy + dpToPx(4f), timePaint)
+            canvas.drawText("${mins}:${secs.toString().padStart(2, '0')}", cx, cy + dpToPx(6f), timePaint)
+            canvas.drawText(appLabel.take(1).uppercase(), cx, cy - r * 0.45f, headerPaint)
 
-            // Status chip
-            val statusLabel = if (isMilestone) "Milestone" else getStatusLabel()
-            val chipWidth = r * 1.35f
-            val chipTop = cy + dpToPx(8f)
-            val chipBottom = chipTop + dpToPx(9f)
-            chipPaint.color = if (isMilestone) Color.parseColor("#4A3B00") else Color.parseColor("#162133")
-            canvas.drawRoundRect(RectF(cx - chipWidth / 2, chipTop, cx + chipWidth / 2, chipBottom), dpToPx(7f), dpToPx(7f), chipPaint)
-            msgPaint.color = if (isMilestone) Color.parseColor("#FFD700") else Color.parseColor("#C9D3E8")
-            canvas.drawText(statusLabel, cx, chipBottom - dpToPx(2.5f), msgPaint)
-
-            // Encouragement / milestone line
-            val msg = getMessage()
-            msgPaint.color = if (isMilestone) Color.parseColor("#FFE69A") else Color.parseColor("#9FAAC4")
-            canvas.drawText(msg, cx, cy + r - dpToPx(5f), msgPaint)
+            msgPaint.color = ringColor
+            canvas.drawText(getMessage(), cx, cy + r - dpToPx(10f), msgPaint)
             
-            // XP indicator at very bottom
-            if (xpEarned > 0 && !isMilestone) {
-                canvas.drawText("+${xpEarned} XP", cx, cy + r + dpToPx(2.5f), xpPaint)
-            }
-            
-            // Re-draw particles on top if milestone
             if (focusState == FocusState.FOCUSED || isMilestone) {
                 drawParticles(canvas, cx, cy, r, ringColor, isMilestone)
             }
         }
 
-        private fun drawFace(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int) {
-            val eyeSpacing = r * 0.45f
-            val eyeY = cy - r * 0.12f
-            val eyeSize = r * 0.07f
+        private fun drawCompanion(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int) {
+            val eyeSpacing = r * 0.4f
+            val eyeY = cy - r * 0.15f
+            val eyeW = r * 0.08f
+            val eyeH = r * 0.12f
             
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 this.color = Color.WHITE
                 style = Paint.Style.FILL
             }
 
-            // Blinking logic
             val isBlinking = (System.currentTimeMillis() % 4000) > 3800
 
             when {
                 focusState == FocusState.ABSENT -> {
-                    // Closed eyes (arcs)
                     paint.style = Paint.Style.STROKE
-                    paint.strokeWidth = 3f
-                    paint.color = Color.parseColor("#88FFFFFF")
-                    val ovalL = RectF(cx - eyeSpacing / 2 - eyeSize, eyeY - eyeSize, cx - eyeSpacing / 2 + eyeSize, eyeY + eyeSize)
-                    val ovalR = RectF(cx + eyeSpacing / 2 - eyeSize, eyeY - eyeSize, cx + eyeSpacing / 2 + eyeSize, eyeY + eyeSize)
-                    canvas.drawArc(ovalL, 0f, 180f, false, paint)
-                    canvas.drawArc(ovalR, 0f, 180f, false, paint)
+                    paint.strokeWidth = dpToPx(2f)
+                    paint.color = Color.parseColor("#80FFFFFF")
+                    canvas.drawArc(RectF(cx - eyeSpacing/2 - eyeW, eyeY - eyeH/2, cx - eyeSpacing/2 + eyeW, eyeY + eyeH/2), 0f, 180f, false, paint)
+                    canvas.drawArc(RectF(cx + eyeSpacing/2 - eyeW, eyeY - eyeH/2, cx + eyeSpacing/2 + eyeW, eyeY + eyeH/2), 0f, 180f, false, paint)
                 }
-                focusState == FocusState.DROWSY -> {
-                    // Heavy eyelids
-                    val rectL = RectF(cx - eyeSpacing / 2 - eyeSize, eyeY, cx - eyeSpacing / 2 + eyeSize, eyeY + 3f)
-                    val rectR = RectF(cx + eyeSpacing / 2 - eyeSize, eyeY, cx + eyeSpacing / 2 + eyeSize, eyeY + 3f)
-                    canvas.drawRect(rectL, paint)
-                    canvas.drawRect(rectR, paint)
-                }
-                focusState == FocusState.DISTRACTED -> {
-                    // Looking sideways
-                    val offset = 4f
-                    canvas.drawCircle(cx - eyeSpacing / 2 + offset, eyeY, eyeSize, paint)
-                    canvas.drawCircle(cx + eyeSpacing / 2 + offset, eyeY, eyeSize, paint)
-                }
-                isBlinking -> {
-                    // Blink!
-                    val rectL = RectF(cx - eyeSpacing / 2 - eyeSize, eyeY, cx - eyeSpacing / 2 + eyeSize, eyeY + 2f)
-                    val rectR = RectF(cx + eyeSpacing / 2 - eyeSize, eyeY, cx + eyeSpacing / 2 + eyeSize, eyeY + 2f)
-                    canvas.drawRect(rectL, paint)
-                    canvas.drawRect(rectR, paint)
+                focusState == FocusState.DROWSY || isBlinking -> {
+                    val rectL = RectF(cx - eyeSpacing/2 - eyeW, eyeY - dpToPx(1f), cx - eyeSpacing/2 + eyeW, eyeY + dpToPx(1f))
+                    val rectR = RectF(cx + eyeSpacing/2 - eyeW, eyeY - dpToPx(1f), cx + eyeSpacing/2 + eyeW, eyeY + dpToPx(1f))
+                    canvas.drawRoundRect(rectL, 2f, 2f, paint)
+                    canvas.drawRoundRect(rectR, 2f, 2f, paint)
                 }
                 else -> {
-                    // Focused / Neutral
-                    canvas.drawCircle(cx - eyeSpacing / 2, eyeY, eyeSize, paint)
-                    canvas.drawCircle(cx + eyeSpacing / 2, eyeY, eyeSize, paint)
+                    val rectL = RectF(cx - eyeSpacing/2 - eyeW/2, eyeY - eyeH/2, cx - eyeSpacing/2 + eyeW/2, eyeY + eyeH/2)
+                    val rectR = RectF(cx + eyeSpacing/2 - eyeW/2, eyeY - eyeH/2, cx + eyeSpacing/2 + eyeW/2, eyeY + eyeH/2)
+                    canvas.drawRoundRect(rectL, eyeW, eyeW, paint)
+                    canvas.drawRoundRect(rectR, eyeW, eyeW, paint)
                     
-                    // Add tiny pupils for 'FOCUSED' state depth
                     if (focusState == FocusState.FOCUSED) {
                         paint.color = color
-                        canvas.drawCircle(cx - eyeSpacing / 2, eyeY, eyeSize * 0.4f, paint)
-                        canvas.drawCircle(cx + eyeSpacing / 2, eyeY, eyeSize * 0.4f, paint)
+                        canvas.drawCircle(cx - eyeSpacing/2, eyeY, eyeW * 0.3f, paint)
+                        canvas.drawCircle(cx + eyeSpacing/2, eyeY, eyeW * 0.3f, paint)
                     }
                 }
             }
         }
-        
-        private fun drawParticles(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int, isMilestone: Boolean) {
-            val numParticles = if (isMilestone) 12 else 6
-            for (i in 0 until numParticles) {
-                val phaseOffset = i * (Math.PI * 2 / numParticles)
-                val angle = (particlePhase + phaseOffset).toFloat()
-                
-                // Orbiting with slight wobble
-                val wobble = sin((particlePhase * 1.5 + i).toDouble()).toFloat() * 10f
-                val dist = r + 12f + wobble
-                
-                val px = cx + cos(angle.toDouble()).toFloat() * dist
-                val py = cy + sin(angle.toDouble()).toFloat() * dist
-                
-                // Pulsing size
-                val size = 3f + sin((particlePhase * 4 + i).toDouble()).toFloat() * 2f
-                
-                val alpha = (180 + sin((particlePhase * 2.5 + i).toDouble()) * 70).toInt().coerceIn(0, 255)
+
+        private fun drawParticles(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int, isM: Boolean) {
+            val num = if (isM) 10 else 5
+            for (i in 0 until num) {
+                val p = particlePhase + i * (Math.PI * 2 / num)
+                val d = r + dpToPx(6f) + sin(p * 1.5).toFloat() * dpToPx(3f)
+                val px = cx + cos(p).toFloat() * d
+                val py = cy + sin(p).toFloat() * d
+                val sz = dpToPx(2f) + sin(p * 3).toFloat() * dpToPx(1f)
+                val alpha = (140 + sin(p * 2) * 80).toInt().coerceIn(0, 255)
                 particlePaint.color = Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
-                
-                // Add tiny glow to each particle
-                particlePaint.setShadowLayer(5f, 0f, 0f, color)
-                canvas.drawCircle(px, py, size, particlePaint)
-                particlePaint.clearShadowLayer()
+                canvas.drawCircle(px, py, sz, particlePaint)
             }
         }
-        
+
         private fun vibrateMilestone() {
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                    vm?.defaultVibrator?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 50, 100), -1))
-                } else {
-                    @Suppress("DEPRECATION")
-                    val v = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        v?.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 50, 100), -1))
-                    }
-                }
-            } catch (_: Exception) {}
+                val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 
+                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator 
+                    else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
+                    v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40, 40, 40), -1))
+            } catch (e: Exception) {}
         }
-        
+
         private fun vibrateAlert() {
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                    vm?.defaultVibrator?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-                } else {
-                    @Suppress("DEPRECATION")
-                    val v = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        v?.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-                    }
-                }
-            } catch (_: Exception) {}
+                val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 
+                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator 
+                    else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
+                    v.vibrate(VibrationEffect.createOneShot(80, VibrationEffect.DEFAULT_AMPLITUDE))
+            } catch (e: Exception) {}
         }
-        
+
         override fun onDetachedFromWindow() {
             super.onDetachedFromWindow()
             handler.removeCallbacks(animationRunnable)
         }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // Drag handler with snap-to-edge and position persistence
-    // ════════════════════════════════════════════════════════════════
-
-    class DragTouchListener(
-        private val context: Context,
-        private val params: WindowManager.LayoutParams,
-        private val wm: WindowManager
-    ) : View.OnTouchListener {
-        private var initialX = 0
-        private var initialY = 0
-        private var initialTouchX = 0f
-        private var initialTouchY = 0f
-        private var isTap = true
-        private var isDragging = false
-        
+    class DragTouchListener(private val context: Context, private val params: WindowManager.LayoutParams, private val wm: WindowManager) : View.OnTouchListener {
+        private var initialX = 0; private var initialY = 0; private var initialTouchX = 0f; private var initialTouchY = 0f; private var isTap = true; private var isDragging = false
         private val prefs: SharedPreferences = context.getSharedPreferences("guru_overlay_prefs", Context.MODE_PRIVATE)
-        private val screenWidth: Int
-        private val screenHeight: Int
-        
-        companion object {
-            private const val PREF_X = "overlay_x"
-            private const val PREF_Y = "overlay_y"
-            private const val EDGE_MARGIN = 16
-            private const val SNAP_DURATION = 250L
-        }
+        private val screenWidth: Int; private val screenHeight: Int
         
         init {
             val dm = context.resources.displayMetrics
             screenWidth = dm.widthPixels
             screenHeight = dm.heightPixels
-            
-            // Restore saved position
-            val savedX = prefs.getInt(PREF_X, -1)
-            val savedY = prefs.getInt(PREF_Y, -1)
+            val savedX = prefs.getInt("overlay_x", -1)
+            val savedY = prefs.getInt("overlay_y", -1)
             if (savedX >= 0 && savedY >= 0) {
                 params.x = savedX.coerceIn(0, screenWidth - 100)
                 params.y = savedY.coerceIn(0, screenHeight - 100)
             }
         }
-        
+
         private fun savePosition() {
-            prefs.edit().putInt(PREF_X, params.x).putInt(PREF_Y, params.y).apply()
+            prefs.edit().putInt("overlay_x", params.x).putInt("overlay_y", params.y).apply()
         }
-        
-        private fun snapToEdge(view: View) {
-            val bubbleWidth = view.width.takeIf { it > 0 } ?: 130
-            val centerX = params.x + bubbleWidth / 2
+
+        private fun snapToEdge(v: View) {
+            val bw = v.width.takeIf { it > 0 } ?: 130
+            val cx = params.x + bw / 2
+            val tx = if (cx < screenWidth / 2) 16 else screenWidth - bw - 16
+            val ty = params.y.coerceIn(16, screenHeight - v.height - 64)
             
-            // Determine which edge is closer
-            val targetX = if (centerX < screenWidth / 2) {
-                // Snap to left
-                EDGE_MARGIN
-            } else {
-                // Snap to right
-                screenWidth - bubbleWidth - EDGE_MARGIN
-            }
-            
-            // Clamp Y within screen bounds
-            val targetY = params.y.coerceIn(EDGE_MARGIN, screenHeight - view.height - EDGE_MARGIN * 4)
-            
-            // Animate to target position
-            animateToPosition(view, targetX, targetY)
-        }
-        
-        private fun animateToPosition(view: View, targetX: Int, targetY: Int) {
-            val startX = params.x
-            val startY = params.y
+            val sx = params.x
+            val sy = params.y
             
             ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = SNAP_DURATION
+                duration = 250
                 interpolator = OvershootInterpolator(0.8f)
                 addUpdateListener { animator ->
-                    val progress = animator.animatedValue as Float
-                    params.x = (startX + (targetX - startX) * progress).toInt()
-                    params.y = (startY + (targetY - startY) * progress).toInt()
-                    try {
-                        wm.updateViewLayout(view.parent as View, params)
-                    } catch (_: Exception) {}
+                    val p = animator.animatedValue as Float
+                    params.x = (sx + (tx - sx) * p).toInt()
+                    params.y = (sy + (ty - sy) * p).toInt()
+                    try { wm.updateViewLayout(v.parent as View, params) } catch (e: Exception) {}
                 }
                 addListener(object : android.animation.Animator.AnimatorListener {
-                    override fun onAnimationEnd(animation: android.animation.Animator) {
-                        savePosition()
-                    }
-                    override fun onAnimationStart(animation: android.animation.Animator) {}
-                    override fun onAnimationCancel(animation: android.animation.Animator) {}
-                    override fun onAnimationRepeat(animation: android.animation.Animator) {}
+                    override fun onAnimationEnd(a: android.animation.Animator) { savePosition() }
+                    override fun onAnimationStart(a: android.animation.Animator) {}
+                    override fun onAnimationCancel(a: android.animation.Animator) {}
+                    override fun onAnimationRepeat(a: android.animation.Animator) {}
                 })
                 start()
             }
         }
-        
+
         private fun vibrateLight() {
             try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                    vm?.defaultVibrator?.vibrate(VibrationEffect.createOneShot(10, VibrationEffect.EFFECT_TICK))
-                } else {
-                    @Suppress("DEPRECATION")
-                    val v = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        v?.vibrate(VibrationEffect.createOneShot(10, VibrationEffect.EFFECT_TICK))
-                    }
-                }
-            } catch (_: Exception) {}
+                val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 
+                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator 
+                    else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
+                    v.vibrate(VibrationEffect.createOneShot(10, VibrationEffect.EFFECT_TICK))
+            } catch (e: Exception) {}
         }
 
         override fun onTouch(v: View, event: MotionEvent): Boolean {
@@ -1146,10 +874,7 @@ class OverlayService : Service(), LifecycleOwner {
                 MotionEvent.ACTION_DOWN -> {
                     initialX = params.x; initialY = params.y
                     initialTouchX = event.rawX; initialTouchY = event.rawY
-                    isTap = true
-                    isDragging = false
-                    
-                    // Scale down slightly to indicate press
+                    isTap = true; isDragging = false
                     v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start()
                     return true
                 }
@@ -1160,25 +885,21 @@ class OverlayService : Service(), LifecycleOwner {
                         if (!isDragging) {
                             isDragging = true
                             vibrateLight()
-                            // Restore scale when starting drag
                             v.animate().scaleX(1f).scaleY(1f).setDuration(50).start()
                         }
                         isTap = false
                         params.x = initialX + dx.toInt()
                         params.y = initialY + dy.toInt()
-                        try { wm.updateViewLayout(v.parent as View, params) } catch (_: Exception) {}
+                        try { wm.updateViewLayout(v.parent as View, params) } catch (e: Exception) {}
                     }
                     return true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    // Restore scale
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                    
                     if (isTap) {
                         (v as? CompanionBubbleView)?.onTap?.invoke()
                         v.performClick()
                     } else {
-                        // Snap to nearest edge
                         snapToEdge(v)
                         vibrateLight()
                     }

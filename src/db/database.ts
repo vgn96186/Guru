@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import * as FileSystem from 'expo-file-system/legacy';
 import { ALL_SCHEMAS, DB_INDEXES } from './schema';
 import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
@@ -20,13 +21,25 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   // Use provided forceSeed parameter (default false)
   const actualForce = forceSeed;
 
-  if (g.__GURU_DB__ && !actualForce) {
-    _db = g.__GURU_DB__;
-    // if (__DEV__) console.log('[DB] Using existing global DB instance');
-    // We don't return here, we want to ensure tables and migrations are checked
-  }
+  if (!g.__GURU_DB__ || actualForce) {
+    // ─── Database File Migration (Stale Filenames) ───────────────────────────
+    const dbDir = FileSystem.documentDirectory + 'SQLite/';
+    const oldDbPath = dbDir + 'study_guru.db';
+    const newDbPath = dbDir + 'neet_study.db';
 
-  if (!g.__GURU_DB__) {
+    try {
+      const oldInfo = await FileSystem.getInfoAsync(oldDbPath);
+      const newInfo = await FileSystem.getInfoAsync(newDbPath);
+
+      if (oldInfo.exists && !newInfo.exists) {
+        console.log('[DB] Migrating legacy study_guru.db to neet_study.db...');
+        await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
+        await FileSystem.copyAsync({ from: oldDbPath, to: newDbPath });
+      }
+    } catch (err) {
+      console.warn('[DB] Migration check failed:', err);
+    }
+
     _db = await SQLite.openDatabaseAsync('neet_study.db');
     g.__GURU_DB__ = _db;
   } else {
@@ -159,10 +172,11 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await seedUserProfile(db);
   } else {
     // Run background maintenance
-    const { retryFailedTasks, autoRepairLegacyNotes } =
+    const { retryFailedTasks, autoRepairLegacyNotes, scanAndRecoverOrphanedTranscripts } =
       await import('../services/lectureSessionMonitor');
     void retryFailedTasks(profile.groq_api_key || undefined);
     void autoRepairLegacyNotes();
+    void scanAndRecoverOrphanedTranscripts();
   }
 
   // Update streak on open

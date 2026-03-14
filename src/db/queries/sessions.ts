@@ -64,18 +64,70 @@ export async function endSession(
   );
 }
 
+/**
+ * Periodic update for a running session (e.g. during Hostage Mode)
+ * to ensure data is not lost if the app is killed.
+ */
+export async function updateSessionProgress(
+  sessionId: number,
+  durationMinutes: number,
+  xpEarned: number,
+  completedTopics: number[] = [],
+  notes?: string,
+): Promise<void> {
+  const db = getDb();
+  const today = todayStr();
+
+  // 1. Get previous values for this session to calculate delta for daily_log
+  const prev = await db.getFirstAsync<{ duration_minutes: number; total_xp_earned: number }>(
+    'SELECT COALESCE(duration_minutes, 0) as duration_minutes, COALESCE(total_xp_earned, 0) as total_xp_earned FROM sessions WHERE id = ?',
+    [sessionId],
+  );
+
+  const deltaMins = durationMinutes - (prev?.duration_minutes ?? 0);
+  const deltaXp = xpEarned - (prev?.total_xp_earned ?? 0);
+
+  // 2. Update session
+  await db.runAsync(
+    `UPDATE sessions
+     SET completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
+     WHERE id = ?`,
+    [JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
+  );
+
+  // 3. Update daily log with deltas
+  if (deltaMins > 0 || deltaXp > 0) {
+    await db.runAsync(
+      `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
+       VALUES (?, 1, ?, ?)
+       ON CONFLICT(date) DO UPDATE SET
+         total_minutes = total_minutes + ?,
+         xp_earned = xp_earned + ?`,
+      [
+        today,
+        Math.max(0, deltaMins),
+        Math.max(0, deltaXp),
+        Math.max(0, deltaMins),
+        Math.max(0, deltaXp),
+      ],
+    );
+  }
+}
+
 export async function getRecentSessions(limit = 7): Promise<StudySession[]> {
   const db = getDb();
   const rows = await db.getAllAsync<{
-    id: number; started_at: number; ended_at: number | null;
-    planned_topics: string; completed_topics: string;
-    total_xp_earned: number; duration_minutes: number | null;
-    mood: string | null; mode: string;
-  }>(
-    'SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?',
-    [limit],
-  );
-  return rows.map(r => ({
+    id: number;
+    started_at: number;
+    ended_at: number | null;
+    planned_topics: string;
+    completed_topics: string;
+    total_xp_earned: number;
+    duration_minutes: number | null;
+    mood: string | null;
+    mode: string;
+  }>('SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?', [limit]);
+  return rows.map((r) => ({
     id: r.id,
     startedAt: r.started_at,
     endedAt: r.ended_at,
@@ -94,27 +146,31 @@ export async function getRecentlyStudiedTopicNames(sessionCount = 3): Promise<st
     'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL ORDER BY started_at DESC LIMIT ?',
     [sessionCount],
   );
-  const topicIds = rows.flatMap(r => JSON.parse(r.completed_topics) as number[]);
+  const topicIds = rows.flatMap((r) => JSON.parse(r.completed_topics) as number[]);
   if (topicIds.length === 0) return [];
   const placeholders = topicIds.map(() => '?').join(',');
   const nameRows = await db.getAllAsync<{ name: string }>(
     `SELECT name FROM topics WHERE id IN (${placeholders})`,
     topicIds,
   );
-  return nameRows.map(r => r.name);
+  return nameRows.map((r) => r.name);
 }
 
-export async function getCompletedTopicIdsBetween(startTs: number, endTs?: number): Promise<number[]> {
+export async function getCompletedTopicIdsBetween(
+  startTs: number,
+  endTs?: number,
+): Promise<number[]> {
   const db = getDb();
-  const rows = endTs == null
-    ? await db.getAllAsync<{ completed_topics: string }>(
-        'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ?',
-        [startTs],
-      )
-    : await db.getAllAsync<{ completed_topics: string }>(
-        'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND started_at < ?',
-        [startTs, endTs],
-      );
+  const rows =
+    endTs == null
+      ? await db.getAllAsync<{ completed_topics: string }>(
+          'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ?',
+          [startTs],
+        )
+      : await db.getAllAsync<{ completed_topics: string }>(
+          'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL AND started_at >= ? AND started_at < ?',
+          [startTs, endTs],
+        );
 
   return rows.flatMap((row) => {
     try {
@@ -129,7 +185,7 @@ export async function getPreferredStudyHours(): Promise<number[]> {
   const db = getDb();
   // Get all session start times
   const rows = await db.getAllAsync<{ started_at: number }>(
-    'SELECT started_at FROM sessions WHERE duration_minutes >= 10 ORDER BY started_at DESC LIMIT 50'
+    'SELECT started_at FROM sessions WHERE duration_minutes >= 10 ORDER BY started_at DESC LIMIT 50',
   );
 
   if (rows.length === 0) return [9, 14, 19]; // Default: 9am, 2pm, 7pm
@@ -163,7 +219,10 @@ export async function getPreferredStudyHours(): Promise<number[]> {
 }
 
 /** Get weekly stats: this week vs last week */
-export async function getWeeklyComparison(): Promise<{ thisWeek: WeeklyStatsBucket; lastWeek: WeeklyStatsBucket }> {
+export async function getWeeklyComparison(): Promise<{
+  thisWeek: WeeklyStatsBucket;
+  lastWeek: WeeklyStatsBucket;
+}> {
   const db = getDb();
   const now = Date.now();
   const dayMs = 86_400_000;
@@ -205,7 +264,7 @@ export async function getWeeklyComparison(): Promise<{ thisWeek: WeeklyStatsBuck
       WHERE ended_at IS NOT NULL
         AND started_at >= ?
       GROUP BY bucket`,
-    [thisWeekStart, lastWeekStart]
+    [thisWeekStart, lastWeekStart],
   );
 
   const emptyBucket: WeeklyStatsBucket = { minutes: 0, sessions: 0, topics: 0 };
@@ -270,7 +329,7 @@ export async function calculateCurrentStreak(): Promise<number> {
        )
      SELECT COUNT(*) AS streak
      FROM streak`,
-    [today, today, yesterday, yesterday]
+    [today, today, yesterday, yesterday],
   );
 
   return result?.streak ?? 0;

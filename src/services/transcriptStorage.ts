@@ -45,8 +45,35 @@ export async function loadTranscriptFromFile(
     });
     return content;
   } catch (err) {
-    console.warn('[TranscriptStorage] Failed to read transcript file:', err);
-    return 'Transcript file could not be loaded.';
+    // FAILED — it might be a stale absolute path from a previous app version/install
+    // Extract filename and try to find it in current TRANSCRIPT_DIR
+    const parts = transcriptUriOrText.split('/');
+    const fileName = parts[parts.length - 1];
+    const currentUri = TRANSCRIPT_DIR + fileName;
+
+    if (currentUri === transcriptUriOrText) {
+      // It's already the current path, so it really is missing
+      console.warn('[TranscriptStorage] Failed to read transcript file (not found):', err);
+      return 'Transcript file could not be loaded.';
+    }
+
+    try {
+      const content = await FileSystem.readAsStringAsync(currentUri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      console.log(
+        '[TranscriptStorage] Successfully recovered transcript from new path:',
+        currentUri,
+      );
+      return content;
+    } catch (err2) {
+      console.warn(
+        '[TranscriptStorage] Failed to read transcript file from both old and new paths:',
+        err,
+        err2,
+      );
+      return 'Transcript file could not be loaded.';
+    }
   }
 }
 

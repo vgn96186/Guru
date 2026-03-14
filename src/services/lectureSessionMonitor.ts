@@ -253,3 +253,67 @@ export async function autoRepairLegacyNotes(): Promise<number> {
   }
   return repaired;
 }
+
+/**
+ * Scans the transcripts directory for any files NOT referenced in the database
+ * and creates lecture notes for them.
+ */
+export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
+  try {
+    const db = (await import('../db/database')).getDb();
+    const TRANSCRIPT_DIR =
+      (await import('expo-file-system/legacy')).documentDirectory + 'transcripts/';
+
+    const dirInfo = await (await import('expo-file-system/legacy')).getInfoAsync(TRANSCRIPT_DIR);
+    if (!dirInfo.exists) return 0;
+
+    const files = await (
+      await import('expo-file-system/legacy')
+    ).readDirectoryAsync(TRANSCRIPT_DIR);
+    if (files.length === 0) return 0;
+
+    // Get all referenced transcripts
+    const rows = await db.getAllAsync<{ transcript: string }>(
+      'SELECT transcript FROM lecture_notes WHERE transcript IS NOT NULL',
+    );
+    const referencedFiles = new Set(
+      rows.map((r) => {
+        const parts = r.transcript.split('/');
+        return parts[parts.length - 1];
+      }),
+    );
+
+    let recovered = 0;
+    for (const fileName of files) {
+      if (!fileName.endsWith('.txt')) continue;
+      if (referencedFiles.has(fileName)) continue;
+
+      // Orphan found!
+      const fileUri = TRANSCRIPT_DIR + fileName;
+      const content = await (await import('expo-file-system/legacy')).readAsStringAsync(fileUri);
+
+      if (!content.trim()) continue;
+
+      console.log(`[Recovery] Found orphaned transcript: ${fileName}. Recovering...`);
+
+      const analysis = await analyzeTranscript(content);
+      const quickNote = buildQuickLectureNote(analysis);
+
+      const { saveLecturePersistence } = await import('./lecture/persistence');
+      await saveLecturePersistence({
+        analysis: { ...analysis, transcript: content },
+        appName: 'Recovered Folder',
+        durationMinutes: 0,
+        logId: -1, // Not linked to an original log
+        quickNote,
+      });
+
+      recovered++;
+    }
+
+    return recovered;
+  } catch (err) {
+    console.warn('[Recovery] Orphan scan failed:', err);
+    return 0;
+  }
+}

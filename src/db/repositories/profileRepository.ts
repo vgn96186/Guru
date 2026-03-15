@@ -13,8 +13,10 @@ import {
   resetStudyProgress,
   clearAiCache,
   getReviewDueTopics,
+  getRecentTopics,
   applyConfidenceDecay,
 } from '../queries/progress';
+import { getSubjectCoverage, getWeakestTopics } from '../queries/topics';
 
 export const profileRepository = {
   getProfile: getUserProfile,
@@ -26,6 +28,9 @@ export const profileRepository = {
   resetStudyProgress,
   clearAiCache,
   getReviewDueTopics,
+  getRecentTopics,
+  getSubjectCoverage,
+  getWeakestTopics,
   applyConfidenceDecay,
 };
 

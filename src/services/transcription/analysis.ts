@@ -1,8 +1,16 @@
-import { z } from 'zod';
 import { generateJSONWithRouting } from '../aiService';
-import { buildRepresentativeTranscriptExcerpt } from './transcriptExcerpt';
+import { z } from 'zod';
 
-export interface LectureAnalysis {
+export const LectureAnalysisSchema = z.object({
+  subject: z.string(),
+  topics: z.array(z.string()),
+  key_concepts: z.array(z.string()),
+  high_yield_highlights: z.array(z.string()),
+  lecture_summary: z.string(),
+  estimated_confidence: z.number().min(1).max(3),
+});
+
+export type LectureAnalysis = {
   subject: string;
   topics: string[];
   keyConcepts: string[];
@@ -10,65 +18,134 @@ export interface LectureAnalysis {
   lectureSummary: string;
   estimatedConfidence: 1 | 2 | 3;
   transcript?: string;
+  modelUsed?: string;
+  embedding?: number[] | null;
+};
+
+const MEDICAL_EXTRACT_PROMPT = `You are a medical scribe. Extract key clinical facts, subject, and topics from the following transcript segment.`;
+const META_SUMMARIZE_PROMPT = `Combine the following medical transcript segment analyses into a single coherent lecture analysis.`;
+
+/**
+ * Split transcript into manageable segments for hierarchical analysis.
+ */
+function splitTranscript(transcript: string, maxChars = 12000): string[] {
+  const segments: string[] = [];
+  let currentPos = 0;
+  while (currentPos < transcript.length) {
+    segments.push(transcript.slice(currentPos, currentPos + maxChars));
+    currentPos += maxChars;
+  }
+  return segments;
 }
-
-const MEDICAL_EXTRACT_PROMPT = `You are a NEET-PG/INICET medical education assistant analyzing audio from a lecture recording.
-Your task:
-1. Transcribe relevant medical content
-2. Identify the subject and specific topics covered
-3. Extract key concepts as brief bullet points
-4. Extract 3-5 "High-Yield Highlights" (extremely testable facts, specific drug names, or diagnostic criteria)
-5. Write a one-line summary
-
-Return ONLY valid JSON:
-{
-  "subject": "Physiology",
-  "topics": ["Renin-Angiotensin System", "Cardiovascular System"],
-  "key_concepts": ["JGA cells release renin in response to low BP"],
-  "high_yield_highlights": ["Renin is the **rate-limiting step** of RAAS"],
-  "lecture_summary": "RAAS pathway from renin release to aldosterone effect",
-  "estimated_confidence": 2
-}
-`;
-
-const LectureAnalysisSchema = z.object({
-  subject: z.string(),
-  topics: z.array(z.string()),
-  key_concepts: z.array(z.string()),
-  high_yield_highlights: z.array(z.string()).optional(),
-  lecture_summary: z.string(),
-  estimated_confidence: z.number().int().min(1).max(3),
-});
 
 export async function analyzeTranscript(transcript: string): Promise<LectureAnalysis> {
-  const transcriptExcerpt = buildRepresentativeTranscriptExcerpt(transcript, 64000, 4);
-  const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the lecture transcript:\n"""\n${transcriptExcerpt}\n"""`;
+  const segments = splitTranscript(transcript);
+  const segmentAnalyses: LectureAnalysis[] = [];
 
-  try {
-    const { parsed } = await generateJSONWithRouting(
-      [{ role: 'user', content: extractPrompt }],
-      LectureAnalysisSchema,
-      'high',
-    );
-    return {
-      subject: parsed.subject ?? 'Unknown',
-      topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 5) : [],
-      keyConcepts: Array.isArray(parsed.key_concepts) ? parsed.key_concepts.slice(0, 8) : [],
-      highYieldPoints: Array.isArray(parsed.high_yield_highlights)
-        ? parsed.high_yield_highlights.slice(0, 5)
-        : [],
-      lectureSummary: parsed.lecture_summary ?? '',
-      estimatedConfidence: (parsed.estimated_confidence ?? 2) as 1 | 2 | 3,
-    };
-  } catch (err) {
-    console.warn('[Analysis] LLM topic extraction failed, using basic fallback.');
+  for (let i = 0; i < segments.length; i++) {
+    console.log(`[Analysis] Analyzing segment ${i + 1}/${segments.length}`);
+    try {
+      const analysis = await runSingleAnalysisPass(segments[i]);
+      segmentAnalyses.push(analysis);
+    } catch (_e) {
+      console.warn(`[Analysis] Failed to analyze segment ${i}, skipping.`);
+    }
+  }
+
+  if (segmentAnalyses.length === 0) {
+    console.warn('[Analysis] All segment analyses failed, returning fallback.');
     return {
       subject: 'Unknown',
       topics: [],
       keyConcepts: [],
       highYieldPoints: [],
-      lectureSummary: 'Lecture content recorded',
-      estimatedConfidence: 2,
+      lectureSummary: 'Lecture content recorded (analysis failed)',
+      estimatedConfidence: 1,
     };
   }
+
+  if (segmentAnalyses.length === 1) {
+    return segmentAnalyses[0];
+  }
+
+  return metaSummarize(segmentAnalyses);
+}
+
+async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
+  const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the transcript segment:\n"""\n${text}\n"""`;
+  const { parsed, modelUsed } = await generateJSONWithRouting(
+    [{ role: 'user', content: extractPrompt }],
+    LectureAnalysisSchema,
+    'high',
+  );
+  return { ...mapParsedAnalysis(parsed), modelUsed };
+}
+
+async function metaSummarize(analyses: LectureAnalysis[]): Promise<LectureAnalysis> {
+  const aggregatedInput = analyses
+    .map(
+      (a, i) => `
+Segment ${i + 1}:
+- Subject: ${a.subject}
+- Topics: ${a.topics.join(', ')}
+- Key Concepts: ${a.keyConcepts.join('; ')}
+- High Yield: ${a.highYieldPoints.join('; ')}
+- Summary: ${a.lectureSummary}
+`,
+    )
+    .join('\n');
+
+  const extractPrompt = `${META_SUMMARIZE_PROMPT}\n\nHere are the segment summaries:\n"""\n${aggregatedInput}\n"""`;
+
+  console.log('[Analysis] Running final meta-summarization pass...');
+  try {
+    const { parsed, modelUsed } = await generateJSONWithRouting(
+      [{ role: 'user', content: extractPrompt }],
+      LectureAnalysisSchema,
+      'high',
+    );
+    return { ...mapParsedAnalysis(parsed), modelUsed };
+  } catch (_err) {
+    console.warn('[Analysis] Meta-summarization failed, using basic aggregation fallback.');
+    // Fallback: Just smash everything together and take the first few
+    return {
+      subject: analyses[0]?.subject ?? 'Unknown',
+      topics: [...new Set(analyses.flatMap((a: LectureAnalysis) => a.topics))].slice(0, 5),
+      keyConcepts: [...new Set(analyses.flatMap((a: LectureAnalysis) => a.keyConcepts))].slice(
+        0,
+        8,
+      ),
+      highYieldPoints: [
+        ...new Set(analyses.flatMap((a: LectureAnalysis) => a.highYieldPoints)),
+      ].slice(0, 5),
+      lectureSummary:
+        analyses
+          .map((a: LectureAnalysis) => a.lectureSummary)
+          .join(' ')
+          .slice(0, 200) + '...',
+      estimatedConfidence: (analyses[0]?.estimatedConfidence ?? 2) as 1 | 2 | 3,
+    };
+  }
+}
+
+interface ParsedAnalysis {
+  subject?: string;
+  topics?: string[];
+  key_concepts?: string[];
+  high_yield_highlights?: string[];
+  lecture_summary?: string;
+  estimated_confidence?: number;
+}
+
+function mapParsedAnalysis(parsed: ParsedAnalysis): LectureAnalysis {
+  return {
+    subject: parsed.subject ?? 'Unknown',
+    topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 5) : [],
+    keyConcepts: Array.isArray(parsed.key_concepts) ? parsed.key_concepts.slice(0, 8) : [],
+    highYieldPoints: Array.isArray(parsed.high_yield_highlights)
+      ? parsed.high_yield_highlights.slice(0, 5)
+      : [],
+    lectureSummary: parsed.lecture_summary ?? 'Lecture summary captured.',
+    estimatedConfidence: (parsed.estimated_confidence ?? 2) as 1 | 2 | 3,
+  };
 }

@@ -28,6 +28,7 @@ export interface Subject {
   inicetWeight: number;
   neetWeight: number;
   displayOrder: number;
+  topics?: TopicWithProgress[];
 }
 
 export interface Topic {

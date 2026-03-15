@@ -27,9 +27,9 @@ try {
       const contentTypes = getMoodContentTypes('good').filter((ct: any) => !profile.blockedContentTypes.includes(ct)) as ContentType[];
       const typesToFetch: ContentType[] = contentTypes.length > 0 ? contentTypes : ['keypoints'];
 
-      for (const topic of candidates) {
-        await prefetchTopicContent(topic, typesToFetch);
-      }
+      await Promise.allSettled(
+        candidates.map(topic => prefetchTopicContent(topic, typesToFetch))
+      );
 
       await refreshAccountabilityNotifications().catch(e => console.log('BG notif refresh failed:', e));
 

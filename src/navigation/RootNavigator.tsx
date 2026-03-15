@@ -14,6 +14,7 @@ import BedLockScreen from '../screens/BedLockScreen';
 import PunishmentMode from '../screens/PunishmentMode';
 import DoomscrollInterceptor from '../screens/DoomscrollInterceptor';
 import LocalModelScreen from '../screens/LocalModelScreen';
+import ManualNoteCreationScreen from '../screens/ManualNoteCreationScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -36,6 +37,7 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
       <Stack.Screen name="BedLock" component={BedLockScreen} options={{ gestureEnabled: false, presentation: 'fullScreenModal' }} />
       <Stack.Screen name="DoomscrollInterceptor" component={DoomscrollInterceptor} options={{ gestureEnabled: false, presentation: 'fullScreenModal' }} />
       <Stack.Screen name="LocalModel" component={LocalModelScreen} options={{ presentation: 'modal' }} />
+      <Stack.Screen name="ManualNoteCreation" component={ManualNoteCreationScreen as any} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

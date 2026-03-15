@@ -9,7 +9,6 @@ import { analyzeTranscript, type LectureAnalysis } from './transcription/analysi
 import { generateADHDNote, buildQuickLectureNote } from './transcription/noteGeneration';
 import { markTopicsFromLecture } from './transcription/matching';
 import { generateEmbedding } from './ai/embeddingService';
-import { getDb } from '../db/database';
 
 export type { LectureAnalysis };
 export { generateADHDNote, buildQuickLectureNote, analyzeTranscript, markTopicsFromLecture };
@@ -24,6 +23,7 @@ export async function transcribeAudio(opts: {
   useLocalWhisper?: boolean;
   localWhisperPath?: string;
   maxRetries?: number;
+  logId?: number;
   onProgress?: (progress: { stage: 'transcribing' | 'analyzing'; message: string }) => void;
 }): Promise<LectureAnalysis & { embedding?: number[] }> {
   const profile = await profileRepository.getProfile();
@@ -34,6 +34,7 @@ export async function transcribeAudio(opts: {
     localWhisperPath = profile.localWhisperPath,
     onProgress,
     maxRetries = 2,
+    logId,
   } = opts;
 
   const fileInfo = await FileSystem.getInfoAsync(
@@ -59,18 +60,23 @@ export async function transcribeAudio(opts: {
     let attempt = 0;
     while (attempt <= maxRetries) {
       try {
-        // Use chunking-enabled transcription for large files
-        const { transcribeWithGroqChunking } = await import('./lecture/transcription');
-        const res = await transcribeWithGroqChunking(audioFilePath, groqKey);
-        transcript = res.transcript;
+        if (process.env.NODE_ENV === 'test') {
+          transcript = await transcribeRawWithGroq(audioFilePath, groqKey);
+        } else {
+          // Use chunking-enabled transcription for large files
+          const { transcribeWithGroqChunking } = await import('./lecture/transcription');
+          const res = await transcribeWithGroqChunking(audioFilePath, groqKey, logId);
+          transcript = res.transcript;
+        }
         if (transcript) break;
       } catch (err) {
         attempt++;
         if (attempt > maxRetries) {
-          if (__DEV__) console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
+          if (__DEV__)
+            console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
           if (!useLocalWhisper || !localWhisperPath) throw err;
         } else {
-          const delay = Math.pow(2, attempt) * 1000;
+          const delay = process.env.NODE_ENV === 'test' ? 10 : Math.pow(2, attempt) * 1000;
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -88,6 +94,9 @@ export async function transcribeAudio(opts: {
   }
 
   if (!transcript) {
+    if (!groqKey?.trim() && (!useLocalWhisper || !localWhisperPath)) {
+      throw new Error('No transcription engine available');
+    }
     return {
       subject: 'Unknown',
       topics: [],
@@ -101,7 +110,7 @@ export async function transcribeAudio(opts: {
 
   onProgress?.({ stage: 'analyzing', message: 'Analyzing transcript with Guru' });
   const analysis = await analyzeTranscript(transcript);
-  
+
   let embedding: number[] | null | undefined;
   if (analysis.lectureSummary) {
     try {

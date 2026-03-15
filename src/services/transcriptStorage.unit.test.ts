@@ -9,10 +9,17 @@ jest.mock('expo-file-system/legacy', () => {
     writeAsStringAsync: jest.fn(async () => {}),
     readAsStringAsync: jest.fn(async () => 'transcript content'),
     makeDirectoryAsync: jest.fn(async () => {}),
-    getInfoAsync: jest.fn(async () => ({ exists: true })),
+    getInfoAsync: jest.fn(async (uri) => {
+      // Mock failure for the first read in "falls back to local current directory"
+      if (typeof uri === 'string' && uri.includes('/old/install/path/')) {
+        return { exists: false };
+      }
+      return { exists: true };
+    }),
     copyAsync: jest.fn(async () => {}),
     StorageAccessFramework: {
       createFileAsync: jest.fn(async () => 'content://mock/uri/file.txt'),
+      writeAsStringAsync: jest.fn(async () => {}),
     },
     EncodingType: { UTF8: 'utf8' },
   }
@@ -44,6 +51,8 @@ describe('transcriptStorage', () => {
     (FileSystem.getInfoAsync as jest.Mock).mockClear();
     (FileSystem.copyAsync as jest.Mock).mockClear();
     (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockClear();
+    (FileSystem.StorageAccessFramework.createFileAsync as any).mockResolvedValue('content://mock/uri/file.txt');
+    (FileSystem.StorageAccessFramework.writeAsStringAsync as jest.Mock).mockClear();
   });
 
   describe('backupNoteToPublic', () => {
@@ -57,12 +66,11 @@ describe('transcriptStorage', () => {
         'text/plain'
       );
 
-      // Check write to both SAF and Local
-      expect(FileSystem.writeAsStringAsync).toHaveBeenCalledTimes(2);
+      // Check write to Local
+      expect(FileSystem.writeAsStringAsync).toHaveBeenCalledTimes(1);
 
       // First write to SAF
-      expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
-        1,
+      expect(FileSystem.StorageAccessFramework.writeAsStringAsync).toHaveBeenCalledWith(
         'content://mock/uri/file.txt',
         'This is a note.',
         { encoding: 'utf8' }
@@ -70,7 +78,7 @@ describe('transcriptStorage', () => {
 
       // Second write to local public
       expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
-        2,
+        1,
         expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
         'This is a note.',
         { encoding: 'utf8' }
@@ -96,8 +104,12 @@ describe('transcriptStorage', () => {
         expect.stringMatching(/^transcript_\d+_[a-z0-9]+\.txt$/),
         'text/plain'
       );
-      expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
-        2,
+      expect(FileSystem.writeAsStringAsync).not.toHaveBeenCalledWith(
+        'content://mock/uri/file.txt',
+        'lecture text',
+        { encoding: 'utf8' }
+      );
+      expect(FileSystem.StorageAccessFramework.writeAsStringAsync).toHaveBeenCalledWith(
         'content://mock/uri/file.txt',
         'lecture text',
         { encoding: 'utf8' }
@@ -125,6 +137,9 @@ describe('transcriptStorage', () => {
     });
 
     it('loads from URI correctly', async () => {
+      // Mock getInfoAsync to succeed
+      (FileSystem.getInfoAsync as any).mockImplementationOnce(async () => ({ exists: true }));
+      (FileSystem.readAsStringAsync as any).mockImplementationOnce(async () => 'transcript content');
       const result = await loadTranscriptFromFile('file:///data/user/0/com.app/files/transcripts/transcript_123.txt');
       expect(FileSystem.readAsStringAsync).toHaveBeenCalledWith(
         'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
@@ -134,20 +149,16 @@ describe('transcriptStorage', () => {
     });
 
     it('falls back to local current directory if absolute path fails', async () => {
-      // Mock failure for the first read
-      (FileSystem.readAsStringAsync as jest.Mock).mockImplementationOnce(() => Promise.reject(new Error('File not found')))
-                                           .mockImplementationOnce(() => Promise.resolve('recovered content'));
+      // It will throw first because exists=false in the mock for this path
+      // then the catch block will extract the file name and look in the current TRANSCRIPT_DIR
+      // We need to make sure the second readAsStringAsync succeeds.
+      (FileSystem.readAsStringAsync as jest.Mock).mockImplementationOnce(() => Promise.resolve('recovered content'));
 
       const result = await loadTranscriptFromFile('file:///old/install/path/transcripts/transcript_123.txt');
 
-      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(1);
       expect(FileSystem.readAsStringAsync).toHaveBeenNthCalledWith(
         1,
-        'file:///old/install/path/transcripts/transcript_123.txt',
-        { encoding: 'utf8' }
-      );
-      expect(FileSystem.readAsStringAsync).toHaveBeenNthCalledWith(
-        2,
         'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
         { encoding: 'utf8' }
       );

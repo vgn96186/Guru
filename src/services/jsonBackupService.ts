@@ -171,9 +171,10 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
 
   const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
-  let backup: any;
+  let backup: Record<string, unknown>;
   try {
     backup = JSON.parse(content);
+    if (!backup || typeof backup !== 'object') throw new Error('Not an object');
   } catch (err) {
     console.error('[Backup] JSON parse failed during import:', err);
     return { ok: false, message: 'Invalid JSON file' };
@@ -182,7 +183,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   if (!backup.version) {
     return { ok: false, message: 'Invalid backup format — missing version' };
   }
-  if (backup.version > BACKUP_VERSION) {
+  if (typeof backup.version === 'number' && backup.version > BACKUP_VERSION) {
     return { ok: false, message: 'Backup was made with a newer version of the app' };
   }
 
@@ -220,21 +221,21 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
 
   const sanitizeRow = (table: BackupTableName, rawRow: BackupRow): BackupRow | null => {
     const row = { ...rawRow };
-    delete (row as any).topic_ref;
-    delete (row as any).subject_ref;
-    delete (row as any).planned_topic_refs;
-    delete (row as any).completed_topic_refs;
+    delete row.topic_ref;
+    delete row.subject_ref;
+    delete row.planned_topic_refs;
+    delete row.completed_topic_refs;
 
     if (table === 'topic_progress' || table === 'ai_cache') {
-      const ref = (rawRow as any).topic_ref;
+      const ref = rawRow.topic_ref as Record<string, unknown> | undefined;
       if (ref && typeof ref.subjectShortCode === 'string' && typeof ref.topicName === 'string') {
-        const tid = topicIdsByRefKey.get(createTopicRefKey(ref));
+        const tid = topicIdsByRefKey.get(createTopicRefKey(ref as unknown as TopicBackupRef));
         if (tid) row.topic_id = tid;
         else return null;
       }
     }
     if (table === 'lecture_notes') {
-      const ref = (rawRow as any).subject_ref;
+      const ref = rawRow.subject_ref as Record<string, unknown> | undefined;
       if (ref && typeof ref.shortCode === 'string') {
         const sid = subjectIdsByShortCode.get(ref.shortCode.toLowerCase());
         if (sid) row.subject_id = sid;
@@ -242,13 +243,13 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
       }
     }
     if (table === 'sessions') {
-      const pRefs = (rawRow as any).planned_topic_refs;
+      const pRefs = rawRow.planned_topic_refs as Array<Record<string, unknown>> | undefined;
       if (Array.isArray(pRefs)) {
-        row.planned_topics = JSON.stringify(pRefs.map((r: any) => topicIdsByRefKey.get(createTopicRefKey(r))).filter(id => !!id));
+        row.planned_topics = JSON.stringify(pRefs.map(r => topicIdsByRefKey.get(createTopicRefKey(r as unknown as TopicBackupRef))).filter(id => !!id));
       }
-      const cRefs = (rawRow as any).completed_topic_refs;
+      const cRefs = rawRow.completed_topic_refs as Array<Record<string, unknown>> | undefined;
       if (Array.isArray(cRefs)) {
-        row.completed_topics = JSON.stringify(cRefs.map((r: any) => topicIdsByRefKey.get(createTopicRefKey(r))).filter(id => !!id));
+        row.completed_topics = JSON.stringify(cRefs.map(r => topicIdsByRefKey.get(createTopicRefKey(r as unknown as TopicBackupRef))).filter(id => !!id));
       }
     }
     return row;

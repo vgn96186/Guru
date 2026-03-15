@@ -185,9 +185,7 @@ Summary: ${result.lectureSummary}`;
         appName,
         durationMinutes,
         logId,
-        recordingPath,
         embedding: (analysis as any).embedding,
-        onProgress: handlePipelineProgress,
       });
 
       setAnalysis(analysisToSave);

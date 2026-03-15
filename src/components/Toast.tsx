@@ -102,6 +102,8 @@ const ToastItem = React.memo(({ payload, onDone }: { payload: ToastPayload; onDo
         onPress={() => { payload.onPress?.(); onDone(); }}
         activeOpacity={payload.onPress ? 0.7 : 1}
         style={styles.inner}
+        accessibilityRole="alert"
+        accessibilityLabel={payload.message}
       >
         <Text style={styles.text} numberOfLines={3}>{payload.message}</Text>
         {payload.onPress && (

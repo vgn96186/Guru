@@ -11,7 +11,7 @@ async function loadTranscriptionService(opts?: {
   embeddingError?: Error | null;
 }) {
   jest.resetModules();
-  // @ts-ignore
+  // @ts-expect-error test env global
   globalThis.__DEV__ = false;
 
   const localTranscript = opts?.localTranscript ?? 'local lecture transcript';

@@ -42,11 +42,11 @@ export default function HeroCard({ greeting, firstName, daysToInicet, daysToNeet
   });
 
   return (
-    <View style={styles.card}>
+    <View style={styles.card} accessibilityRole="header" accessible={true} accessibilityLabel={`${greeting}, ${firstName}. Let's lock your next focused hour. INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}>
       <Text style={styles.greeting}>{greeting}, {firstName}</Text>
       <Text style={styles.title}>Let's lock your next focused hour.</Text>
       
-      <View style={styles.statsRow}>
+      <View style={styles.statsRow} importantForAccessibility="no-hide-descendants">
         <View style={styles.stat}>
           <Text style={styles.statLabel}>INICET</Text>
           <Animated.Text 

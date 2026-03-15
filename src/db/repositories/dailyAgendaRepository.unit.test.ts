@@ -12,7 +12,7 @@ describe('dailyAgendaRepository', () => {
   };
 
   beforeEach(() => {
-    (getDb as any).mockResolvedValue(mockDb);
+    (getDb as any).mockReturnValue(mockDb);
     jest.clearAllMocks();
   });
 
@@ -23,7 +23,7 @@ describe('dailyAgendaRepository', () => {
     const result = await dailyAgendaRepository.getDailyAgenda('2026-03-14');
     expect(result).toEqual(mockPlan);
     expect(mockDb.getFirstAsync).toHaveBeenCalledWith(
-      'SELECT plan_json FROM daily_plan WHERE date = ?',
+      'SELECT plan_json FROM daily_agenda WHERE date = ?',
       ['2026-03-14'],
     );
   });
@@ -39,14 +39,14 @@ describe('dailyAgendaRepository', () => {
     await dailyAgendaRepository.saveDailyAgenda('2026-03-14', mockPlan as any);
 
     expect(mockDb.runAsync).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT OR REPLACE INTO daily_plan'),
+      expect.stringContaining('INSERT OR REPLACE INTO daily_agenda'),
       ['2026-03-14', JSON.stringify(mockPlan), 'guru', expect.any(Number), expect.any(Number)],
     );
   });
 
   it('deletes a daily plan', async () => {
     await dailyAgendaRepository.deleteDailyAgenda('2026-03-14');
-    expect(mockDb.runAsync).toHaveBeenCalledWith('DELETE FROM daily_plan WHERE date = ?', [
+    expect(mockDb.runAsync).toHaveBeenCalledWith('DELETE FROM daily_agenda WHERE date = ?', [
       '2026-03-14',
     ]);
   });

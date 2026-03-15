@@ -30,7 +30,7 @@ export async function backupNoteToPublic(noteId: number, subject: string, noteTe
           fileName,
           'text/plain',
         );
-        await FileSystem.writeAsStringAsync(backupUri, noteText, {
+        await StorageAccessFramework.writeAsStringAsync(backupUri, noteText, {
           encoding: FileSystem.EncodingType.UTF8,
         });
         console.log('[TranscriptStorage] Note cloud backup saved:', fileName);
@@ -41,7 +41,7 @@ export async function backupNoteToPublic(noteId: number, subject: string, noteTe
 
     // 2. Local Public Backup
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_NOTES_DIR);
-    if (!dirInfo.exists) {
+    if (!dirInfo || !dirInfo.exists) {
       await FileSystem.makeDirectoryAsync(PUBLIC_NOTES_DIR, { intermediates: true });
     }
     await FileSystem.writeAsStringAsync(PUBLIC_NOTES_DIR + fileName, noteText, {
@@ -93,7 +93,7 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
         fileName,
         'text/plain',
       );
-      await FileSystem.writeAsStringAsync(backupUri, normalized, {
+      await StorageAccessFramework.writeAsStringAsync(backupUri, normalized, {
         encoding: FileSystem.EncodingType.UTF8,
       });
       console.log('[TranscriptStorage] Transcript cloud backup saved:', fileName);
@@ -105,7 +105,7 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
   // 2. Local Public Backup
   try {
     const publicExists = await FileSystem.getInfoAsync(PUBLIC_TRANSCRIPT_DIR);
-    if (!publicExists.exists) {
+    if (!publicExists || !publicExists.exists) {
       await FileSystem.makeDirectoryAsync(PUBLIC_TRANSCRIPT_DIR, { intermediates: true });
     }
     await FileSystem.copyAsync({ from: fileUri, to: PUBLIC_TRANSCRIPT_DIR + fileName });
@@ -125,6 +125,10 @@ export async function loadTranscriptFromFile(
   if (!transcriptUriOrText.startsWith('file://')) return transcriptUriOrText;
 
   try {
+    const fileInfo = await FileSystem.getInfoAsync(transcriptUriOrText);
+    if (!fileInfo || !fileInfo.exists) {
+      throw new Error('File does not exist');
+    }
     const content = await FileSystem.readAsStringAsync(transcriptUriOrText, {
       encoding: FileSystem.EncodingType.UTF8,
     });

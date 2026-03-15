@@ -12,7 +12,7 @@ describe('dailyAgendaRepository', () => {
   };
 
   beforeEach(() => {
-    (getDb as any).mockReturnValue(mockDb);
+    (getDb as jest.Mock).mockReturnValue(mockDb);
     jest.clearAllMocks();
   });
 

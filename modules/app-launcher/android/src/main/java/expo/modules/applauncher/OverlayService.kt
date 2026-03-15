@@ -368,6 +368,7 @@ class OverlayService : Service(), LifecycleOwner {
     override fun onDestroy() {
         stopCamera()
         hideOverlay()
+        overlayView?.destroy() // Clean up the animation handler
         stopTimer()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         super.onDestroy()
@@ -556,6 +557,10 @@ class OverlayService : Service(), LifecycleOwner {
             }
         }
         
+        fun destroy() {
+            bubbleView.destroy()
+        }
+        
         private fun vibrateLight(ctx: Context) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -649,9 +654,19 @@ class OverlayService : Service(), LifecycleOwner {
                 prevFocusState = focusState
                 focusState = s
                 stateTransitionProgress = 0f
-                if (s == FocusState.ABSENT || s == FocusState.DROWSY) vibrateAlert()
+                if (s == FocusState.ABSENT || s == FocusState.DISTRACTED) vibrateAlert()
+                invalidate()
             }
-            invalidate()
+        }
+
+        fun destroy() {
+            handler.removeCallbacks(animationRunnable)
+        }
+
+        override fun onDetachedFromWindow() {
+            super.onDetachedFromWindow()
+            handler.removeCallbacks(animationRunnable)
+        }
         }
 
         private fun getMessage(): String {
@@ -815,32 +830,6 @@ class OverlayService : Service(), LifecycleOwner {
                     else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
                     v.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-            } catch (e: Exception) {}
-        }
-
-        override fun onDetachedFromWindow() {
-            super.onDetachedFromWindow()
-            handler.removeCallbacks(animationRunnable)
-        }
-    }
-
-        private fun vibrateMilestone() {
-            try {
-                val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 
-                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator 
-                    else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
-                    v.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 40, 40, 40), -1))
-            } catch (e: Exception) {}
-        }
-
-        private fun vibrateAlert() {
-            try {
-                val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 
-                    (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator 
-                    else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) 
-                    v.vibrate(VibrationEffect.createOneShot(80, VibrationEffect.DEFAULT_AMPLITUDE))
             } catch (e: Exception) {}
         }
 

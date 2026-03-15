@@ -39,7 +39,7 @@ export default React.memo(function AgendaItem({ time, title, type, subjectName, 
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },

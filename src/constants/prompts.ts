@@ -142,7 +142,14 @@ No other keys. No markdown. No extra text.`;
 }
 
 export function buildAgendaPrompt(
-  candidates: Array<{ id: number; name: string; subject: string; priority: number; status: string; score: number }>,
+  candidates: Array<{
+    id: number;
+    name: string;
+    subject: string;
+    priority: number;
+    status: string;
+    score: number;
+  }>,
   sessionMinutes: number,
   mood: Mood,
   recentTopics: string[],
@@ -151,9 +158,11 @@ export function buildAgendaPrompt(
     energetic: 'User is energized. Pick high-priority, challenging topics. 3 topics.',
     good: 'User is in good shape. Normal selection. 2-3 topics.',
     okay: 'User is okay. Mix 1 easy familiar topic + 1-2 harder ones. 2-3 topics.',
-    tired: 'User is tired. Pick only topics they have seen before (status: seen/reviewed). 1-2 short topics max.',
+    tired:
+      'User is tired. Pick only topics they have seen before (status: seen/reviewed). 1-2 short topics max.',
     stressed: 'User is stressed. Pick 1 easy, familiar topic. Short session. 1 topic only.',
-    distracted: 'User is distracted. Sprint mode: pick 1 topic with high-yield keypoints only. 1 topic.',
+    distracted:
+      'User is distracted. Sprint mode: pick 1 topic with high-yield keypoints only. 1 topic.',
   };
 
   return `Plan a ${sessionMinutes}-minute NEET-PG study session.
@@ -192,9 +201,11 @@ export function buildAccountabilityPrompt(stats: {
 }): string {
   const count = stats.guruFrequency === 'rare' ? 2 : stats.guruFrequency === 'frequent' ? 4 : 3;
   const slots: string[] =
-    count === 2 ? ['morning', 'streak_warning']
-    : count === 4 ? ['morning', 'afternoon', 'evening', 'streak_warning']
-    : ['morning', 'evening', 'streak_warning'];
+    count === 2
+      ? ['morning', 'streak_warning']
+      : count === 4
+        ? ['morning', 'afternoon', 'evening', 'streak_warning']
+        : ['morning', 'evening', 'streak_warning'];
 
   const examLines: string[] = [];
   if (stats.daysToInicet > 0) examLines.push(`INI-CET in ${stats.daysToInicet} days`);
@@ -215,7 +226,7 @@ STUDENT SNAPSHOT:
 - Last mood: ${stats.lastMood ?? 'unknown'}
 
 Return exactly ${count} messages as JSON, one for each scheduledFor slot:
-{ "messages": [${slots.map(s => `{ "title": "...", "body": "...", "scheduledFor": "${s}" }`).join(', ')}] }
+{ "messages": [${slots.map((s) => `{ "title": "...", "body": "...", "scheduledFor": "${s}" }`).join(', ')}] }
 
 RULES:
 - Use ${stats.displayName}'s name at least once across all messages
@@ -272,6 +283,75 @@ Rules:
 - Strict JSON, no markdown fences.`;
 }
 
+export function buildDailyAgendaPrompt(
+  displayName: string,
+  stats: {
+    streak: number;
+    daysToInicet: number;
+    daysToNeetPg: number;
+    coveragePercent: number;
+    dueTopics: Array<{ id: number; name: string; subject: string }>;
+    weakTopics: Array<{ id: number; name: string; subject: string }>;
+    recentTopics: string[];
+  },
+  availableMinutes: number = 480,
+): string {
+  return `Generate a personalized daily study plan for ${displayName}, a NEET-PG/INI-CET student.
+Available study time: ${availableMinutes} minutes.
+
+STUDENT STATS:
+- Streak: ${stats.streak} days
+- Coverage: ${stats.coveragePercent}%
+- Days to INI-CET: ${stats.daysToInicet}
+- Days to NEET-PG: ${stats.daysToNeetPg}
+- DUE FOR REVIEW (SRS): ${stats.dueTopics.map((t) => t.name).join(', ')}
+- WEAK TOPICS: ${stats.weakTopics.map((t) => t.name).join(', ')}
+- RECENTLY STUDIED (AVOID): ${stats.recentTopics.join(', ')}
+
+Return JSON:
+{
+  "blocks": [
+    {
+      "id": "block1",
+      "title": "Morning Review Power Hour",
+      "topicIds": [id1, id2],
+      "durationMinutes": 60,
+      "startTime": "08:00",
+      "type": "review",
+      "why": "Prioritizing urgent SRS topics while mind is fresh."
+    }
+  ],
+  "guruNote": "A sharp, personalized message from Guru about today's focus.",
+  "prioritySubjectId": 5
+}
+
+RULES:
+- Blocks should be 30-120 minutes.
+- Include 'break' blocks (15-30 min) every 2-3 study blocks.
+- types: 'study', 'review', 'test', 'break'.
+- Prioritize dueTopics first, then weakTopics, then new high-yield topics if time permits.
+- Total durationMinutes (including breaks) should be approx ${availableMinutes}.`;
+}
+
+export function buildReplanPrompt(
+  currentPlan: any,
+  completedBlockIds: string[],
+  missedBlockIds: string[],
+  remainingMinutes: number,
+): string {
+  return `The student has drifted from their daily plan. Replan the remaining ${remainingMinutes} minutes.
+
+Original Plan:
+${JSON.stringify(currentPlan, null, 2)}
+
+Completed: ${completedBlockIds.join(', ')}
+Missed/Skipped: ${missedBlockIds.join(', ')}
+
+Return a revised JSON structure (blocks, guruNote, prioritySubjectId) for the remaining time. 
+Prioritize critical topics from missed blocks if still urgent.
+Be firm but adaptive. Guru's note should reflect the "recovery" nature of this plan.`;
+}
+
 export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: string) => string> = {
   keypoints: buildKeyPointsPrompt,
   quiz: buildQuizPrompt,
@@ -285,12 +365,19 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
 
 export function getMoodContentTypes(mood: Mood): ContentType[] {
   switch (mood) {
-    case 'energetic': return ['quiz', 'error_hunt', 'detective', 'keypoints'];
-    case 'good': return ['keypoints', 'story', 'quiz', 'detective'];
-    case 'okay': return ['keypoints', 'detective', 'quiz', 'story'];
-    case 'tired': return ['story', 'keypoints', 'detective'];
-    case 'stressed': return ['story', 'keypoints', 'detective'];
-    case 'distracted': return ['keypoints', 'detective'];
-    default: return ['keypoints', 'story', 'detective', 'quiz'];
+    case 'energetic':
+      return ['quiz', 'error_hunt', 'detective', 'keypoints'];
+    case 'good':
+      return ['keypoints', 'story', 'quiz', 'detective'];
+    case 'okay':
+      return ['keypoints', 'detective', 'quiz', 'story'];
+    case 'tired':
+      return ['story', 'keypoints', 'detective'];
+    case 'stressed':
+      return ['story', 'keypoints', 'detective'];
+    case 'distracted':
+      return ['keypoints', 'detective'];
+    default:
+      return ['keypoints', 'story', 'detective', 'quiz'];
   }
 }

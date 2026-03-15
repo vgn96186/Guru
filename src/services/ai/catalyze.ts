@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
-import type { Message } from './types';
 import { CatalystSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
 
@@ -33,9 +32,9 @@ Return ONLY a JSON object matching this structure:
 }
 `;
 
-  const messages: Message[] = [
-    { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: userPrompt },
+  const messages = [
+    { role: 'system' as const, content: SYSTEM_PROMPT },
+    { role: 'user' as const, content: userPrompt },
   ];
 
   const { parsed } = await generateJSONWithRouting(messages, CatalystSchema, 'high');

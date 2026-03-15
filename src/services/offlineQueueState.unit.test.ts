@@ -43,4 +43,18 @@ describe('offlineQueueState', () => {
     expect(completed.status).toBe('completed');
     expect(completed.errorMessage).toBeNull();
   });
+
+  it('toProcessingState uses Date.now() when now is not provided', () => {
+    const now = 1234567890;
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(now);
+
+    const pending = makeItem({ status: 'pending', attempts: 0 });
+    const processing = toProcessingState(pending);
+
+    expect(processing.status).toBe('processing');
+    expect(processing.attempts).toBe(1);
+    expect(processing.lastAttemptAt).toBe(now);
+
+    dateSpy.mockRestore();
+  });
 });

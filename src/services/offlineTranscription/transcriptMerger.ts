@@ -22,6 +22,7 @@
  */
 
 import { Platform } from 'react-native';
+import { generateSecureRandomString } from '../cryptoUtils';
 import {
   TranscriptSegment,
   LectureTranscript,
@@ -32,7 +33,7 @@ import {
 
 function generateLectureId(): string {
   const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 8);
+  const random = generateSecureRandomString(6);
   return `lecture_${timestamp}_${random}`;
 }
 

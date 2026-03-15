@@ -1,7 +1,19 @@
-// Load .env so EXPO_PUBLIC_* (e.g. EXPO_PUBLIC_BUNDLED_GROQ_KEY) are available at build/start.
 require('dotenv').config();
+
+const requiredEnvVars = [
+  'EXPO_PUBLIC_BUNDLED_GROQ_KEY',
+];
+
+const missing = requiredEnvVars.filter(key => !process.env[key]);
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+if (missing.length > 0 && isDev) {
+  console.warn(`[app.config] Missing environment variables: ${missing.join(', ')}`);
+}
 
 const appJson = require('./app.json');
 module.exports = {
   ...appJson,
+  extra: {
+    bundledGroqKey: process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '',
+  },
 };

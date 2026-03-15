@@ -44,45 +44,54 @@ export default function SyllabusScreen() {
   const [searchMatchCounts, setSearchMatchCounts] = useState<Map<number, number>>(new Map());
 
   async function loadData() {
-    const [subs, cov] = await Promise.all([getAllSubjects(), getSubjectCoverage()]);
-    // Force numeric keys in the map to prevent string/number mismatch
-    const map = new Map(cov.map(c => [Number(c.subjectId), { total: c.total, seen: c.seen }]));
     const db = getDb();
-    const metricRows = await db.getAllAsync<{
-      subjectId: number;
-      due: number;
-      highYield: number;
-      unseen: number;
-      withNotes: number;
-      weak: number;
-    }>(
-      `SELECT
-         t.subject_id AS subjectId,
-         SUM(CASE WHEN COALESCE(p.status, 'unseen') != 'unseen' AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now')) THEN 1 ELSE 0 END) AS due,
-         SUM(CASE WHEN t.inicet_priority >= 8 THEN 1 ELSE 0 END) AS highYield,
-         SUM(CASE WHEN COALESCE(p.status, 'unseen') = 'unseen' THEN 1 ELSE 0 END) AS unseen,
-         SUM(CASE WHEN TRIM(COALESCE(p.user_notes, '')) <> '' THEN 1 ELSE 0 END) AS withNotes,
-         SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) AS weak
-       FROM topics t
-       LEFT JOIN topic_progress p ON p.topic_id = t.id
-       WHERE NOT EXISTS (
-         SELECT 1 FROM topics c
-         WHERE c.parent_topic_id = t.id
-       )
-       GROUP BY t.subject_id`,
-    );
-    const metricMap = new Map(
-      metricRows.map((row) => [
-        Number(row.subjectId),
-        {
-          due: row.due ?? 0,
-          highYield: row.highYield ?? 0,
-          unseen: row.unseen ?? 0,
-          withNotes: row.withNotes ?? 0,
-          weak: row.weak ?? 0,
-        },
-      ]),
-    );
+
+    // Combine subject fetching, coverage, and metrics into a single query to eliminate N+1 processing and redundant group bys
+    const [subs, combinedRows] = await Promise.all([
+      getAllSubjects(),
+      db.getAllAsync<{
+        subjectId: number;
+        total: number;
+        seen: number;
+        due: number;
+        highYield: number;
+        unseen: number;
+        withNotes: number;
+        weak: number;
+      }>(
+        `SELECT
+           t.subject_id AS subjectId,
+           COUNT(t.id) as total,
+           SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) as seen,
+           SUM(CASE WHEN COALESCE(p.status, 'unseen') != 'unseen' AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now')) THEN 1 ELSE 0 END) AS due,
+           SUM(CASE WHEN t.inicet_priority >= 8 THEN 1 ELSE 0 END) AS highYield,
+           SUM(CASE WHEN COALESCE(p.status, 'unseen') = 'unseen' THEN 1 ELSE 0 END) AS unseen,
+           SUM(CASE WHEN TRIM(COALESCE(p.user_notes, '')) <> '' THEN 1 ELSE 0 END) AS withNotes,
+           SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) AS weak
+         FROM topics t
+         LEFT JOIN topic_progress p ON p.topic_id = t.id
+         WHERE NOT EXISTS (
+           SELECT 1 FROM topics c
+           WHERE c.parent_topic_id = t.id
+         )
+         GROUP BY t.subject_id`
+      )
+    ]);
+
+    const map = new Map<number, { total: number; seen: number }>();
+    const metricMap = new Map<number, SubjectMetrics>();
+
+    for (const row of combinedRows) {
+      const sId = Number(row.subjectId);
+      map.set(sId, { total: row.total ?? 0, seen: row.seen ?? 0 });
+      metricMap.set(sId, {
+        due: row.due ?? 0,
+        highYield: row.highYield ?? 0,
+        unseen: row.unseen ?? 0,
+        withNotes: row.withNotes ?? 0,
+        weak: row.weak ?? 0,
+      });
+    }
 
     const sortedSubjects = [...subs].sort((a, b) => {
       const aCoverage = map.get(a.id) ?? { total: 0, seen: 0 };
@@ -173,8 +182,6 @@ export default function SyllabusScreen() {
                  `--- Topics Per Subject ---\n${summary}\n\n` +
                  `--- Subjects Map ---\n${subjects.map((s:any) => `${s.id}: ${s.name}`).join('\n')}`;
     
-// console.log('--- DB DIAGNOSTICS ---');
-// console.log(diag);
     Alert.alert('Database State', diag);
   }
 

@@ -20,7 +20,7 @@ export const MarkdownRender = React.memo(function MarkdownRender({ content, comp
       </Markdown>
     </View>
   );
-}
+});
 
 const markdownStyles: any = {
   body: {

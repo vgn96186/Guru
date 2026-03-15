@@ -7,49 +7,100 @@ import type { Card } from 'ts-fsrs';
 
 // Shared extended row type used across queries
 type TopicRow = {
-  id: number; subject_id: number; parent_topic_id: number | null; name: string; estimated_minutes: number; inicet_priority: number;
-  status: string; confidence: number; last_studied_at: number | null; times_studied: number; xp_earned: number;
-  next_review_date: string | null; user_notes: string;
-  fsrs_due: string | null; fsrs_stability: number; fsrs_difficulty: number; fsrs_elapsed_days: number; fsrs_scheduled_days: number; fsrs_reps: number; fsrs_lapses: number; fsrs_state: number; fsrs_last_review: string | null;
-  wrong_count: number; is_nemesis: number;
-  subject_name: string; short_code: string; color_hex: string;
+  id: number;
+  subject_id: number;
+  parent_topic_id: number | null;
+  name: string;
+  estimated_minutes: number;
+  inicet_priority: number;
+  status: string;
+  confidence: number;
+  last_studied_at: number | null;
+  times_studied: number;
+  xp_earned: number;
+  next_review_date: string | null;
+  user_notes: string;
+  fsrs_due: string | null;
+  fsrs_stability: number;
+  fsrs_difficulty: number;
+  fsrs_elapsed_days: number;
+  fsrs_scheduled_days: number;
+  fsrs_reps: number;
+  fsrs_lapses: number;
+  fsrs_state: number;
+  fsrs_last_review: string | null;
+  wrong_count: number;
+  is_nemesis: number;
+  subject_name: string;
+  short_code: string;
+  color_hex: string;
 };
 
 export async function getAllSubjects(): Promise<Subject[]> {
   const db = getDb();
   const rows = await db.getAllAsync<{
-    id: number; name: string; short_code: string; color_hex: string;
-    inicet_weight: number; neet_weight: number; display_order: number;
+    id: number;
+    name: string;
+    short_code: string;
+    color_hex: string;
+    inicet_weight: number;
+    neet_weight: number;
+    display_order: number;
   }>('SELECT * FROM subjects ORDER BY display_order');
-  return rows.map(r => ({
-    id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
-    inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    shortCode: r.short_code,
+    colorHex: r.color_hex,
+    inicetWeight: r.inicet_weight,
+    neetWeight: r.neet_weight,
+    displayOrder: r.display_order,
   }));
 }
 
 export async function getSubjectByName(name: string): Promise<Subject | null> {
   const db = getDb();
   const r = await db.getFirstAsync<{
-    id: number; name: string; short_code: string; color_hex: string;
-    inicet_weight: number; neet_weight: number; display_order: number;
+    id: number;
+    name: string;
+    short_code: string;
+    color_hex: string;
+    inicet_weight: number;
+    neet_weight: number;
+    display_order: number;
   }>('SELECT * FROM subjects WHERE LOWER(name) = LOWER(?)', [name]);
   if (!r) return null;
   return {
-    id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
-    inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
+    id: r.id,
+    name: r.name,
+    shortCode: r.short_code,
+    colorHex: r.color_hex,
+    inicetWeight: r.inicet_weight,
+    neetWeight: r.neet_weight,
+    displayOrder: r.display_order,
   };
 }
 
 export async function getSubjectById(id: number): Promise<Subject | null> {
   const db = getDb();
   const r = await db.getFirstAsync<{
-    id: number; name: string; short_code: string; color_hex: string;
-    inicet_weight: number; neet_weight: number; display_order: number;
+    id: number;
+    name: string;
+    short_code: string;
+    color_hex: string;
+    inicet_weight: number;
+    neet_weight: number;
+    display_order: number;
   }>('SELECT * FROM subjects WHERE id = ?', [id]);
   if (!r) return null;
   return {
-    id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
-    inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
+    id: r.id,
+    name: r.name,
+    shortCode: r.short_code,
+    colorHex: r.color_hex,
+    inicetWeight: r.inicet_weight,
+    neetWeight: r.neet_weight,
+    displayOrder: r.display_order,
   };
 }
 
@@ -115,12 +166,15 @@ export async function updateTopicProgress(
 ): Promise<void> {
   const db = getDb();
   const now = Date.now();
-  
+
   await db.execAsync('BEGIN TRANSACTION');
   try {
     // Get existing FSRS data
-    const existing = await db.getFirstAsync<any>('SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?', [topicId]);
-    
+    const existing = await db.getFirstAsync<any>(
+      'SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?',
+      [topicId],
+    );
+
     let card: Card;
     if (existing && existing.fsrs_last_review) {
       card = {
@@ -132,16 +186,16 @@ export async function updateTopicProgress(
         reps: existing.fsrs_reps,
         lapses: existing.fsrs_lapses,
         state: existing.fsrs_state,
-        last_review: new Date(existing.fsrs_last_review)
+        last_review: new Date(existing.fsrs_last_review),
       };
     } else {
       card = getInitialCard();
     }
-    
+
     const log = reviewCardFromConfidence(card, confidence, new Date());
     const updatedCard = log.card;
     const nextReview = updatedCard.due.toISOString().slice(0, 10);
-    
+
     await db.runAsync(
       `INSERT INTO topic_progress (
          topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
@@ -174,12 +228,23 @@ export async function updateTopicProgress(
            ELSE user_notes 
          END`,
       [
-        topicId, status, confidence, now, xpToAdd, nextReview,
-        updatedCard.due.toISOString(), updatedCard.stability, updatedCard.difficulty,
-        updatedCard.elapsed_days, updatedCard.scheduled_days, updatedCard.reps,
-        updatedCard.lapses, updatedCard.state, updatedCard.last_review?.toISOString() ?? null,
-        noteToAppend ?? null
-      ]
+        topicId,
+        status,
+        confidence,
+        now,
+        xpToAdd,
+        nextReview,
+        updatedCard.due.toISOString(),
+        updatedCard.stability,
+        updatedCard.difficulty,
+        updatedCard.elapsed_days,
+        updatedCard.scheduled_days,
+        updatedCard.reps,
+        updatedCard.lapses,
+        updatedCard.state,
+        updatedCard.last_review?.toISOString() ?? null,
+        noteToAppend ?? null,
+      ],
     );
     await db.execAsync('COMMIT TRANSACTION');
   } catch (err) {
@@ -207,17 +272,24 @@ export async function getTopicsDueForReview(limit = 10): Promise<TopicWithProgre
      JOIN subjects s ON t.subject_id = s.id
      JOIN topic_progress p ON t.id = p.topic_id
      WHERE p.status != 'unseen'
-       AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now'))
+       AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE(?))
      ORDER BY p.fsrs_due ASC, p.confidence ASC
      LIMIT ?`,
-    [limit],
+    [today, limit],
   );
   return rows.map(mapTopicRow);
 }
 
-export async function getSubjectCoverage(): Promise<Array<{ subjectId: number; total: number; seen: number; mastered: number }>> {
+export async function getSubjectCoverage(): Promise<
+  Array<{ subjectId: number; total: number; seen: number; mastered: number }>
+> {
   const db = getDb();
-  const rows = await db.getAllAsync<{ subjectId: number; total: number; seen: number; mastered: number }>(
+  const rows = await db.getAllAsync<{
+    subjectId: number;
+    total: number;
+    seen: number;
+    mastered: number;
+  }>(
     `SELECT t.subject_id as subjectId,
             COUNT(t.id) as total,
             SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) as seen,
@@ -254,7 +326,7 @@ function mapTopicRow(r: any): TopicWithProgress {
   const sname = r.subject_name || 'Unknown';
   const scode = r.short_code || '???';
   const scolor = r.color_hex || '#555';
-  
+
   return {
     id: tid,
     subjectId: r.subject_id,
@@ -317,10 +389,9 @@ export async function markNemesisTopics(): Promise<void> {
 
 export async function incrementWrongCount(topicId: number): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    'UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?',
-    [topicId],
-  );
+  await db.runAsync('UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?', [
+    topicId,
+  ]);
   // Auto-mark as nemesis if threshold reached
   await db.runAsync(
     `UPDATE topic_progress SET is_nemesis = 1
@@ -380,7 +451,7 @@ export async function getSubjectBreakdown(): Promise<SubjectBreakdownRow[]> {
      GROUP BY s.id
      ORDER BY s.name`,
   );
-  return rows.map(r => ({
+  return rows.map((r) => ({
     id: r.id,
     name: r.name,
     shortCode: r.short_code,
@@ -403,9 +474,8 @@ export interface ReviewDay {
 export async function getReviewCalendarData(year: number, month: number): Promise<ReviewDay[]> {
   const db = getDb();
   const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const endDate = month === 11
-    ? `${year + 1}-01-01`
-    : `${year}-${String(month + 2).padStart(2, '0')}-01`;
+  const endDate =
+    month === 11 ? `${year + 1}-01-01` : `${year}-${String(month + 2).padStart(2, '0')}-01`;
 
   const rows = await db.getAllAsync<{
     review_date: string;

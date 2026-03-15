@@ -247,17 +247,24 @@ function resolveBestDate(hits: DateHit[]): { date: string; sources: string[] } |
 
 async function syncOneExam(config: ExamSourceConfig): Promise<{ date?: string; sources: string[] }> {
   const allHits: DateHit[] = [];
-  for (const url of config.urls) {
+  const promises = config.urls.map(async (url) => {
     try {
       const text = await fetchSourceText(url);
       if (text.length > 0) {
-        const hits = extractDateHits(text, url, config.keyword);
-        allHits.push(...hits);
+        return extractDateHits(text, url, config.keyword);
       }
     } catch {
       // Ignore individual source failures
     }
-  }
+    return [];
+  });
+
+  const results = await Promise.allSettled(promises);
+  results.forEach((result) => {
+    if (result.status === 'fulfilled') {
+      allHits.push(...result.value);
+    }
+  });
 
   const best = resolveBestDate(allHits);
   if (!best) return { sources: [] };

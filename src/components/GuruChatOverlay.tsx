@@ -37,7 +37,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  
+
   const scrollRef = useRef<ScrollView>(null);
   const isMountedRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -75,7 +75,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
       // Reset animations
       slideAnim.setValue(300);
       pulseAnim.setValue(1);
-      
+
       // Slide in animation
       slideAnimationRef.current = Animated.spring(slideAnim, {
         toValue: 0,
@@ -133,23 +133,21 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const userMsg: ChatMessage = { role: 'user', text: q };
     const next = [...messages, userMsg];
-    
+
     // Update state immediately
     setMessages(next);
     setInput('');
     setLoading(true);
     setError(null);
-    
+
     scrollToEnd();
 
     // Create new abort controller for this request
     abortControllerRef.current = new AbortController();
 
     try {
-      const { reply } = await chatWithGuru(q, topicName, next.slice(-10), {
-        signal: abortControllerRef.current.signal,
-      });
-      
+      const { reply } = await chatWithGuru(q, topicName, next.slice(-10));
+
       if (isMountedRef.current) {
         setMessages((prev) => [...prev, { role: 'guru', text: reply }]);
         setRetryCount(0);
@@ -162,10 +160,10 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
           console.log('[GuruChatOverlay] Request aborted');
           return;
         }
-        
+
         const errorMessage = err.message || "Couldn't connect. Try again.";
         setError(errorMessage);
-        setRetryCount(prev => prev + 1);
+        setRetryCount((prev) => prev + 1);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } finally {
@@ -202,18 +200,9 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
   }, [visible]);
 
   return (
-    <Modal 
-      visible={visible} 
-      transparent 
-      animationType="none"
-      onRequestClose={handleClose}
-    >
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
       <StatusBar barStyle="light-content" />
-      <TouchableOpacity
-        style={s.backdrop}
-        activeOpacity={1}
-        onPress={handleClose}
-      >
+      <TouchableOpacity style={s.backdrop} activeOpacity={1} onPress={handleClose}>
         <View style={s.backdropOverlay} />
       </TouchableOpacity>
 
@@ -232,9 +221,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
               </View>
               <View style={s.headerText}>
                 <Text style={s.headerTitle}>Study Guru</Text>
-                <Text style={s.headerSub}>
-                  {topicName}
-                </Text>
+                <Text style={s.headerSub}>{topicName}</Text>
               </View>
             </View>
 
@@ -269,21 +256,20 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
             {messages.map((msg, i) => (
               <View
                 key={i}
-                style={[
-                  s.bubbleContainer, 
-                  msg.role === 'user' ? s.userContainer : s.guruContainer
-                ]}
+                style={[s.bubbleContainer, msg.role === 'user' ? s.userContainer : s.guruContainer]}
               >
                 {msg.role === 'guru' && (
                   <View style={[s.avatar, s.guruAvatar]}>
                     <Text style={s.avatarText}>G</Text>
                   </View>
                 )}
-                <View style={[
-                  s.bubble, 
-                  msg.role === 'user' ? s.userBubble : s.guruBubble,
-                  msg.role === 'user' ? s.userBubbleTail : s.guruBubbleTail
-                ]}>
+                <View
+                  style={[
+                    s.bubble,
+                    msg.role === 'user' ? s.userBubble : s.guruBubble,
+                    msg.role === 'user' ? s.userBubbleTail : s.guruBubbleTail,
+                  ]}
+                >
                   {msg.role === 'guru' ? (
                     <MarkdownRender content={msg.text} />
                   ) : (
@@ -343,10 +329,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
                 autoCorrect={false}
               />
               <TouchableOpacity
-                style={[
-                  s.sendBtn, 
-                  (!input.trim() || loading) && s.sendBtnDisabled
-                ]}
+                style={[s.sendBtn, (!input.trim() || loading) && s.sendBtnDisabled]}
                 onPress={handleSend}
                 disabled={!input.trim() || loading}
               >

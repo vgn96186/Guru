@@ -39,7 +39,8 @@ import { useAppStore } from '../store/useAppStore';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 import * as DocumentPicker from 'expo-document-picker';
 import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
-import { getSubjectByName, saveLectureTranscript } from '../db/queries/topics';
+import { getSubjectByName } from '../db/queries/topics';
+import { saveLectureTranscript } from '../db/queries/aiCache';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -102,7 +103,7 @@ function ActionHubPlaceholder() {
 export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const profile = useAppStore((state) => state.profile);
+  const { profile, refreshProfile } = useAppStore();
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
   const localWhisperPath =
@@ -323,8 +324,14 @@ export default function TabNavigator() {
                 onPress={handleAudioUpload}
                 disabled={isTranscribingUpload}
               >
-                <Ionicons name="document-attach-outline" size={18} color={theme.colors.textSecondary} />
-                <Text style={styles.manualActionText}>{isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}</Text>
+                <Ionicons
+                  name="document-attach-outline"
+                  size={18}
+                  color={theme.colors.textSecondary}
+                />
+                <Text style={styles.manualActionText}>
+                  {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+                </Text>
               </Pressable>
 
               <Pressable

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -32,12 +33,7 @@ interface NotesStats {
 }
 
 function extractPreview(text: string): string {
-  return text
-    .replace(/#+\s*/g, '')
-    .replace(/\*\*/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 120);
+  return text.replace(/#+\s*/g, '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
 function formatDate(timestamp: number): string {
@@ -52,14 +48,15 @@ function formatDate(timestamp: number): string {
 }
 
 import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
-import { getSubjectByName, saveLectureTranscript } from '../db/queries/topics';
+import { getSubjectByName } from '../db/queries/topics';
+import { saveLectureTranscript } from '../db/queries/aiCache';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
 
 export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const refreshProfile = useAppStore(s => s.refreshProfile);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
 
   const handleAudioUpload = async () => {
@@ -165,7 +162,11 @@ export default function NotesHubScreen() {
       <ResponsiveContainer>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backBtn}
+              activeOpacity={0.7}
+            >
               <Ionicons name="arrow-back" size={20} color="#fff" />
             </TouchableOpacity>
             <View style={styles.headerTextWrap}>
@@ -196,7 +197,9 @@ export default function NotesHubScreen() {
             >
               <Ionicons name="search" size={20} color="#0F0F14" />
               <Text style={styles.actionPrimaryTitle}>Search all notes</Text>
-              <Text style={styles.actionPrimarySub}>Find any concept across transcripts and saved topic notes.</Text>
+              <Text style={styles.actionPrimarySub}>
+                Find any concept across transcripts and saved topic notes.
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -206,20 +209,26 @@ export default function NotesHubScreen() {
             >
               <Ionicons name="document-text-outline" size={20} color="#A09CF7" />
               <Text style={styles.actionTitle}>Lecture transcripts</Text>
-              <Text style={styles.actionSub}>Browse processed lecture notes and raw transcript history.</Text>
+              <Text style={styles.actionSub}>
+                Browse processed lecture notes and raw transcript history.
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => tabsNavigation?.navigate('ChatTab', {
-                screen: 'GuruChat',
-                params: { topicName: 'General Medicine' },
-              })}
+              onPress={() =>
+                tabsNavigation?.navigate('ChatTab', {
+                  screen: 'GuruChat',
+                  params: { topicName: 'General Medicine' },
+                })
+              }
               activeOpacity={0.85}
             >
               <Ionicons name="medkit-outline" size={20} color="#7ED6A7" />
               <Text style={styles.actionTitle}>Ask Guru</Text>
-              <Text style={styles.actionSub}>Use your notes as a launch point for grounded medical questions.</Text>
+              <Text style={styles.actionSub}>
+                Use your notes as a launch point for grounded medical questions.
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -229,8 +238,12 @@ export default function NotesHubScreen() {
               activeOpacity={0.85}
             >
               <Ionicons name="cloud-upload-outline" size={20} color="#F7C49C" />
-              <Text style={styles.actionTitle}>{isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}</Text>
-              <Text style={styles.actionSub}>Convert external lecture audio files into elite ADHD notes.</Text>
+              <Text style={styles.actionTitle}>
+                {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+              </Text>
+              <Text style={styles.actionSub}>
+                Convert external lecture audio files into elite ADHD notes.
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -240,7 +253,9 @@ export default function NotesHubScreen() {
             >
               <Ionicons name="clipboard-outline" size={20} color="#F79C9C" />
               <Text style={styles.actionTitle}>Paste Transcript</Text>
-              <Text style={styles.actionSub}>Manually enter text to generate formatted medical notes.</Text>
+              <Text style={styles.actionSub}>
+                Manually enter text to generate formatted medical notes.
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -253,10 +268,12 @@ export default function NotesHubScreen() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyBtn}
-                onPress={() => tabsNavigation?.navigate('HomeTab', {
-                  screen: 'LectureMode',
-                  params: {},
-                })}
+                onPress={() =>
+                  tabsNavigation?.navigate('HomeTab', {
+                    screen: 'LectureMode',
+                    params: {},
+                  })
+                }
                 activeOpacity={0.8}
               >
                 <Text style={styles.emptyBtnText}>Start a lecture capture</Text>
@@ -266,7 +283,10 @@ export default function NotesHubScreen() {
             <>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Recent lecture notes</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('TranscriptHistory')} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('TranscriptHistory')}
+                  activeOpacity={0.7}
+                >
                   <Text style={styles.sectionLink}>View all</Text>
                 </TouchableOpacity>
               </View>
@@ -282,14 +302,20 @@ export default function NotesHubScreen() {
                     activeOpacity={0.8}
                   >
                     <View style={styles.lectureMetaRow}>
-                      <Text style={styles.lectureSubject}>{lecture.subjectName ?? 'Lecture note'}</Text>
+                      <Text style={styles.lectureSubject}>
+                        {lecture.subjectName ?? 'Lecture note'}
+                      </Text>
                       <Text style={styles.lectureDate}>{formatDate(lecture.createdAt)}</Text>
                     </View>
                     <Text style={styles.lecturePreview} numberOfLines={4}>
                       {extractPreview(lecture.summary || lecture.note)}
                     </Text>
                     <View style={styles.inlineMetaRow}>
-                      {lecture.appName ? <Text style={styles.inlineMeta}>via {lecture.appName}</Text> : <View />}
+                      {lecture.appName ? (
+                        <Text style={styles.inlineMeta}>via {lecture.appName}</Text>
+                      ) : (
+                        <View />
+                      )}
                       <Ionicons name="chevron-forward" size={16} color="#7A7A91" />
                     </View>
                   </TouchableOpacity>
@@ -298,7 +324,10 @@ export default function NotesHubScreen() {
 
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Topic notes</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('NotesSearch')} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('NotesSearch')}
+                  activeOpacity={0.7}
+                >
                   <Text style={styles.sectionLink}>Search notes</Text>
                 </TouchableOpacity>
               </View>
@@ -413,11 +442,21 @@ const styles = StyleSheet.create({
     borderColor: '#242433',
     gap: 10,
   },
-  lectureMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  lectureMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   lectureSubject: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
   lectureDate: { color: '#7A7A91', fontSize: 12, fontWeight: '600' },
   lecturePreview: { color: '#C9C9D3', fontSize: 14, lineHeight: 21 },
-  inlineMetaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  inlineMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   inlineMeta: { color: '#8C8CA1', fontSize: 12 },
   topicCard: {
     backgroundColor: '#13131B',

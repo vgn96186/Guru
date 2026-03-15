@@ -271,7 +271,7 @@ export default function LectureReturnSheet(props: Props) {
                   <View style={styles.section}>
                     <Text style={styles.sectionLabel}>TOPICS DETECTED</Text>
                     <View style={styles.topicRow}>
-                      {analysis.topics.map((t, i) => (
+                      {analysis.topics.map((t: string, i: number) => (
                         <TouchableOpacity
                           key={`${t}-${i}`}
                           style={styles.topicPillEditable}
@@ -279,7 +279,7 @@ export default function LectureReturnSheet(props: Props) {
                             // Toggle topic removal/addition
                             if (!analysis) return;
                             const newTopics = analysis.topics.includes(t)
-                              ? analysis.topics.filter((topic) => topic !== t)
+                              ? analysis.topics.filter((topic: string) => topic !== t)
                               : [...analysis.topics, t];
                             setAnalysis({ ...analysis, topics: newTopics });
                           }}
@@ -297,7 +297,7 @@ export default function LectureReturnSheet(props: Props) {
                 {analysis.keyConcepts.length > 0 && (
                   <View style={styles.section}>
                     <Text style={styles.sectionLabel}>KEY CONCEPTS</Text>
-                    {analysis.keyConcepts.map((c, i) => (
+                    {analysis.keyConcepts.map((c: string, i: number) => (
                       <Text key={i} style={styles.conceptItem}>
                         • {c}
                       </Text>
@@ -381,9 +381,9 @@ export default function LectureReturnSheet(props: Props) {
                     </Text>
                     <Text style={styles.questionText}>{q.question}</Text>
                     <View style={styles.optionsContainer}>
-                      {q.options.map((opt, idx) => {
-                        let bgColor = theme.colors.inputBg;
-                        let borderColor = theme.colors.border;
+                      {q.options.map((opt: string, idx: number) => {
+                        let bgColor: string = theme.colors.inputBg;
+                        let borderColor: string = theme.colors.border;
                         if (selected !== null) {
                           if (idx === q.correctIndex) {
                             bgColor = theme.colors.successSurface;
@@ -412,7 +412,9 @@ export default function LectureReturnSheet(props: Props) {
                           styles.explBox,
                           {
                             borderColor:
-                              selected === q.correctIndex ? theme.colors.success : theme.colors.error,
+                              selected === q.correctIndex
+                                ? theme.colors.success
+                                : theme.colors.error,
                           },
                         ]}
                       >
@@ -704,7 +706,12 @@ const styles = StyleSheet.create({
   },
   centeredBlock: { alignItems: 'center', paddingVertical: 12 },
   returnEmoji: { fontSize: 44, marginBottom: 10 },
-  returnTitle: { color: theme.colors.textPrimary, fontSize: 20, fontWeight: '800', textAlign: 'center' },
+  returnTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
   returnSub: { color: theme.colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' },
   spinnerText: { color: theme.colors.primary, fontSize: 13, flexShrink: 1 },
   processingCard: {
@@ -745,7 +752,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primaryTintSoft,
   },
   stagePillDone: {
-    borderColor: theme.colors.successDark || theme.colors.success,
+    borderColor: theme.colors.success,
     backgroundColor: theme.colors.successSurface,
   },
   stagePillText: {

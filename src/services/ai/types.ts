@@ -42,7 +42,9 @@ export interface MedicalGroundingSource {
   snippet: string;
   journal?: string;
   publishedAt?: string;
-  source: 'EuropePMC' | 'PubMed' | 'Wikipedia';
+  source: 'EuropePMC' | 'PubMed' | 'Wikipedia' | 'Wikimedia Commons' | 'Open i (NIH)';
+  author?: string;
+  license?: string;
 }
 
 export interface GroundedGuruResponse {

@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   taskTitle: {
-    color: theme.colors.text,
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,

@@ -210,7 +210,7 @@ export default function HomeScreen() {
       sub: 'Stop mindless scrolling now.',
       badge: 'URGENT',
       accent: '#FFB300',
-      onPress: () => navigation.navigate('DoomscrollGuide'),
+      onPress: () => navigation.getParent()?.navigate('DoomscrollGuide'),
     },
   ];
 
@@ -314,7 +314,7 @@ export default function HomeScreen() {
                 ))}
                 {todayTasks.length > 2 && (
                   <TouchableOpacity
-                    onPress={() => tabsNavigation?.navigate('StudyPlan')}
+                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.seeAllLink}>See full plan →</Text>
@@ -347,7 +347,7 @@ export default function HomeScreen() {
                     title="Guru Chat"
                     icon="chatbubbles-outline"
                     accent={theme.colors.info}
-                    onPress={() => navigation.navigate('GuruChat')}
+                    onPress={() => tabsNavigation?.navigate('ChatTab', { screen: 'GuruChat' })}
                   />
                 </View>
               </Section>

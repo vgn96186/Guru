@@ -49,30 +49,36 @@ export async function enqueueRequest(
 ): Promise<void> {
   try {
     const db = getDb();
-    
+
     // Check queue size before enqueueing
     const countRow = await db.getFirstAsync<{ count: number }>(
-      `SELECT COUNT(*) as count FROM offline_ai_queue WHERE status IN ('pending', 'processing')`
+      `SELECT COUNT(*) as count FROM offline_ai_queue WHERE status IN ('pending', 'processing')`,
     );
-    if (countRow?.count >= MAX_QUEUE_SIZE) {
-      console.warn('[OfflineQueue] Queue full (max %d), dropping request of type: %s', MAX_QUEUE_SIZE, requestType);
+    if (countRow && countRow.count >= MAX_QUEUE_SIZE) {
+      console.warn(
+        '[OfflineQueue] Queue full (max %d), dropping request of type: %s',
+        MAX_QUEUE_SIZE,
+        requestType,
+      );
       return;
     }
-    
+
     // Check for recent duplicate (within dedupe window)
     const dedupeKey = getDedupeKey(requestType, payload);
     const recentRow = await db.getFirstAsync<{ id: number; created_at: number }>(
       `SELECT id, created_at FROM offline_ai_queue 
        WHERE request_type = ? AND payload = ? AND status IN ('pending', 'processing')
        AND created_at > ?`,
-      [requestType, JSON.stringify(payload), nowTs() - DEDUPE_WINDOW_MS]
+      [requestType, JSON.stringify(payload), nowTs() - DEDUPE_WINDOW_MS],
     );
-    
+
     if (recentRow) {
-      console.debug('[OfflineQueue] Duplicate request detected (within dedupe window), skipping enqueue');
+      console.debug(
+        '[OfflineQueue] Duplicate request detected (within dedupe window), skipping enqueue',
+      );
       return;
     }
-    
+
     await db.runAsync(
       `INSERT INTO offline_ai_queue (request_type, payload, status, attempts, created_at)
        VALUES (?, ?, 'pending', 0, ?)`,
@@ -108,7 +114,7 @@ export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
        LIMIT 20`,
       [MAX_ATTEMPTS],
     );
-    return rows.map(r => ({
+    return rows.map((r) => ({
       id: r.id,
       requestType: r.request_type as OfflineRequestType,
       payload: JSON.parse(r.payload),
@@ -145,10 +151,7 @@ async function markProcessing(id: number): Promise<boolean> {
 export async function markCompleted(id: number): Promise<void> {
   try {
     const db = getDb();
-    await db.runAsync(
-      `UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?`,
-      [id],
-    );
+    await db.runAsync(`UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?`, [id]);
   } catch (err) {
     console.warn('[OfflineQueue] markCompleted failed:', err);
   }
@@ -195,7 +198,7 @@ export async function pruneCompletedItems(): Promise<void> {
 
 type RequestProcessor = (item: OfflineQueueItem) => Promise<void>;
 
-let processorRegistry: Partial<Record<OfflineRequestType, RequestProcessor>> = {};
+const processorRegistry: Partial<Record<OfflineRequestType, RequestProcessor>> = {};
 
 /**
  * Register a handler for a request type. Called during app init.
@@ -225,7 +228,7 @@ export async function processQueue(): Promise<void> {
     console.debug('[OfflineQueue] Already processing, skipping');
     return;
   }
-  
+
   isProcessing = true;
   try {
     const items = await getPendingRequests();
@@ -236,7 +239,7 @@ export async function processQueue(): Promise<void> {
     }
 
     console.log(`[OfflineQueue] Processing ${items.length} queued request(s)`);
-    
+
     // Process items one at a time (avoid parallel processing issues)
     for (const item of items) {
       const processor = processorRegistry[item.requestType];
@@ -256,8 +259,10 @@ export async function processQueue(): Promise<void> {
       // If this is a retry (failed status), apply backoff delay
       if (item.status === 'failed' && item.attempts > 1) {
         const delay = getRetryDelay(item.attempts - 1);
-        console.log(`[OfflineQueue] Item ${item.id} is a retry (attempt ${item.attempts}), waiting ${delay}ms`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        console.log(
+          `[OfflineQueue] Item ${item.id} is a retry (attempt ${item.attempts}), waiting ${delay}ms`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
       try {
@@ -270,7 +275,7 @@ export async function processQueue(): Promise<void> {
         console.warn(`[OfflineQueue] Request ${item.id} failed (attempt ${item.attempts}):`, err);
       }
     }
-    
+
     // Prune after processing
     await pruneCompletedItems();
   } finally {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { EXTERNAL_APPS, type ExternalApp } from '../constants/externalApps';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
@@ -45,9 +46,7 @@ export default React.memo(function ExternalToolsRow({ onLogSession }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>OPEN LECTURE APP</Text>
-        <Text style={styles.subtitle}>
-          Tap to launch capture. Long press to log manually.
-        </Text>
+        <Text style={styles.subtitle}>Tap to launch capture. Long press to log manually.</Text>
       </View>
       <ScrollView
         horizontal

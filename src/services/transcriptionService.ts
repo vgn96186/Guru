@@ -121,5 +121,10 @@ export async function transcribeAudio(opts: {
     }
   }
 
-  return embedding ? { ...analysis, transcript, embedding } : { ...analysis, transcript };
+  if (embedding) {
+    return { ...analysis, transcript, embedding };
+  } else {
+    const { embedding: _, ...rest } = analysis;
+    return { ...rest, transcript };
+  }
 }

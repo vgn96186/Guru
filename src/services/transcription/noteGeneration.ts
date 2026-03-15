@@ -15,9 +15,9 @@ export async function generateADHDNote(analysis: LectureAnalysis): Promise<strin
   const input = `Subject: ${analysis.subject}
 Topics: ${analysis.topics.join(', ')}
 Key concepts:
-${analysis.keyConcepts.map((c) => `- ${c}`).join('\n')}
+${analysis.keyConcepts.map((c: string) => `- ${c}`).join('\n')}
 High-yield facts:
-${analysis.highYieldPoints.map((p) => `- ${p}`).join('\n')}
+${analysis.highYieldPoints.map((p: string) => `- ${p}`).join('\n')}
 Summary: ${analysis.lectureSummary}`;
 
   try {
@@ -33,8 +33,8 @@ Summary: ${analysis.lectureSummary}`;
 }
 
 export function buildQuickLectureNote(analysis: LectureAnalysis): string {
-  const conceptPoints = analysis.keyConcepts.map((c) => `• ${c}`).join('\n');
-  const highYieldPoints = analysis.highYieldPoints.map((p) => `🚀 **${p}**`).join('\n');
+  const conceptPoints = analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n');
+  const highYieldPoints = analysis.highYieldPoints.map((p: string) => `🚀 **${p}**`).join('\n');
 
   return `🎯 **Subject**: ${analysis.subject}
 📌 **Topics**: ${analysis.topics.join(', ')}

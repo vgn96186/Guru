@@ -20,8 +20,6 @@ import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 
-const DOOMSCROLL_APPS = ['instagram', 'tiktok', 'twitter', 'facebook', 'youtube', 'snapchat'];
-const CHECK_INTERVAL = 2000;
 const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30;
 
@@ -30,7 +28,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function DoomscrollInterceptor() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'DoomscrollInterceptor'>>();
-  const appStateRef = React.useRef(AppState.currentState);
+  const appStateRef = useRef(AppState.currentState);
   const [doomscrollAttempts, setDoomscrollAttempts] = useState(0);
   const [isBlocking, setIsBlocking] = useState(false);
   const [blockAppName, setBlockAppName] = useState('');
@@ -45,52 +43,53 @@ export default function DoomscrollInterceptor() {
   const progressAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    dailyLogRepository.getDailyLog().then(log => setSessionCount(log?.sessionCount ?? 0));
+    dailyLogRepository.getDailyLog().then((log) => setSessionCount(log?.sessionCount ?? 0));
   }, []);
 
-  // Monitor app state changes
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
-      const prevAppState = appStateRef.current;
-      appStateRef.current = nextAppState;
-      
-      if (nextAppState === 'active' && prevAppState.match(/inactive|background/)) {
-        checkForDoomscrollAttempt();
-      }
-    });
-    
-    return () => subscription.remove();
-  }, []);
+  const checkForDoomscrollAttempt = useRef(() => {
+    const params = route.params as { appName?: string } | undefined;
+    const detectedApp = params?.appName || 'social media';
 
-  function checkForDoomscrollAttempt() {
-    const detectedApp = route.params?.appName || 'social media';
-    
-    setDoomscrollAttempts(prev => {
+    setDoomscrollAttempts((prev) => {
       const newCount = prev + 1;
-      
+
       if (newCount >= MAX_OPENS_BEFORE_SHAME) {
         setIsBlocking(true);
         setBlockAppName(detectedApp);
         setDelayRemaining(DELAY_SECONDS);
         setShameLevel(Math.min(3, Math.floor(newCount / 3)));
-        
+
         // Heavy vibration for punishment
         Vibration.vibrate([0, 1000, 500, 1000, 500, 1000]);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        
+
         startDelayTimer();
       }
-      
+
       return newCount;
     });
-  }
+  }).current;
+
+  // Monitor app state changes
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      const prevAppState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      if (nextAppState === 'active' && prevAppState.match(/inactive|background/)) {
+        checkForDoomscrollAttempt();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [checkForDoomscrollAttempt]);
 
   function startDelayTimer() {
     let remaining = DELAY_SECONDS;
     const timer = setInterval(() => {
       remaining -= 1;
       setDelayRemaining(remaining);
-      
+
       if (remaining <= 0) {
         clearInterval(timer);
       }
@@ -112,20 +111,20 @@ export default function DoomscrollInterceptor() {
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.1, duration: 800, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
+        ]),
       );
       pulseLoop.start();
-      
+
       // Shake animation for shame
       const shakeLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(shakeAnim, { toValue: 8, duration: 100, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: -8, duration: 100, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
-        ])
+        ]),
       );
       shakeLoop.start();
-      
+
       return () => {
         pulseLoop.stop();
         shakeLoop.stop();
@@ -138,7 +137,7 @@ export default function DoomscrollInterceptor() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isBlocking]);
+  }, [isBlocking, fadeAnim, pulseAnim, shakeAnim]);
 
   // Progress bar animation
   useEffect(() => {
@@ -147,27 +146,27 @@ export default function DoomscrollInterceptor() {
       const progress = delayRemaining / total;
       progressAnim.setValue(progress);
     }
-  }, [delayRemaining, isBlocking]);
+  }, [delayRemaining, isBlocking, progressAnim]);
 
   const shameMessages = [
     {
-      title: "Really?",
+      title: 'Really?',
       subtitle: "You've opened {app} {count} times today without studying.",
-      quote: "Your future patients are watching.",
+      quote: 'Your future patients are watching.',
       color: theme.colors.primary,
     },
     {
-      title: "PATHETIC",
+      title: 'PATHETIC',
       subtitle: "{count} attempts to avoid studying. You're better than this.",
-      quote: "The algorithm is winning. Fight back.",
+      quote: 'The algorithm is winning. Fight back.',
       color: theme.colors.error,
     },
     {
-      title: "DISAPPOINTMENT",
-      subtitle: "{count} times. A doctor needs discipline, not dopamine.",
+      title: 'DISAPPOINTMENT',
+      subtitle: '{count} times. A doctor needs discipline, not dopamine.',
       quote: "You're choosing pixels over patients.",
       color: '#FF5722',
-    }
+    },
   ];
 
   const currentShame = shameMessages[Math.min(shameLevel, shameMessages.length - 1)];
@@ -180,26 +179,26 @@ export default function DoomscrollInterceptor() {
       screen: 'HomeTab',
       params: {
         screen: 'Inertia',
-      },
-    });
+      } as any,
+    } as any);
   }
 
   function handleForceProceed() {
     Alert.alert(
-      'You\'re Giving Up?',
+      "You're Giving Up?",
       `Opening ${blockAppName} means losing 50 XP and breaking your streak momentum.`,
       [
-        { text: 'I\'ll Study Instead', style: 'cancel', onPress: () => setIsBlocking(false) },
-        { 
-          text: 'Take the Penalty', 
+        { text: "I'll Study Instead", style: 'cancel', onPress: () => setIsBlocking(false) },
+        {
+          text: 'Take the Penalty',
           style: 'destructive',
           onPress: async () => {
             // In real implementation: deduct XP and update profile
             setIsBlocking(false);
             navigation.goBack();
-          }
+          },
         },
-      ]
+      ],
     );
   }
 
@@ -212,31 +211,34 @@ export default function DoomscrollInterceptor() {
             <View style={styles.standbyIconContainer}>
               <Text style={styles.standbyEmoji}>🛡️</Text>
             </View>
-            
+
             <Text style={styles.standbyTitle}>App Hijack Standby</Text>
             <Text style={styles.standbySubtitle}>
-              Live app detection is not active yet on this device. Use App Hijack Setup to enable the guardrails, or go back to study now.
+              Live app detection is not active yet on this device. Use App Hijack Setup to enable
+              the guardrails, or go back to study now.
             </Text>
-            
+
             <TouchableOpacity
               style={[styles.button, styles.primaryButton]}
-              onPress={() => navigation.navigate('Tabs', {
-                screen: 'HomeTab',
-                params: {
-                  screen: 'Inertia',
-                },
-              })}
+              onPress={() =>
+                navigation.navigate('Tabs', {
+                  screen: 'HomeTab',
+                  params: {
+                    screen: 'Inertia',
+                  } as any,
+                } as any)
+              }
             >
               <Text style={styles.primaryButtonText}>📚 GO BACK TO STUDYING</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.button, styles.secondaryButton]} 
+
+            <TouchableOpacity
+              style={[styles.button, styles.secondaryButton]}
               onPress={() => navigation.goBack()}
             >
               <Text style={styles.secondaryButtonText}>Close</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.statsRow}>
               <Text style={styles.statsText}>Doomscroll attempts today: {doomscrollAttempts}</Text>
               <Text style={styles.statsSub}>Study sessions: {sessionCount}</Text>
@@ -251,36 +253,35 @@ export default function DoomscrollInterceptor() {
     <SafeAreaView style={[styles.safe, { backgroundColor: '#0A0A14' }]}>
       <StatusBar barStyle="light-content" backgroundColor="#0A0A14" />
       <ResponsiveContainer>
-        <Animated.View 
+        <Animated.View
           style={[
-            styles.container, 
-            { 
+            styles.container,
+            {
               opacity: fadeAnim,
-              transform: [
-                { translateX: shakeAnim },
-                { scale: pulseAnim }
-              ] 
-            }
+              transform: [{ translateX: shakeAnim }, { scale: pulseAnim }],
+            },
           ]}
         >
           {/* Lock Icon with Pulse Ring */}
           <View style={styles.lockIconContainer}>
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.pulseRing,
                 {
                   transform: [
-                    { scale: pulseAnim.interpolate({
-                      inputRange: [1, 1.1],
-                      outputRange: [1, 1.3],
-                    }) }
+                    {
+                      scale: pulseAnim.interpolate({
+                        inputRange: [1, 1.1],
+                        outputRange: [1, 1.3],
+                      }),
+                    },
                   ],
                   opacity: pulseAnim.interpolate({
                     inputRange: [1, 1.1],
                     outputRange: [0.6, 0],
                   }),
-                }
-              ]} 
+                },
+              ]}
             />
             <View style={[styles.lockIcon, { borderColor: currentShame.color }]}>
               <Text style={styles.lockEmoji}>🚫</Text>
@@ -292,9 +293,11 @@ export default function DoomscrollInterceptor() {
             {currentShame.title}
           </Text>
           <Text style={styles.shameSubtitle}>
-            {currentShame.subtitle.replace('{app}', blockAppName).replace('{count}', String(doomscrollAttempts))}
+            {currentShame.subtitle
+              .replace('{app}', blockAppName)
+              .replace('{count}', String(doomscrollAttempts))}
           </Text>
-          
+
           {/* Quote Box */}
           <View style={[styles.quoteBox, { borderLeftColor: currentShame.color }]}>
             <Text style={styles.quoteText}>"{currentShame.quote}"</Text>
@@ -310,10 +313,10 @@ export default function DoomscrollInterceptor() {
                 </Text>
                 <Text style={styles.countdownUnit}>sec</Text>
               </View>
-              
+
               {/* Progress Bar */}
               <View style={styles.progressBarContainer}>
-                <Animated.View 
+                <Animated.View
                   style={[
                     styles.progressBarFill,
                     {
@@ -322,14 +325,12 @@ export default function DoomscrollInterceptor() {
                         outputRange: ['0%', '100%'],
                       }),
                       backgroundColor: currentShame.color,
-                    }
-                  ]} 
+                    },
+                  ]}
                 />
               </View>
-              
-              <Text style={styles.countdownHint}>
-                Think about your goals while you wait.
-              </Text>
+
+              <Text style={styles.countdownHint}>Think about your goals while you wait.</Text>
             </View>
           ) : (
             <View style={styles.unlockedContainer}>
@@ -340,31 +341,28 @@ export default function DoomscrollInterceptor() {
           )}
 
           {/* Action Buttons */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
-              styles.button, 
+              styles.button,
               styles.primaryButton,
-              delayRemaining > 0 && styles.disabledButton
-            ]} 
+              delayRemaining > 0 && styles.disabledButton,
+            ]}
             onPress={handleGoBackToStudy}
             disabled={delayRemaining > 0}
           >
-            <Text style={[
-              styles.primaryButtonText,
-              delayRemaining > 0 && styles.disabledButtonText
-            ]}>
+            <Text
+              style={[styles.primaryButtonText, delayRemaining > 0 && styles.disabledButtonText]}
+            >
               {delayRemaining > 0 ? `⏳ Wait ${delayRemaining}s...` : '📚 GO BACK TO STUDYING'}
             </Text>
           </TouchableOpacity>
-          
+
           {delayRemaining === 0 && (
-            <TouchableOpacity 
-              style={[styles.button, styles.dangerButton]} 
+            <TouchableOpacity
+              style={[styles.button, styles.dangerButton]}
               onPress={handleForceProceed}
             >
-              <Text style={styles.dangerButtonText}>
-                Open {blockAppName} Anyway (-50 XP)
-              </Text>
+              <Text style={styles.dangerButtonText}>Open {blockAppName} Anyway (-50 XP)</Text>
             </TouchableOpacity>
           )}
 
@@ -387,9 +385,9 @@ export default function DoomscrollInterceptor() {
 }
 
 const styles = StyleSheet.create({
-  safe: { 
-    flex: 1, 
-    backgroundColor: '#0A0A14' 
+  safe: {
+    flex: 1,
+    backgroundColor: '#0A0A14',
   },
   container: {
     flex: 1,
@@ -397,7 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  
+
   // Standby State
   standbyIconContainer: {
     width: 100,
@@ -460,7 +458,7 @@ const styles = StyleSheet.create({
   lockEmoji: {
     fontSize: 40,
   },
-  
+
   shameTitle: {
     fontSize: 36,
     fontWeight: '900',
@@ -476,7 +474,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 16,
   },
-  
+
   quoteBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     padding: 20,
@@ -530,7 +528,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
   },
-  
+
   progressBarContainer: {
     width: SCREEN_WIDTH * 0.6,
     height: 6,
@@ -543,7 +541,7 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
-  
+
   countdownHint: {
     color: theme.colors.textSecondary,
     fontSize: 13,
@@ -649,5 +647,22 @@ const styles = StyleSheet.create({
     width: 1,
     height: 40,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    gap: 12,
+  },
+  statsText: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statsSub: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

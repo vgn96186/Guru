@@ -45,47 +45,6 @@ interface SessionStoreState {
   resetSession: () => void;
 }
 
-// Validate agenda structure
-function validateAgenda(agenda: any): Agenda | null {
-  if (!agenda || typeof agenda !== 'object') return null;
-  
-  const { items, mode, focusNote } = agenda;
-  if (!Array.isArray(items)) return null;
-  
-  // Validate each item
-  for (const item of items) {
-    if (!item || typeof item !== 'object') return null;
-    const { topic, contentTypes, estimatedMinutes } = item;
-    if (!topic || typeof topic !== 'object') return null;
-    if (!Array.isArray(contentTypes)) return null;
-    if (typeof estimatedMinutes !== 'number') return null;
-    
-    // Validate topic structure
-    if (typeof topic.id !== 'number') return null;
-    if (typeof topic.name !== 'string') return null;
-  }
-  
-  return {
-    items: items as AgendaItem[],
-    mode: mode === 'sprint' ? 'sprint' : 'normal',
-    focusNote: typeof focusNote === 'string' ? focusNote : '',
-  };
-}
-
-// Validate quiz result
-function validateQuizResult(result: any): QuizResult | null {
-  if (!result || typeof result !== 'object') return null;
-  if (typeof result.topicId !== 'number') return null;
-  if (typeof result.correct !== 'number' || result.correct < 0) return null;
-  if (typeof result.total !== 'number' || result.total < 1) return null;
-  if (result.correct > result.total) return null;
-  return {
-    topicId: result.topicId,
-    correct: result.correct,
-    total: result.total,
-  };
-}
-
 export const useSessionStore = create<SessionStoreState>()(
   persist(
     (set, get) => ({
@@ -105,33 +64,156 @@ export const useSessionStore = create<SessionStoreState>()(
       activeStudyDuration: 0,
 
       setSessionId: (id) => set({ sessionId: id, startedAt: Date.now() }),
-      
-      setSessionState: (state) => {
-        // Validate state transition
-        const currentState = get().sessionState;
-        const validTransitions: Record<SessionState, SessionState[]> = {
-          'planning': ['topic_done', 'session_done', 'downgraded'],
-          'topic_done': ['topic_done', 'session_done', 'downgraded'],
-          'session_done': [],
-          'downgraded': ['topic_done', 'session_done'],
-        };
-        
-        if (!validTransitions[currentState]?.includes(state)) {
-          console.warn(`[SessionStore] Invalid state transition: ${currentState} -> ${state}`);
-          return;
+      setSessionState: (state) => set({ sessionState: state }),
+      setAgenda: (agenda) => set({ agenda }),
+      setCurrentContent: (content) => set({ currentContent: content }),
+      setLoadingContent: (loading) => set({ isLoadingContent: loading }),
+      setPaused: (paused) => set({ isPaused: paused }),
+
+      nextContent: () => {
+        const { agenda, currentItemIndex, currentContentIndex } = get();
+        if (!agenda) return;
+        const item = agenda.items[currentItemIndex];
+        if (!item) return;
+        if (currentContentIndex < item.contentTypes.length - 1) {
+          set({ currentContentIndex: currentContentIndex + 1, currentContent: null });
         }
-        set({ sessionState: state });
+        // If last content type, caller should call nextTopic
       },
 
-      setAgenda: (agenda) => {
-        const validated = validateAgenda(agenda);
-        if (!validated) {
-          console.error('[SessionStore] Invalid agenda provided:', agenda);
-          return;
+      nextTopic: () => {
+        const { agenda, currentItemIndex, completedTopicIds } = get();
+        if (!agenda) return;
+        const currentTopic = agenda.items[currentItemIndex];
+        const newCompleted =
+          currentTopic && !completedTopicIds.includes(currentTopic.topic.id)
+            ? [...completedTopicIds, currentTopic.topic.id]
+            : completedTopicIds;
+
+        if (currentItemIndex < agenda.items.length - 1) {
+          set({
+            currentItemIndex: currentItemIndex + 1,
+            currentContentIndex: 0,
+            currentContent: null,
+            completedTopicIds: newCompleted,
+            sessionState: 'topic_done',
+          });
+        } else {
+          set({
+            completedTopicIds: newCompleted,
+            sessionState: 'session_done',
+          });
         }
-        set({ 
-          agenda: validated,
+      },
+
+      markTopicComplete: () => {
+        const { agenda, currentItemIndex, completedTopicIds } = get();
+        if (!agenda) return;
+        const topic = agenda.items[currentItemIndex]?.topic;
+        if (topic && !completedTopicIds.includes(topic.id)) {
+          set({ completedTopicIds: [...completedTopicIds, topic.id] });
+        }
+      },
+
+      addQuizResult: (result) => {
+        const { quizResults } = get();
+        const existing = quizResults.find((r) => r.topicId === result.topicId);
+        if (existing) {
+          set({ quizResults: quizResults.map((r) => (r.topicId === result.topicId ? result : r)) });
+        } else {
+          set({ quizResults: [...quizResults, result] });
+        }
+      },
+
+      startBreak: (seconds) => set({ isOnBreak: true, breakCountdown: seconds }),
+      endBreak: () => set({ isOnBreak: false, breakCountdown: 0 }),
+      tickBreak: () => {
+        const { breakCountdown } = get();
+        if (breakCountdown <= 1) {
+          set({ isOnBreak: false, breakCountdown: 0 });
+        } else {
+          set({ breakCountdown: breakCountdown - 1 });
+        }
+      },
+
+      downgradeSession: () => {
+        const { agenda, currentItemIndex } = get();
+        if (!agenda) return;
+
+        const remainingItems = agenda.items.slice(currentItemIndex, currentItemIndex + 2);
+
+        const simplifiedItems = remainingItems.map((item) => ({
+          ...item,
+          contentTypes: item.contentTypes.filter((ct) =>
+            ['keypoints', 'quiz', 'mnemonic'].includes(ct),
+          ),
+          estimatedMinutes: 5, // Force short estimate
+        }));
+
+        if (simplifiedItems[0] && simplifiedItems[0].contentTypes.length === 0) {
+          simplifiedItems[0].contentTypes = ['keypoints'];
+        }
+
+        const newAgenda = {
+          ...agenda,
+          items: [...agenda.items.slice(0, currentItemIndex), ...simplifiedItems],
+          mode: 'sprint', // Switch mode label
+          focusNote: (agenda.focusNote || '') + ' (Downgraded due to focus loss)',
+        };
+
+        set({ agenda: newAgenda as Agenda });
+      },
+
+      incrementActiveStudyDuration: (amount: number) => {
+        set((state) => ({ activeStudyDuration: state.activeStudyDuration + amount }));
+      },
+
+      resetSession: () =>
+        set({
+          sessionId: null,
+          sessionState: 'planning',
+          agenda: null,
           currentItemIndex: 0,
           currentContentIndex: 0,
           currentContent: null,
-          completedTopicIds
+          isLoadingContent: false,
+          completedTopicIds: [],
+          quizResults: [],
+          startedAt: null,
+          isOnBreak: false,
+          breakCountdown: 300,
+          isPaused: false,
+          activeStudyDuration: 0,
+        }),
+    }),
+    {
+      name: 'session-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        sessionId: state.sessionId,
+        sessionState: state.sessionState,
+        agenda: state.agenda,
+        currentItemIndex: state.currentItemIndex,
+        currentContentIndex: state.currentContentIndex,
+        currentContent: state.currentContent,
+        completedTopicIds: state.completedTopicIds,
+        quizResults: state.quizResults,
+        startedAt: state.startedAt,
+        activeStudyDuration: state.activeStudyDuration,
+        isOnBreak: state.isOnBreak,
+        breakCountdown: state.breakCountdown,
+        isPaused: state.isPaused,
+      }),
+    },
+  ),
+);
+
+export function getCurrentAgendaItem(state: SessionStoreState): AgendaItem | null {
+  return state.agenda?.items[state.currentItemIndex] ?? null;
+}
+
+export function getCurrentContentType(state: SessionStoreState): ContentType | null {
+  const item = getCurrentAgendaItem(state);
+  if (!item) return null;
+  return item.contentTypes[state.currentContentIndex] ?? null;
+}

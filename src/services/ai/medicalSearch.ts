@@ -13,31 +13,36 @@ export function clipText(raw: string, maxChars: number): string {
 function buildMedicalSearchQuery(question: string, topicName?: string): string {
   const base = compactWhitespace(`${topicName ?? ''} ${question}`.trim());
   const cleaned = base.replace(/[^\w\s\-(),./]/g, ' ');
-  return clipText(`${cleaned} (India OR Indian OR ICMR OR AIIMS OR WHO OR guidelines OR protocol OR diagnosis OR treatment OR "clinical presentation")`, 180);
+  return clipText(
+    `${cleaned} (India OR Indian OR ICMR OR AIIMS OR WHO OR guidelines OR protocol OR diagnosis OR treatment OR "clinical presentation")`,
+    180,
+  );
 }
 
 async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 12000): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(url, { 
+    const res = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'GuruStudyApp/1.0 (https://guru.study; help@guru.study)'
-      }
+        'User-Agent': 'GuruStudyApp/1.0 (https://guru.study; help@guru.study)',
+      },
     });
     if (!res.ok) {
       const text = await res.text().catch(() => String(res.status));
       throw new Error(`HTTP ${res.status}: ${text}`);
     }
-    return await res.json() as T;
+    return (await res.json()) as T;
   } finally {
     clearTimeout(timer);
   }
 }
 
 /** Deduplicates sources by title+url (case-insensitive). Exported for unit testing. */
-export function dedupeGroundingSources(sources: MedicalGroundingSource[]): MedicalGroundingSources[] {
+export function dedupeGroundingSources(
+  sources: MedicalGroundingSource[],
+): MedicalGroundingSource[] {
   const seen = new Set<string>();
   const deduped: MedicalGroundingSource[] = [];
   for (const src of sources) {
@@ -55,20 +60,23 @@ export function dedupeGroundingSources(sources: MedicalGroundingSource[]): Medic
  * Search Wikimedia Commons for medical images.
  * Uses category filtering to ensure medical relevance.
  */
-async function searchWikimediaCommons(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
+async function searchWikimediaCommons(
+  query: string,
+  maxResults: number,
+): Promise<MedicalGroundingSource[]> {
   // Wikimedia Commons API - search for images in medical categories
   const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=file:${encodeURIComponent(query)}&srnamespace=6&srlimit=${maxResults}&format=json`;
-  
+
   try {
     const searchData = await fetchJsonWithTimeout<any>(searchUrl, 8000);
     const pages = searchData?.query?.search || [];
-    
+
     if (pages.length === 0) return [];
 
     // Get image info for each result
-    const titles = pages.map(p => p.title).join('|');
+    const titles = pages.map((p: any) => p.title).join('|');
     const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=imageinfo&iiprop=url|extmetadata|size&format=json`;
-    
+
     const infoData = await fetchJsonWithTimeout<any>(imageInfoUrl, 8000);
     const imagePages = infoData?.query?.pages || {};
 
@@ -81,14 +89,17 @@ async function searchWikimediaCommons(query: string, maxResults: number): Promis
       const info = imagePage.imageinfo[0];
       const url = info.url;
       const title = clipText(page.title.replace(/^File:/, ''), 220);
-      
+
       // Extract description from metadata
       const metadata = info.extmetadata || {};
       const description = metadata.ImageDescription?.value || metadata.ObjectName?.value || '';
-      const cleanDesc = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-      
+      const cleanDesc = description
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
       // Filter out non-medical images by checking categories and description
-      const isMedical = 
+      const isMedical =
         page.title.toLowerCase().includes('medical') ||
         page.title.toLowerCase().includes('anatomy') ||
         page.title.toLowerCase().includes('disease') ||
@@ -105,27 +116,26 @@ async function searchWikimediaCommons(query: string, maxResults: number): Promis
         page.title.toLowerCase().includes('organ') ||
         page.title.toLowerCase().includes('cell') ||
         page.title.toLowerCase().includes('tissue') ||
-        (cleanDesc && (
-          cleanDesc.toLowerCase().includes('medical') ||
-          cleanDesc.toLowerCase().includes('anatomy') ||
-          cleanDesc.toLowerCase().includes('disease') ||
-          cleanDesc.toLowerCase().includes('symptom') ||
-          cleanDesc.toLowerCase().includes('diagnosis') ||
-          cleanDesc.toLowerCase().includes('treatment')
-        ));
+        (cleanDesc &&
+          (cleanDesc.toLowerCase().includes('medical') ||
+            cleanDesc.toLowerCase().includes('anatomy') ||
+            cleanDesc.toLowerCase().includes('disease') ||
+            cleanDesc.toLowerCase().includes('symptom') ||
+            cleanDesc.toLowerCase().includes('diagnosis') ||
+            cleanDesc.toLowerCase().includes('treatment')));
 
       if (!isMedical) continue;
 
       // Get author/attribution
       const author = metadata.Artist?.value || metadata.Credit?.value || 'Wikimedia Commons';
-      
+
       results.push({
         id: `commons-${page.pageid}`,
         title,
         url: page.url, // Link to the file page
         imageUrl: url,
         snippet: clipText(cleanDesc || `Medical image from Wikimedia Commons: ${title}`, 420),
-        source: 'Wikimedia Commons',
+        source: 'Wikimedia Commons' as any,
         author: clipText(author, 100),
         license: metadata.LicenseShortName?.value || 'CC BY-SA',
       });
@@ -147,11 +157,11 @@ async function searchWikimediaCommons(query: string, maxResults: number): Promis
 async function searchOpenI(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
   // Open i API - medical images from NIH
   const searchUrl = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(query)}&m=1&n=${maxResults}&it=xg`;
-  
+
   try {
     const data = await fetchJsonWithTimeout<any>(searchUrl, 10000);
     const results = data?.results || [];
-    
+
     return results
       .filter((r: any) => r?.image?.url && r?.title)
       .slice(0, maxResults)
@@ -159,15 +169,18 @@ async function searchOpenI(query: string, maxResults: number): Promise<MedicalGr
         const title = clipText(r.title, 220);
         const imageUrl = r.image.url.replace(/^\/\//, 'https://');
         const description = r.description || r.title || '';
-        const cleanDesc = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-        
+        const cleanDesc = description
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
         return {
           id: `openi-${r.uuid || r.image.url}`,
           title,
           url: `https://openi.nlm.nih.gov/detail.jsp?img=${r.uuid}`,
           imageUrl,
           snippet: clipText(cleanDesc, 420),
-          source: 'Open i (NIH)',
+          source: 'Open i (NIH)' as any,
           author: r.owner || 'NIH',
           license: 'Public Domain (U.S. Government)',
         };
@@ -182,9 +195,12 @@ async function searchOpenI(query: string, maxResults: number): Promise<MedicalGr
  * Search for medical images using specialized medical image databases.
  * Falls back to article sources only if no images found.
  */
-export async function searchMedicalImages(query: string, maxResults = 6): Promise<MedicalGroundingSource[]> {
+export async function searchMedicalImages(
+  query: string,
+  maxResults = 6,
+): Promise<MedicalGroundingSource[]> {
   const collected: MedicalGroundingSource[] = [];
-  
+
   // Try Wikimedia Commons first (good for anatomy, diagrams)
   try {
     const commons = await searchWikimediaCommons(query, Math.min(4, maxResults));
@@ -205,7 +221,10 @@ export async function searchMedicalImages(query: string, maxResults = 6): Promis
 
   // If still no images, fall back to article sources (they might have relevant thumbnails)
   if (collected.length === 0) {
-    if (__DEV__) console.warn('[MedicalSearch] No images from specialized sources, falling back to article search');
+    if (__DEV__)
+      console.warn(
+        '[MedicalSearch] No images from specialized sources, falling back to article search',
+      );
     return searchLatestMedicalSources(query, maxResults);
   }
 
@@ -215,27 +234,39 @@ export async function searchMedicalImages(query: string, maxResults = 6): Promis
 // ─── ARTICLE SEARCH (for text-based grounding) ───────────────────────────────────
 
 /** Wikipedia: curriculum-aligned summaries, good for NEET-PG/INICET concepts */
-async function searchWikipedia(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
+async function searchWikipedia(
+  query: string,
+  maxResults: number,
+): Promise<MedicalGroundingSource[]> {
   const url = `https://en.wikipedia.org/w/rest.php/v1/search/page?q=${encodeURIComponent(query)}&limit=${maxResults}`;
-  const data = await fetchJsonWithTimeout<{ pages?: Array<{ id?: number; key?: string; title?: string; excerpt?: string; description?: string; thumbnail?: { url?: string } }> }>(url, 8000);
+  const data = await fetchJsonWithTimeout<{
+    pages?: Array<{
+      id?: number;
+      key?: string;
+      title?: string;
+      excerpt?: string;
+      description?: string;
+      thumbnail?: { url?: string };
+    }>;
+  }>(url, 8000);
   const pages = Array.isArray(data?.pages) ? data.pages : [];
   return pages
-    .filter((p) => p?.title && p?.key)
+    .filter((p: any) => p?.title && p?.key)
     .slice(0, maxResults)
-    .map((p) => {
+    .map((p: any) => {
       const title = clipText(String(p.title), 220);
       const key = String(p.key ?? p.title ?? '');
       const excerpt = (p.excerpt ?? p.description ?? '')
         .replace(/<[^>]+>/g, ' ')
         .replace(/\s+/g, ' ')
         .trim();
-        
+
       let imageUrl: string | undefined = undefined;
       const tUrl = p.thumbnail?.url;
       if (tUrl) {
         imageUrl = tUrl.startsWith('//') ? `https:${tUrl}` : tUrl;
       }
-      
+
       return {
         id: `wiki-${p.id ?? key}`,
         title,
@@ -247,7 +278,10 @@ async function searchWikipedia(query: string, maxResults: number): Promise<Medic
     });
 }
 
-async function searchEuropePMC(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
+async function searchEuropePMC(
+  query: string,
+  maxResults: number,
+): Promise<MedicalGroundingSource[]> {
   const europeQuery = `(${query}) AND (HAS_ABSTRACT:y OR OPEN_ACCESS:y) NOT (veterinary OR animal OR murine OR mice OR rat OR dog OR cat)`;
   const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=${encodeURIComponent(europeQuery)}&format=json&pageSize=${maxResults}&sort=relevance`;
   const data = await fetchJsonWithTimeout<any>(url, 14000);
@@ -264,7 +298,9 @@ async function searchEuropePMC(query: string, maxResults: number): Promise<Medic
       const urlFromId = pmid
         ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`
         : `https://europepmc.org/article/${row.source ?? 'MED'}/${sourceId}`;
-      const snippetRaw = String(row.abstractText ?? row.authorString ?? 'No abstract snippet available.');
+      const snippetRaw = String(
+        row.abstractText ?? row.authorString ?? 'No abstract snippet available.',
+      );
 
       return {
         id: `epmc-${sourceId}`,
@@ -278,19 +314,26 @@ async function searchEuropePMC(query: string, maxResults: number): Promise<Medic
     });
 }
 
-async function searchPubMedFallback(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
+async function searchPubMedFallback(
+  query: string,
+  maxResults: number,
+): Promise<MedicalGroundingSource[]> {
   const term = `${query} AND (english[Language]) NOT (veterinary OR animal OR murine OR mice OR rat OR dog OR cat)`;
   const searchUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&retmode=json&sort=pub+date&retmax=${maxResults}&term=${encodeURIComponent(term)}`;
   const searchData = await fetchJsonWithTimeout<any>(searchUrl);
-  const ids: string[] = Array.isArray(searchData?.esearchresult?.idlist) ? searchData.esearchresult.idlist : [];
+  const ids: string[] = Array.isArray(searchData?.esearchresult?.idlist)
+    ? searchData.esearchresult.idlist
+    : [];
   if (ids.length === 0) return [];
 
   const summaryUrl = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=${ids.join(',')}`;
   const summaryData = await fetchJsonWithTimeout<any>(summaryUrl);
-  const uidList: string[] = Array.isArray(summaryData?.result?.uids) ? summaryData.result.uids : ids;
+  const uidList: string[] = Array.isArray(summaryData?.result?.uids)
+    ? summaryData.result.uids
+    : ids;
 
   return uidList
-    .map((uid): MedicalGroundingSource | null => {
+    .map((uid: string): MedicalGroundingSource | null => {
       const row = summaryData?.result?.[uid];
       if (!row?.title) return null;
       const publishedAt = String(row.pubdate ?? '').trim() || undefined;
@@ -315,7 +358,10 @@ async function searchPubMedFallback(query: string, maxResults: number): Promise<
  * Search for medical articles (text-based grounding).
  * Use this for text explanations, not images.
  */
-export async function searchLatestMedicalSources(query: string, maxResults = 6): Promise<MedicalGroundingSource[]> {
+export async function searchLatestMedicalSources(
+  query: string,
+  maxResults = 6,
+): Promise<MedicalGroundingSource[]> {
   const collected: MedicalGroundingSource[] = [];
   const wikiLimit = Math.min(3, maxResults);
   const litLimit = maxResults;
@@ -348,8 +394,10 @@ export async function searchLatestMedicalSources(query: string, maxResults = 6):
 
 export function renderSourcesForPrompt(sources: MedicalGroundingSource[]): string {
   return sources
-    .map((src, idx) => {
-      const published = src.publishedAt ? `Published: ${src.publishedAt}` : 'Published: unknown date';
+    .map((src: MedicalGroundingSource, idx: number) => {
+      const published = src.publishedAt
+        ? `Published: ${src.publishedAt}`
+        : 'Published: unknown date';
       const journal = src.journal ? `Journal: ${src.journal}` : 'Journal: not listed';
       return `[S${idx + 1}]
 Title: ${src.title}

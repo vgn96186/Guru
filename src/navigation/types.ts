@@ -15,6 +15,7 @@ export type RootStackParamList = {
   SleepMode: undefined;
   WakeUp: undefined;
   LocalModel: undefined;
+  ManualNoteCreation: undefined;
 };
 
 export type HomeStackParamList = {
@@ -40,7 +41,12 @@ export type HomeStackParamList = {
 
 export type SyllabusStackParamList = {
   Syllabus: undefined;
-  TopicDetail: { subjectId: number; subjectName: string; initialTopicId?: number; initialSearchQuery?: string };
+  TopicDetail: {
+    subjectId: number;
+    subjectName: string;
+    initialTopicId?: number;
+    initialSearchQuery?: string;
+  };
 };
 
 export type ChatStackParamList = {

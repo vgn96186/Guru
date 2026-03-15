@@ -31,7 +31,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { getAllSubjects, getTopicsBySubject, getTopicById } from '../db/queries/topics';
-import { saveLectureTranscript, getLectureTranscriptsBySubject } from '../db/queries/aiCache';
+import {
+  saveLectureTranscript,
+  getLectureTranscriptsBySubject,
+  saveLectureNote,
+} from '../db/queries/aiCache';
 import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
@@ -81,7 +85,7 @@ export default function LectureModeScreen() {
 
   const [proofOfLifeActive, setProofOfLifeActive] = useState(false);
   const [proofOfLifeCountdown, setProofOfLifeCountdown] = useState(0);
-  
+
   // Animation for proof of life warning
   const proofPulseAnim = useRef(new Animated.Value(1)).current;
   const proofGlowAnim = useRef(new Animated.Value(0)).current;
@@ -147,12 +151,12 @@ export default function LectureModeScreen() {
   // Throttled state persistence
   useEffect(() => {
     if (!isHydratedRef.current) return;
-    
+
     const now = Date.now();
     if (now - lastStateSave < STATE_SAVE_THROTTLE) return;
-    
+
     lastStateSave = now;
-    
+
     const state = {
       elapsed,
       notes,
@@ -161,7 +165,7 @@ export default function LectureModeScreen() {
       isRecordingEnabled,
       timestamp: Date.now(),
     };
-    
+
     AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state)).catch((err) => {
       console.warn('[LectureMode] Failed to save state:', err);
     });
@@ -270,9 +274,9 @@ export default function LectureModeScreen() {
         }
       }
     });
-    
+
     appStateSubscriptionRef.current = subscription;
-    
+
     return () => {
       subscription.remove();
     };
@@ -293,7 +297,7 @@ export default function LectureModeScreen() {
         return newE;
       });
     }, 1000);
-    
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -319,7 +323,7 @@ export default function LectureModeScreen() {
           return c - 1;
         });
       }, 1000);
-      
+
       return () => {
         if (proofOfLifeTimerRef.current) {
           clearInterval(proofOfLifeTimerRef.current);
@@ -337,7 +341,7 @@ export default function LectureModeScreen() {
         Animated.sequence([
           Animated.timing(proofGlowAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
           Animated.timing(proofGlowAnim, { toValue: 0.6, duration: 1000, useNativeDriver: true }),
-        ])
+        ]),
       );
       glowLoop.start();
 
@@ -346,7 +350,7 @@ export default function LectureModeScreen() {
         Animated.sequence([
           Animated.timing(proofPulseAnim, { toValue: 1.02, duration: 800, useNativeDriver: true }),
           Animated.timing(proofPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        ])
+        ]),
       );
       pulseLoop.start();
 
@@ -366,7 +370,7 @@ export default function LectureModeScreen() {
       clearInterval(proofOfLifeTimerRef.current);
       proofOfLifeTimerRef.current = null;
     }
-    
+
     if (currentNote.trim()) {
       try {
         await saveLectureNote(selectedSubjectId, currentNote.trim());
@@ -395,13 +399,13 @@ export default function LectureModeScreen() {
         console.error('[LectureMode] Failed to finalize session:', err);
       }
     }
-    
+
     try {
       await AsyncStorage.removeItem(LECTURE_STATE_KEY);
     } catch (err) {
       console.warn('[LectureMode] Failed to clear state:', err);
     }
-    
+
     navigation.goBack();
   }, [elapsed, notes, currentNote, selectedSubjectId, navigation, refreshProfile]);
 
@@ -419,7 +423,7 @@ export default function LectureModeScreen() {
 
   async function saveNote() {
     if (!currentNote.trim()) return;
-    
+
     try {
       await saveLectureNote(selectedSubjectId, currentNote.trim());
       setNotes((n) => [...n, currentNote.trim()]);
@@ -520,8 +524,9 @@ export default function LectureModeScreen() {
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
       const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
-      
-      if (__DEV__) console.log('[LectureMode] Recording stopped. URI:', uri, 'Duration:', recordingDuration);
+
+      if (__DEV__)
+        console.log('[LectureMode] Recording stopped. URI:', uri, 'Duration:', recordingDuration);
 
       recordingRef.current = null;
       setRecording(null);
@@ -529,14 +534,16 @@ export default function LectureModeScreen() {
       if (uri) {
         try {
           const startTime = Date.now();
-          const analysis = await transcribeAudio(uri);
+          const analysis = await transcribeAudio({ audioFilePath: uri });
           const transcriptionTime = Date.now() - startTime;
-          
+
           // Save lecture with enhanced metadata
           await applyLectureAnalysis(analysis, {
             recordingPath: uri,
             recordingDurationSeconds: Math.round(recordingDuration),
-            transcriptionConfidence: analysis.estimatedConfidence ? analysis.estimatedConfidence / 3 : null, // Convert 1-3 to 0-1
+            transcriptionConfidence: analysis.estimatedConfidence
+              ? analysis.estimatedConfidence / 3
+              : null, // Convert 1-3 to 0-1
             processingMetricsJson: JSON.stringify({
               transcriptionMs: transcriptionTime,
               totalMs: transcriptionTime,
@@ -544,7 +551,7 @@ export default function LectureModeScreen() {
             }),
             retryCount: recordingRetryCount,
           });
-          
+
           // Clean up recording file after successful save
           await FileSystem.deleteAsync(uri, { idempotent: true });
         } catch (err) {
@@ -598,7 +605,7 @@ export default function LectureModeScreen() {
       processingMetricsJson?: string;
       retryCount?: number;
       lastError?: string;
-    } = {}
+    } = {},
   ) {
     const hasTranscript = !!analysis.transcript?.trim();
     const hasMeaningfulSummary =
@@ -616,11 +623,12 @@ export default function LectureModeScreen() {
 
     const conceptsText =
       analysis.keyConcepts.length > 0
-        ? '\n\n💡 **Key Concepts**\n' + analysis.keyConcepts.map((c) => `• ${c}`).join('\n')
+        ? '\n\n💡 **Key Concepts**\n' + analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n')
         : '';
     const hyText =
       analysis.highYieldPoints.length > 0
-        ? '\n\n🚀 **High-Yield**\n' + analysis.highYieldPoints.map((p) => `• ${p}`).join('\n')
+        ? '\n\n🚀 **High-Yield**\n' +
+          analysis.highYieldPoints.map((p: string) => `• ${p}`).join('\n')
         : '';
 
     const noteText = `🎯 **Subject**: ${analysis.subject}\n📌 **Topics**: ${analysis.topics.join(', ')}\n\n📝 **Summary**: ${analysis.lectureSummary}${conceptsText}${hyText}`;
@@ -650,23 +658,25 @@ export default function LectureModeScreen() {
    * Mark topics as studied based on lecture content
    * Uses deduplication to avoid double-counting
    */
-  async function markTopicsAsStudied(subjectId: number, topicNames: string[], lectureNoteId: number) {
+  async function markTopicsAsStudied(
+    subjectId: number,
+    topicNames: string[],
+    lectureNoteId: number,
+  ) {
     try {
       const db = getDb();
-      
-      // Get all topics for this subject to match by name
-      const allTopics = await getAllSubjects();
-      const subjectTopics = allTopics
-        .flatMap(subj => subj.topics || [])
-        .filter(topic => topic.subjectId === subjectId);
-      
+
+      // Subject doesn't have topics directly, we need to fetch them
+      const subjectTopics = await getTopicsBySubject(subjectId);
+
       // Match topic names (case-insensitive, partial match)
       const matchedTopicIds = new Set<number>();
       for (const topicName of topicNames) {
         const normalizedName = topicName.toLowerCase().trim();
-        const match = subjectTopics.find(t => 
-          t.name.toLowerCase().includes(normalizedName) ||
-          normalizedName.includes(t.name.toLowerCase())
+        const match = subjectTopics.find(
+          (t) =>
+            t.name.toLowerCase().includes(normalizedName) ||
+            normalizedName.includes(t.name.toLowerCase()),
         );
         if (match) {
           matchedTopicIds.add(match.id);
@@ -679,29 +689,29 @@ export default function LectureModeScreen() {
           // Check if already marked from this lecture (deduplication)
           const existing = await db.getFirstAsync<{ id: number }>(
             `SELECT id FROM lecture_learned_topics WHERE lecture_note_id = ? AND topic_id = ?`,
-            [lectureNoteId, topicId]
+            [lectureNoteId, topicId],
           );
-          
+
           if (!existing) {
             await db.runAsync(
               `INSERT INTO lecture_learned_topics (lecture_note_id, topic_id, confidence_at_time) 
                VALUES (?, ?, ?)`,
-              [lectureNoteId, topicId, 2] // Default confidence
+              [lectureNoteId, topicId, 2], // Default confidence
             );
-            
+
             // Update topic_progress status to 'seen' if it was 'unseen'
             await db.runAsync(
               `UPDATE topic_progress 
                SET status = 'seen', times_studied = times_studied + 1, last_studied_at = ?
                WHERE topic_id = ? AND status = 'unseen'`,
-              [Date.now(), topicId]
+              [Date.now(), topicId],
             );
           }
         } catch (err) {
           console.warn('[LectureMode] Failed to mark topic as studied:', topicId, err);
         }
       }
-      
+
       if (matchedTopicIds.size > 0 && __DEV__) {
         console.log(`[LectureMode] Marked ${matchedTopicIds.size} topics as studied from lecture`);
       }
@@ -723,7 +733,7 @@ export default function LectureModeScreen() {
       await FileSystem.copyAsync({ from: pickedUri, to: tempUri });
 
       setIsTranscribing(true);
-      const analysis = await transcribeAudio(tempUri);
+      const analysis = await transcribeAudio({ audioFilePath: tempUri });
 
       await applyLectureAnalysis(analysis);
       Alert.alert('Transcription Complete', analysis.lectureSummary || 'Done');
@@ -912,51 +922,55 @@ export default function LectureModeScreen() {
 
           {/* Proof of Life Challenge - Enhanced with animation */}
           {proofOfLifeActive && (
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.proofOfLifeBox,
                 proofOfLifeActive && styles.proofOfLifeBoxActive,
                 {
                   transform: [{ scale: proofPulseAnim }],
-                  shadowOpacity: 0.4 + proofGlowAnim._value * 0.4,
-                }
+                  shadowOpacity: 0.4,
+                },
               ]}
             >
               <View style={styles.proofIconContainer}>
                 <Text style={styles.proofEmoji}>🚨</Text>
-                <Animated.View 
+                <Animated.View
                   style={[
                     styles.proofPulseRing,
                     {
                       opacity: proofGlowAnim,
                       transform: [
-                        { scale: proofGlowAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [1, 1.3],
-                        }) }
+                        {
+                          scale: proofGlowAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [1, 1.3],
+                          }),
+                        },
                       ],
-                    }
-                  ]} 
+                    },
+                  ]}
                 />
               </View>
-              
+
               <Text style={styles.proofTitle}>ACTIVE LISTENING CHECK</Text>
               <Text style={styles.proofSub}>
                 You have {proofOfLifeCountdown}s to type one thing the professor just said.
               </Text>
-              
+
               <View style={styles.proofTimerContainer}>
                 <View style={styles.proofTimerCircle}>
-                  <Text style={[
-                    styles.proofTimerText,
-                    proofOfLifeCountdown <= 10 && styles.proofTimerTextUrgent
-                  ]}>
+                  <Text
+                    style={[
+                      styles.proofTimerText,
+                      proofOfLifeCountdown <= 10 && styles.proofTimerTextUrgent,
+                    ]}
+                  >
                     {proofOfLifeCountdown}
                   </Text>
                 </View>
                 <Text style={styles.proofTimerLabel}>seconds remaining</Text>
               </View>
-              
+
               <Text style={styles.proofWarning}>
                 Are you zoning out? Type a note above to dismiss this alert.
               </Text>
@@ -1021,9 +1035,9 @@ export default function LectureModeScreen() {
           <View style={styles.noteSection}>
             <TextInput
               style={[
-                styles.noteInput, 
+                styles.noteInput,
                 proofOfLifeActive && styles.noteInputWarn,
-                currentNote.trim() && proofOfLifeActive && styles.noteInputActive
+                currentNote.trim() && proofOfLifeActive && styles.noteInputActive,
               ]}
               placeholder={
                 proofOfLifeActive
@@ -1117,10 +1131,10 @@ const styles = StyleSheet.create({
     padding: 24,
     marginBottom: 24,
   },
-  timerBoxWarn: { 
-    backgroundColor: '#2A0A0A', 
-    borderWidth: 2, 
-    borderColor: '#F44336' 
+  timerBoxWarn: {
+    backgroundColor: '#2A0A0A',
+    borderWidth: 2,
+    borderColor: '#F44336',
   },
   timerLabel: {
     color: '#9E9E9E',
@@ -1164,14 +1178,14 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     backgroundColor: 'rgba(244, 67, 54, 0.4)',
   },
-  proofEmoji: { 
-    fontSize: 32, 
-    zIndex: 1 
+  proofEmoji: {
+    fontSize: 32,
+    zIndex: 1,
   },
-  proofTitle: { 
-    color: '#F44336', 
-    fontWeight: '900', 
-    fontSize: 20, 
+  proofTitle: {
+    color: '#F44336',
+    fontWeight: '900',
+    fontSize: 20,
     marginBottom: 8,
     textAlign: 'center',
     letterSpacing: 1,
@@ -1280,9 +1294,9 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A38',
     marginBottom: 12,
   },
-  noteInputWarn: { 
-    backgroundColor: '#2A0A0A', 
-    borderColor: '#F44336', 
+  noteInputWarn: {
+    backgroundColor: '#2A0A0A',
+    borderColor: '#F44336',
     borderWidth: 2,
   },
   noteInputActive: {

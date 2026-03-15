@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, ActivityIndicator, Alert, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  StatusBar,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { analyzeTranscript, generateADHDNote } from '../services/transcriptionService';
-import { getSubjectByName, saveLectureTranscript } from '../db/queries/topics';
-import { theme } from '../theme';
+import { getSubjectByName } from '../db/queries/topics';
+import { saveLectureTranscript } from '../db/queries/aiCache';
+import { theme } from '../constants/theme';
 
 export default function ManualNoteCreationScreen() {
   const navigation = useNavigation();
@@ -39,7 +50,7 @@ export default function ManualNoteCreationScreen() {
       });
 
       Alert.alert('Success', 'Notes generated and saved successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+        { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (e: any) {
       Alert.alert('Error', e.message);
@@ -52,7 +63,11 @@ export default function ManualNoteCreationScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isProcessing}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          disabled={isProcessing}
+        >
           <Text style={styles.backText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Manual Note Generation</Text>
@@ -80,7 +95,11 @@ export default function ManualNoteCreationScreen() {
             <Text style={styles.btnText}>Generate Notes</Text>
           )}
         </TouchableOpacity>
-        {isProcessing && <Text style={styles.processingText}>Analyzing transcript and building elite notes...</Text>}
+        {isProcessing && (
+          <Text style={styles.processingText}>
+            Analyzing transcript and building elite notes...
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -88,7 +107,13 @@ export default function ManualNoteCreationScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.divider,
+  },
   backBtn: { marginRight: 16 },
   backText: { color: theme.colors.primary, fontSize: 16 },
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
@@ -102,26 +127,26 @@ const styles = StyleSheet.create({
     height: 300,
     textAlignVertical: 'top',
     fontSize: 16,
-    marginBottom: 20
+    marginBottom: 20,
   },
   btn: {
     backgroundColor: theme.colors.primary,
     padding: 16,
     borderRadius: 8,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   btnDisabled: {
-    opacity: 0.5
+    opacity: 0.5,
   },
   btnText: {
     color: '#000',
     fontSize: 16,
-    fontWeight: '700'
+    fontWeight: '700',
   },
   processingText: {
     color: theme.colors.textSecondary,
     textAlign: 'center',
     marginTop: 16,
-    fontSize: 14
-  }
+    fontSize: 14,
+  },
 });

@@ -1,5 +1,26 @@
 import { generateJSONWithRouting } from '../aiService';
-import { LectureAnalysisSchema, type LectureAnalysis } from './analysis';
+import { z } from 'zod';
+
+export const LectureAnalysisSchema = z.object({
+  subject: z.string(),
+  topics: z.array(z.string()),
+  key_concepts: z.array(z.string()),
+  high_yield_highlights: z.array(z.string()),
+  lecture_summary: z.string(),
+  estimated_confidence: z.number().min(1).max(3),
+});
+
+export type LectureAnalysis = {
+  subject: string;
+  topics: string[];
+  keyConcepts: string[];
+  highYieldPoints: string[];
+  lectureSummary: string;
+  estimatedConfidence: 1 | 2 | 3;
+  transcript?: string;
+  modelUsed?: string;
+  embedding?: number[] | null;
+};
 
 const MEDICAL_EXTRACT_PROMPT = `You are a medical scribe. Extract key clinical facts, subject, and topics from the following transcript segment.`;
 const META_SUMMARIZE_PROMPT = `Combine the following medical transcript segment analyses into a single coherent lecture analysis.`;
@@ -52,12 +73,12 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
 
 async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
   const extractPrompt = `${MEDICAL_EXTRACT_PROMPT}\n\nHere is the transcript segment:\n"""\n${text}\n"""`;
-  const { parsed } = await generateJSONWithRouting(
+  const { parsed, modelUsed } = await generateJSONWithRouting(
     [{ role: 'user', content: extractPrompt }],
     LectureAnalysisSchema,
     'high',
   );
-  return mapParsedAnalysis(parsed);
+  return { ...mapParsedAnalysis(parsed), modelUsed };
 }
 
 async function metaSummarize(analyses: LectureAnalysis[]): Promise<LectureAnalysis> {
@@ -78,31 +99,45 @@ Segment ${i + 1}:
 
   console.log('[Analysis] Running final meta-summarization pass...');
   try {
-    const { parsed } = await generateJSONWithRouting(
+    const { parsed, modelUsed } = await generateJSONWithRouting(
       [{ role: 'user', content: extractPrompt }],
       LectureAnalysisSchema,
       'high',
     );
-    return mapParsedAnalysis(parsed);
+    return { ...mapParsedAnalysis(parsed), modelUsed };
   } catch (_err) {
     console.warn('[Analysis] Meta-summarization failed, using basic aggregation fallback.');
     // Fallback: Just smash everything together and take the first few
     return {
       subject: analyses[0]?.subject ?? 'Unknown',
-      topics: [...new Set(analyses.flatMap((a) => a.topics))].slice(0, 5),
-      keyConcepts: [...new Set(analyses.flatMap((a) => a.keyConcepts))].slice(0, 8),
-      highYieldPoints: [...new Set(analyses.flatMap((a) => a.highYieldPoints))].slice(0, 5),
+      topics: [...new Set(analyses.flatMap((a: LectureAnalysis) => a.topics))].slice(0, 5),
+      keyConcepts: [...new Set(analyses.flatMap((a: LectureAnalysis) => a.keyConcepts))].slice(
+        0,
+        8,
+      ),
+      highYieldPoints: [
+        ...new Set(analyses.flatMap((a: LectureAnalysis) => a.highYieldPoints)),
+      ].slice(0, 5),
       lectureSummary:
         analyses
-          .map((a) => a.lectureSummary)
+          .map((a: LectureAnalysis) => a.lectureSummary)
           .join(' ')
           .slice(0, 200) + '...',
-      estimatedConfidence: analyses[0]?.estimatedConfidence ?? 2,
+      estimatedConfidence: (analyses[0]?.estimatedConfidence ?? 2) as 1 | 2 | 3,
     };
   }
 }
 
-function mapParsedAnalysis(parsed: any): LectureAnalysis {
+interface ParsedAnalysis {
+  subject?: string;
+  topics?: string[];
+  key_concepts?: string[];
+  high_yield_highlights?: string[];
+  lecture_summary?: string;
+  estimated_confidence?: number;
+}
+
+function mapParsedAnalysis(parsed: ParsedAnalysis): LectureAnalysis {
   return {
     subject: parsed.subject ?? 'Unknown',
     topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 5) : [],
@@ -111,6 +146,6 @@ function mapParsedAnalysis(parsed: any): LectureAnalysis {
       ? parsed.high_yield_highlights.slice(0, 5)
       : [],
     lectureSummary: parsed.lecture_summary ?? 'Lecture summary captured.',
-    estimatedConfidence: parsed.estimated_confidence ?? 2,
+    estimatedConfidence: (parsed.estimated_confidence ?? 2) as 1 | 2 | 3,
   };
 }

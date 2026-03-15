@@ -378,26 +378,40 @@ export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
 
 export async function markNemesisTopics(): Promise<void> {
   const db = getDb();
-  // Reset all nemesis flags
-  await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
-  // Mark topics with 3+ wrong answers and low confidence as nemesis
-  await db.runAsync(
-    `UPDATE topic_progress SET is_nemesis = 1
-     WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
-  );
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    // Reset all nemesis flags
+    await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
+    // Mark topics with 3+ wrong answers and low confidence as nemesis
+    await db.runAsync(
+      `UPDATE topic_progress SET is_nemesis = 1
+       WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
 }
 
 export async function incrementWrongCount(topicId: number): Promise<void> {
   const db = getDb();
-  await db.runAsync('UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?', [
-    topicId,
-  ]);
-  // Auto-mark as nemesis if threshold reached
-  await db.runAsync(
-    `UPDATE topic_progress SET is_nemesis = 1
-     WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
-    [topicId],
-  );
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync('UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?', [
+      topicId,
+    ]);
+    // Auto-mark as nemesis if threshold reached
+    await db.runAsync(
+      `UPDATE topic_progress SET is_nemesis = 1
+       WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
+      [topicId],
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
 }
 
 export interface SubjectBreakdownRow {

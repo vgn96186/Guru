@@ -1,10 +1,10 @@
-import { describe, it, expect, jest, afterEach } from "@jest/globals";
+import { describe, it, expect, jest, afterEach } from '@jest/globals';
 
 const profileMock = { backupDirectoryUri: 'content://mock/uri' };
 
 async function loadService() {
   jest.resetModules();
-  
+
   const mockFileSystem = {
     documentDirectory: 'file:///data/user/0/com.app/files/',
     writeAsStringAsync: jest.fn(async (_u: string, _c: string, _o?: any) => {}),
@@ -13,13 +13,15 @@ async function loadService() {
     getInfoAsync: jest.fn(async (_u: string) => ({ exists: true })),
     copyAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
     StorageAccessFramework: {
-      createFileAsync: jest.fn(async (_u: string, _f: string, _m: string) => 'content://mock/uri/file.txt'),
+      createFileAsync: jest.fn(
+        async (_u: string, _f: string, _m: string) => 'content://mock/uri/file.txt',
+      ),
     },
     EncodingType: { UTF8: 'utf8' },
   };
 
   jest.doMock('expo-file-system/legacy', () => mockFileSystem);
-  
+
   jest.doMock('react-native', () => ({
     Platform: { OS: 'android' },
   }));
@@ -35,6 +37,25 @@ async function loadService() {
 }
 
 describe('transcriptStorage', () => {
+  beforeEach(() => {
+    // Reset mocks
+    (FileSystem.writeAsStringAsync as jest.Mock).mockClear();
+    (FileSystem.readAsStringAsync as jest.Mock).mockClear();
+    (FileSystem.makeDirectoryAsync as jest.Mock).mockClear();
+    (FileSystem.getInfoAsync as jest.Mock).mockClear();
+    (FileSystem.copyAsync as jest.Mock).mockClear();
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockClear();
+
+    // Ensure mock return values are reset in case any tests override them
+    (FileSystem.getInfoAsync as jest.Mock).mockImplementation(async () => ({ exists: true }));
+    (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(
+      async () => 'transcript content',
+    );
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockImplementation(
+      async () => 'content://mock/uri/file.txt',
+    );
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -48,7 +69,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
         expect.stringMatching(/^note_anatomy_1_\d+\.txt$/),
-        'text/plain'
+        'text/plain',
       );
 
       // Check write to both SAF and Local
@@ -59,15 +80,17 @@ describe('transcriptStorage', () => {
         1,
         'content://mock/uri/file.txt',
         'This is a note.',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
 
       // Second write to local public
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
-        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
+        expect.stringMatching(
+          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/,
+        ),
         'This is a note.',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
     });
 
@@ -85,9 +108,11 @@ describe('transcriptStorage', () => {
       // But should still write to local public
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledTimes(1);
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledWith(
-        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_physiology_2_\d+\.txt$/),
+        expect.stringMatching(
+          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_physiology_2_\d+\.txt$/,
+        ),
         'Another note.',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
 
       // Restore profile mock
@@ -106,7 +131,7 @@ describe('transcriptStorage', () => {
       // Should make the directory since it didn't exist
       expect(mockFileSystem.makeDirectoryAsync).toHaveBeenCalledWith(
         'file:///sdcard/Documents/Guru/Notes/',
-        { intermediates: true }
+        { intermediates: true },
       );
 
       // Both writes should happen
@@ -122,41 +147,57 @@ describe('transcriptStorage', () => {
       // Main app directory
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         1,
-        expect.stringMatching(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+        expect.stringMatching(
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+        ),
         'lecture text',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
 
       // Cloud SAF backup
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
         expect.stringMatching(/^transcript_\d+_[a-z0-9]+\.txt$/),
-        'text/plain'
+        'text/plain',
       );
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
         'content://mock/uri/file.txt',
         'lecture text',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
 
       // Public local backup
       expect(mockFileSystem.copyAsync).toHaveBeenCalledWith({
-        from: expect.stringMatching(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
-        to: expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+        from: expect.stringMatching(
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+        ),
+        to: expect.stringMatching(
+          /^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+        ),
       });
 
-      expect(uri).toMatch(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/);
+      expect(uri).toMatch(
+        /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+      );
     });
 
     it('returns the text directly if it is not a path', async () => {
-       const { service } = await loadService();
-       const res = await service.saveTranscriptToFile('file://my_test_path.txt');
-       expect(res).toBe('file://my_test_path.txt');
+      const { service } = await loadService();
+      const res = await service.saveTranscriptToFile('file://my_test_path.txt');
+      expect(res).toBe('file://my_test_path.txt');
     });
   });
 
   describe('loadTranscriptFromFile', () => {
+    it('returns null if input is falsy', async () => {
+      const result = await loadTranscriptFromFile(null);
+      expect(result).toBeNull();
+
+      const resultEmpty = await loadTranscriptFromFile('');
+      expect(resultEmpty).toBeNull();
+    });
+
     it('returns the text if it is not a file URI', async () => {
       const { service } = await loadService();
       const result = await service.loadTranscriptFromFile('just text');
@@ -165,10 +206,12 @@ describe('transcriptStorage', () => {
 
     it('loads from URI correctly', async () => {
       const { service, mockFileSystem } = await loadService();
-      const result = await service.loadTranscriptFromFile('file:///data/user/0/com.app/files/transcripts/transcript_123.txt');
+      const result = await service.loadTranscriptFromFile(
+        'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
+      );
       expect(mockFileSystem.readAsStringAsync).toHaveBeenCalledWith(
         'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
       expect(result).toBe('transcript content');
     });
@@ -176,24 +219,56 @@ describe('transcriptStorage', () => {
     it('falls back to local current directory if absolute path fails', async () => {
       const { service, mockFileSystem } = await loadService();
       // Mock failure for the first read
-      mockFileSystem.readAsStringAsync.mockImplementationOnce(() => Promise.reject(new Error('File not found')))
-                                           .mockImplementationOnce(() => Promise.resolve('recovered content'));
+      mockFileSystem.readAsStringAsync
+        .mockImplementationOnce(() => Promise.reject(new Error('File not found')))
+        .mockImplementationOnce(() => Promise.resolve('recovered content'));
 
-      const result = await service.loadTranscriptFromFile('file:///old/install/path/transcripts/transcript_123.txt');
+      const result = await service.loadTranscriptFromFile(
+        'file:///old/install/path/transcripts/transcript_123.txt',
+      );
 
       expect(mockFileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
       expect(mockFileSystem.readAsStringAsync).toHaveBeenNthCalledWith(
         1,
         'file:///old/install/path/transcripts/transcript_123.txt',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
       expect(mockFileSystem.readAsStringAsync).toHaveBeenNthCalledWith(
         2,
         'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
-        { encoding: 'utf8' }
+        { encoding: 'utf8' },
       );
 
       expect(result).toBe('recovered content');
+    });
+
+    it('returns an error message if both primary and fallback paths fail', async () => {
+      // Mock failure for both reads
+      (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
+        Promise.reject(new Error('File not found anywhere')),
+      );
+
+      const result = await loadTranscriptFromFile(
+        'file:///old/install/path/transcripts/transcript_123.txt',
+      );
+
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
+      expect(result).toBe('Transcript file could not be loaded.');
+    });
+
+    it('returns an error message immediately if original URI is already the current fallback URI and fails', async () => {
+      // Mock failure for read
+      (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
+        Promise.reject(new Error('Current path file not found')),
+      );
+
+      // Give it the exact path that the fallback logic would resolve to
+      const result = await loadTranscriptFromFile(
+        'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
+      );
+
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(1);
+      expect(result).toBe('Transcript file could not be loaded.');
     });
   });
 });

@@ -92,7 +92,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   await seedSubjects(db);
 
   if (topicCount === 0 || actualForce) {
-    // if (__DEV__) console.log(`[DB] Seeding topics (force: ${actualForce})`);
     if (actualForce) {
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
@@ -108,7 +107,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   const topicCountAfterRes = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM topics',
   );
-  // if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
 
   // Versioned migrations — only run pending ones; fresh installs skip entirely
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');

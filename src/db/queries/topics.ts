@@ -21,7 +21,6 @@ export async function getAllSubjects(): Promise<Subject[]> {
     id: number; name: string; short_code: string; color_hex: string;
     inicet_weight: number; neet_weight: number; display_order: number;
   }>('SELECT * FROM subjects ORDER BY display_order');
-// if (__DEV__) console.log(`[DB] Found ${rows.length} subjects`);
   return rows.map(r => ({
     id: r.id, name: r.name, shortCode: r.short_code, colorHex: r.color_hex,
     inicetWeight: r.inicet_weight, neetWeight: r.neet_weight, displayOrder: r.display_order,
@@ -231,7 +230,6 @@ export async function getSubjectCoverage(): Promise<Array<{ subjectId: number; t
      )
      GROUP BY t.subject_id`,
   );
-// if (__DEV__) console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
   return rows;
 }
 

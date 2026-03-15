@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
+import { generateSecureRandomString } from './cryptoUtils';
 
 const TRANSCRIPT_DIR = FileSystem.documentDirectory + 'transcripts/';
 const RECOVERY_DIR = FileSystem.documentDirectory + 'recovery/';
@@ -54,7 +55,7 @@ export async function backupNoteToPublic(noteId: number, subject: string, noteTe
 
 export async function moveFileToRecovery(fileUri: string): Promise<string> {
   await FileSystem.makeDirectoryAsync(RECOVERY_DIR, { intermediates: true });
-  const fileName = 'recovery_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9) + '.m4a';
+  const fileName = 'recovery_' + Date.now() + '_' + generateSecureRandomString(7) + '.m4a';
   const targetUri = RECOVERY_DIR + fileName;
   try {
     await FileSystem.copyAsync({ from: fileUri, to: targetUri });
@@ -73,7 +74,7 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
   const profile = await profileRepository.getProfile();
   await FileSystem.makeDirectoryAsync(TRANSCRIPT_DIR, { intermediates: true });
   const fileName =
-    'transcript_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9) + '.txt';
+    'transcript_' + Date.now() + '_' + generateSecureRandomString(7) + '.txt';
   const fileUri = TRANSCRIPT_DIR + fileName;
 
   await FileSystem.writeAsStringAsync(fileUri, normalized, {

@@ -33,11 +33,7 @@ import NotificationSection from '../components/settings/NotificationSection';
 import StudyPreferencesSection from '../components/settings/StudyPreferencesSection';
 import ContentPreferencesSection from '../components/settings/ContentPreferencesSection';
 import { isSyncAvailable } from '../services/deviceSyncService';
-import {
-  getExamDateSyncMeta,
-  syncExamDatesFromInternet,
-  type ExamDateSyncMeta,
-} from '../services/examDateSyncService';
+import { getExamDateSyncMeta, syncExamDatesFromInternet } from '../services/examDateSyncService';
 import { getAllSubjects } from '../db/queries/topics';
 import type { ContentType, Subject } from '../types';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
@@ -254,7 +250,7 @@ export default function SettingsScreen() {
     focusSubjectIds,
     subjectLoadOverrides,
     markDirty,
-    profile
+    profile,
   ]);
 
   async function save() {
@@ -324,7 +320,7 @@ export default function SettingsScreen() {
       setIsDirty(false);
       setSaveState('saved');
       saveStateTimeoutRef.current = setTimeout(() => setSaveState('idle'), 2200);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setSaveState('error');
       console.error('[Settings] Save failed:', err);
     } finally {
@@ -342,8 +338,9 @@ export default function SettingsScreen() {
       if (res.neetDate) setNeetDate(res.neetDate);
       await refreshProfile();
       Alert.alert(res.updated ? 'Updated' : 'Checked', res.message);
-    } catch (err: any) {
-      Alert.alert('Sync Failed', err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Sync Failed', message);
     } finally {
       setExamSyncBusy(false);
     }

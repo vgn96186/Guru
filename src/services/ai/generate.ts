@@ -23,25 +23,32 @@ export async function generateJSONWithRouting<T>(
   if (hasCloud) attempts.push('cloud');
   if (hasLocal) attempts.push('local');
 
-  if (attempts.length === 0) throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
+  if (attempts.length === 0)
+    throw new Error(
+      'No AI backend available. Download a local model or add an API key in Settings.',
+    );
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
     try {
-      const { text, modelUsed } = backend === 'local'
-        ? await attemptLocalLLM(messages, profile.localModelPath!, false)
-        : await attemptCloudLLM(messages, orKey, false, groqKey);
-      const parsed = parseStructuredJson(text, schema);
+      const { text, modelUsed } =
+        backend === 'local'
+          ? await attemptLocalLLM(messages, profile.localModelPath!, false)
+          : await attemptCloudLLM(messages, orKey, false, groqKey);
+      const parsed = await parseStructuredJson(text, schema);
       return { parsed, modelUsed };
     } catch (err) {
-      if (__DEV__) console.warn(`[AI] ${backend} inference/parsing failed:`, (err as Error).message);
+      if (__DEV__)
+        console.warn(`[AI] ${backend} inference/parsing failed:`, (err as Error).message);
       lastError = err as Error;
       continue;
     }
   }
 
   if (queueOnFailure && lastError && isTransientNetworkError(lastError) && __DEV__) {
-    console.warn('[AI] Skipping offline queue for structured generation because the original side effect cannot be replayed safely.');
+    console.warn(
+      '[AI] Skipping offline queue for structured generation because the original side effect cannot be replayed safely.',
+    );
   }
 
   throw lastError || new Error('All AI attempts failed');
@@ -60,7 +67,8 @@ export async function generateTextWithRouting(
   // If a specific model is chosen and it's local (e.g., matching the local model path name or 'local')
   if (options?.chosenModel === 'local' && profile.localModelPath && !hasLocal) {
     throw new Error(
-      getLocalLlmRamWarning() ?? 'On-device text AI is disabled on this device to avoid low-memory crashes.',
+      getLocalLlmRamWarning() ??
+        'On-device text AI is disabled on this device to avoid low-memory crashes.',
     );
   }
   if (options?.chosenModel === 'local' && hasLocal) {
@@ -73,14 +81,18 @@ export async function generateTextWithRouting(
   if (hasCloud) attempts.push('cloud');
   if (hasLocal) attempts.push('local');
 
-  if (attempts.length === 0) throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
+  if (attempts.length === 0)
+    throw new Error(
+      'No AI backend available. Download a local model or add an API key in Settings.',
+    );
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
     try {
-      const { text, modelUsed } = backend === 'local'
-        ? await attemptLocalLLM(messages, profile.localModelPath!, true)
-        : await attemptCloudLLM(messages, orKey, true, groqKey, options?.chosenModel);
+      const { text, modelUsed } =
+        backend === 'local'
+          ? await attemptLocalLLM(messages, profile.localModelPath!, true)
+          : await attemptCloudLLM(messages, orKey, true, groqKey, options?.chosenModel);
       return { text, modelUsed };
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} inference failed:`, (err as Error).message);
@@ -90,7 +102,9 @@ export async function generateTextWithRouting(
   }
 
   if (queueOnFailure && lastError && isTransientNetworkError(lastError) && __DEV__) {
-    console.warn('[AI] Skipping offline queue for text generation because the original side effect cannot be replayed safely.');
+    console.warn(
+      '[AI] Skipping offline queue for text generation because the original side effect cannot be replayed safely.',
+    );
   }
 
   throw lastError || new Error('All AI attempts failed');

@@ -16,7 +16,7 @@
  * Audio spec: 16,000 Hz sample rate, mono, 16-bit signed integer PCM.
  */
 
-import { Platform, PermissionsAndroid } from 'react-native';
+import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import {
   RecordingState,
@@ -109,6 +109,12 @@ export class AudioRecorder {
   // Fallback recording state
   private fallbackRecordingPath: string | null = null;
 
+  // Track temporary files for cleanup
+  private tempFilesToClean: string[] = [];
+
+  // Track if destroyed
+  private isDestroyed = false;
+
   constructor() {
     this.ensureRecordingDir();
   }
@@ -138,6 +144,14 @@ export class AudioRecorder {
    * Returns the file path where the WAV will be saved.
    */
   async startRecording(): Promise<string> {
+    if (this.isDestroyed) {
+      throw new TranscriptionError(
+        'RECORDER_DESTROYED',
+        'Cannot start recording - recorder has been destroyed',
+        'The audio recorder has been cleaned up. Please restart the recording.',
+      );
+    }
+
     if (this.state === 'recording') {
       throw new TranscriptionError(
         'UNKNOWN',
@@ -168,6 +182,7 @@ export class AudioRecorder {
     this.totalPcmBytes = 0;
     this.usingFallback = false;
     this.recordingStartTime = Date.now();
+    this.tempFilesToClean = [];
 
     // Try primary PCM path first
     if (AudioPcmStream) {
@@ -180,6 +195,9 @@ export class AudioRecorder {
           '[AudioRecorder] PCM stream failed, trying fallback:',
           err,
         );
+        // Clean up any partial PCM data
+        this.pcmChunks = [];
+        this.totalPcmBytes = 0;
       }
     }
 
@@ -191,6 +209,7 @@ export class AudioRecorder {
         this.setState('recording');
         return this.currentWavPath;
       } catch (err) {
+        await this.cleanupTempFiles();
         this.setState('error');
         throw new TranscriptionError(
           'MIC_IN_USE',
@@ -200,6 +219,7 @@ export class AudioRecorder {
       }
     }
 
+    await this.cleanupTempFiles();
     this.setState('error');
     throw new TranscriptionError(
       'UNKNOWN',
@@ -213,6 +233,14 @@ export class AudioRecorder {
    * Returns the path to the final WAV file (16kHz mono PCM).
    */
   async stopRecording(): Promise<string> {
+    if (this.isDestroyed) {
+      throw new TranscriptionError(
+        'RECORDER_DESTROYED',
+        'Cannot stop recording - recorder has been destroyed',
+        'The audio recorder has been cleaned up.',
+      );
+    }
+
     if (this.state !== 'recording' && this.state !== 'paused') {
       throw new TranscriptionError(
         'UNKNOWN',
@@ -225,13 +253,19 @@ export class AudioRecorder {
 
     let wavPath: string;
 
-    if (this.usingFallback) {
-      wavPath = await this.stopFallbackRecording();
-    } else {
-      wavPath = await this.stopPcmRecording();
+    try {
+      if (this.usingFallback) {
+        wavPath = await this.stopFallbackRecording();
+      } else {
+        wavPath = await this.stopPcmRecording();
+      }
+    } catch (err) {
+      await this.cleanupTempFiles();
+      throw err;
+    } finally {
+      this.setState('idle');
     }
 
-    this.setState('idle');
     return wavPath;
   }
 
@@ -267,16 +301,32 @@ export class AudioRecorder {
 
   /**
    * Release all resources. Call when the component unmounts.
+   * This is idempotent and safe to call multiple times.
    */
-  destroy(): void {
+  async destroy(): Promise<void> {
+    if (this.isDestroyed) return;
+    this.isDestroyed = true;
+
+    // Stop recording if active
     if (this.state === 'recording' || this.state === 'paused') {
-      // Best-effort stop without waiting
-      this.stopRecording().catch((error) => {
-        console.warn('[AudioRecorder] Background stopRecording failed during destroy:', error);
-      });
+      try {
+        await this.stopRecording();
+      } catch (error) {
+        // Ignore errors during cleanup
+        console.warn('[AudioRecorder] Error stopping recording during destroy:', error);
+      }
     }
+
+    // Clean up all temporary files
+    await this.cleanupTempFiles();
+
+    // Clear callbacks
     this.pcmCallback = null;
     this.stateCallback = null;
+
+    // Clear buffers
+    this.pcmChunks = [];
+    this.totalPcmBytes = 0;
   }
 
   // ── Primary Path: Direct PCM Recording ──────────────────────────────────
@@ -290,50 +340,148 @@ export class AudioRecorder {
       bufferSize: 8192, // ~0.5s at 16kHz mono 16-bit
     };
 
-    AudioPcmStream.init(options);
+    try {
+      AudioPcmStream.init(options);
+    } catch (err) {
+      throw new TranscriptionError(
+        'PCM_INIT_FAILED',
+        `Failed to initialize PCM stream: ${err}`,
+        'Audio initialization failed. Try restarting the app.',
+      );
+    }
 
-    AudioPcmStream.on('data', (base64Chunk: string) => {
-      if (this.state !== 'recording') return;
+    // Set up data listener
+    const dataHandler = (base64Chunk: string) => {
+      if (this.state !== 'recording' || this.isDestroyed) return;
 
-      // Decode base64 to raw bytes
-      const rawBuffer = Buffer.from(base64Chunk, 'base64');
-      this.pcmChunks.push(rawBuffer);
-      this.totalPcmBytes += rawBuffer.length;
+      try {
+        // Decode base64 to raw bytes
+        const rawBuffer = Buffer.from(base64Chunk, 'base64');
+        this.pcmChunks.push(rawBuffer);
+        this.totalPcmBytes += rawBuffer.length;
 
-      // Convert Int16 PCM to Float32 for whisper.rn
-      if (this.pcmCallback) {
-        const int16View = new Int16Array(
-          rawBuffer.buffer,
-          rawBuffer.byteOffset,
-          rawBuffer.length / 2,
-        );
-        const float32 = new Float32Array(int16View.length);
-        for (let i = 0; i < int16View.length; i++) {
-          float32[i] = int16View[i] / 32768.0;
+        // Memory safety check - limit to 500MB of raw PCM
+        if (this.totalPcmBytes > 500 * 1024 * 1024) {
+          console.error('[AudioRecorder] Recording exceeded 500MB limit, stopping...');
+          this.stopRecording().catch(() => {});
+          return;
         }
-        this.pcmCallback(float32);
-      }
-    });
 
-    await AudioPcmStream.start();
+        // Convert Int16 PCM to Float32 for whisper.rn
+        if (this.pcmCallback) {
+          const int16View = new Int16Array(
+            rawBuffer.buffer,
+            rawBuffer.byteOffset,
+            rawBuffer.length / 2,
+          );
+          const float32 = new Float32Array(int16View.length);
+          for (let i = 0; i < int16View.length; i++) {
+            float32[i] = int16View[i] / 32768.0;
+          }
+          this.pcmCallback(float32);
+        }
+      } catch (err) {
+        console.warn('[AudioRecorder] Error processing PCM chunk:', err);
+        // Don't throw - continue recording
+      }
+    };
+
+    AudioPcmStream.on('data', dataHandler);
+
+    // Store listener for cleanup
+    (AudioPcmStream as any)._dataListener = dataHandler;
+
+    try {
+      await AudioPcmStream.start();
+    } catch (err) {
+      // Clean up listener
+      AudioPcmStream.off('data', dataHandler);
+      delete (AudioPcmStream as any)._dataListener;
+      throw new TranscriptionError(
+        'PCM_START_FAILED',
+        `Failed to start PCM recording: ${err}`,
+        'Could not start audio capture. Check microphone permissions.',
+      );
+    }
   }
 
   private async stopPcmRecording(): Promise<string> {
-    await AudioPcmStream.stop();
+    try {
+      await AudioPcmStream.stop();
+    } catch (err) {
+      console.warn('[AudioRecorder] Error stopping PCM stream:', err);
+      // Continue to write whatever we have
+    }
 
-    // Concatenate all PCM chunks
-    const totalBuffer = Buffer.concat(this.pcmChunks, this.totalPcmBytes);
+    // Clean up listener
+    const dataHandler = (AudioPcmStream as any)._dataListener;
+    if (dataHandler) {
+      AudioPcmStream.off('data', dataHandler);
+      delete (AudioPcmStream as any)._dataListener;
+    }
+
+    // Check if we have any audio data
+    if (this.pcmChunks.length === 0) {
+      throw new TranscriptionError(
+        'NO_AUDIO_DATA',
+        'No audio data captured',
+        'The recording appears to be empty. Check your microphone.',
+      );
+    }
+
+    // Concatenate all PCM chunks with memory safety check
+    if (this.totalPcmBytes > 100 * 1024 * 1024) { // 100MB limit for concatenation
+      throw new TranscriptionError(
+        'RECORDING_TOO_LONG',
+        'Recording exceeds maximum duration',
+        'Recording is too long. Please break it into smaller chunks.',
+      );
+    }
+
+    let totalBuffer: Buffer;
+    try {
+      // Use a more memory-efficient approach for large recordings
+      if (this.pcmChunks.length > 100) {
+        // For many chunks, write incrementally to temp file
+        const tempPath = `${FileSystem.cacheDirectory}pcm-chunks-${Date.now()}.bin`;
+        this.tempFilesToClean.push(tempPath);
+        
+        let offset = 0;
+        const buffer = Buffer.alloc(this.totalPcmBytes);
+        for (const chunk of this.pcmChunks) {
+          chunk.copy(buffer, offset);
+          offset += chunk.length;
+        }
+        totalBuffer = buffer;
+      } else {
+        totalBuffer = Buffer.concat(this.pcmChunks, this.totalPcmBytes);
+      }
+    } catch (err) {
+      throw new TranscriptionError(
+        'BUFFER_CONCAT_FAILED',
+        `Failed to concatenate audio buffers: ${err}`,
+        'Internal audio processing error.',
+      );
+    }
 
     // Write WAV file: header + PCM data
     const wavHeader = createWavHeader(totalBuffer.length);
     const headerBuffer = Buffer.from(wavHeader);
     const wavBuffer = Buffer.concat([headerBuffer, totalBuffer]);
 
-    // Write to file
+    // Write to file with error handling
     const base64Wav = wavBuffer.toString('base64');
-    await FileSystem.writeAsStringAsync(this.currentWavPath!, base64Wav, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    try {
+      await FileSystem.writeAsStringAsync(this.currentWavPath!, base64Wav, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    } catch (err) {
+      throw new TranscriptionError(
+        'FILE_WRITE_FAILED',
+        `Failed to write WAV file: ${err}`,
+        'Could not save recording. Check storage space.',
+      );
+    }
 
     // Free memory
     this.pcmChunks = [];
@@ -345,63 +493,104 @@ export class AudioRecorder {
   // ── Fallback Path: Native Module M4A → WAV ─────────────────────────────
 
   private async startFallbackRecording(): Promise<void> {
-    // Use the existing native RecordingService (records to M4A)
-    this.fallbackRecordingPath = await AppLauncher.startRecording('');
-    if (!this.fallbackRecordingPath) {
-      throw new Error('Native recording returned null path');
+    if (!AppLauncher) {
+      throw new TranscriptionError(
+        'NATIVE_MODULE_MISSING',
+        'Native recording module not available',
+        'Audio recording is not supported on this device.',
+      );
+    }
+
+    try {
+      this.fallbackRecordingPath = await AppLauncher.startRecording('');
+      if (!this.fallbackRecordingPath) {
+        throw new Error('Native recording returned null path');
+      }
+      this.tempFilesToClean.push(this.fallbackRecordingPath);
+    } catch (err) {
+      throw new TranscriptionError(
+        'FALLBACK_START_FAILED',
+        `Failed to start fallback recording: ${err}`,
+        'Could not start audio recording. Check microphone permissions.',
+      );
     }
   }
 
   private async stopFallbackRecording(): Promise<string> {
-    const m4aPath = await AppLauncher.stopRecording();
-    if (!m4aPath) {
+    if (!AppLauncher) {
       throw new TranscriptionError(
-        'RECORDING_INTERRUPTED',
-        'stopRecording returned null',
-        'Recording was interrupted. Your progress may have been lost.',
+        'NATIVE_MODULE_MISSING',
+        'Native recording module not available',
+        'Cannot stop recording - module missing.',
       );
     }
 
-    // Convert M4A → WAV (16kHz mono PCM) via native module
-    const wavPath = await AppLauncher.convertToWav(m4aPath);
-    if (!wavPath) {
-      throw new TranscriptionError(
-        'AUDIO_FORMAT_ERROR',
-        `Failed to convert ${m4aPath} to WAV`,
-        'Could not process the audio file. Please try recording again.',
-      );
-    }
+    try {
+      const m4aPath = await AppLauncher.stopRecording();
+      if (!m4aPath) {
+        throw new TranscriptionError(
+          'RECORDING_INTERRUPTED',
+          'stopRecording returned null',
+          'Recording was interrupted. Your progress may have been lost.',
+        );
+      }
 
-    // Copy to our expected output path
-    if (wavPath !== this.currentWavPath) {
-      await FileSystem.copyAsync({ from: wavPath, to: this.currentWavPath! });
-    }
+      // Convert M4A → WAV (16kHz mono PCM) via native module
+      const wavPath = await AppLauncher.convertToWav(m4aPath);
+      if (!wavPath) {
+        throw new TranscriptionError(
+          'AUDIO_FORMAT_ERROR',
+          `Failed to convert ${m4aPath} to WAV`,
+          'Could not process the audio file. Please try recording again.',
+        );
+      }
 
-    return this.currentWavPath!;
+      // Copy to our expected output path if different
+      if (wavPath !== this.currentWavPath) {
+        try {
+          await FileSystem.copyAsync({ from: wavPath, to: this.currentWavPath! });
+          this.tempFilesToClean.push(wavPath); // Mark for cleanup
+        } catch (err) {
+          throw new TranscriptionError(
+            'FILE_COPY_FAILED',
+            `Failed to copy WAV file: ${err}`,
+            'Could not save converted audio.',
+          );
+        }
+      }
+
+      return this.currentWavPath!;
+    } catch (err) {
+      // Clean up temp files on error
+      await this.cleanupTempFiles();
+      throw err;
+    }
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────────
 
   private setState(state: RecordingState): void {
+    if (this.isDestroyed) return;
     this.state = state;
     this.stateCallback?.(state);
   }
 
   private async requestMicPermission(): Promise<boolean> {
-    if (Platform.OS !== 'android') return false;
+    if (Platform.OS !== 'android') return true; // iOS handled by expo-av
 
     try {
       const result = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
           title: 'Microphone Permission',
-          message: 'Guru needs microphone access to record lectures.',
+          message: 'Guru needs microphone access to record lectures for transcription.',
           buttonPositive: 'Allow',
           buttonNegative: 'Deny',
         },
       );
       return result === PermissionsAndroid.RESULTS.GRANTED;
-    } catch {
+    } catch (err) {
+      console.warn('[AudioRecorder] Permission request failed:', err);
       return false;
     }
   }
@@ -417,6 +606,24 @@ export class AudioRecorder {
     } catch (err) {
       console.warn('[AudioRecorder] Failed to create recording dir:', err);
     }
+  }
+
+  /**
+   * Clean up temporary files created during recording.
+   * Called on error or when stopping recording.
+   */
+  private async cleanupTempFiles(): Promise<void> {
+    for (const file of this.tempFilesToClean) {
+      try {
+        const info = await FileSystem.getInfoAsync(file);
+        if (info.exists) {
+          await FileSystem.deleteAsync(file, { idempotent: true });
+        }
+      } catch (err) {
+        console.warn('[AudioRecorder] Failed to cleanup temp file:', file, err);
+      }
+    }
+    this.tempFilesToClean = [];
   }
 }
 

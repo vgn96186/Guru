@@ -182,8 +182,6 @@ export default function SyllabusScreen() {
                  `--- Topics Per Subject ---\n${summary}\n\n` +
                  `--- Subjects Map ---\n${subjects.map((s:any) => `${s.id}: ${s.name}`).join('\n')}`;
     
-// console.log('--- DB DIAGNOSTICS ---');
-// console.log(diag);
     Alert.alert('Database State', diag);
   }
 

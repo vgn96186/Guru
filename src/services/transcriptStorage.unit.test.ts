@@ -57,7 +57,7 @@ describe('transcriptStorage', () => {
       // First write to SAF
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         1,
-        'content://mock/uri/file.txt',
+        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
         'This is a note.',
         { encoding: 'utf8' }
       );
@@ -65,7 +65,7 @@ describe('transcriptStorage', () => {
       // Second write to local public
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
-        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
+        'content://mock/uri/file.txt',
         'This is a note.',
         { encoding: 'utf8' }
       );

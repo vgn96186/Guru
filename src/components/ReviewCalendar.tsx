@@ -192,7 +192,7 @@ export default React.memo(function ReviewCalendar() {
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

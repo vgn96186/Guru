@@ -193,3 +193,51 @@ describe('retryFailedTranscriptions', () => {
     expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('saveLectureAnalysisQuick', () => {
+  let lectureSessionMonitor: typeof import('./lectureSessionMonitor');
+  let transcriptionServiceMock: any;
+  let persistenceMock: any;
+
+  beforeEach(async () => {
+    jest.resetModules();
+    transcriptionServiceMock = require('./transcriptionService');
+    persistenceMock = require('./lecture/persistence');
+    lectureSessionMonitor = require('./lectureSessionMonitor');
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should call buildQuickLectureNote and saveLecturePersistence with combined parameters', async () => {
+    const mockAnalysis = {
+      subject: 'Mock Subject',
+      topics: [],
+      keyConcepts: [],
+      highYieldPoints: [],
+      lectureSummary: 'Mock summary',
+      estimatedConfidence: 2,
+    };
+
+    const mockOpts = {
+      analysis: mockAnalysis as any,
+      appName: 'MockApp',
+      durationMinutes: 10,
+      logId: 1,
+    };
+
+    const mockQuickNote = 'Mock Quick Note Content';
+    transcriptionServiceMock.buildQuickLectureNote.mockReturnValue(mockQuickNote);
+    persistenceMock.saveLecturePersistence.mockResolvedValue(123);
+
+    const result = await lectureSessionMonitor.saveLectureAnalysisQuick(mockOpts);
+
+    expect(transcriptionServiceMock.buildQuickLectureNote).toHaveBeenCalledWith(mockAnalysis);
+    expect(persistenceMock.saveLecturePersistence).toHaveBeenCalledWith({
+      ...mockOpts,
+      quickNote: mockQuickNote,
+    });
+    expect(result).toBe(123);
+  });
+});

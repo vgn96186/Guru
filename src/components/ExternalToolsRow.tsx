@@ -78,7 +78,7 @@ export default React.memo(function ExternalToolsRow({ onLogSession }: Props) {
       </ScrollView>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { marginBottom: 8, marginTop: 4 },

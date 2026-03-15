@@ -110,7 +110,7 @@ const ToastItem = React.memo(({ payload, onDone }: { payload: ToastPayload; onDo
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 /**
  * Mount this component once near your app root.

@@ -1,17 +1,29 @@
 import { z } from 'zod';
 import type { Mood, TopicWithProgress } from '../../types';
-import { SYSTEM_PROMPT, buildAgendaPrompt, buildAccountabilityPrompt } from '../../constants/prompts';
-import type { Message, GuruPresenceMessage, AgendaResponse } from './types';
-import { AgendaSchema } from './schemas';
+import {
+  SYSTEM_PROMPT,
+  buildAgendaPrompt,
+  buildAccountabilityPrompt,
+  buildDailyAgendaPrompt,
+  buildReplanPrompt,
+} from '../../constants/prompts';
+import type { Message, GuruPresenceMessage, AgendaResponse, DailyAgenda } from './types';
+import { AgendaSchema, DailyAgendaSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
 
 const FALLBACK_MESSAGES: GuruPresenceMessage[] = [
-  { text: "Still here. Working through some Pharmacology while you tackle this.", trigger: 'periodic' },
-  { text: "Heads down over here. Keep your pace.", trigger: 'periodic' },
-  { text: "Nice. That card is done. One step closer.", trigger: 'card_done' },
+  {
+    text: 'Still here. Working through some Pharmacology while you tackle this.',
+    trigger: 'periodic',
+  },
+  { text: 'Heads down over here. Keep your pace.', trigger: 'periodic' },
+  { text: 'Nice. That card is done. One step closer.', trigger: 'card_done' },
   { text: "That's it. Knew you had that one.", trigger: 'quiz_correct' },
   { text: "Tricky question. Don't overthink it — move on.", trigger: 'quiz_wrong' },
-  { text: "Good call flagging that. Honest review beats false confidence.", trigger: 'again_rated' },
+  {
+    text: 'Good call flagging that. Honest review beats false confidence.',
+    trigger: 'again_rated',
+  },
 ];
 
 export async function planSessionWithAI(
@@ -20,7 +32,7 @@ export async function planSessionWithAI(
   mood: Mood,
   recentTopics: string[],
 ): Promise<AgendaResponse> {
-  const candidateData = candidates.map(t => ({
+  const candidateData = candidates.map((t) => ({
     id: t.id,
     name: t.name,
     subject: t.subjectName,
@@ -38,23 +50,21 @@ export async function planSessionWithAI(
   return parsed;
 }
 
-export async function generateAccountabilityMessages(
-  stats: {
-    displayName: string;
-    streak: number;
-    weakestTopics: string[];
-    nemesisTopics: string[];
-    dueTopics: string[];
-    lastStudied: string;
-    daysToInicet: number;
-    daysToNeetPg: number;
-    coveragePercent: number;
-    masteredCount: number;
-    totalTopics: number;
-    lastMood: Mood | null;
-    guruFrequency: 'rare' | 'normal' | 'frequent' | 'off';
-  },
-): Promise<Array<{ title: string; body: string; scheduledFor: string }>> {
+export async function generateAccountabilityMessages(stats: {
+  displayName: string;
+  streak: number;
+  weakestTopics: string[];
+  nemesisTopics: string[];
+  dueTopics: string[];
+  lastStudied: string;
+  daysToInicet: number;
+  daysToNeetPg: number;
+  coveragePercent: number;
+  masteredCount: number;
+  totalTopics: number;
+  lastMood: Mood | null;
+  guruFrequency: 'rare' | 'normal' | 'frequent' | 'off';
+}): Promise<Array<{ title: string; body: string; scheduledFor: string }>> {
   const userPrompt = buildAccountabilityPrompt(stats);
   const messages: Message[] = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -72,14 +82,18 @@ export async function generateGuruPresenceMessages(
   topicNames: string[],
   allTopicNames: string[],
 ): Promise<GuruPresenceMessage[]> {
-  const guruTopic = allTopicNames[Math.floor(Math.random() * allTopicNames.length)] ?? 'Biochemistry';
+  const guruTopic =
+    allTopicNames[Math.floor(Math.random() * allTopicNames.length)] ?? 'Biochemistry';
   const systemPrompt = `You are Guru, a study companion working alongside a medical student. You are currently studying ${guruTopic}. Be brief, warm, and grounding.`;
   const userPrompt = `The student is studying: ${topicNames.join(', ')}.
 Generate exactly 6 ambient presence messages as a JSON array. Each has "text" (1-2 short sentences) and "trigger" (one of: periodic, card_done, quiz_correct, quiz_wrong, again_rated).
 Include 2 "periodic" messages and 1 each of the other 4. Reference their topics or yours naturally.
 Return only valid JSON: [{"text":"...","trigger":"..."},...]`;
   try {
-    const messages: Message[] = [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }];
+    const messages: Message[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ];
     const GuruMsgSchema = z.array(z.object({ text: z.string(), trigger: z.string() }));
 
     const { parsed } = await generateJSONWithRouting(messages, GuruMsgSchema, 'high');
@@ -88,4 +102,48 @@ Return only valid JSON: [{"text":"...","trigger":"..."},...]`;
   } catch {
     return FALLBACK_MESSAGES;
   }
+}
+
+export async function generateDailyAgendaWithRouting(
+  displayName: string,
+  stats: {
+    streak: number;
+    daysToInicet: number;
+    daysToNeetPg: number;
+    coveragePercent: number;
+    dueTopics: Array<{ id: number; name: string; subject: string }>;
+    weakTopics: Array<{ id: number; name: string; subject: string }>;
+    recentTopics: string[];
+  },
+  availableMinutes: number = 480,
+): Promise<DailyAgenda> {
+  const userPrompt = buildDailyAgendaPrompt(displayName, stats, availableMinutes);
+  const messages: Message[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ];
+
+  const { parsed } = await generateJSONWithRouting(messages, DailyAgendaSchema, 'high');
+  return parsed;
+}
+
+export async function replanDayWithRouting(
+  currentPlan: DailyAgenda,
+  completedBlockIds: string[],
+  missedBlockIds: string[],
+  remainingMinutes: number,
+): Promise<DailyAgenda> {
+  const userPrompt = buildReplanPrompt(
+    currentPlan,
+    completedBlockIds,
+    missedBlockIds,
+    remainingMinutes,
+  );
+  const messages: Message[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ];
+
+  const { parsed } = await generateJSONWithRouting(messages, DailyAgendaSchema, 'high');
+  return parsed;
 }

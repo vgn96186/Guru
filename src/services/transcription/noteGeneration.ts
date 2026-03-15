@@ -6,7 +6,7 @@ const ADHD_NOTE_SYSTEM_PROMPT = `You create elite medical study notes for a NEET
 Rules:
 - STRUCTURE: Use clear emoji headers: 🎯 **Subject**, 📌 **Topics**, 💡 **Key Concepts**, 🚀 **High-Yield Facts**.
 - HIGHLIGHTS: Use markdown bolding (**keyword**) for clinical anchors, specific drug names, and diagnostic criteria.
-- SCANNABLE: Short bullet points, never walls of text. Max 220 words total.
+- SCANNABLE: Short bullet points, never walls of text. Ensure comprehensive coverage of the entire transcript.
 - VISUAL: Use emoji anchors throughout.
 - MEMORABLE: Include one brief mnemonic or clinical anchor for the most tested concept.
 - ACTIONABLE: End with 2 quick "check-your-understanding" questions.
@@ -16,8 +16,8 @@ export async function generateADHDNote(analysis: LectureAnalysis): Promise<strin
   const transcriptContext = analysis.transcript?.trim()
     ? `\nRepresentative transcript excerpts:\n${buildRepresentativeTranscriptExcerpt(
         analysis.transcript,
-        24000,
-        3,
+        64000,
+        4,
       )}`
     : '';
   const input = `Subject: ${analysis.subject}

@@ -26,11 +26,12 @@ export async function transcribeAudio(opts: {
   maxRetries?: number;
   onProgress?: (progress: { stage: 'transcribing' | 'analyzing'; message: string }) => void;
 }): Promise<LectureAnalysis & { embedding?: number[] }> {
+  const profile = await profileRepository.getProfile();
   const {
     audioFilePath,
-    groqKey,
-    useLocalWhisper,
-    localWhisperPath,
+    groqKey = getApiKeys(profile).groqKey,
+    useLocalWhisper = profile.useLocalWhisper,
+    localWhisperPath = profile.localWhisperPath,
     onProgress,
     maxRetries = 2,
   } = opts;

@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
-import Svg, { Circle, G, Path } from 'react-native-svg';
+import Svg, { Circle, G } from 'react-native-svg';
 import Animated, {
     useSharedValue,
     useAnimatedProps,
     withTiming,
     Easing,
-    interpolateColor,
-    useAnimatedStyle
+    interpolateColor
 } from 'react-native-reanimated';
 import { theme } from '../constants/theme';
 

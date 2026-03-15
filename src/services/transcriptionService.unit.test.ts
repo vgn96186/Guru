@@ -1,5 +1,5 @@
 // Just skipping tests that mock complex nested dynamic imports that cause vm-modules to fail, as it relies heavily on native features.
-import { describe, it, expect, jest, afterEach } from '@jest/globals';
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
 async function loadTranscriptionService(opts?: {
   groqKey?: string | undefined;
@@ -27,16 +27,17 @@ async function loadTranscriptionService(opts?: {
     })),
     release: jest.fn(async () => undefined),
   }));
-  const generateJSONWithRoutingMock = jest.fn(async () => ({
+  const generateJSONWithRoutingMock = jest.fn<any>().mockResolvedValue({
     parsed: {
       subject: 'Physiology',
       topics: ['Renin-Angiotensin System'],
       key_concepts: ['Renin rises with low BP'],
+      high_yield_highlights: ['Renin is an enzyme'],
       lecture_summary: 'RAAS overview',
       estimated_confidence: 2,
     },
     modelUsed: 'groq/llama-3.3-70b-versatile',
-  }));
+  });
 
   jest.doMock('expo-file-system/legacy', () => ({
     getInfoAsync: jest.fn(async () => ({ exists: true, size: 1024 })),
@@ -94,7 +95,7 @@ async function loadTranscriptionService(opts?: {
 }
 
 describe('transcriptionService entrypoint policy', () => {
-  afterEach(() => {
+  beforeEach(() => {
     jest.restoreAllMocks();
   });
 
@@ -128,6 +129,7 @@ describe('transcriptionService entrypoint policy', () => {
 
     expect(analysis.subject).toBe('Physiology');
     expect(analysis.transcript).toBe('groq transcript text');
+    expect(analysis.highYieldPoints).toEqual(['Renin is an enzyme']);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(initWhisperMock).not.toHaveBeenCalled();
   });
@@ -162,6 +164,7 @@ describe('transcriptionService entrypoint policy', () => {
 
     expect(analysis.subject).toBe('Physiology');
     expect(analysis.transcript).toBe('local fallback transcript');
+    expect(analysis.highYieldPoints).toEqual(['Renin is an enzyme']);
     expect(initWhisperMock).toHaveBeenCalledTimes(1);
   });
 

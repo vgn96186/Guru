@@ -341,33 +341,42 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
       if (!dirInfo.exists) return;
 
       const files = await FileSystem.readDirectoryAsync(dir);
-      for (const fileName of files) {
-        if (!fileName.endsWith('.txt')) continue;
-        if (referencedFiles.has(fileName)) continue;
+      const orphanedFiles = files.filter(
+        (fileName) => fileName.endsWith('.txt') && !referencedFiles.has(fileName)
+      );
 
-        // Orphan found!
-        const fileUri = dir + fileName;
-        const content = await FileSystem.readAsStringAsync(fileUri);
+      // Process in chunks of 5
+      const concurrencyLimit = 5;
+      for (let i = 0; i < orphanedFiles.length; i += concurrencyLimit) {
+        const chunk = orphanedFiles.slice(i, i + concurrencyLimit);
 
-        if (!content.trim()) continue;
+        await Promise.all(
+          chunk.map(async (fileName) => {
+            // Orphan found!
+            const fileUri = dir + fileName;
+            const content = await FileSystem.readAsStringAsync(fileUri);
 
-        console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
+            if (!content.trim()) return;
 
-        const analysis = await analyzeTranscript(content);
-        const quickNote = buildQuickLectureNote(analysis);
+            console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
 
-        const { saveLecturePersistence } = await import('./lecture/persistence');
-        await saveLecturePersistence({
-          analysis: { ...analysis, transcript: content },
-          appName: 'Recovered Folder',
-          durationMinutes: 0,
-          logId: -1,
-          quickNote,
-        });
+            const analysis = await analyzeTranscript(content);
+            const quickNote = buildQuickLectureNote(analysis);
 
-        // Add to set so we don't recover it twice if it exists in both dirs
-        referencedFiles.add(fileName);
-        recovered++;
+            const { saveLecturePersistence } = await import('./lecture/persistence');
+            await saveLecturePersistence({
+              analysis: { ...analysis, transcript: content },
+              appName: 'Recovered Folder',
+              durationMinutes: 0,
+              logId: -1,
+              quickNote,
+            });
+
+            // Add to set so we don't recover it twice if it exists in both dirs
+            referencedFiles.add(fileName);
+            recovered++;
+          })
+        );
       }
     }
 

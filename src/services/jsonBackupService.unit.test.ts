@@ -124,5 +124,41 @@ describe('jsonBackupService', () => {
 
       consoleSpy.mockRestore();
     });
+
+    it('should handle invalid JSON in number array gracefully', async () => {
+      // Setup mock to return invalid JSON string for a number array column
+      mockDb.getAllAsync.mockImplementation(async (query: string) => {
+        if (query.includes('FROM subjects')) return [{ id: 1, name: 'Anatomy', short_code: 'ANA' }];
+        if (query.includes('FROM topics')) return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
+        if (query.includes('sessions')) {
+          // 'planned_topics' has invalid JSON string
+          return [{ id: 300, planned_topics: '{ invalid json }', completed_topics: '[10]' }];
+        }
+        return [];
+      });
+
+      (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(false);
+
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const result = await exportJsonBackup();
+
+      expect(result).toBe(true);
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '[Backup] Failed to parse number array:',
+        expect.any(SyntaxError)
+      );
+
+      const [, jsonContent] = (FileSystem.writeAsStringAsync as jest.Mock).mock.calls[0];
+      const parsed = JSON.parse(jsonContent);
+
+      // The invalid JSON should result in an empty array of refs, not crash
+      expect(parsed.tables.sessions[0].planned_topic_refs).toEqual([]);
+      expect(parsed.tables.sessions[0].completed_topic_refs).toEqual([
+        { subjectShortCode: 'ANA', topicName: 'Upper Limb' },
+      ]);
+
+      consoleWarnSpy.mockRestore();
+    });
   });
 });

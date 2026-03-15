@@ -10,17 +10,13 @@ import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
 export async function generateJSONWithRouting<T>(
   messages: Message[],
   schema: z.ZodType<T>,
-  taskComplexity: 'low' | 'high' = 'low',
+  _taskComplexity: 'low' | 'high' = 'low',
   queueOnFailure = true,
 ): Promise<{ parsed: T; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
   const { orKey, groqKey } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
-  const isQwen = hasLocal && profile.localModelPath!.toLowerCase().includes('qwen');
   const hasCloud = !!orKey || !!groqKey;
-
-  // High complexity tasks on 1B Llama model usually output invalid JSON. We prefer cloud for them.
-  const preferCloud = taskComplexity === 'high' && hasLocal && !isQwen && hasCloud;
 
   // Define the order of backends to try — cloud first for reliability
   const attempts: ('local' | 'cloud')[] = [];

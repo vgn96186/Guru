@@ -138,7 +138,7 @@ export default React.memo(function SubjectCard({ subject, coverage, metrics, mat
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

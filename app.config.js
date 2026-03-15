@@ -5,7 +5,8 @@ const requiredEnvVars = [
 ];
 
 const missing = requiredEnvVars.filter(key => !process.env[key]);
-if (missing.length > 0 && __DEV__) {
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+if (missing.length > 0 && isDev) {
   console.warn(`[app.config] Missing environment variables: ${missing.join(', ')}`);
 }
 

@@ -47,7 +47,6 @@ export async function getAllSubjects(): Promise<Subject[]> {
     neet_weight: number;
     display_order: number;
   }>('SELECT * FROM subjects ORDER BY display_order');
-  // if (__DEV__) console.log(`[DB] Found ${rows.length} subjects`);
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
@@ -303,7 +302,6 @@ export async function getSubjectCoverage(): Promise<
      )
      GROUP BY t.subject_id`,
   );
-  // if (__DEV__) console.log(`[DB] Coverage rows: ${JSON.stringify(rows)}`);
   return rows;
 }
 

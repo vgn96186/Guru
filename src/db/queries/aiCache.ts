@@ -452,6 +452,46 @@ export async function deleteLectureNote(id: number): Promise<void> {
   await db.runAsync('DELETE FROM lecture_notes WHERE id = ?', [id]);
 }
 
+export async function getLectureTranscriptsBySubject(
+  subjectId: number,
+): Promise<LectureHistoryItem[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    subject_id: number | null;
+    subject_name: string | null;
+    note: string;
+    transcript: string | null;
+    summary: string | null;
+    topics_json: string | null;
+    app_name: string | null;
+    duration_minutes: number | null;
+    confidence: number | null;
+    created_at: number;
+  }>(
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+     FROM lecture_notes ln
+     LEFT JOIN subjects s ON ln.subject_id = s.id
+     WHERE ln.subject_id = ?
+     ORDER BY ln.created_at DESC`,
+    [subjectId],
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    subjectId: r.subject_id,
+    subjectName: r.subject_name,
+    note: r.note,
+    transcript: r.transcript,
+    summary: r.summary,
+    topics: r.topics_json ? JSON.parse(r.topics_json) : [],
+    appName: r.app_name,
+    durationMinutes: r.duration_minutes,
+    confidence: r.confidence ?? 2,
+    createdAt: r.created_at,
+  }));
+}
+
 // ── Chat History ──────────────────────────────────────────────────
 
 export interface ChatHistoryMessage {

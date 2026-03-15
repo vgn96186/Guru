@@ -92,7 +92,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   await seedSubjects(db);
 
   if (topicCount === 0 || actualForce) {
-    // if (__DEV__) console.log(`[DB] Seeding topics (force: ${actualForce})`);
     if (actualForce) {
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
@@ -108,7 +107,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   const topicCountAfterRes = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM topics',
   );
-  // if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
 
   // Versioned migrations — only run pending ones; fresh installs skip entirely
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -177,22 +175,28 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await seedUserProfile(db);
   } else {
     // Run background maintenance
-    const {
-      retryFailedTasks,
-      autoRepairLegacyNotes,
-      scanAndRecoverOrphanedTranscripts,
-      scanAndRecoverOrphanedRecordings,
-    } = await import('../services/lectureSessionMonitor');
-    void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
-      console.error('[DB] retryFailedTasks failed:', e),
-    );
-    void autoRepairLegacyNotes().catch((e) => console.error('[DB] autoRepairLegacyNotes failed:', e));
-    void scanAndRecoverOrphanedTranscripts().catch((e) =>
-      console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
-    );
-    void scanAndRecoverOrphanedRecordings().catch((e) =>
-      console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
-    );
+    try {
+      const {
+        retryFailedTasks,
+        autoRepairLegacyNotes,
+        scanAndRecoverOrphanedTranscripts,
+        scanAndRecoverOrphanedRecordings,
+      } = await import('../services/lectureSessionMonitor');
+      void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
+        console.error('[DB] retryFailedTasks failed:', e),
+      );
+      void autoRepairLegacyNotes().catch((e) =>
+        console.error('[DB] autoRepairLegacyNotes failed:', e),
+      );
+      void scanAndRecoverOrphanedTranscripts().catch((e) =>
+        console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
+      );
+      void scanAndRecoverOrphanedRecordings().catch((e) =>
+        console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
+      );
+    } catch (e) {
+      console.error('[DB] Failed to run background maintenance tasks:', e);
+    }
   }
 
   // Update streak on open

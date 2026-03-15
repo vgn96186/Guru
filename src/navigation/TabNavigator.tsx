@@ -37,6 +37,10 @@ import { theme } from '../constants/theme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
+import * as DocumentPicker from 'expo-document-picker';
+import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
+import { getSubjectByName } from '../db/queries/topics';
+import { saveLectureTranscript } from '../db/queries/aiCache';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -99,7 +103,7 @@ function ActionHubPlaceholder() {
 export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const profile = useAppStore((state) => state.profile);
+  const { profile, refreshProfile } = useAppStore();
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
   const localWhisperPath =
@@ -121,6 +125,49 @@ export default function TabNavigator() {
       );
     }
   }
+
+  const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+
+  const handleAudioUpload = async () => {
+    setIsActionHubOpen(false);
+    const res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+    if (res.canceled || !res.assets[0]) return;
+    setIsTranscribingUpload(true);
+    try {
+      const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
+      const hasTranscript = !!analysis.transcript?.trim();
+      const hasMeaningfulSummary =
+        !!analysis.lectureSummary &&
+        ![
+          'No audio recorded (empty file)',
+          'No speech detected (silent audio)',
+          'No speech detected',
+          'Lecture content recorded',
+          'No medical content detected',
+        ].includes(analysis.lectureSummary);
+      if (!hasTranscript || !hasMeaningfulSummary) {
+        throw new Error('No usable lecture content was detected in this recording.');
+      }
+      const note = await generateADHDNote(analysis);
+      const sub = await getSubjectByName(analysis.subject);
+      await saveLectureTranscript({
+        subjectId: sub?.id ?? null,
+        note,
+        transcript: analysis.transcript,
+        summary: analysis.lectureSummary,
+        topics: analysis.topics,
+        appName: 'Upload',
+        confidence: analysis.estimatedConfidence,
+        embedding: analysis.embedding,
+      });
+      refreshProfile();
+      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setIsTranscribingUpload(false);
+    }
+  };
 
   function openRoute(tab: keyof TabParamList, screen?: string, params?: object) {
     setIsActionHubOpen(false);
@@ -271,6 +318,31 @@ export default function TabNavigator() {
               </Pressable>
             </View>
 
+            <View style={styles.manualActionsContainer}>
+              <Pressable
+                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                onPress={handleAudioUpload}
+                disabled={isTranscribingUpload}
+              >
+                <Ionicons
+                  name="document-attach-outline"
+                  size={18}
+                  color={theme.colors.textSecondary}
+                />
+                <Text style={styles.manualActionText}>
+                  {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                onPress={() => navigation.navigate('ManualNoteCreation' as never)}
+              >
+                <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
+                <Text style={styles.manualActionText}>Paste Transcript</Text>
+              </Pressable>
+            </View>
+
             <View style={styles.externalHeader}>
               <Text style={styles.externalTitle}>Launch External App</Text>
               <Text style={styles.externalSubtitle}>
@@ -357,6 +429,28 @@ const styles = StyleSheet.create({
   },
   primaryActions: {
     gap: theme.spacing.md,
+  },
+  manualActionsContainer: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.sm,
+  },
+  manualAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 6,
+  },
+  manualActionText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   primaryAction: {
     backgroundColor: theme.colors.primaryDark,

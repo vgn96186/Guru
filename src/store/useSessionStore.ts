@@ -85,9 +85,10 @@ export const useSessionStore = create<SessionStoreState>()(
         const { agenda, currentItemIndex, completedTopicIds } = get();
         if (!agenda) return;
         const currentTopic = agenda.items[currentItemIndex];
-        const newCompleted = currentTopic && !completedTopicIds.includes(currentTopic.topic.id)
-          ? [...completedTopicIds, currentTopic.topic.id]
-          : completedTopicIds;
+        const newCompleted =
+          currentTopic && !completedTopicIds.includes(currentTopic.topic.id)
+            ? [...completedTopicIds, currentTopic.topic.id]
+            : completedTopicIds;
 
         if (currentItemIndex < agenda.items.length - 1) {
           set({
@@ -116,9 +117,9 @@ export const useSessionStore = create<SessionStoreState>()(
 
       addQuizResult: (result) => {
         const { quizResults } = get();
-        const existing = quizResults.find(r => r.topicId === result.topicId);
+        const existing = quizResults.find((r) => r.topicId === result.topicId);
         if (existing) {
-          set({ quizResults: quizResults.map(r => r.topicId === result.topicId ? result : r) });
+          set({ quizResults: quizResults.map((r) => (r.topicId === result.topicId ? result : r)) });
         } else {
           set({ quizResults: [...quizResults, result] });
         }
@@ -140,11 +141,13 @@ export const useSessionStore = create<SessionStoreState>()(
         if (!agenda) return;
 
         const remainingItems = agenda.items.slice(currentItemIndex, currentItemIndex + 2);
-        
-        const simplifiedItems = remainingItems.map(item => ({
+
+        const simplifiedItems = remainingItems.map((item) => ({
           ...item,
-          contentTypes: item.contentTypes.filter(ct => ['keypoints', 'quiz', 'mnemonic'].includes(ct)),
-          estimatedMinutes: 5 // Force short estimate
+          contentTypes: item.contentTypes.filter((ct) =>
+            ['keypoints', 'quiz', 'mnemonic'].includes(ct),
+          ),
+          estimatedMinutes: 5, // Force short estimate
         }));
 
         if (simplifiedItems[0] && simplifiedItems[0].contentTypes.length === 0) {
@@ -155,32 +158,33 @@ export const useSessionStore = create<SessionStoreState>()(
           ...agenda,
           items: [...agenda.items.slice(0, currentItemIndex), ...simplifiedItems],
           mode: 'sprint', // Switch mode label
-          focusNote: agenda.focusNote + " (Downgraded due to focus loss)",
+          focusNote: (agenda.focusNote || '') + ' (Downgraded due to focus loss)',
         };
 
         set({ agenda: newAgenda as Agenda });
       },
 
       incrementActiveStudyDuration: (amount: number) => {
-        set(state => ({ activeStudyDuration: state.activeStudyDuration + amount }));
+        set((state) => ({ activeStudyDuration: state.activeStudyDuration + amount }));
       },
 
-      resetSession: () => set({
-        sessionId: null,
-        sessionState: 'planning',
-        agenda: null,
-        currentItemIndex: 0,
-        currentContentIndex: 0,
-        currentContent: null,
-        isLoadingContent: false,
-        completedTopicIds: [],
-        quizResults: [],
-        startedAt: null,
-        isOnBreak: false,
-        breakCountdown: 300,
-        isPaused: false,
-        activeStudyDuration: 0,
-      }),
+      resetSession: () =>
+        set({
+          sessionId: null,
+          sessionState: 'planning',
+          agenda: null,
+          currentItemIndex: 0,
+          currentContentIndex: 0,
+          currentContent: null,
+          isLoadingContent: false,
+          completedTopicIds: [],
+          quizResults: [],
+          startedAt: null,
+          isOnBreak: false,
+          breakCountdown: 300,
+          isPaused: false,
+          activeStudyDuration: 0,
+        }),
     }),
     {
       name: 'session-storage',
@@ -200,8 +204,8 @@ export const useSessionStore = create<SessionStoreState>()(
         breakCountdown: state.breakCountdown,
         isPaused: state.isPaused,
       }),
-    }
-  )
+    },
+  ),
 );
 
 export function getCurrentAgendaItem(state: SessionStoreState): AgendaItem | null {

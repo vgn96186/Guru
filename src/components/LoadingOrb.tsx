@@ -55,7 +55,7 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
       <Text style={styles.text}>{displayMessage}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', justifyContent: 'center', padding: 32 },

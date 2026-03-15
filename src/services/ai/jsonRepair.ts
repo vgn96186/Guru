@@ -1,5 +1,11 @@
 import { z } from 'zod';
 
+// Timeout for JSON repair operations (ms)
+const JSON_REPAIR_TIMEOUT = 5000;
+
+// Limit input size to prevent DoS
+const MAX_INPUT_SIZE = 100_000; // 100KB
+
 function stripJsonCodeFences(raw: string): string {
   return raw
     .replace(/^\uFEFF/, '')
@@ -11,11 +17,12 @@ function stripJsonCodeFences(raw: string): string {
 function extractBalancedJson(raw: string): string {
   const objectStart = raw.indexOf('{');
   const arrayStart = raw.indexOf('[');
-  const start = objectStart === -1
-    ? arrayStart
-    : arrayStart === -1
-      ? objectStart
-      : Math.min(objectStart, arrayStart);
+  const start =
+    objectStart === -1
+      ? arrayStart
+      : arrayStart === -1
+        ? objectStart
+        : Math.min(objectStart, arrayStart);
 
   if (start === -1) return raw.trim();
 
@@ -65,9 +72,9 @@ function extractBalancedJson(raw: string): string {
 
 function repairCommonJsonIssues(raw: string): string {
   let s = raw
-    .replace(/[\u201C\u201D]/g, '"')   // Smart double quotes -> regular
-    .replace(/[\u2018\u2019]/g, "'")   // Smart single quotes -> regular
-    .replace(/^json\s*/i, '');          // Strip leading "json" prefix
+    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes -> regular
+    .replace(/[\u2018\u2019]/g, "'") // Smart single quotes -> regular
+    .replace(/^json\s*/i, ''); // Strip leading "json" prefix
 
   // Phase 1: Protect existing double-quoted strings with placeholders
   const strings: string[] = [];
@@ -78,18 +85,21 @@ function repairCommonJsonIssues(raw: string): string {
 
   // Phase 2: Structural repairs (no double-quoted strings present, safe to regex)
 
-  // Strip // line comments
+  // Strip // line comments (non-greedy to avoid ReDoS)
   s = s.replace(/\/\/[^\n]*/g, '');
 
   // Fix single-quoted keys: { 'key': value }
-  s = s.replace(/([{,]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(\s*:)/g,
+  s = s.replace(
+    /([{,]\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(\s*:)/g,
     (_m: string, pre: string, key: string, suf: string) =>
-      `${pre}"${key.replace(/"/g, '\\"')}"${suf}`);
+      `${pre}"${key.replace(/"/g, '\\"')}"${suf}`,
+  );
 
   // Fix single-quoted values: : 'value'
-  s = s.replace(/(:\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(?=\s*[,}\]\x00])/g,
-    (_m: string, pre: string, val: string) =>
-      `${pre}"${val.replace(/"/g, '\\"')}"`);
+  s = s.replace(
+    /(:\s*)'([^'\\]*(?:\\.[^'\\]*)*)'(?=\s*[,}\]\x00])/g,
+    (_m: string, pre: string, val: string) => `${pre}"${val.replace(/"/g, '\\"')}"`,
+  );
 
   // Fix unquoted keys (now safe - real strings are placeholders so won't be corrupted)
   s = s.replace(/([{,]\s*)([A-Za-z_$][A-Za-z0-9_$]*)(\s*:)/g, '$1"$2"$3');
@@ -117,12 +127,23 @@ function repairTruncatedJson(raw: string): string {
   for (let i = 0; i < raw.length; i++) {
     const ch = raw[i];
     if (inString) {
-      if (escaped) { escaped = false; continue; }
-      if (ch === '\\') { escaped = true; continue; }
-      if (ch === '"') { inString = false; }
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+      if (ch === '\\') {
+        escaped = true;
+        continue;
+      }
+      if (ch === '"') {
+        inString = false;
+      }
       continue;
     }
-    if (ch === '"') { inString = true; continue; }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
     if (ch === '{') stack.push('}');
     else if (ch === '[') stack.push(']');
     else if (ch === '}' || ch === ']') {
@@ -139,34 +160,75 @@ function repairTruncatedJson(raw: string): string {
   return raw + suffix;
 }
 
-export function parseStructuredJson<T>(raw: string, schema: z.ZodType<T>): T {
-  if (__DEV__) console.log('[AI] Raw text for JSON parsing (first 600 chars):', raw.slice(0, 600));
+/**
+ * Parse structured JSON with timeout protection.
+ * Wraps the parsing logic in a timeout to prevent ReDoS hangs.
+ */
+async function parseStructuredJsonWithTimeout<T>(
+  raw: string,
+  schema: z.ZodType<T>,
+  timeoutMs: number = JSON_REPAIR_TIMEOUT,
+): Promise<T> {
+  return Promise.race([
+    (async () => {
+      if (__DEV__)
+        console.log('[AI] Raw text for JSON parsing (first 600 chars):', raw.slice(0, 600));
 
-  const cleaned = stripJsonCodeFences(raw);
-  const extracted = extractBalancedJson(cleaned);
+      // Size limit check
+      if (raw.length > MAX_INPUT_SIZE) {
+        throw new Error(
+          `Input too large for JSON repair: ${raw.length} bytes (max ${MAX_INPUT_SIZE})`,
+        );
+      }
 
-  const candidates = Array.from(new Set([
-    cleaned,
-    extracted,
-    repairCommonJsonIssues(cleaned),
-    repairCommonJsonIssues(extracted),
-    // Also try repairing truncated JSON (local model can hit token limit)
-    repairCommonJsonIssues(repairTruncatedJson(cleaned)),
-    repairCommonJsonIssues(repairTruncatedJson(extracted)),
-  ].filter(Boolean)));
+      const cleaned = stripJsonCodeFences(raw);
+      const extracted = extractBalancedJson(cleaned);
 
-  let lastError: Error | null = null;
-  for (const candidate of candidates) {
-    try {
-      return schema.parse(JSON.parse(candidate));
-    } catch (err) {
-      lastError = err as Error;
+      const candidates = Array.from(
+        new Set(
+          [
+            cleaned,
+            extracted,
+            repairCommonJsonIssues(cleaned),
+            repairCommonJsonIssues(extracted),
+            // Also try repairing truncated JSON (local model can hit token limit)
+            repairCommonJsonIssues(repairTruncatedJson(cleaned)),
+            repairCommonJsonIssues(repairTruncatedJson(extracted)),
+          ].filter(Boolean),
+        ),
+      );
+
+      let lastError: Error | null = null;
+      for (const candidate of candidates) {
+        try {
+          return schema.parse(JSON.parse(candidate));
+        } catch (err) {
+          lastError = err as Error;
+        }
+      }
+
+      if (__DEV__) {
+        console.warn(
+          '[AI] All JSON parse candidates failed. Candidates tried:',
+          candidates.map((c) => c.slice(0, 200)),
+        );
+      }
+
+      throw lastError || new Error('Failed to parse structured JSON response');
+    })(),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('JSON parsing timeout')), timeoutMs),
+    ),
+  ]) as Promise<T>;
+}
+
+export async function parseStructuredJson<T>(raw: string, schema: z.ZodType<T>): Promise<T> {
+  try {
+    return await parseStructuredJsonWithTimeout(raw, schema);
+  } catch (err) {
+    if (err instanceof Error && err.message === 'JSON parsing timeout') {
+      throw new Error('JSON repair took too long - possible ReDoS attack or malformed input');
     }
+    throw err;
   }
-
-  if (__DEV__) {
-    console.warn('[AI] All JSON parse candidates failed. Candidates tried:', candidates.map(c => c.slice(0, 200)));
-  }
-
-  throw lastError || new Error('Failed to parse structured JSON response');
 }

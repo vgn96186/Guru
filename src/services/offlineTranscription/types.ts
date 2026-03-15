@@ -249,17 +249,25 @@ export type TranscriptionErrorCode =
   | 'VAD_INIT_FAILED'
   | 'DOWNLOAD_FAILED'
   | 'CHECKSUM_MISMATCH'
+  | 'RECORDER_DESTROYED'
+  | 'PCM_INIT_FAILED'
+  | 'PCM_START_FAILED'
+  | 'NO_AUDIO_DATA'
+  | 'RECORDING_TOO_LONG'
+  | 'BUFFER_CONCAT_FAILED'
+  | 'FILE_WRITE_FAILED'
+  | 'NATIVE_MODULE_MISSING'
+  | 'FALLBACK_START_FAILED'
+  | 'FILE_COPY_FAILED'
+  | 'DOWNLOAD_SIZE_MISMATCH'
+  | 'VAD_CHECKSUM_MISMATCH'
   | 'UNKNOWN';
 
 export class TranscriptionError extends Error {
   code: TranscriptionErrorCode;
   userMessage: string;
 
-  constructor(
-    code: TranscriptionErrorCode,
-    technicalMessage: string,
-    userMessage: string,
-  ) {
+  constructor(code: TranscriptionErrorCode, technicalMessage: string, userMessage: string) {
     super(technicalMessage);
     this.name = 'TranscriptionError';
     this.code = code;
@@ -268,36 +276,39 @@ export class TranscriptionError extends Error {
 }
 
 export const ERROR_MESSAGES: Record<TranscriptionErrorCode, string> = {
-  MODEL_LOAD_FAILED:
-    'Failed to load the speech recognition model. Try restarting the app.',
-  MODEL_CORRUPT:
-    'The speech model file is corrupted. Please re-download it from Settings.',
-  MODEL_MISSING:
-    'No speech recognition model found. Please download one from Settings.',
-  MODEL_INCOMPATIBLE:
-    'This model is not compatible with your device. Try a smaller model size.',
+  MODEL_LOAD_FAILED: 'Failed to load the speech recognition model. Try restarting the app.',
+  MODEL_CORRUPT: 'The speech model file is corrupted. Please re-download it from Settings.',
+  MODEL_MISSING: 'No speech recognition model found. Please download one from Settings.',
+  MODEL_INCOMPATIBLE: 'This model is not compatible with your device. Try a smaller model size.',
   MIC_PERMISSION_DENIED:
     'Microphone access is required for recording. Please grant permission in Settings.',
   MIC_IN_USE:
     'The microphone is being used by another app. Close other recording apps and try again.',
   INSUFFICIENT_STORAGE:
     'Not enough storage space to download the model. Free up some space and try again.',
-  INSUFFICIENT_RAM:
-    'Not enough memory to load this model. Try the Base model instead of Small.',
+  INSUFFICIENT_RAM: 'Not enough memory to load this model. Try the Base model instead of Small.',
   EMPTY_TRANSCRIPTION:
     'No speech was detected in this audio segment. The recording may be too quiet.',
-  RECORDING_INTERRUPTED:
-    'Recording was interrupted. Your progress has been saved.',
+  RECORDING_INTERRUPTED: 'Recording was interrupted. Your progress has been saved.',
   THERMAL_THROTTLING:
     'Your device is getting warm. Transcription speed has been reduced to prevent overheating.',
-  AUDIO_FORMAT_ERROR:
-    'Could not process the audio file. The format may be unsupported.',
+  AUDIO_FORMAT_ERROR: 'Could not process the audio file. The format may be unsupported.',
   VAD_INIT_FAILED:
     'Voice detection failed to initialize. Transcription will proceed without silence skipping.',
-  DOWNLOAD_FAILED:
-    'Model download failed. Check your internet connection and try again.',
-  CHECKSUM_MISMATCH:
-    'Downloaded model file is corrupted. Please try downloading again.',
+  DOWNLOAD_FAILED: 'Model download failed. Check your internet connection and try again.',
+  CHECKSUM_MISMATCH: 'Downloaded model file is corrupted. Please try downloading again.',
+  RECORDER_DESTROYED: 'Recording system was shut down.',
+  PCM_INIT_FAILED: 'Audio capture initialization failed.',
+  PCM_START_FAILED: 'Could not start audio capture.',
+  NO_AUDIO_DATA: 'No audio data was received.',
+  RECORDING_TOO_LONG: 'Recording is too long for this device.',
+  BUFFER_CONCAT_FAILED: 'Audio processing error.',
+  FILE_WRITE_FAILED: 'Failed to save recording to disk.',
+  NATIVE_MODULE_MISSING: 'Native audio module is not available.',
+  FALLBACK_START_FAILED: 'Failed to start backup recording.',
+  FILE_COPY_FAILED: 'File system error during processing.',
+  DOWNLOAD_SIZE_MISMATCH: 'The model file download was incomplete.',
+  VAD_CHECKSUM_MISMATCH: 'Voice detection data is corrupted.',
   UNKNOWN: 'An unexpected error occurred. Please try again.',
 };
 
@@ -324,10 +335,7 @@ export interface UseLectureTranscriptionReturn {
   stopRealtimeSession: () => Promise<LectureTranscript>;
 
   // ── Batch Mode ──
-  transcribeFile: (
-    audioFilePath: string,
-    title?: string,
-  ) => Promise<LectureTranscript>;
+  transcribeFile: (audioFilePath: string, title?: string) => Promise<LectureTranscript>;
   cancelBatchTranscription: () => void;
 
   // ── Shared ──

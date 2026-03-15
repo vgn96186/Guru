@@ -177,22 +177,28 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await seedUserProfile(db);
   } else {
     // Run background maintenance
-    const {
-      retryFailedTasks,
-      autoRepairLegacyNotes,
-      scanAndRecoverOrphanedTranscripts,
-      scanAndRecoverOrphanedRecordings,
-    } = await import('../services/lectureSessionMonitor');
-    void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
-      console.error('[DB] retryFailedTasks failed:', e),
-    );
-    void autoRepairLegacyNotes().catch((e) => console.error('[DB] autoRepairLegacyNotes failed:', e));
-    void scanAndRecoverOrphanedTranscripts().catch((e) =>
-      console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
-    );
-    void scanAndRecoverOrphanedRecordings().catch((e) =>
-      console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
-    );
+    try {
+      const {
+        retryFailedTasks,
+        autoRepairLegacyNotes,
+        scanAndRecoverOrphanedTranscripts,
+        scanAndRecoverOrphanedRecordings,
+      } = await import('../services/lectureSessionMonitor');
+      void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
+        console.error('[DB] retryFailedTasks failed:', e),
+      );
+      void autoRepairLegacyNotes().catch((e) =>
+        console.error('[DB] autoRepairLegacyNotes failed:', e),
+      );
+      void scanAndRecoverOrphanedTranscripts().catch((e) =>
+        console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
+      );
+      void scanAndRecoverOrphanedRecordings().catch((e) =>
+        console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
+      );
+    } catch (e) {
+      console.error('[DB] Failed to run background maintenance tasks:', e);
+    }
   }
 
   // Update streak on open

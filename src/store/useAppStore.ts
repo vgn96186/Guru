@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { UserProfile, LevelInfo, StudyResourceMode } from '../types';
-import { DailyPlan } from '../services/ai';
+import { DailyAgenda } from '../services/ai';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { getLevelInfo } from '../services/xpService';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
@@ -10,14 +10,15 @@ import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 interface AppState {
   profile: UserProfile | null;
   levelInfo: LevelInfo | null;
+  loading: boolean;
   hasCheckedInToday: boolean;
   dailyAvailability: number | null;
-  todayPlan: DailyPlan | null;
+  todayPlan: DailyAgenda | null;
   planGeneratedAt: number | null;
   loadProfile: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setDailyAvailability: (mins: number) => void;
-  setTodayPlan: (plan: DailyPlan | null) => void;
+  setTodayPlan: (plan: DailyAgenda | null) => void;
   toggleFocusAudio: () => Promise<void>;
   toggleVisualTimers: () => Promise<void>;
   toggleFaceTracking: () => Promise<void>;
@@ -47,19 +48,22 @@ export const useAppStore = create<AppState>((set, get) => {
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, refresh);
     dbEvents.on(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, refresh);
     dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, refresh);
-    
+
     listenersInitialized = true;
   }
 
   return {
     profile: null,
     levelInfo: null,
+    loading: false,
     hasCheckedInToday: false,
     dailyAvailability: null,
     todayPlan: null,
     planGeneratedAt: null,
 
     loadProfile: async () => {
+      if (get().loading) return;
+      set({ loading: true });
       try {
         const profile = await profileRepository.getProfile();
         const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
@@ -68,10 +72,14 @@ export const useAppStore = create<AppState>((set, get) => {
       } catch (err) {
         console.error('[useAppStore] Failed to load profile:', err);
         set({ profile: null, levelInfo: null, hasCheckedInToday: false });
+      } finally {
+        set({ loading: false });
       }
     },
 
     refreshProfile: async () => {
+      if (get().loading) return;
+      set({ loading: true });
       try {
         const profile = await profileRepository.getProfile();
         const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
@@ -79,6 +87,8 @@ export const useAppStore = create<AppState>((set, get) => {
         set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
       } catch (err) {
         console.error('[useAppStore] Failed to refresh profile:', err);
+      } finally {
+        set({ loading: false });
       }
     },
 
@@ -86,7 +96,7 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ dailyAvailability: mins });
     },
 
-    setTodayPlan: (plan: DailyPlan | null) => {
+    setTodayPlan: (plan: DailyAgenda | null) => {
       set({ todayPlan: plan, planGeneratedAt: plan ? Date.now() : null });
     },
 

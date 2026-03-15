@@ -3,13 +3,35 @@ export interface Message {
   content: string;
 }
 
-export type GuruEventType = 'periodic' | 'card_done' | 'quiz_correct' | 'quiz_wrong' | 'again_rated';
-export interface GuruPresenceMessage { text: string; trigger: GuruEventType; }
+export type GuruEventType =
+  | 'periodic'
+  | 'card_done'
+  | 'quiz_correct'
+  | 'quiz_wrong'
+  | 'again_rated';
+export interface GuruPresenceMessage {
+  text: string;
+  trigger: GuruEventType;
+}
 
 export interface AgendaResponse {
   selectedTopicIds: number[];
   focusNote: string;
   guruMessage: string;
+}
+
+export interface DailyAgenda {
+  blocks: Array<{
+    id: string;
+    title: string;
+    topicIds: number[];
+    durationMinutes: number;
+    startTime?: string;
+    type: 'study' | 'review' | 'test' | 'break';
+    why: string;
+  }>;
+  guruNote: string;
+  prioritySubjectId?: number;
 }
 
 export interface MedicalGroundingSource {

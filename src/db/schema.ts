@@ -208,8 +208,8 @@ CREATE TABLE IF NOT EXISTS offline_ai_queue (
   error_message TEXT
 )`;
 
-export const CREATE_DAILY_PLAN = `
-CREATE TABLE IF NOT EXISTS daily_plan (
+export const CREATE_DAILY_AGENDA = `
+CREATE TABLE IF NOT EXISTS daily_agenda (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   date TEXT NOT NULL UNIQUE,
   plan_json TEXT NOT NULL,
@@ -249,8 +249,8 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_topics_parent ON topics(parent_topic_id)`,
   // Topic-to-subject join
   `CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject_id)`,
-  // Daily plan lookups
-  `CREATE INDEX IF NOT EXISTS idx_daily_plan_date ON daily_plan(date)`,
+  // Daily agenda lookups
+  `CREATE INDEX IF NOT EXISTS idx_daily_agenda_date ON daily_agenda(date)`,
   // Plan events lookup by date
   `CREATE INDEX IF NOT EXISTS idx_plan_events_date ON plan_events(date)`,
   // Lecture learned topics for quick lookup
@@ -273,7 +273,7 @@ export const ALL_SCHEMAS = [
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
   CREATE_CHAT_HISTORY,
-  CREATE_DAILY_PLAN,
+  CREATE_DAILY_AGENDA,
   CREATE_PLAN_EVENTS,
   CREATE_LECTURE_LEARNED_TOPICS,
 ];

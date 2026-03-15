@@ -20,10 +20,11 @@ import HeroCard from '../components/home/HeroCard';
 import QuickStatsCard from '../components/home/QuickStatsCard';
 import ShortcutTile from '../components/home/ShortcutTile';
 import AgendaItem from '../components/home/AgendaItem';
+import TodayPlanCard from '../components/home/TodayPlanCard';
 import StartButton from '../components/StartButton';
 import LoadingOrb from '../components/LoadingOrb';
 import LectureReturnSheet from '../components/LectureReturnSheet';
-import { profileRepository, dailyLogRepository } from '../db/repositories';
+import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
 import { getSubjectById, getSubjectByName } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
 import * as DocumentPicker from 'expo-document-picker';
@@ -46,7 +47,7 @@ export default function HomeScreen() {
   const isTabletLandscape = width >= 900 && width > height;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const { profile, levelInfo } = useAppStore();
+  const { profile, levelInfo, setTodayPlan } = useAppStore();
 
   const {
     weakTopics,
@@ -67,7 +68,13 @@ export default function HomeScreen() {
 
   useEffect(() => {
     dailyLogRepository.getDailyLog().then((log) => setMood((log?.mood as Mood) ?? 'good'));
-  }, []);
+
+    // Load daily agenda on mount
+    const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+    dailyAgendaRepository.getDailyAgenda(date).then((plan) => {
+      if (plan) setTodayPlan(plan);
+    });
+  }, [setTodayPlan]);
 
   useEffect(() => {
     if (!profile?.syncCode) return;
@@ -198,6 +205,8 @@ export default function HomeScreen() {
             level={levelInfo.level}
             completedSessions={completedSessions}
           />
+
+          <TodayPlanCard />
 
           <View style={styles.startArea}>
             <StartButton

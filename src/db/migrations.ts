@@ -273,7 +273,17 @@ export const MIGRATIONS: Migration[] = [
     sql: `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_topic ON lecture_learned_topics(topic_id)`,
     description: 'Index for finding lectures that covered a topic',
   },
+  {
+    version: 76,
+    sql: `ALTER TABLE daily_plan RENAME TO daily_agenda;`,
+    description: 'Rename daily_plan to daily_agenda for consistency',
+  },
+  {
+    version: 77,
+    sql: `DROP INDEX IF EXISTS idx_daily_plan_date; CREATE INDEX IF NOT EXISTS idx_daily_agenda_date ON daily_agenda(date);`,
+    description: 'Update index name for daily_agenda',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 75;
+export const LATEST_VERSION = 77;

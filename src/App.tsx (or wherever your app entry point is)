@@ -1,8 +1,0 @@
-// At the top of your App component or in a useEffect on mount:
-import { schedulePeriodicCleanup } from './services/recordingCleanup';
-
-// In your App component:
-useEffect(() => {
-  // Clean up old recordings on app launch
-  schedulePeriodicCleanup();
-}, []);

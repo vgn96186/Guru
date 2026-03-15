@@ -618,3 +618,21 @@ export async function getReviewDueTopics(): Promise<
     daysOverdue: Math.max(0, Math.floor((Date.now() - new Date(r.fsrs_due).getTime()) / 86400000)),
   }));
 }
+
+/**
+ * Get recently studied topics (last 48 hours) to avoid repetitive planning.
+ */
+export async function getRecentTopics(limit: number = 10): Promise<string[]> {
+  const db = getDb();
+  const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
+  const rows = await db.getAllAsync<{ topic_name: string }>(
+    `SELECT DISTINCT t.name as topic_name
+     FROM session_metrics sm
+     JOIN topics t ON sm.topic_id = t.id
+     WHERE sm.created_at > ?
+     ORDER BY sm.created_at DESC
+     LIMIT ?`,
+    [twoDaysAgo, limit],
+  );
+  return rows.map((r) => r.topic_name);
+}

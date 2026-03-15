@@ -22,7 +22,7 @@
  */
 
 import { Platform } from 'react-native';
-import { generateSecureRandomString } from '../cryptoUtils';
+import * as crypto from 'expo-crypto';
 import {
   TranscriptSegment,
   LectureTranscript,
@@ -32,9 +32,7 @@ import {
 // ─── Unique ID generation ────────────────────────────────────────────────────
 
 function generateLectureId(): string {
-  const timestamp = Date.now().toString(36);
-  const random = generateSecureRandomString(6);
-  return `lecture_${timestamp}_${random}`;
+  return `lecture_${crypto.randomUUID()}`;
 }
 
 // ─── Merger ──────────────────────────────────────────────────────────────────

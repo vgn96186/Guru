@@ -107,7 +107,7 @@ describe('transcriptionService entrypoint policy', () => {
         } as any;
       });
 
-    const analysis = await transcriptionService.transcribeAudio('/tmp/lecture.m4a');
+    const analysis = await transcriptionService.transcribeAudio({ audioFilePath: '/tmp/lecture.m4a' });
 
     expect(analysis.subject).toBe('Physiology');
     expect(analysis.transcript).toBe('groq transcript text');
@@ -134,7 +134,7 @@ describe('transcriptionService entrypoint policy', () => {
         }) as any,
     );
 
-    const analysis = await transcriptionService.transcribeAudio('/tmp/lecture.wav');
+    const analysis = await transcriptionService.transcribeAudio({ audioFilePath: '/tmp/lecture.wav' });
 
     expect(analysis.subject).toBe('Physiology');
     expect(analysis.transcript).toBe('local fallback transcript');
@@ -149,7 +149,7 @@ describe('transcriptionService entrypoint policy', () => {
       localWhisperPath: null,
     });
 
-    await expect(transcriptionService.transcribeAudio('/tmp/lecture.wav')).rejects.toThrow(
+    await expect(transcriptionService.transcribeAudio({ audioFilePath: '/tmp/lecture.wav' })).rejects.toThrow(
       'No transcription engine available',
     );
   });
@@ -162,7 +162,7 @@ describe('transcriptionService entrypoint policy', () => {
         embeddingError: new Error('embedding offline'),
       });
 
-    const analysis = await transcriptionService.transcribeAudio('/tmp/lecture.wav');
+    const analysis = await transcriptionService.transcribeAudio({ audioFilePath: '/tmp/lecture.wav' });
     const matchCall = markTopicsFromLectureMock.mock.calls[0] as any[];
 
     expect(analysis.transcript).toBe('full transcript text');

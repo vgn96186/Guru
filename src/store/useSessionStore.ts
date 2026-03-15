@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { splitSessionStorage } from './splitSessionStorage';
 import type { Agenda, AgendaItem, AIContent, ContentType, SessionState } from '../types';
 
 interface QuizResult {
@@ -188,7 +188,7 @@ export const useSessionStore = create<SessionStoreState>()(
     }),
     {
       name: 'session-storage',
-      storage: createJSONStorage(() => AsyncStorage),
+      storage: createJSONStorage(() => splitSessionStorage),
       partialize: (state) => ({
         sessionId: state.sessionId,
         sessionState: state.sessionState,

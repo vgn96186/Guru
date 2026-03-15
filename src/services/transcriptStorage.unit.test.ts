@@ -6,13 +6,13 @@ import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 jest.mock('expo-file-system/legacy', () => {
   return {
     documentDirectory: 'file:///data/user/0/com.app/files/',
-    writeAsStringAsync: jest.fn(async () => {}),
-    readAsStringAsync: jest.fn(async () => 'transcript content'),
-    makeDirectoryAsync: jest.fn(async () => {}),
-    getInfoAsync: jest.fn(async () => ({ exists: true })),
-    copyAsync: jest.fn(async () => {}),
+    writeAsStringAsync: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    readAsStringAsync: jest.fn<() => Promise<string>>().mockResolvedValue('transcript content'),
+    makeDirectoryAsync: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    getInfoAsync: jest.fn<() => Promise<{ exists: boolean }>>().mockResolvedValue({ exists: true }),
+    copyAsync: jest.fn<() => Promise<void>>().mockResolvedValue(undefined),
     StorageAccessFramework: {
-      createFileAsync: jest.fn(async () => 'content://mock/uri/file.txt'),
+      createFileAsync: jest.fn<() => Promise<string>>().mockResolvedValue('content://mock/uri/file.txt'),
     },
     EncodingType: { UTF8: 'utf8' },
   }
@@ -60,18 +60,18 @@ describe('transcriptStorage', () => {
       // Check write to both SAF and Local
       expect(FileSystem.writeAsStringAsync).toHaveBeenCalledTimes(2);
 
-      // First write to SAF
+      // First write to local public
       expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         1,
-        'content://mock/uri/file.txt',
+        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
         'This is a note.',
         { encoding: 'utf8' }
       );
 
-      // Second write to local public
+      // Second write to SAF
       expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
-        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
+        'content://mock/uri/file.txt',
         'This is a note.',
         { encoding: 'utf8' }
       );
@@ -90,6 +90,12 @@ describe('transcriptStorage', () => {
         { encoding: 'utf8' }
       );
 
+      // Public local backup
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith({
+        from: expect.stringMatching(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+        to: expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+      });
+
       // Cloud SAF backup
       expect(FileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
@@ -102,12 +108,6 @@ describe('transcriptStorage', () => {
         'lecture text',
         { encoding: 'utf8' }
       );
-
-      // Public local backup
-      expect(FileSystem.copyAsync).toHaveBeenCalledWith({
-        from: expect.stringMatching(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
-        to: expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
-      });
 
       expect(uri).toMatch(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/);
     });

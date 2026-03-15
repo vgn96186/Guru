@@ -64,6 +64,9 @@ export default function HomeScreen() {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
 
+  // Added from UI-UX audit branch
+  const [criticalExpanded, setCriticalExpanded] = useState(false);
+
   useLectureReturnRecovery({ onRecovered: setReturnSheet });
 
   useEffect(() => {
@@ -78,23 +81,28 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!profile?.syncCode) return;
-    return connectToRoom(profile.syncCode, async (msg: any) => {
-      if (msg.type === 'BREAK_STARTED')
-        navigation.getParent()?.navigate('BreakEnforcer', { durationSeconds: msg.durationSeconds });
-      if (msg.type === 'LECTURE_STARTED') {
-        const sub = await getSubjectById(msg.subjectId);
-        Alert.alert(
-          'Lecture Detected',
-          `Tablet started ${sub?.name || 'lecture'}. Entering Hostage Mode.`,
-          [
-            {
-              text: 'Okay',
-              onPress: () => navigation.navigate('LectureMode', { subjectId: msg.subjectId }),
-            },
-          ],
-        );
-      }
-    });
+    return connectToRoom(
+      profile.syncCode,
+      async (msg: { type: string; durationSeconds?: number; subjectId?: number }) => {
+        if (msg.type === 'BREAK_STARTED')
+          navigation
+            .getParent()
+            ?.navigate('BreakEnforcer', { durationSeconds: msg.durationSeconds });
+        if (msg.type === 'LECTURE_STARTED') {
+          const sub = await getSubjectById(msg.subjectId!);
+          Alert.alert(
+            'Lecture Detected',
+            `Tablet started ${sub?.name || 'lecture'}. Entering Hostage Mode.`,
+            [
+              {
+                text: 'Okay',
+                onPress: () => navigation.navigate('LectureMode', { subjectId: msg.subjectId }),
+              },
+            ],
+          );
+        }
+      },
+    );
   }, [profile?.syncCode, navigation]);
 
   if (isLoading || !profile || !levelInfo) {
@@ -151,7 +159,7 @@ export default function HomeScreen() {
     if (res.canceled || !res.assets[0]) return;
     setIsTranscribingUpload(true);
     try {
-      const analysis = await transcribeAudio(res.assets[0].uri);
+      const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
       const hasTranscript = !!analysis.transcript?.trim();
       const hasMeaningfulSummary =
         !!analysis.lectureSummary &&
@@ -179,12 +187,32 @@ export default function HomeScreen() {
       });
       reloadHomeDashboard();
       Alert.alert('Success', 'Audio transcribed and added to notes vault.');
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Unknown error';
+      Alert.alert('Error', message);
     } finally {
       setIsTranscribingUpload(false);
     }
   };
+
+  const criticalItems = [
+    {
+      key: 'inertia',
+      title: 'Task Paralysis',
+      sub: "Can't get started? Break the loop.",
+      badge: 'BLOCKER',
+      accent: '#FF5252',
+      onPress: () => navigation.navigate('Inertia'),
+    },
+    {
+      key: 'doomscroll',
+      title: 'Harassment Mode',
+      sub: 'Stop mindless scrolling now.',
+      badge: 'URGENT',
+      accent: '#FFB300',
+      onPress: () => navigation.navigate('DoomscrollGuide'),
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -214,6 +242,39 @@ export default function HomeScreen() {
               label={heroCta.label}
               sublabel={heroCta.sublabel}
             />
+          </View>
+
+          {/* CRITICAL NOW Section from UX Audit */}
+          <View style={styles.collapsibleSection}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => setCriticalExpanded((prev) => !prev)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
+              <Text style={styles.moreChevron}>{criticalExpanded ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+            {criticalExpanded && (
+              <View style={styles.criticalSectionContent}>
+                {criticalItems.map((item) => (
+                  <TouchableOpacity
+                    key={item.key}
+                    style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
+                    onPress={item.onPress}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.criticalCardTop}>
+                      <Text style={[styles.criticalBadge, { color: item.accent }]}>
+                        {item.badge}
+                      </Text>
+                      <Text style={[styles.criticalArrow, { color: item.accent }]}>›</Text>
+                    </View>
+                    <Text style={styles.criticalTitle}>{item.title}</Text>
+                    <Text style={styles.criticalSub}>{item.sub}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={isTabletLandscape ? styles.gridLandscape : null}>
@@ -251,6 +312,14 @@ export default function HomeScreen() {
                     }
                   />
                 ))}
+                {todayTasks.length > 2 && (
+                  <TouchableOpacity
+                    onPress={() => tabsNavigation?.navigate('StudyPlan')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.seeAllLink}>See full plan →</Text>
+                  </TouchableOpacity>
+                )}
               </Section>
             </View>
             <View style={isTabletLandscape ? { flex: 0.9 } : null}>
@@ -273,6 +342,12 @@ export default function HomeScreen() {
                     icon="flash-outline"
                     accent={theme.colors.warning}
                     onPress={() => navigation.navigate('Inertia')}
+                  />
+                  <ShortcutTile
+                    title="Guru Chat"
+                    icon="chatbubbles-outline"
+                    accent={theme.colors.info}
+                    onPress={() => navigation.navigate('GuruChat')}
                   />
                 </View>
               </Section>
@@ -324,6 +399,12 @@ export default function HomeScreen() {
               >
                 <Text style={styles.moreLinkText}>Nightstand Mode</Text>
               </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.moreLink}
+                onPress={() => navigation.navigate('FlaggedReview')}
+              >
+                <Text style={styles.moreLinkText}>Flagged Review</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ResponsiveContainer>
@@ -364,12 +445,63 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.5,
     marginBottom: 10,
+    textTransform: 'uppercase',
   },
   startArea: { paddingVertical: 30, alignItems: 'center' },
   gridLandscape: { flexDirection: 'row', gap: 16 },
   shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  moreHeader: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
+  moreHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  moreChevron: { color: theme.colors.textMuted, fontSize: 12 },
   moreContent: { paddingBottom: 20 },
   moreLink: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
   moreLinkText: { color: theme.colors.textSecondary, fontSize: 14 },
+
+  // Collapsible UX Audit styles
+  collapsibleSection: { marginBottom: 20 },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+  },
+  criticalSectionContent: { paddingBottom: 10 },
+  criticalCard: {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 10,
+    borderColor: theme.colors.border,
+  },
+  criticalCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  criticalBadge: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  criticalArrow: { fontSize: 20, fontWeight: '800' },
+  criticalTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  criticalSub: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  seeAllLink: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'right',
+  },
 });

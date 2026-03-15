@@ -253,6 +253,49 @@ export async function updateTopicProgress(
   }
 }
 
+export type TopicProgressUpdate = {
+  topicId: number;
+  status: 'seen' | 'unseen' | 'completed';
+  confidence: number;
+  xpToAdd: number;
+  noteToAppend?: string;
+};
+
+export async function updateTopicsProgressBatch(updates: TopicProgressUpdate[]): Promise<void> {
+  if (!updates || updates.length === 0) return;
+  const db = getDb();
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    for (const update of updates) {
+      await db.runAsync(
+        `INSERT INTO topic_progress (topic_id, status, confidence, times_studied, xp_earned, user_notes)
+         VALUES (?, ?, ?, 1, ?, ?)
+         ON CONFLICT(topic_id) DO UPDATE SET
+           status = excluded.status,
+           confidence = excluded.confidence,
+           times_studied = times_studied + 1,
+           xp_earned = xp_earned + excluded.xp_earned,
+           user_notes = CASE
+             WHEN excluded.user_notes IS NOT NULL AND excluded.user_notes != "" THEN
+               CASE WHEN user_notes IS NULL OR user_notes = "" THEN excluded.user_notes ELSE user_notes || "\n\n---\n" || excluded.user_notes END
+             ELSE user_notes
+           END`,
+        [
+          update.topicId,
+          update.status,
+          update.confidence,
+          update.xpToAdd,
+          update.noteToAppend ?? null,
+        ],
+      );
+    }
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
+}
+
 export async function updateTopicNotes(topicId: number, notes: string): Promise<void> {
   const db = getDb();
   await db.runAsync(

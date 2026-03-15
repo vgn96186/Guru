@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { updateTopicProgress } from '../../db/queries/topics';
+import { updateTopicsProgressBatch, TopicProgressUpdate } from '../../db/queries/topics';
 import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
 
 /**
@@ -21,6 +21,17 @@ export async function markTopicsFromLecture(
   if ((!topics || topics.length === 0) && !lectureSummary) return;
 
   const matchedTopicIds = new Set<number>();
+  const updates: TopicProgressUpdate[] = [];
+
+  const addUpdate = (id: number, confidenceVal: number, isDirectMatch: boolean) => {
+    updates.push({
+      topicId: id,
+      status: 'seen',
+      confidence: confidenceVal,
+      xpToAdd: 0,
+      noteToAppend: isDirectMatch ? lectureSummary : undefined,
+    });
+  };
 
   // 1-3: Keyword matching
   for (const topicName of topics) {
@@ -30,21 +41,20 @@ export async function markTopicsFromLecture(
     const match = await findTopicIdByKeywords(db, sanitized, subjectName);
     if (match) {
       matchedTopicIds.add(match);
-      await applyLectureProgressToTopic(db, match, confidence, true, lectureSummary);
+      addUpdate(match, confidence, true);
     }
   }
 
   // 4: Semantic Matching (if summary available)
   if (lectureSummary) {
     try {
-      const effectiveEmbedding =
-        summaryEmbedding === undefined ? await generateEmbedding(lectureSummary) : summaryEmbedding;
+      const effectiveEmbedding = summaryEmbedding || (await generateEmbedding(lectureSummary));
       if (effectiveEmbedding) {
         const semanticMatches = await findSemanticMatches(db, effectiveEmbedding, subjectName);
         for (const matchId of semanticMatches) {
           if (!matchedTopicIds.has(matchId)) {
             matchedTopicIds.add(matchId);
-            await applyLectureProgressToTopic(db, matchId, confidence, true, lectureSummary);
+            addUpdate(matchId, confidence, true);
           }
         }
       }
@@ -53,7 +63,7 @@ export async function markTopicsFromLecture(
     }
   }
 
-  // Also mark parents as seen
+  // 5: Parent cascade
   if (matchedTopicIds.size > 0) {
     const ids = Array.from(matchedTopicIds).join(',');
     const parents = await db.getAllAsync<{ parent_topic_id: number }>(
@@ -61,10 +71,12 @@ export async function markTopicsFromLecture(
     );
     for (const p of parents) {
       if (!matchedTopicIds.has(p.parent_topic_id)) {
-        await applyLectureProgressToTopic(db, p.parent_topic_id, confidence, false);
+        addUpdate(p.parent_topic_id, confidence, false);
       }
     }
   }
+
+  await updateTopicsProgressBatch(updates);
 }
 
 async function findTopicIdByKeywords(
@@ -122,15 +134,4 @@ async function findSemanticMatches(
     }
   }
   return matchedIds;
-}
-
-async function applyLectureProgressToTopic(
-  db: SQLiteDatabase,
-  topicId: number,
-  confidence: number,
-  isDirectMatch = true,
-  summary?: string,
-) {
-  const status = 'seen';
-  await updateTopicProgress(topicId, status, confidence, 0, summary);
 }

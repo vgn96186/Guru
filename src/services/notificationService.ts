@@ -36,11 +36,10 @@ async function cancelNotificationsByPrefix(prefix: string): Promise<void> {
   if (!areNotificationsSupported) return;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    for (const notif of scheduled) {
-      if (notif.identifier.startsWith(prefix)) {
-        await Notifications.cancelScheduledNotificationAsync(notif.identifier);
-      }
-    }
+    const promises = scheduled
+      .filter((notif) => notif.identifier.startsWith(prefix))
+      .map((notif) => Notifications.cancelScheduledNotificationAsync(notif.identifier));
+    await Promise.allSettled(promises);
   } catch (error) {
     if (__DEV__) console.warn('Failed to cancel notifications by prefix:', error);
   }
@@ -249,19 +248,20 @@ export async function scheduleHarassment(
     const messages = HARASSMENT_MESSAGES[tone] ?? HARASSMENT_MESSAGES.shame;
 
     // Schedule 10 notifications, starting 5 minutes from now, spaced 3 minutes apart
-    for (let i = 0; i < messages.length; i++) {
+    const promises = messages.map((body, i) => {
       const triggerTime = new Date(Date.now() + (i * 3 + 1) * 60000); // 1m, 4m, 7m, 10m...
-      await Notifications.scheduleNotificationAsync({
+      return Notifications.scheduleNotificationAsync({
         identifier: `${HARASSMENT_ID_PREFIX}${i}`,
         content: {
           title: '🚨 DOOMSCROLL DETECTED',
-          body: messages[i],
+          body,
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
       });
-    }
+    });
+    await Promise.allSettled(promises);
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule harassment:', error);
   }
@@ -277,19 +277,20 @@ export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<v
     const startTime = Date.now() + durationSeconds * 1000;
 
     // Schedule aggressive notifications 15 seconds apart immediately after the break ends
-    for (let i = 0; i < messages.length; i++) {
+    const promises = messages.map((body, i) => {
       const triggerTime = new Date(startTime + i * 15 * 1000);
-      await Notifications.scheduleNotificationAsync({
+      return Notifications.scheduleNotificationAsync({
         identifier: `${BREAK_ID_PREFIX}${i}`,
         content: {
           title: '🚨 BREAK OVER',
-          body: messages[i],
+          body,
           sound: true,
           priority: Notifications.AndroidNotificationPriority.MAX,
         },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerTime },
       });
-    }
+    });
+    await Promise.allSettled(promises);
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule break alarms:', error);
   }
@@ -425,9 +426,9 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
 
     // Schedule each AI message with a stable identifier and correct trigger time
     const eveningHour = Math.min(20, Math.max(17, notifHour + 11));
-    for (const msg of aiMessages) {
+    const promises = aiMessages.map((msg) => {
       if (msg.scheduledFor === 'morning') {
-        await Notifications.scheduleNotificationAsync({
+        return Notifications.scheduleNotificationAsync({
           identifier: `${ACCOUNTABILITY_ID_PREFIX}morning`,
           content: { title: msg.title, body: msg.body, sound: true },
           trigger: {
@@ -437,13 +438,13 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
           },
         });
       } else if (msg.scheduledFor === 'afternoon') {
-        await Notifications.scheduleNotificationAsync({
+        return Notifications.scheduleNotificationAsync({
           identifier: `${ACCOUNTABILITY_ID_PREFIX}afternoon`,
           content: { title: msg.title, body: msg.body, sound: true },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 12, minute: 0 },
         });
       } else if (msg.scheduledFor === 'evening') {
-        await Notifications.scheduleNotificationAsync({
+        return Notifications.scheduleNotificationAsync({
           identifier: `${ACCOUNTABILITY_ID_PREFIX}evening`,
           content: { title: msg.title, body: msg.body, sound: true },
           trigger: {
@@ -454,13 +455,15 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
         });
       } else if (msg.scheduledFor === 'streak_warning') {
         // Always fires at 9pm — use the AI-generated content (not the hardcoded fallback)
-        await Notifications.scheduleNotificationAsync({
+        return Notifications.scheduleNotificationAsync({
           identifier: `${ACCOUNTABILITY_ID_PREFIX}streak`,
           content: { title: msg.title, body: msg.body, sound: true },
           trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: 21, minute: 0 },
         });
       }
-    }
+      return Promise.resolve();
+    });
+    await Promise.allSettled(promises);
   } catch {
     // Last-resort fallback — at minimum schedule a streak reminder
     try {

@@ -59,10 +59,30 @@ const EXAM_SOURCES: ExamSourceConfig[] = [
 ];
 
 const MONTHS: Record<string, number> = {
-  jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3,
-  apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7,
-  aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10,
-  october: 10, nov: 11, november: 11, dec: 12, december: 12,
+  jan: 1,
+  january: 1,
+  feb: 2,
+  february: 2,
+  mar: 3,
+  march: 3,
+  apr: 4,
+  april: 4,
+  may: 5,
+  jun: 6,
+  june: 6,
+  jul: 7,
+  july: 7,
+  aug: 8,
+  august: 8,
+  sep: 9,
+  sept: 9,
+  september: 9,
+  oct: 10,
+  october: 10,
+  nov: 11,
+  november: 11,
+  dec: 12,
+  december: 12,
 };
 
 const DATE_REGEX =
@@ -73,15 +93,15 @@ function normalizeIsoDate(year: number, month: number, day: number): string | nu
   if (year < currentYear || year > currentYear + 3) return null;
   if (month < 1 || month > 12) return null;
   if (day < 1 || day > 31) return null;
-  
+
   const iso = `${year.toString().padStart(4, '0')}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   const dt = new Date(year, month - 1, day);
-  
+
   // Verify it represents a valid Date object.
   if (dt.getFullYear() !== year || dt.getMonth() !== month - 1 || dt.getDate() !== day) {
     return null;
   }
-  
+
   // NEVER accept dates that are in the past. Exam dates are in the future!
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -93,7 +113,10 @@ function normalizeIsoDate(year: number, month: number, day: number): string | nu
 }
 
 function parseAnyDate(raw: string): string | null {
-  const text = raw.trim().replace(/\./g, '').replace(/(\d)(st|nd|rd|th)/gi, '$1');
+  const text = raw
+    .trim()
+    .replace(/\./g, '')
+    .replace(/(\d)(st|nd|rd|th)/gi, '$1');
   if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
     const [y, m, d] = text.split('-').map(Number);
     return normalizeIsoDate(y, m, d);
@@ -105,9 +128,7 @@ function parseAnyDate(raw: string): string | null {
     return normalizeIsoDate(y, b, a);
   }
 
-  const dmy = text.match(
-    /^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/,
-  );
+  const dmy = text.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
   if (dmy) {
     const day = Number(dmy[1]);
     const month = MONTHS[dmy[2].toLowerCase()];
@@ -116,9 +137,7 @@ function parseAnyDate(raw: string): string | null {
     return normalizeIsoDate(year, month, day);
   }
 
-  const mdy = text.match(
-    /^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/,
-  );
+  const mdy = text.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
   if (mdy) {
     const month = MONTHS[mdy[1].toLowerCase()];
     const day = Number(mdy[2]);
@@ -152,7 +171,8 @@ async function fetchWithTimeout(url: string, timeoutMs = 12000): Promise<string>
       headers: {
         Accept: 'text/html,application/json,text/plain;q=0.9,*/*;q=0.8',
         'Accept-Language': 'en-IN,en;q=0.9',
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
+        'User-Agent':
+          'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36',
         'Cache-Control': 'no-cache',
       },
     });
@@ -186,8 +206,13 @@ async function fetchSourceText(url: string): Promise<string> {
 function scoreHit(context: string, examKeyword: RegExp, sourceUrl: string): number {
   let score = 1;
   if (examKeyword.test(context)) score += 2;
-  if (/(exam date|scheduled|to be held|conducted on|exam is scheduled|will be conducted)/i.test(context)) score += 2;
-  if (/(expected|tentative)/i.test(context)) score -= 1; 
+  if (
+    /(exam date|scheduled|to be held|conducted on|exam is scheduled|will be conducted)/i.test(
+      context,
+    )
+  )
+    score += 2;
+  if (/(expected|tentative)/i.test(context)) score -= 1;
   if (/(updated on|published on|last updated|written on|edited on)/i.test(context)) score -= 10;
   return score;
 }
@@ -225,19 +250,18 @@ function resolveBestDate(hits: DateHit[]): { date: string; sources: string[] } |
     byDate.set(hit.date, row);
   }
 
-  const ranked = [...byDate.entries()]
-    .sort((a, b) => {
-      const bySources = b[1].sources.size - a[1].sources.size;
-      if (bySources !== 0) return bySources;
-      const byHits = b[1].hitCount - a[1].hitCount;
-      if (byHits !== 0) return byHits;
-      return b[1].totalScore - a[1].totalScore;
-    });
+  const ranked = [...byDate.entries()].sort((a, b) => {
+    const bySources = b[1].sources.size - a[1].sources.size;
+    if (bySources !== 0) return bySources;
+    const byHits = b[1].hitCount - a[1].hitCount;
+    if (byHits !== 0) return byHits;
+    return b[1].totalScore - a[1].totalScore;
+  });
 
   const [bestDate, best] = ranked[0];
   if (!bestDate) return null;
 
-  // Verification rule: either mentioned across multiple domains, 
+  // Verification rule: either mentioned across multiple domains,
   // or mentioned multiple times on one domain with high contextual score.
   const isVerified = best.sources.size >= 2 || (best.hitCount >= 2 && best.totalScore >= 5);
   if (!isVerified) return null;
@@ -245,19 +269,28 @@ function resolveBestDate(hits: DateHit[]): { date: string; sources: string[] } |
   return { date: bestDate, sources: [...best.sources] };
 }
 
-async function syncOneExam(config: ExamSourceConfig): Promise<{ date?: string; sources: string[] }> {
+async function syncOneExam(
+  config: ExamSourceConfig,
+): Promise<{ date?: string; sources: string[] }> {
   const allHits: DateHit[] = [];
-  for (const url of config.urls) {
+  const promises = config.urls.map(async (url) => {
     try {
       const text = await fetchSourceText(url);
       if (text.length > 0) {
-        const hits = extractDateHits(text, url, config.keyword);
-        allHits.push(...hits);
+        return extractDateHits(text, url, config.keyword);
       }
     } catch {
       // Ignore individual source failures
     }
-  }
+    return [];
+  });
+
+  const results = await Promise.allSettled(promises);
+  results.forEach((result) => {
+    if (result.status === 'fulfilled') {
+      allHits.push(...result.value);
+    }
+  });
 
   const best = resolveBestDate(allHits);
   if (!best) return { sources: [] };
@@ -316,8 +349,11 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
 
   const nextMeta: ExamDateSyncMeta = {
     lastCheckedAt: checkedAt,
-    lastSuccessAt: (inicetSync.date || neetSync.date) ? checkedAt : meta.lastSuccessAt,
-    lastError: (!inicetSync.date && !neetSync.date) ? 'Unable to verify updated official exam dates from web sources.' : null,
+    lastSuccessAt: inicetSync.date || neetSync.date ? checkedAt : meta.lastSuccessAt,
+    lastError:
+      !inicetSync.date && !neetSync.date
+        ? 'Unable to verify updated official exam dates from web sources.'
+        : null,
     inicetDate: inicetSync.date ?? profile.inicetDate,
     neetDate: neetSync.date ?? profile.neetDate,
     inicetSources: inicetSync.sources,

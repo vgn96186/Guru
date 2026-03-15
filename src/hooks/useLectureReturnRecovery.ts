@@ -105,7 +105,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
         if (!validation.validated) {
           try {
             const finalInfo = await validateRecordingFile(recordingPath);
-            if (!finalInfo.exists || finalInfo.size <= 100) {
+            if (!(finalInfo?.exists) || finalInfo.size <= 100) {
               await updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
               showToast(
                 "Recording file isn't ready yet — it may appear when you reopen the app.",

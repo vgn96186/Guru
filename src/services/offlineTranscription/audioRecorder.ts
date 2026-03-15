@@ -291,7 +291,7 @@ export class AudioRecorder {
   async deleteRecording(filePath: string): Promise<void> {
     try {
       const info = await FileSystem.getInfoAsync(filePath);
-      if (info.exists) {
+      if (info?.exists) {
         await FileSystem.deleteAsync(filePath, { idempotent: true });
       }
     } catch (err) {
@@ -598,7 +598,7 @@ export class AudioRecorder {
   private async ensureRecordingDir(): Promise<void> {
     try {
       const info = await FileSystem.getInfoAsync(RECORDING_DIR);
-      if (!info.exists) {
+      if (!(info?.exists)) {
         await FileSystem.makeDirectoryAsync(RECORDING_DIR, {
           intermediates: true,
         });
@@ -616,7 +616,7 @@ export class AudioRecorder {
     for (const file of this.tempFilesToClean) {
       try {
         const info = await FileSystem.getInfoAsync(file);
-        if (info.exists) {
+        if (info?.exists) {
           await FileSystem.deleteAsync(file, { idempotent: true });
         }
       } catch (err) {

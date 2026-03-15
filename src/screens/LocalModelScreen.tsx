@@ -72,12 +72,12 @@ export default function LocalModelScreen() {
   useEffect(() => {
     if (localModelPath) {
       FileSystem.getInfoAsync(localModelPath).then(info => {
-        if (!info.exists) { setLocalModelPath(null); setUseLocalModel(false); }
+        if (!(info?.exists)) { setLocalModelPath(null); setUseLocalModel(false); }
       });
     }
     if (localWhisperPath) {
       FileSystem.getInfoAsync(localWhisperPath).then(info => {
-        if (!info.exists) { setLocalWhisperPath(null); setUseLocalWhisper(false); }
+        if (!(info?.exists)) { setLocalWhisperPath(null); setUseLocalWhisper(false); }
       });
     }
   }, [localModelPath, localWhisperPath]);
@@ -96,7 +96,7 @@ export default function LocalModelScreen() {
       const targetUri = FileSystem.documentDirectory + model.name;
       const fileInfo = await FileSystem.getInfoAsync(targetUri);
       
-      if (fileInfo.exists) {
+      if (fileInfo?.exists) {
         if (isLlm) setLocalModelPath(targetUri);
         else setLocalWhisperPath(targetUri);
         if (isLlm) setDownloadingLlm(false);

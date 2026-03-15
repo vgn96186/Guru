@@ -41,7 +41,7 @@ export async function runAutoPublicBackup() {
     // 2. Secondary Backup: Local Private Document Directory (Survives app updates)
     // Ensure backup dir exists
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_BACKUP_DIR);
-    if (!dirInfo.exists) {
+    if (!(dirInfo?.exists)) {
       await FileSystem.makeDirectoryAsync(PUBLIC_BACKUP_DIR, { intermediates: true });
     }
 

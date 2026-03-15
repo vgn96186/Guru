@@ -73,7 +73,7 @@ export async function transcribeRawWithLocalWhisper(
   const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
 
   const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  if (!fileInfo.exists || fileInfo.size === 0) return '';
+  if (!(fileInfo?.exists) || fileInfo.size === 0) return '';
 
   let whisperInputUri = fileUri;
   if (audioFilePath.endsWith('.m4a') || audioFilePath.endsWith('.mp4')) {

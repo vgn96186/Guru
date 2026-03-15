@@ -165,7 +165,7 @@ export class WhisperModelManager {
 
     try {
       const fileInfo = await FileSystem.getInfoAsync(path);
-      if (!fileInfo.exists) return false;
+      if (!(fileInfo?.exists)) return false;
       
       // Size check as quick validation
       if ('size' in fileInfo) {
@@ -198,7 +198,7 @@ export class WhisperModelManager {
     const path = getVadModelPath();
     try {
       const info = await FileSystem.getInfoAsync(path);
-      if (!info.exists) return false;
+      if (!(info?.exists)) return false;
       
       // Size check
       if ('size' in info && info.size < VAD_MODEL_INFO.expectedBytes * 0.95) {
@@ -255,7 +255,7 @@ export class WhisperModelManager {
     try {
       // Delete any existing corrupted file
       const existingInfo = await FileSystem.getInfoAsync(modelPath);
-      if (existingInfo.exists) {
+      if (existingInfo?.exists) {
         await FileSystem.deleteAsync(modelPath, { idempotent: true });
       }
 
@@ -293,7 +293,7 @@ export class WhisperModelManager {
 
       // Validate downloaded file size
       const fileInfo = await FileSystem.getInfoAsync(modelPath);
-      if (!fileInfo.exists) {
+      if (!(fileInfo?.exists)) {
         throw new Error('Downloaded file not found on disk');
       }
 
@@ -503,7 +503,7 @@ export class WhisperModelManager {
       const path = getModelPath(info);
       try {
         const fileInfo = await FileSystem.getInfoAsync(path);
-        if (fileInfo.exists && 'size' in fileInfo) {
+        if ((fileInfo?.exists) && 'size' in fileInfo) {
           results.push({
             size: size as WhisperModelSize,
             fileSizeBytes: fileInfo.size,
@@ -588,7 +588,7 @@ export class WhisperModelManager {
   private async ensureModelsDir(): Promise<void> {
     try {
       const info = await FileSystem.getInfoAsync(MODELS_DIR);
-      if (!info.exists) {
+      if (!(info?.exists)) {
         await FileSystem.makeDirectoryAsync(MODELS_DIR, {
           intermediates: true,
         });

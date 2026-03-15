@@ -206,7 +206,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
     const PUBLIC_REC_DIR = FileSystem.documentDirectory + 'recordings/';
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_REC_DIR);
-    if (!dirInfo.exists) return 0;
+    if (!(dirInfo?.exists)) return 0;
 
     const files = await FileSystem.readDirectoryAsync(PUBLIC_REC_DIR);
     if (files.length === 0) return 0;
@@ -338,7 +338,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
 
     async function scanDir(dir: string) {
       const dirInfo = await FileSystem.getInfoAsync(dir);
-      if (!dirInfo.exists) return;
+      if (!(dirInfo?.exists)) return;
 
       const files = await FileSystem.readDirectoryAsync(dir);
       for (const fileName of files) {

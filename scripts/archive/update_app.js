@@ -181,7 +181,7 @@ const DB_PATH = \`\${DB_DIR}/\${DB_NAME}\`;
 export async function exportDatabase() {
   try {
     const fileExists = await FileSystem.getInfoAsync(DB_PATH);
-    if (!fileExists.exists) {
+    if (!(fileExists?.exists)) {
       Alert.alert('Error', 'Database file not found.');
       return;
     }
@@ -223,7 +223,7 @@ export async function importDatabase() {
     
     // Ensure SQLite dir exists
     const dirInfo = await FileSystem.getInfoAsync(DB_DIR);
-    if (!dirInfo.exists) {
+    if (!(dirInfo?.exists)) {
       await FileSystem.makeDirectoryAsync(DB_DIR, { intermediates: true });
     }
     

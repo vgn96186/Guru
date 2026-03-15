@@ -10,9 +10,10 @@ export default function FocusAudioPlayer() {
     const toggleAudio = useAppStore(s => s.toggleFocusAudio);
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
+    const isMountedRef = useRef(true);
 
     useEffect(() => {
-        let isMounted = true;
+        isMountedRef.current = true;
         async function initAudio() {
             try {
                 await Audio.setAudioModeAsync({
@@ -27,7 +28,7 @@ export default function FocusAudioPlayer() {
                     { shouldPlay: false, isLooping: true, volume: 0.5 }
                 );
                 
-                if (isMounted) {
+                if (isMountedRef.current) {
                     soundRef.current = newSound;
                     setSound(newSound);
                 } else {
@@ -41,9 +42,11 @@ export default function FocusAudioPlayer() {
         initAudio();
 
         return () => {
-            isMounted = false;
+            isMountedRef.current = false;
             if (soundRef.current) {
-                soundRef.current.unloadAsync();
+                soundRef.current.unloadAsync().catch((err) => {
+                    console.warn('[FocusAudioPlayer] Failed to unload sound:', err);
+                });
             }
         };
     }, []);
@@ -52,9 +55,13 @@ export default function FocusAudioPlayer() {
         if (!sound) return;
 
         if (isAudioEnabled) {
-            sound.playAsync();
+            sound.playAsync().catch((err) => {
+                console.warn('[FocusAudioPlayer] Failed to play sound:', err);
+            });
         } else {
-            sound.pauseAsync();
+            sound.pauseAsync().catch((err) => {
+                console.warn('[FocusAudioPlayer] Failed to pause sound:', err);
+            });
         }
     }, [isAudioEnabled, sound]);
 

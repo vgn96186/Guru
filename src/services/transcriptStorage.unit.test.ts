@@ -1,40 +1,158 @@
-import * as FileSystem from 'expo-file-system/legacy';
-import { saveTranscriptToFile } from './transcriptStorage';
+import { describe, it, expect, jest, beforeEach } from "@jest/globals";
 
-jest.mock('expo-file-system/legacy', () => ({
-  documentDirectory: 'file:///data/user/0/com.guru/files/',
-  cacheDirectory: 'file:///data/user/0/com.guru/cache/',
-  makeDirectoryAsync: jest.fn(async () => {}),
-  writeAsStringAsync: jest.fn(async () => {}),
-  copyAsync: jest.fn(async () => {}),
-  EncodingType: { UTF8: 'utf8' },
-  getInfoAsync: jest.fn(async () => ({ exists: true })),
-  StorageAccessFramework: {
-    createFileAsync: jest.fn(async () => 'file://backup'),
-  },
-}));
+// Instead of mock module which relies on bun we'll use jest which the codebase relies on.
+
+// We will skip running this file with Bun directly and just use jest mocks
+jest.mock('expo-file-system/legacy', () => {
+  return {
+    documentDirectory: 'file:///data/user/0/com.app/files/',
+    writeAsStringAsync: jest.fn(async () => {}),
+    readAsStringAsync: jest.fn(async () => 'transcript content'),
+    makeDirectoryAsync: jest.fn(async () => {}),
+    getInfoAsync: jest.fn(async () => ({ exists: true })),
+    copyAsync: jest.fn(async () => {}),
+    StorageAccessFramework: {
+      createFileAsync: jest.fn(async () => 'content://mock/uri/file.txt'),
+    },
+    EncodingType: { UTF8: 'utf8' },
+  }
+});
+
+jest.mock('react-native', () => {
+  return {
+    Platform: { OS: 'android' },
+  };
+});
+
+const profileMock = { backupDirectoryUri: 'content://mock/uri' };
 
 jest.mock('../db/repositories', () => ({
   profileRepository: {
-    getProfile: jest.fn(async () => ({
-      groqApiKey: 'mock-key',
-      useLocalWhisper: false,
-      backupDirectoryUri: 'content://mock-uri',
-    })),
+    getProfile: async () => profileMock,
   },
 }));
 
-describe('transcriptStorage backup', () => {
-  it('should save transcript and attempt backup', async () => {
-    const text = 'Biochemistry lecture content';
-    const uri = await saveTranscriptToFile(text);
+import * as FileSystem from 'expo-file-system/legacy';
+import { backupNoteToPublic, saveTranscriptToFile, loadTranscriptFromFile } from './transcriptStorage';
 
-    expect(uri).toContain('transcript_');
-    expect(FileSystem.makeDirectoryAsync).toHaveBeenCalled();
-    expect(FileSystem.writeAsStringAsync).toHaveBeenCalledWith(
-      expect.stringContaining('transcripts/transcript_'),
-      text,
-      { encoding: 'utf8' },
-    );
+describe('transcriptStorage', () => {
+  beforeEach(() => {
+    // Reset mocks
+    (FileSystem.writeAsStringAsync as jest.Mock).mockClear();
+    (FileSystem.readAsStringAsync as jest.Mock).mockClear();
+    (FileSystem.makeDirectoryAsync as jest.Mock).mockClear();
+    (FileSystem.getInfoAsync as jest.Mock).mockClear();
+    (FileSystem.copyAsync as jest.Mock).mockClear();
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockClear();
+  });
+
+  describe('backupNoteToPublic', () => {
+    it('should save to cloud (SAF) and local public dir on Android', async () => {
+      await backupNoteToPublic(1, 'Anatomy', 'This is a note.');
+
+      // Check SAF Cloud Backup
+      expect(FileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
+        'content://mock/uri',
+        expect.stringMatching(/^note_anatomy_1_\d+\.txt$/),
+        'text/plain'
+      );
+
+      // Check write to both SAF and Local
+      expect(FileSystem.writeAsStringAsync).toHaveBeenCalledTimes(2);
+
+      // First write to SAF
+      expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
+        1,
+        'content://mock/uri/file.txt',
+        'This is a note.',
+        { encoding: 'utf8' }
+      );
+
+      // Second write to local public
+      expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
+        2,
+        expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/),
+        'This is a note.',
+        { encoding: 'utf8' }
+      );
+    });
+  });
+
+  describe('saveTranscriptToFile', () => {
+    it('should save transcript locally, to SAF cloud, and public local backup', async () => {
+      const uri = await saveTranscriptToFile('lecture text');
+
+      // Main app directory
+      expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
+        1,
+        expect.stringMatching(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+        'lecture text',
+        { encoding: 'utf8' }
+      );
+
+      // Cloud SAF backup
+      expect(FileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
+        'content://mock/uri',
+        expect.stringMatching(/^transcript_\d+_[a-z0-9]+\.txt$/),
+        'text/plain'
+      );
+      expect(FileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
+        2,
+        'content://mock/uri/file.txt',
+        'lecture text',
+        { encoding: 'utf8' }
+      );
+
+      // Public local backup
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith({
+        from: expect.stringMatching(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+        to: expect.stringMatching(/^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/transcript_\d+_[a-z0-9]+\.txt$/),
+      });
+
+      expect(uri).toMatch(/^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/);
+    });
+
+    it('returns the text directly if it is not a path', async () => {
+       const res = await saveTranscriptToFile('file://my_test_path.txt');
+       expect(res).toBe('file://my_test_path.txt');
+    });
+  });
+
+  describe('loadTranscriptFromFile', () => {
+    it('returns the text if it is not a file URI', async () => {
+      const result = await loadTranscriptFromFile('just text');
+      expect(result).toBe('just text');
+    });
+
+    it('loads from URI correctly', async () => {
+      const result = await loadTranscriptFromFile('file:///data/user/0/com.app/files/transcripts/transcript_123.txt');
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledWith(
+        'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
+        { encoding: 'utf8' }
+      );
+      expect(result).toBe('transcript content');
+    });
+
+    it('falls back to local current directory if absolute path fails', async () => {
+      // Mock failure for the first read
+      (FileSystem.readAsStringAsync as jest.Mock).mockImplementationOnce(() => Promise.reject(new Error('File not found')))
+                                           .mockImplementationOnce(() => Promise.resolve('recovered content'));
+
+      const result = await loadTranscriptFromFile('file:///old/install/path/transcripts/transcript_123.txt');
+
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
+      expect(FileSystem.readAsStringAsync).toHaveBeenNthCalledWith(
+        1,
+        'file:///old/install/path/transcripts/transcript_123.txt',
+        { encoding: 'utf8' }
+      );
+      expect(FileSystem.readAsStringAsync).toHaveBeenNthCalledWith(
+        2,
+        'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
+        { encoding: 'utf8' }
+      );
+
+      expect(result).toBe('recovered content');
+    });
   });
 });

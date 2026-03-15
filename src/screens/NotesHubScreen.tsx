@@ -51,9 +51,57 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
+import { getSubjectByName, saveLectureTranscript } from '../db/queries/topics';
+import * as DocumentPicker from 'expo-document-picker';
+import { useAppStore } from '../store/useAppStore';
+
 export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const refreshProfile = useAppStore(s => s.refreshProfile);
+  const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+
+  const handleAudioUpload = async () => {
+    const res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+    if (res.canceled || !res.assets[0]) return;
+    setIsTranscribingUpload(true);
+    try {
+      const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
+      const hasTranscript = !!analysis.transcript?.trim();
+      const hasMeaningfulSummary =
+        !!analysis.lectureSummary &&
+        ![
+          'No audio recorded (empty file)',
+          'No speech detected (silent audio)',
+          'No speech detected',
+          'Lecture content recorded',
+          'No medical content detected',
+        ].includes(analysis.lectureSummary);
+      if (!hasTranscript || !hasMeaningfulSummary) {
+        throw new Error('No usable lecture content was detected in this recording.');
+      }
+      const note = await generateADHDNote(analysis);
+      const sub = await getSubjectByName(analysis.subject);
+      await saveLectureTranscript({
+        subjectId: sub?.id ?? null,
+        note,
+        transcript: analysis.transcript,
+        summary: analysis.lectureSummary,
+        topics: analysis.topics,
+        appName: 'Upload',
+        confidence: analysis.estimatedConfidence,
+        embedding: analysis.embedding,
+      });
+      refreshProfile();
+      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
+      loadData();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setIsTranscribingUpload(false);
+    }
+  };
   const [stats, setStats] = useState<NotesStats>({ lectureCount: 0, topicNoteCount: 0 });
   const [recentLectures, setRecentLectures] = useState<LectureHistoryItem[]>([]);
   const [topicNotes, setTopicNotes] = useState<TopicNotePreview[]>([]);
@@ -172,6 +220,27 @@ export default function NotesHubScreen() {
               <Ionicons name="medkit-outline" size={20} color="#7ED6A7" />
               <Text style={styles.actionTitle}>Ask Guru</Text>
               <Text style={styles.actionSub}>Use your notes as a launch point for grounded medical questions.</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={handleAudioUpload}
+              disabled={isTranscribingUpload}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="cloud-upload-outline" size={20} color="#F7C49C" />
+              <Text style={styles.actionTitle}>{isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}</Text>
+              <Text style={styles.actionSub}>Convert external lecture audio files into elite ADHD notes.</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => navigation.navigate('ManualNoteCreation' as any)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="clipboard-outline" size={20} color="#F79C9C" />
+              <Text style={styles.actionTitle}>Paste Transcript</Text>
+              <Text style={styles.actionSub}>Manually enter text to generate formatted medical notes.</Text>
             </TouchableOpacity>
           </View>
 

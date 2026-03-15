@@ -2,7 +2,14 @@
 export { getApiKeys, OPENROUTER_FREE_MODELS, GROQ_MODELS } from './config';
 
 // Types
-export type { Message, GuruEventType, GuruPresenceMessage, AgendaResponse, MedicalGroundingSource } from './types';
+export type {
+  Message,
+  GuruEventType,
+  GuruPresenceMessage,
+  AgendaResponse,
+  DailyAgenda,
+  MedicalGroundingSource,
+} from './types';
 
 // JsonRepair — robust JSON extraction and repair
 export { parseStructuredJson } from './jsonRepair';
@@ -24,7 +31,13 @@ export {
 export { fetchContent, prefetchTopicContent } from './content';
 
 // Planning
-export { planSessionWithAI, generateAccountabilityMessages, generateGuruPresenceMessages } from './planning';
+export {
+  planSessionWithAI,
+  generateAccountabilityMessages,
+  generateGuruPresenceMessages,
+  generateDailyAgendaWithRouting,
+  replanDayWithRouting,
+} from './planning';
 
 // Chat
 export { chatWithGuru, chatWithGuruGrounded, askGuru } from './chat';

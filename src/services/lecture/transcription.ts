@@ -15,24 +15,64 @@ export async function getRecordingInfo(filePath: string) {
   } catch { return { exists: false, sizeBytes: 0, needsChunking: false }; }
 }
 
-export async function transcribeWithGroqChunking(recordingPath: string, groqKey: string) {
+export async function transcribeWithGroqChunking(recordingPath: string, groqKey: string, logId?: number) {
   const info = await getRecordingInfo(recordingPath);
   if (!info.needsChunking) return { transcript: await transcribeRawWithGroq(recordingPath, groqKey), usedChunking: false };
 
   let wavPath: string | null = null;
   let nativeChunks: { path: string }[] = [];
 
+  // Setup checkpoint directory
+  const sessionId = logId ?? 'unknown_' + Date.now();
+  const checkpointDir = FileSystem.documentDirectory + `transcripts_checkpoint_${sessionId}/`;
+
   try {
+    const dirInfo = await FileSystem.getInfoAsync(checkpointDir);
+    if (!dirInfo.exists) {
+      await FileSystem.makeDirectoryAsync(checkpointDir, { intermediates: true });
+    }
+
     wavPath = await convertToWav(recordingPath);
     if (!wavPath) throw new Error('WAV conversion failed');
 
     const chunkBytes = Math.floor(GROQ_TARGET_CHUNK_BYTES / WAV_BYTES_PER_SECOND) * WAV_BYTES_PER_SECOND;
     nativeChunks = await splitWavIntoChunks(wavPath, chunkBytes, chunkBytes, WAV_BYTES_PER_SECOND);
     
-    const transcripts = [];
-    for (const chunk of nativeChunks) {
-      const t = await transcribeRawWithGroq(chunk.path, groqKey);
-      if (t.trim()) transcripts.push(t);
+    const transcripts: string[] = [];
+
+    for (let i = 0; i < nativeChunks.length; i++) {
+      const chunk = nativeChunks[i];
+      const chunkFileName = `chunk_${String(i).padStart(3, '0')}.txt`;
+      const chunkFilePath = checkpointDir + chunkFileName;
+
+      const chunkFileInfo = await FileSystem.getInfoAsync(chunkFilePath);
+      let chunkTranscript = '';
+
+      if (chunkFileInfo.exists) {
+        // Resume from checkpoint
+        chunkTranscript = await FileSystem.readAsStringAsync(chunkFilePath, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+        console.log(`[Transcription] Resuming chunk ${i} from checkpoint`);
+      } else {
+        // Transcribe and save checkpoint
+        console.log(`[Transcription] Transcribing chunk ${i}...`);
+        chunkTranscript = await transcribeRawWithGroq(chunk.path, groqKey);
+        await FileSystem.writeAsStringAsync(chunkFilePath, chunkTranscript, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+      }
+
+      if (chunkTranscript.trim()) {
+        transcripts.push(chunkTranscript);
+      }
+    }
+
+    // Cleanup checkpoint directory on success
+    try {
+      await FileSystem.deleteAsync(checkpointDir, { idempotent: true });
+    } catch (e) {
+      console.warn('[Transcription] Failed to delete checkpoint dir:', e);
     }
 
     return { transcript: transcripts.join('\n\n'), usedChunking: true };

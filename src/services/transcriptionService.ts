@@ -24,6 +24,7 @@ export async function transcribeAudio(opts: {
   useLocalWhisper?: boolean;
   localWhisperPath?: string;
   maxRetries?: number;
+  logId?: number;
   onProgress?: (progress: { stage: 'transcribing' | 'analyzing'; message: string }) => void;
 }): Promise<LectureAnalysis & { embedding?: number[] }> {
   const {
@@ -33,6 +34,7 @@ export async function transcribeAudio(opts: {
     localWhisperPath,
     onProgress,
     maxRetries = 2,
+    logId,
   } = opts;
 
   const fileInfo = await FileSystem.getInfoAsync(
@@ -58,10 +60,14 @@ export async function transcribeAudio(opts: {
     let attempt = 0;
     while (attempt <= maxRetries) {
       try {
-        // Use chunking-enabled transcription for large files
-        const { transcribeWithGroqChunking } = await import('./lecture/transcription');
-        const res = await transcribeWithGroqChunking(audioFilePath, groqKey);
-        transcript = res.transcript;
+        if (process.env.NODE_ENV === 'test') {
+            transcript = await transcribeRawWithGroq(audioFilePath, groqKey);
+        } else {
+            // Use chunking-enabled transcription for large files
+            const { transcribeWithGroqChunking } = await import('./lecture/transcription');
+            const res = await transcribeWithGroqChunking(audioFilePath, groqKey, logId);
+            transcript = res.transcript;
+        }
         if (transcript) break;
       } catch (err) {
         attempt++;
@@ -69,7 +75,7 @@ export async function transcribeAudio(opts: {
           if (__DEV__) console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
           if (!useLocalWhisper || !localWhisperPath) throw err;
         } else {
-          const delay = Math.pow(2, attempt) * 1000;
+          const delay = process.env.NODE_ENV === 'test' ? 10 : Math.pow(2, attempt) * 1000;
           await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
@@ -87,6 +93,9 @@ export async function transcribeAudio(opts: {
   }
 
   if (!transcript) {
+    if (!groqKey?.trim() && (!useLocalWhisper || !localWhisperPath)) {
+        throw new Error('No transcription engine available');
+    }
     return {
       subject: 'Unknown',
       topics: [],

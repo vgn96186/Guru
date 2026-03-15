@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { updateTopicProgress } from '../../db/queries/topics';
+import { updateTopicsProgressBatch, TopicProgressUpdate } from '../../db/queries/topics';
 import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
 
 /**
@@ -21,6 +21,8 @@ export async function markTopicsFromLecture(
   if ((!topics || topics.length === 0) && !lectureSummary) return;
 
   const matchedTopicIds = new Set<number>();
+  const updates: TopicProgressUpdate[] = [];
+  const status = 'seen';
 
   // 1-3: Keyword matching
   for (const topicName of topics) {
@@ -28,9 +30,15 @@ export async function markTopicsFromLecture(
     if (!sanitized) continue;
 
     const match = await findTopicIdByKeywords(db, sanitized, subjectName);
-    if (match) {
+    if (match && !matchedTopicIds.has(match)) {
       matchedTopicIds.add(match);
-      await applyLectureProgressToTopic(db, match, confidence, true, lectureSummary);
+      updates.push({
+        topicId: match,
+        status,
+        confidence,
+        xpToAdd: 0,
+        noteToAppend: lectureSummary,
+      });
     }
   }
 
@@ -44,7 +52,13 @@ export async function markTopicsFromLecture(
         for (const matchId of semanticMatches) {
           if (!matchedTopicIds.has(matchId)) {
             matchedTopicIds.add(matchId);
-            await applyLectureProgressToTopic(db, matchId, confidence, true, lectureSummary);
+            updates.push({
+              topicId: matchId,
+              status,
+              confidence,
+              xpToAdd: 0,
+              noteToAppend: lectureSummary,
+            });
           }
         }
       }
@@ -61,9 +75,17 @@ export async function markTopicsFromLecture(
     );
     for (const p of parents) {
       if (!matchedTopicIds.has(p.parent_topic_id)) {
-        await applyLectureProgressToTopic(db, p.parent_topic_id, confidence, false);
+        matchedTopicIds.add(p.parent_topic_id);
+        updates.push({
+          topicId: p.parent_topic_id,
+          status,
+          confidence,
+          xpToAdd: 0,
+        });
       }
     }
+
+    await updateTopicsProgressBatch(updates);
   }
 }
 
@@ -124,13 +146,3 @@ async function findSemanticMatches(
   return matchedIds;
 }
 
-async function applyLectureProgressToTopic(
-  db: SQLiteDatabase,
-  topicId: number,
-  confidence: number,
-  isDirectMatch = true,
-  summary?: string,
-) {
-  const status = 'seen';
-  await updateTopicProgress(topicId, status, confidence, 0, summary);
-}

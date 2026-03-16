@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
   Animated,
   StatusBar,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -86,13 +85,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
       slideAnimationRef.current.start();
 
       // Pulse animation for the indicator
-      pulseAnimationRef.current = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1.4, duration: 1200, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 1, duration: 1200, useNativeDriver: true }),
-        ]),
-      );
-      pulseAnimationRef.current.start();
+      // Pulse animation removed for stability
 
       // Reset error state when opening
       setError(null);
@@ -360,16 +353,21 @@ const s = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFillObject },
   backdropOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
   kvWrapper: { flex: 1, justifyContent: 'flex-end' },
+
   panel: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: theme.colors.surface, // #1A1A24
+    borderTopLeftRadius: theme.borderRadius.xxl, // 28
+    borderTopRightRadius: theme.borderRadius.xxl, // 28
     height: '80%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
+    shadowColor: theme.colors.primary, // #6C63FF
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
     elevation: 20,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   dragHandle: {
     width: 40,
@@ -505,10 +503,11 @@ const s = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
   },
+
   bubble: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: theme.borderRadius.xl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -516,17 +515,17 @@ const s = StyleSheet.create({
   },
   userBubble: {
     backgroundColor: theme.colors.primary,
-    borderBottomRightRadius: 4,
-    borderTopRightRadius: 20,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: theme.borderRadius.sm,
+    borderTopRightRadius: theme.borderRadius.xl,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderBottomLeftRadius: theme.borderRadius.xl,
   },
   guruBubble: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderBottomLeftRadius: 4,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
+    backgroundColor: theme.colors.surfaceAlt, // #13131A
+    borderBottomLeftRadius: theme.borderRadius.sm,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    borderBottomRightRadius: theme.borderRadius.xl,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },

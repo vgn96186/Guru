@@ -45,15 +45,17 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
       if (totalRecovered > 0) {
         const parts = [
           recoveredTranscriptions > 0
-            ? `${recoveredTranscriptions} transcription${recoveredTranscriptions > 1 ? 's' : ''}`
+            ? `${recoveredTranscriptions} lecture${recoveredTranscriptions > 1 ? 's' : ''}`
             : null,
           recoveredEnhancements > 0
-            ? `${recoveredEnhancements} note enhancement${recoveredEnhancements > 1 ? 's' : ''}`
+            ? `${recoveredEnhancements} note${recoveredEnhancements > 1 ? 's' : ''}`
             : null,
         ].filter(Boolean);
-        Alert.alert(
-          'Recovered lecture notes',
-          `${parts.join(' and ')} recovered automatically.`,
+        showToast(
+          `${parts.join(' and ')} finished processing. Check your notes.`,
+          'success',
+          undefined,
+          4000,
         );
       }
     } catch (err) {
@@ -61,82 +63,100 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
     }
   }, []);
 
-  const checkForReturnedSession = useCallback(async (showPrompt: boolean) => {
-    try {
-      const session = await getIncompleteExternalSession();
-      if (!session || handledReturnLogRef.current === session.id) return;
-
-      const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
-      const logId = session.id!;
-      handledReturnLogRef.current = logId;
-      stopRecordingHealthCheck();
-
-      if (!showPrompt && !session.recordingPath) {
-        await finishExternalAppSession(logId, durationMinutes, 'Recovered silently on cold app launch');
-        return;
-      }
-
-      if (!showPrompt) {
-        await finishExternalAppSession(logId, durationMinutes, 'Stale session cleaned on cold launch');
-        return;
-      }
-
-      let recordingPath = session.recordingPath ?? null;
-
+  const checkForReturnedSession = useCallback(
+    async (showPrompt: boolean) => {
       try {
-        const stoppedPath = await Promise.race<string | null>([
-          stopRecording(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
-        ]);
-        if (stoppedPath) recordingPath = stoppedPath;
-      } catch (err) {
-        console.warn('[Home] stopRecording failed:', err);
-      }
+        const session = await getIncompleteExternalSession();
+        if (!session || handledReturnLogRef.current === session.id) return;
 
-      if (!recordingPath && session.recordingPath) {
-        recordingPath = session.recordingPath;
-      }
+        const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
+        const logId = session.id!;
+        handledReturnLogRef.current = logId;
+        stopRecordingHealthCheck();
 
-      if (recordingPath) {
-        const validation = await validateRecordingWithBackoff(recordingPath, validateRecordingFile);
-        await updateSessionPipelineTelemetry(logId, {
-          validationAttempts: validation.attemptsUsed,
-        });
-        if (!validation.validated) {
-          try {
-            const finalInfo = await validateRecordingFile(recordingPath);
-            if (!(finalInfo?.exists) || finalInfo.size <= 100) {
-              await updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
-              showToast(
-                "Recording file isn't ready yet — it may appear when you reopen the app.",
-                'warning',
-              );
+        if (!showPrompt && !session.recordingPath) {
+          await finishExternalAppSession(
+            logId,
+            durationMinutes,
+            'Recovered silently on cold app launch',
+          );
+          return;
+        }
+
+        if (!showPrompt) {
+          await finishExternalAppSession(
+            logId,
+            durationMinutes,
+            'Stale session cleaned on cold launch',
+          );
+          return;
+        }
+
+        let recordingPath = session.recordingPath ?? null;
+
+        try {
+          const stoppedPath = await Promise.race<string | null>([
+            stopRecording(),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+          ]);
+          if (stoppedPath) recordingPath = stoppedPath;
+        } catch (err) {
+          console.warn('[Home] stopRecording failed:', err);
+        }
+
+        if (!recordingPath && session.recordingPath) {
+          recordingPath = session.recordingPath;
+        }
+
+        if (recordingPath) {
+          const validation = await validateRecordingWithBackoff(
+            recordingPath,
+            validateRecordingFile,
+          );
+          await updateSessionPipelineTelemetry(logId, {
+            validationAttempts: validation.attemptsUsed,
+          });
+          if (!validation.validated) {
+            try {
+              const finalInfo = await validateRecordingFile(recordingPath);
+              if (!finalInfo?.exists || finalInfo.size <= 100) {
+                await updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
+                showToast(
+                  "Recording file isn't ready yet — it may appear when you reopen the app.",
+                  'warning',
+                );
+              }
+            } catch (e) {
+              console.warn('[Home] Native validation threw, keeping path anyway:', e);
             }
-          } catch (e) {
-            console.warn('[Home] Native validation threw, keeping path anyway:', e);
           }
         }
+
+        try {
+          await hideOverlay();
+        } catch (err) {
+          console.warn('[Home] hideOverlay failed:', err);
+        }
+
+        await finishExternalAppSession(logId, durationMinutes);
+        onRecovered({
+          appName: session.appName,
+          durationMinutes,
+          recordingPath,
+          logId,
+        });
+      } catch (err) {
+        console.error('[Home] Error in checkForReturnedSession:', err);
+        showToast("Couldn't process your lecture recording. Try opening the app again.", 'error');
       }
-
-      try { await hideOverlay(); } catch (err) { console.warn('[Home] hideOverlay failed:', err); }
-
-      await finishExternalAppSession(logId, durationMinutes);
-      onRecovered({
-        appName: session.appName,
-        durationMinutes,
-        recordingPath,
-        logId,
-      });
-    } catch (err) {
-      console.error('[Home] Error in checkForReturnedSession:', err);
-      showToast("Couldn't process your lecture recording. Try opening the app again.", 'error');
-    }
-  }, [onRecovered]);
+    },
+    [onRecovered],
+  );
 
   useEffect(() => {
     checkForReturnedSession(false);
     recoverPendingTranscriptions(true);
-    const sub = AppState.addEventListener('change', nextState => {
+    const sub = AppState.addEventListener('change', (nextState) => {
       if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
         checkForReturnedSession(true);
         recoverPendingTranscriptions();

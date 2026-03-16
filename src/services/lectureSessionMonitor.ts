@@ -37,15 +37,17 @@ export interface LecturePipelineProgress {
 
 export { startRecordingHealthCheck, stopRecordingHealthCheck, getRecordingInfo };
 
-/** Legacy wrapper for saveLecturePersistence */
+/** Legacy wrapper for saveLecturePersistence. Pass noteOverride to save an AI-generated note instead of the quick template. */
 export async function saveLectureAnalysisQuick(opts: {
   analysis: LectureAnalysis;
   appName: string;
   durationMinutes: number;
   logId: number;
   embedding?: number[] | null;
+  /** When set, this note is saved instead of the quick template (e.g. from generateADHDNote). */
+  noteOverride?: string;
 }) {
-  const quickNote = buildQuickLectureNote(opts.analysis);
+  const quickNote = opts.noteOverride?.trim() || buildQuickLectureNote(opts.analysis);
   return saveLecturePersistence({ ...opts, quickNote });
 }
 

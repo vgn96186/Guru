@@ -5,8 +5,16 @@
 
 import React, { useState, useCallback, useRef, useMemo } from 'react';
 import {
-  View, Text, FlatList, TextInput, TouchableOpacity,
-  StyleSheet, Modal, ScrollView, RefreshControl, Alert,
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  ScrollView,
+  RefreshControl,
+  Alert,
 } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,9 +28,10 @@ import {
   deleteLectureNote,
   updateLectureTranscriptSummary,
   getLectureNoteById,
-  type LectureHistoryItem
+  type LectureHistoryItem,
 } from '../db/queries/aiCache';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
+import { MarkdownRender } from '../components/MarkdownRender';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -55,7 +64,10 @@ const CONFIDENCE_LABELS: Record<number, string> = {
 
 /** Extract the first meaningful line from a note (skip markdown headers) */
 function extractFirstLine(note: string): string {
-  const lines = note.split('\n').map(l => l.trim()).filter(Boolean);
+  const lines = note
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   for (const line of lines) {
     const stripped = line.replace(/^#+\s*/, '').replace(/\*\*/g, '');
     if (stripped.length > 10) return stripped;
@@ -63,68 +75,13 @@ function extractFirstLine(note: string): string {
   return lines[0] ?? 'Lecture note';
 }
 
-/** Lightweight markdown renderer for ADHD-formatted notes */
-function renderMarkdownNote(md: string): React.ReactNode {
-  const lines = md.split('\n');
-  const elements: React.ReactNode[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    if (!trimmed) continue;
-
-    if (trimmed.startsWith('# ')) {
-      elements.push(<Text key={i} style={mdStyles.h1}>{trimmed.slice(2)}</Text>);
-    } else if (trimmed.startsWith('## ')) {
-      elements.push(<Text key={i} style={mdStyles.h2}>{trimmed.slice(3)}</Text>);
-    } else if (/^\d+\.\s/.test(trimmed)) {
-      const text = trimmed.replace(/^\d+\.\s/, '');
-      const num = trimmed.match(/^(\d+)\./)?.[1] ?? '';
-      const parts = text.split(/\*\*(.*?)\*\*/);
-      elements.push(
-        <Text key={i} style={mdStyles.listItem}>
-          <Text style={mdStyles.listNum}>{num}. </Text>
-          {parts.map((part, j) =>
-            j % 2 === 1
-              ? <Text key={j} style={mdStyles.bold}>{part}</Text>
-              : <Text key={j}>{part}</Text>
-          )}
-        </Text>
-      );
-    } else if (trimmed.startsWith('- ')) {
-      elements.push(<Text key={i} style={mdStyles.bullet}>{trimmed.slice(2)}</Text>);
-    } else {
-      const parts = trimmed.split(/\*\*(.*?)\*\*/);
-      elements.push(
-        <Text key={i} style={mdStyles.paragraph}>
-          {parts.map((part, j) =>
-            j % 2 === 1
-              ? <Text key={j} style={mdStyles.bold}>{part}</Text>
-              : <Text key={j}>{part}</Text>
-          )}
-        </Text>
-      );
-    }
-  }
-
-  return <View style={mdStyles.container}>{elements}</View>;
-}
-
-const mdStyles = StyleSheet.create({
-  container: { gap: 3 },
-  h1: { color: '#fff', fontSize: 17, fontWeight: '800', lineHeight: 24, marginBottom: 6 },
-  h2: { color: '#A09CF7', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.6, marginTop: 12, marginBottom: 3 },
-  paragraph: { color: '#ddd', fontSize: 14, lineHeight: 21, marginBottom: 3 },
-  bold: { color: '#fff', fontWeight: '700' },
-  listItem: { color: '#ddd', fontSize: 14, lineHeight: 21, paddingLeft: 4, marginBottom: 2 },
-  listNum: { color: '#6C63FF', fontWeight: '700' },
-  bullet: { color: '#ddd', fontSize: 14, lineHeight: 21, paddingLeft: 8, marginBottom: 2 },
-});
-
 /** Collapsible transcript section */
 function TranscriptSection({ transcript }: { transcript: string }) {
   const [content, setContent] = React.useState<string>('Loading transcript...');
   React.useEffect(() => {
-    loadTranscriptFromFile(transcript).then((res: string | null) => setContent(res || 'No transcript available.'));
+    loadTranscriptFromFile(transcript).then((res: string | null) =>
+      setContent(res || 'No transcript available.'),
+    );
   }, [transcript]);
   const [expanded, setExpanded] = useState(false);
   return (
@@ -137,14 +94,25 @@ function TranscriptSection({ transcript }: { transcript: string }) {
         <Text style={{ color: '#888', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
           Raw Transcript
         </Text>
-        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color="#888" style={{ marginLeft: 6 }} />
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#888"
+          style={{ marginLeft: 6 }}
+        />
       </TouchableOpacity>
       {expanded && (
-        <Text style={{
-          color: '#aaa', fontSize: 13, lineHeight: 20,
-          fontFamily: 'monospace', backgroundColor: '#0D0D0D',
-          padding: 12, borderRadius: 8,
-        }}>
+        <Text
+          style={{
+            color: '#aaa',
+            fontSize: 13,
+            lineHeight: 20,
+            fontFamily: 'monospace',
+            backgroundColor: '#0D0D0D',
+            padding: 12,
+            borderRadius: 8,
+          }}
+        >
           {content}
         </Text>
       )}
@@ -167,7 +135,7 @@ export default function TranscriptHistoryScreen() {
   const loadNotes = useCallback(async () => {
     const items = await getLectureHistory(100);
     setNotes(items);
-    setSelectedIds(prev => prev.filter(id => items.some(item => item.id === id)));
+    setSelectedIds((prev) => prev.filter((id) => items.some((item) => item.id === id)));
   }, []);
 
   const isSelectionMode = selectedIds.length > 0;
@@ -182,14 +150,14 @@ export default function TranscriptHistoryScreen() {
           searchTimeout.current = null;
         }
       };
-    }, [loadNotes])
+    }, [loadNotes]),
   );
 
   useFocusEffect(
     useCallback(() => {
       const noteId = route.params?.noteId;
       if (!noteId) return;
-      void getLectureNoteById(noteId).then(target => {
+      void getLectureNoteById(noteId).then((target) => {
         if (target) {
           setSelectedNote(target);
           navigation.setParams({ noteId: undefined });
@@ -219,29 +187,25 @@ export default function TranscriptHistoryScreen() {
   }, [loadNotes]);
 
   const handleDelete = (id: number) => {
-    Alert.alert(
-      'Delete transcript?',
-      'This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            await deleteLectureNote(id);
-            await loadNotes();
-            setSelectedNote(null);
-          },
+    Alert.alert('Delete transcript?', 'This action cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          await deleteLectureNote(id);
+          await loadNotes();
+          setSelectedNote(null);
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const toggleSelection = (id: number) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       if (prev.includes(id)) {
-        return prev.filter(x => x !== id);
+        return prev.filter((x) => x !== id);
       }
       return [...prev, id];
     });
@@ -285,9 +249,10 @@ export default function TranscriptHistoryScreen() {
 
   const openRename = () => {
     if (!selectedNote) return;
-    const current = (selectedNote.summary && selectedNote.summary.trim().length > 0)
-      ? selectedNote.summary
-      : extractFirstLine(selectedNote.note);
+    const current =
+      selectedNote.summary && selectedNote.summary.trim().length > 0
+        ? selectedNote.summary
+        : extractFirstLine(selectedNote.note);
     setRenameText(current);
     setShowRenameEditor(true);
   };
@@ -323,71 +288,87 @@ export default function TranscriptHistoryScreen() {
   const renderNote = ({ item }: { item: LectureHistoryItem }) => {
     const isSelected = selectedIds.includes(item.id);
     return (
-    <TouchableOpacity
-      style={[styles.noteCard, isSelected && styles.noteCardSelected]}
-      onLongPress={() => handleLongPressItem(item.id)}
-      delayLongPress={220}
-      onPress={() => {
-        if (isSelectionMode) {
+      <TouchableOpacity
+        style={[styles.noteCard, isSelected && styles.noteCardSelected]}
+        onLongPress={() => handleLongPressItem(item.id)}
+        delayLongPress={220}
+        onPress={() => {
+          if (isSelectionMode) {
+            Haptics.selectionAsync();
+            toggleSelection(item.id);
+            return;
+          }
           Haptics.selectionAsync();
-          toggleSelection(item.id);
-          return;
-        }
-        Haptics.selectionAsync();
-        setSelectedNote(item);
-      }}
-      activeOpacity={0.7}
-    >
-      {isSelectionMode && (
-        <View style={styles.selectionTickWrap}>
-          <Ionicons
-            name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-            size={22}
-            color={isSelected ? '#6C63FF' : '#666'}
-          />
-        </View>
-      )}
-      <View style={styles.noteHeader}>
-        <View style={[styles.subjectChip, { backgroundColor: SUBJECT_COLORS[item.subjectName ?? 'Unknown'] ?? '#9E9E9E' }]}>
-          <Text style={styles.subjectText}>{item.subjectName ?? 'Unknown'}</Text>
-        </View>
-        <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
-      </View>
-
-      {item.appName && (
-        <Text style={styles.appBadge}>via {item.appName}</Text>
-      )}
-
-      <Text style={styles.summaryText} numberOfLines={2}>
-        {item.summary || extractFirstLine(item.note)}
-      </Text>
-
-      <View style={styles.noteFooter}>
-        {item.topics.length > 0 && (
-          <View style={styles.topicsRow}>
-            {item.topics.slice(0, 3).map((t, i) => (
-              <Text key={i} style={styles.topicPill}>{t}</Text>
-            ))}
-            {item.topics.length > 3 && (
-              <Text style={styles.moreBadge}>+{item.topics.length - 3}</Text>
-            )}
+          setSelectedNote(item);
+        }}
+        activeOpacity={0.7}
+      >
+        {isSelectionMode && (
+          <View style={styles.selectionTickWrap}>
+            <Ionicons
+              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+              size={22}
+              color={isSelected ? '#6C63FF' : '#666'}
+            />
           </View>
         )}
-        <View style={styles.metaRow}>
-          {item.durationMinutes && (
-            <Text style={styles.metaText}>
-              <Ionicons name="time-outline" size={12} color="#888" /> {formatDuration(item.durationMinutes)}
-            </Text>
-          )}
-          <Text style={[styles.confidenceBadge, { 
-            backgroundColor: item.confidence === 3 ? '#4CAF50' : item.confidence === 2 ? '#FF9800' : '#F44336' 
-          }]}>
-            {CONFIDENCE_LABELS[item.confidence]}
-          </Text>
+        <View style={styles.noteHeader}>
+          <View
+            style={[
+              styles.subjectChip,
+              { backgroundColor: SUBJECT_COLORS[item.subjectName ?? 'Unknown'] ?? '#9E9E9E' },
+            ]}
+          >
+            <Text style={styles.subjectText}>{item.subjectName ?? 'Unknown'}</Text>
+          </View>
+          <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+
+        {item.appName && <Text style={styles.appBadge}>via {item.appName}</Text>}
+
+        <Text style={styles.summaryText} numberOfLines={2}>
+          {item.summary || extractFirstLine(item.note)}
+        </Text>
+
+        <View style={styles.noteFooter}>
+          {item.topics.length > 0 && (
+            <View style={styles.topicsRow}>
+              {item.topics.slice(0, 3).map((t, i) => (
+                <Text key={i} style={styles.topicPill}>
+                  {t}
+                </Text>
+              ))}
+              {item.topics.length > 3 && (
+                <Text style={styles.moreBadge}>+{item.topics.length - 3}</Text>
+              )}
+            </View>
+          )}
+          <View style={styles.metaRow}>
+            {item.durationMinutes && (
+              <Text style={styles.metaText}>
+                <Ionicons name="time-outline" size={12} color="#888" />{' '}
+                {formatDuration(item.durationMinutes)}
+              </Text>
+            )}
+            <Text
+              style={[
+                styles.confidenceBadge,
+                {
+                  backgroundColor:
+                    item.confidence === 3
+                      ? '#4CAF50'
+                      : item.confidence === 2
+                        ? '#FF9800'
+                        : '#F44336',
+                },
+              ]}
+            >
+              {CONFIDENCE_LABELS[item.confidence]}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -449,24 +430,18 @@ export default function TranscriptHistoryScreen() {
         <View style={styles.emptyState}>
           <Ionicons name="search-outline" size={48} color="#666" />
           <Text style={styles.emptyTitle}>No Results</Text>
-          <Text style={styles.emptySubtitle}>
-            No transcripts match "{searchQuery}"
-          </Text>
+          <Text style={styles.emptySubtitle}>No transcripts match "{searchQuery}"</Text>
         </View>
       )}
 
       {/* Notes list */}
       <FlatList
         data={notes}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={renderNote}
         contentContainerStyle={styles.listContent}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor="#fff"
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#fff" />
         }
       />
 
@@ -495,7 +470,10 @@ export default function TranscriptHistoryScreen() {
                   <Ionicons name="trash-outline" size={18} color="#F28B8B" />
                   <Text style={[styles.headerActionText, { color: '#F28B8B' }]}>Delete</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.headerActionBtn} onPress={() => setSelectedNote(null)}>
+                <TouchableOpacity
+                  style={styles.headerActionBtn}
+                  onPress={() => setSelectedNote(null)}
+                >
                   <Ionicons name="close" size={22} color="#fff" />
                 </TouchableOpacity>
               </View>
@@ -512,14 +490,26 @@ export default function TranscriptHistoryScreen() {
                 {selectedNote?.appName && (
                   <Text style={styles.modalMetaText}>
                     via {selectedNote.appName} • {formatDate(selectedNote.createdAt)}
-                    {selectedNote.durationMinutes ? ` • ${formatDuration(selectedNote.durationMinutes)}` : ''}
+                    {selectedNote.durationMinutes
+                      ? ` • ${formatDuration(selectedNote.durationMinutes)}`
+                      : ''}
                   </Text>
                 )}
-                <Text style={[styles.confidenceBadge, { 
-                  backgroundColor: (selectedNote?.confidence ?? 2) === 3 ? '#4CAF50' : (selectedNote?.confidence ?? 2) === 2 ? '#FF9800' : '#F44336',
-                  alignSelf: 'flex-start',
-                  marginTop: 8,
-                }]}>
+                <Text
+                  style={[
+                    styles.confidenceBadge,
+                    {
+                      backgroundColor:
+                        (selectedNote?.confidence ?? 2) === 3
+                          ? '#4CAF50'
+                          : (selectedNote?.confidence ?? 2) === 2
+                            ? '#FF9800'
+                            : '#F44336',
+                      alignSelf: 'flex-start',
+                      marginTop: 8,
+                    },
+                  ]}
+                >
                   {CONFIDENCE_LABELS[selectedNote?.confidence ?? 2]}
                 </Text>
               </View>
@@ -536,7 +526,10 @@ export default function TranscriptHistoryScreen() {
                     autoFocus
                   />
                   <View style={styles.renameActions}>
-                    <TouchableOpacity style={styles.renameCancelBtn} onPress={() => setShowRenameEditor(false)}>
+                    <TouchableOpacity
+                      style={styles.renameCancelBtn}
+                      onPress={() => setShowRenameEditor(false)}
+                    >
                       <Text style={styles.renameCancelText}>Cancel</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.renameSaveBtn} onPress={saveRename}>
@@ -552,17 +545,19 @@ export default function TranscriptHistoryScreen() {
                   <Text style={styles.modalSectionTitle}>Topics Covered</Text>
                   <View style={styles.topicsWrap}>
                     {selectedNote.topics.map((t, i) => (
-                      <Text key={i} style={styles.topicPillLarge}>{t}</Text>
+                      <Text key={i} style={styles.topicPillLarge}>
+                        {t}
+                      </Text>
                     ))}
                   </View>
                 </View>
               )}
 
-              {/* ADHD-formatted study note */}
+              {/* Study note — same renderer as Guru chat (coloured highlights for **bold**) */}
               {selectedNote?.note && (
                 <View style={styles.modalSection}>
                   <Text style={styles.modalSectionTitle}>Study Note</Text>
-                  {renderMarkdownNote(selectedNote.note)}
+                  <MarkdownRender content={selectedNote.note} />
                 </View>
               )}
 
@@ -570,7 +565,6 @@ export default function TranscriptHistoryScreen() {
               {selectedNote?.transcript && (
                 <TranscriptSection transcript={selectedNote.transcript} />
               )}
-
             </ScrollView>
           </View>
         </View>
@@ -714,7 +708,13 @@ const styles = StyleSheet.create({
   },
   modalTitle: { color: '#fff', fontSize: 18, fontWeight: '600', flex: 1 },
   modalHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 10 },
-  headerActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4 },
+  headerActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
   headerActionText: { color: '#A09CF7', fontSize: 12, fontWeight: '600' },
   modalScroll: { padding: 16 },
   modalMeta: { marginBottom: 16 },
@@ -728,7 +728,13 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  renameLabel: { color: '#bbb', fontSize: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.6 },
+  renameLabel: {
+    color: '#bbb',
+    fontSize: 12,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
   renameInput: {
     backgroundColor: '#111',
     borderWidth: 1,
@@ -742,10 +748,21 @@ const styles = StyleSheet.create({
   renameActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
   renameCancelBtn: { paddingHorizontal: 12, paddingVertical: 8 },
   renameCancelText: { color: '#999', fontSize: 13, fontWeight: '600' },
-  renameSaveBtn: { backgroundColor: '#6C63FF', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  renameSaveBtn: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
   renameSaveText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   modalSection: { marginBottom: 20 },
-  modalSectionTitle: { color: '#888', fontSize: 12, marginBottom: 8, textTransform: 'uppercase', letterSpacing: 1 },
+  modalSectionTitle: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 8,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   modalText: { color: '#ddd', fontSize: 15, lineHeight: 22 },
   topicsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   topicPillLarge: {

@@ -14,9 +14,7 @@ import {
   stopRecording as nativeStopRecording,
 } from '../../modules/app-launcher';
 import { requestRecordingPermissions } from './appLauncher/permissions';
-import {
-  ensureOverlayPermission,
-} from './appLauncher/overlay';
+import { ensureOverlayPermission } from './appLauncher/overlay';
 
 export type SupportedMedicalApp =
   | 'marrow'
@@ -105,7 +103,10 @@ async function _launchMedicalAppInner(
 
       const micGranted = await requestRecordingPermissions();
       if (!micGranted) {
-        Alert.alert('Microphone Required', 'Guru needs microphone access to capture the lecture audio while you use another app.');
+        Alert.alert(
+          'Microphone Required',
+          'Guru needs microphone access to capture the lecture audio while you use another app.',
+        );
         return false;
       }
 
@@ -129,11 +130,18 @@ async function _launchMedicalAppInner(
         }
       } catch (e) {
         console.warn('[AppLauncher] Recording start failed:', e);
-        Alert.alert('Recording Failed', 'Could not start background recording. Audio will not be captured.');
+        Alert.alert(
+          'Recording Failed',
+          'Could not start background recording. Audio will not be captured.',
+        );
       }
 
       try {
         await showOverlay(app.name, faceTracking);
+        // Give OverlayService time to start and show the bubble before we switch activities.
+        // Otherwise launchApp() can run before onStartCommand(), and the system may block
+        // startForeground() when the app is already in background (Android 12+).
+        await new Promise((r) => setTimeout(r, 900));
       } catch (overlayErr) {
         console.error('[AppLauncher] Overlay failed:', overlayErr);
       }
@@ -148,7 +156,7 @@ async function _launchMedicalAppInner(
     } catch (err: any) {
       console.error('[AppLauncher] Launch sequence failed:', err);
       Alert.alert('Launch Error', `Failed to open ${app.name}: ${err?.message || 'Unknown error'}`);
-      
+
       stopRecordingHealthCheck();
       try {
         await nativeStopRecording();

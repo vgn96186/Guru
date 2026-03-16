@@ -35,6 +35,7 @@ import { useAppStore } from '../store/useAppStore';
 import { clearChatHistory, getChatHistory, saveChatMessage } from '../db/queries/aiCache';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { theme } from '../constants/theme';
+import { getChatStartersForTopic } from '../constants/chatStarters';
 import { MarkdownRender } from '../components/MarkdownRender';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
@@ -60,28 +61,6 @@ type ChatItem =
   | { id: string; type: 'message'; message: ChatMessage }
   | { id: string; type: 'typing' };
 
-function getStartersForTopic(topicName: string) {
-  if (topicName === 'General Medicine' || !topicName) {
-    return [
-      { icon: 'heart-outline', text: 'First-line treatment for HFrEF?' },
-      { icon: 'fitness-outline', text: 'GLP-1 agonists in obesity - key trials?' },
-      { icon: 'pulse-outline', text: 'Sepsis bundle essentials 2024' },
-      { icon: 'medical-outline', text: 'Hypertension guidelines - thresholds?' },
-      { icon: 'flask-outline', text: 'CKD staging and management approach' },
-      { icon: 'medkit-outline', text: 'Migraine prophylaxis options ranked' },
-    ];
-  }
-
-  return [
-    { icon: 'book-outline', text: `What are the highest-yield exam concepts for ${topicName}?` },
-    { icon: 'help-circle-outline', text: `Give me a hard clinical vignette MCQ on ${topicName}.` },
-    { icon: 'bulb-outline', text: `Can you share a memory hook or mnemonic for ${topicName}?` },
-    { icon: 'list-outline', text: `What is the diagnostic algorithm or criteria for ${topicName}?` },
-    { icon: 'alert-circle-outline', text: `What are common pitfalls and mistakes when studying ${topicName}?` },
-    { icon: 'medkit-outline', text: `What is the first-line treatment and management for ${topicName}?` },
-  ];
-}
-
 function formatTime(ts: number) {
   const d = new Date(ts);
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -99,8 +78,18 @@ function TypingDots() {
       Animated.loop(
         Animated.sequence([
           Animated.delay(index * 150),
-          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true, easing: Easing.in(Easing.ease) }),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.ease),
+          }),
           Animated.delay((2 - index) * 150),
         ]),
       ),
@@ -117,7 +106,9 @@ function TypingDots() {
           style={[
             styles.dot,
             {
-              transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) }],
+              transform: [
+                { translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
+              ],
               opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
             },
           ]}
@@ -150,7 +141,7 @@ export default function GuruChatScreen() {
   useEffect(() => {
     if (topicName && topicName !== 'General Medicine') {
       void getChatHistory(topicName, 20)
-        .then(history => {
+        .then((history) => {
           if (history.length > 0) {
             setMessages(
               history.map((entry) => ({
@@ -188,7 +179,11 @@ export default function GuruChatScreen() {
 
     if (orKey) {
       OPENROUTER_FREE_MODELS.forEach((model) => {
-        list.push({ id: model, name: model.split('/')[1].split(':')[0].toUpperCase(), group: 'OpenRouter' });
+        list.push({
+          id: model,
+          name: model.split('/')[1].split(':')[0].toUpperCase(),
+          group: 'OpenRouter',
+        });
       });
     }
 
@@ -212,7 +207,11 @@ export default function GuruChatScreen() {
   );
 
   const chatItems = useMemo<ChatItem[]>(() => {
-    const items: ChatItem[] = messages.map((message) => ({ id: message.id, type: 'message', message }));
+    const items: ChatItem[] = messages.map((message) => ({
+      id: message.id,
+      type: 'message',
+      message,
+    }));
     if (loading) {
       items.push({ id: 'typing-indicator', type: 'typing' });
     }
@@ -346,7 +345,9 @@ export default function GuruChatScreen() {
 
       const { message } = item;
       return (
-        <View style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}>
+        <View
+          style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}
+        >
           {message.role === 'guru' ? (
             <View style={styles.guruAvatarTiny}>
               <Ionicons name="sparkles" size={11} color={theme.colors.primary} />
@@ -355,7 +356,12 @@ export default function GuruChatScreen() {
 
           <View style={styles.msgContent}>
             <Pressable onLongPress={() => copyMessage(message.text)} delayLongPress={400}>
-              <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.guruBubble]}>
+              <View
+                style={[
+                  styles.bubble,
+                  message.role === 'user' ? styles.userBubble : styles.guruBubble,
+                ]}
+              >
                 {message.role === 'guru' ? (
                   <FormattedGuruMessage text={message.text} />
                 ) : (
@@ -366,7 +372,9 @@ export default function GuruChatScreen() {
 
             <Text style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}>
               {formatTime(message.timestamp)}
-              {message.role === 'guru' && message.modelUsed ? `  ·  ${message.modelUsed.split('/').pop()}` : ''}
+              {message.role === 'guru' && message.modelUsed
+                ? `  ·  ${message.modelUsed.split('/').pop()}`
+                : ''}
             </Text>
 
             {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
@@ -492,11 +500,20 @@ export default function GuruChatScreen() {
                               setShowModelPicker(false);
                             }}
                           >
-                            <Text style={[styles.modelItemText, chosenModel === model.id && styles.modelItemTextActive]}>
+                            <Text
+                              style={[
+                                styles.modelItemText,
+                                chosenModel === model.id && styles.modelItemTextActive,
+                              ]}
+                            >
                               {model.name}
                             </Text>
                             {chosenModel === model.id ? (
-                              <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                              <Ionicons
+                                name="checkmark-circle"
+                                size={18}
+                                color={theme.colors.primary}
+                              />
                             ) : null}
                           </Pressable>
                         ))}
@@ -504,7 +521,10 @@ export default function GuruChatScreen() {
                     );
                   }}
                 />
-                <Pressable style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]} onPress={() => setShowModelPicker(false)}>
+                <Pressable
+                  style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+                  onPress={() => setShowModelPicker(false)}
+                >
                   <Text style={styles.closeBtnText}>Cancel</Text>
                 </Pressable>
               </View>
@@ -513,8 +533,15 @@ export default function GuruChatScreen() {
 
           {bannerVisible ? (
             <View style={styles.infoBanner}>
-              <Ionicons name="library-outline" size={14} color={theme.colors.primary} style={styles.bannerIcon} />
-              <Text style={styles.infoText}>Grounded with Wikipedia, Europe PMC and PubMed. Sources cited inline.</Text>
+              <Ionicons
+                name="library-outline"
+                size={14}
+                color={theme.colors.primary}
+                style={styles.bannerIcon}
+              />
+              <Text style={styles.infoText}>
+                Grounded with Wikipedia, Europe PMC and PubMed. Sources cited inline.
+              </Text>
               <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
                 <Ionicons name="close" size={14} color={theme.colors.textMuted} />
               </Pressable>
@@ -529,7 +556,7 @@ export default function GuruChatScreen() {
               <Text style={styles.emptyTitle}>What do you want to know?</Text>
               <Text style={styles.emptyHint}>Try a question or pick a prompt below.</Text>
               <View style={styles.starterGrid}>
-                {getStartersForTopic(topicName).map((starter) => (
+                {getChatStartersForTopic(topicName).map((starter) => (
                   <Pressable
                     key={starter.text}
                     style={({ pressed }) => [styles.starterChip, pressed && styles.pressed]}
@@ -537,7 +564,12 @@ export default function GuruChatScreen() {
                     onPress={() => handleSend(starter.text)}
                     disabled={loading}
                   >
-                    <Ionicons name={starter.icon as keyof typeof Ionicons.glyphMap} size={16} color={theme.colors.primary} style={styles.starterIcon} />
+                    <Ionicons
+                      name={starter.icon as keyof typeof Ionicons.glyphMap}
+                      size={16}
+                      color={theme.colors.primary}
+                      style={styles.starterIcon}
+                    />
                     <Text style={styles.starterChipText}>{starter.text}</Text>
                   </Pressable>
                 ))}

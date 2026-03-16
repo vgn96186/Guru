@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { updateTopicProgress } from '../../db/queries/topics';
+import { updateTopicsProgressBatch, TopicProgressUpdate } from '../../db/queries/topics';
 import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
 
 /**
@@ -21,6 +21,8 @@ export async function markTopicsFromLecture(
   if ((!topics || topics.length === 0) && !lectureSummary) return;
 
   const matchedTopicIds = new Set<number>();
+  const updates: TopicProgressUpdate[] = [];
+  const status = 'seen';
 
   try {
     await db.execAsync('BEGIN TRANSACTION');

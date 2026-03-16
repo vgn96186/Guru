@@ -74,7 +74,24 @@ CREATE TABLE IF NOT EXISTS lecture_notes (
   app_name TEXT,
   duration_minutes INTEGER,
   confidence INTEGER DEFAULT 2,
-  embedding BLOB
+  embedding BLOB,
+  -- New fields for better tracking
+  recording_path TEXT,
+  recording_duration_seconds INTEGER,
+  transcription_confidence REAL,
+  processing_metrics_json TEXT,
+  retry_count INTEGER DEFAULT 0,
+  last_error TEXT
+)`;
+
+export const CREATE_LECTURE_LEARNED_TOPICS = `
+CREATE TABLE IF NOT EXISTS lecture_learned_topics (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  lecture_note_id INTEGER NOT NULL REFERENCES lecture_notes(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  confidence_at_time INTEGER NOT NULL DEFAULT 2,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  UNIQUE(lecture_note_id, topic_id)
 )`;
 
 export const CREATE_DAILY_LOG = `
@@ -141,6 +158,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'
     CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
   , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'
+  , backup_directory_uri TEXT
 )`;
 
 export const CREATE_BRAIN_DUMPS = `
@@ -190,6 +208,25 @@ CREATE TABLE IF NOT EXISTS offline_ai_queue (
   error_message TEXT
 )`;
 
+export const CREATE_DAILY_AGENDA = `
+CREATE TABLE IF NOT EXISTS daily_agenda (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL UNIQUE,
+  plan_json TEXT NOT NULL,
+  source TEXT DEFAULT 'guru',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`;
+
+export const CREATE_PLAN_EVENTS = `
+CREATE TABLE IF NOT EXISTS plan_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  payload_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
@@ -198,6 +235,8 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
   // Lecture notes chronological listing
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created ON lecture_notes(created_at DESC)`,
+  // Lecture notes by subject for stats
+  `CREATE INDEX IF NOT EXISTS idx_lecture_notes_subject ON lecture_notes(subject_id)`,
   // External app session "active" check (returned_at IS NULL)
   `CREATE INDEX IF NOT EXISTS idx_ext_logs_active ON external_app_logs(returned_at)`,
   // Retry scanner for transcription recovery jobs
@@ -210,6 +249,15 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_topics_parent ON topics(parent_topic_id)`,
   // Topic-to-subject join
   `CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject_id)`,
+  // Daily agenda lookups
+  `CREATE INDEX IF NOT EXISTS idx_daily_agenda_date ON daily_agenda(date)`,
+  // Plan events lookup by date
+  `CREATE INDEX IF NOT EXISTS idx_plan_events_date ON plan_events(date)`,
+  // Lecture learned topics for quick lookup
+  `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_lecture ON lecture_learned_topics(lecture_note_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_topic ON lecture_learned_topics(topic_id)`,
+  // Recording cleanup index (find old recordings)
+  `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created_at ON lecture_notes(created_at)`,
 ];
 
 export const ALL_SCHEMAS = [
@@ -225,4 +273,7 @@ export const ALL_SCHEMAS = [
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
   CREATE_CHAT_HISTORY,
+  CREATE_DAILY_AGENDA,
+  CREATE_PLAN_EVENTS,
+  CREATE_LECTURE_LEARNED_TOPICS,
 ];

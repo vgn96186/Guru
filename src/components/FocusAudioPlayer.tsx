@@ -3,29 +3,37 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { useAppStore } from '../store/useAppStore';
+import { theme } from '../constants/theme';
 
 export default function FocusAudioPlayer() {
     const isAudioEnabled = useAppStore(s => s.profile?.focusAudioEnabled);
     const toggleAudio = useAppStore(s => s.toggleFocusAudio);
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const soundRef = useRef<Audio.Sound | null>(null);
+    const isMountedRef = useRef(true);
 
     useEffect(() => {
+        isMountedRef.current = true;
         async function initAudio() {
-            await Audio.setAudioModeAsync({
-                playsInSilentModeIOS: true,
-                staysActiveInBackground: false,
-                shouldDuckAndroid: true,
-            });
-
             try {
+                await Audio.setAudioModeAsync({
+                    playsInSilentModeIOS: true,
+                    staysActiveInBackground: false,
+                    shouldDuckAndroid: true,
+                });
+
                 // Use bundled asset; falls back to white noise generation if missing
                 const { sound: newSound } = await Audio.Sound.createAsync(
                     require('../../assets/rain.mp3'),
                     { shouldPlay: false, isLooping: true, volume: 0.5 }
                 );
-                soundRef.current = newSound;
-                setSound(newSound);
+                
+                if (isMountedRef.current) {
+                    soundRef.current = newSound;
+                    setSound(newSound);
+                } else {
+                    await newSound.unloadAsync();
+                }
             } catch {
                 // Asset missing — silently disable audio feature
             }
@@ -34,8 +42,11 @@ export default function FocusAudioPlayer() {
         initAudio();
 
         return () => {
+            isMountedRef.current = false;
             if (soundRef.current) {
-                soundRef.current.unloadAsync();
+                soundRef.current.unloadAsync().catch((err) => {
+                    console.warn('[FocusAudioPlayer] Failed to unload sound:', err);
+                });
             }
         };
     }, []);
@@ -44,9 +55,13 @@ export default function FocusAudioPlayer() {
         if (!sound) return;
 
         if (isAudioEnabled) {
-            sound.playAsync();
+            sound.playAsync().catch((err) => {
+                console.warn('[FocusAudioPlayer] Failed to play sound:', err);
+            });
         } else {
-            sound.pauseAsync();
+            sound.pauseAsync().catch((err) => {
+                console.warn('[FocusAudioPlayer] Failed to pause sound:', err);
+            });
         }
     }, [isAudioEnabled, sound]);
 
@@ -55,7 +70,7 @@ export default function FocusAudioPlayer() {
             <Ionicons
                 name={isAudioEnabled ? "headset" : "headset-outline"}
                 size={24}
-                color={isAudioEnabled ? "#6C63FF" : "#9E9E9E"}
+                color={isAudioEnabled ? theme.colors.primary : theme.colors.textMuted}
             />
         </TouchableOpacity>
     );
@@ -65,8 +80,8 @@ const styles = StyleSheet.create({
     button: {
         padding: 8,
         borderRadius: 20,
-        backgroundColor: '#1A1A24',
+        backgroundColor: theme.colors.surface,
         borderWidth: 1,
-        borderColor: '#333344',
+        borderColor: theme.colors.borderLight,
     }
 });

@@ -41,15 +41,20 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     }
 
     _db = await SQLite.openDatabaseAsync('neet_study.db');
+    // Enable WAL mode for better concurrency (simultaneous reads and writes)
+    await _db.execAsync('PRAGMA journal_mode = WAL');
     g.__GURU_DB__ = _db;
+
+    // Migrate legacy public files to private storage on startup
+    // DEPRECATED: Handled by lectureSessionMonitor scanAndRecoverOrphanedTranscripts
   } else {
     _db = g.__GURU_DB__;
   }
 
   const db = _db!;
 
-  // Keep FK checks disabled until legacy cleanup completes.
-  await db.execAsync('PRAGMA foreign_keys = OFF');
+  // Enable Foreign Key constraints
+  await db.execAsync('PRAGMA foreign_keys = ON');
 
   // Create all tables
   for (const sql of ALL_SCHEMAS) {
@@ -87,7 +92,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   await seedSubjects(db);
 
   if (topicCount === 0 || actualForce) {
-    // if (__DEV__) console.log(`[DB] Seeding topics (force: ${actualForce})`);
     if (actualForce) {
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
@@ -103,7 +107,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   const topicCountAfterRes = await db.getFirstAsync<{ count: number }>(
     'SELECT COUNT(*) as count FROM topics',
   );
-  // if (__DEV__) console.log(`[DB] Topics count: ${topicCountAfterRes?.count ?? 0}`);
 
   // Versioned migrations — only run pending ones; fresh installs skip entirely
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -172,11 +175,28 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     await seedUserProfile(db);
   } else {
     // Run background maintenance
-    const { retryFailedTasks, autoRepairLegacyNotes, scanAndRecoverOrphanedTranscripts } =
-      await import('../services/lectureSessionMonitor');
-    void retryFailedTasks(profile.groq_api_key || undefined);
-    void autoRepairLegacyNotes();
-    void scanAndRecoverOrphanedTranscripts();
+    try {
+      const {
+        retryFailedTasks,
+        autoRepairLegacyNotes,
+        scanAndRecoverOrphanedTranscripts,
+        scanAndRecoverOrphanedRecordings,
+      } = await import('../services/lectureSessionMonitor');
+      void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
+        console.error('[DB] retryFailedTasks failed:', e),
+      );
+      void autoRepairLegacyNotes().catch((e) =>
+        console.error('[DB] autoRepairLegacyNotes failed:', e),
+      );
+      void scanAndRecoverOrphanedTranscripts().catch((e) =>
+        console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
+      );
+      void scanAndRecoverOrphanedRecordings().catch((e) =>
+        console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
+      );
+    } catch (e) {
+      console.error('[DB] Failed to run background maintenance tasks:', e);
+    }
   }
 
   // Update streak on open

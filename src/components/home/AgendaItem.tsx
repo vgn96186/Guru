@@ -11,7 +11,7 @@ interface AgendaItemProps {
   onPress: () => void;
 }
 
-export default function AgendaItem({ time, title, type, subjectName, priority, onPress }: AgendaItemProps) {
+export default React.memo(function AgendaItem({ time, title, type, subjectName, priority, onPress }: AgendaItemProps) {
   return (
     <TouchableOpacity
       style={styles.row}
@@ -29,7 +29,7 @@ export default function AgendaItem({ time, title, type, subjectName, priority, o
         type === 'review' && styles.review,
         type === 'deep_dive' && styles.deep
       ]}>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.sub}>{type.toUpperCase().replace('_', ' ')} · {subjectName}</Text>
         <View style={styles.badgeRow}>
           {type === 'review' && <Text style={styles.badge}>Due now</Text>}
@@ -39,7 +39,7 @@ export default function AgendaItem({ time, title, type, subjectName, priority, o
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, BackHandler, AppState } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, BackHandler, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -17,7 +17,7 @@ export default function LockdownScreen() {
     // Prevent physical back button on Android
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      setAttempts(a => a + 1);
+      setAttempts((a) => a + 1);
       return true; // block back
     });
 
@@ -36,17 +36,17 @@ export default function LockdownScreen() {
       backHandler.remove();
       clearInterval(timer);
     };
-  }, []);
+  }, [navigation]);
 
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
-  
+
   const messages = [
     "Stay with it. You're almost there.",
-    "Your future self thanks you for this discipline.",
+    'Your future self thanks you for this discipline.',
     "The timer's ticking. Make it count.",
-    "Focus builds momentum. Keep going.",
-    "You chose this. Honor that choice."
+    'Focus builds momentum. Keep going.',
+    'You chose this. Honor that choice.',
   ];
 
   return (
@@ -55,7 +55,7 @@ export default function LockdownScreen() {
         <Text style={styles.emoji}>🔒</Text>
         <Text style={styles.title}>FOCUS TIMER</Text>
         <Text style={styles.sub}>Stay focused for this block. You've got this.</Text>
-        
+
         <Text style={styles.timer}>
           {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
         </Text>
@@ -68,13 +68,19 @@ export default function LockdownScreen() {
 
         <TouchableOpacity
           style={styles.studyBtn}
-          onPress={() => navigation.navigate('Tabs', {
-            screen: 'HomeTab',
-            params: {
-              screen: 'Session',
-              params: { mood: 'distracted', mode: 'sprint', forcedMinutes: Math.ceil(timeLeft / 60) },
-            },
-          })}
+          onPress={() =>
+            navigation.navigate('Tabs', {
+              screen: 'HomeTab',
+              params: {
+                screen: 'Session',
+                params: {
+                  mood: 'distracted',
+                  mode: 'sprint',
+                  forcedMinutes: Math.ceil(timeLeft / 60),
+                },
+              },
+            })
+          }
         >
           <Text style={styles.studyBtnText}>Start 5-min Sprint →</Text>
         </TouchableOpacity>
@@ -87,10 +93,39 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A0A' },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 64, marginBottom: 24 },
-  title: { color: '#FF9800', fontSize: 32, fontWeight: '900', letterSpacing: 2, marginBottom: 12, textAlign: 'center' },
+  title: {
+    color: '#FF9800',
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: 2,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48, lineHeight: 24 },
-  timer: { color: '#fff', fontSize: 72, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 48 },
-  shameText: { color: '#FF9800', fontSize: 16, fontWeight: '700', textAlign: 'center', marginBottom: 32, fontStyle: 'italic' },
-  studyBtn: { backgroundColor: '#6C63FF', width: '100%', padding: 20, borderRadius: 16, alignItems: 'center' },
-  studyBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' }
+  timer: {
+    color: '#fff',
+    fontSize: 72,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    marginBottom: 48,
+  },
+  shameText: {
+    color: '#FF9800',
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 32,
+    fontStyle: 'italic',
+  },
+  studyBtn: {
+    backgroundColor: '#6C63FF',
+    width: '100%',
+    padding: 20,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  studyBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' },
+  exitBtn: { padding: 12 },
+  exitBtnText: { color: '#555', fontSize: 14, textDecorationLine: 'underline' },
 });

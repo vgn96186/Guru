@@ -13,7 +13,7 @@ interface ContentPreferencesSectionProps {
   onContentTypeToggle: (type: ContentType) => void;
 }
 
-export default function ContentPreferencesSection({
+function ContentPreferencesSection({
   subjects, focusSubjectIds, onFocusSubjectToggle, onClearFocus,
   allContentTypes, blockedTypes, onContentTypeToggle
 }: ContentPreferencesSectionProps) {
@@ -65,6 +65,8 @@ export default function ContentPreferencesSection({
     </View>
   );
 }
+
+export default React.memo(ContentPreferencesSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },

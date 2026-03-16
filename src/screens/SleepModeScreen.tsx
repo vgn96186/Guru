@@ -45,8 +45,12 @@ export default function SleepModeScreen() {
     return Math.round(d.getMinutes() / 15) * 15 % 60;
   });
 
+  // Custom time picker states
+  const [hoursToAdd, setHoursToAdd] = useState(8);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
+  const vibrateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Update clock every minute
   useEffect(() => {
@@ -54,9 +58,29 @@ export default function SleepModeScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  const triggerAlarm = useCallback(async () => {
+    setAlarmRinging(true);
+    setIsTracking(false);
+
+    // Fade in screen
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 3000,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }).start();
+
+    // Vibrate and maybe play sound
+    const interval = setInterval(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }, 1000);
+
+    vibrateIntervalRef.current = interval;
+  }, [fadeAnim]);
+
   // Sleep tracking with Accelerometer
   useEffect(() => {
-    let subscription: any;
+    let subscription: Subscription | undefined;
     if (isTracking) {
       Accelerometer.setUpdateInterval(1000);
       let lastPoint = { x: 0, y: 0, z: 0 };
@@ -65,7 +89,7 @@ export default function SleepModeScreen() {
         const dy = Math.abs(data.y - lastPoint.y);
         const dz = Math.abs(data.z - lastPoint.z);
         if (dx > 0.3 || dy > 0.3 || dz > 0.3) {
-          setMovementCount(c => c + 1);
+          setMovementCount((c) => c + 1);
         }
         lastPoint = data;
       });
@@ -92,7 +116,7 @@ export default function SleepModeScreen() {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isTracking, alarmTime, alarmRinging, movementCount]);
+  }, [isTracking, alarmTime, alarmRinging, movementCount, triggerAlarm]);
 
   async function triggerAlarm() {
     setAlarmRinging(true);
@@ -266,14 +290,27 @@ const styles = StyleSheet.create({
   alarmText: { color: '#9E9E9E', fontSize: 14, marginBottom: 4 },
   trackingSub: { color: '#444', fontSize: 12 },
 
-  toggleBtn: { backgroundColor: '#1A1A24', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: '#333' },
+  toggleBtn: {
+    backgroundColor: '#1A1A24',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
   toggleBtnActive: { backgroundColor: '#2A0A0A', borderColor: '#F44336' },
   toggleBtnText: { color: '#9E9E9E', fontWeight: '800', fontSize: 16 },
 
   backBtn: { marginTop: 20, padding: 12 },
   backBtnText: { color: '#555', fontSize: 14 },
 
-  alarmContainer: { flex: 1, backgroundColor: '#0F0F14', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  alarmContainer: {
+    flex: 1,
+    backgroundColor: '#0F0F14',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   alarmOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#6C63FF22' },
   alarmTime: { color: '#fff', fontSize: 64, fontWeight: '900', marginBottom: 16 },
   alarmTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },

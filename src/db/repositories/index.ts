@@ -4,3 +4,4 @@
  */
 export { profileRepository, type UserProfile } from './profileRepository';
 export { dailyLogRepository, type DailyLog, type Mood } from './dailyLogRepository';
+export { dailyAgendaRepository } from './dailyAgendaRepository';

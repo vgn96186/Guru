@@ -13,7 +13,7 @@ interface AdvancedToolsSectionProps {
   isImporting: boolean;
 }
 
-export default function AdvancedToolsSection({
+function AdvancedToolsSection({
   onExportBackup,
   onImportBackup,
   onExportJsonBackup,
@@ -65,6 +65,8 @@ export default function AdvancedToolsSection({
     </View>
   );
 }
+
+export default React.memo(AdvancedToolsSection);
 
 const styles = StyleSheet.create({
   section: {

@@ -62,7 +62,7 @@ const COLORS: Record<ToastType, string> = {
 
 const WIDTH = Dimensions.get('window').width - 32;
 
-function ToastItem({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) {
+const ToastItem = React.memo(({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) => {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(20)).current;
 
@@ -102,6 +102,8 @@ function ToastItem({ payload, onDone }: { payload: ToastPayload; onDone: () => v
         onPress={() => { payload.onPress?.(); onDone(); }}
         activeOpacity={payload.onPress ? 0.7 : 1}
         style={styles.inner}
+        accessibilityRole="alert"
+        accessibilityLabel={payload.message}
       >
         <Text style={styles.text} numberOfLines={3}>{payload.message}</Text>
         {payload.onPress && (
@@ -110,7 +112,7 @@ function ToastItem({ payload, onDone }: { payload: ToastPayload; onDone: () => v
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 /**
  * Mount this component once near your app root.

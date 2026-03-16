@@ -11,7 +11,7 @@
  *   6. Score + bonus XP
  */
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -19,19 +19,10 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { type LectureAnalysis } from '../services/transcriptionService';
-import {
-  saveLectureAnalysisQuick,
-  transcribeLectureWithRecovery,
-  type LecturePipelineProgress,
-  type LecturePipelineStage,
-} from '../services/lectureSessionMonitor';
-import { catalyzeTranscript } from '../services/aiService';
-import { profileRepository } from '../db/repositories';
-import { updateSessionTranscriptionStatus } from '../db/queries/externalLogs';
-import { useAppStore } from '../store/useAppStore';
+import { theme } from '../constants/theme';
+import { type LecturePipelineStage } from '../services/lectureSessionMonitor';
+import { useLecturePipeline } from '../hooks/useLecturePipeline';
 
 interface Props {
   visible: boolean;
@@ -44,325 +35,39 @@ interface Props {
   onStudyNow?: () => void;
 }
 
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation: string;
-}
-
-type Phase = 'intro' | 'transcribing' | 'results' | 'quiz' | 'quiz_done' | 'error';
-
-export default function LectureReturnSheet({
-  visible,
-  appName,
-  durationMinutes,
-  recordingPath,
-  logId,
-  groqKey,
-  onDone,
-}: Props) {
-  const profile = useAppStore((s) => s.profile);
-  const [phase, setPhase] = useState<Phase>('intro');
-  const [analysis, setAnalysis] = useState<LectureAnalysis | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [activeStage, setActiveStage] = useState<LecturePipelineStage | null>(null);
-  const [stageMessage, setStageMessage] = useState('');
-  const [transcriptionCompleted, setTranscriptionCompleted] = useState(false);
-  const [sessionSaved, setSessionSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // User override for confidence level
-  const [userConfidence, setUserConfidence] = useState<1 | 2 | 3 | null>(null);
-
-  // Quiz state
-  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
-  const [quizLoading, setQuizLoading] = useState(false);
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [showExpl, setShowExpl] = useState(false);
-  const [score, setScore] = useState(0);
-
-  // Auto-start transcription when sheet opens with a recording
-  const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-  const canTranscribe = !!(recordingPath && (groqKey || hasLocalWhisper));
-  const transcriptionStartedRef = React.useRef(false);
-  const cancelRequestedRef = React.useRef(false);
-  const transcriptionRunIdRef = React.useRef(0);
-  useEffect(() => {
-    if (visible && canTranscribe && !transcriptionStartedRef.current) {
-      transcriptionStartedRef.current = true;
-      setIsExpanded(false);
-      const delay = setTimeout(() => runTranscription(), 150);
-      return () => clearTimeout(delay);
-    } else if (visible && !recordingPath) {
-      setIsExpanded(true);
-      setErrorMsg(
-        'No lecture audio was captured for this session. Please retry with microphone permission enabled.',
-      );
-      void updateSessionTranscriptionStatus(logId, 'no_audio', 'No recording file captured');
-      setPhase('error');
-    } else if (visible && recordingPath && !groqKey && !hasLocalWhisper) {
-      setIsExpanded(true);
-      setErrorMsg(
-        'Local Whisper is unavailable. Enable Local Transcription or add a Groq API key in Settings.',
-      );
-      void updateSessionTranscriptionStatus(logId, 'failed', 'No transcription engine configured');
-      setPhase('error');
-    }
-  }, [visible, recordingPath, groqKey, hasLocalWhisper, canTranscribe, logId]);
-
-  // Reset when closed
-  useEffect(() => {
-    if (!visible) {
-      setPhase('intro');
-      setAnalysis(null);
-      setErrorMsg('');
-      setIsExpanded(false);
-      setActiveStage(null);
-      setStageMessage('');
-      setTranscriptionCompleted(false);
-      setSessionSaved(false);
-      setIsSaving(false);
-      setUserConfidence(null);
-      setQuizQuestions([]);
-      setQuizLoading(false);
-      setCurrentQ(0);
-      setSelected(null);
-      setShowExpl(false);
-      setScore(0);
-      transcriptionStartedRef.current = false;
-      cancelRequestedRef.current = false;
-    }
-  }, [visible]);
-
-  useEffect(() => {
-    if (!visible) return;
-    if (phase === 'results' || phase === 'quiz' || phase === 'quiz_done' || phase === 'error') {
-      setIsExpanded(true);
-    }
-  }, [phase, visible]);
-
-  function handlePipelineProgress(progress: LecturePipelineProgress) {
-    if (cancelRequestedRef.current) return;
-    if (progress.stage === 'enhancing') {
-      return;
-    }
-    setActiveStage(progress.stage);
-    setStageMessage(progress.message);
-  }
-
-  async function runTranscription() {
-    const runId = ++transcriptionRunIdRef.current;
-    cancelRequestedRef.current = false;
-    setPhase('transcribing');
-    setIsExpanded(false);
-    setActiveStage('transcribing');
-    setStageMessage('Transcribing lecture audio');
-    try {
-      await updateSessionTranscriptionStatus(logId, 'transcribing');
-      const result = await transcribeLectureWithRecovery({
-        recordingPath: recordingPath!,
-        groqKey: groqKey || undefined,
-        useLocalWhisper: !!(profile?.useLocalWhisper && profile?.localWhisperPath),
-        localWhisperPath: profile?.localWhisperPath || undefined,
-        maxRetries: 1,
-        logId,
-        onProgress: handlePipelineProgress,
-      });
-      if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
-        return;
-      }
-      if (!result.transcript?.trim()) {
-        setActiveStage(null);
-        setStageMessage('');
-        setErrorMsg(
-          "In-app audio wasn't captured (this app may block it). Next time we'll use the microphone — keep device speaker on when you open the lecture app.",
-        );
-        await updateSessionTranscriptionStatus(
-          logId,
-          'no_audio',
-          'No speech detected in recording',
-        );
-        setPhase('error');
-        return;
-      }
-      setAnalysis(result);
-      setTranscriptionCompleted(true);
-      setSessionSaved(false);
-      setActiveStage(null);
-      setStageMessage('');
-      await updateSessionTranscriptionStatus(logId, 'pending');
-      setPhase('results');
-      // Fire quiz generation in background while user reads results
-      if (result.topics.length > 0) {
-        generateQuiz(result);
-      }
-    } catch (e: any) {
-      if (cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription cancelled by user');
-        return;
-      }
-      console.error('[Transcription] Error:', e);
-      const message = e?.message ?? 'Transcription failed';
-      setActiveStage(null);
-      setStageMessage('');
-      setErrorMsg(`${message}. Audio has been preserved for auto-retry on next launch.`);
-      await updateSessionTranscriptionStatus(logId, 'failed', message);
-      setPhase('error');
-    }
-  }
-
-  function handleCancelTranscription() {
-    Alert.alert(
-      'Cancel transcription?',
-      'Processing will stop in the UI. Audio is preserved and can be retried later.',
-      [
-        { text: 'Keep processing', style: 'cancel' },
-        {
-          text: 'Cancel',
-          style: 'destructive',
-          onPress: () => {
-            cancelRequestedRef.current = true;
-            setActiveStage(null);
-            setStageMessage('');
-            setPhase('intro');
-            void updateSessionTranscriptionStatus(
-              logId,
-              'pending',
-              'Transcription cancelled by user',
-            );
-            void cleanupAndClose();
-          },
-        },
-      ],
-    );
-  }
-
-  async function generateQuiz(result: LectureAnalysis) {
-    setQuizLoading(true);
-    try {
-      const pseudoTranscript = `Subject: ${result.subject}
-Topics: ${result.topics.join(', ')}
-Key concepts:
-${result.keyConcepts.map((c) => `- ${c}`).join('\n')}
-Summary: ${result.lectureSummary}`;
-      const catalyst = await catalyzeTranscript(pseudoTranscript);
-      if (Array.isArray(catalyst.quiz?.questions) && catalyst.quiz.questions.length > 0) {
-        setQuizQuestions(catalyst.quiz.questions);
-      }
-    } catch (e) {
-      console.warn('[LectureReturn] Quiz generation failed:', e);
-    } finally {
-      setQuizLoading(false);
-    }
-  }
-
-  async function saveSessionQuickly(): Promise<boolean> {
-    if (!analysis || !recordingPath) return false;
-
-    try {
-      setIsSaving(true);
-      setActiveStage('saving');
-      setStageMessage('Saving lecture summary');
-      const finalConfidence = userConfidence ?? analysis.estimatedConfidence;
-      const analysisToSave =
-        finalConfidence === analysis.estimatedConfidence
-          ? analysis
-          : { ...analysis, estimatedConfidence: finalConfidence };
-
-      await saveLectureAnalysisQuick({
-        analysis: analysisToSave,
-        appName,
-        durationMinutes,
-        logId,
-        recordingPath,
-        onProgress: handlePipelineProgress,
-      });
-
-      setAnalysis(analysisToSave);
-      setSessionSaved(true);
-      setActiveStage(null);
-      setStageMessage('');
-      return true;
-    } catch (e: any) {
-      console.warn('[LectureReturn] save error:', e);
-      setActiveStage(null);
-      setStageMessage('');
-      setErrorMsg(
-        `${e?.message ?? 'Failed while saving lecture note'}. Audio has been preserved for retry.`,
-      );
-      setPhase('error');
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
-  }
-
-  async function handleMarkStudied() {
-    const saved = await saveSessionQuickly();
-    if (saved) {
-      await cleanupAndClose();
-    }
-  }
-
-  async function handleMarkAndQuiz() {
-    const saved = await saveSessionQuickly();
-    if (saved) {
-      setCurrentQ(0);
-      setSelected(null);
-      setShowExpl(false);
-      setScore(0);
-      setPhase('quiz');
-    }
-  }
-
-  async function handleSaveAndClose() {
-    const saved = await saveSessionQuickly();
-    if (saved) {
-      await cleanupAndClose();
-    }
-  }
-
-  function handleSelectAnswer(idx: number) {
-    if (selected !== null) return;
-    const q = quizQuestions[currentQ];
-    if (!q) return;
-    setSelected(idx);
-    setShowExpl(true);
-    if (idx === q.correctIndex) {
-      setScore((s) => s + 1);
-    }
-  }
-
-  async function handleNextQuestion() {
-    if (currentQ < quizQuestions.length - 1) {
-      setCurrentQ((c) => c + 1);
-      setSelected(null);
-      setShowExpl(false);
-    } else {
-      const bonusXp = score * 15;
-      if (bonusXp > 0) await profileRepository.addXp(bonusXp);
-      setPhase('quiz_done');
-    }
-  }
-
-  async function cleanupAndClose() {
-    if (!sessionSaved && transcriptionCompleted) {
-      await updateSessionTranscriptionStatus(logId, 'pending');
-    }
-    onDone();
-  }
-
-  function handleSkip() {
-    if (phase === 'intro' || phase === 'transcribing') {
-      setIsExpanded(false);
-      return;
-    }
-    void cleanupAndClose();
-  }
+export default function LectureReturnSheet(props: Props) {
+  const { visible, appName, durationMinutes, logId } = props;
+  const {
+    phase,
+    analysis,
+    setAnalysis,
+    errorMsg,
+    isExpanded,
+    setIsExpanded,
+    activeStage,
+    stageMessage,
+    transcriptionCompleted,
+    sessionSaved,
+    isSaving,
+    userConfidence,
+    setUserConfidence,
+    quizQuestions,
+    quizLoading,
+    currentQ,
+    selected,
+    showExpl,
+    score,
+    canTranscribe,
+    runTranscription,
+    handleCancelTranscription,
+    handleMarkStudied,
+    handleMarkAndQuiz,
+    handleSaveAndClose,
+    handleSelectAnswer,
+    handleNextQuestion,
+    handleSkip,
+    cleanupAndClose,
+  } = useLecturePipeline(props);
 
   function getCompactTitle() {
     if (activeStage === 'transcribing') return 'Transcribing lecture audio';
@@ -388,13 +93,13 @@ Summary: ${result.lectureSummary}`;
     Anatomy: '#E91E63',
     Physiology: '#9C27B0',
     Biochemistry: '#3F51B5',
-    Pathology: '#F44336',
+    Pathology: theme.colors.error,
     Microbiology: '#009688',
-    Pharmacology: '#FF9800',
-    Medicine: '#2196F3',
+    Pharmacology: theme.colors.warning,
+    Medicine: theme.colors.info,
     Surgery: '#795548',
     OBG: '#E91E63',
-    Pediatrics: '#4CAF50',
+    Pediatrics: theme.colors.success,
     Ophthalmology: '#00BCD4',
     ENT: '#8BC34A',
     Psychiatry: '#673AB7',
@@ -406,7 +111,7 @@ Summary: ${result.lectureSummary}`;
     SPM: '#388E3C',
     'Community Medicine': '#388E3C',
   };
-  const subjectColor = SUBJECT_COLORS[analysis?.subject ?? ''] ?? '#6C63FF';
+  const subjectColor = SUBJECT_COLORS[analysis?.subject ?? ''] ?? theme.colors.primary;
   const isProcessingPhase = phase === 'intro' || phase === 'transcribing' || activeStage !== null;
   const showCompactCard = !isExpanded;
 
@@ -442,7 +147,7 @@ Summary: ${result.lectureSummary}`;
             </View>
             <View style={styles.compactMeta}>
               {isProcessingPhase ? (
-                <ActivityIndicator color="#6C63FF" size="small" />
+                <ActivityIndicator color={theme.colors.primary} size="small" />
               ) : (
                 <Text style={styles.compactChevron}>Open</Text>
               )}
@@ -475,7 +180,7 @@ Summary: ${result.lectureSummary}`;
                 </Text>
                 {phase === 'transcribing' && (
                   <View style={styles.processingCard}>
-                    <ActivityIndicator color="#6C63FF" size="small" />
+                    <ActivityIndicator color={theme.colors.primary} size="small" />
                     <Text style={styles.processingTitle}>{getCompactTitle()}</Text>
                     <View style={styles.stageRow}>
                       {(['transcribing', 'analyzing', 'saving'] as LecturePipelineStage[]).map(
@@ -540,7 +245,7 @@ Summary: ${result.lectureSummary}`;
               <ScrollView showsVerticalScrollIndicator={false}>
                 {isSaving && (
                   <View style={styles.inlineStatusCard}>
-                    <ActivityIndicator color="#6C63FF" size="small" />
+                    <ActivityIndicator color={theme.colors.primary} size="small" />
                     <Text style={styles.inlineStatusTitle}>Saving lecture summary</Text>
                     <Text style={styles.inlineStatusHint}>
                       Topics are being marked now. The detailed note will be enhanced in the
@@ -566,7 +271,7 @@ Summary: ${result.lectureSummary}`;
                   <View style={styles.section}>
                     <Text style={styles.sectionLabel}>TOPICS DETECTED</Text>
                     <View style={styles.topicRow}>
-                      {analysis.topics.map((t, i) => (
+                      {analysis.topics.map((t: string, i: number) => (
                         <TouchableOpacity
                           key={`${t}-${i}`}
                           style={styles.topicPillEditable}
@@ -574,7 +279,7 @@ Summary: ${result.lectureSummary}`;
                             // Toggle topic removal/addition
                             if (!analysis) return;
                             const newTopics = analysis.topics.includes(t)
-                              ? analysis.topics.filter((topic) => topic !== t)
+                              ? analysis.topics.filter((topic: string) => topic !== t)
                               : [...analysis.topics, t];
                             setAnalysis({ ...analysis, topics: newTopics });
                           }}
@@ -592,7 +297,7 @@ Summary: ${result.lectureSummary}`;
                 {analysis.keyConcepts.length > 0 && (
                   <View style={styles.section}>
                     <Text style={styles.sectionLabel}>KEY CONCEPTS</Text>
-                    {analysis.keyConcepts.map((c, i) => (
+                    {analysis.keyConcepts.map((c: string, i: number) => (
                       <Text key={i} style={styles.conceptItem}>
                         • {c}
                       </Text>
@@ -610,7 +315,11 @@ Summary: ${result.lectureSummary}`;
                         2: '🌿 Understood',
                         3: '🌳 Can explain',
                       };
-                      const colors = { 1: '#F44336', 2: '#FF9800', 3: '#4CAF50' };
+                      const colors = {
+                        1: theme.colors.error,
+                        2: theme.colors.warning,
+                        3: theme.colors.success,
+                      };
                       return (
                         <TouchableOpacity
                           key={level}
@@ -662,7 +371,7 @@ Summary: ${result.lectureSummary}`;
               <ScrollView showsVerticalScrollIndicator={false}>
                 {quizLoading && !q ? (
                   <View style={styles.centeredBlock}>
-                    <ActivityIndicator color="#6C63FF" size="large" />
+                    <ActivityIndicator color={theme.colors.primary} size="large" />
                     <Text style={[styles.spinnerText, { marginTop: 12 }]}>Generating quiz…</Text>
                   </View>
                 ) : q ? (
@@ -672,16 +381,16 @@ Summary: ${result.lectureSummary}`;
                     </Text>
                     <Text style={styles.questionText}>{q.question}</Text>
                     <View style={styles.optionsContainer}>
-                      {q.options.map((opt, idx) => {
-                        let bgColor = '#12121A';
-                        let borderColor = '#2A2A38';
+                      {q.options.map((opt: string, idx: number) => {
+                        let bgColor: string = theme.colors.inputBg;
+                        let borderColor: string = theme.colors.border;
                         if (selected !== null) {
                           if (idx === q.correctIndex) {
-                            bgColor = '#0A1F0A';
-                            borderColor = '#4CAF50';
+                            bgColor = theme.colors.successSurface;
+                            borderColor = theme.colors.success;
                           } else if (idx === selected) {
-                            bgColor = '#1F0A0A';
-                            borderColor = '#F44336';
+                            bgColor = theme.colors.errorSurface;
+                            borderColor = theme.colors.error;
                           }
                         }
                         return (
@@ -701,13 +410,23 @@ Summary: ${result.lectureSummary}`;
                       <View
                         style={[
                           styles.explBox,
-                          { borderColor: selected === q.correctIndex ? '#4CAF50' : '#F44336' },
+                          {
+                            borderColor:
+                              selected === q.correctIndex
+                                ? theme.colors.success
+                                : theme.colors.error,
+                          },
                         ]}
                       >
                         <Text
                           style={[
                             styles.explLabel,
-                            { color: selected === q.correctIndex ? '#4CAF50' : '#F44336' },
+                            {
+                              color:
+                                selected === q.correctIndex
+                                  ? theme.colors.success
+                                  : theme.colors.error,
+                            },
                           ]}
                         >
                           {selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}
@@ -896,9 +615,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: '#171A22',
+    backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: '#2C3240',
+    borderColor: theme.colors.border,
     borderRadius: 18,
     paddingHorizontal: 14,
     paddingVertical: 14,
@@ -909,29 +628,29 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
   },
   compactCardReady: {
-    borderColor: '#335C4C',
-    backgroundColor: '#13211C',
+    borderColor: theme.colors.success + '88',
+    backgroundColor: theme.colors.successSurface,
   },
   compactCardError: {
-    borderColor: '#6A3131',
-    backgroundColor: '#261414',
+    borderColor: theme.colors.error + '88',
+    backgroundColor: theme.colors.errorSurface,
   },
   compactTextWrap: { flex: 1 },
   compactEyebrow: {
-    color: '#7E889C',
+    color: theme.colors.textMuted,
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,
     marginBottom: 4,
   },
   compactTitle: {
-    color: '#F5F7FB',
+    color: theme.colors.textPrimary,
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 3,
   },
   compactSubtitle: {
-    color: '#B4BDCF',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
   },
@@ -940,18 +659,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   compactChevron: {
-    color: '#90A0C0',
+    color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
   sheet: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '85%',
     borderTopWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
     elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.28,
@@ -966,7 +685,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#3A3A48',
+    backgroundColor: theme.colors.divider,
     alignSelf: 'center',
   },
   minimizeBtn: {
@@ -976,20 +695,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: '#202432',
+    backgroundColor: theme.colors.panel,
     borderWidth: 1,
-    borderColor: '#303649',
+    borderColor: theme.colors.borderLight,
   },
   minimizeBtnText: {
-    color: '#B9C0D1',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
   },
   centeredBlock: { alignItems: 'center', paddingVertical: 12 },
   returnEmoji: { fontSize: 44, marginBottom: 10 },
-  returnTitle: { color: '#fff', fontSize: 20, fontWeight: '800', textAlign: 'center' },
-  returnSub: { color: '#9E9E9E', fontSize: 14, marginTop: 4, textAlign: 'center' },
-  spinnerText: { color: '#6C63FF', fontSize: 13, flexShrink: 1 },
+  returnTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  returnSub: { color: theme.colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' },
+  spinnerText: { color: theme.colors.primary, fontSize: 13, flexShrink: 1 },
   processingCard: {
     width: '100%',
     marginTop: 20,
@@ -997,13 +721,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2C3240',
-    backgroundColor: '#151923',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
     alignItems: 'center',
     gap: 8,
   },
   processingTitle: {
-    color: '#F5F7FB',
+    color: theme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     textAlign: 'center',
@@ -1018,32 +742,32 @@ const styles = StyleSheet.create({
   stagePill: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#31384A',
-    backgroundColor: '#1B2030',
+    borderColor: theme.colors.borderLight,
+    backgroundColor: theme.colors.panel,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   stagePillActive: {
-    borderColor: '#6C63FF',
-    backgroundColor: '#6C63FF22',
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primaryTintSoft,
   },
   stagePillDone: {
-    borderColor: '#2E7D32',
-    backgroundColor: '#17301D',
+    borderColor: theme.colors.success,
+    backgroundColor: theme.colors.successSurface,
   },
   stagePillText: {
-    color: '#9AA5BC',
+    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
   stagePillTextActive: {
-    color: '#C8C2FF',
+    color: theme.colors.primaryLight,
   },
   stagePillTextDone: {
-    color: '#8FD39B',
+    color: theme.colors.success,
   },
   processingHint: {
-    color: '#A7B0C3',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
@@ -1054,11 +778,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#6A3131',
-    backgroundColor: '#261414',
+    borderColor: theme.colors.error,
+    backgroundColor: theme.colors.errorSurface,
   },
   cancelProcessingBtnText: {
-    color: '#F28B8B',
+    color: theme.colors.error,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1066,21 +790,21 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#2C3240',
-    backgroundColor: '#151923',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceAlt,
     paddingHorizontal: 14,
     paddingVertical: 14,
     alignItems: 'center',
     gap: 8,
   },
   inlineStatusTitle: {
-    color: '#F5F7FB',
+    color: theme.colors.textPrimary,
     fontSize: 14,
     fontWeight: '800',
     textAlign: 'center',
   },
   inlineStatusHint: {
-    color: '#A7B0C3',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
@@ -1095,10 +819,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subjectChipText: { fontSize: 13, fontWeight: '800' },
-  summaryText: { color: '#C5C5D2', fontSize: 13, lineHeight: 19 },
+  summaryText: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
   section: { marginBottom: 14 },
   sectionLabel: {
-    color: '#555',
+    color: theme.colors.textMuted,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.8,
@@ -1106,17 +830,17 @@ const styles = StyleSheet.create({
   },
   topicRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   topicPill: {
-    backgroundColor: '#6C63FF22',
+    backgroundColor: theme.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: '#6C63FF55',
+    borderColor: theme.colors.primaryTintMedium,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   topicPillEditable: {
-    backgroundColor: '#6C63FF22',
+    backgroundColor: theme.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: '#6C63FF55',
+    borderColor: theme.colors.primaryTintMedium,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1124,18 +848,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  topicRemoveIcon: { color: '#6C63FF88', fontSize: 16, fontWeight: '700' },
-  topicHint: { color: '#555', fontSize: 10, marginTop: 6, fontStyle: 'italic' },
-  topicPillText: { color: '#A09CF7', fontSize: 13, fontWeight: '600' },
-  conceptItem: { color: '#C5C5D2', fontSize: 12, lineHeight: 20 },
+  topicRemoveIcon: { color: theme.colors.primary, fontSize: 16, fontWeight: '700' },
+  topicHint: { color: theme.colors.textMuted, fontSize: 10, marginTop: 6, fontStyle: 'italic' },
+  topicPillText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' },
+  conceptItem: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 20 },
   confidenceBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
     marginBottom: 16,
   },
-  confidenceLabel: { color: '#777', fontSize: 12 },
-  confidenceVal: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  confidenceLabel: { color: theme.colors.textMuted, fontSize: 12 },
+  confidenceVal: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '700' },
   confidenceSection: { marginBottom: 16 },
   confidenceSelector: { flexDirection: 'row', gap: 8, marginTop: 4 },
   confidenceOption: {
@@ -1144,50 +868,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#333',
-    backgroundColor: '#1A1A24',
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     alignItems: 'center',
   },
   confidenceOptionText: {
-    color: '#888',
+    color: theme.colors.textSecondary,
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
   },
   confidenceOverrideNote: {
-    color: '#666',
+    color: theme.colors.textMuted,
     fontSize: 10,
     marginTop: 8,
     fontStyle: 'italic',
   },
   noContentNote: {
-    color: '#666',
+    color: theme.colors.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
     textAlign: 'center',
     marginVertical: 12,
   },
   errorDetail: {
-    color: '#F44336',
+    color: theme.colors.error,
     fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 16,
   },
   retryBtn: {
-    backgroundColor: '#6C63FF22',
+    backgroundColor: theme.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: '#6C63FF',
+    borderColor: theme.colors.primary,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginTop: 8,
   },
-  retryBtnText: { color: '#6C63FF', fontWeight: '700' },
+  retryBtnText: { color: theme.colors.primary, fontWeight: '700' },
 
   // Quiz
   quizProgress: {
-    color: '#555',
+    color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1195,7 +919,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   questionText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
@@ -1207,41 +931,41 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
   },
-  optionText: { color: '#C5C5D2', fontSize: 14, lineHeight: 20 },
+  optionText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
   explBox: {
     borderWidth: 1,
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: '#12121A',
+    backgroundColor: theme.colors.panel,
   },
   explLabel: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
-  explText: { color: '#9E9E9E', fontSize: 12, lineHeight: 18 },
+  explText: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18 },
 
   // XP bonus
   xpBonusBox: {
     marginTop: 16,
-    backgroundColor: '#2E7D3222',
+    backgroundColor: theme.colors.successTintSoft,
     borderWidth: 1,
-    borderColor: '#4CAF5055',
+    borderColor: theme.colors.success + '55',
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  xpBonusText: { color: '#4CAF50', fontWeight: '800', fontSize: 15 },
+  xpBonusText: { color: theme.colors.success, fontWeight: '800', fontSize: 15 },
 
   // Actions
   actions: { marginTop: 12, gap: 8 },
   primaryBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
   primaryBtnText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 15,
     textAlign: 'center',
@@ -1249,19 +973,19 @@ const styles = StyleSheet.create({
   },
   outlineBtn: {
     borderWidth: 1.5,
-    borderColor: '#6C63FF',
+    borderColor: theme.colors.primary,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
   outlineBtnText: {
-    color: '#6C63FF',
+    color: theme.colors.primary,
     fontWeight: '700',
     fontSize: 14,
     textAlign: 'center',
     flexShrink: 1,
   },
   secondaryBtn: { alignItems: 'center', paddingVertical: 12 },
-  secondaryBtnText: { color: '#777', fontSize: 14, fontWeight: '600' },
+  secondaryBtnText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
 });

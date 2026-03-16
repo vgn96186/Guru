@@ -1,14 +1,14 @@
-const registerProcessorMock = jest.fn();
-const markCompletedMock = jest.fn();
-const runFullTranscriptionPipelineMock = jest.fn();
+const mockRegisterProcessor = jest.fn();
+const mockMarkCompleted = jest.fn();
+const mockRunFullTranscriptionPipeline = jest.fn();
 
 jest.mock('./offlineQueue', () => ({
-  registerProcessor: (...args: any[]) => registerProcessorMock(...args),
-  markCompleted: (...args: any[]) => markCompletedMock(...args),
+  registerProcessor: (...args: any[]) => mockRegisterProcessor(...args),
+  markCompleted: (...args: any[]) => mockMarkCompleted(...args),
 }));
 
 jest.mock('./lectureSessionMonitor', () => ({
-  runFullTranscriptionPipeline: (...args: any[]) => runFullTranscriptionPipelineMock(...args),
+  runFullTranscriptionPipeline: (...args: any[]) => mockRunFullTranscriptionPipeline(...args),
 }));
 
 jest.mock('../db/repositories', () => ({
@@ -23,9 +23,9 @@ jest.mock('../db/repositories', () => ({
 
 describe('offlineQueueBootstrap', () => {
   beforeEach(() => {
-    registerProcessorMock.mockClear();
-    markCompletedMock.mockClear();
-    runFullTranscriptionPipelineMock.mockReset();
+    mockRegisterProcessor.mockClear();
+    mockMarkCompleted.mockClear();
+    mockRunFullTranscriptionPipeline.mockReset();
     jest.resetModules();
   });
 
@@ -34,7 +34,7 @@ describe('offlineQueueBootstrap', () => {
     registerOfflineQueueProcessors();
 
     const processors = Object.fromEntries(
-      registerProcessorMock.mock.calls.map(([requestType, processor]) => [requestType, processor]),
+      mockRegisterProcessor.mock.calls.map(([requestType, processor]) => [requestType, processor]),
     ) as Record<string, (item: any) => Promise<void>>;
 
     await expect(
@@ -51,12 +51,12 @@ describe('offlineQueueBootstrap', () => {
   });
 
   it('retries queued transcription work and marks it complete on success', async () => {
-    runFullTranscriptionPipelineMock.mockResolvedValue({ success: true });
+    mockRunFullTranscriptionPipeline.mockResolvedValue({ success: true });
     const { registerOfflineQueueProcessors } = await import('./offlineQueueBootstrap');
     registerOfflineQueueProcessors();
 
     const processors = Object.fromEntries(
-      registerProcessorMock.mock.calls.map(([requestType, processor]) => [requestType, processor]),
+      mockRegisterProcessor.mock.calls.map(([requestType, processor]) => [requestType, processor]),
     ) as Record<string, (item: any) => Promise<void>>;
 
     await processors.transcribe({
@@ -64,12 +64,12 @@ describe('offlineQueueBootstrap', () => {
       payload: { audioFilePath: '/tmp/audio.m4a', logId: 7 },
     });
 
-    expect(runFullTranscriptionPipelineMock).toHaveBeenCalledTimes(1);
-    expect(markCompletedMock).toHaveBeenCalledWith(42);
+    expect(mockRunFullTranscriptionPipeline).toHaveBeenCalledTimes(1);
+    expect(mockMarkCompleted).toHaveBeenCalledWith(42);
   });
 
   it('surfaces transcription retry failures', async () => {
-    runFullTranscriptionPipelineMock.mockResolvedValue({
+    mockRunFullTranscriptionPipeline.mockResolvedValue({
       success: false,
       error: 'pipeline failed',
     });
@@ -77,7 +77,7 @@ describe('offlineQueueBootstrap', () => {
     registerOfflineQueueProcessors();
 
     const processors = Object.fromEntries(
-      registerProcessorMock.mock.calls.map(([requestType, processor]) => [requestType, processor]),
+      mockRegisterProcessor.mock.calls.map(([requestType, processor]) => [requestType, processor]),
     ) as Record<string, (item: any) => Promise<void>>;
 
     await expect(

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, View, Text, StyleSheet } from 'react-native';
+import { theme } from '../constants/theme';
 
 interface Props {
   message?: string;
@@ -18,7 +19,7 @@ function getRandomVariation(message: string): string {
   return variations[Math.floor(Math.random() * variations.length)];
 }
 
-export default function LoadingOrb({ message = 'Hey there! Let me think...' }: Props) {
+export default React.memo(function LoadingOrb({ message = 'Hey there! Let me think...' }: Props) {
   const [displayMessage, setDisplayMessage] = React.useState(message);
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0.4)).current;
@@ -54,7 +55,7 @@ export default function LoadingOrb({ message = 'Hey there! Let me think...' }: P
       <Text style={styles.text}>{displayMessage}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', justifyContent: 'center', padding: 32 },
@@ -62,13 +63,13 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#6C63FF',
-    shadowColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowRadius: 20,
     shadowOpacity: 0.8,
     elevation: 10,
     marginBottom: 20,
   },
-  text: { color: '#9E9E9E', fontSize: 14, fontStyle: 'italic' },
+  text: { color: theme.colors.textMuted, fontSize: 14, fontStyle: 'italic' },
 });

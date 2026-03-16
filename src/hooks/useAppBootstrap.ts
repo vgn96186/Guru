@@ -39,12 +39,12 @@ export function useAppBootstrap(): void {
       }
 
       // 3. Sync and Maintenance
-      syncExamDatesFromInternet().then(res => { if (res.updated) refreshProfile(); }).catch(() => {});
-      refreshAccountabilityNotifications().catch(() => {});
+      syncExamDatesFromInternet().then(res => { if (res.updated) refreshProfile(); }).catch((e) => console.error('[Sync] Exam date sync failed:', e));
+      refreshAccountabilityNotifications().catch((e) => console.error('[Notifications] Refresh failed:', e));
       
       // 4. Recovery
       if (profile?.groqApiKey) {
-        retryFailedTasks(profile.groqApiKey).catch(() => {});
+        retryFailedTasks(profile.groqApiKey).catch((e) => console.error('[Recovery] Transcription retry failed:', e));
       }
     };
 
@@ -60,7 +60,7 @@ export function useAppBootstrap(): void {
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
         refreshProfile();
-        refreshAccountabilityNotifications().catch(() => {});
+        refreshAccountabilityNotifications().catch((e) => console.error('[Notifications] Refresh failed on foreground:', e));
       }
     });
 

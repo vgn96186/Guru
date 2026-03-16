@@ -45,23 +45,30 @@ export async function endSession(
   notes?: string,
 ): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    `UPDATE sessions
-     SET ended_at = ?, completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
-     WHERE id = ?`,
-    [nowTs(), JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
-  );
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync(
+      `UPDATE sessions
+       SET ended_at = ?, completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
+       WHERE id = ?`,
+      [nowTs(), JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
+    );
 
-  // Update daily log
-  await db.runAsync(
-    `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
-     VALUES (?, 1, ?, ?)
-     ON CONFLICT(date) DO UPDATE SET
-       session_count = session_count + 1,
-       total_minutes = total_minutes + excluded.total_minutes,
-       xp_earned = xp_earned + excluded.xp_earned`,
-    [todayStr(), durationMinutes, xpEarned],
-  );
+    // Update daily log
+    await db.runAsync(
+      `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
+       VALUES (?, 1, ?, ?)
+       ON CONFLICT(date) DO UPDATE SET
+         session_count = session_count + 1,
+         total_minutes = total_minutes + excluded.total_minutes,
+         xp_earned = xp_earned + excluded.xp_earned`,
+      [todayStr(), durationMinutes, xpEarned],
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
 }
 
 /**
@@ -78,39 +85,46 @@ export async function updateSessionProgress(
   const db = getDb();
   const today = todayStr();
 
-  // 1. Get previous values for this session to calculate delta for daily_log
-  const prev = await db.getFirstAsync<{ duration_minutes: number; total_xp_earned: number }>(
-    'SELECT COALESCE(duration_minutes, 0) as duration_minutes, COALESCE(total_xp_earned, 0) as total_xp_earned FROM sessions WHERE id = ?',
-    [sessionId],
-  );
-
-  const deltaMins = durationMinutes - (prev?.duration_minutes ?? 0);
-  const deltaXp = xpEarned - (prev?.total_xp_earned ?? 0);
-
-  // 2. Update session
-  await db.runAsync(
-    `UPDATE sessions
-     SET completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
-     WHERE id = ?`,
-    [JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
-  );
-
-  // 3. Update daily log with deltas
-  if (deltaMins > 0 || deltaXp > 0) {
-    await db.runAsync(
-      `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
-       VALUES (?, 1, ?, ?)
-       ON CONFLICT(date) DO UPDATE SET
-         total_minutes = total_minutes + ?,
-         xp_earned = xp_earned + ?`,
-      [
-        today,
-        Math.max(0, deltaMins),
-        Math.max(0, deltaXp),
-        Math.max(0, deltaMins),
-        Math.max(0, deltaXp),
-      ],
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    // 1. Get previous values for this session to calculate delta for daily_log
+    const prev = await db.getFirstAsync<{ duration_minutes: number; total_xp_earned: number }>(
+      'SELECT COALESCE(duration_minutes, 0) as duration_minutes, COALESCE(total_xp_earned, 0) as total_xp_earned FROM sessions WHERE id = ?',
+      [sessionId],
     );
+
+    const deltaMins = durationMinutes - (prev?.duration_minutes ?? 0);
+    const deltaXp = xpEarned - (prev?.total_xp_earned ?? 0);
+
+    // 2. Update session
+    await db.runAsync(
+      `UPDATE sessions
+       SET completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
+       WHERE id = ?`,
+      [JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
+    );
+
+    // 3. Update daily log with deltas
+    if (deltaMins > 0 || deltaXp > 0) {
+      await db.runAsync(
+        `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
+         VALUES (?, 1, ?, ?)
+         ON CONFLICT(date) DO UPDATE SET
+           total_minutes = total_minutes + ?,
+           xp_earned = xp_earned + ?`,
+        [
+          today,
+          Math.max(0, deltaMins),
+          Math.max(0, deltaXp),
+          Math.max(0, deltaMins),
+          Math.max(0, deltaXp),
+        ],
+      );
+    }
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
   }
 }
 

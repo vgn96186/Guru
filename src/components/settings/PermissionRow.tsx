@@ -8,7 +8,7 @@ interface PermissionRowProps {
   onFix: () => void;
 }
 
-export default function PermissionRow({ label, status, onFix }: PermissionRowProps) {
+function PermissionRow({ label, status, onFix }: PermissionRowProps) {
   const isGranted = status === 'granted';
   
   return (
@@ -27,6 +27,8 @@ export default function PermissionRow({ label, status, onFix }: PermissionRowPro
     </View>
   );
 }
+
+export default React.memo(PermissionRow);
 
 const styles = StyleSheet.create({
   row: {

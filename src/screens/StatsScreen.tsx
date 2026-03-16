@@ -137,7 +137,7 @@ export default function StatsScreen() {
         {/* Absolute Progress (Anti-Guilt) */}
         <View style={styles.absoluteCard}>
           <Text style={styles.absoluteTitle}>Total Knowledge Acquired</Text>
-          <Text style={styles.absoluteBig} numberOfLines={1} adjustsFontSizeToFit>{stats.totalCovered} / {stats.totalTopics}</Text>
+          <Text style={styles.absoluteBig} >{stats.totalCovered} / {stats.totalTopics}</Text>
           <Text style={styles.absoluteSub}>topics seen at least once</Text>
           
           <View style={styles.progressBar}>
@@ -148,7 +148,7 @@ export default function StatsScreen() {
         {/* Consistency Card utilizing unused getActivityHistory metric */}
         <View style={[styles.absoluteCard, { backgroundColor: '#1A2A1A' }]}>
           <Text style={[styles.absoluteTitle, { color: '#4CAF50' }]}>30-Day Consistency</Text>
-          <Text style={[styles.absoluteBig, { color: '#4CAF50' }]} numberOfLines={1} adjustsFontSizeToFit>{stats.activeDays30} / 30 Days</Text>
+          <Text style={[styles.absoluteBig, { color: '#4CAF50' }]} >{stats.activeDays30} / 30 Days</Text>
           <Text style={styles.absoluteSub}>days studied in the past month</Text>
         </View>
 
@@ -158,7 +158,7 @@ export default function StatsScreen() {
             <Text style={styles.streakEmoji}>🔥</Text>
             <View style={{ flex: 1 }}>
               <Text style={[styles.absoluteTitle, { color: '#FF9800' }]}>Current Streak</Text>
-              <Text style={[styles.absoluteBig, { color: '#FF9800' }]} numberOfLines={1} adjustsFontSizeToFit>{stats.currentStreak} Days</Text>
+              <Text style={[styles.absoluteBig, { color: '#FF9800' }]} >{stats.currentStreak} Days</Text>
             </View>
             {stats.bestStreak > stats.currentStreak && (
               <View style={styles.bestStreakBadge}>
@@ -213,7 +213,7 @@ export default function StatsScreen() {
         {stats.avgTopicsPerDay > 0 && stats.projectedCompletionDays < 365 && (
           <View style={[styles.absoluteCard, { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF44' }]}>
             <Text style={[styles.absoluteTitle, { color: '#6C63FF' }]}>📅 Syllabus Completion Projection</Text>
-            <Text style={[styles.absoluteBig, { color: '#6C63FF' }]} numberOfLines={1} adjustsFontSizeToFit>
+            <Text style={[styles.absoluteBig, { color: '#6C63FF' }]} >
               {stats.projectedCompletionDays} days
             </Text>
             <Text style={styles.absoluteSub}>
@@ -235,7 +235,7 @@ export default function StatsScreen() {
         {/* Time Logged Card */}
         <View style={styles.absoluteCard}>
           <Text style={styles.absoluteTitle}>Time Invested</Text>
-          <Text style={styles.absoluteBig} numberOfLines={1} adjustsFontSizeToFit>{Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h {(stats.totalAppMinutes + stats.totalExternalMinutes) % 60}m</Text>
+          <Text style={styles.absoluteBig} >{Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h {(stats.totalAppMinutes + stats.totalExternalMinutes) % 60}m</Text>
           <Text style={styles.absoluteSub}>Total study time across {stats.totalSessions} sessions</Text>
         </View>
 

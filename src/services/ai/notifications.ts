@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { SYSTEM_PROMPT } from '../../constants/prompts';
 import { generateJSONWithRouting, generateTextWithRouting } from './generate';
 
 const FALLBACK_BREAK_MESSAGES = [

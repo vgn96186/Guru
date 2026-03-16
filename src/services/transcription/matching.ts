@@ -22,48 +22,57 @@ export async function markTopicsFromLecture(
 
   const matchedTopicIds = new Set<number>();
 
-  // 1-3: Keyword matching
-  for (const topicName of topics) {
-    const sanitized = topicName.trim().toLowerCase();
-    if (!sanitized) continue;
+  try {
+    await db.execAsync('BEGIN TRANSACTION');
 
-    const match = await findTopicIdByKeywords(db, sanitized, subjectName);
-    if (match) {
-      matchedTopicIds.add(match);
-      await applyLectureProgressToTopic(db, match, confidence);
+    // 1-3: Keyword matching
+    for (const topicName of topics) {
+      const sanitized = topicName.trim().toLowerCase();
+      if (!sanitized) continue;
+
+      const match = await findTopicIdByKeywords(db, sanitized, subjectName);
+      if (match) {
+        matchedTopicIds.add(match);
+        await applyLectureProgressToTopic(db, match, confidence, true, lectureSummary);
+      }
     }
-  }
 
-  // 4: Semantic Matching (if summary available)
-  if (lectureSummary) {
-    try {
-      const effectiveEmbedding =
-        summaryEmbedding === undefined ? await generateEmbedding(lectureSummary) : summaryEmbedding;
-      if (effectiveEmbedding) {
-        const semanticMatches = await findSemanticMatches(db, effectiveEmbedding, subjectName);
-        for (const matchId of semanticMatches) {
-          if (!matchedTopicIds.has(matchId)) {
-            matchedTopicIds.add(matchId);
-            await applyLectureProgressToTopic(db, matchId, confidence);
+    // 4: Semantic Matching (if summary available)
+    if (lectureSummary) {
+      try {
+        const effectiveEmbedding =
+          summaryEmbedding === undefined ? await generateEmbedding(lectureSummary) : summaryEmbedding;
+        if (effectiveEmbedding) {
+          const semanticMatches = await findSemanticMatches(db, effectiveEmbedding, subjectName);
+          for (const matchId of semanticMatches) {
+            if (!matchedTopicIds.has(matchId)) {
+              matchedTopicIds.add(matchId);
+              await applyLectureProgressToTopic(db, matchId, confidence, true, lectureSummary);
+            }
           }
         }
+      } catch (err) {
+        if (__DEV__) console.warn('[Matching] Semantic matching failed:', err);
       }
-    } catch (err) {
-      if (__DEV__) console.warn('[Matching] Semantic matching failed:', err);
     }
-  }
 
-  // Also mark parents as seen
-  if (matchedTopicIds.size > 0) {
-    const ids = Array.from(matchedTopicIds).join(',');
-    const parents = await db.getAllAsync<{ parent_topic_id: number }>(
-      `SELECT DISTINCT parent_topic_id FROM topics WHERE id IN (${ids}) AND parent_topic_id IS NOT NULL`,
-    );
-    for (const p of parents) {
-      if (!matchedTopicIds.has(p.parent_topic_id)) {
-        await applyLectureProgressToTopic(db, p.parent_topic_id, confidence, false);
+    // Also mark parents as seen
+    if (matchedTopicIds.size > 0) {
+      const ids = Array.from(matchedTopicIds).join(',');
+      const parents = await db.getAllAsync<{ parent_topic_id: number }>(
+        `SELECT DISTINCT parent_topic_id FROM topics WHERE id IN (${ids}) AND parent_topic_id IS NOT NULL`,
+      );
+      for (const p of parents) {
+        if (!matchedTopicIds.has(p.parent_topic_id)) {
+          await applyLectureProgressToTopic(db, p.parent_topic_id, confidence, false);
+        }
       }
     }
+
+    await db.execAsync('COMMIT');
+  } catch (e) {
+    await db.execAsync('ROLLBACK');
+    throw e;
   }
 }
 
@@ -125,11 +134,12 @@ async function findSemanticMatches(
 }
 
 async function applyLectureProgressToTopic(
-  db: SQLiteDatabase,
+  _db: SQLiteDatabase,
   topicId: number,
   confidence: number,
-  isDirectMatch = true,
+  _isDirectMatch = true,
+  summary?: string,
 ) {
   const status = 'seen';
-  await updateTopicProgress(topicId, status, confidence, 0);
+  await updateTopicProgress(topicId, status, confidence, 0, summary);
 }

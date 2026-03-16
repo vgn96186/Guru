@@ -18,7 +18,7 @@ interface Props {
   onPress: () => void;
 }
 
-export default function SubjectCard({ subject, coverage, metrics, matchingTopicsCount, onPress }: Props) {
+export default React.memo(function SubjectCard({ subject, coverage, metrics, matchingTopicsCount, onPress }: Props) {
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
@@ -75,7 +75,7 @@ export default function SubjectCard({ subject, coverage, metrics, matchingTopics
         activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel={`${subject.name} subject`}
-        accessibilityHint={`Opens ${subject.name} micro-topics. ${coverage.seen} of ${coverage.total} covered.`}
+        accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
       >
         {/* Subtle background fill based on progress */}
         <View 
@@ -97,7 +97,7 @@ export default function SubjectCard({ subject, coverage, metrics, matchingTopics
                   </View>
                 )}
               </View>
-              <Text style={styles.name} numberOfLines={2}>{subject.name}</Text>
+              <Text style={styles.name}>{subject.name}</Text>
             </View>
             <View style={styles.pctContainer}>
               <Text style={[styles.pct, { color: pct >= 80 ? theme.colors.success : pct >= 50 ? theme.colors.warning : theme.colors.textPrimary }]}>
@@ -138,7 +138,7 @@ export default function SubjectCard({ subject, coverage, metrics, matchingTopics
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

@@ -23,11 +23,13 @@ export default function DeviceLinkScreen() {
 
   function generateCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const randomValues = new Uint32Array(12);
+    globalThis.crypto.getRandomValues(randomValues);
     let randomCode = '';
     for (let i = 0; i < 12; i++) {
-      randomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+      randomCode += chars.charAt(randomValues[i] % chars.length);
     }
-    const formattedCode = `${randomCode.substring(0,4)}-${randomCode.substring(4,8)}-${randomCode.substring(8,12)}`;
+    const formattedCode = `${randomCode.substring(0, 4)}-${randomCode.substring(4, 8)}-${randomCode.substring(8, 12)}`;
     setCode(formattedCode);
   }
 

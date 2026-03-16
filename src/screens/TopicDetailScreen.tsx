@@ -467,7 +467,7 @@ export default function TopicDetailScreen() {
                     </View>
                   )}
                   {item.progress.userNotes ? (
-                    <Text style={styles.notePreview} numberOfLines={1}>📝 {item.progress.userNotes}</Text>
+                    <Text style={styles.notePreview} numberOfLines={2}>📝 {item.progress.userNotes}</Text>
                   ) : null}
                 </View>
                 <View style={styles.topicRight}>

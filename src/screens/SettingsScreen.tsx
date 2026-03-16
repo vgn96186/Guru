@@ -226,7 +226,9 @@ export default function SettingsScreen() {
   const [idleTimeout, setIdleTimeout] = useState('2');
   const [breakDuration, setBreakDuration] = useState('5');
   const [notifHour, setNotifHour] = useState('7');
-  const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>('normal');
+  const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>(
+    'normal',
+  );
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -395,6 +397,27 @@ export default function SettingsScreen() {
       Alert.alert('Error', 'Could not schedule notifications.');
     }
   }
+
+  const handleSelectBackupDir = async () => {
+    if (Platform.OS !== 'android') {
+      Alert.alert('Not supported', 'This feature is only available on Android.');
+      return;
+    }
+    try {
+      const { StorageAccessFramework } = await import('expo-file-system/legacy');
+      const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (permissions.granted) {
+        await profileRepository.updateProfile({ backupDirectoryUri: permissions.directoryUri });
+        await refreshProfile();
+        Alert.alert(
+          'Success',
+          'Backup directory configured! Your data will now stay synced there.',
+        );
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Failed to configure backup directory.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>

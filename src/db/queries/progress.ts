@@ -1,7 +1,15 @@
 import { getDb, todayStr, dateStr } from '../database';
-import type { UserProfile, DailyLog, Mood, ContentType, StudyResourceMode, HarassmentTone } from '../../types';
+import type {
+  UserProfile,
+  DailyLog,
+  Mood,
+  ContentType,
+  StudyResourceMode,
+  HarassmentTone,
+} from '../../types';
 import { LEVELS } from '../../constants/gamification';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
+import { notifyDbUpdate, DB_EVENT_KEYS } from '../../services/databaseEvents';
 
 function isValidFutureDate(dateStr: string | null): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
@@ -26,14 +34,21 @@ export async function getUserProfile(): Promise<UserProfile> {
     idle_timeout_minutes: number; break_duration_minutes: number;
     notification_hour: number; focus_subject_ids: string;
     guru_frequency: UserProfile['guruFrequency'] | null;
-    focus_audio_enabled: number; visual_timers_enabled: number; face_tracking_enabled: number;
-    quiz_correct_count: number; last_backup_date: string | null;
-    use_local_model: number; local_model_path: string | null;
-    use_local_whisper: number; local_whisper_path: string | null;
-    quick_start_streak: number; groq_api_key: string;
+    focus_audio_enabled: number;
+    visual_timers_enabled: number;
+    face_tracking_enabled: number;
+    quiz_correct_count: number;
+    last_backup_date: string | null;
+    use_local_model: number;
+    local_model_path: string | null;
+    use_local_whisper: number;
+    local_whisper_path: string | null;
+    quick_start_streak: number;
+    groq_api_key: string;
     study_resource_mode: StudyResourceMode | null;
     subject_load_overrides_json: string | null;
     harassment_tone: string | null;
+    backup_directory_uri: string | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -55,6 +70,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       studyResourceMode: 'hybrid',
       harassmentTone: 'shame',
       customSubjectLoadMultipliers: {},
+      backupDirectoryUri: null,
     };
   }
 
@@ -77,12 +93,24 @@ export async function getUserProfile(): Promise<UserProfile> {
     syncCode: r.sync_code,
     strictModeEnabled: r.strict_mode_enabled === 1,
     bodyDoublingEnabled: (r.body_doubling_enabled ?? 1) === 1,
-    blockedContentTypes: (() => { try { return JSON.parse(r.blocked_content_types ?? '[]'); } catch { return []; } })() as ContentType[],
+    blockedContentTypes: (() => {
+      try {
+        return JSON.parse(r.blocked_content_types ?? '[]');
+      } catch {
+        return [];
+      }
+    })() as ContentType[],
     idleTimeoutMinutes: r.idle_timeout_minutes ?? 2,
     breakDurationMinutes: r.break_duration_minutes ?? 5,
     notificationHour: r.notification_hour ?? 7,
     guruFrequency: r.guru_frequency ?? 'normal',
-    focusSubjectIds: (() => { try { return JSON.parse(r.focus_subject_ids ?? '[]'); } catch { return []; } })() as number[],
+    focusSubjectIds: (() => {
+      try {
+        return JSON.parse(r.focus_subject_ids ?? '[]');
+      } catch {
+        return [];
+      }
+    })() as number[],
     focusAudioEnabled: (r.focus_audio_enabled ?? 0) === 1,
     visualTimersEnabled: (r.visual_timers_enabled ?? 0) === 1,
     faceTrackingEnabled: (r.face_tracking_enabled ?? 0) === 1,
@@ -98,11 +126,12 @@ export async function getUserProfile(): Promise<UserProfile> {
     customSubjectLoadMultipliers: (() => {
       try {
         const parsed = JSON.parse(r.subject_load_overrides_json ?? '{}');
-        return parsed && typeof parsed === 'object' ? parsed as Record<string, number> : {};
+        return parsed && typeof parsed === 'object' ? (parsed as Record<string, number>) : {};
       } catch {
         return {};
       }
     })(),
+    backupDirectoryUri: r.backup_directory_uri ?? null,
   };
 }
 
@@ -118,13 +147,20 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     bodyDoublingEnabled: 'body_doubling_enabled', idleTimeoutMinutes: 'idle_timeout_minutes',
     breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
     guruFrequency: 'guru_frequency',
-    focusAudioEnabled: 'focus_audio_enabled', visualTimersEnabled: 'visual_timers_enabled',
-    faceTrackingEnabled: 'face_tracking_enabled', quizCorrectCount: 'quiz_correct_count',
-    lastBackupDate: 'last_backup_date', useLocalModel: 'use_local_model', localModelPath: 'local_model_path',
-    useLocalWhisper: 'use_local_whisper', localWhisperPath: 'local_whisper_path',
-    quickStartStreak: 'quick_start_streak', groqApiKey: 'groq_api_key',
+    focusAudioEnabled: 'focus_audio_enabled',
+    visualTimersEnabled: 'visual_timers_enabled',
+    faceTrackingEnabled: 'face_tracking_enabled',
+    quizCorrectCount: 'quiz_correct_count',
+    lastBackupDate: 'last_backup_date',
+    useLocalModel: 'use_local_model',
+    localModelPath: 'local_model_path',
+    useLocalWhisper: 'use_local_whisper',
+    localWhisperPath: 'local_whisper_path',
+    quickStartStreak: 'quick_start_streak',
+    groqApiKey: 'groq_api_key',
     studyResourceMode: 'study_resource_mode',
     harassmentTone: 'harassment_tone',
+    backupDirectoryUri: 'backup_directory_uri',
   };
 
   const setClauses: string[] = [];
@@ -154,24 +190,51 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
 
   if (setClauses.length === 0) return;
   values.push(1);
-  await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
+  try {
+    await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
+    notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to update profile: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
-export async function addXp(amount: number): Promise<{ newTotal: number; leveledUp: boolean; newLevel: number }> {
+export async function addXp(
+  amount: number,
+): Promise<{ newTotal: number; leveledUp: boolean; newLevel: number }> {
   const db = getDb();
-  const currentProfile = await db.getFirstAsync<{ total_xp: number; current_level: number }>('SELECT total_xp, current_level FROM user_profile WHERE id = 1');
+  const currentProfile = await db.getFirstAsync<{ total_xp: number; current_level: number }>(
+    'SELECT total_xp, current_level FROM user_profile WHERE id = 1',
+  );
   const oldTotal = currentProfile?.total_xp ?? 0;
   const oldLevel = currentProfile?.current_level ?? 1;
   const newTotal = oldTotal + amount;
 
   let newLevel = oldLevel;
   for (let i = LEVELS.length - 1; i >= 0; i--) {
-    if (newTotal >= LEVELS[i].xpRequired) { newLevel = LEVELS[i].level; break; }
+    if (newTotal >= LEVELS[i].xpRequired) {
+      newLevel = LEVELS[i].level;
+      break;
+    }
   }
 
   const leveledUp = newLevel > oldLevel;
-  await db.runAsync('UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1', [amount, newLevel]);
-  return { newTotal, leveledUp, newLevel };
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync(
+      'UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1',
+      [amount, newLevel],
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+    notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+    return { newTotal, leveledUp, newLevel };
+  } catch (err: any) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to update XP: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function updateStreak(studiedToday: boolean, useShield = false): Promise<void> {
@@ -182,8 +245,18 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
   if (profile.lastActiveDate === today) return;
 
   if (useShield && profile.streakCurrent > 0) {
-    await db.runAsync('UPDATE user_profile SET streak_shield_available = 0, last_active_date = ? WHERE id = 1', [today]);
-    return;
+    try {
+      await db.runAsync(
+        'UPDATE user_profile SET streak_shield_available = 0, last_active_date = ? WHERE id = 1',
+        [today],
+      );
+      notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+      return;
+    } catch (err: any) {
+      const { showToast } = require('../../components/Toast');
+      showToast(`Failed to use shield: ${err.message || 'Unknown error'}`, 'error');
+      throw err;
+    }
   }
 
   if (!studiedToday) return;
@@ -191,15 +264,29 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
   const yesterday = dateStr(new Date(Date.now() - 86400000));
   const newStreak = profile.lastActiveDate === yesterday ? profile.streakCurrent + 1 : 1;
   const newBest = Math.max(newStreak, profile.streakBest);
-  const shieldAvailable = newStreak === 1 ? 1 : (profile.streakCurrent === 0 ? 1 : 0);
+  const shieldAvailable = newStreak === 1 ? 1 : profile.streakCurrent === 0 ? 1 : 0;
 
-  await db.runAsync('UPDATE user_profile SET streak_current = ?, streak_best = ?, last_active_date = ?, streak_shield_available = ? WHERE id = 1', [newStreak, newBest, today, shieldAvailable]);
+  try {
+    await db.runAsync(
+      'UPDATE user_profile SET streak_current = ?, streak_best = ?, last_active_date = ?, streak_shield_available = ? WHERE id = 1',
+      [newStreak, newBest, today, shieldAvailable],
+    );
+    notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to update streak: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function useStreakShield(): Promise<boolean> {
   const db = getDb();
   const profile = await getUserProfile();
-  const raw = (await db.getFirstAsync<{ streak_shield_available: number }>('SELECT streak_shield_available FROM user_profile WHERE id = 1'))?.streak_shield_available;
+  const raw = (
+    await db.getFirstAsync<{ streak_shield_available: number }>(
+      'SELECT streak_shield_available FROM user_profile WHERE id = 1',
+    )
+  )?.streak_shield_available;
   if (profile.streakCurrent === 0 || raw !== 1) return false;
   await updateStreak(false, true);
   return true;
@@ -208,15 +295,39 @@ export async function useStreakShield(): Promise<boolean> {
 export async function getDailyLog(date?: string): Promise<DailyLog | null> {
   const db = getDb();
   const d = date ?? todayStr();
-  const r = await db.getFirstAsync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>('SELECT * FROM daily_log WHERE date = ?', [d]);
+  const r = await db.getFirstAsync<{
+    date: string;
+    checked_in: number;
+    mood: string | null;
+    total_minutes: number;
+    xp_earned: number;
+    session_count: number;
+  }>('SELECT * FROM daily_log WHERE date = ?', [d]);
   if (!r) return null;
-  return { date: r.date, checkedIn: r.checked_in === 1, mood: r.mood as Mood | null, totalMinutes: r.total_minutes, xpEarned: r.xp_earned, sessionCount: r.session_count };
+  return {
+    date: r.date,
+    checkedIn: r.checked_in === 1,
+    mood: r.mood as Mood | null,
+    totalMinutes: r.total_minutes,
+    xpEarned: r.xp_earned,
+    sessionCount: r.session_count,
+  };
 }
 
 export async function checkinToday(mood: Mood): Promise<void> {
   const db = getDb();
   const today = todayStr();
-  await db.runAsync(`INSERT INTO daily_log (date, checked_in, mood) VALUES (?, 1, ?) ON CONFLICT(date) DO UPDATE SET checked_in = 1, mood = excluded.mood`, [today, mood]);
+  try {
+    await db.runAsync(
+      `INSERT INTO daily_log (date, checked_in, mood) VALUES (?, 1, ?) ON CONFLICT(date) DO UPDATE SET checked_in = 1, mood = excluded.mood`,
+      [today, mood],
+    );
+    notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Check-in failed: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function getLast30DaysLog(): Promise<DailyLog[]> {
@@ -225,8 +336,22 @@ export async function getLast30DaysLog(): Promise<DailyLog[]> {
 
 export async function getActivityHistory(days = 90): Promise<DailyLog[]> {
   const db = getDb();
-  const rows = await db.getAllAsync<{ date: string; checked_in: number; mood: string | null; total_minutes: number; xp_earned: number; session_count: number }>(`SELECT * FROM daily_log ORDER BY date DESC LIMIT ?`, [days]);
-  return rows.map(r => ({ date: r.date, checkedIn: r.checked_in === 1, mood: r.mood as Mood | null, totalMinutes: r.total_minutes, xpEarned: r.xp_earned, sessionCount: r.session_count }));
+  const rows = await db.getAllAsync<{
+    date: string;
+    checked_in: number;
+    mood: string | null;
+    total_minutes: number;
+    xp_earned: number;
+    session_count: number;
+  }>(`SELECT * FROM daily_log ORDER BY date DESC LIMIT ?`, [days]);
+  return rows.map((r) => ({
+    date: r.date,
+    checkedIn: r.checked_in === 1,
+    mood: r.mood as Mood | null,
+    totalMinutes: r.total_minutes,
+    xpEarned: r.xp_earned,
+    sessionCount: r.session_count,
+  }));
 }
 
 export async function getActiveStudyDays(days = 30): Promise<number> {
@@ -276,37 +401,55 @@ export async function getDailyMinutesSeries(days = 7): Promise<number[]> {
 
 export async function resetStudyProgress(): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    `UPDATE topic_progress SET
-       status = 'unseen',
-       confidence = 0,
-       last_studied_at = NULL,
-       times_studied = 0,
-       xp_earned = 0,
-       next_review_date = NULL,
-       fsrs_due = NULL,
-       fsrs_stability = 0,
-       fsrs_difficulty = 0,
-       fsrs_elapsed_days = 0,
-       fsrs_scheduled_days = 0,
-       fsrs_reps = 0,
-       fsrs_lapses = 0,
-       fsrs_state = 0,
-       fsrs_last_review = NULL,
-       wrong_count = 0,
-       is_nemesis = 0`,
-  );
-  await db.runAsync(`UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`);
-  await db.runAsync(`DELETE FROM daily_log`);
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync(
+      `UPDATE topic_progress SET
+         status = 'unseen',
+         confidence = 0,
+         last_studied_at = NULL,
+         times_studied = 0,
+         xp_earned = 0,
+         next_review_date = NULL,
+         fsrs_due = NULL,
+         fsrs_stability = 0,
+         fsrs_difficulty = 0,
+         fsrs_elapsed_days = 0,
+         fsrs_scheduled_days = 0,
+         fsrs_reps = 0,
+         fsrs_lapses = 0,
+         fsrs_state = 0,
+         fsrs_last_review = NULL,
+         wrong_count = 0,
+         is_nemesis = 0`,
+    );
+    await db.runAsync(
+      `UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`,
+    );
+    await db.runAsync(`DELETE FROM daily_log`);
+    await db.execAsync('COMMIT TRANSACTION');
+    notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  } catch (err: any) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to reset progress: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export async function clearAiCache(): Promise<void> {
-  await getDb().runAsync('DELETE FROM ai_cache');
+  try {
+    await getDb().runAsync('DELETE FROM ai_cache');
+  } catch (err: any) {
+    const { showToast } = require('../../components/Toast');
+    showToast(`Failed to clear AI cache: ${err.message || 'Unknown error'}`, 'error');
+    throw err;
+  }
 }
 
 export function getDaysToExam(examDateStr: string): number {
   if (!examDateStr) return 0;
-  
+
   let examTime = 0;
   const parts = examDateStr.split('-');
   if (parts.length === 3) {
@@ -317,20 +460,20 @@ export function getDaysToExam(examDateStr: string): number {
       examTime = new Date(y, m, d).getTime();
     }
   }
-  
+
   if (!examTime) {
     examTime = new Date(examDateStr).getTime();
   }
-  
+
   if (isNaN(examTime) || examTime === 0) return 0;
 
   const now = new Date();
   now.setHours(0, 0, 0, 0); // Calculate from local midnight
-  
+
   // Also adjust examTime to be local midnight if it's not already
   const exam = new Date(examTime);
   exam.setHours(0, 0, 0, 0);
-  
+
   return Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / 86400000));
 }
 
@@ -378,28 +521,32 @@ export async function applyConfidenceDecay(): Promise<{ decayed: number }> {
     }
 
     if (newConf !== row.confidence || newStatus !== row.status) {
-      await db.runAsync(
-        `UPDATE topic_progress SET confidence = ?, status = ? WHERE topic_id = ?`,
-        [newConf, newStatus, row.topic_id],
-      );
+      await db.runAsync(`UPDATE topic_progress SET confidence = ?, status = ? WHERE topic_id = ?`, [
+        newConf,
+        newStatus,
+        row.topic_id,
+      ]);
       decayed++;
     }
   }
 
+  if (decayed > 0) notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
   return { decayed };
 }
 
 /**
  * Get topics due for review today or overdue, grouped by subject.
  */
-export async function getReviewDueTopics(): Promise<Array<{
-  topicId: number;
-  topicName: string;
-  subjectName: string;
-  confidence: number;
-  nextReviewDate: string;
-  daysOverdue: number;
-}>> {
+export async function getReviewDueTopics(): Promise<
+  Array<{
+    topicId: number;
+    topicName: string;
+    subjectName: string;
+    confidence: number;
+    nextReviewDate: string;
+    daysOverdue: number;
+  }>
+> {
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
   const rows = await db.getAllAsync<{
@@ -420,7 +567,7 @@ export async function getReviewDueTopics(): Promise<Array<{
     [today],
   );
 
-  return rows.map(r => ({
+  return rows.map((r) => ({
     topicId: r.topic_id,
     topicName: r.topic_name,
     subjectName: r.subject_name,
@@ -428,4 +575,22 @@ export async function getReviewDueTopics(): Promise<Array<{
     nextReviewDate: r.fsrs_due.slice(0, 10),
     daysOverdue: Math.max(0, Math.floor((Date.now() - new Date(r.fsrs_due).getTime()) / 86400000)),
   }));
+}
+
+/**
+ * Get recently studied topics (last 48 hours) to avoid repetitive planning.
+ */
+export async function getRecentTopics(limit: number = 10): Promise<string[]> {
+  const db = getDb();
+  const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
+  const rows = await db.getAllAsync<{ topic_name: string }>(
+    `SELECT DISTINCT t.name as topic_name
+     FROM session_metrics sm
+     JOIN topics t ON sm.topic_id = t.id
+     WHERE sm.created_at > ?
+     ORDER BY sm.created_at DESC
+     LIMIT ?`,
+    [twoDaysAgo, limit],
+  );
+  return rows.map((r) => r.topic_name);
 }

@@ -11,7 +11,7 @@ interface ApiKeySectionProps {
 
 const PLACEHOLDER_COLOR = '#7B8193';
 
-export default function ApiKeySection({
+function ApiKeySection({
   groqKey,
   onGroqKeyChange,
   openRouterKey,
@@ -53,6 +53,8 @@ export default function ApiKeySection({
     </View>
   );
 }
+
+export default React.memo(ApiKeySection);
 
 const styles = StyleSheet.create({
   section: {

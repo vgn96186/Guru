@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,7 +33,7 @@ export default function DoomscrollGuideScreen() {
     Alert.alert(
       'Harassment Mode Activated 🚨',
       'If you close this app and go doomscroll, I will start blowing up your phone with notifications every 3 minutes starting soon. The only way to stop it is to come back and study.',
-      [{ text: 'I understand the consequences' }]
+      [{ text: 'I understand the consequences' }],
     );
   }
 
@@ -109,7 +117,13 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A0A' },
   container: { padding: 24, alignItems: 'center' },
   emoji: { fontSize: 56, marginBottom: 16 },
-  title: { color: '#F44336', fontSize: 28, fontWeight: '900', marginBottom: 12, textAlign: 'center' },
+  title: {
+    color: '#F44336',
+    fontSize: 28,
+    fontWeight: '900',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 32, lineHeight: 24 },
   
   card: { backgroundColor: '#1A1A24', width: '100%', padding: 20, borderRadius: 16, marginBottom: 24, borderWidth: 1, borderColor: '#333' },
@@ -127,5 +141,5 @@ const styles = StyleSheet.create({
   deactivateBtn: { marginTop: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#555', borderRadius: 10 },
   deactivateBtnText: { color: '#9E9E9E', fontSize: 14, fontWeight: '700' },
   backBtn: { marginTop: 16, padding: 16 },
-  backBtnText: { color: '#666', fontSize: 16, fontWeight: '600' }
+  backBtnText: { color: '#666', fontSize: 16, fontWeight: '600' },
 });

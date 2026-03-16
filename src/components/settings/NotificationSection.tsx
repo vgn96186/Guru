@@ -13,7 +13,7 @@ interface NotificationSectionProps {
   error?: string;
 }
 
-export default function NotificationSection({
+function NotificationSection({
   enabled, onEnabledChange, hour, onHourChange,
   frequency, onFrequencyChange, onTest, error
 }: NotificationSectionProps) {
@@ -57,6 +57,8 @@ export default function NotificationSection({
     </View>
   );
 }
+
+export default React.memo(NotificationSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },

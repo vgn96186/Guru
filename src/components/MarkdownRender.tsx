@@ -8,7 +8,7 @@ interface MarkdownRenderProps {
   compact?: boolean;
 }
 
-export function MarkdownRender({ content, compact }: MarkdownRenderProps) {
+export const MarkdownRender = React.memo(function MarkdownRender({ content, compact }: MarkdownRenderProps) {
   const mergedStyles = compact
     ? { ...markdownStyles, paragraph: { marginBottom: 0, marginTop: 0 }, body: { ...markdownStyles.body, marginBottom: 0 } }
     : markdownStyles;
@@ -20,7 +20,7 @@ export function MarkdownRender({ content, compact }: MarkdownRenderProps) {
       </Markdown>
     </View>
   );
-}
+});
 
 const markdownStyles: any = {
   body: {
@@ -29,8 +29,8 @@ const markdownStyles: any = {
     lineHeight: 24,
   },
   strong: {
-    color: '#FFD58A',
-    backgroundColor: 'rgba(255, 213, 138, 0.15)',
+    color: theme.colors.accentAlt,
+    backgroundColor: theme.colors.warningTintSoft,
     fontWeight: '800',
   },
   em: {
@@ -41,55 +41,55 @@ const markdownStyles: any = {
     textDecorationLine: 'underline',
   },
   paragraph: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   bullet_list: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   ordered_list: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   bullet_list_icon: {
     marginLeft: 0,
-    marginRight: 8,
+    marginRight: theme.spacing.sm,
     color: theme.colors.primary,
   },
   ordered_list_icon: {
     marginLeft: 0,
-    marginRight: 8,
+    marginRight: theme.spacing.sm,
     color: theme.colors.primary,
     fontWeight: '600',
   },
   list_item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 4,
+    marginBottom: theme.spacing.xs,
   },
   heading1: {
     color: theme.colors.textPrimary,
-    fontSize: 22,
+    fontSize: theme.typography.h2.fontSize,
     fontWeight: 'bold',
-    marginBottom: 12,
-    marginTop: 16,
+    marginBottom: theme.spacing.md,
+    marginTop: theme.spacing.lg,
   },
   heading2: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: theme.typography.h3.fontSize,
     fontWeight: 'bold',
-    marginBottom: 10,
-    marginTop: 14,
+    marginBottom: theme.spacing.md,
+    marginTop: theme.spacing.md,
   },
   heading3: {
     color: theme.colors.textPrimary,
-    fontSize: 16,
+    fontSize: theme.typography.h4.fontSize,
     fontWeight: 'bold',
-    marginBottom: 8,
-    marginTop: 12,
+    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.md,
   },
   code_inline: {
     color: theme.colors.primary,
     backgroundColor: theme.colors.surfaceAlt,
-    paddingHorizontal: 4,
+    paddingHorizontal: theme.spacing.xs,
     paddingVertical: 2,
     borderRadius: 4,
     fontFamily: 'monospace',
@@ -97,16 +97,16 @@ const markdownStyles: any = {
   code_block: {
     color: theme.colors.textSecondary,
     backgroundColor: theme.colors.surfaceAlt,
-    padding: 12,
-    borderRadius: 8,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.sm,
     fontFamily: 'monospace',
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   blockquote: {
     borderLeftWidth: 4,
     borderLeftColor: theme.colors.primary,
-    paddingLeft: 12,
-    marginBottom: 12,
+    paddingLeft: theme.spacing.md,
+    marginBottom: theme.spacing.md,
     fontStyle: 'italic',
     color: theme.colors.textMuted,
   },

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { EXTERNAL_APPS, type ExternalApp } from '../constants/externalApps';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
@@ -11,7 +12,7 @@ interface Props {
   onLogSession: (appId: string) => void;
 }
 
-export default function ExternalToolsRow({ onLogSession }: Props) {
+export default React.memo(function ExternalToolsRow({ onLogSession }: Props) {
   const profile = useAppStore((s) => s.profile);
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
@@ -20,6 +21,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
 
   async function launchApp(app: ExternalApp) {
     try {
+      Haptics.selectionAsync();
       await launchMedicalApp(app.id as SupportedMedicalApp, faceTrackingEnabled, {
         onMicUsed: () => {
           showToast(
@@ -35,13 +37,16 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
     }
   }
 
+  function handleLongPress(appId: string) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onLogSession(appId);
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>OPEN LECTURE APP</Text>
-        <Text style={styles.subtitle}>
-          Tap to launch. Use the menu below each app to log manually if needed.
-        </Text>
+        <Text style={styles.subtitle}>Tap to launch capture. Long press to log manually.</Text>
       </View>
       <ScrollView
         horizontal
@@ -54,7 +59,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             testID={`external-app-${app.id}`}
             style={[styles.appBtn, { borderColor: app.color + '55' }]}
             onPress={() => launchApp(app)}
-            onLongPress={() => onLogSession(app.id)}
+            onLongPress={() => handleLongPress(app.id)}
             delayLongPress={500}
             activeOpacity={0.7}
             accessibilityRole="button"
@@ -64,7 +69,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
             <View style={[styles.iconBox, { backgroundColor: app.color + '22' }]}>
               <Text style={styles.icon}>{app.iconEmoji}</Text>
             </View>
-            <Text style={styles.appName} numberOfLines={1}>
+            <Text style={styles.appName} numberOfLines={2}>
               {app.name}
             </Text>
           </TouchableOpacity>
@@ -72,7 +77,7 @@ export default function ExternalToolsRow({ onLogSession }: Props) {
       </ScrollView>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: { marginBottom: 8, marginTop: 4 },

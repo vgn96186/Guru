@@ -98,8 +98,9 @@ export async function updateSessionTranscriptionStatus(
              WHERE id = ?`,
       [status, error ?? null, lectureNoteId ?? null, logId],
     );
-  } catch {
+  } catch (err) {
     // Old schema — silently ignore
+    if (__DEV__) console.warn('[externalLogs] Update failed, likely old schema:', err);
   }
 }
 
@@ -113,8 +114,9 @@ export async function updateSessionNoteEnhancementStatus(
       status,
       logId,
     ]);
-  } catch {
+  } catch (err) {
     // Old schema — silently ignore
+    if (__DEV__) console.warn('[externalLogs] Query failed, likely old schema:', err);
   }
 }
 
@@ -156,8 +158,9 @@ export async function updateSessionPipelineTelemetry(
       JSON.stringify(merged),
       logId,
     ]);
-  } catch {
+  } catch (err) {
     // Old schema — silently ignore
+    if (__DEV__) console.warn('[externalLogs] Query failed, likely old schema:', err);
   }
 }
 

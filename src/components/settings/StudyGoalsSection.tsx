@@ -17,7 +17,7 @@ interface StudyGoalsSectionProps {
 
 const PLACEHOLDER_COLOR = '#7B8193';
 
-export default function StudyGoalsSection({
+function StudyGoalsSection({
   inicetDate,
   neetDate,
   sessionLength,
@@ -80,6 +80,8 @@ export default function StudyGoalsSection({
     </View>
   );
 }
+
+export default React.memo(StudyGoalsSection);
 
 const styles = StyleSheet.create({
   section: {

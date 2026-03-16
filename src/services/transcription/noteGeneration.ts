@@ -1,32 +1,24 @@
 import { generateTextWithRouting } from '../aiService';
 import type { LectureAnalysis } from './analysis';
-import { buildRepresentativeTranscriptExcerpt } from './transcriptExcerpt';
 
 const ADHD_NOTE_SYSTEM_PROMPT = `You create elite medical study notes for a NEET-PG student with ADHD.
 Rules:
 - STRUCTURE: Use clear emoji headers: 🎯 **Subject**, 📌 **Topics**, 💡 **Key Concepts**, 🚀 **High-Yield Facts**.
 - HIGHLIGHTS: Use markdown bolding (**keyword**) for clinical anchors, specific drug names, and diagnostic criteria.
-- SCANNABLE: Short bullet points, never walls of text. Max 220 words total.
+- SCANNABLE: Short bullet points, never walls of text. Ensure comprehensive coverage of the entire transcript.
 - VISUAL: Use emoji anchors throughout.
 - MEMORABLE: Include one brief mnemonic or clinical anchor for the most tested concept.
 - ACTIONABLE: End with 2 quick "check-your-understanding" questions.
 `;
 
 export async function generateADHDNote(analysis: LectureAnalysis): Promise<string> {
-  const transcriptContext = analysis.transcript?.trim()
-    ? `\nRepresentative transcript excerpts:\n${buildRepresentativeTranscriptExcerpt(
-        analysis.transcript,
-        24000,
-        3,
-      )}`
-    : '';
   const input = `Subject: ${analysis.subject}
 Topics: ${analysis.topics.join(', ')}
 Key concepts:
-${analysis.keyConcepts.map((c) => `- ${c}`).join('\n')}
+${analysis.keyConcepts.map((c: string) => `- ${c}`).join('\n')}
 High-yield facts:
-${analysis.highYieldPoints.map((p) => `- ${p}`).join('\n')}
-Summary: ${analysis.lectureSummary}${transcriptContext}`;
+${analysis.highYieldPoints.map((p: string) => `- ${p}`).join('\n')}
+Summary: ${analysis.lectureSummary}`;
 
   try {
     const { text } = await generateTextWithRouting([
@@ -34,16 +26,15 @@ Summary: ${analysis.lectureSummary}${transcriptContext}`;
       { role: 'user', content: input },
     ]);
     return text.trim();
-  } catch (e) {
+  } catch {
     console.warn('[NoteGen] ADHD note generation failed, using fallback.');
     return buildQuickLectureNote(analysis);
   }
 }
 
 export function buildQuickLectureNote(analysis: LectureAnalysis): string {
-  const topicStr = analysis.topics.length > 0 ? analysis.topics[0] : analysis.subject;
-  const conceptPoints = analysis.keyConcepts.map((c) => `• ${c}`).join('\n');
-  const highYieldPoints = analysis.highYieldPoints.map((p) => `🚀 **${p}**`).join('\n');
+  const conceptPoints = analysis.keyConcepts.map((c: string) => `• ${c}`).join('\n');
+  const highYieldPoints = analysis.highYieldPoints.map((p: string) => `🚀 **${p}**`).join('\n');
 
   return `🎯 **Subject**: ${analysis.subject}
 📌 **Topics**: ${analysis.topics.join(', ')}

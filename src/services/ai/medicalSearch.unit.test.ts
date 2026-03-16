@@ -33,11 +33,30 @@ describe('medicalSearch utilities', () => {
       expect(clipText(text, 10)).toBe(text);
     });
 
-    it('clips at boundary without breaking mid-word when possible', () => {
+    it('clips exactly at maxChars with ellipsis', () => {
       const raw = 'hello world test';
       const result = clipText(raw, 10);
-      expect(result.endsWith('…')).toBe(true);
-      expect(result.length).toBeLessThanOrEqual(10);
+      expect(result).toBe('hello wor…');
+      expect(result.length).toBe(10);
+    });
+
+    it('trims trailing whitespace before adding ellipsis', () => {
+      const raw = 'hello world test';
+      // 'hello ' is 6 chars. If maxChars is 7, it slices 6 chars: 'hello '
+      // then trims to 'hello' and adds '…' -> 'hello…' (6 chars)
+      const result = clipText(raw, 7);
+      expect(result).toBe('hello…');
+      expect(result.length).toBe(6);
+    });
+
+    it('handles very small maxChars', () => {
+      expect(clipText('abcde', 1)).toBe('…');
+      expect(clipText('abcde', 0)).toBe('…');
+    });
+
+    it('handles whitespace-only input', () => {
+      expect(clipText('   ', 10)).toBe('');
+      expect(clipText('\n\t  \r', 5)).toBe('');
     });
   });
 

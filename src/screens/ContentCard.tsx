@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 import {
   View, Text, ScrollView, TouchableOpacity, TextInput,
@@ -14,16 +14,21 @@ import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import { MarkdownRender } from '../components/MarkdownRender';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 interface TopicImageProps {
   topicName: string;
 }
 
-function TopicImage({ topicName }: TopicImageProps) {
+const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchWikipediaImage(topicName).then(setImageUrl);
+    let active = true;
+    fetchWikipediaImage(topicName).then(url => {
+      if (active) setImageUrl(url);
+    });
+    return () => { active = false; };
   }, [topicName]);
 
   if (!imageUrl) return null;
@@ -35,7 +40,7 @@ function TopicImage({ topicName }: TopicImageProps) {
       resizeMode="contain"
     />
   );
-}
+});
 
 interface Props {
   content: AIContent;
@@ -46,16 +51,30 @@ interface Props {
   onQuizComplete?: (correct: number, total: number) => void;
 }
 
-export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizComplete }: Props) {
+export default React.memo(function ContentCardWithBoundary(props: Props) {
+  return (
+    <ErrorBoundary>
+      <ContentCard {...props} />
+    </ErrorBoundary>
+  );
+});
+
+function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizComplete }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
 
+  if (!topicId && flagged) {
+    setFlagged(false);
+  }
+
   useEffect(() => {
+    let active = true;
     if (topicId) {
-      void isContentFlagged(topicId, content.type).then(setFlagged);
-    } else {
-      setFlagged(false);
+      void isContentFlagged(topicId, content.type).then(val => {
+        if (active && val !== flagged) setFlagged(val);
+      });
     }
+    return () => { active = false; };
   }, [topicId, content.type]);
 
   function handleFlag() {
@@ -66,11 +85,11 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
     if (newFlagged) Alert.alert('Flagged for review', 'This content has been flagged. You can review all flagged items in the Flagged Review section.');
   }
 
-  const handleQuizAnswered = (correct: boolean) => {
+  const handleQuizAnswered = useCallback((correct: boolean) => {
     onQuizAnswered?.(correct);
-  };
+  }, [onQuizAnswered]);
 
-  const card = (() => {
+  const card = useMemo(() => {
     switch (content.type) {
       case 'keypoints': return <KeyPointsCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'quiz':      return <QuizCard content={content} onDone={onDone} onSkip={onSkip} onQuizAnswered={handleQuizAnswered} onQuizComplete={onQuizComplete} />;
@@ -82,7 +101,7 @@ export default function ContentCard({ content, topicId, onDone, onSkip, onQuizAn
       case 'manual':    return <ManualReviewCard content={content} onDone={onDone} onSkip={onSkip} />;
       default:          return null;
     }
-  })();
+  }, [content, onDone, onSkip, handleQuizAnswered, onQuizComplete]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -123,10 +142,6 @@ function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
     </View>
   );
 }
-
-const CONFIDENCE_LABELS: Record<number, string> = {
-  1: '😬', 2: '😕', 3: '😐', 4: '😊', 5: '🔥',
-};
 
 // ── Key Points ────────────────────────────────────────────────────
 
@@ -351,7 +366,7 @@ function TeachBackCard({ content, onDone, onSkip }: { content: TeachBackContent 
       const parsed = JSON.parse(raw);
       setGuruFeedback(parsed);
       setSubmitted(true);
-    } catch (e) {
+    } catch {
       // Fallback if AI fails
       setSubmitted(true);
     } finally {

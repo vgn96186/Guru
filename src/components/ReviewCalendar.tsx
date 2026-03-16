@@ -9,62 +9,14 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getDb } from '../db/database';
+import { getReviewCalendarData, type ReviewDay } from '../db/queries/topics';
 import { theme } from '../constants/theme';
-
-interface ReviewDay {
-  date: string; // YYYY-MM-DD
-  count: number;
-  topics: Array<{ name: string; confidence: number }>;
-}
 
 function toLocalDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
-}
-
-async function getReviewCalendarData(year: number, month: number): Promise<ReviewDay[]> {
-  const db = getDb();
-  const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const endDate = month === 11
-    ? `${year + 1}-01-01`
-    : `${year}-${String(month + 2).padStart(2, '0')}-01`;
-
-  const rows = await db.getAllAsync<{
-    review_date: string;
-    topic_name: string;
-    confidence: number;
-  }>(
-    `SELECT DATE(tp.fsrs_due) as review_date,
-            t.name as topic_name,
-            tp.confidence
-     FROM topic_progress tp
-     JOIN topics t ON tp.topic_id = t.id
-     WHERE tp.status != 'unseen'
-       AND tp.fsrs_due IS NOT NULL
-       AND DATE(tp.fsrs_due) >= ?
-       AND DATE(tp.fsrs_due) < ?
-     ORDER BY review_date ASC`,
-    [startDate, endDate],
-  );
-
-  const byDate = new Map<string, ReviewDay>();
-  for (const r of rows) {
-    const existing = byDate.get(r.review_date);
-    if (existing) {
-      existing.count++;
-      existing.topics.push({ name: r.topic_name, confidence: r.confidence });
-    } else {
-      byDate.set(r.review_date, {
-        date: r.review_date,
-        count: 1,
-        topics: [{ name: r.topic_name, confidence: r.confidence }],
-      });
-    }
-  }
-  return Array.from(byDate.values());
 }
 
 const MONTHS = [
@@ -74,7 +26,7 @@ const MONTHS = [
 
 const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-export default function ReviewCalendar() {
+export default React.memo(function ReviewCalendar() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -93,30 +45,39 @@ export default function ReviewCalendar() {
   const todayStr = toLocalDateKey(now);
 
   // Build calendar grid
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weeks: (number | null)[][] = [];
-  let currentWeek: (number | null)[] = Array(firstDay).fill(null);
+  const weeks = useMemo(() => {
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const grid: (number | null)[][] = [];
+    let currentWeek: (number | null)[] = Array(firstDay).fill(null);
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    currentWeek.push(d);
-    if (currentWeek.length === 7) {
-      weeks.push(currentWeek);
-      currentWeek = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      currentWeek.push(d);
+      if (currentWeek.length === 7) {
+        grid.push(currentWeek);
+        currentWeek = [];
+      }
     }
-  }
-  if (currentWeek.length > 0) {
-    while (currentWeek.length < 7) currentWeek.push(null);
-    weeks.push(currentWeek);
-  }
+    if (currentWeek.length > 0) {
+      while (currentWeek.length < 7) currentWeek.push(null);
+      grid.push(currentWeek);
+    }
+    return grid;
+  }, [year, month]);
 
   const changeMonth = (delta: number) => {
-    let m = month + delta;
-    let y = year;
-    if (m < 0) { m = 11; y--; }
-    if (m > 11) { m = 0; y++; }
-    setMonth(m);
-    setYear(y);
+    setMonth((prevM) => {
+      let nextM = prevM + delta;
+      if (nextM < 0) {
+        setYear((prevY) => prevY - 1);
+        return 11;
+      }
+      if (nextM > 11) {
+        setYear((prevY) => prevY + 1);
+        return 0;
+      }
+      return nextM;
+    });
     setSelectedDay(null);
   };
 
@@ -149,9 +110,9 @@ export default function ReviewCalendar() {
 
       {/* Calendar grid */}
       {weeks.map((week, wi) => (
-        <View key={wi} style={styles.weekRow}>
+        <View key={`${year}-${month}-w${wi}`} style={styles.weekRow}>
           {week.map((day, di) => {
-            if (day === null) return <View key={di} style={styles.dayCell} />;
+            if (day === null) return <View key={`empty-${di}`} style={styles.dayCell} />;
 
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const review = reviewMap.get(dateStr);
@@ -161,7 +122,7 @@ export default function ReviewCalendar() {
 
             return (
               <TouchableOpacity
-                key={di}
+                key={dateStr}
                 style={[
                   styles.dayCell,
                   isToday && styles.todayCell,
@@ -173,7 +134,7 @@ export default function ReviewCalendar() {
                 accessibilityLabel={
                   review
                     ? `${day} ${MONTHS[month]}, ${review.count} review${review.count === 1 ? '' : 's'} scheduled`
-                    : undefined
+                    : `${day} ${MONTHS[month]}, no reviews scheduled`
                 }
               >
                 <Text
@@ -221,7 +182,7 @@ export default function ReviewCalendar() {
             {selectedDay.topics.map((t, i) => (
               <View key={i} style={styles.topicRow}>
                 <View style={[styles.confDot, {
-                  backgroundColor: t.confidence >= 3 ? '#4CAF50' : t.confidence >= 2 ? '#FF9800' : '#F44336',
+                  backgroundColor: t.confidence >= 3 ? theme.colors.success : t.confidence >= 2 ? theme.colors.warning : theme.colors.error,
                 }]} />
                 <Text style={styles.topicName}>{t.name}</Text>
               </View>
@@ -231,7 +192,7 @@ export default function ReviewCalendar() {
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

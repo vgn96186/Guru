@@ -78,37 +78,82 @@ export async function markTopicsFromLecture(
   }
 }
 
-async function findTopicIdByKeywords(
+async function findTopicIdsByKeywordsBatched(
   db: SQLiteDatabase,
-  name: string,
+  names: string[],
   subjectName?: string,
-): Promise<number | null> {
-  // Exact match within subject
-  if (subjectName) {
-    const r1 = await db.getFirstAsync<{ id: number }>(
-      `SELECT t.id FROM topics t 
-       JOIN subjects s ON t.subject_id = s.id 
-       WHERE LOWER(t.name) = ? AND LOWER(s.name) = ? LIMIT 1`,
-      [name, subjectName.toLowerCase()],
-    );
-    if (r1) return r1.id;
+): Promise<{ topicName: string; matchId: number }[]> {
+  const results: { topicName: string; matchId: number }[] = [];
+  const unresolvedNames = new Set(names);
 
-    const r2 = await db.getFirstAsync<{ id: number }>(
-      `SELECT t.id FROM topics t 
-       JOIN subjects s ON t.subject_id = s.id 
-       WHERE LOWER(t.name) LIKE ? AND LOWER(s.name) = ? LIMIT 1`,
-      [`%${name}%`, subjectName.toLowerCase()],
-    );
-    if (r2) return r2.id;
+  if (subjectName) {
+    const lowerSubject = subjectName.toLowerCase();
+
+    // Priority 1: Exact match within subject
+    if (unresolvedNames.size > 0) {
+      const currentNames = Array.from(unresolvedNames);
+      const placeholders = currentNames.map(() => '?').join(',');
+      const exactMatches = await db.getAllAsync<{ id: number; name: string }>(
+        `SELECT t.id, LOWER(t.name) as name FROM topics t
+         JOIN subjects s ON t.subject_id = s.id
+         WHERE LOWER(t.name) IN (${placeholders}) AND LOWER(s.name) = ?`,
+        [...currentNames, lowerSubject]
+      );
+
+      for (const match of exactMatches) {
+        if (unresolvedNames.has(match.name)) {
+          results.push({ topicName: match.name, matchId: match.id });
+          unresolvedNames.delete(match.name);
+        }
+      }
+    }
+
+    // Priority 2: LIKE match within subject
+    if (unresolvedNames.size > 0) {
+      const currentNames = Array.from(unresolvedNames);
+      // Construct dynamic OR for LIKE
+      const likeConditions = currentNames.map(() => 'LOWER(t.name) LIKE ?').join(' OR ');
+      const likeParams = currentNames.map(name => `%${name}%`);
+
+      const likeMatches = await db.getAllAsync<{ id: number; name: string }>(
+        `SELECT t.id, LOWER(t.name) as name FROM topics t
+         JOIN subjects s ON t.subject_id = s.id
+         WHERE (${likeConditions}) AND LOWER(s.name) = ?`,
+        [...likeParams, lowerSubject]
+      );
+
+      // Map back matches to the original search keyword
+      // Loop over the search keywords first so that multiple keywords can match the same DB row
+      for (const searchName of Array.from(unresolvedNames)) {
+        for (const match of likeMatches) {
+          if (match.name.includes(searchName)) {
+            results.push({ topicName: searchName, matchId: match.id });
+            unresolvedNames.delete(searchName);
+            break; // We found the first matching DB row for this keyword, move to the next keyword
+          }
+        }
+      }
+    }
   }
 
-  const r4 = await db.getFirstAsync<{ id: number }>(
-    'SELECT id FROM topics WHERE LOWER(name) = ? LIMIT 1',
-    [name],
-  );
-  if (r4) return r4.id;
+  // Priority 3: Exact match globally
+  if (unresolvedNames.size > 0) {
+    const currentNames = Array.from(unresolvedNames);
+    const placeholders = currentNames.map(() => '?').join(',');
+    const globalExactMatches = await db.getAllAsync<{ id: number; name: string }>(
+      `SELECT id, LOWER(name) as name FROM topics WHERE LOWER(name) IN (${placeholders})`,
+      currentNames
+    );
 
-  return null;
+    for (const match of globalExactMatches) {
+      if (unresolvedNames.has(match.name)) {
+        results.push({ topicName: match.name, matchId: match.id });
+        unresolvedNames.delete(match.name);
+      }
+    }
+  }
+
+  return results;
 }
 
 async function findSemanticMatches(

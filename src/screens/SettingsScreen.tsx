@@ -407,7 +407,7 @@ export default function SettingsScreen() {
       const { StorageAccessFramework } = await import('expo-file-system/legacy');
       const permissions = await StorageAccessFramework.requestDirectoryPermissionsAsync();
       if (permissions.granted) {
-        await profileRepository.updateProfile({ backupDirectoryUri: permissions.directoryUri });
+        await updateUserProfile({ backupDirectoryUri: permissions.directoryUri } as any);
         await refreshProfile();
         Alert.alert(
           'Success',

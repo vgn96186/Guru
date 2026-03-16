@@ -149,5 +149,7 @@ const styles = StyleSheet.create({
   timer: { color: '#fff', fontSize: 80, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 24 },
   footerText: { color: '#666', fontSize: 14, fontStyle: 'italic', marginTop: 32 },
   manualResumeBtn: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#4CAF5066' },
-  manualResumeBtnText: { color: '#4CAF50', fontSize: 15, fontWeight: '700' }
+  manualResumeBtnText: { color: '#4CAF50', fontSize: 15, fontWeight: '700' },
+  fallbackBtn: { marginTop: 32, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#ffffff44', backgroundColor: '#ffffff11' },
+  fallbackBtnText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });

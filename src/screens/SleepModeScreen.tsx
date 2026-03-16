@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -80,7 +80,7 @@ export default function SleepModeScreen() {
 
   // Sleep tracking with Accelerometer
   useEffect(() => {
-    let subscription: Subscription | undefined;
+    let subscription: ReturnType<typeof Accelerometer.addListener> | undefined;
     if (isTracking) {
       Accelerometer.setUpdateInterval(1000);
       let lastPoint = { x: 0, y: 0, z: 0 };
@@ -118,23 +118,7 @@ export default function SleepModeScreen() {
     return () => clearInterval(interval);
   }, [isTracking, alarmTime, alarmRinging, movementCount, triggerAlarm]);
 
-  async function triggerAlarm() {
-    setAlarmRinging(true);
-    setIsTracking(false);
-
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 3000,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start();
-
-    const interval = setInterval(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    }, 1000);
-
-    (soundRef as any).vibrateInterval = interval;
-  }
+  // (triggerAlarm is defined above as a useCallback)
 
   function stopAlarm() {
     if ((soundRef as any).vibrateInterval) {

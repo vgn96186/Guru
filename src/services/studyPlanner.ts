@@ -38,6 +38,7 @@ export interface StudyPlanSummary {
   resourceLabel: string;
   workloadAssumption: string;
   subjectLoadHighlights: string[];
+  examType: 'INICET' | 'NEET';
 }
 
 export interface TodayTask {
@@ -588,6 +589,7 @@ export async function generateStudyPlan(options?: GeneratePlanOptions): Promise<
       resourceLabel: resourceProfile.label,
       workloadAssumption: resourceProfile.workloadAssumption,
       subjectLoadHighlights: getActiveSubjectLoadHighlights(resourceMode, customSubjectLoads),
+      examType: profile.examType,
     }
   };
 

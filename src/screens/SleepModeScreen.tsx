@@ -6,11 +6,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { Accelerometer } from 'expo-sensors';
 import * as Haptics from 'expo-haptics';
 import { Audio } from 'expo-av';
-import * as Notifications from 'expo-notifications';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { ResponsiveContainer } from '../hooks/useResponsive';
-import { generateWakeUpMessage } from '../services/aiService';
 
 const { } = {};
 
@@ -34,7 +31,19 @@ export default function SleepModeScreen() {
   const [isTracking, setIsTracking] = useState(false);
   const [alarmRinging, setAlarmRinging] = useState(false);
   const [movementCount, setMovementCount] = useState(0);
-  const [notifId, setNotifId] = useState<string | null>(null);
+  const [snoozed, setSnoozed] = useState(false);
+
+  // Time picker state — default to 8h from now
+  const [pickHour, setPickHour] = useState(() => {
+    const d = new Date();
+    d.setHours(d.getHours() + 8);
+    return d.getHours();
+  });
+  const [pickMinute, setPickMinute] = useState(() => {
+    const d = new Date();
+    d.setHours(d.getHours() + 8);
+    return Math.round(d.getMinutes() / 15) * 15 % 60;
+  });
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
@@ -51,9 +60,7 @@ export default function SleepModeScreen() {
     if (isTracking) {
       Accelerometer.setUpdateInterval(1000);
       let lastPoint = { x: 0, y: 0, z: 0 };
-      
-      subscription = Accelerometer.addListener((data: { x: number; y: number; z: number }) => {
-        // Simple movement detection: if acceleration change is significant
+      subscription = Accelerometer.addListener(data => {
         const dx = Math.abs(data.x - lastPoint.x);
         const dy = Math.abs(data.y - lastPoint.y);
         const dz = Math.abs(data.z - lastPoint.z);
@@ -113,37 +120,9 @@ export default function SleepModeScreen() {
     navigation.replace('WakeUp');
   }
 
-  async function toggleTracking() {
-    if (!isTracking) {
-      // Set alarm for let's say 8 hours from now
-      // Before scheduling, ask for permissions just in case
-      await Notifications.requestPermissionsAsync();
-      
-      const target = new Date();
-      target.setHours(target.getHours() + 8);
-      setAlarmTime(target);
-      setIsTracking(true);
-      setMovementCount(0);
-      
-      const { title, body } = await generateWakeUpMessage();
-      
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          data: { screen: 'WakeUp' },
-          sound: 'default'
-        },
-        trigger: { date: target } as any,
-      });
-      setNotifId(id);
-    } else {
-      setIsTracking(false);
-      setAlarmTime(null);
-      if (notifId) {
-        await Notifications.cancelScheduledNotificationAsync(notifId);
-        setNotifId(null);
-      }
+  function snoozeAlarm() {
+    if ((soundRef as any).vibrateInterval) {
+      clearInterval((soundRef as any).vibrateInterval);
     }
     const newAlarm = new Date(Date.now() + 10 * 60 * 1000);
     setAlarmTime(newAlarm);
@@ -202,7 +181,7 @@ export default function SleepModeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ResponsiveContainer style={styles.container}>
+      <View style={styles.container}>
         <Text style={styles.clock}>{timeString}</Text>
 
         {isTracking ? (
@@ -261,7 +240,7 @@ export default function SleepModeScreen() {
             <Text style={styles.backBtnText}>Exit</Text>
           </TouchableOpacity>
         )}
-      </ResponsiveContainer>
+      </View>
     </SafeAreaView>
   );
 }

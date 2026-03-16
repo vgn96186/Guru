@@ -48,6 +48,12 @@ export default function DoomscrollGuideScreen() {
     );
   }
 
+  async function deactivateHarassment() {
+    await cancelAllNotifications();
+    setHarassmentActive(false);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>

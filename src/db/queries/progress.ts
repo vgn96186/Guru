@@ -22,6 +22,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     openrouter_api_key: string; openrouter_key: string; notifications_enabled: number; last_active_date: string | null; sync_code: string | null;
     strict_mode_enabled: number; streak_shield_available: number;
     body_doubling_enabled: number; blocked_content_types: string;
+    guru_frequency: string | null;
     idle_timeout_minutes: number; break_duration_minutes: number;
     notification_hour: number; focus_subject_ids: string;
     guru_frequency: UserProfile['guruFrequency'] | null;

@@ -142,6 +142,27 @@ export default function SettingsScreen() {
     }
   }, [isFocused]);
 
+  async function handleAutoFetchDates() {
+    const key = apiKey.trim() || profile?.openrouterApiKey || '';
+    const or = orKey.trim() || profile?.openrouterKey || '';
+    if (!key && !or) {
+      setFetchDatesMsg('Add an API key first to auto-fetch dates.');
+      return;
+    }
+    setFetchingDates(true);
+    setFetchDatesMsg('');
+    try {
+      const dates = await fetchExamDates(key, or || undefined);
+      setInicetDate(dates.inicetDate);
+      setNeetDate(dates.neetDate);
+      setFetchDatesMsg(`✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`);
+    } catch (e: any) {
+      setFetchDatesMsg(`❌ ${e?.message || 'Could not fetch dates. Try manually.'}`);
+    } finally {
+      setFetchingDates(false);
+    }
+  }
+
   async function checkPermissions() {
     const n = await Notifications.getPermissionsAsync();
     const m = await Audio.getPermissionsAsync();

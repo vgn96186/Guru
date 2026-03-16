@@ -357,7 +357,7 @@ export async function generateStudyPlan(options?: GeneratePlanOptions): Promise<
   const today = new Date();
   const daysToExam = profileRepository.getDaysToExam(profile.inicetDate);
   const dailyGoal = profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 120;
-  
+
   // Get exam dates to mark as rest days
   const examDates = new Set([
     profile.inicetDate,

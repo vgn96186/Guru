@@ -66,7 +66,7 @@ export default function LockdownScreen() {
           </Text>
         )}
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.studyBtn}
           onPress={() => navigation.navigate('Tabs', {
             screen: 'HomeTab',
@@ -76,7 +76,7 @@ export default function LockdownScreen() {
             },
           })}
         >
-          <Text style={styles.studyBtnText}>Open Flashcards</Text>
+          <Text style={styles.studyBtnText}>Start 5-min Sprint →</Text>
         </TouchableOpacity>
       </ResponsiveContainer>
     </SafeAreaView>

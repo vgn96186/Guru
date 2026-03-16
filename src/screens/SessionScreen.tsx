@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
   revealSub: { color: '#888', fontSize: 13 },
   revealTopic: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   revealDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
-  revealTopicName: { color: '#fff', fontSize: 16, fontWeight: '600', marginRight: 8 },
+  revealTopicName: { color: '#fff', fontSize: 16, fontWeight: '600', marginRight: 8, flex: 1 },
   revealTopicSub: { color: '#9E9E9E', fontSize: 12 },
   topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topicDoneEmoji: { fontSize: 64, marginBottom: 16 },

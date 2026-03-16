@@ -82,7 +82,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setLoading(false);
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     }
   }
 

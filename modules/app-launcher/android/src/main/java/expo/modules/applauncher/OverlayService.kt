@@ -386,15 +386,17 @@ class OverlayService : Service(), LifecycleOwner {
         val onReturnClick: () -> Unit
     ) : android.widget.FrameLayout(context) {
 
-        private val bubbleView = CompanionBubbleView(context, appLabel, faceTracking) {
-             toggleMenu()
+        private val bubbleView = object : CompanionBubbleView(context, appLabel, faceTracking) {
+            override fun onTap() {
+                toggleMenu()
+            }
         }
 
         private var isMenuExpanded = false
         private var isRecordingPaused = false
 
         private val menuLayout = android.widget.LinearLayout(context).apply {
-            orientation = HORIZONTAL
+            orientation = android.widget.LinearLayout.HORIZONTAL
             visibility = View.GONE
             setPadding(dpToPx(64, context), dpToPx(8, context), dpToPx(12, context), dpToPx(8, context))
             gravity = Gravity.CENTER_VERTICAL
@@ -413,7 +415,7 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         private val infoStack = android.widget.LinearLayout(context).apply {
-            orientation = VERTICAL
+            orientation = android.widget.LinearLayout.VERTICAL
             setPadding(dpToPx(12, context), 0, dpToPx(16, context), 0)
         }
 
@@ -580,12 +582,13 @@ class OverlayService : Service(), LifecycleOwner {
         }
     }
 
-    class CompanionBubbleView(
+    abstract class CompanionBubbleView(
         context: Context,
         private val appLabel: String,
-        private val faceTracking: Boolean,
-        val onTap: () -> Unit
+        private val faceTracking: Boolean
     ) : View(context) {
+        
+        abstract fun onTap()
 
         private val density = context.resources.displayMetrics.density
         private val scaledDensity = context.resources.displayMetrics.scaledDensity
@@ -666,7 +669,6 @@ class OverlayService : Service(), LifecycleOwner {
         override fun onDetachedFromWindow() {
             super.onDetachedFromWindow()
             handler.removeCallbacks(animationRunnable)
-        }
         }
 
         private fun getMessage(): String {
@@ -833,10 +835,6 @@ class OverlayService : Service(), LifecycleOwner {
             } catch (e: Exception) {}
         }
 
-        override fun onDetachedFromWindow() {
-            super.onDetachedFromWindow()
-            handler.removeCallbacks(animationRunnable)
-        }
     }
 
     class DragTouchListener(private val context: Context, private val params: WindowManager.LayoutParams, private val wm: WindowManager) : View.OnTouchListener {
@@ -926,7 +924,7 @@ class OverlayService : Service(), LifecycleOwner {
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
                     if (isTap) {
-                        (v as? CompanionBubbleView)?.onTap?.invoke()
+                        (v as? CompanionBubbleView)?.onTap()
                         v.performClick()
                     } else {
                         snapToEdge(v)

@@ -627,10 +627,10 @@ export async function getRecentTopics(limit: number = 10): Promise<string[]> {
   const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
   const rows = await db.getAllAsync<{ topic_name: string }>(
     `SELECT DISTINCT t.name as topic_name
-     FROM session_metrics sm
-     JOIN topics t ON sm.topic_id = t.id
-     WHERE sm.created_at > ?
-     ORDER BY sm.created_at DESC
+     FROM topic_progress tp
+     JOIN topics t ON tp.topic_id = t.id
+     WHERE tp.last_studied_at > ?
+     ORDER BY tp.last_studied_at DESC
      LIMIT ?`,
     [twoDaysAgo, limit],
   );

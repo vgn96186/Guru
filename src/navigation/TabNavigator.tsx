@@ -172,10 +172,10 @@ export default function TabNavigator() {
   function openRoute(tab: keyof TabParamList, screen?: string, params?: object) {
     setIsActionHubOpen(false);
     if (screen) {
-      navigation.navigate(tab, { screen, params });
+      navigation.navigate('Tabs', { screen: tab, params: { screen, params } });
       return;
     }
-    navigation.navigate(tab);
+    navigation.navigate('Tabs', { screen: tab });
   }
 
   return (

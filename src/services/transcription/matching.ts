@@ -32,7 +32,8 @@ export async function markTopicsFromLecture(
       const sanitized = topicName.trim().toLowerCase();
       if (!sanitized) continue;
 
-      const match = await findTopicIdByKeywords(db, sanitized, subjectName);
+      const matches = await findTopicIdsByKeywordsBatched(db, [sanitized], subjectName);
+      const match = matches.length > 0 ? matches[0].matchId : null;
       if (match) {
         matchedTopicIds.add(match);
         await applyLectureProgressToTopic(db, match, confidence, true, lectureSummary);
@@ -188,5 +189,5 @@ async function applyLectureProgressToTopic(
   summary?: string,
 ) {
   const status = 'seen';
-  await updateTopicProgress(topicId, status, confidence, 0, summary);
+  await updateTopicsProgressBatch([{ topicId, status, confidence, xpToAdd: 0, noteToAppend: summary }]);
 }

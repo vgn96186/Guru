@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { RootStackParamList } from './types';
+import { theme } from '../constants/theme';
 import CheckInScreen from '../screens/CheckInScreen';
 import TabNavigator from './TabNavigator';
 import LockdownScreen from '../screens/LockdownScreen';
@@ -22,7 +23,7 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
   return (
     <Stack.Navigator
       initialRouteName={initialRoute}
-      screenOptions={{ headerShown: false, animation: 'fade' }}
+      screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: theme.colors.background } }}
     >
       <Stack.Screen name="CheckIn" component={CheckInScreen} />
       <Stack.Screen name="Tabs" component={TabNavigator} />

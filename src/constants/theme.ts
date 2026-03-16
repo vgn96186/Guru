@@ -1,12 +1,6 @@
-/**
- * Guru — Centralized Design System
- *
- * All screens should import from this file rather than hardcoding hex values,
- * magic numbers, or inline font sizes. Migrate screens incrementally.
- *
- * Migration order (highest-traffic first):
- *   HomeScreen → SettingsScreen → StatsScreen → SessionScreen → SyllabusScreen
- */
+import { spacing } from './spacing';
+import { radius } from './radius';
+import { shadows } from './shadows';
 
 export const theme = {
   colors: {
@@ -68,60 +62,35 @@ export const theme = {
     subtlePressed: 0.94,
   },
 
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
-    xxl: 32,
-    xxxl: 48,
-  },
+  spacing,
+  radius,
+  shadows,
+  borderRadius: radius, // For backward compatibility temporarily
 
   typography: {
+    headline: { fontSize: 28, fontWeight: '900' as const, letterSpacing: -0.5 },
+    title: { fontSize: 22, fontWeight: '800' as const, letterSpacing: -0.25 },
+    subtitle: { fontSize: 18, fontWeight: '700' as const },
+    body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24 },
+    caption: { fontSize: 13, fontWeight: '400' as const, color: '#8080A0' },
+    sectionLabel: {
+      fontSize: 12,
+      fontWeight: '800' as const,
+      letterSpacing: 1.5,
+      textTransform: 'uppercase' as const,
+      color: '#8080A0'
+    },
+    button: { fontSize: 16, fontWeight: '700' as const },
+
+    // Legacy (keep for compatibility while transitioning)
     h1: { fontSize: 26, fontWeight: '900' as const },
     h2: { fontSize: 22, fontWeight: '800' as const },
     h3: { fontSize: 18, fontWeight: '700' as const },
     h4: { fontSize: 16, fontWeight: '700' as const },
-    body: { fontSize: 15, fontWeight: '400' as const },
     bodySmall: { fontSize: 14, fontWeight: '400' as const },
-    caption: { fontSize: 12, fontWeight: '400' as const },
     label: { fontSize: 13, fontWeight: '600' as const },
-    button: { fontSize: 16, fontWeight: '700' as const },
   },
 
-  borderRadius: {
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 20,
-    xxl: 28,
-    full: 999,
-  },
-
-  shadows: {
-    sm: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    md: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 8,
-      elevation: 6,
-    },
-    glow: (color: string) => ({
-      shadowColor: color,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.6,
-      shadowRadius: 12,
-      elevation: 8,
-    }),
-  },
 } as const;
 
 export type ThemeColors = typeof theme.colors;

@@ -1,6 +1,11 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../constants/theme';
 
@@ -9,57 +14,74 @@ interface ShortcutTileProps {
   icon: keyof typeof Ionicons.glyphMap;
   accent: string;
   onPress: () => void;
-  accessibilityLabel?: string;
-  testID?: string;
 }
 
-export default function ShortcutTile({
-  title,
-  icon,
-  accent,
-  onPress,
-  accessibilityLabel,
-  testID,
-}: ShortcutTileProps) {
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
+export default function ShortcutTile({ title, icon, accent, onPress }: ShortcutTileProps) {
+  const scale = useSharedValue(1);
+
+  function handlePressIn() {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 200 });
+  }
+
+  function handlePressOut() {
+    scale.value = withSpring(1, { damping: 15, stiffness: 200 });
+  }
+
+  function handlePress() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  }
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <TouchableOpacity
-      style={styles.tile}
-      onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        onPress();
-      }}
-      activeOpacity={0.8}
-      testID={testID}
+    <AnimatedTouchableOpacity
+      style={[styles.tile, animatedStyle]}
+      onPress={handlePress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      activeOpacity={1}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
     >
-      <View style={[styles.iconWrap, { backgroundColor: `${accent}1F`, borderColor: `${accent}44` }]}>
-        <Ionicons name={icon} size={20} color={accent} />
+      <View style={[styles.iconBox, { backgroundColor: accent + '1A', borderColor: accent + '33' }]}>
+        <Ionicons name={icon} size={22} color={accent} />
       </View>
-      <Text style={styles.title}>{title}</Text>
-    </TouchableOpacity>
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
+    </AnimatedTouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   tile: {
     flex: 1,
-    minWidth: '30%',
-    backgroundColor: theme.colors.panel,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    alignItems: 'center',
-    gap: 8,
-  },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
+    minWidth: '45%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.xl,
+    padding: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.soft,
   },
-  title: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: theme.radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.md,
+    borderWidth: 1,
+  },
+  title: {
+    ...theme.typography.caption,
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+  },
 });

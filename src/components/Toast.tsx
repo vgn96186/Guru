@@ -2,7 +2,8 @@
  * Lightweight in-app toast notification for Guru.
  *
  * Usage (imperative — no Provider needed):
- *   import { showToast } from '../components/Toast';
+ *   import { theme } from '../constants/theme';
+import { showToast } from '../components/Toast';
  *
  *   showToast('Lecture saved!');
  *   showToast('Recording failed. Tap to retry.', 'error', onTap);
@@ -134,7 +135,7 @@ export function ToastContainer() {
   return (
     <Animated.View
       pointerEvents="box-none"
-      style={[styles.container, { bottom: insets.bottom + 16 }]}
+      style={[styles.container, { bottom: insets.bottom + theme.spacing.xl }]}
     >
       {toasts.map(t => (
         <ToastItem
@@ -150,23 +151,19 @@ export function ToastContainer() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: theme.spacing.xl,
+    right: theme.spacing.xl,
     zIndex: 9999,
     alignItems: 'center',
   },
   toast: {
     width: WIDTH,
-    borderRadius: 12,
+    borderRadius: theme.radius.pill,
     marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
+    ...theme.shadows.floating,
   },
   inner: {
-    padding: 14,
+    paddingVertical: theme.spacing.md, paddingHorizontal: theme.spacing.xl,
   },
   text: {
     color: '#FFFFFF',

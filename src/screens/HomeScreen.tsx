@@ -37,6 +37,7 @@ import {
   type LectureReturnSheetData,
 } from '../hooks/useLectureReturnRecovery';
 import { theme } from '../constants/theme';
+import { AppButton } from '../components/ui';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 import type { Mood } from '../types';
 
@@ -121,8 +122,8 @@ export default function HomeScreen() {
     new Date().getHours() < 12
       ? 'Good morning'
       : new Date().getHours() < 18
-        ? 'Good afternoon'
-        : 'Good evening';
+      ? 'Good afternoon'
+      : 'Good evening';
   const firstName = profile.displayName?.split(' ')[0] || 'Doctor';
 
   const heroCta = (() => {

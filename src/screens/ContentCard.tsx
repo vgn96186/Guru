@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../constants/theme';
+
 import { Ionicons } from '@expo/vector-icons';
 import type {
   AIContent,

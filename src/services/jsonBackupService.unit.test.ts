@@ -1,4 +1,4 @@
-import { exportJsonBackup } from './jsonBackupService';
+import { exportJsonBackup, importJsonBackup } from './jsonBackupService';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
@@ -55,6 +55,189 @@ describe('jsonBackupService', () => {
 
       // Default empty for other tables
       return [];
+    });
+  });
+
+  describe('importJsonBackup', () => {
+    it('should return cancelled if document picker is cancelled', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({ canceled: true });
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Cancelled' });
+    });
+
+    it('should return cancelled if document picker has no assets', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({ canceled: false, assets: [] });
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Cancelled' });
+    });
+
+    it('should return invalid JSON file if parsing fails', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///mock/file.json' }],
+      });
+
+      const FileSystem = require('expo-file-system/legacy');
+      FileSystem.readAsStringAsync.mockResolvedValueOnce('invalid json {');
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Invalid JSON file' });
+      expect(consoleSpy).toHaveBeenCalledWith('[Backup] JSON parse failed during import:', expect.any(Error));
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should return invalid JSON file if backup is not an object', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///mock/file.json' }],
+      });
+
+      const FileSystem = require('expo-file-system/legacy');
+      FileSystem.readAsStringAsync.mockResolvedValueOnce('"string"');
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Invalid JSON file' });
+      expect(consoleSpy).toHaveBeenCalledWith('[Backup] JSON parse failed during import:', expect.any(Error));
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should return missing version if version is not provided', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///mock/file.json' }],
+      });
+
+      const FileSystem = require('expo-file-system/legacy');
+      FileSystem.readAsStringAsync.mockResolvedValueOnce(JSON.stringify({ tables: {} }));
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Invalid backup format — missing version' });
+    });
+
+    it('should return newer version error if version > BACKUP_VERSION', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///mock/file.json' }],
+      });
+
+      const FileSystem = require('expo-file-system/legacy');
+      FileSystem.readAsStringAsync.mockResolvedValueOnce(JSON.stringify({ version: 9999, tables: {} }));
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Backup was made with a newer version of the app' });
+    });
+
+    it('should restore backup successfully and execute transaction', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///mock/file.json' }],
+      });
+
+      const validBackup = {
+        version: 3,
+        tables: {
+          user_profile: [{ id: 1, groq_api_key: 'new_key' }],
+          topic_progress: [
+            { id: 100, status: 'seen', topic_ref: { subjectShortCode: 'ANA', topicName: 'Upper Limb' } },
+          ],
+        },
+      };
+
+      const FileSystem = require('expo-file-system/legacy');
+      FileSystem.readAsStringAsync.mockResolvedValueOnce(JSON.stringify(validBackup));
+
+      mockDb.execAsync = jest.fn();
+      mockDb.runAsync = jest.fn();
+
+      // Mock PRAGMA table_info calls
+      mockDb.getAllAsync.mockImplementation(async (query: string) => {
+        if (query.includes('FROM subjects')) return [{ id: 1, name: 'Anatomy', short_code: 'ANA' }];
+        if (query.includes('FROM topics')) return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
+        if (query.includes('PRAGMA table_info(user_profile)')) return [{ name: 'id' }, { name: 'groq_api_key' }];
+        if (query.includes('PRAGMA table_info(topic_progress)')) return [{ name: 'id' }, { name: 'topic_id' }, { name: 'status' }];
+        return [];
+      });
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: true, message: 'Restored backup successfully' });
+
+      expect(mockDb.execAsync).toHaveBeenCalledWith('BEGIN IMMEDIATE');
+      expect(mockDb.execAsync).toHaveBeenCalledWith('COMMIT');
+
+      // Check DELETE statements
+      expect(mockDb.runAsync).toHaveBeenCalledWith('DELETE FROM topic_progress');
+
+      // Check UPDATE for user_profile
+      expect(mockDb.runAsync).toHaveBeenCalledWith('UPDATE user_profile SET groq_api_key = ? WHERE id = 1', ['new_key']);
+
+      // Check INSERT for topic_progress
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        'INSERT OR REPLACE INTO topic_progress (id, status, topic_id) VALUES (?, ?, ?)',
+        [100, 'seen', 10]
+      );
+    });
+
+    it('should rollback transaction if restore fails', async () => {
+      const DocumentPicker = require('expo-document-picker');
+      DocumentPicker.getDocumentAsync.mockResolvedValueOnce({
+        canceled: false,
+        assets: [{ uri: 'file:///mock/file.json' }],
+      });
+
+      const validBackup = {
+        version: 3,
+        tables: {
+          topic_progress: [
+            { id: 100, status: 'seen', topic_ref: { subjectShortCode: 'ANA', topicName: 'Upper Limb' } },
+          ],
+        },
+      };
+
+      const FileSystem = require('expo-file-system/legacy');
+      FileSystem.readAsStringAsync.mockResolvedValueOnce(JSON.stringify(validBackup));
+
+      mockDb.execAsync = jest.fn();
+      mockDb.runAsync = jest.fn().mockRejectedValue(new Error('DB Error'));
+
+      mockDb.getAllAsync.mockImplementation(async (query: string) => {
+        if (query.includes('FROM subjects')) return [{ id: 1, name: 'Anatomy', short_code: 'ANA' }];
+        if (query.includes('FROM topics')) return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
+        if (query.includes('PRAGMA table_info(topic_progress)')) return [{ name: 'id' }, { name: 'topic_id' }, { name: 'status' }];
+        return [];
+      });
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await importJsonBackup();
+
+      expect(result).toEqual({ ok: false, message: 'Import failed during restore.' });
+
+      expect(mockDb.execAsync).toHaveBeenCalledWith('BEGIN IMMEDIATE');
+      expect(mockDb.execAsync).toHaveBeenCalledWith('ROLLBACK');
+
+      consoleSpy.mockRestore();
     });
   });
 

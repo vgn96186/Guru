@@ -73,8 +73,7 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
 
   const profile = await profileRepository.getProfile();
   await FileSystemLegacy.makeDirectoryAsync(TRANSCRIPT_DIR, { intermediates: true });
-  const fileName =
-    'transcript_' + Date.now() + '_' + generateSecureRandomString(7) + '.txt';
+  const fileName = 'transcript_' + Date.now() + '_' + generateSecureRandomString(7) + '.txt';
   const fileUri = TRANSCRIPT_DIR + fileName;
 
   await FileSystemLegacy.writeAsStringAsync(fileUri, normalized, {

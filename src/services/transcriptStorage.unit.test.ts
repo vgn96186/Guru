@@ -37,6 +37,25 @@ async function loadService() {
 }
 
 describe('transcriptStorage', () => {
+  beforeEach(() => {
+    // Reset mocks
+    (FileSystem.writeAsStringAsync as jest.Mock).mockClear();
+    (FileSystem.readAsStringAsync as jest.Mock).mockClear();
+    (FileSystem.makeDirectoryAsync as jest.Mock).mockClear();
+    (FileSystem.getInfoAsync as jest.Mock).mockClear();
+    (FileSystem.copyAsync as jest.Mock).mockClear();
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockClear();
+
+    // Ensure mock return values are reset in case any tests override them
+    (FileSystem.getInfoAsync as jest.Mock).mockImplementation(async () => ({ exists: true }));
+    (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(
+      async () => 'transcript content',
+    );
+    (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockImplementation(
+      async () => 'content://mock/uri/file.txt',
+    );
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
@@ -171,6 +190,14 @@ describe('transcriptStorage', () => {
   });
 
   describe('loadTranscriptFromFile', () => {
+    it('returns null if input is falsy', async () => {
+      const result = await loadTranscriptFromFile(null);
+      expect(result).toBeNull();
+
+      const resultEmpty = await loadTranscriptFromFile('');
+      expect(resultEmpty).toBeNull();
+    });
+
     it('returns the text if it is not a file URI', async () => {
       const { service } = await loadService();
       const result = await service.loadTranscriptFromFile('just text');
@@ -213,6 +240,35 @@ describe('transcriptStorage', () => {
       );
 
       expect(result).toBe('recovered content');
+    });
+
+    it('returns an error message if both primary and fallback paths fail', async () => {
+      // Mock failure for both reads
+      (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
+        Promise.reject(new Error('File not found anywhere')),
+      );
+
+      const result = await loadTranscriptFromFile(
+        'file:///old/install/path/transcripts/transcript_123.txt',
+      );
+
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
+      expect(result).toBe('Transcript file could not be loaded.');
+    });
+
+    it('returns an error message immediately if original URI is already the current fallback URI and fails', async () => {
+      // Mock failure for read
+      (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
+        Promise.reject(new Error('Current path file not found')),
+      );
+
+      // Give it the exact path that the fallback logic would resolve to
+      const result = await loadTranscriptFromFile(
+        'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
+      );
+
+      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(1);
+      expect(result).toBe('Transcript file could not be loaded.');
     });
   });
 });

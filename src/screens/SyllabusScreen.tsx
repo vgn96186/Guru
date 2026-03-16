@@ -1,5 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, Alert, ActivityIndicator, Animated, Easing, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  StatusBar,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Animated,
+  Easing,
+  TextInput,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -74,8 +86,8 @@ export default function SyllabusScreen() {
            SELECT 1 FROM topics c
            WHERE c.parent_topic_id = t.id
          )
-         GROUP BY t.subject_id`
-      )
+         GROUP BY t.subject_id`,
+      ),
     ]);
 
     const map = new Map<number, { total: number; seen: number }>();
@@ -96,16 +108,34 @@ export default function SyllabusScreen() {
     const sortedSubjects = [...subs].sort((a, b) => {
       const aCoverage = map.get(a.id) ?? { total: 0, seen: 0 };
       const bCoverage = map.get(b.id) ?? { total: 0, seen: 0 };
-      const aMetrics = metricMap.get(a.id) ?? { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
-      const bMetrics = metricMap.get(b.id) ?? { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
+      const aMetrics = metricMap.get(a.id) ?? {
+        due: 0,
+        highYield: 0,
+        unseen: 0,
+        withNotes: 0,
+        weak: 0,
+      };
+      const bMetrics = metricMap.get(b.id) ?? {
+        due: 0,
+        highYield: 0,
+        unseen: 0,
+        withNotes: 0,
+        weak: 0,
+      };
       const aPct = aCoverage.total > 0 ? aCoverage.seen / aCoverage.total : 0;
       const bPct = bCoverage.total > 0 ? bCoverage.seen / bCoverage.total : 0;
 
       switch (sortMode) {
         case 'due':
-          return bMetrics.due - aMetrics.due || bMetrics.weak - aMetrics.weak || b.inicetWeight - a.inicetWeight;
+          return (
+            bMetrics.due - aMetrics.due ||
+            bMetrics.weak - aMetrics.weak ||
+            b.inicetWeight - a.inicetWeight
+          );
         case 'coverage':
-          return aPct - bPct || bMetrics.unseen - aMetrics.unseen || b.inicetWeight - a.inicetWeight;
+          return (
+            aPct - bPct || bMetrics.unseen - aMetrics.unseen || b.inicetWeight - a.inicetWeight
+          );
         case 'high_yield':
           return bMetrics.highYield - aMetrics.highYield || b.inicetWeight - a.inicetWeight;
         case 'weight':
@@ -133,13 +163,15 @@ export default function SyllabusScreen() {
       return;
     }
     const db = getDb();
-    void db.getAllAsync<{ subject_id: number; c: number }>(
-      `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
-      [`%${searchLower}%`],
-    ).then(rows => {
-      setSearchMatchIds(new Set(rows.map(r => r.subject_id)));
-      setSearchMatchCounts(new Map(rows.map(r => [r.subject_id, r.c])));
-    });
+    void db
+      .getAllAsync<{
+        subject_id: number;
+        c: number;
+      }>(`SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`, [`%${searchLower}%`])
+      .then((rows) => {
+        setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
+        setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
+      });
   }, [searchQuery]);
 
   async function handleManualSync() {
@@ -176,12 +208,18 @@ export default function SyllabusScreen() {
     ]);
     const count = countRow?.c;
     const subjectMap = new Map(subjects.map((s: any) => [s.id, s.name]));
-    const summary = coverage.map((c: any) => `${subjectMap.get(c.subject_id) || `ID ${c.subject_id} (NOT IN SUBJECTS)`}: ${c.c} topics`).join('\n');
+    const summary = coverage
+      .map(
+        (c: any) =>
+          `${subjectMap.get(c.subject_id) || `ID ${c.subject_id} (NOT IN SUBJECTS)`}: ${c.c} topics`,
+      )
+      .join('\n');
 
-    const diag = `Total topics: ${count}\n\n` +
-                 `--- Topics Per Subject ---\n${summary}\n\n` +
-                 `--- Subjects Map ---\n${subjects.map((s:any) => `${s.id}: ${s.name}`).join('\n')}`;
-    
+    const diag =
+      `Total topics: ${count}\n\n` +
+      `--- Topics Per Subject ---\n${summary}\n\n` +
+      `--- Subjects Map ---\n${subjects.map((s: any) => `${s.id}: ${s.name}`).join('\n')}`;
+
     Alert.alert('Database State', diag);
   }
 
@@ -189,26 +227,33 @@ export default function SyllabusScreen() {
   const seenTopics = Array.from(coverage.values()).reduce((s, v) => s + v.seen, 0);
   const overallPct = totalTopics > 0 ? Math.round((seenTopics / totalTopics) * 100) : 0;
   const totalDue = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.due, 0);
-  const totalHighYield = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.highYield, 0);
-  const totalWithNotes = Array.from(subjectMetrics.values()).reduce((sum, item) => sum + item.withNotes, 0);
+  const totalHighYield = Array.from(subjectMetrics.values()).reduce(
+    (sum, item) => sum + item.highYield,
+    0,
+  );
+  const totalWithNotes = Array.from(subjectMetrics.values()).reduce(
+    (sum, item) => sum + item.withNotes,
+    0,
+  );
 
   const searchLower = searchQuery.trim().toLowerCase();
-  const filteredSubjects = subjects.filter(subject =>
-    subject.name.toLowerCase().includes(searchLower) ||
-    subject.shortCode.toLowerCase().includes(searchLower) ||
-    searchMatchIds.has(subject.id)
+  const filteredSubjects = subjects.filter(
+    (subject) =>
+      subject.name.toLowerCase().includes(searchLower) ||
+      subject.shortCode.toLowerCase().includes(searchLower) ||
+      searchMatchIds.has(subject.id),
   );
-  
+
   // Animated progress
   const progressAnim = useRef(new Animated.Value(0)).current;
   const prevPct = useRef(0);
   const countAnim = useRef(new Animated.Value(0)).current;
   const [displayCount, setDisplayCount] = useState(seenTopics);
-  
+
   useEffect(() => {
     const increased = overallPct > prevPct.current;
     prevPct.current = overallPct;
-    
+
     // Animate progress bar
     Animated.timing(progressAnim, {
       toValue: overallPct,
@@ -216,7 +261,7 @@ export default function SyllabusScreen() {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-    
+
     // Animate count
     Animated.timing(countAnim, {
       toValue: seenTopics,
@@ -224,19 +269,19 @@ export default function SyllabusScreen() {
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-    
+
     const listener = countAnim.addListener(({ value }) => {
       setDisplayCount(Math.round(value));
     });
-    
+
     // Haptic on milestone
     if (increased && overallPct > 0 && overallPct % 10 === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-    
+
     return () => countAnim.removeListener(listener);
   }, [overallPct, seenTopics]);
-  
+
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 100],
     outputRange: ['0%', '100%'],
@@ -250,7 +295,9 @@ export default function SyllabusScreen() {
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
             <Text style={styles.title}>Syllabus</Text>
-              <Text style={styles.subtitle}>Track exam prep through micro-topics, due reviews, and high-yield coverage.</Text>
+            <Text style={styles.subtitle}>
+              Track exam prep through micro-topics, due reviews, and high-yield coverage.
+            </Text>
             {seenTopics === 0 ? (
               <View style={styles.emptySummaryCard}>
                 <Text style={styles.emptySummaryTitle}>You are starting fresh</Text>
@@ -265,7 +312,9 @@ export default function SyllabusScreen() {
                 <Text style={styles.overallLabel}>/{totalTopics} micro-topics</Text>
               </View>
               <View style={[styles.pctBadge, overallPct >= 50 && styles.pctBadgeGood]}>
-                <Text style={[styles.pctText, overallPct >= 50 && { color: '#4CAF50' }]}>{overallPct}%</Text>
+                <Text style={[styles.pctText, overallPct >= 50 && { color: '#4CAF50' }]}>
+                  {overallPct}%
+                </Text>
               </View>
             </View>
             {/* Progress bar */}
@@ -278,11 +327,7 @@ export default function SyllabusScreen() {
               <Text style={styles.snapshotPill}>Notes {totalWithNotes}</Text>
             </View>
           </View>
-          <TouchableOpacity 
-            onPress={handleManualSync} 
-            disabled={refreshing}
-            style={styles.syncBtn}
-          >
+          <TouchableOpacity onPress={handleManualSync} disabled={refreshing} style={styles.syncBtn}>
             {refreshing ? (
               <ActivityIndicator size="small" color="#6C63FF" />
             ) : (
@@ -299,14 +344,19 @@ export default function SyllabusScreen() {
             style={styles.searchInput}
           />
           <View style={styles.sortRow}>
-            {SORT_OPTIONS.map(option => (
+            {SORT_OPTIONS.map((option) => (
               <TouchableOpacity
                 key={option.key}
                 style={[styles.sortChip, sortMode === option.key && styles.sortChipActive]}
                 onPress={() => setSortMode(option.key)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.sortChipText, sortMode === option.key && styles.sortChipTextActive]}>
+                <Text
+                  style={[
+                    styles.sortChipText,
+                    sortMode === option.key && styles.sortChipTextActive,
+                  ]}
+                >
                   {option.label}
                 </Text>
               </TouchableOpacity>
@@ -315,7 +365,7 @@ export default function SyllabusScreen() {
         </View>
         <FlatList
           data={filteredSubjects}
-          keyExtractor={s => s.id.toString()}
+          keyExtractor={(s) => s.id.toString()}
           contentContainerStyle={styles.list}
           ListEmptyComponent={
             <View style={styles.emptyState}>
@@ -329,7 +379,13 @@ export default function SyllabusScreen() {
               coverage={coverage.get(item.id) ?? { total: 0, seen: 0 }}
               metrics={subjectMetrics.get(item.id)}
               matchingTopicsCount={searchMatchCounts.get(item.id)}
-              onPress={() => navigation.navigate('TopicDetail', { subjectId: item.id, subjectName: item.name, initialSearchQuery: searchQuery.trim() })}
+              onPress={() =>
+                navigation.navigate('TopicDetail', {
+                  subjectId: item.id,
+                  subjectName: item.name,
+                  initialSearchQuery: searchQuery.trim(),
+                })
+              }
             />
           )}
         />
@@ -340,7 +396,13 @@ export default function SyllabusScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, paddingTop: 20 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 16,
+    paddingTop: 20,
+  },
   title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 8 },
   subtitle: { color: '#8E94A5', fontSize: 13, lineHeight: 19, marginBottom: 10 },
   emptySummaryCard: {
@@ -351,13 +413,24 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  emptySummaryTitle: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '800', marginBottom: 4 },
+  emptySummaryTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
   emptySummaryText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
   statsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   overallBadge: { flexDirection: 'row', alignItems: 'baseline' },
   overallPct: { color: '#6C63FF', fontWeight: '900', fontSize: 24 },
   overallLabel: { color: '#9E9E9E', fontSize: 14, marginLeft: 2 },
-  pctBadge: { backgroundColor: '#2A2A38', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginLeft: 12 },
+  pctBadge: {
+    backgroundColor: '#2A2A38',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginLeft: 12,
+  },
   pctBadgeGood: { backgroundColor: '#1A2A1A' },
   pctText: { color: '#888', fontWeight: '800', fontSize: 14 },
   progressTrack: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, overflow: 'hidden' },
@@ -374,7 +447,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  syncBtn: { backgroundColor: '#1A1A24', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#6C63FF33' },
+  syncBtn: {
+    backgroundColor: '#1A1A24',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#6C63FF33',
+  },
   syncBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 18 },
   controls: { paddingHorizontal: 16, paddingBottom: 8, gap: 10 },
   searchInput: {

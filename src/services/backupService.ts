@@ -33,7 +33,7 @@ async function hasSQLiteHeader(filePath: string): Promise<boolean> {
 export async function exportDatabase() {
   try {
     const fileExists = await FileSystem.getInfoAsync(DB_PATH);
-    if (!fileExists.exists) {
+    if (!(fileExists?.exists)) {
       Alert.alert('Error', 'Database file not found.');
       return;
     }
@@ -71,7 +71,7 @@ export async function importDatabase() {
 
     // Ensure SQLite dir exists first
     const dirInfo = await FileSystem.getInfoAsync(DB_DIR);
-    if (!dirInfo.exists) {
+    if (!(dirInfo?.exists)) {
       await FileSystem.makeDirectoryAsync(DB_DIR, { intermediates: true });
     }
 
@@ -95,7 +95,7 @@ export async function importDatabase() {
     (global as any).__GURU_DB__ = null;
 
     const existing = await FileSystem.getInfoAsync(DB_PATH);
-    if (existing.exists) {
+    if (existing?.exists) {
       await FileSystem.copyAsync({ from: DB_PATH, to: rollbackPath });
     }
 
@@ -106,7 +106,7 @@ export async function importDatabase() {
     } catch (replaceError) {
       // Restore old DB if replacement fails
       const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
-      if (rollbackExists.exists) {
+      if (rollbackExists?.exists) {
         await FileSystem.copyAsync({ from: rollbackPath, to: DB_PATH });
       }
       await FileSystem.deleteAsync(tempImportPath, { idempotent: true });
@@ -124,7 +124,7 @@ export async function importDatabase() {
     } catch (validationError) {
       // Imported DB is corrupt — rollback
       const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
-      if (rollbackExists.exists) {
+      if (rollbackExists?.exists) {
         await FileSystem.copyAsync({ from: rollbackPath, to: DB_PATH });
       }
       await FileSystem.deleteAsync(rollbackPath, { idempotent: true });

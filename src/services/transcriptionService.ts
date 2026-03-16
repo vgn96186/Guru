@@ -40,7 +40,7 @@ export async function transcribeAudio(opts: {
   const fileInfo = await FileSystem.getInfoAsync(
     audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`,
   );
-  if (!fileInfo.exists || fileInfo.size === 0) {
+  if (!(fileInfo?.exists) || fileInfo.size === 0) {
     if (__DEV__) console.warn('[Transcription] File does not exist or is empty:', audioFilePath);
     return {
       subject: 'Unknown',

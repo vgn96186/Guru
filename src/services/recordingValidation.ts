@@ -38,7 +38,7 @@ export async function validateRecordingWithBackoff(
     try {
       const info = await validateFile(path);
       lastInfo = info;
-      if (info.exists && info.size > policy.minValidBytes) {
+      if ((info?.exists) && info.size > policy.minValidBytes) {
         return {
           validated: true,
           attemptsUsed: attempt + 1,

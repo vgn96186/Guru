@@ -105,7 +105,7 @@ export class BatchTranscriber {
 
     // Validate input file
     const fileInfo = await FileSystem.getInfoAsync(wavFilePath);
-    if (!fileInfo.exists) {
+    if (!(fileInfo?.exists)) {
       throw new TranscriptionError(
         'AUDIO_FORMAT_ERROR',
         `WAV file not found: ${wavFilePath}`,
@@ -251,7 +251,7 @@ export class BatchTranscriber {
     // WAV header is 44 bytes. Rest is PCM data.
     // Duration = dataBytes / (sampleRate * channels * bytesPerSample)
     const fileInfo = await FileSystem.getInfoAsync(wavFilePath);
-    if (!fileInfo.exists || !('size' in fileInfo)) {
+    if (!(fileInfo?.exists) || !('size' in fileInfo)) {
       throw new Error('Cannot read WAV file info');
     }
 

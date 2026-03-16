@@ -31,7 +31,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
       const oldInfo = await FileSystem.getInfoAsync(oldDbPath);
       const newInfo = await FileSystem.getInfoAsync(newDbPath);
 
-      if (oldInfo.exists && !newInfo.exists) {
+      if ((oldInfo?.exists) && !(newInfo?.exists)) {
         console.log('[DB] Migrating legacy study_guru.db to neet_study.db...');
         await FileSystem.makeDirectoryAsync(dbDir, { intermediates: true });
         await FileSystem.copyAsync({ from: oldDbPath, to: newDbPath });

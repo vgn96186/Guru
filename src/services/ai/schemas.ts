@@ -72,7 +72,13 @@ export const DailyAgendaSchema = z.object({
     z.object({
       id: z.string(),
       title: z.string(),
-      topicIds: z.array(z.number()),
+      topicIds: z
+        .array(z.union([z.number(), z.string()]))
+        .transform((val) =>
+          val
+            .map((v) => (typeof v === 'string' ? parseInt(v.replace(/[^0-9]/g, ''), 10) || 0 : v))
+            .filter((v) => v > 0),
+        ),
       durationMinutes: z.number(),
       startTime: z.string().optional(),
       type: z.enum(['study', 'review', 'test', 'break']),

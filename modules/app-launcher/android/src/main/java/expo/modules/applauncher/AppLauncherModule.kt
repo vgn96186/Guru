@@ -215,17 +215,13 @@ class AppLauncherModule : Module() {
             return@AsyncFunction granted
         }
 
-        /**
-         * Starts audio recording.
-         * @param targetPackage Package name of the app whose audio to capture.
-         *                     If empty or null, uses microphone fallback.
-         * Returns the absolute path where the .m4a will be saved.
-         */
         AsyncFunction("startRecording") { targetPackage: String ->
             val context = appContext.reactContext ?: throw Exception("No context")
+            // CRITICAL: Save to Public Documents/Guru so it SURVIVES reinstall
             val dir = getPublicGuruDir()
             val path = File(dir, "lecture_${System.currentTimeMillis()}.m4a").absolutePath
             currentRecordingPath = path
+            // ...
 
             // Determine recording mode & target UID
             val useInternal = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q

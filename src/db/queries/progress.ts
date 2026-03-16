@@ -24,15 +24,29 @@ function isValidFutureDate(dateStr: string | null): boolean {
 export async function getUserProfile(): Promise<UserProfile> {
   const db = getDb();
   const r = await db.getFirstAsync<{
-    display_name: string; total_xp: number; current_level: number;
-    streak_current: number; streak_best: number; daily_goal_minutes: number;
-    inicet_date: string; neet_date: string; preferred_session_length: number;
-    openrouter_api_key: string; openrouter_key: string; notifications_enabled: number; last_active_date: string | null; sync_code: string | null;
-    strict_mode_enabled: number; streak_shield_available: number;
-    body_doubling_enabled: number; blocked_content_types: string;
+    display_name: string;
+    total_xp: number;
+    current_level: number;
+    streak_current: number;
+    streak_best: number;
+    daily_goal_minutes: number;
+    inicet_date: string;
+    neet_date: string;
+    preferred_session_length: number;
+    openrouter_api_key: string;
+    openrouter_key: string;
+    notifications_enabled: number;
+    last_active_date: string | null;
+    sync_code: string | null;
+    strict_mode_enabled: number;
+    streak_shield_available: number;
+    body_doubling_enabled: number;
+    blocked_content_types: string;
     exam_type: string | null;
-    idle_timeout_minutes: number; break_duration_minutes: number;
-    notification_hour: number; focus_subject_ids: string;
+    idle_timeout_minutes: number;
+    break_duration_minutes: number;
+    notification_hour: number;
+    focus_subject_ids: string;
     guru_frequency: UserProfile['guruFrequency'] | null;
     focus_audio_enabled: number;
     visual_timers_enabled: number;
@@ -53,19 +67,39 @@ export async function getUserProfile(): Promise<UserProfile> {
 
   if (!r) {
     return {
-      displayName: 'Doctor', totalXp: 0, currentLevel: 1,
-      streakCurrent: 0, streakBest: 0, dailyGoalMinutes: 120,
+      displayName: 'Doctor',
+      totalXp: 0,
+      currentLevel: 1,
+      streakCurrent: 0,
+      streakBest: 0,
+      dailyGoalMinutes: 120,
       examType: 'INICET' as const,
-      inicetDate: DEFAULT_INICET_DATE, neetDate: DEFAULT_NEET_DATE,
-      preferredSessionLength: 45, openrouterApiKey: '', openrouterKey: '', groqApiKey: '',
-      notificationsEnabled: true, lastActiveDate: null, syncCode: null,
-      strictModeEnabled: false, bodyDoublingEnabled: true,
-      blockedContentTypes: [], idleTimeoutMinutes: 2,
-      breakDurationMinutes: 5, notificationHour: 7, guruFrequency: 'normal', focusSubjectIds: [],
-      focusAudioEnabled: false, visualTimersEnabled: false, faceTrackingEnabled: false,
-      quizCorrectCount: 0, lastBackupDate: null,
-      useLocalModel: false, localModelPath: null,
-      useLocalWhisper: false, localWhisperPath: null,
+      inicetDate: DEFAULT_INICET_DATE,
+      neetDate: DEFAULT_NEET_DATE,
+      preferredSessionLength: 45,
+      openrouterApiKey: '',
+      openrouterKey: '',
+      groqApiKey: '',
+      notificationsEnabled: true,
+      lastActiveDate: null,
+      syncCode: null,
+      strictModeEnabled: false,
+      bodyDoublingEnabled: true,
+      blockedContentTypes: [],
+      idleTimeoutMinutes: 2,
+      breakDurationMinutes: 5,
+      notificationHour: 7,
+      guruFrequency: 'normal',
+      focusSubjectIds: [],
+      focusAudioEnabled: false,
+      visualTimersEnabled: false,
+      faceTrackingEnabled: false,
+      quizCorrectCount: 0,
+      lastBackupDate: null,
+      useLocalModel: false,
+      localModelPath: null,
+      useLocalWhisper: false,
+      localWhisperPath: null,
       quickStartStreak: 0,
       studyResourceMode: 'hybrid',
       harassmentTone: 'shame',
@@ -138,14 +172,26 @@ export async function getUserProfile(): Promise<UserProfile> {
 export async function updateUserProfile(updates: Partial<UserProfile>): Promise<void> {
   const db = getDb();
   const map: Record<string, string> = {
-    displayName: 'display_name', totalXp: 'total_xp', currentLevel: 'current_level',
-    streakCurrent: 'streak_current', streakBest: 'streak_best', dailyGoalMinutes: 'daily_goal_minutes',
+    displayName: 'display_name',
+    totalXp: 'total_xp',
+    currentLevel: 'current_level',
+    streakCurrent: 'streak_current',
+    streakBest: 'streak_best',
+    dailyGoalMinutes: 'daily_goal_minutes',
     examType: 'exam_type',
-    inicetDate: 'inicet_date', neetDate: 'neet_date', preferredSessionLength: 'preferred_session_length',
-    openrouterApiKey: 'openrouter_api_key', openrouterKey: 'openrouter_key',
-    notificationsEnabled: 'notifications_enabled', lastActiveDate: 'last_active_date', syncCode: 'sync_code', strictModeEnabled: 'strict_mode_enabled',
-    bodyDoublingEnabled: 'body_doubling_enabled', idleTimeoutMinutes: 'idle_timeout_minutes',
-    breakDurationMinutes: 'break_duration_minutes', notificationHour: 'notification_hour',
+    inicetDate: 'inicet_date',
+    neetDate: 'neet_date',
+    preferredSessionLength: 'preferred_session_length',
+    openrouterApiKey: 'openrouter_api_key',
+    openrouterKey: 'openrouter_key',
+    notificationsEnabled: 'notifications_enabled',
+    lastActiveDate: 'last_active_date',
+    syncCode: 'sync_code',
+    strictModeEnabled: 'strict_mode_enabled',
+    bodyDoublingEnabled: 'body_doubling_enabled',
+    idleTimeoutMinutes: 'idle_timeout_minutes',
+    breakDurationMinutes: 'break_duration_minutes',
+    notificationHour: 'notification_hour',
     guruFrequency: 'guru_frequency',
     focusAudioEnabled: 'focus_audio_enabled',
     visualTimersEnabled: 'visual_timers_enabled',
@@ -585,10 +631,10 @@ export async function getRecentTopics(limit: number = 10): Promise<string[]> {
   const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
   const rows = await db.getAllAsync<{ topic_name: string }>(
     `SELECT DISTINCT t.name as topic_name
-     FROM session_metrics sm
-     JOIN topics t ON sm.topic_id = t.id
-     WHERE sm.created_at > ?
-     ORDER BY sm.created_at DESC
+     FROM topic_progress tp
+     JOIN topics t ON tp.topic_id = t.id
+     WHERE tp.last_studied_at > ?
+     ORDER BY tp.last_studied_at DESC
      LIMIT ?`,
     [twoDaysAgo, limit],
   );

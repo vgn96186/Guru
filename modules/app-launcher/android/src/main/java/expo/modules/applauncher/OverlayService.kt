@@ -386,10 +386,8 @@ class OverlayService : Service(), LifecycleOwner {
         val onReturnClick: () -> Unit
     ) : android.widget.FrameLayout(context) {
 
-        private val bubbleView = object : CompanionBubbleView(context, appLabel, faceTracking) {
-            override fun onTap() {
-                toggleMenu()
-            }
+        private val bubbleView = CompanionBubbleView(context, appLabel, faceTracking) {
+             toggleMenu()
         }
 
         private var isMenuExpanded = false
@@ -582,13 +580,12 @@ class OverlayService : Service(), LifecycleOwner {
         }
     }
 
-    abstract class CompanionBubbleView(
+    class CompanionBubbleView(
         context: Context,
         private val appLabel: String,
-        private val faceTracking: Boolean
+        private val faceTracking: Boolean,
+        val onTap: () -> Unit
     ) : View(context) {
-        
-        abstract fun onTap()
 
         private val density = context.resources.displayMetrics.density
         private val scaledDensity = context.resources.displayMetrics.scaledDensity
@@ -663,11 +660,6 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         fun destroy() {
-            handler.removeCallbacks(animationRunnable)
-        }
-
-        override fun onDetachedFromWindow() {
-            super.onDetachedFromWindow()
             handler.removeCallbacks(animationRunnable)
         }
 
@@ -835,6 +827,10 @@ class OverlayService : Service(), LifecycleOwner {
             } catch (e: Exception) {}
         }
 
+        override fun onDetachedFromWindow() {
+            super.onDetachedFromWindow()
+            handler.removeCallbacks(animationRunnable)
+        }
     }
 
     class DragTouchListener(private val context: Context, private val params: WindowManager.LayoutParams, private val wm: WindowManager) : View.OnTouchListener {
@@ -924,7 +920,7 @@ class OverlayService : Service(), LifecycleOwner {
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                     v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
                     if (isTap) {
-                        (v as? CompanionBubbleView)?.onTap()
+                        (v as? CompanionBubbleView)?.onTap?.invoke()
                         v.performClick()
                     } else {
                         snapToEdge(v)

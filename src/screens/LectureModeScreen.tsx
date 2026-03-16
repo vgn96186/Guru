@@ -525,8 +525,9 @@ export default function LectureModeScreen() {
       const uri = recording.getURI();
       const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
 
-      if (__DEV__)
+      if (__DEV__) {
         console.log('[LectureMode] Recording stopped. URI:', uri, 'Duration:', recordingDuration);
+      }
 
       recordingRef.current = null;
       setRecording(null);

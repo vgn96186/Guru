@@ -56,9 +56,7 @@ try {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type RealtimeTranscriptCallback = (
-  progress: TranscriptionProgress,
-) => void;
+export type RealtimeTranscriptCallback = (progress: TranscriptionProgress) => void;
 
 interface SliceResult {
   text: string;
@@ -170,15 +168,13 @@ export class RealtimeTranscriptionController {
       },
       onSliceStart: (sliceIndex: number, startSec: number) => {
         // A new audio slice has started — the previous one is being transcribed
-        console.log(
-          `[Realtime] Slice ${sliceIndex} started at ${startSec.toFixed(1)}s`,
-        );
+        if (__DEV__)
+          console.log(`[Realtime] Slice ${sliceIndex} started at ${startSec.toFixed(1)}s`);
       },
       onSilenceDetected: (startSec: number, durationSec: number) => {
         this.totalVadSkippedSeconds += durationSec;
-        console.log(
-          `[Realtime] Silence: ${durationSec.toFixed(1)}s at ${startSec.toFixed(1)}s`,
-        );
+        if (__DEV__)
+          console.log(`[Realtime] Silence: ${durationSec.toFixed(1)}s at ${startSec.toFixed(1)}s`);
       },
     });
 
@@ -266,9 +262,7 @@ export class RealtimeTranscriptionController {
 
   private async initVad(): Promise<void> {
     if (!initWhisperVad) {
-      console.warn(
-        '[RealtimeTranscriber] initWhisperVad not available, proceeding without VAD',
-      );
+      console.warn('[RealtimeTranscriber] initWhisperVad not available, proceeding without VAD');
       return;
     }
 
@@ -377,15 +371,10 @@ export class RealtimeTranscriptionController {
   private emitProgress(): void {
     if (!this.callback) return;
 
-    const elapsedSeconds =
-      (Date.now() - this.processingStartTime) / 1000;
+    const elapsedSeconds = (Date.now() - this.processingStartTime) / 1000;
 
     const progress: TranscriptionProgress = {
-      state: this.isPaused
-        ? 'paused'
-        : this.isRunning
-          ? 'transcribing'
-          : 'completed',
+      state: this.isPaused ? 'paused' : this.isRunning ? 'transcribing' : 'completed',
       percentage: -1, // Indeterminate for real-time mode
       partialTranscript: this.segments.map((s) => s.text).join(' '),
       segments: [...this.segments],

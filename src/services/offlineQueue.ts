@@ -189,7 +189,7 @@ export async function pruneCompletedItems(): Promise<void> {
       [cutoff],
     );
     if (result.changes > 0) {
-      console.log(`[OfflineQueue] Pruned ${result.changes} old completed items`);
+      if (__DEV__) console.log(`[OfflineQueue] Pruned ${result.changes} old completed items`);
     }
   } catch (error) {
     console.warn('[OfflineQueue] Failed to prune completed items:', error);
@@ -238,7 +238,7 @@ export async function processQueue(): Promise<void> {
       return;
     }
 
-    console.log(`[OfflineQueue] Processing ${items.length} queued request(s)`);
+    if (__DEV__) console.log(`[OfflineQueue] Processing ${items.length} queued request(s)`);
 
     // Process items one at a time (avoid parallel processing issues)
     for (const item of items) {
@@ -259,16 +259,17 @@ export async function processQueue(): Promise<void> {
       // If this is a retry (failed status), apply backoff delay
       if (item.status === 'failed' && item.attempts > 1) {
         const delay = getRetryDelay(item.attempts - 1);
-        console.log(
-          `[OfflineQueue] Item ${item.id} is a retry (attempt ${item.attempts}), waiting ${delay}ms`,
-        );
+        if (__DEV__)
+          console.log(
+            `[OfflineQueue] Item ${item.id} is a retry (attempt ${item.attempts}), waiting ${delay}ms`,
+          );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
       try {
         await processor(item);
         await markCompleted(item.id);
-        console.log(`[OfflineQueue] Successfully processed item ${item.id}`);
+        if (__DEV__) console.log(`[OfflineQueue] Successfully processed item ${item.id}`);
       } catch (err: any) {
         const errorMsg = err?.message ?? String(err);
         await markFailed(item.id, errorMsg);

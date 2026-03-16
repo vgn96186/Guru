@@ -43,7 +43,7 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
   const segmentAnalyses: LectureAnalysis[] = [];
 
   for (let i = 0; i < segments.length; i++) {
-    console.log(`[Analysis] Analyzing segment ${i + 1}/${segments.length}`);
+    if (__DEV__) console.log(`[Analysis] Analyzing segment ${i + 1}/${segments.length}`);
     try {
       const analysis = await runSingleAnalysisPass(segments[i]);
       segmentAnalyses.push(analysis);
@@ -97,7 +97,7 @@ Segment ${i + 1}:
 
   const extractPrompt = `${META_SUMMARIZE_PROMPT}\n\nHere are the segment summaries:\n"""\n${aggregatedInput}\n"""`;
 
-  console.log('[Analysis] Running final meta-summarization pass...');
+  if (__DEV__) console.log('[Analysis] Running final meta-summarization pass...');
   try {
     const { parsed, modelUsed } = await generateJSONWithRouting(
       [{ role: 'user', content: extractPrompt }],

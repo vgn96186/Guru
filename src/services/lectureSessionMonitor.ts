@@ -121,9 +121,10 @@ export async function retryFailedTasks(groqKey?: string) {
   const recoveredTx = await retryFailedTranscriptions(groqKey);
   const recoveredEnh = await retryPendingNoteEnhancements();
   if (recoveredTx > 0 || recoveredEnh > 0) {
-    console.log(
-      `[Recovery] Recovered ${recoveredTx} transcripts and ${recoveredEnh} note enhancements.`,
-    );
+    if (__DEV__)
+      console.log(
+        `[Recovery] Recovered ${recoveredTx} transcripts and ${recoveredEnh} note enhancements.`,
+      );
   }
 }
 
@@ -172,7 +173,7 @@ export async function runFullTranscriptionPipeline(opts: {
       embedding,
     });
 
-    void enhanceNoteInBackground(noteId as number, logId, analysis).catch(err => {
+    void enhanceNoteInBackground(noteId as number, logId, analysis).catch((err) => {
       console.error('[SessionMonitor] Note enhancement failed:', err);
     });
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
@@ -235,7 +236,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
       // Orphan audio found!
       const fileUri = PUBLIC_REC_DIR + fileName;
-      console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
+      if (__DEV__) console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
 
       // Create a dummy log entry
       const logResult = await db.runAsync(
@@ -251,7 +252,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
         appName: 'Recovered Audio',
         durationMinutes: 0,
         logId: logId as number,
-      }).catch(err => {
+      }).catch((err) => {
         console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
       });
 
@@ -282,7 +283,7 @@ export async function autoRepairLegacyNotes(): Promise<number> {
     const transcriptText = await getTranscriptText(note.transcript);
     if (!transcriptText?.trim()) continue;
     try {
-      console.log(`[Repair] Repairing note ${note.id}...`);
+      if (__DEV__) console.log(`[Repair] Repairing note ${note.id}...`);
       const analysis = await analyzeTranscript(transcriptText);
       if (
         analysis.subject === 'Unknown' &&
@@ -348,7 +349,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
 
       const files = await FileSystem.readDirectoryAsync(dir);
       const orphanedFiles = files.filter(
-        (fileName) => fileName.endsWith('.txt') && !referencedFiles.has(fileName)
+        (fileName) => fileName.endsWith('.txt') && !referencedFiles.has(fileName),
       );
 
       // Process in chunks of 5
@@ -364,7 +365,10 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
 
             if (!content.trim()) return;
 
-            console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
+            if (__DEV__)
+              console.log(
+                `[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`,
+              );
 
             const analysis = await analyzeTranscript(content);
             const quickNote = buildQuickLectureNote(analysis);
@@ -381,7 +385,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
             // Add to set so we don't recover it twice if it exists in both dirs
             referencedFiles.add(fileName);
             recovered++;
-          })
+          }),
         );
       }
     }

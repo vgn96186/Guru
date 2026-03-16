@@ -94,13 +94,15 @@ async function getRoomTopic(code: string): Promise<string> {
   const raw = new TextEncoder().encode(cleanCode + '::topic-v2');
   const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', raw);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   return ROOM_PREFIX + hashHex.slice(0, 16);
 }
 
 function generateSecureId(prefix: string): string {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(4));
-  const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  const hex = Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
   return prefix + '_' + hex;
 }
 
@@ -109,7 +111,7 @@ async function ensureConnected(code: string): Promise<void> {
     console.warn('[DeviceSync] MQTT module unavailable');
     return;
   }
-  
+
   if (client && currentRoomCode === code) return;
   if (connectPromise && (currentRoomCode === code || connectingRoomCode === code)) {
     await connectPromise;
@@ -131,7 +133,7 @@ async function ensureConnected(code: string): Promise<void> {
     if (client && currentRoomCode === code) return;
 
     const clientId = generateSecureId('guru');
-    const nextClient = mqtt.connect(BROKER_URL, { 
+    const nextClient = mqtt.connect(BROKER_URL, {
       clientId,
       // Add connection timeout and keepalive
       connectTimeout: 10 * 1000,
@@ -140,20 +142,20 @@ async function ensureConnected(code: string): Promise<void> {
       // Reject unauthorized connections (basic auth not supported by public broker)
       // In production, use a private broker with authentication
     });
-    
+
     const topic = await getRoomTopic(code);
 
     nextClient.on('connect', () => {
       isConnected = true;
-      console.log('[DeviceSync] Connected to MQTT broker');
+      if (__DEV__) console.log('[DeviceSync] Connected to MQTT broker');
       nextClient.subscribe(topic, (err: any) => {
         if (err) {
           console.error('[DeviceSync] Failed to subscribe to topic:', err);
         } else {
-          console.log('[DeviceSync] Subscribed to topic:', topic);
+          if (__DEV__) console.log('[DeviceSync] Subscribed to topic:', topic);
         }
       });
-      
+
       // Flush outgoing queue
       while (outgoingQueue.length > 0) {
         const msg = outgoingQueue.shift();
@@ -170,13 +172,13 @@ async function ensureConnected(code: string): Promise<void> {
           console.warn('[DeviceSync] Failed to decrypt message');
           return;
         }
-        
+
         // Validate timestamp (with clock skew tolerance)
         if (decrypted.ts && Math.abs(Date.now() - decrypted.ts) > CLOCK_SKEW_TOLERANCE_MS) {
           console.warn('[DeviceSync] Message timestamp too old or from future, ignoring');
           return;
         }
-        
+
         // Check for replay attacks
         if (decrypted.msgId && markAndCheckReplay(decrypted.msgId, decrypted.ts ?? Date.now())) {
           console.debug('[DeviceSync] Duplicate message detected, ignoring');
@@ -188,17 +190,21 @@ async function ensureConnected(code: string): Promise<void> {
           console.warn('[DeviceSync] Message missing type field');
           return;
         }
-        
+
         // Validate message type
         const validTypes: string[] = [
-          'LECTURE_STARTED', 'LECTURE_STOPPED', 'DOOMSCROLL_DETECTED',
-          'NOTE_SAVED', 'BREAK_STARTED', 'LECTURE_RESUMED'
+          'LECTURE_STARTED',
+          'LECTURE_STOPPED',
+          'DOOMSCROLL_DETECTED',
+          'NOTE_SAVED',
+          'BREAK_STARTED',
+          'LECTURE_RESUMED',
         ];
         if (!validTypes.includes(msg.type)) {
           console.warn('[DeviceSync] Unknown message type:', msg.type);
           return;
         }
-        
+
         // Validate message structure based on type
         switch (msg.type) {
           case 'LECTURE_STARTED':
@@ -220,7 +226,7 @@ async function ensureConnected(code: string): Promise<void> {
             }
             break;
         }
-        
+
         for (const listener of subscribers.values()) {
           try {
             listener(msg as SyncMessage);
@@ -248,12 +254,12 @@ async function ensureConnected(code: string): Promise<void> {
       if (client === nextClient) {
         client = null;
       }
-      console.log('[DeviceSync] MQTT connection closed');
+      if (__DEV__) console.log('[DeviceSync] MQTT connection closed');
     });
 
     // Handle reconnection
     nextClient.on('reconnect', () => {
-      console.log('[DeviceSync] MQTT reconnecting...');
+      if (__DEV__) console.log('[DeviceSync] MQTT reconnecting...');
     });
 
     client = nextClient;
@@ -277,16 +283,16 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
     console.error('[DeviceSync] Invalid room code provided');
     return () => {};
   }
-  
+
   // Validate room code format (4-6 uppercase alphanumeric)
   const cleanCode = code.trim().toUpperCase();
   if (!/^[A-Z0-9]{4,6}$/.test(cleanCode)) {
     console.warn('[DeviceSync] Unusual room code format:', code);
   }
-  
+
   const subscriberId = `sync_${nextSubscriberId++}`;
   subscribers.set(subscriberId, onMessage);
-  
+
   ensureConnected(cleanCode).catch((err) => {
     console.warn('[DeviceSync] Failed to connect:', err);
   });
@@ -310,27 +316,29 @@ export function sendSyncMessage(msg: SyncMessage) {
     }
     return;
   }
-  
+
   const code = currentRoomCode;
   // Encrypt async, then publish
-  encryptPayload(code, msg).then(envelope => {
-    if (client && isConnected) {
-      client.publish(activeTopic, envelope, (err: any) => {
-        if (err) {
-          console.warn('[DeviceSync] Publish failed:', err);
-          // Re-queue for retry
-          if (outgoingQueue.length < 50) {
-            outgoingQueue.push(msg);
+  encryptPayload(code, msg)
+    .then((envelope) => {
+      if (client && isConnected) {
+        client.publish(activeTopic, envelope, (err: any) => {
+          if (err) {
+            console.warn('[DeviceSync] Publish failed:', err);
+            // Re-queue for retry
+            if (outgoingQueue.length < 50) {
+              outgoingQueue.push(msg);
+            }
           }
+        });
+      } else {
+        // Connection lost, re-queue
+        if (outgoingQueue.length < 50) {
+          outgoingQueue.push(msg);
         }
-      });
-    } else {
-      // Connection lost, re-queue
-      if (outgoingQueue.length < 50) {
-        outgoingQueue.push(msg);
       }
-    }
-  }).catch(err => {
-    console.warn('[DeviceSync] encrypt failed, dropping message:', err);
-  });
+    })
+    .catch((err) => {
+      console.warn('[DeviceSync] encrypt failed, dropping message:', err);
+    });
 }

@@ -157,7 +157,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
     } catch (err: any) {
       if (isMountedRef.current) {
         if (err.name === 'AbortError') {
-          console.log('[GuruChatOverlay] Request aborted');
+          if (__DEV__) console.log('[GuruChatOverlay] Request aborted');
           return;
         }
 

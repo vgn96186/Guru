@@ -9,8 +9,6 @@ import { Audio } from 'expo-av';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 
-const { } = {};
-
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SleepMode'>;
 
 function buildAlarmDate(hour: number, minute: number): Date {
@@ -42,7 +40,7 @@ export default function SleepModeScreen() {
   const [pickMinute, setPickMinute] = useState(() => {
     const d = new Date();
     d.setHours(d.getHours() + 8);
-    return Math.round(d.getMinutes() / 15) * 15 % 60;
+    return (Math.round(d.getMinutes() / 15) * 15) % 60;
   });
 
   // Custom time picker states
@@ -84,7 +82,7 @@ export default function SleepModeScreen() {
     if (isTracking) {
       Accelerometer.setUpdateInterval(1000);
       let lastPoint = { x: 0, y: 0, z: 0 };
-      subscription = Accelerometer.addListener(data => {
+      subscription = Accelerometer.addListener((data) => {
         const dx = Math.abs(data.x - lastPoint.x);
         const dy = Math.abs(data.y - lastPoint.y);
         const dz = Math.abs(data.z - lastPoint.z);
@@ -156,11 +154,11 @@ export default function SleepModeScreen() {
   }
 
   function adjustHour(delta: number) {
-    setPickHour(h => (h + delta + 24) % 24);
+    setPickHour((h) => (h + delta + 24) % 24);
   }
 
   function adjustMinute(delta: number) {
-    setPickMinute(m => (m + delta + 60) % 60);
+    setPickMinute((m) => (m + delta + 60) % 60);
   }
 
   const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -197,9 +195,7 @@ export default function SleepModeScreen() {
             <Text style={styles.trackingText}>
               {snoozed ? 'Snoozed 10 min 💤' : 'Nightstand Mode Active'}
             </Text>
-            <Text style={styles.alarmText}>
-              Alarm set for {alarmLabel}
-            </Text>
+            <Text style={styles.alarmText}>Alarm set for {alarmLabel}</Text>
             <Text style={styles.trackingSub}>Screen will stay on. Place face down.</Text>
           </View>
         ) : (
@@ -256,7 +252,13 @@ export default function SleepModeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#000' },
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  clock: { color: '#333', fontSize: 80, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 40 },
+  clock: {
+    color: '#333',
+    fontSize: 80,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    marginBottom: 40,
+  },
 
   setupInfo: { marginBottom: 40, alignItems: 'center' },
   setupText: { color: '#555', textAlign: 'center', fontSize: 14, lineHeight: 20, marginBottom: 24 },
@@ -265,7 +267,14 @@ const styles = StyleSheet.create({
   pickerUnit: { alignItems: 'center' },
   pickerBtn: { padding: 8 },
   pickerBtnText: { color: '#6C63FF', fontSize: 18, fontWeight: '700' },
-  pickerValue: { color: '#fff', fontSize: 36, fontWeight: '900', fontVariant: ['tabular-nums'], minWidth: 56, textAlign: 'center' },
+  pickerValue: {
+    color: '#fff',
+    fontSize: 36,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    minWidth: 56,
+    textAlign: 'center',
+  },
   pickerColon: { color: '#fff', fontSize: 36, fontWeight: '900', marginBottom: 8 },
   pickerLabel: { color: '#555', fontSize: 12, textAlign: 'center' },
 
@@ -300,8 +309,25 @@ const styles = StyleSheet.create({
   alarmTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
   alarmSub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48 },
 
-  stopBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 40, paddingVertical: 20, borderRadius: 20, elevation: 8, shadowColor: '#6C63FF', shadowOpacity: 0.5, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, marginBottom: 16 },
+  stopBtn: {
+    backgroundColor: '#6C63FF',
+    paddingHorizontal: 40,
+    paddingVertical: 20,
+    borderRadius: 20,
+    elevation: 8,
+    shadowColor: '#6C63FF',
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    marginBottom: 16,
+  },
   stopBtnText: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
-  snoozeBtn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 16, borderWidth: 1, borderColor: '#444' },
+  snoozeBtn: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
   snoozeBtnText: { color: '#9E9E9E', fontSize: 16, fontWeight: '700' },
 });

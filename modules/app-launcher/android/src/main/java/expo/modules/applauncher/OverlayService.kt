@@ -505,7 +505,7 @@ class OverlayService : Service(), LifecycleOwner {
             val cardParams = LayoutParams(dpToPx(80, context), LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.TOP or Gravity.START
                 // Keep inside the pill body (CompanionBubbleView expands downward).
-                topMargin = dpToPx(96, context) + dpToPx(12, context)
+                topMargin = dpToPx(96, context) + dpToPx(32, context)
                 leftMargin = dpToPx(8, context)
             }
 
@@ -634,7 +634,7 @@ class CompanionBubbleView(
             private set
         // Extra height in dp when fully expanded. Increased to ensure the pill fully
         // covers the Pause/Finish controls (prevents "Finish" spilling past the pill).
-        private val expandedExtraDp = 220f
+        private val expandedExtraDp = 165f
         private var expandAnimator: ValueAnimator? = null
         var onExpandHeightChanged: ((Int) -> Unit)? = null
 
@@ -643,6 +643,7 @@ class CompanionBubbleView(
         private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#A0A3B1"); textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)) }
         private val timePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)) }
         private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#8A7CFF"); style = Paint.Style.FILL }
+        private val redDotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#FF5252"); style = Paint.Style.FILL }
 
         private val animationRunnable = object : Runnable {
             override fun run() {
@@ -823,6 +824,13 @@ class CompanionBubbleView(
                 val statusStr = if (isPaused) "Paused" else "Recording"
                 canvas.drawText(statusStr, cx, statusY, labelPaint)
                 labelPaint.alpha = 255
+
+                if (!isPaused) {
+                    val dotAlpha = (contentAlpha * (0.3f + 0.7f * breathe) * 255).toInt()
+                    redDotPaint.alpha = dotAlpha
+                    val redDotY = statusY + dpToPx(14f)
+                    canvas.drawCircle(cx, redDotY, dpToPx(3f), redDotPaint)
+                }
             }
         }
 

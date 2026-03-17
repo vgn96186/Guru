@@ -469,74 +469,94 @@ class AppLauncherModule : Module() {
                 decoder.configure(inputFormat, null, null, 0)
                 decoder.start()
 
-                val pcmChunks = mutableListOf<ByteArray>()
-                val bufInfo = MediaCodec.BufferInfo()
-                var inputEos = false
-                var outputEos = false
-                val timeoutUs = 10_000L
+                val targetRate = 16000
+                val targetChannels = 1
+                
+                var totalWavDataSize = 0
+                val wavFile = java.io.File(wavPath)
+                
+                java.io.RandomAccessFile(wavFile, "rw").use { raf ->
+                    // Reserve space for WAV header (44 bytes)
+                    raf.write(ByteArray(44))
 
-                while (!outputEos) {
-                    // Feed input
-                    if (!inputEos) {
-                        val inIdx = decoder.dequeueInputBuffer(timeoutUs)
-                        if (inIdx >= 0) {
-                            val inBuf = decoder.getInputBuffer(inIdx)!!
-                            val readSize = extractor.readSampleData(inBuf, 0)
-                            if (readSize < 0) {
-                                decoder.queueInputBuffer(inIdx, 0, 0, 0,
-                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM)
-                                inputEos = true
-                            } else {
-                                decoder.queueInputBuffer(inIdx, 0, readSize,
-                                    extractor.sampleTime, 0)
-                                extractor.advance()
+                    val bufInfo = MediaCodec.BufferInfo()
+                    var inputEos = false
+                    var outputEos = false
+                    val timeoutUs = 10_000L
+
+                    while (!outputEos) {
+                        // Feed input
+                        if (!inputEos) {
+                            val inIdx = decoder.dequeueInputBuffer(timeoutUs)
+                            if (inIdx >= 0) {
+                                val inBuf = decoder.getInputBuffer(inIdx)!!
+                                val readSize = extractor.readSampleData(inBuf, 0)
+                                if (readSize < 0) {
+                                    decoder.queueInputBuffer(inIdx, 0, 0, 0,
+                                        MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                                    inputEos = true
+                                } else {
+                                    decoder.queueInputBuffer(inIdx, 0, readSize,
+                                        extractor.sampleTime, 0)
+                                    extractor.advance()
+                                }
+                            }
+                        }
+
+                        // Drain output
+                        val outIdx = decoder.dequeueOutputBuffer(bufInfo, timeoutUs)
+                        if (outIdx >= 0) {
+                            if (bufInfo.size > 0) {
+                                val outBuf = decoder.getOutputBuffer(outIdx)!!
+                                val chunk = ByteArray(bufInfo.size)
+                                outBuf.get(chunk)
+                                
+                                val finalChunk = if (sampleRate != targetRate || channels != targetChannels) {
+                                    resamplePcm(chunk, sampleRate, channels, targetRate, targetChannels)
+                                } else {
+                                    chunk
+                                }
+                                
+                                raf.write(finalChunk)
+                                totalWavDataSize += finalChunk.size
+                            }
+                            decoder.releaseOutputBuffer(outIdx, false)
+                            if (bufInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
+                                outputEos = true
                             }
                         }
                     }
 
-                    // Drain output
-                    val outIdx = decoder.dequeueOutputBuffer(bufInfo, timeoutUs)
-                    if (outIdx >= 0) {
-                        if (bufInfo.size > 0) {
-                            val outBuf = decoder.getOutputBuffer(outIdx)!!
-                            val chunk = ByteArray(bufInfo.size)
-                            outBuf.get(chunk)
-                            pcmChunks.add(chunk)
-                        }
-                        decoder.releaseOutputBuffer(outIdx, false)
-                        if (bufInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) {
-                            outputEos = true
-                        }
-                    }
+                    decoder.stop()
+                    decoder.release()
+                    extractor.release()
+
+                    // Write proper WAV header at the beginning
+                    raf.seek(0)
+                    val bytesPerSample = 2
+                    val byteRate = targetRate * targetChannels * bytesPerSample
+                    val blockAlign = targetChannels * bytesPerSample
+                    val headerSize = 44
+
+                    val buf = ByteBuffer.allocate(headerSize).order(ByteOrder.LITTLE_ENDIAN)
+                    buf.put("RIFF".toByteArray())
+                    buf.putInt(totalWavDataSize + headerSize - 8)
+                    buf.put("WAVE".toByteArray())
+                    buf.put("fmt ".toByteArray())
+                    buf.putInt(16)
+                    buf.putShort(1)
+                    buf.putShort(targetChannels.toShort())
+                    buf.putInt(targetRate)
+                    buf.putInt(byteRate)
+                    buf.putShort(blockAlign.toShort())
+                    buf.putShort((bytesPerSample * 8).toShort())
+                    buf.put("data".toByteArray())
+                    buf.putInt(totalWavDataSize)
+
+                    raf.write(buf.array())
                 }
 
-                decoder.stop()
-                decoder.release()
-                extractor.release()
-
-                // Combine all PCM chunks
-                val totalPcmSize = pcmChunks.sumOf { it.size }
-                val pcmData = ByteArray(totalPcmSize)
-                var offset = 0
-                for (chunk in pcmChunks) {
-                    System.arraycopy(chunk, 0, pcmData, offset, chunk.size)
-                    offset += chunk.size
-                }
-                Log.i(TAG, "convertToWav: decoded $totalPcmSize bytes of PCM (rate=$sampleRate, ch=$channels)")
-
-                // Resample to 16kHz mono if needed
-                val targetRate = 16000
-                val finalPcm: ByteArray
-                if (sampleRate != targetRate || channels != 1) {
-                    finalPcm = resamplePcm(pcmData, sampleRate, channels, targetRate, 1)
-                    Log.i(TAG, "convertToWav: resampled to ${finalPcm.size} bytes (16kHz mono)")
-                } else {
-                    finalPcm = pcmData
-                }
-
-                // Write WAV header + PCM data
-                writeWavFile(wavPath, finalPcm, targetRate, 1)
-                Log.i(TAG, "convertToWav: wrote WAV file ${File(wavPath).length()} bytes")
+                Log.i(TAG, "convertToWav: wrote WAV file ${wavFile.length()} bytes")
 
                 return@AsyncFunction wavPath
             } catch (e: Exception) {

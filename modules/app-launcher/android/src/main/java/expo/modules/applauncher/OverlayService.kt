@@ -10,13 +10,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
-import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.PixelFormat
-import android.graphics.RadialGradient
 import android.graphics.RectF
 import android.graphics.Shader
 import android.os.Build
@@ -51,7 +49,6 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.sin
-import kotlin.math.cos
 
 enum class FocusState { NEUTRAL, FOCUSED, DISTRACTED, DROWSY, ABSENT }
 
@@ -387,73 +384,82 @@ class OverlayService : Service(), LifecycleOwner {
     ) : android.widget.FrameLayout(context) {
 
         private val bubbleView = CompanionBubbleView(context, appLabel, faceTracking) {
-             toggleMenu()
+            toggleExpanded()
         }
 
-        private var isMenuExpanded = false
+        private var isExpanded = false
         private var isRecordingPaused = false
 
-        private val menuLayout = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
+        private val expandedCard = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
             visibility = View.GONE
-            setPadding(dpToPx(64, context), dpToPx(8, context), dpToPx(12, context), dpToPx(8, context))
-            gravity = Gravity.CENTER_VERTICAL
-            background = android.graphics.drawable.GradientDrawable().apply {
-                orientation = android.graphics.drawable.GradientDrawable.Orientation.TL_BR
-                colors = intArrayOf(
-                    Color.parseColor("#E61A1A24"), // theme.colors.surface with high alpha
-                    Color.parseColor("#E60F0F14")  // theme.colors.background with high alpha
-                )
-                cornerRadius = dpToPx(32, context).toFloat()
-                setStroke(dpToPx(1, context), Color.parseColor("#26FFFFFF")) // Subtle inner rim
-            }
-            elevation = 12f
-            translationX = dpToPx(20, context).toFloat()
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dpToPx(14, context), dpToPx(18, context), dpToPx(14, context), dpToPx(16, context))
+            // Transparent — the pill shape is drawn by CompanionBubbleView
+            setBackgroundColor(Color.TRANSPARENT)
             alpha = 0f
         }
 
-        private val infoStack = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(dpToPx(12, context), 0, dpToPx(16, context), 0)
+        private val headerRow = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
         }
 
-        private val appLabelView = android.widget.TextView(context).apply {
-            text = appLabel.uppercase()
-            textSize = 10f
-            setTextColor(Color.parseColor("#B8B8D0"))
-            setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
-            letterSpacing = 0.15f
-            maxLines = 1
-        }
-
-        private val modeChip = android.widget.TextView(context).apply {
-            text = if (faceTracking) "LIVE FOCUS" else "STUDY TIMER"
-            textSize = 8f
-            setTextColor(Color.parseColor("#6C63FF"))
-            setPadding(dpToPx(6, context), dpToPx(1, context), dpToPx(6, context), dpToPx(1, context))
-            setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
+        private val recDot = View(context).apply {
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#1A6C63FF"))
-                cornerRadius = 999f
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(Color.parseColor("#8A7CFF"))
             }
+            alpha = 0.8f
+        }
+
+        private val headerText = android.widget.TextView(context).apply {
+            text = appLabel
+            textSize = 12f
+            setTextColor(Color.parseColor("#A0A3B1"))
+            setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.NORMAL)
+            maxLines = 1
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setSingleLine(true)
+        }
+
+        private val timerText = android.widget.TextView(context).apply {
+            text = "00:00"
+            textSize = 40f
+            setTextColor(Color.WHITE)
+            setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.NORMAL))
+            letterSpacing = -0.02f
+        }
+
+        private val statusText = android.widget.TextView(context).apply {
+            text = "You're in focus mode"
+            textSize = 14f
+            setTextColor(Color.parseColor("#A0A3B1"))
+            gravity = Gravity.CENTER
+        }
+
+        private val actionsRow = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
         }
 
         private val pauseBtn = android.widget.TextView(context).apply {
             text = "Pause"
-            textSize = 11f
+            textSize = 12f
+            setSingleLine()
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(dpToPx(14, context), dpToPx(8, context), dpToPx(14, context), dpToPx(8, context))
+            setPadding(dpToPx(8, context), dpToPx(11, context), dpToPx(8, context), dpToPx(11, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#33334D"))
-                cornerRadius = dpToPx(12, context).toFloat()
+                setColor(Color.parseColor("#14FFFFFF"))
+                cornerRadius = dpToPx(14, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#1AFFFFFF"))
             }
             setOnClickListener {
                 isRecordingPaused = !isRecordingPaused
-                text = if (isRecordingPaused) "Resume" else "Pause"
-                setTextColor(if (isRecordingPaused) Color.parseColor("#6C63FF") else Color.WHITE)
-                
+                setPaused(isRecordingPaused)
+
                 val recAction = if (isRecordingPaused) RecordingService.ACTION_PAUSE else RecordingService.ACTION_RESUME
                 context.startService(Intent(context, RecordingService::class.java).apply { action = recAction })
 
@@ -464,16 +470,18 @@ class OverlayService : Service(), LifecycleOwner {
             }
         }
 
-        private val returnBtn = android.widget.TextView(context).apply {
+        private val finishBtn = android.widget.TextView(context).apply {
             text = "Finish"
-            textSize = 11f
+            textSize = 12f
+            setSingleLine()
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(dpToPx(14, context), dpToPx(8, context), dpToPx(14, context), dpToPx(8, context))
+            setPadding(dpToPx(8, context), dpToPx(11, context), dpToPx(8, context), dpToPx(11, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#F44336"))
-                cornerRadius = dpToPx(12, context).toFloat()
+                setColor(Color.parseColor("#266C63FF")) // purple accent
+                cornerRadius = dpToPx(14, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#408A7CFF"))
             }
             setOnClickListener {
                 vibrateLight(context)
@@ -486,27 +494,38 @@ class OverlayService : Service(), LifecycleOwner {
             clipChildren = false
             clipToPadding = false
 
-            infoStack.addView(appLabelView)
-            infoStack.addView(modeChip, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dpToPx(2, context)
-            })
-            menuLayout.addView(infoStack)
-
-            menuLayout.addView(pauseBtn, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = dpToPx(6, context)
-            })
-            menuLayout.addView(returnBtn)
-
-            // Add menu first so it's behind the bubble
-            addView(menuLayout, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                gravity = Gravity.CENTER_VERTICAL
-            })
-
-            val bubbleParams = LayoutParams(dpToPx(84, context), dpToPx(84, context)).apply {
-                gravity = Gravity.CENTER_VERTICAL
+            // Bubble view draws the entire pill shape (circle when collapsed, elongated pill when expanded)
+            val bubbleSize = dpToPx(96, context)
+            val bubbleParams = LayoutParams(bubbleSize, bubbleSize).apply {
+                gravity = Gravity.TOP or Gravity.START
             }
             addView(bubbleView, bubbleParams)
-            
+
+            // Buttons overlay the pill's lower section (below the circle area + status text)
+            val cardParams = LayoutParams(dpToPx(80, context), LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.TOP or Gravity.START
+                // Keep inside the pill body (CompanionBubbleView expands downward).
+                topMargin = dpToPx(96, context) + dpToPx(12, context)
+                leftMargin = dpToPx(8, context)
+            }
+
+            expandedCard.addView(pauseBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+            expandedCard.addView(finishBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dpToPx(10, context)
+            })
+
+            addView(expandedCard, cardParams)
+
+            // When the pill grows, update the FrameLayout so WindowManager sees the new size
+            bubbleView.onExpandHeightChanged = { newBubbleH ->
+                val lp = bubbleView.layoutParams
+                if (lp != null && lp.height != newBubbleH) {
+                    lp.height = newBubbleH
+                    bubbleView.layoutParams = lp
+                }
+            }
+
+            // Entry animation
             scaleX = 0.2f
             scaleY = 0.2f
             alpha = 0f
@@ -525,62 +544,70 @@ class OverlayService : Service(), LifecycleOwner {
             TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), ctx.resources.displayMetrics
         ).toInt()
 
-        fun updateTime(secs: Int) { bubbleView.updateTime(secs) }
+        fun updateTime(secs: Int) {
+            bubbleView.updateTime(secs)
+            // format MM:SS
+            val mins = secs / 60
+            val s = secs % 60
+            timerText.text = "${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}"
+        }
+
         fun updateFocusState(state: FocusState) { bubbleView.updateFocusState(state) }
 
         fun setPaused(paused: Boolean) {
             isRecordingPaused = paused
+            bubbleView.setPaused(paused)
+
             pauseBtn.text = if (paused) "Resume" else "Pause"
-            pauseBtn.setTextColor(if (paused) Color.parseColor("#6C63FF") else Color.WHITE)
+            statusText.text = if (paused) "Take your time" else "You're in focus mode"
+            // Dim rec dot when paused
+            recDot.alpha = if (paused) 0.35f else 0.8f
         }
 
-        private fun toggleMenu() {
-            isMenuExpanded = !isMenuExpanded
+        private fun toggleExpanded() {
+            isExpanded = !isExpanded
             vibrateLight(context)
-            
-            if (isMenuExpanded) {
-                menuLayout.visibility = View.VISIBLE
-                menuLayout.animate()
-                    .translationX(0f)
-                    .alpha(1f)
-                    .setDuration(400)
-                    .setInterpolator(OvershootInterpolator(1.0f))
+
+            // Drive the pill morph animation on the bubble view
+            bubbleView.animateExpand(isExpanded)
+
+            if (isExpanded) {
+                // Show buttons with a slight delay so the pill has started growing
+                expandedCard.visibility = View.VISIBLE
+                expandedCard.alpha = 0f
+                expandedCard.animate().alpha(1f)
+                    .setStartDelay(120)
+                    .setDuration(200)
                     .start()
             } else {
-                menuLayout.animate()
-                    .translationX(dpToPx(20, context).toFloat())
-                    .alpha(0f)
-                    .setDuration(300)
-                    .setInterpolator(AccelerateDecelerateInterpolator())
-                    .withEndAction { menuLayout.visibility = View.GONE }
+                expandedCard.animate().alpha(0f)
+                    .setDuration(150)
+                    .withEndAction { expandedCard.visibility = View.GONE }
                     .start()
             }
         }
-        
+
         fun destroy() {
             bubbleView.destroy()
         }
-        
+
         private fun vibrateLight(ctx: Context) {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     val vm = ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager
-                    vm?.defaultVibrator?.vibrate(VibrationEffect.createOneShot(15, VibrationEffect.DEFAULT_AMPLITUDE))
+                    vm?.defaultVibrator?.vibrate(VibrationEffect.createOneShot(18, 50))
                 } else {
                     @Suppress("DEPRECATION")
                     val v = ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        v?.vibrate(VibrationEffect.createOneShot(15, VibrationEffect.DEFAULT_AMPLITUDE))
-                    } else {
-                        @Suppress("DEPRECATION")
-                        v?.vibrate(15)
-                    }
+                    @Suppress("DEPRECATION")
+                    v?.vibrate(18)
                 }
-            } catch (_: Exception) {}
+            } catch (_: Throwable) {
+            }
         }
     }
 
-    class CompanionBubbleView(
+class CompanionBubbleView(
         context: Context,
         private val appLabel: String,
         private val faceTracking: Boolean,
@@ -593,6 +620,7 @@ class OverlayService : Service(), LifecycleOwner {
         private fun spToPx(sp: Float) = sp * scaledDensity
 
         private var seconds = 0
+        private var isPaused = false
         private var focusState = FocusState.NEUTRAL
         private var prevFocusState = FocusState.NEUTRAL
         private var lastMilestone = 0
@@ -600,28 +628,25 @@ class OverlayService : Service(), LifecycleOwner {
         private var stateTransitionProgress = 1f
         private val handler = Handler(Looper.getMainLooper())
         private var breathePhase = 0f
-        private var particlePhase = 0f
 
-        private val encourageFocused = arrayOf("Focused", "Locked in", "Guru is happy", "Study mode", "Flow state", "Keep going")
-        private val encourageNeutral = arrayOf("Guru is here", "Let's learn", "Ready?", "Together")
-        private val encourageDistracted = arrayOf("Eyes here! 👀", "Come back", "Guru is waiting", "Stay focused")
-        private val encourageDrowsy = arrayOf("Wake up! ☕", "Energy up!", "Stay with Guru", "Take a breath")
-        private val encourageAbsent = arrayOf("Guru misses you", "Where are you?", "Still here...", "Hello?")
-        private val milestoneMessages = arrayOf("15m! 🌟", "30m! ⭐", "45m! 💫", "1 HOUR! 🏆", "1h 15m! 🔥", "1h 30m! 💪")
+        // Pill expansion animation
+        var expandProgress = 0f
+            private set
+        // Extra height in dp when fully expanded. Increased to ensure the pill fully
+        // covers the Pause/Finish controls (prevents "Finish" spilling past the pill).
+        private val expandedExtraDp = 220f
+        private var expandAnimator: ValueAnimator? = null
+        var onExpandHeightChanged: ((Int) -> Unit)? = null
 
         private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
-        private val glowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL; maskFilter = BlurMaskFilter(dpToPx(12f), BlurMaskFilter.Blur.OUTER) }
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
-        private val ringBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; color = Color.parseColor("#1AFFFFFF") }
-        private val headerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#80FFFFFF"); textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)) }
+        private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#A0A3B1"); textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.NORMAL)) }
         private val timePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD)) }
-        private val msgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER; setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)) }
-        private val particlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
+        private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#8A7CFF"); style = Paint.Style.FILL }
 
         private val animationRunnable = object : Runnable {
             override fun run() {
-                breathePhase += 0.035f
-                particlePhase += 0.025f
+                breathePhase += 0.044f  // ~4.5s cycle to match Figma spec
                 if (stateTransitionProgress < 1f) stateTransitionProgress = (stateTransitionProgress + 0.06f).coerceAtMost(1f)
                 invalidate()
                 handler.postDelayed(this, 32)
@@ -630,11 +655,12 @@ class OverlayService : Service(), LifecycleOwner {
 
         init {
             setLayerType(LAYER_TYPE_SOFTWARE, null)
-            headerPaint.textSize = spToPx(8f)
-            timePaint.textSize = spToPx(15f)
-            msgPaint.textSize = spToPx(9f)
-            ringPaint.strokeWidth = dpToPx(3.5f)
-            ringBgPaint.strokeWidth = dpToPx(3.5f)
+            labelPaint.textSize = spToPx(10f)
+            labelPaint.letterSpacing = 0.08f
+            // More premium/legible timer styling.
+            timePaint.textSize = spToPx(20f)
+            timePaint.setShadowLayer(dpToPx(10f), 0f, dpToPx(2f), Color.parseColor("#33000000"))
+            ringPaint.strokeWidth = dpToPx(3f)
             handler.post(animationRunnable)
         }
 
@@ -646,6 +672,11 @@ class OverlayService : Service(), LifecycleOwner {
                 milestoneFlashUntil = System.currentTimeMillis() + 6000
                 vibrateMilestone()
             }
+            invalidate()
+
+        }
+        fun setPaused(paused: Boolean) {
+            isPaused = paused
             invalidate()
         }
 
@@ -659,23 +690,33 @@ class OverlayService : Service(), LifecycleOwner {
             }
         }
 
-        fun destroy() {
-            handler.removeCallbacks(animationRunnable)
+        fun animateExpand(expand: Boolean) {
+            expandAnimator?.cancel()
+            val from = expandProgress
+            val to = if (expand) 1f else 0f
+            expandAnimator = ValueAnimator.ofFloat(from, to).apply {
+                duration = if (expand) 320 else 220
+                interpolator = if (expand) OvershootInterpolator(0.6f) else AccelerateDecelerateInterpolator()
+                addUpdateListener { anim ->
+                    expandProgress = anim.animatedValue as Float
+                    // Update view height to accommodate the pill
+                    val baseSize = dpToPx(96f).toInt()
+                    val extraH = (expandProgress * dpToPx(expandedExtraDp)).toInt()
+                    val newH = baseSize + extraH
+                    if (layoutParams != null && layoutParams.height != newH) {
+                        layoutParams.height = newH
+                        requestLayout()
+                        onExpandHeightChanged?.invoke(newH)
+                    }
+                    invalidate()
+                }
+                start()
+            }
         }
 
-        private fun getMessage(): String {
-            if (System.currentTimeMillis() < milestoneFlashUntil) {
-                val idx = (lastMilestone / 15 - 1).coerceIn(0, milestoneMessages.size - 1)
-                return milestoneMessages[idx]
-            }
-            val pool = when (focusState) {
-                FocusState.FOCUSED    -> encourageFocused
-                FocusState.NEUTRAL    -> encourageNeutral
-                FocusState.DISTRACTED -> encourageDistracted
-                FocusState.DROWSY     -> encourageDrowsy
-                FocusState.ABSENT     -> encourageAbsent
-            }
-            return pool[(seconds / 12) % pool.size]
+        fun destroy() {
+            handler.removeCallbacks(animationRunnable)
+            expandAnimator?.cancel()
         }
 
         private fun getStateColor(s: FocusState): Int = when (s) {
@@ -695,115 +736,93 @@ class OverlayService : Service(), LifecycleOwner {
 
         override fun onDraw(canvas: Canvas) {
             super.onDraw(canvas)
-            val cx = width / 2f
-            val cy = height / 2f
-            val r = (width / 2f) - dpToPx(14f)
-            val now = System.currentTimeMillis()
-            val isMilestone = now < milestoneFlashUntil
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val cx = w / 2f
+            // Circle center stays at top half
+            val circleCy = w / 2f
+            val inset = dpToPx(2f)
 
-            val ringColor = if (isMilestone) Color.parseColor("#FFD700") 
-                            else interpolateColor(getStateColor(prevFocusState), getStateColor(focusState), stateTransitionProgress)
+            // Pill rect: when collapsed, it's a circle (h == w). When expanded, it elongates downward.
+            val pillLeft = inset
+            val pillTop = inset
+            val pillRight = w - inset
+            val pillBottom = h - inset
+            val cornerR = (w / 2f) - inset  // semicircular ends
 
             val breathe = (sin(breathePhase.toDouble()).toFloat() + 1f) / 2f
-            
-            // Outer ambient glow
-            glowPaint.color = Color.argb((45 * breathe + 15).toInt(), Color.red(ringColor), Color.green(ringColor), Color.blue(ringColor))
-            canvas.drawCircle(cx, cy, r + dpToPx(4f), glowPaint)
+            val ringAlpha = (0.4f + 0.6f * breathe)
 
-            // Main body
-            bgPaint.shader = RadialGradient(cx, cy, r, 
-                intArrayOf(Color.parseColor("#2A2A38"), Color.parseColor("#12121A")), 
-                null, Shader.TileMode.CLAMP)
-            canvas.drawCircle(cx, cy, r, bgPaint)
+            val gradientShader = LinearGradient(
+                pillLeft, pillTop, pillRight, pillBottom,
+                Color.parseColor("#6C63FF"), Color.parseColor("#8A7CFF"),
+                Shader.TileMode.CLAMP
+            )
+
+            // Glow: 16dp stroke, inset by 8dp from outer boundary
+            val glowInset = dpToPx(8f)
+            val glowRect = RectF(pillLeft + glowInset, pillTop + glowInset, pillRight - glowInset, pillBottom - glowInset)
+            val glowCorner = cornerR - glowInset
+            ringPaint.shader = gradientShader
+            ringPaint.strokeWidth = dpToPx(16f)
+            ringPaint.alpha = (ringAlpha * 0.30f * 255).toInt()
+            canvas.drawRoundRect(glowRect, glowCorner, glowCorner, ringPaint)
+
+            // Main ring: 5dp stroke, inset by 2.5dp from outer boundary
+            val ringInset = dpToPx(2.5f)
+            val ringRect = RectF(pillLeft + ringInset, pillTop + ringInset, pillRight - ringInset, pillBottom - ringInset)
+            val ringCorner = cornerR - ringInset
+            ringPaint.shader = gradientShader
+            ringPaint.strokeWidth = dpToPx(5f)
+            ringPaint.alpha = (ringAlpha * 255).toInt()
+            canvas.drawRoundRect(ringRect, ringCorner, ringCorner, ringPaint)
+            ringPaint.shader = null
+
+            // Dark fill — inside the ring (inset by 5dp total = ring outer edge)
+            val fillInset = dpToPx(5f)
+            val fillRect = RectF(pillLeft + fillInset, pillTop + fillInset, pillRight - fillInset, pillBottom - fillInset)
+            val fillCorner = cornerR - fillInset
+            bgPaint.color = Color.parseColor("#0D0D16")
             bgPaint.shader = null
+            canvas.drawRoundRect(fillRect, fillCorner, fillCorner, bgPaint)
 
-            // Inner rim highlight
-            val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = dpToPx(1.2f)
-                color = Color.parseColor("#33FFFFFF")
-            }
-            canvas.drawCircle(cx, cy, r - dpToPx(0.6f), rimPaint)
+            // --- App name (uppercase, 10sp, #A0A3B1) — centered in circle area ---
+            val outerR = cornerR
+            val maxLabelWidth = outerR * 1.6f
+            val labelRaw = appLabel.uppercase()
+            val textPaint = android.text.TextPaint(labelPaint)
+            val label = android.text.TextUtils.ellipsize(
+                labelRaw, textPaint, maxLabelWidth, android.text.TextUtils.TruncateAt.END
+            ).toString()
+            // Push label up slightly to keep clear separation from timer.
+            canvas.drawText(label, cx, circleCy - dpToPx(10f), labelPaint)
 
-            // Progress rings
-            val oval = RectF(cx - r, cy - r, cx + r, cy + r)
-            canvas.drawArc(oval, -90f, 360f, false, ringBgPaint)
-
-            ringPaint.color = ringColor
-            canvas.drawArc(oval, -90f, (seconds % 60) / 60f * 360f, false, ringPaint)
-            
-            drawCompanion(canvas, cx, cy, r, ringColor)
-
-            // Text info
+            // --- Timer (16sp, white 0.95 opacity) ---
+            timePaint.alpha = (0.95f * 255).toInt()
             val mins = seconds / 60
             val secs = seconds % 60
-            canvas.drawText("${mins}:${secs.toString().padStart(2, '0')}", cx, cy + dpToPx(7f), timePaint)
-            canvas.drawText("GURU", cx, cy - r * 0.5f, headerPaint)
+            val timeStr = "${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}"
+            // Pull timer down so it never collides with app label.
+            canvas.drawText(timeStr, cx, circleCy + dpToPx(18f), timePaint)
 
-            msgPaint.color = ringColor
-            canvas.drawText(getMessage(), cx, cy + r - dpToPx(12f), msgPaint)
-            
-            if (focusState == FocusState.FOCUSED || isMilestone) {
-                drawParticles(canvas, cx, cy, r, ringColor, isMilestone)
-            }
-        }
-
-        private fun drawCompanion(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int) {
-            val eyeSpacing = r * 0.45f
-            val eyeY = cy - r * 0.18f
-            val eyeW = r * 0.09f
-            val eyeH = r * 0.13f
-            
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                this.color = Color.WHITE
-                style = Paint.Style.FILL
+            // --- Recording indicator dot (bottom-right of circle area) ---
+            if (!isPaused && expandProgress < 0.3f) {
+                val dotBreathe = 0.4f + 0.6f * breathe
+                dotPaint.alpha = (dotBreathe * 255).toInt()
+                val dotX = cx + outerR * 0.77f
+                val dotY = circleCy + outerR * 0.77f
+                canvas.drawCircle(dotX, dotY, dpToPx(3f), dotPaint)
             }
 
-            val isBlinking = (System.currentTimeMillis() % 5000) > 4800
-
-            when {
-                focusState == FocusState.ABSENT -> {
-                    paint.style = Paint.Style.STROKE
-                    paint.strokeWidth = dpToPx(2.5f)
-                    paint.color = Color.parseColor("#66FFFFFF")
-                    val arcRectL = RectF(cx - eyeSpacing/2 - eyeW, eyeY - eyeH/2, cx - eyeSpacing/2 + eyeW, eyeY + eyeH/2)
-                    val arcRectR = RectF(cx + eyeSpacing/2 - eyeW, eyeY - eyeH/2, cx + eyeSpacing/2 + eyeW, eyeY + eyeH/2)
-                    canvas.drawArc(arcRectL, 0f, 180f, false, paint)
-                    canvas.drawArc(arcRectR, 0f, 180f, false, paint)
-                }
-                focusState == FocusState.DROWSY || isBlinking -> {
-                    val rectL = RectF(cx - eyeSpacing/2 - eyeW, eyeY - dpToPx(1.5f), cx - eyeSpacing/2 + eyeW, eyeY + dpToPx(1.5f))
-                    val rectR = RectF(cx + eyeSpacing/2 - eyeW, eyeY - dpToPx(1.5f), cx + eyeSpacing/2 + eyeW, eyeY + dpToPx(1.5f))
-                    canvas.drawRoundRect(rectL, 4f, 4f, paint)
-                    canvas.drawRoundRect(rectR, 4f, 4f, paint)
-                }
-                else -> {
-                    val rectL = RectF(cx - eyeSpacing/2 - eyeW/2, eyeY - eyeH/2, cx - eyeSpacing/2 + eyeW/2, eyeY + eyeH/2)
-                    val rectR = RectF(cx + eyeSpacing/2 - eyeW/2, eyeY - eyeH/2, cx + eyeSpacing/2 + eyeW/2, eyeY + eyeH/2)
-                    canvas.drawRoundRect(rectL, eyeW, eyeW, paint)
-                    canvas.drawRoundRect(rectR, eyeW, eyeW, paint)
-                    
-                    if (focusState == FocusState.FOCUSED) {
-                        paint.color = color
-                        canvas.drawCircle(cx - eyeSpacing/2, eyeY, eyeW * 0.35f, paint)
-                        canvas.drawCircle(cx + eyeSpacing/2, eyeY, eyeW * 0.35f, paint)
-                    }
-                }
-            }
-        }
-
-        private fun drawParticles(canvas: Canvas, cx: Float, cy: Float, r: Float, color: Int, isM: Boolean) {
-            val num = if (isM) 12 else 6
-            for (i in 0 until num) {
-                val p = particlePhase + i * (Math.PI * 2 / num)
-                val drift = sin(p * 2).toFloat() * dpToPx(4f)
-                val d = r + dpToPx(8f) + drift
-                val px = cx + cos(p).toFloat() * d
-                val py = cy + sin(p).toFloat() * d
-                val sz = dpToPx(2.5f) + sin(p * 4).toFloat() * dpToPx(1.2f)
-                val alpha = (160 + sin(p * 3) * 90).toInt().coerceIn(0, 255)
-                particlePaint.color = Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
-                canvas.drawCircle(px, py, sz, particlePaint)
+            // --- Expanded content drawn on canvas (status text) ---
+            if (expandProgress > 0.1f) {
+                val contentAlpha = ((expandProgress - 0.1f) / 0.9f).coerceIn(0f, 1f)
+                // Recording status below the circle
+                val statusY = w + dpToPx(8f)
+                labelPaint.alpha = (contentAlpha * 0.7f * 255).toInt()
+                val statusStr = if (isPaused) "Paused" else "Recording"
+                canvas.drawText(statusStr, cx, statusY, labelPaint)
+                labelPaint.alpha = 255
             }
         }
 

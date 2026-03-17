@@ -9,8 +9,6 @@ interface ApiKeySectionProps {
   onOpenRouterKeyChange: (text: string) => void;
 }
 
-const PLACEHOLDER_COLOR = '#7B8193';
-
 function ApiKeySection({
   groqKey,
   onGroqKeyChange,
@@ -20,7 +18,7 @@ function ApiKeySection({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>AI API KEYS</Text>
-      
+
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Groq API Key (Fastest)</Text>
         <TextInput
@@ -28,7 +26,7 @@ function ApiKeySection({
           value={groqKey}
           onChangeText={onGroqKeyChange}
           placeholder="gsk_..."
-          placeholderTextColor={PLACEHOLDER_COLOR}
+          placeholderTextColor={theme.colors.textMuted}
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}
@@ -43,7 +41,7 @@ function ApiKeySection({
           value={openRouterKey}
           onChangeText={onOpenRouterKeyChange}
           placeholder="sk-or-v1-..."
-          placeholderTextColor={PLACEHOLDER_COLOR}
+          placeholderTextColor={theme.colors.textMuted}
           secureTextEntry
           autoCapitalize="none"
           autoCorrect={false}

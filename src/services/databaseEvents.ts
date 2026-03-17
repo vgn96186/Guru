@@ -15,6 +15,6 @@ export const DB_EVENT_KEYS = {
 };
 
 export function notifyDbUpdate(event: string, payload?: any) {
-  console.log(`[DB_EVENT] Notifying: ${event}`);
+  if (__DEV__) console.log(`[DB_EVENT] Notifying: ${event}`);
   dbEvents.emit(event, payload);
 }

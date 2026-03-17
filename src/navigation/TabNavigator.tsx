@@ -186,7 +186,7 @@ export default function TabNavigator() {
           tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: '700',
             marginTop: 0,
             letterSpacing: 0.3,
@@ -287,7 +287,12 @@ export default function TabNavigator() {
 
       {isActionHubOpen ? (
         <View style={styles.sheetRoot} pointerEvents="box-none">
-          <Pressable style={styles.sheetBackdrop} onPress={() => setIsActionHubOpen(false)} />
+          <Pressable
+            style={styles.sheetBackdrop}
+            onPress={() => setIsActionHubOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close action hub"
+          />
           <View style={[styles.sheet, { paddingBottom: bottomInset + theme.spacing.lg }]}>
             <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
             <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
@@ -297,6 +302,8 @@ export default function TabNavigator() {
                 style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
                 android_ripple={{ color: '#ffffff18' }}
                 onPress={() => openRoute('HomeTab', 'LectureMode', {})}
+                accessibilityRole="button"
+                accessibilityLabel="Record lecture"
               >
                 <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
                 <Text style={styles.primaryActionTitle}>Record Lecture</Text>
@@ -309,6 +316,8 @@ export default function TabNavigator() {
                 style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
                 android_ripple={{ color: '#ffffff18' }}
                 onPress={() => openRoute('MenuTab', 'NotesHub')}
+                accessibilityRole="button"
+                accessibilityLabel="Quick note, open notes vault"
               >
                 <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
                 <Text style={styles.secondaryActionTitle}>Quick Note</Text>
@@ -323,6 +332,8 @@ export default function TabNavigator() {
                 style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
                 onPress={handleAudioUpload}
                 disabled={isTranscribingUpload}
+                accessibilityRole="button"
+                accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
               >
                 <Ionicons
                   name="document-attach-outline"
@@ -340,6 +351,14 @@ export default function TabNavigator() {
               >
                 <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Paste Transcript</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                onPress={() => navigation.navigate('BrainDumpReview' as never)}
+              >
+                <Ionicons name="bulb-outline" size={18} color={theme.colors.textSecondary} />
+                <Text style={styles.manualActionText}>Parked thoughts</Text>
               </Pressable>
             </View>
 

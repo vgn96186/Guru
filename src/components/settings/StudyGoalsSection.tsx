@@ -15,8 +15,6 @@ interface StudyGoalsSectionProps {
   errorNeet?: string;
 }
 
-const PLACEHOLDER_COLOR = '#7B8193';
-
 function StudyGoalsSection({
   inicetDate,
   neetDate,
@@ -40,7 +38,7 @@ function StudyGoalsSection({
           value={inicetDate}
           onChangeText={onInicetDateChange}
           placeholder="YYYY-MM-DD"
-          placeholderTextColor={PLACEHOLDER_COLOR}
+          placeholderTextColor={theme.colors.textMuted}
         />
         {errorInicet && <Text style={styles.errorText}>{errorInicet}</Text>}
       </View>
@@ -52,7 +50,7 @@ function StudyGoalsSection({
           value={neetDate}
           onChangeText={onNeetDateChange}
           placeholder="YYYY-MM-DD"
-          placeholderTextColor={PLACEHOLDER_COLOR}
+          placeholderTextColor={theme.colors.textMuted}
         />
         {errorNeet && <Text style={styles.errorText}>{errorNeet}</Text>}
       </View>

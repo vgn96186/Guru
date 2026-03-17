@@ -1,4 +1,4 @@
-import { getDb, todayStr } from '../database';
+import { getDb, runInTransaction, todayStr } from '../database';
 import type { Subject, Topic, TopicProgress, TopicWithProgress } from '../../types';
 import { getInitialCard, reviewCardFromConfidence } from '../../services/fsrsService';
 import type { Card } from 'ts-fsrs';
@@ -164,13 +164,9 @@ export async function updateTopicProgress(
   xpToAdd: number,
   noteToAppend?: string,
 ): Promise<void> {
-  const db = getDb();
   const now = Date.now();
-
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
-    // Get existing FSRS data
-    const existing = await db.getFirstAsync<any>(
+  await runInTransaction(async (tx) => {
+    const existing = await tx.getFirstAsync<any>(
       'SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?',
       [topicId],
     );
@@ -196,7 +192,7 @@ export async function updateTopicProgress(
     const updatedCard = log.card;
     const nextReview = updatedCard.due.toISOString().slice(0, 10);
 
-    await db.runAsync(
+    await tx.runAsync(
       `INSERT INTO topic_progress (
          topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
          fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review,
@@ -246,11 +242,7 @@ export async function updateTopicProgress(
         noteToAppend ?? null,
       ],
     );
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (err) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw err;
-  }
+  });
 }
 
 export async function updateTopicNotes(topicId: number, notes: string): Promise<void> {
@@ -278,6 +270,41 @@ export async function getTopicsDueForReview(limit = 10): Promise<TopicWithProgre
     [today, limit],
   );
   return rows.map(mapTopicRow);
+}
+
+/** Row shape from the single-pass subject-stats aggregation (SyllabusScreen). */
+export type SubjectStatsRow = {
+  subjectId: number;
+  total: number;
+  seen: number;
+  due: number;
+  highYield: number;
+  unseen: number;
+  withNotes: number;
+  weak: number;
+};
+
+/**
+ * Single optimized query: all subject-level stats (total, seen, due, highYield, unseen, withNotes, weak)
+ * for root-level topics only. One pass, no N+1.
+ */
+export async function getSubjectStatsAggregated(): Promise<SubjectStatsRow[]> {
+  const db = getDb();
+  return db.getAllAsync<SubjectStatsRow>(
+    `SELECT
+       t.subject_id AS subjectId,
+       COUNT(t.id) AS total,
+       SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) AS seen,
+       SUM(CASE WHEN COALESCE(p.status, 'unseen') != 'unseen' AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now')) THEN 1 ELSE 0 END) AS due,
+       SUM(CASE WHEN t.inicet_priority >= 8 THEN 1 ELSE 0 END) AS highYield,
+       SUM(CASE WHEN COALESCE(p.status, 'unseen') = 'unseen' THEN 1 ELSE 0 END) AS unseen,
+       SUM(CASE WHEN TRIM(COALESCE(p.user_notes, '')) <> '' THEN 1 ELSE 0 END) AS withNotes,
+       SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) AS weak
+     FROM topics t
+     LEFT JOIN topic_progress p ON p.topic_id = t.id
+     WHERE NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
+     GROUP BY t.subject_id`,
+  );
 }
 
 export async function getSubjectCoverage(): Promise<

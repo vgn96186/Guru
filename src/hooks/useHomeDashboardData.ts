@@ -13,8 +13,10 @@ export function useHomeDashboardData() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [completedSessions, setCompletedSessions] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
+    setLoadError(null);
     setIsLoading(true);
     try {
       await markNemesisTopics();
@@ -27,7 +29,9 @@ export function useHomeDashboardData() {
       setTodayMinutes(log?.totalMinutes ?? 0);
     } catch (err: any) {
       console.error('[Home] Failed to load initial data:', err);
-      Alert.alert('Load Failed', err?.message ?? 'Unable to load home data. Please try again.');
+      const message = err?.message ?? 'Unable to load home data. Please try again.';
+      setLoadError(message);
+      Alert.alert('Load Failed', message);
     } finally {
       setIsLoading(false);
     }
@@ -50,6 +54,7 @@ export function useHomeDashboardData() {
     todayMinutes,
     completedSessions,
     isLoading,
+    loadError,
     reload,
   };
 }

@@ -200,9 +200,21 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
   }, [visible]);
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}
+      accessibilityViewIsModal
+    >
       <StatusBar barStyle="light-content" />
-      <TouchableOpacity style={s.backdrop} activeOpacity={1} onPress={handleClose}>
+      <TouchableOpacity
+        style={s.backdrop}
+        activeOpacity={1}
+        onPress={handleClose}
+        accessibilityRole="button"
+        accessibilityLabel="Close chat"
+      >
         <View style={s.backdropOverlay} />
       </TouchableOpacity>
 
@@ -219,9 +231,11 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
                 <Animated.View style={[s.dot, { transform: [{ scale: pulseAnim }] }]} />
                 <View style={s.innerDot} />
               </View>
-              <View style={s.headerText}>
+              <View style={[s.headerText, { minWidth: 0 }]}>
                 <Text style={s.headerTitle}>Study Guru</Text>
-                <Text style={s.headerSub}>{topicName}</Text>
+                <Text style={s.headerSub} numberOfLines={1} ellipsizeMode="tail">
+                  {topicName}
+                </Text>
               </View>
             </View>
 
@@ -229,6 +243,8 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
               onPress={handleClose}
               style={s.closeBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
             >
               <Ionicons name="close-circle" size={28} color={theme.colors.textMuted} />
             </TouchableOpacity>
@@ -303,7 +319,12 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
               <View style={s.errorContainer}>
                 <Text style={s.errorText}>{error}</Text>
                 {retryCount > 0 && (
-                  <TouchableOpacity style={s.retryBtn} onPress={handleRetry}>
+                  <TouchableOpacity
+                    style={s.retryBtn}
+                    onPress={handleRetry}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Retry, ${retryCount} attempts left`}
+                  >
                     <Text style={s.retryBtnText}>Retry ({retryCount})</Text>
                   </TouchableOpacity>
                 )}
@@ -332,6 +353,8 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
                 style={[s.sendBtn, (!input.trim() || loading) && s.sendBtnDisabled]}
                 onPress={handleSend}
                 disabled={!input.trim() || loading}
+                accessibilityRole="button"
+                accessibilityLabel="Send message"
               >
                 {loading ? (
                   <ActivityIndicator size="small" color="#fff" />

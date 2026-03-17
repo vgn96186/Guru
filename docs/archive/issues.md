@@ -5,23 +5,28 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ## Cross-cutting themes
 
 ### Consistency & visual system
+
 - **Theme drift**: Background colors vary (`#0A0A0A`, `#0F0F14`, `#000`). This can be intentional (OLED sleep screen), but elsewhere it reads as inconsistent.
 - **Header patterns**: Some screens use a custom header row with back arrow, others are centered-title modals. Consider standardizing a small set of header templates.
 - **Typography scale**: Some screens use very small supporting text (11–12px). In dense layouts this can feel cramped and reduce accessibility.
 
 ### Information hierarchy & “what do I do now?”
+
 - **Overloaded screens**: `HomeScreen` and `SettingsScreen` contain many sections. They’re valuable but can create cognitive load without progressive disclosure.
 - **Tappable affordances that don’t navigate**: Any `TouchableOpacity` rows/cards that don’t do anything create “broken UI” perception.
 
 ### Feedback states
+
 - **Empty states**: Many screens have good empty states (`MockTestScreen`, `FlaggedReviewScreen`, `BrainDumpReviewScreen`). Some could add “what to do next” guidance (`NotesSearchScreen`).
 - **Error/fallback states**: Core flows like sessions should always have calm, actionable fallbacks when AI/network fails.
 
 ### Accessibility & ergonomics
+
 - **Tap target sizing**: Nested touchables (e.g., unflag button inside expandable card) can cause accidental activations.
 - **Contrast**: Most contrast is strong, but some gray-on-black is borderline for long reading.
 
 ### Tone & product safety
+
 - The app has a deliberate “tough love” personality (e.g., harassment mode). This is consistent, but polarizing. Consider a “soft mode” toggle later.
 
 ---
@@ -31,6 +36,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ### HomeTab
 
 #### `HomeScreen`
+
 - **What works**
   - Strong hierarchy and a clear primary CTA.
   - API key banner is contextual and actionable.
@@ -43,6 +49,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Ensure lecture detection results in a single, predictable navigation path.
 
 #### `NotesSearchScreen`
+
 - **What works**
   - Minimal, fast, focused search UI.
 - **Issues / opportunities**
@@ -53,6 +60,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Improve empty/help text for query constraints.
 
 #### `FlaggedReviewScreen`
+
 - **What works**
   - Strong safety messaging: reminds users AI content needs verification.
   - Expand/collapse preview is a good detail level.
@@ -63,6 +71,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Add filtering by content type in the future.
 
 #### `ManualLogScreen`
+
 - **What works**
   - Practical utility for streak integrity and external study.
   - Subject/topic chips are easy to scan.
@@ -74,6 +83,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Consider validating/clarifying what the optional “Subject/Topic” affects.
 
 #### `MockTestScreen`
+
 - **What works**
   - Setup → test → results is clear.
   - Strong empty state that explains unlocking.
@@ -86,6 +96,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Consider a “Mark for review” flow and post-test remediation suggestions.
 
 #### `DailyChallengeScreen`
+
 - **What works**
   - Progress and rewards are clear.
   - Good pacing and end summary.
@@ -97,6 +108,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Consider layout rules for long options (spacing, wrapping).
 
 #### `InertiaScreen`
+
 - **What works**
   - Excellent “intervention” design: breathing → micro-win → decision.
   - Two ending choices reduce guilt.
@@ -106,6 +118,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Add a delayed “Skip / I’m ready” affordance after a few seconds.
 
 #### `SessionScreen`
+
 - **What works**
   - This is the core product; timer + structure + anti-distraction elements are strong.
 - **Issues / opportunities**
@@ -116,6 +129,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Provide explicit recovery actions when AI fetch fails (manual mode, retry, continue without AI).
 
 #### `BreakScreen`
+
 - **What works**
   - Timer + optional “quick fire” keeps engagement.
 - **Issues / opportunities**
@@ -126,6 +140,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Consider tracking or gently discouraging repeated break-skips.
 
 #### `ReviewScreen`
+
 - **What works**
   - Flip-card mechanic is focused and engaging.
   - Clear interval buttons.
@@ -137,6 +152,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Add a lightweight explanation of intervals (“why this spacing”).
 
 #### `BossBattleScreen`
+
 - **What works**
   - Fun, high-energy gamification; clear phases (`select`, `battle`, `victory`, `defeat`).
   - Subject selection grid is understandable.
@@ -153,6 +169,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ### SyllabusTab
 
 #### `SyllabusScreen`
+
 - **What works**
   - Simple and scannable subject list + coverage at top.
 - **Issues / opportunities**
@@ -163,6 +180,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Add microcopy: what sync does/doesn’t affect.
 
 #### `TopicDetailScreen`
+
 - **What works**
   - Parent/child structure and confidence/status indicators are strong.
   - Notes editing is powerful.
@@ -177,6 +195,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ### PlanTab
 
 #### `StudyPlanScreen`
+
 - **What works**
   - Feasibility warning and plan summary are excellent.
   - Tagging (REL/DEEP/NEW) is readable.
@@ -189,6 +208,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ### StatsTab
 
 #### `StatsScreen`
+
 - **What works**
   - Strong framing that reduces guilt.
   - Subject breakdown visualization is clear.
@@ -201,6 +221,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ### SettingsTab
 
 #### `SettingsScreen`
+
 - **What works**
   - Powerful control center (API keys, permissions, backup/restore).
 - **Issues / opportunities**
@@ -213,6 +234,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ## RootStack / modal flows
 
 #### `CheckInScreen`
+
 - **What works**
   - Strong ritual flow; mood + time is a good “start of day” gate.
 - **Issues / opportunities**
@@ -221,6 +243,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Add explicit skip / “Do later” option (or make “Just checking” more clearly a fast path).
 
 #### `DeviceLinkScreen`
+
 - **What works**
   - Single clear task and strong input styling.
 - **Issues / opportunities**
@@ -230,6 +253,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Show current connection status (connected/not connected + code).
 
 #### `DoomscrollGuideScreen`
+
 - **What works**
   - Strong personality; OS-specific instructions are helpful.
 - **Issues / opportunities**
@@ -240,6 +264,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Include a clear “How to disable” section.
 
 #### `LockdownScreen`
+
 - **What works**
   - Extremely clear purpose; one obvious next step.
 - **Issues / opportunities**
@@ -249,6 +274,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Keep intensity but ensure it’s predictable and transparent.
 
 #### `BreakEnforcerScreen`
+
 - **What works**
   - Unmissable break enforcement UI.
 - **Issues / opportunities**
@@ -257,6 +283,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Add instruction text for what the user should do next.
 
 #### `BrainDumpReviewScreen`
+
 - **What works**
   - Clean, calm review of parked thoughts.
   - Good empty state.
@@ -267,6 +294,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Consider a confirmation dialog for “Clear All” (future).
 
 #### `SleepModeScreen`
+
 - **What works**
   - OLED-friendly black, minimal nightstand design.
   - Alarm ringing UI is clear and dramatic.
@@ -279,6 +307,7 @@ This document consolidates UI/UX issues and improvement opportunities found duri
   - Provide haptic intensity controls or a “gentle wake” option.
 
 #### `WakeUpScreen`
+
 - **What works**
   - Nice “morning intercept” concept; grounding is well-structured.
 - **Issues / opportunities**
@@ -293,10 +322,12 @@ This document consolidates UI/UX issues and improvement opportunities found duri
 ## Highest ROI improvements (shortlist)
 
 ### ✅ RESOLVED (March 2026)
+
 1. ~~**Make tappable items consistently do something**~~ — `StudyPlanScreen` rows now navigate to Session, `NotesSearchScreen` results navigate to topic.
 2. ~~**Improve actionability**~~ — `NotesSearchScreen` results navigate to topic; `TopicDetailScreen` "Study this now" starts a topic-focused session.
 3. ~~**Strengthen feedback**~~ — `BossBattleScreen` has answer feedback phase with explanation; `DailyChallengeScreen` shows loading progress ("Generating Q2/5...").
 
 ### REMAINING
+
 4. **Reduce cognitive load on `HomeScreen` and `SettingsScreen`** with collapsible sections / progressive disclosure.
 5. **Clarify/soften high-intensity features** with explicit “how to disable” and transparency (doomscroll/harassment, alarms).

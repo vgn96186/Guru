@@ -29,7 +29,11 @@ export default function QuickStatsCard({
   const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100;
 
   return (
-    <View style={styles.card}>
+    <View
+      style={styles.card}
+      accessibilityRole="summary"
+      accessibilityLabel={`Your progress today. ${progressClamped}% of daily goal. ${streak} day streak. Level ${level}. ${completedSessions} sessions.`}
+    >
       <View style={styles.topRow}>
         <View style={styles.copy}>
           <Text style={styles.title}>Your Progress</Text>
@@ -77,7 +81,9 @@ export default function QuickStatsCard({
           <Text style={styles.metaChipText}>Level {level}</Text>
         </View>
         <View style={styles.metaChip}>
-          <Text style={styles.metaChipText}>{completedSessions} session{completedSessions === 1 ? '' : 's'}</Text>
+          <Text style={styles.metaChipText}>
+            {completedSessions} session{completedSessions === 1 ? '' : 's'}
+          </Text>
         </View>
       </View>
     </View>
@@ -108,5 +114,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  metaChipText: { color: theme.colors.textSecondary, fontSize: 10, fontWeight: '700' },
+  metaChipText: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '700' },
 });

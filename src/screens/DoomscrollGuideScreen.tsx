@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import {
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { theme } from '../constants/theme';
 import type { HarassmentTone } from '../types';
 
 const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
@@ -71,6 +73,7 @@ export default function DoomscrollGuideScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ScrollView contentContainerStyle={styles.container}>
         <ResponsiveContainer style={{ alignItems: 'center' }}>
           <Text style={styles.emoji}>📱</Text>
@@ -97,6 +100,9 @@ export default function DoomscrollGuideScreen() {
                   style={[styles.toneBtn, selectedTone === opt.tone && styles.toneBtnActive]}
                   onPress={() => handleToneSelect(opt.tone)}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Notification tone: ${opt.label}`}
+                  accessibilityState={{ selected: selectedTone === opt.tone }}
                 >
                   <Text style={styles.toneIcon}>{opt.icon}</Text>
                   <Text
@@ -115,6 +121,11 @@ export default function DoomscrollGuideScreen() {
               style={[styles.btn, harassmentActive && styles.btnActive]}
               onPress={activateHarassment}
               disabled={harassmentActive}
+              accessibilityRole="button"
+              accessibilityLabel={
+                harassmentActive ? 'Bombardment armed' : 'Activate harassment mode'
+              }
+              accessibilityState={{ disabled: harassmentActive }}
             >
               <Text style={styles.btnText}>
                 {harassmentActive ? '💣 Bombardment Armed' : 'Activate Harassment Mode'}
@@ -122,7 +133,12 @@ export default function DoomscrollGuideScreen() {
             </TouchableOpacity>
 
             {harassmentActive && (
-              <TouchableOpacity style={styles.deactivateBtn} onPress={deactivateHarassment}>
+              <TouchableOpacity
+                style={styles.deactivateBtn}
+                onPress={deactivateHarassment}
+                accessibilityRole="button"
+                accessibilityLabel="Deactivate harassment mode"
+              >
                 <Text style={styles.deactivateBtnText}>Deactivate Harassment Mode</Text>
               </TouchableOpacity>
             )}
@@ -177,7 +193,7 @@ export default function DoomscrollGuideScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A0A' },
-  container: { padding: 24, alignItems: 'center' },
+  container: { padding: 24, paddingBottom: 40, alignItems: 'center' },
   emoji: { fontSize: 56, marginBottom: 16 },
   title: {
     color: '#F44336',

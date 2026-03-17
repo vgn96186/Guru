@@ -30,6 +30,7 @@ import { enqueueRequest } from '../services/offlineQueue';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
+import { STREAK_MIN_MINUTES } from '../constants/gamification';
 import { getAllSubjects, getTopicsBySubject, getTopicById } from '../db/queries/topics';
 import {
   saveLectureTranscript,
@@ -38,6 +39,7 @@ import {
 } from '../db/queries/aiCache';
 import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
+import { theme } from '../constants/theme';
 import { useAppStore } from '../store/useAppStore';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
@@ -393,7 +395,7 @@ export default function LectureModeScreen() {
           await endSession(sessionId, [], totalXp, mins, notes.join('\n\n'));
         }
 
-        await profileRepository.updateStreak(mins >= 20);
+        await profileRepository.updateStreak(mins >= STREAK_MIN_MINUTES);
         await refreshProfile();
       } catch (err) {
         console.error('[LectureMode] Failed to finalize session:', err);
@@ -873,7 +875,7 @@ export default function LectureModeScreen() {
       )}
       <StatusBar
         barStyle="light-content"
-        backgroundColor={proofOfLifeActive ? '#2A0A0A' : '#0A0A14'}
+        backgroundColor={proofOfLifeActive ? theme.colors.errorSurface : theme.colors.background}
       />
       <ResponsiveContainer>
         <View style={styles.header}>
@@ -1020,7 +1022,9 @@ export default function LectureModeScreen() {
                 ? '🎙️ AUTO-SCRIBE ACTIVE (Listening...)'
                 : '🎙️ Enable Auto-Scribe'}
             </Text>
-            {isTranscribing && <Text style={{ color: '#fff', fontSize: 10 }}>Processing...</Text>}
+            {isTranscribing && (
+              <Text style={{ color: theme.colors.textInverse, fontSize: 11 }}>Processing...</Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1044,7 +1048,9 @@ export default function LectureModeScreen() {
                   ? 'Type here immediately to dismiss alarm...'
                   : "Type a key concept to prove you're listening..."
               }
-              placeholderTextColor={proofOfLifeActive ? '#FF980088' : '#444'}
+              placeholderTextColor={
+                proofOfLifeActive ? theme.colors.error + 'AA' : theme.colors.textMuted
+              }
               multiline
               value={currentNote}
               onChangeText={setCurrentNote}

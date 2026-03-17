@@ -12,11 +12,10 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import {
-  Animated, Text, TouchableOpacity, StyleSheet, Dimensions,
-} from 'react-native';
+import { Animated, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { theme } from '../constants/theme';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
 
@@ -54,63 +53,71 @@ export function showToast(
 }
 
 const COLORS: Record<ToastType, string> = {
-  info: '#6C63FF',
-  success: '#4CAF50',
-  error: '#F44336',
-  warning: '#FF9800',
+  info: theme.colors.primary,
+  success: theme.colors.success,
+  error: theme.colors.error,
+  warning: theme.colors.warning,
 };
 
 const WIDTH = Dimensions.get('window').width - 32;
 
-const ToastItem = React.memo(({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) => {
-  const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+const ToastItem = React.memo(
+  ({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) => {
+    const opacity = useRef(new Animated.Value(0)).current;
+    const translateY = useRef(new Animated.Value(20)).current;
 
-  useEffect(() => {
-    if (payload.type === 'error') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } else if (payload.type === 'warning') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } else if (payload.type === 'success') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    Animated.parallel([
-      Animated.spring(opacity, { toValue: 1, useNativeDriver: true }),
-      Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
-    ]).start();
-
-    const timer = setTimeout(() => {
+    useEffect(() => {
+      if (payload.type === 'error') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      } else if (payload.type === 'warning') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      } else if (payload.type === 'success') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }
       Animated.parallel([
-        Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
-        Animated.timing(translateY, { toValue: 20, duration: 250, useNativeDriver: true }),
-      ]).start(() => onDone());
-    }, payload.duration);
+        Animated.spring(opacity, { toValue: 1, useNativeDriver: true }),
+        Animated.spring(translateY, { toValue: 0, useNativeDriver: true }),
+      ]).start();
 
-    return () => clearTimeout(timer);
-  }, []);
+      const timer = setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
+          Animated.timing(translateY, { toValue: 20, duration: 250, useNativeDriver: true }),
+        ]).start(() => onDone());
+      }, payload.duration);
 
-  return (
-    <Animated.View
-      style={[
-        styles.toast,
-        { backgroundColor: COLORS[payload.type], opacity, transform: [{ translateY }] },
-      ]}
-    >
-      <TouchableOpacity
-        onPress={() => { payload.onPress?.(); onDone(); }}
-        activeOpacity={payload.onPress ? 0.7 : 1}
-        style={styles.inner}
+      return () => clearTimeout(timer);
+    }, []);
+
+    return (
+      <Animated.View
+        style={[
+          styles.toast,
+          { backgroundColor: COLORS[payload.type], opacity, transform: [{ translateY }] },
+        ]}
       >
-        <Text style={styles.text} numberOfLines={3}>{payload.message}</Text>
-        {payload.onPress && (
-          <Text style={styles.tapHint}>Tap to act</Text>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
-  );
-});
+        <TouchableOpacity
+          onPress={() => {
+            payload.onPress?.();
+            onDone();
+          }}
+          activeOpacity={payload.onPress ? 0.7 : 1}
+          style={styles.inner}
+          accessibilityRole="button"
+          accessibilityLabel={payload.message}
+          accessibilityHint={payload.onPress ? 'Double tap to act' : undefined}
+        >
+          <Text style={styles.text} numberOfLines={3}>
+            {payload.message}
+          </Text>
+          {payload.onPress && <Text style={styles.tapHint}>Tap to act</Text>}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  },
+);
 
 /**
  * Mount this component once near your app root.
@@ -121,12 +128,14 @@ export function ToastContainer() {
   const insets = useSafeAreaInsets();
 
   const addToast = useCallback((payload: ToastPayload) => {
-    setToasts(prev => [...prev.slice(-2), payload]); // max 3 visible
+    setToasts((prev) => [...prev.slice(-2), payload]); // max 3 visible
   }, []);
 
   useEffect(() => {
     _listener = addToast;
-    return () => { _listener = null; };
+    return () => {
+      _listener = null;
+    };
   }, [addToast]);
 
   return (
@@ -134,11 +143,11 @@ export function ToastContainer() {
       pointerEvents="box-none"
       style={[styles.container, { bottom: insets.bottom + 16 }]}
     >
-      {toasts.map(t => (
+      {toasts.map((t) => (
         <ToastItem
           key={t.id}
           payload={t}
-          onDone={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+          onDone={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
         />
       ))}
     </Animated.View>

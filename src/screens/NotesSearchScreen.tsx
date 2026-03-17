@@ -1,12 +1,26 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { getAllSubjects } from '../db/queries/topics';
-import { searchLectureNotes, deleteLectureNote, type LectureHistoryItem } from '../db/queries/aiCache';
+import {
+  searchLectureNotes,
+  deleteLectureNote,
+  type LectureHistoryItem,
+} from '../db/queries/aiCache';
+import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
 
@@ -42,8 +56,8 @@ export default function NotesSearchScreen() {
   }
 
   function toggleSelection(key: string) {
-    setSelectedKeys(prev => {
-      if (prev.includes(key)) return prev.filter(k => k !== key);
+    setSelectedKeys((prev) => {
+      if (prev.includes(key)) return prev.filter((k) => k !== key);
       return [...prev, key];
     });
   }
@@ -53,7 +67,7 @@ export default function NotesSearchScreen() {
   }
 
   function getSubjectById(subjectId: number) {
-    return subjects.find(s => s.id === subjectId);
+    return subjects.find((s) => s.id === subjectId);
   }
 
   async function search(text: string) {
@@ -66,18 +80,26 @@ export default function NotesSearchScreen() {
     const db = getDb();
 
     // Search topic notes
-    const topicRows = await db.getAllAsync<{ id: number; name: string; user_notes: string; subject_id: number }>(
+    const topicRows = await db.getAllAsync<{
+      id: number;
+      name: string;
+      user_notes: string;
+      subject_id: number;
+    }>(
       `SELECT t.id, t.name, p.user_notes, t.subject_id
        FROM topics t
        JOIN topic_progress p ON t.id = p.topic_id
        WHERE p.user_notes LIKE ? LIMIT 25`,
-      [`%${text}%`]
+      [`%${text}%`],
     );
-    const topicResults: SearchResult[] = topicRows.map(r => ({ type: 'topic' as const, ...r }));
+    const topicResults: SearchResult[] = topicRows.map((r) => ({ type: 'topic' as const, ...r }));
 
     // Search lecture notes (transcripts, summaries, ADHD notes)
     const lectureRows = await searchLectureNotes(text, 25);
-    const lectureResults: SearchResult[] = lectureRows.map(item => ({ type: 'lecture' as const, item }));
+    const lectureResults: SearchResult[] = lectureRows.map((item) => ({
+      type: 'lecture' as const,
+      item,
+    }));
 
     // Merge: lecture notes first (more likely what user wants), then topic notes
     setResults([...lectureResults, ...topicResults]);
@@ -87,8 +109,8 @@ export default function NotesSearchScreen() {
     // Strip markdown formatting for preview
     return note
       .split('\n')
-      .map(l => l.trim())
-      .filter(l => l && !l.startsWith('#'))
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#'))
       .slice(0, 2)
       .join(' ')
       .replace(/\*\*/g, '')
@@ -114,22 +136,21 @@ export default function NotesSearchScreen() {
   }
 
   function removeTopicNote(topicId: number) {
-    Alert.alert(
-      'Delete topic note?',
-      'This clears your saved note for this topic.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const db = getDb();
-            await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', topicId]);
-            await search(query);
-          },
+    Alert.alert('Delete topic note?', 'This clears your saved note for this topic.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const db = getDb();
+          await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
+            '',
+            topicId,
+          ]);
+          await search(query);
         },
-      ],
-    );
+      },
+    ]);
   }
 
   function openResult(item: SearchResult) {
@@ -172,7 +193,10 @@ export default function NotesSearchScreen() {
               } else if (key.startsWith('topic-')) {
                 const id = Number(key.replace('topic-', ''));
                 if (!Number.isNaN(id)) {
-                  await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', ['', id]);
+                  await db.runAsync('UPDATE topic_progress SET user_notes = ? WHERE topic_id = ?', [
+                    '',
+                    id,
+                  ]);
                 }
               }
             }
@@ -214,7 +238,9 @@ export default function NotesSearchScreen() {
                 {lecture.appName && <Text style={styles.appName}>via {lecture.appName}</Text>}
               </View>
               <Text style={styles.topic}>{lecture.subjectName ?? 'Lecture'}</Text>
-              <Text style={styles.note} numberOfLines={3}>{extractPreview(lecture.note)}</Text>
+              <Text style={styles.note} numberOfLines={3}>
+                {extractPreview(lecture.note)}
+              </Text>
               {lecture.topics.length > 0 && (
                 <Text style={styles.topicsPreview}>{lecture.topics.slice(0, 3).join(' · ')}</Text>
               )}
@@ -255,7 +281,9 @@ export default function NotesSearchScreen() {
               <Text style={styles.selectedMarker}>{isSelected ? '● Selected' : '○ Select'}</Text>
             )}
             <Text style={styles.topic}>{item.name}</Text>
-            <Text style={styles.note} numberOfLines={3}>{item.user_notes}</Text>
+            <Text style={styles.note} numberOfLines={3}>
+              {item.user_notes}
+            </Text>
             <Text style={styles.tapHint}>Tap to view topic →</Text>
           </TouchableOpacity>
           {!isSelectionMode && (
@@ -274,14 +302,16 @@ export default function NotesSearchScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}><Text style={styles.back}>←</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.back}>←</Text>
+          </TouchableOpacity>
           <TextInput
             style={styles.input}
             placeholder="Search notes & transcripts..."
-            placeholderTextColor="#666"
+            placeholderTextColor={theme.colors.textMuted}
             value={query}
             onChangeText={search}
             autoFocus
@@ -289,33 +319,39 @@ export default function NotesSearchScreen() {
         </View>
         <FlatList
           data={results}
-          ListHeaderComponent={isSelectionMode ? (
-            <View style={styles.selectionBar}>
-              <Text style={styles.selectionText}>{selectedKeys.length} selected</Text>
-              <View style={styles.selectionActions}>
-                <TouchableOpacity onPress={clearSelection} style={styles.selectionCancelBtn}>
-                  <Text style={styles.selectionCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={batchDeleteSelected} style={styles.selectionDeleteBtn}>
-                  <Text style={styles.selectionDeleteText}>Delete</Text>
-                </TouchableOpacity>
+          ListHeaderComponent={
+            isSelectionMode ? (
+              <View style={styles.selectionBar}>
+                <Text style={styles.selectionText}>{selectedKeys.length} selected</Text>
+                <View style={styles.selectionActions}>
+                  <TouchableOpacity onPress={clearSelection} style={styles.selectionCancelBtn}>
+                    <Text style={styles.selectionCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={batchDeleteSelected} style={styles.selectionDeleteBtn}>
+                    <Text style={styles.selectionDeleteText}>Delete</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ) : null}
+            ) : null
+          }
           keyExtractor={(item, idx) =>
             item.type === 'lecture' ? `lec-${item.item.id}` : `topic-${item.id}`
           }
           renderItem={renderItem}
-          ListEmptyComponent={query.length > 1 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.empty}>No matches found</Text>
-              <Text style={styles.emptySub}>Try searching for 2+ characters or different keywords</Text>
-            </View>
-          ) : query.length > 0 ? (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptySub}>Type at least 2 characters to search</Text>
-            </View>
-          ) : null}
+          ListEmptyComponent={
+            query.length > 1 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.empty}>No matches found</Text>
+                <Text style={styles.emptySub}>
+                  Try searching for 2+ characters or different keywords
+                </Text>
+              </View>
+            ) : query.length > 0 ? (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptySub}>Type at least 2 characters to search</Text>
+              </View>
+            ) : null
+          }
         />
       </ResponsiveContainer>
     </SafeAreaView>
@@ -324,10 +360,29 @@ export default function NotesSearchScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12, borderBottomWidth: 1, borderBottomColor: '#222' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+  },
   back: { color: '#fff', fontSize: 24 },
-  input: { flex: 1, backgroundColor: '#1A1A24', padding: 12, borderRadius: 10, color: '#fff', fontSize: 16 },
-  item: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#222', backgroundColor: '#0F0F14' },
+  input: {
+    flex: 1,
+    backgroundColor: '#1A1A24',
+    padding: 12,
+    borderRadius: 10,
+    color: '#fff',
+    fontSize: 16,
+  },
+  item: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+    backgroundColor: '#0F0F14',
+  },
   rowBetween: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   resultBody: { flex: 1 },
   resultBodySelected: {
@@ -357,7 +412,7 @@ const styles = StyleSheet.create({
   lectureHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   lectureBadge: {
     color: '#4CAF50',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.6,
     backgroundColor: '#4CAF5022',

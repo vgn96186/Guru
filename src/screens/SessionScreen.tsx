@@ -38,7 +38,8 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import BreakScreen from './BreakScreen';
 import BrainDumpFab from '../components/BrainDumpFab';
 import type { Mood, SessionMode, AgendaItem } from '../types';
-import { XP_REWARDS } from '../constants/gamification';
+import { XP_REWARDS, STREAK_MIN_MINUTES } from '../constants/gamification';
+import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { useIdleTimer } from '../hooks/useIdleTimer';
 import { useGuruPresence } from '../hooks/useGuruPresence';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -130,7 +131,7 @@ export default function SessionScreen() {
     const isFirstToday = (dailyLog?.sessionCount ?? 0) === 0;
     const xpResult = await calculateAndAwardSessionXp(completedTopics, quizResults, isFirstToday);
     await endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
-    await profileRepository.updateStreak(durationMin >= 20);
+    await profileRepository.updateStreak(durationMin >= STREAK_MIN_MINUTES);
     setSessionXpTotal(xpResult.total);
     refreshProfile().catch((err) =>
       console.error('[Session] Post-session profile refresh failed:', err),
@@ -417,7 +418,12 @@ export default function SessionScreen() {
               {store.agenda ? 'Continue Without AI' : 'Start Manual Review'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.leaveBtn}
+            onPress={() => navigation.goBack()}
+            accessibilityRole="button"
+            accessibilityLabel="Leave session"
+          >
             <Text style={styles.leaveBtnText}>Leave Session</Text>
           </TouchableOpacity>
         </ResponsiveContainer>
@@ -435,7 +441,7 @@ export default function SessionScreen() {
   if (store.sessionState === 'agenda_reveal' && store.agenda) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={styles.revealContainer} testID="session-agenda-reveal">
           <Text style={styles.revealEmoji}>🎯</Text>
           <Text style={styles.revealFocus}>{store.agenda.focusNote}</Text>
@@ -444,7 +450,9 @@ export default function SessionScreen() {
           {store.agenda.items.map((item) => (
             <View key={item.topic.id} style={styles.revealTopic}>
               <View style={[styles.revealDot, { backgroundColor: item.topic.subjectColor }]} />
-              <Text style={styles.revealTopicName}>{item.topic.name}</Text>
+              <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
+                {item.topic.name}
+              </Text>
               <Text style={styles.revealTopicSub}>{item.topic.subjectCode}</Text>
             </View>
           ))}
@@ -481,7 +489,9 @@ export default function SessionScreen() {
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.topicDoneContainer}>
           <Text style={styles.topicDoneEmoji}>✅</Text>
-          <Text style={styles.topicDoneName}>{getCurrentAgendaItem(store)?.topic.name}</Text>
+          <Text style={styles.topicDoneName} numberOfLines={2} ellipsizeMode="tail">
+            {getCurrentAgendaItem(store)?.topic.name}
+          </Text>
           <Text style={styles.topicDoneSub}>
             Topic complete! Taking a {profile?.breakDurationMinutes ?? 5}-min break...
           </Text>
@@ -510,7 +520,7 @@ export default function SessionScreen() {
 
   return (
     <SafeAreaView style={styles.safe} {...panHandlers} testID="session-studying">
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
 
       <ResponsiveContainer>
         {/* Story-style time progress bar across top edge */}
@@ -538,7 +548,9 @@ export default function SessionScreen() {
                 Topic {topicNum}/{totalTopics}
               </Text>
             </View>
-            <Text style={styles.topicName}>{item.topic.name}</Text>
+            <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
+              {item.topic.name}
+            </Text>
             <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
           </View>
           <View style={styles.headerRight}>
@@ -620,7 +632,9 @@ export default function SessionScreen() {
                 accessibilityLabel="End session and save progress"
               >
                 <Text style={styles.menuItemEmoji}>🚪</Text>
-                <Text style={[styles.menuItemText, { color: '#F44336' }]}>End Session</Text>
+                <Text style={[styles.menuItemText, { color: theme.colors.error }]}>
+                  End Session
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -647,7 +661,7 @@ export default function SessionScreen() {
                   idx < store.currentContentIndex && styles.contentTabDone,
                 ]}
               >
-                <Text style={styles.contentTabText}>{CONTENT_LABELS[ct]}</Text>
+                <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
               </View>
             ))}
           </View>
@@ -706,16 +720,6 @@ export default function SessionScreen() {
     </SafeAreaView>
   );
 }
-
-const CONTENT_LABELS: Record<string, string> = {
-  keypoints: 'Key Points',
-  quiz: 'Quiz',
-  story: 'Story',
-  mnemonic: 'Mnemonic',
-  teach_back: 'Teach',
-  error_hunt: 'Hunt',
-  detective: 'Case',
-};
 
 function SessionDoneScreen({
   completedCount,
@@ -776,9 +780,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: theme.colors.surface,
   },
-  headerLeft: { flex: 1 },
+  headerLeft: { flex: 1, minWidth: 0 },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
-  topicProgress: { color: '#9E9E9E', fontSize: 11, marginBottom: 2 },
+  topicProgress: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 2 },
   phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   phaseBadge: {
     color: theme.colors.primary,
@@ -789,7 +793,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18, flex: 1 },
   subjectTag: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
   pauseBtn: {
     backgroundColor: theme.colors.border,
@@ -806,7 +810,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginLeft: 8,
   },
-  menuBtnText: { color: '#9E9E9E', fontSize: 16, fontWeight: '700', letterSpacing: 2 },
+  menuBtnText: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
   menuOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 },
   menuBackdrop: { flex: 1 },
   menuDropdown: {
@@ -866,21 +875,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   revealGuru: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 15,
     fontStyle: 'italic',
     textAlign: 'center',
     marginBottom: 24,
   },
-  revealSub: { color: '#888', fontSize: 13 },
+  revealSub: { color: theme.colors.textSecondary, fontSize: 13 },
   revealTopic: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   revealDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
   revealTopicName: { color: '#fff', fontSize: 16, fontWeight: '600', marginRight: 8 },
-  revealTopicSub: { color: '#9E9E9E', fontSize: 12 },
+  revealTopicSub: { color: theme.colors.textSecondary, fontSize: 12 },
   topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   topicDoneEmoji: { fontSize: 64, marginBottom: 16 },
   topicDoneName: { color: '#fff', fontWeight: '800', fontSize: 20, marginBottom: 8 },
-  topicDoneSub: { color: '#9E9E9E', fontSize: 14 },
+  topicDoneSub: { color: theme.colors.textSecondary, fontSize: 14 },
   xpPop: {
     position: 'absolute',
     bottom: 100,
@@ -904,9 +913,9 @@ const styles = StyleSheet.create({
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
   summaryItem: { alignItems: 'center' },
   summaryValue: { color: '#fff', fontSize: 28, fontWeight: '900' },
-  summaryLabel: { color: '#9E9E9E', fontSize: 12, marginTop: 4 },
-  summaryDivider: { width: 1, height: 40, backgroundColor: '#333' },
-  doneStat: { color: '#9E9E9E', fontSize: 16, marginBottom: 32 },
+  summaryLabel: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 4 },
+  summaryDivider: { width: 1, height: 40, backgroundColor: theme.colors.border },
+  doneStat: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 32 },
   doneBtn: {
     backgroundColor: '#6C63FF',
     borderRadius: 16,
@@ -946,7 +955,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   manualBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
-  leaveBtn: { paddingVertical: 12 },
+  leaveBtn: { paddingVertical: 12, minHeight: 44, justifyContent: 'center' },
   leaveBtnText: { color: theme.colors.textMuted, fontSize: 14 },
   guruDot: {
     width: 10,

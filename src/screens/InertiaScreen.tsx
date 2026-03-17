@@ -183,6 +183,7 @@ export default function InertiaScreen() {
   if (phase === 'breathe') {
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={styles.center}>
           <Text style={styles.breatheTitle}>Brain Fog?</Text>
           <Text style={styles.breatheSub}>Let's reset. Breathe with the circle.</Text>
@@ -203,6 +204,7 @@ export default function InertiaScreen() {
   if (phase === 'fetching') {
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <LoadingOrb message="Constructing a diagnostic puzzle..." />
       </SafeAreaView>
     );
@@ -211,6 +213,7 @@ export default function InertiaScreen() {
   if (phase === 'sit_up_prompt') {
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.sitUpEmoji}>🕵️</Text>
@@ -236,6 +239,7 @@ export default function InertiaScreen() {
   if ((phase === 'micro_win' || phase === 'micro_win_bed') && content) {
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.winTitle}>Solve the Mystery</Text>
@@ -275,6 +279,7 @@ export default function InertiaScreen() {
   if (phase === 'pivot') {
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.emoji}>🔥</Text>
@@ -391,7 +396,7 @@ const styles = StyleSheet.create({
     borderColor: '#252535',
   },
   newClue: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
-  clueLabel: { color: theme.colors.textMuted, fontSize: 10, fontWeight: '700', marginBottom: 4 },
+  clueLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
   clueText: { color: theme.colors.textPrimary, fontSize: 16, lineHeight: 22 },
 
   solutionBox: {

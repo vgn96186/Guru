@@ -78,7 +78,7 @@ export default function ManualNoteCreationScreen() {
           style={styles.input}
           multiline
           placeholder="Paste long transcript here..."
-          placeholderTextColor="#666"
+          placeholderTextColor={theme.colors.textMuted}
           value={transcript}
           onChangeText={setTranscript}
           editable={!isProcessing}
@@ -90,7 +90,7 @@ export default function ManualNoteCreationScreen() {
           disabled={!transcript.trim() || isProcessing}
         >
           {isProcessing ? (
-            <ActivityIndicator color="#000" />
+            <ActivityIndicator color={theme.colors.primary} />
           ) : (
             <Text style={styles.btnText}>Generate Notes</Text>
           )}
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   backBtn: { marginRight: 16 },
   backText: { color: theme.colors.primary, fontSize: 16 },
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  content: { padding: 16 },
+  content: { padding: 16, paddingBottom: 40 },
   label: { color: '#FFF', fontSize: 16, marginBottom: 12 },
   input: {
     backgroundColor: '#1E1E24',

@@ -18,29 +18,41 @@ interface Props {
   onPress: () => void;
 }
 
-export default React.memo(function SubjectCard({ subject, coverage, metrics, matchingTopicsCount, onPress }: Props) {
+export default React.memo(function SubjectCard({
+  subject,
+  coverage,
+  metrics,
+  matchingTopicsCount,
+  onPress,
+}: Props) {
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   }
   const pct = coverage.total > 0 ? Math.round((coverage.seen / coverage.total) * 100) : 0;
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(pct)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const prevPct = useRef(0);
+  const prevPct = useRef(pct);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      progressAnim.setValue(pct);
+      prevPct.current = pct;
+      return;
+    }
+
     const increased = pct > prevPct.current;
     prevPct.current = pct;
-    
-    // Animate progress bar fill
+
     Animated.timing(progressAnim, {
       toValue: pct,
-      duration: 600,
+      duration: 500,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-    
-    // Pulse animation when progress increases
+
     if (increased && pct > 0) {
       Animated.sequence([
         Animated.timing(scaleAnim, {
@@ -78,17 +90,14 @@ export default React.memo(function SubjectCard({ subject, coverage, metrics, mat
         accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
       >
         {/* Subtle background fill based on progress */}
-        <View 
-          style={[
-            styles.backgroundFill, 
-            { backgroundColor: subject.colorHex, opacity: bgOpacity }
-          ]} 
+        <View
+          style={[styles.backgroundFill, { backgroundColor: subject.colorHex, opacity: bgOpacity }]}
         />
-        
+
         <View style={[styles.colorBar, { backgroundColor: subject.colorHex }]} />
         <View style={styles.content}>
           <View style={styles.topRow}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.nameWrap}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={styles.code}>{subject.shortCode}</Text>
                 {matchingTopicsCount !== undefined && matchingTopicsCount > 0 && (
@@ -97,28 +106,44 @@ export default React.memo(function SubjectCard({ subject, coverage, metrics, mat
                   </View>
                 )}
               </View>
-              <Text style={styles.name}>{subject.name}</Text>
+              <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+                {subject.name}
+              </Text>
             </View>
             <View style={styles.pctContainer}>
-              <Text style={[styles.pct, { color: pct >= 80 ? theme.colors.success : pct >= 50 ? theme.colors.warning : theme.colors.textPrimary }]}>
+              <Text
+                style={[
+                  styles.pct,
+                  {
+                    color:
+                      pct >= 80
+                        ? theme.colors.success
+                        : pct >= 50
+                          ? theme.colors.warning
+                          : theme.colors.textPrimary,
+                  },
+                ]}
+              >
                 {pct}%
               </Text>
-              <Text style={styles.pctLabel}>{coverage.seen}/{coverage.total} micro</Text>
+              <Text style={styles.pctLabel}>
+                {coverage.seen}/{coverage.total} micro
+              </Text>
             </View>
           </View>
-          
+
           {/* Progress bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
-              <Animated.View 
+              <Animated.View
                 style={[
-                  styles.progressFill, 
-                  { width: progressWidth, backgroundColor: subject.colorHex }
-                ]} 
+                  styles.progressFill,
+                  { width: progressWidth, backgroundColor: subject.colorHex },
+                ]}
               />
             </View>
           </View>
-          
+
           <View style={styles.weightRow}>
             <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
             <Text style={styles.weight}>INICET ×{subject.inicetWeight}</Text>
@@ -171,27 +196,34 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     marginBottom: 2,
     borderWidth: 1,
-    borderColor: '#6C63FF55'
+    borderColor: '#6C63FF55',
   },
   matchBadgeText: {
     color: '#E7E4FF',
-    fontSize: 9,
-    fontWeight: '700'
+    fontSize: 11,
+    fontWeight: '700',
   },
-  name: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 15, marginBottom: 6 },
+  nameWrap: { flex: 1, minWidth: 0 },
+  name: {
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 15,
+    marginBottom: 6,
+    lineHeight: 20,
+  },
   pctContainer: { alignItems: 'flex-end', marginLeft: 12 },
   pct: { fontWeight: '900', fontSize: 20 },
-  pctLabel: { color: theme.colors.textMuted, fontSize: 10, marginTop: 2 },
+  pctLabel: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
   progressContainer: { marginVertical: 8 },
-  progressTrack: { 
-    height: 4, 
-    backgroundColor: theme.colors.border, 
-    borderRadius: 2, 
-    overflow: 'hidden' 
+  progressTrack: {
+    height: 4,
+    backgroundColor: theme.colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  progressFill: { 
-    height: '100%', 
-    borderRadius: 2 
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
   },
   weightRow: { flexDirection: 'row', alignItems: 'center' },
   dot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
@@ -204,7 +236,7 @@ const styles = StyleSheet.create({
   },
   metricBadge: {
     color: theme.colors.textSecondary,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     paddingHorizontal: 7,
     paddingVertical: 4,
@@ -215,10 +247,10 @@ const styles = StyleSheet.create({
     color: '#FFD6D6',
     backgroundColor: theme.colors.errorSurface,
   },
-  completeBadge: { 
-    marginLeft: 'auto', 
-    color: theme.colors.success, 
-    fontSize: 11, 
-    fontWeight: '700' 
+  completeBadge: {
+    marginLeft: 'auto',
+    color: theme.colors.success,
+    fontSize: 11,
+    fontWeight: '700',
   },
 });

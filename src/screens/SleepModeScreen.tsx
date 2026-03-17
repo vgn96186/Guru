@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Animated,
+  Easing,
+  StatusBar,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -10,6 +18,7 @@ import * as Notifications from 'expo-notifications';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { theme } from '../constants/theme';
 import { generateWakeUpMessage } from '../services/aiService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SleepMode'>;
@@ -190,6 +199,7 @@ export default function SleepModeScreen() {
   if (alarmRinging) {
     return (
       <View style={styles.alarmContainer}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <Animated.View style={[styles.alarmOverlay, { opacity: fadeAnim }]} />
         <Text style={styles.alarmTime}>{timeString}</Text>
         <Text style={styles.alarmTitle}>Good Morning, Doctor.</Text>
@@ -208,6 +218,7 @@ export default function SleepModeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <Text style={styles.clock}>{timeString}</Text>
 
@@ -264,7 +275,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#000' }, // Pure black for OLED screens
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   clock: {
-    color: '#333',
+    color: theme.colors.textMuted,
     fontSize: 80,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
@@ -272,7 +283,13 @@ const styles = StyleSheet.create({
   },
 
   setupInfo: { marginBottom: 40, alignItems: 'center' },
-  setupText: { color: '#555', textAlign: 'center', fontSize: 14, lineHeight: 20, marginBottom: 12 },
+  setupText: {
+    color: theme.colors.textMuted,
+    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 12,
+  },
   timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   timePickerBtn: {
     backgroundColor: '#1A1A24',
@@ -282,7 +299,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
   },
   timePickerText: { color: '#fff', fontSize: 24, fontWeight: '400' },
   timePickerVal: {
@@ -295,8 +312,8 @@ const styles = StyleSheet.create({
 
   trackingInfo: { alignItems: 'center', marginBottom: 40 },
   trackingText: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  alarmText: { color: '#9E9E9E', fontSize: 14, marginBottom: 4 },
-  trackingSub: { color: '#444', fontSize: 12 },
+  alarmText: { color: theme.colors.textSecondary, fontSize: 14, marginBottom: 4 },
+  trackingSub: { color: theme.colors.textMuted, fontSize: 12 },
 
   toggleBtn: {
     backgroundColor: '#1A1A24',
@@ -304,13 +321,13 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
   },
   toggleBtnActive: { backgroundColor: '#2A0A0A', borderColor: '#F44336' },
-  toggleBtnText: { color: '#9E9E9E', fontWeight: '800', fontSize: 16 },
+  toggleBtnText: { color: theme.colors.textSecondary, fontWeight: '800', fontSize: 16 },
 
   backBtn: { marginTop: 20, padding: 12 },
-  backBtnText: { color: '#555', fontSize: 14 },
+  backBtnText: { color: theme.colors.textSecondary, fontSize: 14 },
 
   alarmContainer: {
     flex: 1,
@@ -322,7 +339,12 @@ const styles = StyleSheet.create({
   alarmOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#6C63FF22' },
   alarmTime: { color: '#fff', fontSize: 64, fontWeight: '900', marginBottom: 16 },
   alarmTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  alarmSub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 60 },
+  alarmSub: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 60,
+  },
 
   stopBtn: {
     backgroundColor: '#6C63FF',
@@ -343,7 +365,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#1A1A24',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
   },
-  snoozeBtnText: { color: '#9E9E9E', fontSize: 16, fontWeight: '700' },
+  snoozeBtnText: { color: theme.colors.textSecondary, fontSize: 16, fontWeight: '700' },
 });

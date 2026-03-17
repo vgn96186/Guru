@@ -5,9 +5,7 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getReviewCalendarData, type ReviewDay } from '../db/queries/topics';
 import { theme } from '../constants/theme';
@@ -20,8 +18,18 @@ function toLocalDateKey(date: Date): string {
 }
 
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const DAYS_OF_WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -67,7 +75,7 @@ export default React.memo(function ReviewCalendar() {
 
   const changeMonth = (delta: number) => {
     setMonth((prevM) => {
-      let nextM = prevM + delta;
+      const nextM = prevM + delta;
       if (nextM < 0) {
         setYear((prevY) => prevY - 1);
         return 11;
@@ -91,7 +99,9 @@ export default React.memo(function ReviewCalendar() {
           <Ionicons name="chevron-back" size={20} color={theme.colors.textMuted} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
-          <Text style={styles.monthText}>{MONTHS[month]} {year}</Text>
+          <Text style={styles.monthText}>
+            {MONTHS[month]} {year}
+          </Text>
           <Text style={styles.reviewCount}>
             {totalReviews} review{totalReviews !== 1 ? 's' : ''} scheduled
           </Text>
@@ -104,7 +114,9 @@ export default React.memo(function ReviewCalendar() {
       {/* Day of week headers */}
       <View style={styles.weekRow}>
         {DAYS_OF_WEEK.map((d, i) => (
-          <Text key={i} style={styles.dayHeader}>{d}</Text>
+          <Text key={i} style={styles.dayHeader}>
+            {d}
+          </Text>
         ))}
       </View>
 
@@ -152,15 +164,19 @@ export default React.memo(function ReviewCalendar() {
                   <View style={styles.dotsRow}>
                     {review.count <= 3 ? (
                       Array.from({ length: review.count }).map((_, i) => (
-                        <View key={i} style={[
-                          styles.dot,
-                          isPast && { backgroundColor: theme.colors.error },
-                        ]} />
+                        <View
+                          key={i}
+                          style={[styles.dot, isPast && { backgroundColor: theme.colors.error }]}
+                        />
                       ))
                     ) : (
                       <>
-                        <View style={[styles.dot, isPast && { backgroundColor: theme.colors.error }]} />
-                        <Text style={[styles.dotCount, isPast && { color: theme.colors.error }]}>{review.count}</Text>
+                        <View
+                          style={[styles.dot, isPast && { backgroundColor: theme.colors.error }]}
+                        />
+                        <Text style={[styles.dotCount, isPast && { color: theme.colors.error }]}>
+                          {review.count}
+                        </Text>
                       </>
                     )}
                   </View>
@@ -175,15 +191,30 @@ export default React.memo(function ReviewCalendar() {
       {selectedDay && (
         <View style={styles.detailSection}>
           <Text style={styles.detailTitle}>
-            {new Date(selectedDay.date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })}
-            {' · '}{selectedDay.count} topic{selectedDay.count !== 1 ? 's' : ''}
+            {new Date(selectedDay.date + 'T00:00:00').toLocaleDateString('en-IN', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'short',
+            })}
+            {' · '}
+            {selectedDay.count} topic{selectedDay.count !== 1 ? 's' : ''}
           </Text>
           <ScrollView style={styles.detailScroll}>
             {selectedDay.topics.map((t, i) => (
               <View key={i} style={styles.topicRow}>
-                <View style={[styles.confDot, {
-                  backgroundColor: t.confidence >= 3 ? theme.colors.success : t.confidence >= 2 ? theme.colors.warning : theme.colors.error,
-                }]} />
+                <View
+                  style={[
+                    styles.confDot,
+                    {
+                      backgroundColor:
+                        t.confidence >= 3
+                          ? theme.colors.success
+                          : t.confidence >= 2
+                            ? theme.colors.warning
+                            : theme.colors.error,
+                    },
+                  ]}
+                />
                 <Text style={styles.topicName}>{t.name}</Text>
               </View>
             ))}
@@ -256,7 +287,7 @@ const styles = StyleSheet.create({
   },
   dotCount: {
     color: theme.colors.primary,
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: '700',
     marginLeft: 1,
   },

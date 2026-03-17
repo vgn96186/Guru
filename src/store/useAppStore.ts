@@ -15,10 +15,13 @@ interface AppState {
   dailyAvailability: number | null;
   todayPlan: DailyAgenda | null;
   planGeneratedAt: number | null;
+  /** True while background recovery (orphan transcripts) is running; used for inline ghost row in Notes Hub */
+  isRecoveringBackground: boolean;
   loadProfile: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   setDailyAvailability: (mins: number) => void;
   setTodayPlan: (plan: DailyAgenda | null) => void;
+  setRecoveringBackground: (value: boolean) => void;
   toggleFocusAudio: () => Promise<void>;
   toggleVisualTimers: () => Promise<void>;
   toggleFaceTracking: () => Promise<void>;
@@ -48,6 +51,7 @@ export const useAppStore = create<AppState>((set, get) => {
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, refresh);
     dbEvents.on(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, refresh);
     dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, refresh);
+    dbEvents.on(DB_EVENT_KEYS.PROFILE_UPDATED, refresh);
 
     listenersInitialized = true;
   }
@@ -60,6 +64,9 @@ export const useAppStore = create<AppState>((set, get) => {
     dailyAvailability: null,
     todayPlan: null,
     planGeneratedAt: null,
+    isRecoveringBackground: false,
+
+    setRecoveringBackground: (value: boolean) => set({ isRecoveringBackground: value }),
 
     loadProfile: async () => {
       if (get().loading) return;

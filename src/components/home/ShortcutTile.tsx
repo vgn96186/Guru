@@ -33,10 +33,14 @@ export default function ShortcutTile({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <View style={[styles.iconWrap, { backgroundColor: `${accent}1F`, borderColor: `${accent}44` }]}>
+      <View
+        style={[styles.iconWrap, { backgroundColor: `${accent}1F`, borderColor: `${accent}44` }]}
+      >
         <Ionicons name={icon} size={20} color={accent} />
       </View>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -45,6 +49,7 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     minWidth: '30%',
+    minHeight: 44,
     backgroundColor: theme.colors.panel,
     borderRadius: 12,
     borderWidth: 1,
@@ -61,5 +66,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '700', textAlign: 'center' },
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
 });

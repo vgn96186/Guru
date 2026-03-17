@@ -9,7 +9,7 @@
     "android:dev": "bash ./scripts/android-dev.sh",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "prepare": "husky",
+    "prepare": "node ./node_modules/husky/bin.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"modules/**/*.{ts,tsx}\" App.tsx index.ts",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" \"modules/**/*.{ts,tsx}\" App.tsx index.ts --fix",
@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "test": "npm run test:unit",
     "test:unit": "jest --config jest.unit.config.js",
-    "verify": "npm run typecheck && npm run lint && npm run test:unit"
+    "verify": "npm run typecheck && npm run lint && npm run test:unit",
+    "repo-map": "node scripts/generate-repo-map.js"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -93,11 +94,11 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "node ./node_modules/eslint/bin/eslint.js --fix",
+      "node ./node_modules/prettier/bin/prettier.cjs --write"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --write"
+      "node ./node_modules/prettier/bin/prettier.cjs --write"
     ]
   },
   "private": true

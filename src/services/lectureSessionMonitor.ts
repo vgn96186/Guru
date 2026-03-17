@@ -166,7 +166,7 @@ export async function runFullTranscriptionPipeline(opts: {
       embedding,
     });
 
-    void enhanceNoteInBackground(noteId as number, logId, analysis).catch(err => {
+    void enhanceNoteInBackground(noteId as number, logId, analysis).catch((err) => {
       console.error('[SessionMonitor] Note enhancement failed:', err);
     });
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
@@ -245,7 +245,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
         appName: 'Recovered Audio',
         durationMinutes: 0,
         logId: logId as number,
-      }).catch(err => {
+      }).catch((err) => {
         console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
       });
 
@@ -315,6 +315,7 @@ export async function autoRepairLegacyNotes(): Promise<number> {
  * NOT referenced in the database and creates lecture notes for them.
  */
 export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
+  const { useAppStore } = await import('../store/useAppStore');
   try {
     const db = (await import('../db/database')).getDb();
     const FileSystem = await import('expo-file-system/legacy');
@@ -335,6 +336,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
     );
 
     let recovered = 0;
+    let recoveryStarted = false;
 
     async function scanDir(dir: string) {
       const dirInfo = await FileSystem.getInfoAsync(dir);
@@ -345,7 +347,12 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
         if (!fileName.endsWith('.txt')) continue;
         if (referencedFiles.has(fileName)) continue;
 
-        // Orphan found!
+        // Orphan found — show inline ghost in Notes Hub
+        if (!recoveryStarted) {
+          recoveryStarted = true;
+          useAppStore.getState().setRecoveringBackground(true);
+        }
+
         const fileUri = dir + fileName;
         const content = await FileSystem.readAsStringAsync(fileUri);
 
@@ -382,5 +389,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
   } catch (err) {
     console.warn('[Recovery] Orphan scan failed:', err);
     return 0;
+  } finally {
+    useAppStore.getState().setRecoveringBackground(false);
   }
 }

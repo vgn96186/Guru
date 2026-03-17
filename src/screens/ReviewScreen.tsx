@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar, Animated, PanResponder, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  Animated,
+  PanResponder,
+  ScrollView,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
@@ -12,14 +21,15 @@ import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, AIContent, ContentType } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
+import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 // Spaced Repetition Ratings
 const RATINGS = [
-  { label: 'Again', days: 1, confidence: 1, color: '#F44336' },
-  { label: 'Hard', days: 3, confidence: 2, color: '#FF9800' },
-  { label: 'Good', days: 7, confidence: 3, color: '#2ECC71' },
-  { label: 'Easy', days: 14, confidence: 4, color: '#3498DB' },
+  { label: 'Again', days: 1, confidence: 1, color: theme.colors.error },
+  { label: 'Hard', days: 3, confidence: 2, color: theme.colors.warning },
+  { label: 'Good', days: 7, confidence: 3, color: theme.colors.success },
+  { label: 'Easy', days: 14, confidence: 4, color: theme.colors.info },
 ];
 
 const CONTENT_CHIPS: { type: ContentType; label: string; icon: string }[] = [
@@ -48,11 +58,13 @@ export default function ReviewScreen() {
   const progressAnim = useRef(new Animated.Value(0)).current;
   const panXY = useRef(new Animated.ValueXY()).current;
   const isFlippedRef = useRef(false);
-  const handleRateRef = useRef<(rating: typeof RATINGS[0]) => void>(() => {});
+  const handleRateRef = useRef<(rating: (typeof RATINGS)[0]) => void>(() => {});
 
   useEffect(() => {
     void getTopicsDueForReview(20).then(setQueue);
-    return () => { Speech.stop(); };
+    return () => {
+      Speech.stop();
+    };
   }, []);
 
   const currentTopic = queue[currentIdx];
@@ -79,7 +91,10 @@ export default function ReviewScreen() {
     setContent(null);
     const autoType = getAutoContentType(currentTopic.progress.confidence);
     fetchContent(currentTopic, autoType)
-      .then(c => { setContent(c); setLoading(false); })
+      .then((c) => {
+        setContent(c);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [currentTopic?.id]);
 
@@ -89,7 +104,10 @@ export default function ReviewScreen() {
     setLoading(true);
     setContent(null);
     fetchContent(currentTopic, selectedContentType)
-      .then(c => { setContent(c); setLoading(false); })
+      .then((c) => {
+        setContent(c);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [selectedContentType]);
 
@@ -102,17 +120,29 @@ export default function ReviewScreen() {
       onPanResponderMove: Animated.event([null, { dx: panXY.x }], { useNativeDriver: false }),
       onPanResponderRelease: (_, gs) => {
         if (gs.dx > 80) {
-          Animated.timing(panXY, { toValue: { x: 500, y: 0 }, duration: 200, useNativeDriver: false }).start(() => {
+          Animated.timing(panXY, {
+            toValue: { x: 500, y: 0 },
+            duration: 200,
+            useNativeDriver: false,
+          }).start(() => {
             panXY.setValue({ x: 0, y: 0 });
             handleRateRef.current(RATINGS[2]); // Good
           });
         } else if (gs.dx < -80) {
-          Animated.timing(panXY, { toValue: { x: -500, y: 0 }, duration: 200, useNativeDriver: false }).start(() => {
+          Animated.timing(panXY, {
+            toValue: { x: -500, y: 0 },
+            duration: 200,
+            useNativeDriver: false,
+          }).start(() => {
             panXY.setValue({ x: 0, y: 0 });
             handleRateRef.current(RATINGS[0]); // Again
           });
         } else if (gs.dy < -80) {
-          Animated.timing(panXY, { toValue: { x: 0, y: -600 }, duration: 200, useNativeDriver: false }).start(() => {
+          Animated.timing(panXY, {
+            toValue: { x: 0, y: -600 },
+            duration: 200,
+            useNativeDriver: false,
+          }).start(() => {
             panXY.setValue({ x: 0, y: 0 });
             handleRateRef.current(RATINGS[3]); // Easy
           });
@@ -120,7 +150,7 @@ export default function ReviewScreen() {
           Animated.spring(panXY, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
         }
       },
-    })
+    }),
   ).current;
 
   function handleFlip() {
@@ -135,7 +165,7 @@ export default function ReviewScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
-  async function handleRate(rating: typeof RATINGS[0]) {
+  async function handleRate(rating: (typeof RATINGS)[0]) {
     Speech.stop();
     if (!currentTopic) return;
 
@@ -149,14 +179,14 @@ export default function ReviewScreen() {
       currentTopic.id,
       newConf >= 4 ? 'mastered' : newConf >= 2 ? 'reviewed' : 'seen',
       newConf,
-      xp
+      xp,
     );
 
     await profileRepository.addXp(xp);
     await refreshProfile();
 
     if (currentIdx < queue.length - 1) {
-      setCurrentIdx(i => i + 1);
+      setCurrentIdx((i) => i + 1);
     } else {
       navigation.goBack();
     }
@@ -182,14 +212,28 @@ export default function ReviewScreen() {
   if (!currentTopic) return null;
 
   const frontAnimatedStyle = {
-    transform: [{ rotateY: flipAnim.interpolate({ inputRange: [0, 180], outputRange: ['0deg', '180deg'] }) }],
+    transform: [
+      { rotateY: flipAnim.interpolate({ inputRange: [0, 180], outputRange: ['0deg', '180deg'] }) },
+    ],
     backfaceVisibility: 'hidden' as const,
-    position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0,
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   };
   const backAnimatedStyle = {
-    transform: [{ rotateY: flipAnim.interpolate({ inputRange: [0, 180], outputRange: ['180deg', '360deg'] }) }],
+    transform: [
+      {
+        rotateY: flipAnim.interpolate({ inputRange: [0, 180], outputRange: ['180deg', '360deg'] }),
+      },
+    ],
     backfaceVisibility: 'hidden' as const,
-    position: 'absolute' as const, top: 0, left: 0, right: 0, bottom: 0,
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   };
 
   const autoType = getAutoContentType(currentTopic.progress.confidence);
@@ -197,30 +241,48 @@ export default function ReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
 
       <ResponsiveContainer>
         <View style={styles.header}>
-          <Text style={styles.progress}>Card {currentIdx + 1} / {queue.length}  ·  ~{Math.ceil((queue.length - currentIdx) * 0.5)} min left</Text>
+          <Text style={styles.progress}>
+            Card {currentIdx + 1} / {queue.length} · ~{Math.ceil((queue.length - currentIdx) * 0.5)}{' '}
+            min left
+          </Text>
           {currentTopic.progress.isNemesis && (
             <View style={styles.nemesisBadge}>
               <Text style={styles.nemesisBadgeText}>⚔️ NEMESIS (+50 XP)</Text>
             </View>
           )}
-          <TouchableOpacity onPress={() => { Speech.stop(); navigation.goBack(); }}><Text style={styles.close}>✕</Text></TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              Speech.stop();
+              navigation.goBack();
+            }}
+          >
+            <Text style={styles.close}>✕</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Progress bar */}
         <View style={styles.progressBarBg}>
-          <Animated.View style={[styles.progressBarFill, {
-            width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-          }]} />
+          <Animated.View
+            style={[
+              styles.progressBarFill,
+              {
+                width: progressAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0%', '100%'],
+                }),
+              },
+            ]}
+          />
         </View>
 
         {/* Content type chips (only when not flipped) */}
         {!isFlipped && (
           <View style={styles.chipRow}>
-            {CONTENT_CHIPS.map(chip => {
+            {CONTENT_CHIPS.map((chip) => {
               const isActive = chip.type === activeChip;
               const isAuto = selectedContentType === null && chip.type === autoType;
               return (
@@ -255,10 +317,12 @@ export default function ReviewScreen() {
 
             {/* Back — scrollable */}
             <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.backScroll} contentContainerStyle={styles.backScrollContent}>
-                {loading ? (
-                  <LoadingOrb />
-                ) : renderBackContent(content)}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={styles.backScroll}
+                contentContainerStyle={styles.backScrollContent}
+              >
+                {loading ? <LoadingOrb /> : renderBackContent(content)}
               </ScrollView>
             </Animated.View>
 
@@ -276,7 +340,11 @@ export default function ReviewScreen() {
 
             {/* Tap overlay for flip */}
             {!isFlipped && (
-              <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleFlip} activeOpacity={1} />
+              <TouchableOpacity
+                style={StyleSheet.absoluteFill}
+                onPress={handleFlip}
+                activeOpacity={1}
+              />
             )}
           </Animated.View>
         </View>
@@ -285,7 +353,7 @@ export default function ReviewScreen() {
         <View style={styles.controls}>
           {isFlipped ? (
             <View style={styles.ratings}>
-              {RATINGS.map(r => (
+              {RATINGS.map((r) => (
                 <TouchableOpacity
                   key={r.label}
                   style={[styles.rateBtn, { borderColor: r.color }]}
@@ -315,7 +383,9 @@ function renderBackContent(content: AIContent | null) {
       <View>
         <Text style={styles.label}>KEY POINTS</Text>
         {content.points.map((p, i) => (
-          <Text key={i} style={styles.point}>• {p}</Text>
+          <Text key={i} style={styles.point}>
+            • {p}
+          </Text>
         ))}
         {content.memoryHook ? <Text style={styles.hook}>💡 {content.memoryHook}</Text> : null}
       </View>
@@ -327,7 +397,11 @@ function renderBackContent(content: AIContent | null) {
       <View>
         <Text style={styles.label}>MNEMONIC</Text>
         <Text style={styles.mnemonicText}>{content.mnemonic}</Text>
-        {content.expansion.map((e, i) => <Text key={i} style={styles.point}>• {e}</Text>)}
+        {content.expansion.map((e, i) => (
+          <Text key={i} style={styles.point}>
+            • {e}
+          </Text>
+        ))}
         {content.tip ? <Text style={styles.hook}>💡 {content.tip}</Text> : null}
       </View>
     );
@@ -340,10 +414,14 @@ function renderBackContent(content: AIContent | null) {
         <Text style={styles.label}>QUICK QUIZ</Text>
         <Text style={styles.quizQ}>{q.question}</Text>
         {q.options.map((opt, i) => (
-          <Text key={i} style={styles.point}>{String.fromCharCode(65 + i)}. {opt}</Text>
+          <Text key={i} style={styles.point}>
+            {String.fromCharCode(65 + i)}. {opt}
+          </Text>
         ))}
         <Text style={styles.hook}>✓ {q.options[q.correctIndex]}</Text>
-        {q.explanation ? <Text style={[styles.point, { color: '#9E9E9E', marginTop: 8 }]}>{q.explanation}</Text> : null}
+        {q.explanation ? (
+          <Text style={[styles.point, { color: '#9E9E9E', marginTop: 8 }]}>{q.explanation}</Text>
+        ) : null}
       </View>
     );
   }
@@ -354,10 +432,22 @@ function renderBackContent(content: AIContent | null) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0F0F14' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, alignItems: 'center' },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    alignItems: 'center',
+  },
   progress: { color: '#666', fontWeight: '700' },
-  nemesisBadge: { backgroundColor: '#F4433622', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#F44336' },
-  nemesisBadgeText: { color: '#F44336', fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  nemesisBadge: {
+    backgroundColor: '#F4433622',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#F44336',
+  },
+  nemesisBadgeText: { color: '#F44336', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
   close: { color: '#fff', fontSize: 20 },
   emoji: { fontSize: 60, marginBottom: 20 },
   title: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
@@ -372,8 +462,12 @@ const styles = StyleSheet.create({
   // Content type chips
   chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
   chip: {
-    flex: 1, alignItems: 'center', paddingVertical: 7,
-    borderRadius: 20, borderWidth: 1.5, borderColor: '#333',
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#333',
     backgroundColor: '#1A1A24',
   },
   chipActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
@@ -407,12 +501,22 @@ const styles = StyleSheet.create({
 
   // Swipe hints
   swipeHintLeft: {
-    position: 'absolute', left: 8, top: '45%',
-    backgroundColor: 'rgba(244,67,54,0.15)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+    position: 'absolute',
+    left: 8,
+    top: '45%',
+    backgroundColor: 'rgba(244,67,54,0.15)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   swipeHintRight: {
-    position: 'absolute', right: 8, top: '45%',
-    backgroundColor: 'rgba(46,204,113,0.15)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4,
+    position: 'absolute',
+    right: 8,
+    top: '45%',
+    backgroundColor: 'rgba(46,204,113,0.15)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   swipeHintText: { color: '#fff', fontSize: 11, fontWeight: '700', opacity: 0.5 },
 
@@ -422,14 +526,27 @@ const styles = StyleSheet.create({
   tapHint: { color: '#444', marginTop: 40, fontSize: 12 },
   point: { color: '#ddd', fontSize: 16, marginBottom: 12, lineHeight: 22 },
   hook: { color: '#FF9800', fontSize: 14, marginTop: 12, fontStyle: 'italic' },
-  mnemonicText: { color: '#6C63FF', fontSize: 20, fontWeight: '800', marginBottom: 16, lineHeight: 28 },
+  mnemonicText: {
+    color: '#6C63FF',
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 16,
+    lineHeight: 28,
+  },
   quizQ: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 16, lineHeight: 24 },
   error: { color: '#F44336' },
   controls: { padding: 20, height: 120 },
   flipBtn: { backgroundColor: '#6C63FF', padding: 16, borderRadius: 12, alignItems: 'center' },
   flipText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   ratings: { flexDirection: 'row', gap: 10 },
-  rateBtn: { flex: 1, borderWidth: 2, borderRadius: 12, padding: 12, alignItems: 'center', backgroundColor: '#1A1A24' },
+  rateBtn: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    backgroundColor: '#1A1A24',
+  },
   rateLabel: { fontWeight: '800', fontSize: 14, marginBottom: 4 },
   rateDays: { color: '#666', fontSize: 11 },
 });

@@ -1,4 +1,4 @@
-import { dateStr, getDb, nowTs, todayStr } from '../database';
+import { dateStr, getDb, runInTransaction, nowTs, todayStr } from '../database';
 import type { StudySession, Mood, SessionMode } from '../../types';
 
 type WeeklyStatsBucket = {
@@ -44,18 +44,21 @@ export async function endSession(
   durationMinutes: number,
   notes?: string,
 ): Promise<void> {
-  const db = getDb();
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
-    await db.runAsync(
+  await runInTransaction(async (tx) => {
+    await tx.runAsync(
       `UPDATE sessions
        SET ended_at = ?, completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
        WHERE id = ?`,
-      [nowTs(), JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
+      [
+        nowTs(),
+        JSON.stringify(completedTopics),
+        xpEarned,
+        durationMinutes,
+        notes ?? null,
+        sessionId,
+      ],
     );
-
-    // Update daily log
-    await db.runAsync(
+    await tx.runAsync(
       `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
        VALUES (?, 1, ?, ?)
        ON CONFLICT(date) DO UPDATE SET
@@ -64,11 +67,7 @@ export async function endSession(
          xp_earned = xp_earned + excluded.xp_earned`,
       [todayStr(), durationMinutes, xpEarned],
     );
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (err) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw err;
-  }
+  });
 }
 
 /**
@@ -82,31 +81,24 @@ export async function updateSessionProgress(
   completedTopics: number[] = [],
   notes?: string,
 ): Promise<void> {
-  const db = getDb();
   const today = todayStr();
-
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
-    // 1. Get previous values for this session to calculate delta for daily_log
-    const prev = await db.getFirstAsync<{ duration_minutes: number; total_xp_earned: number }>(
+  await runInTransaction(async (tx) => {
+    const prev = await tx.getFirstAsync<{ duration_minutes: number; total_xp_earned: number }>(
       'SELECT COALESCE(duration_minutes, 0) as duration_minutes, COALESCE(total_xp_earned, 0) as total_xp_earned FROM sessions WHERE id = ?',
       [sessionId],
     );
-
     const deltaMins = durationMinutes - (prev?.duration_minutes ?? 0);
     const deltaXp = xpEarned - (prev?.total_xp_earned ?? 0);
 
-    // 2. Update session
-    await db.runAsync(
+    await tx.runAsync(
       `UPDATE sessions
        SET completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
        WHERE id = ?`,
       [JSON.stringify(completedTopics), xpEarned, durationMinutes, notes ?? null, sessionId],
     );
 
-    // 3. Update daily log with deltas
     if (deltaMins > 0 || deltaXp > 0) {
-      await db.runAsync(
+      await tx.runAsync(
         `INSERT INTO daily_log (date, session_count, total_minutes, xp_earned)
          VALUES (?, 1, ?, ?)
          ON CONFLICT(date) DO UPDATE SET
@@ -121,11 +113,7 @@ export async function updateSessionProgress(
         ],
       );
     }
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (err) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw err;
-  }
+  });
 }
 
 export async function getRecentSessions(limit = 7): Promise<StudySession[]> {

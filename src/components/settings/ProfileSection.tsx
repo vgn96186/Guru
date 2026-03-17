@@ -9,7 +9,12 @@ interface ProfileSectionProps {
   onLinkDevice: () => void;
 }
 
-function ProfileSection({ name, onNameChange, isSyncAvailable, onLinkDevice }: ProfileSectionProps) {
+function ProfileSection({
+  name,
+  onNameChange,
+  isSyncAvailable,
+  onLinkDevice,
+}: ProfileSectionProps) {
   return (
     <View style={styles.container}>
       {!isSyncAvailable && (
@@ -17,10 +22,12 @@ function ProfileSection({ name, onNameChange, isSyncAvailable, onLinkDevice }: P
           Tablet Sync is currently unavailable on this device (MQTT module missing).
         </Text>
       )}
-      <TouchableOpacity 
-        style={[styles.linkBtn, !isSyncAvailable && styles.disabledBtn]} 
+      <TouchableOpacity
+        style={[styles.linkBtn, !isSyncAvailable && styles.disabledBtn]}
         onPress={onLinkDevice}
         disabled={!isSyncAvailable}
+        accessibilityRole="button"
+        accessibilityLabel="Link another device for sync"
       >
         <Text style={[styles.linkBtnText, !isSyncAvailable && styles.disabledText]}>
           📱 Link Another Device (Sync)
@@ -33,7 +40,7 @@ function ProfileSection({ name, onNameChange, isSyncAvailable, onLinkDevice }: P
         value={name}
         onChangeText={onNameChange}
         placeholder="Dr. ..."
-        placeholderTextColor="#7B8193"
+        placeholderTextColor={theme.colors.textMuted}
       />
     </View>
   );

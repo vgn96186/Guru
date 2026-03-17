@@ -53,11 +53,13 @@ export async function markTopicsFromLecture(
     }
   }
 
-  // Also mark parents as seen
+  // Also mark parents as seen (parameterized to avoid SQL injection)
   if (matchedTopicIds.size > 0) {
-    const ids = Array.from(matchedTopicIds).join(',');
+    const ids = Array.from(matchedTopicIds);
+    const placeholders = ids.map(() => '?').join(',');
     const parents = await db.getAllAsync<{ parent_topic_id: number }>(
-      `SELECT DISTINCT parent_topic_id FROM topics WHERE id IN (${ids}) AND parent_topic_id IS NOT NULL`,
+      `SELECT DISTINCT parent_topic_id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
+      ids,
     );
     for (const p of parents) {
       if (!matchedTopicIds.has(p.parent_topic_id)) {
@@ -65,6 +67,11 @@ export async function markTopicsFromLecture(
       }
     }
   }
+}
+
+/** Escape SQL LIKE wildcards so literal % and _ in topic names don't over-match. */
+function escapeLikePattern(s: string): string {
+  return s.replace(/[%_]/g, (c) => (c === '%' ? '\\%' : '\\_'));
 }
 
 async function findTopicIdByKeywords(
@@ -82,11 +89,12 @@ async function findTopicIdByKeywords(
     );
     if (r1) return r1.id;
 
+    const likeName = escapeLikePattern(name);
     const r2 = await db.getFirstAsync<{ id: number }>(
       `SELECT t.id FROM topics t 
        JOIN subjects s ON t.subject_id = s.id 
-       WHERE LOWER(t.name) LIKE ? AND LOWER(s.name) = ? LIMIT 1`,
-      [`%${name}%`, subjectName.toLowerCase()],
+       WHERE LOWER(t.name) LIKE ? ESCAPE '\\' AND LOWER(s.name) = ? LIMIT 1`,
+      [`%${likeName}%`, subjectName.toLowerCase()],
     );
     if (r2) return r2.id;
   }

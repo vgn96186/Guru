@@ -2,7 +2,7 @@ import { getDb, nowTs } from '../../db/database';
 import { grantXp } from '../xpService';
 import { markTopicsFromLecture } from '../transcription/matching';
 import { saveTranscriptToFile } from '../transcriptStorage';
-import { embeddingToBlob } from '../ai/embeddingService';
+import { embeddingToBlob, generateEmbedding } from '../ai/embeddingService';
 import { runAutoPublicBackup } from '../backgroundBackupService';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
 
@@ -68,10 +68,9 @@ async function findSubjectId(name: string): Promise<number | null> {
   }
 
   // 3. Partial substring match (fallback)
-  res = await db.getFirstAsync<{ id: number }>(
-    'SELECT id FROM subjects WHERE LOWER(name) LIKE ?',
-    [`%${normalized}%`],
-  );
+  res = await db.getFirstAsync<{ id: number }>('SELECT id FROM subjects WHERE LOWER(name) LIKE ?', [
+    `%${normalized}%`,
+  ]);
   return res?.id ?? null;
 }
 
@@ -87,6 +86,11 @@ export async function saveLecturePersistence(opts: {
   const { analysis } = opts;
   const transcriptUri = await saveTranscriptToFile(analysis.transcript || '');
 
+  // Compute embedding before the transaction so we don't block the UI with AI/network inside BEGIN
+  const embeddingForMatching =
+    opts.embedding ??
+    (analysis.lectureSummary ? await generateEmbedding(analysis.lectureSummary) : null);
+
   await db.execAsync('BEGIN IMMEDIATE');
   try {
     if (analysis.topics.length > 0 || analysis.lectureSummary) {
@@ -96,7 +100,7 @@ export async function saveLecturePersistence(opts: {
         analysis.estimatedConfidence,
         analysis.subject,
         analysis.lectureSummary,
-        opts.embedding ?? null,
+        embeddingForMatching,
       );
       if (analysis.topics.length > 0) await grantXp(analysis.topics.length * 8);
     }
@@ -116,7 +120,7 @@ export async function saveLecturePersistence(opts: {
         opts.appName,
         opts.durationMinutes,
         analysis.estimatedConfidence,
-        opts.embedding ? embeddingToBlob(opts.embedding) : null,
+        embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
       ],
     );
 

@@ -5,6 +5,7 @@ import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 import { generateEmbedding, embeddingToBlob } from '../services/ai/embeddingService';
+import { MS_PER_DAY } from '../constants/time';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -14,6 +15,25 @@ export function getDb(): SQLite.SQLiteDatabase {
   const db = _db || g.__GURU_DB__;
   if (!db) throw new Error('DB not initialized — call initDatabase() first');
   return db;
+}
+
+/**
+ * Run multiple DB operations in a single transaction. On success commits; on throw rolls back.
+ * Use for any multi-statement write that must be atomic.
+ */
+export async function runInTransaction<T>(
+  fn: (db: SQLite.SQLiteDatabase) => Promise<T>,
+): Promise<T> {
+  const db = getDb();
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    const result = await fn(db);
+    await db.execAsync('COMMIT TRANSACTION');
+    return result;
+  } catch (e) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw e;
+  }
 }
 
 export async function initDatabase(forceSeed = false): Promise<void> {
@@ -359,7 +379,7 @@ async function updateStreakOnOpen(db: SQLite.SQLiteDatabase): Promise<void> {
 
   const last = profile.last_active_date;
   if (last && last !== today) {
-    const yesterday = dateStr(new Date(Date.now() - 86400000));
+    const yesterday = dateStr(new Date(Date.now() - MS_PER_DAY));
     if (last !== yesterday) {
       // Streak broken
       await db.runAsync('UPDATE user_profile SET streak_current = 0 WHERE id = 1');

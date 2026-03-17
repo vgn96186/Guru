@@ -7,18 +7,18 @@
 
 ## Priority Legend
 
-| Tag | Meaning | Timeframe |
-|-----|---------|-----------|
-| **P0** | Critical — data loss, crashes, or security holes | This week |
-| **P1** | High — measurable perf / UX wins | Next 2 weeks |
-| **P2** | Medium — quality-of-life, DX, maintainability | Next month |
-| **P3** | Low — nice-to-have, future vision | Backlog |
+| Tag    | Meaning                                          | Timeframe    |
+| ------ | ------------------------------------------------ | ------------ |
+| **P0** | Critical — data loss, crashes, or security holes | This week    |
+| **P1** | High — measurable perf / UX wins                 | Next 2 weeks |
+| **P2** | Medium — quality-of-life, DX, maintainability    | Next month   |
+| **P3** | Low — nice-to-have, future vision                | Backlog      |
 
 ---
 
 ## Phase 1 — Critical Foundations (P0)
 
-### 1.1 Database Indexes  _(PERFORMANCE_AUDIT §1, FEATURE_ENHANCEMENT_ROADMAP §3)_
+### 1.1 Database Indexes _(PERFORMANCE_AUDIT §1, FEATURE_ENHANCEMENT_ROADMAP §3)_
 
 **Status:** Zero custom indexes exist in `src/db/schema.ts`.
 
@@ -67,7 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_topics_subject
 
 ---
 
-### 1.2 MQTT Payload Encryption  _(FEATURE_ENHANCEMENT_ROADMAP §2.2, FULL_SYSTEM_AUDIT §5)_
+### 1.2 MQTT Payload Encryption _(FEATURE_ENHANCEMENT_ROADMAP §2.2, FULL_SYSTEM_AUDIT §5)_
 
 **Status:** `deviceSyncService.ts` sends plain-text JSON over a public MQTT broker (`broker.emqx.io`). Transport is WSS (TLS), but anyone with the sync code can read/spoof messages.
 
@@ -116,7 +116,7 @@ export function decryptPayload(key: CryptoKey, envelope: string): object {
 
 ---
 
-### 1.3 Lecture Return File Validation Window  _(LECTURE_PIPELINE_AUDIT §4, FULL_SYSTEM_AUDIT §2)_
+### 1.3 Lecture Return File Validation Window _(LECTURE_PIPELINE_AUDIT §4, FULL_SYSTEM_AUDIT §2)_
 
 **Status:** `checkForReturnedSession` in `HomeScreen.tsx` retries 3× with 200 ms delays (600 ms total). Long recordings may still be flushing from native cache.
 
@@ -134,7 +134,7 @@ const BASE_DELAY = 300; // ms
 for (let i = 0; i < MAX_RETRIES; i++) {
   const exists = await FileSystem.getInfoAsync(recordingPath);
   if (exists.exists && exists.size > 1024) break; // valid file
-  await new Promise(r => setTimeout(r, BASE_DELAY * Math.pow(1.5, i)));
+  await new Promise((r) => setTimeout(r, BASE_DELAY * Math.pow(1.5, i)));
 }
 ```
 
@@ -146,7 +146,7 @@ for (let i = 0; i < MAX_RETRIES; i++) {
 
 ---
 
-### 1.4 Audio Chunking Memory Fix  _(LECTURE_PIPELINE_AUDIT §1)_
+### 1.4 Audio Chunking Memory Fix _(LECTURE_PIPELINE_AUDIT §1)_
 
 **Status:** `processLongRecording` in `lectureSessionMonitor.ts` loads entire 20 MB+ base64 audio into JS string memory, causing OOM on low-end devices.
 
@@ -197,7 +197,7 @@ async function splitRecording(filePath: string, chunkSizeBytes: number): Promise
 
 ## Phase 2 — High-Impact Performance & UX (P1)
 
-### 2.1 HomeScreen Mount Optimization  _(FULL_SYSTEM_AUDIT §2, UI_UX_AUDIT §4)_
+### 2.1 HomeScreen Mount Optimization _(FULL_SYSTEM_AUDIT §2, UI_UX_AUDIT §4)_
 
 **Status:** `HomeScreen` runs 5+ heavy sync SQLite queries sequentially in a single `useEffect`. Zero usage of `InteractionManager` anywhere in the codebase.
 
@@ -227,11 +227,11 @@ async function loadHomeData() {
   const agenda = getTodaysAgendaWithTimes();
   setAgenda(agenda);
   await yieldToUI(); // () => new Promise(r => setTimeout(r, 0))
-  
+
   const weak = getWeakestTopics();
   setWeakTopics(weak);
   await yieldToUI();
-  
+
   const due = getTopicsDueForReview();
   setDueTopics(due);
   // ...
@@ -244,7 +244,7 @@ async function loadHomeData() {
 
 ---
 
-### 2.2 StatsScreen SQL Aggregation  _(PERFORMANCE_AUDIT §2, UI_UX_AUDIT §4)_
+### 2.2 StatsScreen SQL Aggregation _(PERFORMANCE_AUDIT §2, UI_UX_AUDIT §4)_
 
 **Status:** `StatsScreen.tsx` calls `getAllTopicsWithProgress()` → loads 5 000+ rows into JS → `subjects.map(sub => allTopics.filter(...))` on the JS thread.
 
@@ -284,7 +284,7 @@ export function getSubjectBreakdown(): SubjectBreakdownRow[] {
 
 ---
 
-### 2.3 LLM Context Release on Background  _(LECTURE_PIPELINE_AUDIT §3, PERFORMANCE_AUDIT §3)_
+### 2.3 LLM Context Release on Background _(LECTURE_PIPELINE_AUDIT §3, PERFORMANCE_AUDIT §3)_
 
 **Status:** `aiService.ts` calls `llamaContext.release()` only on completion/error inside generation functions. No AppState listener. The 200 MB+ context stays in RAM when app is backgrounded.
 
@@ -312,7 +312,9 @@ async function releaseLlamaContext() {
   if (llamaContext) {
     try {
       await llamaContext.release();
-    } catch (_) { /* already released */ }
+    } catch (_) {
+      /* already released */
+    }
     llamaContext = null;
   }
 }
@@ -337,7 +339,7 @@ if (!llamaContext && profile.useLocalModel && profile.localModelPath) {
 
 ---
 
-### 2.4 Error Swallowing → User-Visible Feedback  _(FULL_SYSTEM_AUDIT §2, §4)_
+### 2.4 Error Swallowing → User-Visible Feedback _(FULL_SYSTEM_AUDIT §2, §4)_
 
 **Status:** Multiple silent `catch` blocks that swallow errors: lecture return path, AI generation failures, session screen fallbacks.
 
@@ -347,12 +349,12 @@ if (!llamaContext && profile.useLocalModel && profile.localModelPath) {
 
 Create a lightweight toast utility (`src/components/Toast.tsx` or use `react-native-toast-message`):
 
-| Location | Current Behavior | New Behavior |
-|----------|-----------------|--------------|
-| `HomeScreen` `checkForReturnedSession` catch | `console.warn` only | Toast: "Couldn't process your lecture recording. Tap to retry." + save to retry queue |
-| `SessionScreen` `generateJSONWithRouting` catch | Raw error text in-place | Styled error card with "Retry" and "Study Without Notes" buttons |
-| `ReviewScreen` `expo-speech` overlap | No handling | `Audio.setAudioModeAsync({ staysActiveInBackground: false })` + catch TTS errors |
-| `StudyPlanScreen` mode change | Full re-render block | Show spinner overlay during recalc |
+| Location                                        | Current Behavior        | New Behavior                                                                          |
+| ----------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------- |
+| `HomeScreen` `checkForReturnedSession` catch    | `console.warn` only     | Toast: "Couldn't process your lecture recording. Tap to retry." + save to retry queue |
+| `SessionScreen` `generateJSONWithRouting` catch | Raw error text in-place | Styled error card with "Retry" and "Study Without Notes" buttons                      |
+| `ReviewScreen` `expo-speech` overlap            | No handling             | `Audio.setAudioModeAsync({ staysActiveInBackground: false })` + catch TTS errors      |
+| `StudyPlanScreen` mode change                   | Full re-render block    | Show spinner overlay during recalc                                                    |
 
 **Files touched:** new `src/components/Toast.tsx`, `src/screens/HomeScreen.tsx`, `src/screens/SessionScreen.tsx`, `src/screens/ReviewScreen.tsx`, `src/screens/StudyPlanScreen.tsx`
 **Risk:** Low — additive UI changes.
@@ -360,7 +362,7 @@ Create a lightweight toast utility (`src/components/Toast.tsx` or use `react-nat
 
 ---
 
-### 2.5 Face Tracking Frame Throttle  _(LECTURE_PIPELINE_AUDIT §2)_
+### 2.5 Face Tracking Frame Throttle _(LECTURE_PIPELINE_AUDIT §2)_
 
 **Status:** `OverlayService.kt` processes every CameraX frame via ML Kit. Uses `STRATEGY_KEEP_ONLY_LATEST` (implicit backpressure) but no explicit throttle.
 
@@ -397,7 +399,7 @@ override fun analyze(imageProxy: ImageProxy) {
 
 ## Phase 3 — Quality of Life & DX (P2)
 
-### 3.1 Centralized Theme System  _(UI_UX_AUDIT §2)_
+### 3.1 Centralized Theme System _(UI_UX_AUDIT §2)_
 
 **Status:** Zero centralized theme. Colors like `#0F0F14`, `#6C63FF`, `#1A1A24` are hardcoded across every screen.
 
@@ -467,7 +469,7 @@ export const theme = {
 
 ---
 
-### 3.2 Accessibility Pass  _(UI_UX_AUDIT §1)_
+### 3.2 Accessibility Pass _(UI_UX_AUDIT §1)_
 
 **Status:** Zero `accessibilityRole` or `accessibilityLabel` usage in `HomeScreen.tsx` or virtually any screen.
 
@@ -476,6 +478,7 @@ export const theme = {
 1. **Audit scope:** Every `TouchableOpacity`, `Pressable`, and custom button component across `src/screens/` and `src/components/`.
 
 2. **Standard pattern:**
+
 ```tsx
 <TouchableOpacity
   accessibilityRole="button"
@@ -502,11 +505,12 @@ export const theme = {
 
 ---
 
-### 3.3 ESLint + Prettier + Pre-commit Hooks  _(DX_AUDIT §4)_
+### 3.3 ESLint + Prettier + Pre-commit Hooks _(DX_AUDIT §4)_
 
 **Implementation:**
 
 1. Install tooling:
+
 ```bash
 npx expo install -- --save-dev eslint@^8 eslint-config-expo prettier husky lint-staged
 ```
@@ -514,6 +518,7 @@ npx expo install -- --save-dev eslint@^8 eslint-config-expo prettier husky lint-
 2. Create config files:
 
 **`.eslintrc.js`:**
+
 ```javascript
 module.exports = {
   extends: ['expo', 'prettier'],
@@ -525,6 +530,7 @@ module.exports = {
 ```
 
 **`.prettierrc`:**
+
 ```json
 {
   "singleQuote": true,
@@ -535,6 +541,7 @@ module.exports = {
 ```
 
 3. Add to `package.json`:
+
 ```json
 {
   "scripts": {
@@ -548,6 +555,7 @@ module.exports = {
 ```
 
 4. Initialize Husky:
+
 ```bash
 npx husky init
 echo "npx lint-staged" > .husky/pre-commit
@@ -561,7 +569,7 @@ echo "npx lint-staged" > .husky/pre-commit
 
 ---
 
-### 3.4 Unit Test Foundation  _(TESTING_STRATEGY §2)_
+### 3.4 Unit Test Foundation _(TESTING_STRATEGY §2)_
 
 **Status:** Zero unit tests. All 13 test files are E2E/Detox only.
 
@@ -570,6 +578,7 @@ echo "npx lint-staged" > .husky/pre-commit
 1. **Setup Jest for unit tests** (separate from Detox):
 
 Create `jest.config.unit.js`:
+
 ```javascript
 module.exports = {
   preset: 'jest-expo',
@@ -582,6 +591,7 @@ module.exports = {
 ```
 
 Create `jest.setup.unit.js`:
+
 ```javascript
 // Mock expo-sqlite with in-memory DB
 jest.mock('expo-sqlite', () => ({
@@ -593,19 +603,20 @@ jest.mock('expo-sqlite', () => ({
 ```
 
 2. **Add `test:unit` script** to `package.json`:
+
 ```json
 "test:unit": "jest --config jest.config.unit.js"
 ```
 
 3. **Write the 5 critical test suites** (in priority order):
 
-| # | Test File | What It Tests | Key Assertions |
-|---|-----------|---------------|----------------|
-| 1 | `__tests__/services/fsrsService.test.ts` | FSRS scheduling math | Next review date > now for Easy; interval doubles on Good; Again resets |
-| 2 | `__tests__/db/queries/progress.test.ts` | `addXp`, `checkinToday`, streak logic | XP increments, level-up boundary, streak reset on skip |
-| 3 | `__tests__/services/aiService.test.ts` | JSON repair pipeline | Broken JSON → valid parse; truncated JSON → repaired; Zod validation fallback |
-| 4 | `__tests__/services/studyPlanner.test.ts` | Plan generation | Deterministic plan for mock data; respects available minutes; no impossible days |
-| 5 | `__tests__/services/transcriptionService.test.ts` | `markTopicsFromLecture` matching | Exact match, LIKE match, reverse contains, cross-subject fallback all work |
+| #   | Test File                                         | What It Tests                         | Key Assertions                                                                   |
+| --- | ------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| 1   | `__tests__/services/fsrsService.test.ts`          | FSRS scheduling math                  | Next review date > now for Easy; interval doubles on Good; Again resets          |
+| 2   | `__tests__/db/queries/progress.test.ts`           | `addXp`, `checkinToday`, streak logic | XP increments, level-up boundary, streak reset on skip                           |
+| 3   | `__tests__/services/aiService.test.ts`            | JSON repair pipeline                  | Broken JSON → valid parse; truncated JSON → repaired; Zod validation fallback    |
+| 4   | `__tests__/services/studyPlanner.test.ts`         | Plan generation                       | Deterministic plan for mock data; respects available minutes; no impossible days |
+| 5   | `__tests__/services/transcriptionService.test.ts` | `markTopicsFromLecture` matching      | Exact match, LIKE match, reverse contains, cross-subject fallback all work       |
 
 4. **Example test (fsrsService):**
 
@@ -650,7 +661,7 @@ describe('FSRS Service', () => {
 
 ---
 
-### 3.5 Native Module Documentation  _(DX_AUDIT §2)_
+### 3.5 Native Module Documentation _(DX_AUDIT §2)_
 
 **Status:** `modules/app-launcher/index.ts` exports are undocumented — a React developer must read Kotlin to understand parameters.
 
@@ -692,7 +703,7 @@ export function stopRecording(): string;
 
 ---
 
-### 3.6 Settings Screen Refactor  _(FULL_SYSTEM_AUDIT §5)_
+### 3.6 Settings Screen Refactor _(FULL_SYSTEM_AUDIT §5)_
 
 **Status:** `SettingsScreen.tsx` is a single enormous scrollable list. Users must scroll significantly to find "Clear Cache" or "Backup".
 
@@ -720,7 +731,7 @@ SettingsMain (list of sections as tappable rows)
 
 ## Phase 4 — Architectural Improvements (P2–P3)
 
-### 4.1 Offline AI Request Queue  _(FEATURE_ENHANCEMENT_ROADMAP §2.1)_
+### 4.1 Offline AI Request Queue _(FEATURE_ENHANCEMENT_ROADMAP §2.1)_
 
 **Status:** No offline queue exists. Network failure = lost request.
 
@@ -747,6 +758,7 @@ CREATE TABLE IF NOT EXISTS offline_ai_queue (
    - `MAX_ATTEMPTS = 5`.
 
 3. In `aiService.ts`, wrap `fetchContent` and cloud routing calls:
+
 ```typescript
 try {
   return await generateJSONWithRouting(prompt, schema);
@@ -769,7 +781,7 @@ try {
 
 ---
 
-### 4.2 Study Planner SQL Optimization  _(FULL_SYSTEM_AUDIT §3, PERFORMANCE_AUDIT §2)_
+### 4.2 Study Planner SQL Optimization _(FULL_SYSTEM_AUDIT §3, PERFORMANCE_AUDIT §2)_
 
 **Status:** `generateStudyPlan` in `studyPlanner.ts` calls `getAllTopicsWithProgress()` and does multiple O(N) JS iterations.
 
@@ -780,14 +792,17 @@ try {
 ```typescript
 export function getTopicBuckets(): { due: Topic[]; weak: Topic[]; remaining: Topic[] } {
   const db = getDb();
-  const due = db.getAllSync(`
+  const due = db.getAllSync(
+    `
     SELECT t.*, p.*, s.name as subject_name
     FROM topics t
     JOIN topic_progress p ON t.id = p.topic_id
     JOIN subjects s ON t.subject_id = s.id
     WHERE p.next_review_date IS NOT NULL AND p.next_review_date <= ?
     ORDER BY p.next_review_date ASC
-  `, [Date.now()]);
+  `,
+    [Date.now()],
+  );
 
   const weak = db.getAllSync(`
     SELECT t.*, p.*, s.name as subject_name
@@ -820,7 +835,7 @@ export function getTopicBuckets(): { due: Topic[]; weak: Topic[]; remaining: Top
 
 ---
 
-### 4.3 CI/CD Pipeline  _(TESTING_STRATEGY §3)_
+### 4.3 CI/CD Pipeline _(TESTING_STRATEGY §3)_
 
 **Status:** No CI/CD configuration exists whatsoever.
 
@@ -899,7 +914,7 @@ jobs:
 
 ---
 
-### 4.4 CheckIn Screen Flash Fix  _(FULL_SYSTEM_AUDIT §1)_
+### 4.4 CheckIn Screen Flash Fix _(FULL_SYSTEM_AUDIT §1)_
 
 **Status:** `RootNavigator` uses async `useEffect` to determine if check-in should auto-skip. The `CheckInScreen` briefly flashes before redirecting.
 
@@ -915,7 +930,7 @@ function RootNavigator() {
       `SELECT COUNT(*) as count FROM daily_log WHERE date = date('now')`
     );
     if (today?.count > 0) return true;
-    
+
     const quickStarts = db.getFirstSync<{ count: number }>(
       `SELECT quick_start_streak FROM user_profile WHERE id = 1`
     );
@@ -940,38 +955,38 @@ function RootNavigator() {
 
 ## Phase 5 — Aspirational / Future (P3)
 
-### 5.1 Granular Study Analytics with Charts  _(FEATURE_ENHANCEMENT_ROADMAP §1)_
+### 5.1 Granular Study Analytics with Charts _(FEATURE_ENHANCEMENT_ROADMAP §1)_
 
 - Add "Weekly XP Trend" line chart and "Subject Weakness Radar" to `StatsScreen` using already-installed `react-native-chart-kit`.
 - Requires the SQL aggregation queries from §2.2 above.
 - Design: dark-themed charts matching `theme.colors.background` / `theme.colors.primary`.
 
-### 5.2 Session & Note CRUD Completion  _(FEATURE_ENHANCEMENT_ROADMAP §2)_
+### 5.2 Session & Note CRUD Completion _(FEATURE_ENHANCEMENT_ROADMAP §2)_
 
 - Add edit/delete actions to `NotesHubScreen` and `NotesSearchScreen`.
 - Add `SessionHistoryScreen` with swipe-to-delete on session entries.
 - Wire up to existing DB delete queries (or add `deleteSession(id)` / `deleteLectureNote(id)`).
 
-### 5.3 Collaborative Study Mode  _(FEATURE_ENHANCEMENT_ROADMAP §3.1)_
+### 5.3 Collaborative Study Mode _(FEATURE_ENHANCEMENT_ROADMAP §3.1)_
 
 - Extend MQTT sync to support multiple friends' status topics.
 - New `friends` table; subscribe to `guru/v2/<friendCode>/status`.
 - "Focus Ping" push notification via `expo-notifications`.
 - **Prerequisite:** §1.2 (MQTT encryption) must be done first.
 
-### 5.4 AI-Curated Grand Mock Exams  _(FEATURE_ENHANCEMENT_ROADMAP §3.2)_
+### 5.4 AI-Curated Grand Mock Exams _(FEATURE_ENHANCEMENT_ROADMAP §3.2)_
 
 - Weighted 200-question exam generator: 60% high-yield unseen, 20% FSRS due, 20% weak.
 - Batch-queue missing questions to local model overnight via `expo-task-manager`.
 - Full exam UI with timer, question navigator, review mode.
 
-### 5.5 Background Transcription Worker  _(PERFORMANCE_AUDIT §4)_
+### 5.5 Background Transcription Worker _(PERFORMANCE_AUDIT §4)_
 
 - Save recording file paths to a job queue table on completion.
 - Use `expo-background-fetch` + `react-native-background-actions` to process transcription without blocking UI.
 - **Prerequisite:** §1.4 (memory fix) must be done first.
 
-### 5.6 LockdownScreen Emergency Exit  _(FULL_SYSTEM_AUDIT §6)_
+### 5.6 LockdownScreen Emergency Exit _(FULL_SYSTEM_AUDIT §6)_
 
 - Add a hidden 10-second long-press escape hatch to `LockdownScreen`.
 - User must type a 6-word phrase confirming they want to quit.
@@ -1026,10 +1041,10 @@ Backlog (P3):
 
 ## Appendix: Quick Reference of Factual Corrections
 
-| Audit Claim | Actual State |
-|-------------|-------------|
-| UI_UX_AUDIT says "Expo SDK 54" | App uses **Expo SDK 52** (`app.json`) |
-| DX_AUDIT mentions Docker | Not applicable — local-first mobile app |
+| Audit Claim                                   | Actual State                                   |
+| --------------------------------------------- | ---------------------------------------------- |
+| UI_UX_AUDIT says "Expo SDK 54"                | App uses **Expo SDK 52** (`app.json`)          |
+| DX_AUDIT mentions Docker                      | Not applicable — local-first mobile app        |
 | TESTING_STRATEGY mentions `npm run test:unit` | Script does **not** yet exist; must be created |
 
 ---

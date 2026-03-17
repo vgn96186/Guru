@@ -12,21 +12,21 @@ const Updates = (() => {
 
 interface State {
   hasError: boolean;
+  remountKey: number;
 }
 
 export default class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> {
   constructor(props: React.PropsWithChildren<{}>) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, remountKey: 0 };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(_error: Error): Partial<State> {
     return { hasError: true };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // In a real app, you'd log this to an error reporting service like Sentry
-    console.error("ErrorBoundary caught an error", error, errorInfo);
+    console.error('ErrorBoundary caught an error', error, errorInfo);
   }
 
   render() {
@@ -37,21 +37,25 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
           <Text style={styles.emoji}>💥</Text>
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.sub}>
-            A critical error occurred. {canReload ? 'Please restart the app.' : 'The view has been reset.'}
-            If this keeps happening, try clearing app data.
+            A critical error occurred.{' '}
+            {canReload ? 'Reload the app.' : 'Reset will remount this screen.'} If it keeps
+            happening, try clearing app data.
           </Text>
           <TouchableOpacity
             style={styles.retryBtn}
             onPress={() => {
-              this.setState({ hasError: false });
               if (canReload) {
                 try {
-                  void Updates.reloadAsync();
+                  void Updates?.reloadAsync();
                 } catch {
-                  // Fallback to state reset
+                  this.setState({ hasError: false, remountKey: Date.now() });
                 }
+              } else {
+                this.setState({ hasError: false, remountKey: Date.now() });
               }
             }}
+            accessibilityRole="button"
+            accessibilityLabel={canReload ? 'Reload app' : 'Reset view'}
           >
             <Text style={styles.retryText}>{canReload ? 'Reload App' : 'Reset View'}</Text>
           </TouchableOpacity>
@@ -59,11 +63,16 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
       );
     }
 
-    return this.props.children;
+    return (
+      <View key={this.state.remountKey} style={styles.childWrap}>
+        {this.props.children}
+      </View>
+    );
   }
 }
 
 const styles = StyleSheet.create({
+  childWrap: { flex: 1 },
   container: {
     flex: 1,
     backgroundColor: theme.colors.background,

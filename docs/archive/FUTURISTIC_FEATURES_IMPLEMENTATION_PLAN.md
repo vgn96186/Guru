@@ -1,14 +1,17 @@
 # Futuristic Features Implementation Plan (Guru)
 
 ## Goal
+
 Ship a "next-level" ADHD-first AI study experience by adding predictive, multimodal, and proactive features on top of the current Guru architecture.
 
 ## Time Horizon
+
 - Total: 8 weeks
 - Cadence: 4 phases, 2 weeks each
 - Release model: feature flags + staged rollout to internal testers first
 
 ## North-Star Outcomes
+
 - Increase daily active study minutes by >= 25%
 - Increase 7-day retention by >= 15%
 - Improve quiz accuracy in weak topics by >= 12%
@@ -17,6 +20,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 ## Phase 1 (Weeks 1-2): Personal AI Study Twin (MVP)
 
 ### What to Build
+
 - Add a proactive AI planner that:
   - reads topic progress and recent sessions
   - proposes a daily plan with time blocks
@@ -27,6 +31,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - one-click start
 
 ### Code Areas
+
 - `src/services/aiService.ts`
   - add `generateDailyPlanWithRouting()`
   - add `replanDayWithRouting()`
@@ -36,12 +41,14 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - show "Today by Guru" module
 
 ### Data/Schema
+
 - Add table `daily_plan`:
   - `id`, `date`, `plan_json`, `source`, `created_at`, `updated_at`
 - Add table `plan_events`:
   - `id`, `date`, `event_type`, `payload_json`, `created_at`
 
 ### Acceptance Criteria
+
 - Plan can be generated in <= 4s on cloud path
 - Replan works when user marks task as missed
 - Plan survives app restart (DB-backed)
@@ -49,6 +56,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 ## Phase 2 (Weeks 3-4): Real-Time Lecture Copilot
 
 ### What to Build
+
 - During transcription flow, generate:
   - live key points
   - likely exam-style questions
@@ -56,6 +64,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 - Display lecture insights in-session and save post-session digest
 
 ### Code Areas
+
 - `src/services/transcriptionService.ts`
   - pipe transcript chunks to structured insight extraction
 - `src/services/aiService.ts`
@@ -66,10 +75,12 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - cache insight payloads by lecture/session
 
 ### Data/Schema
+
 - Add table `lecture_insights`:
   - `id`, `session_id`, `timestamp_ms`, `insight_type`, `content_json`, `created_at`
 
 ### Acceptance Criteria
+
 - Insight latency <= 15s per chunk on cloud
 - No crash when connectivity drops (graceful fallback)
 - At least one insight digest saved per completed lecture session
@@ -77,6 +88,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 ## Phase 3 (Weeks 5-6): Adaptive Difficulty Engine
 
 ### What to Build
+
 - Adaptive quizzing that changes difficulty every 2-3 questions using:
   - recent correctness
   - response time
@@ -84,6 +96,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 - Add weak-topic battle mode powered by prior mistakes
 
 ### Code Areas
+
 - `src/services/aiService.ts`
   - add `generateAdaptiveQuizSet()`
 - `src/db/queries/progress.ts`
@@ -92,11 +105,13 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - integrate adaptive quiz loop
 
 ### Data/Schema
+
 - Add table `question_attempts`:
   - `id`, `topic_id`, `difficulty`, `correct`, `response_ms`, `confidence`, `created_at`
 - Add derived view/materialized logic for weak-topic clusters
 
 ### Acceptance Criteria
+
 - Difficulty visibly shifts based on user performance
 - Quiz engine never serves empty set; has fallback path
 - Weak-topic mode pulls from last 14 days of mistakes
@@ -104,6 +119,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 ## Phase 4 (Weeks 7-8): Predictive Burnout + Hybrid RAG
 
 ### What to Build
+
 - Burnout/relapse risk predictor (rule-based first, ML-ready later):
   - fragmented session patterns
   - late-night usage
@@ -113,6 +129,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - answer with citation-aware snippets
 
 ### Code Areas
+
 - `src/services/deviceSyncService.ts`
   - feed cross-device interruption events to risk engine
 - `src/services/aiService.ts`
@@ -123,12 +140,14 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - show risk-aware intervention card
 
 ### Data/Schema
+
 - Add table `focus_risk_events`:
   - `id`, `risk_score`, `risk_factors_json`, `intervention_shown`, `created_at`
 - Add retrieval metadata fields to `ai_cache` if needed:
   - `embedding_key`, `source_type`, `source_ref`
 
 ### Acceptance Criteria
+
 - Risk score updates daily and after major interruptions
 - RAG answers are grounded in user data when available
 - Interventions trigger before a doomscroll event in >= 30% of cases
@@ -136,6 +155,7 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 ## Cross-Cutting Workstreams
 
 ### Feature Flags
+
 - Add per-feature toggles in profile/settings:
   - `enableStudyTwin`
   - `enableLectureCopilot`
@@ -144,16 +164,19 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - `enableHybridRag`
 
 ### Privacy + Safety
+
 - Keep sensitive inference on-device where practical
 - Minimize raw transcript retention windows
 - Add clear user controls for data deletion and AI personalization reset
 
 ### Reliability
+
 - Offline-first fallback for all major flows
 - Queue AI jobs during connectivity loss, replay later
 - Add timeout and retry envelopes for each new AI endpoint
 
 ### Testing
+
 - Unit tests:
   - planning, adaptive difficulty, risk score logic
 - Integration tests:
@@ -163,12 +186,14 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
   - no breakage in existing `markTopicsFromLecture()` updates
 
 ## Delivery Milestones
+
 - End of Week 2: Study Twin pilot in Home
 - End of Week 4: Real-Time Lecture Copilot beta
 - End of Week 6: Adaptive Quiz v1 in sessions
 - End of Week 8: Focus Predictor + Hybrid RAG pilot
 
 ## Suggested Execution Order This Week
+
 1. Add new DB tables + migrations (`schema.ts`, `database.ts`)
 2. Implement Study Twin service APIs (`aiService.ts`)
 3. Wire `todayPlan` into Zustand (`useAppStore.ts`)
@@ -176,12 +201,14 @@ Ship a "next-level" ADHD-first AI study experience by adding predictive, multimo
 5. Add tests for plan generation and persistence
 
 ## Risks and Mitigations
+
 - AI latency spikes -> mitigate with caching + fallback model chain
 - Over-personalization fatigue -> allow strict/manual mode switch
 - Schema growth complexity -> isolate query helpers by domain
 - Notification burnout -> cap proactive nudges per day
 
 ## Definition of Done (Per Feature)
+
 - Feature flag-gated
 - DB-backed state with migration
 - Unit tests pass

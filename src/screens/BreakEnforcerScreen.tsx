@@ -112,10 +112,9 @@ export default function BreakEnforcerScreen() {
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>☕</Text>
-        <Text style={styles.title}>Break Mode Active</Text>
+        <Text style={styles.title}>Break Time</Text>
         <Text style={styles.sub}>
-          You are free to close this app and use Instagram. However, when this timer hits zero, I
-          will aggressively hijack your notifications until you resume the lecture on your tablet.
+          Relax. When this timer hits zero, you'll get nudged to resume your lecture.
         </Text>
 
         <Text style={styles.timer}>
@@ -171,13 +170,23 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   footerText: { color: '#666', fontSize: 14, fontStyle: 'italic', marginTop: 32 },
-  fallbackBtn: {
-    marginTop: 40,
-    padding: 16,
-    backgroundColor: '#990000',
+  manualResumeBtn: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FFCDD2',
+    borderColor: '#4CAF5066',
   },
-  fallbackBtnText: { color: '#FFCDD2', fontSize: 14, fontWeight: '700' },
+  manualResumeBtnText: { color: '#4CAF50', fontSize: 15, fontWeight: '700' },
+  fallbackBtn: {
+    marginTop: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffffff44',
+    backgroundColor: '#ffffff11',
+  },
+  fallbackBtnText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });

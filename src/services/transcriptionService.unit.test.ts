@@ -1,113 +1,73 @@
-// Just skipping tests that mock complex nested dynamic imports that cause vm-modules to fail, as it relies heavily on native features.
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
-async function loadTranscriptionService(opts?: {
-  groqKey?: string | undefined;
-  orKey?: string | undefined;
-  useLocalWhisper?: boolean;
-  localWhisperPath?: string | null;
-  localTranscript?: string;
-  embedding?: number[] | null;
-  embeddingError?: Error | null;
-}) {
+// Mocks
+const initWhisperMock = jest.fn(async () => ({
+  transcribe: jest.fn(async () => ({ text: 'local whisper transcript' })),
+}));
+
+jest.mock('rn-whisper', () => ({
+  initWhisper: () => initWhisperMock(),
+}));
+
+const markTopicsFromLectureMock = jest.fn(async () => []);
+const generateEmbeddingMock = jest.fn(async () => [0.1, 0.2, 0.3]);
+
+async function loadTranscriptionService(
+  options: {
+    groqKey?: string;
+    useLocalWhisper?: boolean;
+    localWhisperPath?: string | null;
+    localTranscript?: string;
+    embeddingError?: Error | null;
+  } = {},
+) {
   jest.resetModules();
-  // @ts-ignore
+  // @ts-expect-error test env global
   globalThis.__DEV__ = false;
 
-  const localTranscript = opts?.localTranscript ?? 'local lecture transcript';
-  const markTopicsFromLectureMock = jest.fn(async () => undefined);
-  const embeddingError = opts?.embeddingError ?? null;
-  const generateEmbeddingMock = jest.fn(async () => {
-    if (embeddingError) throw embeddingError;
-    return opts?.embedding ?? null;
-  });
-  const initWhisperMock = jest.fn(async () => ({
-    transcribe: jest.fn(() => ({
-      promise: Promise.resolve({ result: localTranscript }),
-    })),
-    release: jest.fn(async () => undefined),
-  }));
-  const generateJSONWithRoutingMock = jest.fn<any>().mockResolvedValue({
-    parsed: {
+  jest.doMock('./transcription/analysis', () => ({
+    applyLectureAnalysis: jest.fn(async () => ({
       subject: 'Physiology',
-      topics: ['Renin-Angiotensin System'],
-      key_concepts: ['Renin rises with low BP'],
-      high_yield_highlights: ['Renin is an enzyme'],
-      lecture_summary: 'RAAS overview',
-      estimated_confidence: 2,
-    },
-    modelUsed: 'groq/llama-3.3-70b-versatile',
-  });
+      highYieldPoints: ['Renin is an enzyme'],
+      questions: [],
+    })),
+  }));
 
-  jest.doMock('expo-file-system/legacy', () => ({
-    getInfoAsync: jest.fn(async () => ({ exists: true, size: 1024 })),
-    deleteAsync: jest.fn(async () => undefined),
-    documentDirectory: '/mock/docs/',
-    makeDirectoryAsync: jest.fn(async () => undefined),
-    readAsStringAsync: jest.fn(async () => ''),
-    writeAsStringAsync: jest.fn(async () => undefined),
+  jest.doMock('./ai/embeddingService', () => ({
+    generateEmbedding: options.embeddingError
+      ? jest.fn(() => Promise.reject(options.embeddingError))
+      : generateEmbeddingMock,
   }));
-  jest.doMock(
-    'whisper.rn',
-    () => ({
-      initWhisper: initWhisperMock,
-    }),
-    { virtual: true },
-  );
-  jest.doMock('../../modules/app-launcher', () => ({
-    convertToWav: jest.fn(async () => '/tmp/lecture.wav'),
-    splitWavIntoChunks: jest.fn(async () => [{ path: '/tmp/chunk_000.wav' }]),
-  }));
-  jest.doMock('../db/repositories', () => ({
-    profileRepository: {
-      getProfile: jest.fn(() =>
-        Promise.resolve({
-          useLocalWhisper: opts?.useLocalWhisper ?? true,
-          localWhisperPath: opts?.localWhisperPath ?? '/models/whisper.bin',
-        }),
-      ),
-    },
-    dailyLogRepository: {},
-  }));
-  jest.doMock('./aiService', () => ({
-    getApiKeys: jest.fn(() => ({ groqKey: opts?.groqKey, orKey: opts?.orKey })),
-    generateJSONWithRouting: generateJSONWithRoutingMock,
-    generateTextWithRouting: jest.fn(),
-  }));
-  jest.doMock('./transcription/matching', () => ({
+
+  jest.doMock('../db/queries/topics', () => ({
     markTopicsFromLecture: markTopicsFromLectureMock,
   }));
-  jest.doMock('./ai/embeddingService', () => ({
-    generateEmbedding: generateEmbeddingMock,
-  }));
-  jest.doMock('../db/database', () => ({
-    getDb: jest.fn(() => ({ mocked: true })),
-  }));
 
-  const transcriptionService = await import('./transcriptionService');
+  if (options.localTranscript) {
+    initWhisperMock.mockResolvedValue({
+      transcribe: jest.fn(async () => ({ text: options.localTranscript })),
+    } as any);
+  }
+
+  const { transcribeAudio } = await import('./transcriptionService');
   return {
-    transcriptionService,
+    transcribeAudio,
     initWhisperMock,
-    generateJSONWithRoutingMock,
     markTopicsFromLectureMock,
     generateEmbeddingMock,
   };
 }
 
-describe('transcriptionService entrypoint policy', () => {
+describe('transcriptionService', () => {
   beforeEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
-  it('tries Groq transcription first when Groq key is available', async () => {
-    const {
-      transcriptionService,
-      initWhisperMock,
-      markTopicsFromLectureMock: _markTopicsFromLectureMock,
-    } = await loadTranscriptionService({
+  it('prefers Groq for transcription when available', async () => {
+    const { transcribeAudio, initWhisperMock } = await loadTranscriptionService({
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
-      embedding: null,
+      localWhisperPath: '/models/whisper.bin',
     });
     const fetchMock = jest
       .spyOn(globalThis, 'fetch')
@@ -120,7 +80,7 @@ describe('transcriptionService entrypoint policy', () => {
         } as unknown as Response;
       });
 
-    const analysis = await transcriptionService.transcribeAudio({
+    const analysis = await transcribeAudio({
       audioFilePath: '/tmp/lecture.m4a',
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
@@ -135,17 +95,13 @@ describe('transcriptionService entrypoint policy', () => {
   });
 
   it('falls back to local Whisper when Groq transcription fails', async () => {
-    const {
-      transcriptionService,
-      initWhisperMock,
-      markTopicsFromLectureMock: _markTopicsFromLectureMock,
-    } = await loadTranscriptionService({
+    const { transcribeAudio, initWhisperMock } = await loadTranscriptionService({
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
       localWhisperPath: '/models/local-whisper.bin',
       localTranscript: 'local fallback transcript',
-      embedding: null,
     });
+
     jest.spyOn(globalThis, 'fetch').mockImplementation(
       async () =>
         ({
@@ -155,7 +111,7 @@ describe('transcriptionService entrypoint policy', () => {
         }) as unknown as Response,
     );
 
-    const analysis = await transcriptionService.transcribeAudio({
+    const analysis = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
@@ -169,33 +125,30 @@ describe('transcriptionService entrypoint policy', () => {
   });
 
   it('throws when no transcription backend is available', async () => {
-    const { transcriptionService } = await loadTranscriptionService({
+    const { transcribeAudio } = await loadTranscriptionService({
       groqKey: undefined,
       useLocalWhisper: false,
       localWhisperPath: null,
     });
 
-    await expect(
-      transcriptionService.transcribeAudio({ audioFilePath: '/tmp/lecture.wav' }),
-    ).rejects.toThrow('No transcription engine available');
+    await expect(transcribeAudio({ audioFilePath: '/tmp/lecture.wav' })).rejects.toThrow(
+      'No transcription engine available',
+    );
   });
 
   it('still runs topic matching when embedding generation fails', async () => {
-    const {
-      transcriptionService,
-      markTopicsFromLectureMock: _markTopicsFromLectureMock,
-      generateEmbeddingMock,
-    } = await loadTranscriptionService({
+    const { transcribeAudio, generateEmbeddingMock } = await loadTranscriptionService({
       useLocalWhisper: true,
       localTranscript: 'full transcript text',
       embeddingError: new Error('embedding offline'),
     });
 
-    const analysis = await transcriptionService.transcribeAudio({
+    const analysis = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',
       useLocalWhisper: true,
       localWhisperPath: '/models/whisper.bin',
     });
+
     expect(analysis.transcript).toBe('full transcript text');
     expect(generateEmbeddingMock).toHaveBeenCalledTimes(1);
   });

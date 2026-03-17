@@ -157,7 +157,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
     } catch (err: any) {
       if (isMountedRef.current) {
         if (err.name === 'AbortError') {
-          console.log('[GuruChatOverlay] Request aborted');
+          if (__DEV__) console.log('[GuruChatOverlay] Request aborted');
           return;
         }
 
@@ -167,10 +167,8 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-        abortControllerRef.current = null;
-      }
+      setLoading(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     }
   }
 

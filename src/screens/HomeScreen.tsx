@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
@@ -69,6 +69,12 @@ export default function HomeScreen() {
   const [criticalExpanded, setCriticalExpanded] = useState(false);
 
   useLectureReturnRecovery({ onRecovered: setReturnSheet });
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadHomeDashboard({ silent: true });
+    }, [reloadHomeDashboard]),
+  );
 
   useEffect(() => {
     dailyLogRepository.getDailyLog().then((log) => setMood((log?.mood as Mood) ?? 'good'));
@@ -619,6 +625,21 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   criticalSub: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  emptyAgendaRow: {
+    paddingVertical: 12,
+    paddingRight: 8,
+  },
+  emptyAgendaText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emptyAgendaLink: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 6,
+  },
   seeAllLink: {
     color: theme.colors.primary,
     fontSize: 12,

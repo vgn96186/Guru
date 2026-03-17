@@ -33,19 +33,19 @@ async function hasSQLiteHeader(filePath: string): Promise<boolean> {
 export async function exportDatabase() {
   try {
     const fileExists = await FileSystem.getInfoAsync(DB_PATH);
-    if (!fileExists.exists) {
+    if (!fileExists?.exists) {
       Alert.alert('Error', 'Database file not found.');
       return;
     }
-    
+
     // Copy to a temporary file with a readable name
-    const tempPath = `${FileSystem.cacheDirectory}neet_study_backup_${new Date().toISOString().slice(0,10)}.db`;
+    const tempPath = `${FileSystem.cacheDirectory}neet_study_backup_${new Date().toISOString().slice(0, 10)}.db`;
     await FileSystem.copyAsync({ from: DB_PATH, to: tempPath });
-    
+
     if (await Sharing.isAvailableAsync()) {
       await Sharing.shareAsync(tempPath, {
         mimeType: 'application/octet-stream',
-        dialogTitle: 'Export Backup'
+        dialogTitle: 'Export Backup',
       });
     } else {
       Alert.alert('Error', 'Sharing is not available on this device');
@@ -60,18 +60,18 @@ export async function importDatabase() {
   try {
     const result = await DocumentPicker.getDocumentAsync({
       copyToCacheDirectory: true,
-      type: '*/*'
+      type: '*/*',
     });
-    
+
     if (result.canceled) return;
-    
+
     const asset = result.assets[0];
     const tempImportPath = `${FileSystem.cacheDirectory}neet_study_import_tmp_${Date.now()}.db`;
     const rollbackPath = `${DB_PATH}.rollback_${Date.now()}.bak`;
 
     // Ensure SQLite dir exists first
     const dirInfo = await FileSystem.getInfoAsync(DB_DIR);
-    if (!dirInfo.exists) {
+    if (!dirInfo?.exists) {
       await FileSystem.makeDirectoryAsync(DB_DIR, { intermediates: true });
     }
 
@@ -95,7 +95,7 @@ export async function importDatabase() {
     (global as any).__GURU_DB__ = null;
 
     const existing = await FileSystem.getInfoAsync(DB_PATH);
-    if (existing.exists) {
+    if (existing?.exists) {
       await FileSystem.copyAsync({ from: DB_PATH, to: rollbackPath });
     }
 
@@ -106,7 +106,7 @@ export async function importDatabase() {
     } catch (replaceError) {
       // Restore old DB if replacement fails
       const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
-      if (rollbackExists.exists) {
+      if (rollbackExists?.exists) {
         await FileSystem.copyAsync({ from: rollbackPath, to: DB_PATH });
       }
       await FileSystem.deleteAsync(tempImportPath, { idempotent: true });
@@ -124,11 +124,14 @@ export async function importDatabase() {
     } catch (validationError) {
       // Imported DB is corrupt — rollback
       const rollbackExists = await FileSystem.getInfoAsync(rollbackPath);
-      if (rollbackExists.exists) {
+      if (rollbackExists?.exists) {
         await FileSystem.copyAsync({ from: rollbackPath, to: DB_PATH });
       }
       await FileSystem.deleteAsync(rollbackPath, { idempotent: true });
-      Alert.alert('Invalid Backup', 'The backup file failed schema validation. Your original data has been restored.');
+      Alert.alert(
+        'Invalid Backup',
+        'The backup file failed schema validation. Your original data has been restored.',
+      );
       return;
     }
 

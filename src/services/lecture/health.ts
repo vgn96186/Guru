@@ -44,7 +44,7 @@ export function startRecordingHealthCheck(
   healthCheckTimer = setInterval(async () => {
     try {
       const info = await validateRecordingFile(recordingPath);
-      if (!info.exists || info.size <= lastKnownFileSize) {
+      if (!info?.exists || info.size <= lastKnownFileSize) {
         stalledCount++;
       } else {
         stalledCount = 0;

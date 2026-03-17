@@ -51,9 +51,9 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     registerOfflineQueueProcessors();
     processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
     retryFailedTasks().catch((e) => console.warn('[AppBootstrap] Transcription retry failed:', e));
-    await registerBackgroundFetch().catch((e: unknown) =>
-      console.log('Background task not registered:', e),
-    );
+    await registerBackgroundFetch().catch((e: unknown) => {
+      if (__DEV__) console.log('Background task not registered:', e);
+    });
 
     try {
       const { decayed } = await profileRepository.applyConfidenceDecay();

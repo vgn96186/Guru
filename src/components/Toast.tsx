@@ -89,7 +89,7 @@ const ToastItem = React.memo(
       }, payload.duration);
 
       return () => clearTimeout(timer);
-    }, []);
+    }, [opacity, translateY, payload.duration, payload.type, onDone]);
 
     return (
       <Animated.View
@@ -105,8 +105,8 @@ const ToastItem = React.memo(
           }}
           activeOpacity={payload.onPress ? 0.7 : 1}
           style={styles.inner}
-          accessibilityRole="button"
           accessibilityLabel={payload.message}
+          accessibilityRole={payload.onPress ? 'button' : 'alert'}
           accessibilityHint={payload.onPress ? 'Double tap to act' : undefined}
         >
           <Text style={styles.text} numberOfLines={3}>

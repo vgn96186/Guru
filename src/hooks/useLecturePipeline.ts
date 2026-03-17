@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { type LectureAnalysis } from '../services/transcriptionService';
+import {
+  type LectureAnalysis,
+  generateADHDNote,
+  buildQuickLectureNote,
+} from '../services/transcriptionService';
 import {
   saveLectureAnalysisQuick,
   transcribeLectureWithRecovery,
@@ -9,7 +13,10 @@ import {
 } from '../services/lectureSessionMonitor';
 import { catalyzeTranscript } from '../services/aiService';
 import { profileRepository } from '../db/repositories';
-import { updateSessionTranscriptionStatus } from '../db/queries/externalLogs';
+import {
+  updateSessionTranscriptionStatus,
+  updateSessionNoteEnhancementStatus,
+} from '../db/queries/externalLogs';
 import { useAppStore } from '../store/useAppStore';
 
 export interface QuizQuestion {
@@ -123,9 +130,10 @@ Summary: ${result.lectureSummary}`;
         logId,
         onProgress: handlePipelineProgress,
       });
-      
+
       if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
-        if (!visible) await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription backgrounded');
+        if (!visible)
+          await updateSessionTranscriptionStatus(logId, 'pending', 'Transcription backgrounded');
         return;
       }
 
@@ -173,22 +181,30 @@ Summary: ${result.lectureSummary}`;
     try {
       setIsSaving(true);
       setActiveStage('saving');
-      setStageMessage('Saving lecture summary');
+      setStageMessage('Building your note...');
       const finalConfidence = userConfidence ?? analysis.estimatedConfidence;
       const analysisToSave =
         finalConfidence === analysis.estimatedConfidence
           ? analysis
           : { ...analysis, estimatedConfidence: finalConfidence };
 
+      let noteToSave: string;
+      try {
+        noteToSave = await generateADHDNote(analysisToSave);
+      } catch (e) {
+        console.warn('[LectureReturn] ADHD note generation failed, using quick note:', e);
+        noteToSave = buildQuickLectureNote(analysisToSave);
+      }
+
       await saveLectureAnalysisQuick({
         analysis: analysisToSave,
         appName,
         durationMinutes,
         logId,
-        recordingPath,
         embedding: (analysis as any).embedding,
-        onProgress: handlePipelineProgress,
+        noteOverride: noteToSave,
       });
+      await updateSessionNoteEnhancementStatus(logId, 'completed');
 
       setAnalysis(analysisToSave);
       setSessionSaved(true);
@@ -207,7 +223,15 @@ Summary: ${result.lectureSummary}`;
     } finally {
       setIsSaving(false);
     }
-  }, [analysis, recordingPath, userConfidence, appName, durationMinutes, logId, handlePipelineProgress]);
+  }, [
+    analysis,
+    recordingPath,
+    userConfidence,
+    appName,
+    durationMinutes,
+    logId,
+    handlePipelineProgress,
+  ]);
 
   const handleMarkStudied = useCallback(async () => {
     const saved = await saveSessionQuickly();
@@ -234,16 +258,19 @@ Summary: ${result.lectureSummary}`;
     }
   }, [saveSessionQuickly, cleanupAndClose]);
 
-  const handleSelectAnswer = useCallback((idx: number) => {
-    if (selected !== null) return;
-    const q = quizQuestions[currentQ];
-    if (!q) return;
-    setSelected(idx);
-    setShowExpl(true);
-    if (idx === q.correctIndex) {
-      setScore((s) => s + 1);
-    }
-  }, [selected, quizQuestions, currentQ]);
+  const handleSelectAnswer = useCallback(
+    (idx: number) => {
+      if (selected !== null) return;
+      const q = quizQuestions[currentQ];
+      if (!q) return;
+      setSelected(idx);
+      setShowExpl(true);
+      if (idx === q.correctIndex) {
+        setScore((s) => s + 1);
+      }
+    },
+    [selected, quizQuestions, currentQ],
+  );
 
   const handleNextQuestion = useCallback(async () => {
     if (currentQ < quizQuestions.length - 1) {

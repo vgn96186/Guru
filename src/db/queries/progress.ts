@@ -43,6 +43,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     streak_shield_available: number;
     body_doubling_enabled: number;
     blocked_content_types: string;
+    exam_type: string | null;
     idle_timeout_minutes: number;
     break_duration_minutes: number;
     notification_hour: number;
@@ -73,6 +74,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       streakCurrent: 0,
       streakBest: 0,
       dailyGoalMinutes: 120,
+      examType: 'INICET' as const,
       inicetDate: DEFAULT_INICET_DATE,
       neetDate: DEFAULT_NEET_DATE,
       preferredSessionLength: 45,
@@ -114,6 +116,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     streakCurrent: r.streak_current,
     streakBest: r.streak_best,
     dailyGoalMinutes: r.daily_goal_minutes,
+    examType: (r.exam_type === 'NEET' ? 'NEET' : 'INICET') as 'INICET' | 'NEET',
     inicetDate: isValidFutureDate(r.inicet_date) ? r.inicet_date : DEFAULT_INICET_DATE,
     neetDate: isValidFutureDate(r.neet_date) ? r.neet_date : DEFAULT_NEET_DATE,
     preferredSessionLength: r.preferred_session_length,
@@ -176,6 +179,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     streakCurrent: 'streak_current',
     streakBest: 'streak_best',
     dailyGoalMinutes: 'daily_goal_minutes',
+    examType: 'exam_type',
     inicetDate: 'inicet_date',
     neetDate: 'neet_date',
     preferredSessionLength: 'preferred_session_length',
@@ -631,10 +635,10 @@ export async function getRecentTopics(limit: number = 10): Promise<string[]> {
   const twoDaysAgo = Date.now() - INTERVALS.TWO_DAYS;
   const rows = await db.getAllAsync<{ topic_name: string }>(
     `SELECT DISTINCT t.name as topic_name
-     FROM session_metrics sm
-     JOIN topics t ON sm.topic_id = t.id
-     WHERE sm.created_at > ?
-     ORDER BY sm.created_at DESC
+     FROM topic_progress tp
+     JOIN topics t ON tp.topic_id = t.id
+     WHERE tp.last_studied_at > ?
+     ORDER BY tp.last_studied_at DESC
      LIMIT ?`,
     [twoDaysAgo, limit],
   );

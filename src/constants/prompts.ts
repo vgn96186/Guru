@@ -304,8 +304,8 @@ STUDENT STATS:
 - Coverage: ${stats.coveragePercent}%
 - Days to INI-CET: ${stats.daysToInicet}
 - Days to NEET-PG: ${stats.daysToNeetPg}
-- DUE FOR REVIEW (SRS): ${stats.dueTopics.map((t) => t.name).join(', ')}
-- WEAK TOPICS: ${stats.weakTopics.map((t) => t.name).join(', ')}
+- DUE FOR REVIEW (SRS): ${stats.dueTopics.map((t) => `${t.name} (ID: ${t.id})`).join(', ')}
+- WEAK TOPICS: ${stats.weakTopics.map((t) => `${t.name} (ID: ${t.id})`).join(', ')}
 - RECENTLY STUDIED (AVOID): ${stats.recentTopics.join(', ')}
 
 Return JSON:
@@ -314,7 +314,7 @@ Return JSON:
     {
       "id": "block1",
       "title": "Morning Review Power Hour",
-      "topicIds": [id1, id2],
+      "topicIds": [12, 45],
       "durationMinutes": 60,
       "startTime": "08:00",
       "type": "review",
@@ -329,6 +329,7 @@ RULES:
 - Blocks should be 30-120 minutes.
 - Include 'break' blocks (15-30 min) every 2-3 study blocks.
 - types: 'study', 'review', 'test', 'break'.
+- topicIds MUST be an array of numbers representing the actual IDs provided above. If no specific topic, leave empty.
 - Prioritize dueTopics first, then weakTopics, then new high-yield topics if time permits.
 - Total durationMinutes (including breaks) should be approx ${availableMinutes}.`;
 }

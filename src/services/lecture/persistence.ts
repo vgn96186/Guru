@@ -74,8 +74,10 @@ async function findSubjectId(name: string): Promise<number | null> {
   return res?.id ?? null;
 }
 
+import type { LectureAnalysis } from '../transcriptionService';
+
 export async function saveLecturePersistence(opts: {
-  analysis: any;
+  analysis: LectureAnalysis;
   appName: string;
   durationMinutes: number;
   logId: number;
@@ -138,17 +140,24 @@ export async function saveLecturePersistence(opts: {
     runAutoPublicBackup().catch((e) => console.warn('[AutoBackup] Trigger failed:', e));
 
     return noteId;
-  } catch (e: any) {
+  } catch (e: unknown) {
     await db.execAsync('ROLLBACK');
     const { showToast } = require('../../components/Toast');
-    showToast(`Failed to save lecture: ${e.message || 'Unknown error'}`, 'error');
+    const msg = e instanceof Error ? e.message : 'Unknown error';
+    showToast(`Failed to save lecture: ${msg}`, 'error');
     throw e;
   }
 }
 
 export async function getFailedTranscriptions() {
   const db = getDb();
-  return db.getAllAsync<any>(
+  return db.getAllAsync<{
+    id: number;
+    app_name: string;
+    duration_minutes: number;
+    recording_path: string;
+    transcription_status: string;
+  }>(
     "SELECT * FROM external_app_logs WHERE returned_at IS NOT NULL AND recording_path IS NOT NULL AND transcription_status IN ('pending', 'failed', 'transcribing')",
   );
 }

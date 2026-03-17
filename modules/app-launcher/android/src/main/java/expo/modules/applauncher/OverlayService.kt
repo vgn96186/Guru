@@ -394,7 +394,7 @@ class OverlayService : Service(), LifecycleOwner {
         private var isRecordingPaused = false
 
         private val menuLayout = android.widget.LinearLayout(context).apply {
-            orientation = HORIZONTAL
+            orientation = android.widget.LinearLayout.HORIZONTAL
             visibility = View.GONE
             setPadding(dpToPx(64, context), dpToPx(8, context), dpToPx(12, context), dpToPx(8, context))
             gravity = Gravity.CENTER_VERTICAL
@@ -413,7 +413,7 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         private val infoStack = android.widget.LinearLayout(context).apply {
-            orientation = VERTICAL
+            orientation = android.widget.LinearLayout.VERTICAL
             setPadding(dpToPx(12, context), 0, dpToPx(16, context), 0)
         }
 
@@ -661,12 +661,6 @@ class OverlayService : Service(), LifecycleOwner {
 
         fun destroy() {
             handler.removeCallbacks(animationRunnable)
-        }
-
-        override fun onDetachedFromWindow() {
-            super.onDetachedFromWindow()
-            handler.removeCallbacks(animationRunnable)
-        }
         }
 
         private fun getMessage(): String {

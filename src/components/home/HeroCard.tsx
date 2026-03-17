@@ -50,6 +50,7 @@ export default function HeroCard({
     <View
       style={styles.card}
       accessibilityRole="summary"
+      accessible
       accessibilityLabel={`${greeting}, ${firstName}. INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
       <Text style={styles.greeting}>

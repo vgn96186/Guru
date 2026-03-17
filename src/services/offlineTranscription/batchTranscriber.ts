@@ -72,10 +72,7 @@ export class BatchTranscriber {
   private callback: BatchProgressCallback | null = null;
   private processingStartTime = 0;
 
-  constructor(
-    modelManager: WhisperModelManager,
-    config?: Partial<BatchTranscriptionConfig>,
-  ) {
+  constructor(modelManager: WhisperModelManager, config?: Partial<BatchTranscriptionConfig>) {
     this.modelManager = modelManager;
     this.config = { ...DEFAULT_BATCH_CONFIG, ...config };
   }
@@ -105,7 +102,7 @@ export class BatchTranscriber {
 
     // Validate input file
     const fileInfo = await FileSystem.getInfoAsync(wavFilePath);
-    if (!fileInfo.exists) {
+    if (!fileInfo?.exists) {
       throw new TranscriptionError(
         'AUDIO_FORMAT_ERROR',
         `WAV file not found: ${wavFilePath}`,
@@ -147,28 +144,21 @@ export class BatchTranscriber {
       this.emitProgress('transcribing', i + 1, chunks.length, 0);
 
       try {
-        const chunkSegments = await this.transcribeChunk(
-          whisperContext,
-          chunk,
-        );
+        const chunkSegments = await this.transcribeChunk(whisperContext, chunk);
 
         if (chunkSegments.length === 0) {
           emptyChunks++;
-          console.log(
-            `[Batch] Chunk ${i + 1}/${chunks.length}: empty (silence)`,
-          );
+          if (__DEV__) console.log(`[Batch] Chunk ${i + 1}/${chunks.length}: empty (silence)`);
         } else {
           this.segments.push(...chunkSegments);
-          console.log(
-            `[Batch] Chunk ${i + 1}/${chunks.length}: ${chunkSegments.length} segments`,
-          );
+          if (__DEV__)
+            console.log(
+              `[Batch] Chunk ${i + 1}/${chunks.length}: ${chunkSegments.length} segments`,
+            );
         }
       } catch (err) {
         // Log but don't crash on individual chunk failures
-        console.error(
-          `[Batch] Chunk ${i + 1}/${chunks.length} failed:`,
-          err,
-        );
+        console.error(`[Batch] Chunk ${i + 1}/${chunks.length} failed:`, err);
         emptyChunks++;
       }
 
@@ -181,18 +171,12 @@ export class BatchTranscriber {
       }
     }
 
-    const processingTimeSeconds =
-      (Date.now() - this.processingStartTime) / 1000;
+    const processingTimeSeconds = (Date.now() - this.processingStartTime) / 1000;
 
     // Estimate VAD-skipped seconds based on empty chunks
     vadSkippedSeconds = emptyChunks * this.config.chunkDurationSec;
 
-    this.emitProgress(
-      'completed',
-      chunks.length,
-      chunks.length,
-      vadSkippedSeconds,
-    );
+    this.emitProgress('completed', chunks.length, chunks.length, vadSkippedSeconds);
 
     return {
       segments: this.segments,
@@ -242,16 +226,14 @@ export class BatchTranscriber {
    *
    * Each chunk is written as a separate WAV file in a temp directory.
    */
-  private async splitAudioIntoChunks(
-    wavFilePath: string,
-  ): Promise<AudioChunkInfo[]> {
+  private async splitAudioIntoChunks(wavFilePath: string): Promise<AudioChunkInfo[]> {
     const chunks: AudioChunkInfo[] = [];
 
     // Read the WAV file to get its total duration
     // WAV header is 44 bytes. Rest is PCM data.
     // Duration = dataBytes / (sampleRate * channels * bytesPerSample)
     const fileInfo = await FileSystem.getInfoAsync(wavFilePath);
-    if (!fileInfo.exists || !('size' in fileInfo)) {
+    if (!fileInfo?.exists || !('size' in fileInfo)) {
       throw new Error('Cannot read WAV file info');
     }
 
@@ -284,9 +266,10 @@ export class BatchTranscriber {
       });
     });
 
-    console.log(
-      `[Batch] Split ${totalDurationSec.toFixed(0)}s audio into ${chunks.length} chunks (${chunkDuration}s each, ${overlap}s overlap)`,
-    );
+    if (__DEV__)
+      console.log(
+        `[Batch] Split ${totalDurationSec.toFixed(0)}s audio into ${chunks.length} chunks (${chunkDuration}s each, ${overlap}s overlap)`,
+      );
 
     return chunks;
   }
@@ -307,11 +290,7 @@ export class BatchTranscriber {
       maxLen: 0,
     });
 
-    if (
-      !result?.segments ||
-      result.segments.length === 0 ||
-      !result.result?.trim()
-    ) {
+    if (!result?.segments || result.segments.length === 0 || !result.result?.trim()) {
       return [];
     }
 
@@ -378,8 +357,7 @@ export class BatchTranscriber {
   ): void {
     if (!this.callback) return;
 
-    const elapsedSeconds =
-      (Date.now() - this.processingStartTime) / 1000;
+    const elapsedSeconds = (Date.now() - this.processingStartTime) / 1000;
 
     // Estimate remaining time based on average time per chunk
     let estimatedRemaining: number | undefined;
@@ -389,11 +367,7 @@ export class BatchTranscriber {
     }
 
     const percentage =
-      state === 'completed'
-        ? 100
-        : total > 0
-          ? Math.round((current / total) * 100)
-          : 0;
+      state === 'completed' ? 100 : total > 0 ? Math.round((current / total) * 100) : 0;
 
     this.callback({
       state: state === 'completed' ? 'completed' : 'transcribing',
@@ -403,9 +377,7 @@ export class BatchTranscriber {
       partialTranscript: this.segments.map((s) => s.text).join(' '),
       segments: [...this.segments],
       elapsedSeconds,
-      estimatedRemainingSeconds: estimatedRemaining
-        ? Math.round(estimatedRemaining)
-        : undefined,
+      estimatedRemainingSeconds: estimatedRemaining ? Math.round(estimatedRemaining) : undefined,
     });
   }
 

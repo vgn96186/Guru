@@ -26,8 +26,39 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 class AppLauncherModule : Module() {
-    // ... rest of class ...
-    
+    // Holds the current recording output path so JS can retrieve it after stopRecording
+    private var currentRecordingPath: String? = null
+
+    // MediaProjection request handling
+    private var projectionDeferred: CompletableDeferred<Boolean>? = null
+    private var projectionResultCode: Int = 0
+    private var projectionData: Intent? = null
+
+    private companion object {
+        private const val MEDIA_PROJECTION_RC = 7001
+        private const val TAG = "GuruAppLauncher"
+        private const val WAV_HEADER_BYTES = 44
+        private const val WAV_BYTES_PER_SECOND = 16_000 * 1 * 2 // 16kHz mono 16-bit
+    }
+
+    private fun buildWavHeader(dataSize: Int): ByteArray {
+        val header = ByteBuffer.allocate(WAV_HEADER_BYTES).order(ByteOrder.LITTLE_ENDIAN)
+        header.put("RIFF".toByteArray(Charsets.US_ASCII))
+        header.putInt(36 + dataSize)
+        header.put("WAVE".toByteArray(Charsets.US_ASCII))
+        header.put("fmt ".toByteArray(Charsets.US_ASCII))
+        header.putInt(16) // PCM format chunk size
+        header.putShort(1) // PCM
+        header.putShort(1) // Mono
+        header.putInt(16_000) // Sample rate
+        header.putInt(32_000) // Byte rate
+        header.putShort(2) // Block align
+        header.putShort(16) // Bits per sample
+        header.put("data".toByteArray(Charsets.US_ASCII))
+        header.putInt(dataSize)
+        return header.array()
+    }
+
     private fun getPublicGuruDir(): File {
         val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
         val guruDir = File(publicDir, "Guru/Recordings")
@@ -37,8 +68,153 @@ class AppLauncherModule : Module() {
         return if (guruDir.exists()) guruDir else appContext.reactContext?.filesDir ?: File("/tmp")
     }
 
+    private fun splitWavIntoChunksNative(
+        wavPath: String,
+        chunkDataBytes: Int,
+        stepBytes: Int,
+        minChunkBytes: Int,
+    ): List<Map<String, Any>> {
+        val wavFile = File(wavPath)
+        if (!wavFile.exists() || wavFile.length() <= WAV_HEADER_BYTES) return emptyList()
+
+        val safeChunkBytes = if (chunkDataBytes <= 0) WAV_BYTES_PER_SECOND * 60 else chunkDataBytes
+        val safeStepBytes = when {
+            stepBytes <= 0 -> safeChunkBytes
+            stepBytes > safeChunkBytes -> safeChunkBytes
+            else -> stepBytes
+        }
+        val safeMinChunkBytes = if (minChunkBytes <= 0) WAV_BYTES_PER_SECOND else minChunkBytes
+
+        val chunkDir = File(
+            wavFile.parentFile ?: File("/tmp"),
+            "wav-chunks-${System.currentTimeMillis()}",
+        )
+        chunkDir.mkdirs()
+
+        val chunks = mutableListOf<Map<String, Any>>()
+        RandomAccessFile(wavFile, "r").use { raf ->
+            val totalSize = raf.length()
+            var dataOffset = WAV_HEADER_BYTES.toLong()
+            var chunkIndex = 0
+
+            while (dataOffset < totalSize) {
+                val remaining = (totalSize - dataOffset).toInt()
+                val thisChunkBytes = minOf(safeChunkBytes, remaining)
+                if (thisChunkBytes < safeMinChunkBytes) break
+
+                val pcmData = ByteArray(thisChunkBytes)
+                raf.seek(dataOffset)
+                raf.readFully(pcmData)
+
+                val chunkFile = File(chunkDir, "chunk_${chunkIndex.toString().padStart(3, '0')}.wav")
+                FileOutputStream(chunkFile).use { out ->
+                    out.write(buildWavHeader(thisChunkBytes))
+                    out.write(pcmData)
+                    out.flush()
+                }
+
+                val startSec = (dataOffset - WAV_HEADER_BYTES).toDouble() / WAV_BYTES_PER_SECOND.toDouble()
+                val durationSec = thisChunkBytes.toDouble() / WAV_BYTES_PER_SECOND.toDouble()
+                chunks.add(
+                    mapOf(
+                        "path" to chunkFile.absolutePath,
+                        "startSec" to startSec,
+                        "durationSec" to durationSec,
+                    ),
+                )
+
+                dataOffset += safeStepBytes.toLong()
+                chunkIndex += 1
+            }
+        }
+
+        return chunks
+    }
+
     override fun definition() = ModuleDefinition {
-        // ...
+        Name("GuruAppLauncher")
+
+        // ── Activity result handler for MediaProjection ────────────
+        OnActivityResult { _, payload ->
+            if (payload.requestCode == MEDIA_PROJECTION_RC) {
+                projectionResultCode = payload.resultCode
+                projectionData = payload.data
+                if (payload.resultCode == Activity.RESULT_OK && payload.data != null) {
+                    projectionDeferred?.complete(true)
+                } else {
+                    projectionDeferred?.complete(false)
+                }
+            }
+        }
+
+        AsyncFunction("launchApp") { packageName: String ->
+            val context = appContext.reactContext ?: throw Exception("No context")
+            val pm = context.packageManager
+            val intent = pm.getLaunchIntentForPackage(packageName)
+                ?: throw Exception("App not installed: $packageName")
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+            return@AsyncFunction true
+        }
+
+        AsyncFunction("isAppInstalled") { packageName: String ->
+            val context = appContext.reactContext ?: return@AsyncFunction false
+            return@AsyncFunction try {
+                context.packageManager.getPackageInfo(packageName, 0)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        /**
+         * Returns the UID of an installed app, or -1 if not found.
+         * Used to filter AudioPlaybackCapture to that specific app.
+         */
+        AsyncFunction("getAppUid") { packageName: String ->
+            val context = appContext.reactContext ?: return@AsyncFunction -1
+            return@AsyncFunction try {
+                val ai = context.packageManager.getApplicationInfo(packageName, 0)
+                ai.uid
+            } catch (e: Exception) {
+                -1
+            }
+        }
+
+        /**
+         * Requests MediaProjection permission from the user (system dialog).
+         * Returns true if granted, false if denied.
+         * The projection token is stored on RecordingService.mediaProjection.
+         */
+        AsyncFunction("requestMediaProjection") { ->
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                // AudioPlaybackCapture not available below Android 10
+                return@AsyncFunction false
+            }
+
+            val activity = appContext.currentActivity
+                ?: throw Exception("No activity")
+            val mpm = activity.getSystemService(Context.MEDIA_PROJECTION_SERVICE)
+                as MediaProjectionManager
+
+            projectionDeferred = CompletableDeferred()
+            activity.startActivityForResult(
+                mpm.createScreenCaptureIntent(),
+                MEDIA_PROJECTION_RC
+            )
+
+            // Properly suspend without deadlocking the main thread!
+            // Note: Expo's AsyncFunction runs on a separate thread, so runBlocking here is safe.
+            val granted = runBlocking { projectionDeferred!!.await() }
+            projectionDeferred = null
+
+            if (granted && projectionData != null) {
+                val projection = mpm.getMediaProjection(projectionResultCode, projectionData!!)
+                RecordingService.mediaProjection = projection
+            }
+            return@AsyncFunction granted
+        }
+
         AsyncFunction("startRecording") { targetPackage: String ->
             val context = appContext.reactContext ?: throw Exception("No context")
             // CRITICAL: Save to Public Documents/Guru so it SURVIVES reinstall

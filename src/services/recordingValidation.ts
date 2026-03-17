@@ -24,7 +24,7 @@ export const DEFAULT_RECORDING_VALIDATION_POLICY: RecordingValidationPolicy = {
 };
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function validateRecordingWithBackoff(
@@ -38,7 +38,7 @@ export async function validateRecordingWithBackoff(
     try {
       const info = await validateFile(path);
       lastInfo = info;
-      if (info.exists && info.size > policy.minValidBytes) {
+      if (info?.exists && info.size > policy.minValidBytes) {
         return {
           validated: true,
           attemptsUsed: attempt + 1,

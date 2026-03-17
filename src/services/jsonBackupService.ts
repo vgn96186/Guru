@@ -38,7 +38,7 @@ const JSON_BACKUP_RESTORE_ORDER: BackupTableName[] = [
   'user_profile',
 ];
 
-type BackupTableName = typeof JSON_BACKUP_TABLES[number];
+type BackupTableName = (typeof JSON_BACKUP_TABLES)[number];
 type BackupRow = Record<string, unknown>;
 type BackupTableData = Record<BackupTableName, BackupRow[]>;
 type SubjectBackupRef = { shortCode: string; name: string };
@@ -58,13 +58,17 @@ function createTopicRefKey(ref: TopicBackupRef): string {
 
 function parseJsonNumberArray(value: unknown): number[] {
   if (Array.isArray(value)) {
-    return value.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry));
+    return value.filter(
+      (entry): entry is number => typeof entry === 'number' && Number.isFinite(entry),
+    );
   }
   if (typeof value !== 'string') return [];
   try {
     const parsed = JSON.parse(value);
     return Array.isArray(parsed)
-      ? parsed.filter((entry): entry is number => typeof entry === 'number' && Number.isFinite(entry))
+      ? parsed.filter(
+          (entry): entry is number => typeof entry === 'number' && Number.isFinite(entry),
+        )
       : [];
   } catch (err) {
     console.warn('[Backup] Failed to parse number array:', err);
@@ -92,12 +96,15 @@ export async function exportJsonBackup(): Promise<boolean> {
     ),
   ]);
   const subjectRefsById = new Map<number, SubjectBackupRef>(
-    subjects.map(subject => [subject.id, { shortCode: subject.short_code, name: subject.name }]),
+    subjects.map((subject) => [subject.id, { shortCode: subject.short_code, name: subject.name }]),
   );
   const topicRefsById = new Map<number, TopicBackupRef>(
-    topics.map(topic => [topic.id, { subjectShortCode: topic.short_code, topicName: topic.name }]),
+    topics.map((topic) => [
+      topic.id,
+      { subjectShortCode: topic.short_code, topicName: topic.name },
+    ]),
   );
-  
+
   const serializeBackupRow = (table: BackupTableName, row: BackupRow): BackupRow => {
     const nextRow = { ...row };
 
@@ -119,10 +126,10 @@ export async function exportJsonBackup(): Promise<boolean> {
 
     if (table === 'sessions') {
       const plannedRefs = parseJsonNumberArray(nextRow.planned_topics)
-        .map(topicId => topicRefsById.get(topicId))
+        .map((topicId) => topicRefsById.get(topicId))
         .filter((ref): ref is TopicBackupRef => !!ref);
       const completedRefs = parseJsonNumberArray(nextRow.completed_topics)
-        .map(topicId => topicRefsById.get(topicId))
+        .map((topicId) => topicRefsById.get(topicId))
         .filter((ref): ref is TopicBackupRef => !!ref);
       nextRow.planned_topic_refs = plannedRefs;
       nextRow.completed_topic_refs = completedRefs;
@@ -130,11 +137,11 @@ export async function exportJsonBackup(): Promise<boolean> {
 
     return nextRow;
   };
-  
+
   const tables = {} as BackupTableData;
   for (const table of JSON_BACKUP_TABLES) {
     const rows = await db.getAllAsync<BackupRow>(`SELECT * FROM ${table}`);
-    tables[table] = rows.map(row => serializeBackupRow(table, row));
+    tables[table] = rows.map((row) => serializeBackupRow(table, row));
   }
 
   const backup = {
@@ -154,7 +161,10 @@ export async function exportJsonBackup(): Promise<boolean> {
 
   if (await Sharing.isAvailableAsync()) {
     try {
-      await Sharing.shareAsync(filePath, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
+      await Sharing.shareAsync(filePath, {
+        mimeType: 'application/json',
+        dialogTitle: 'Save Guru Backup',
+      });
       return true;
     } catch (err) {
       console.error('[Backup] Sharing failed:', err);
@@ -167,13 +177,17 @@ export async function exportJsonBackup(): Promise<boolean> {
 }
 
 export async function importJsonBackup(): Promise<{ ok: boolean; message: string }> {
-  const result = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true });
+  const result = await DocumentPicker.getDocumentAsync({
+    type: 'application/json',
+    copyToCacheDirectory: true,
+  });
   if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
 
   const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
-  let backup: any;
+  let backup: Record<string, unknown>;
   try {
     backup = JSON.parse(content);
+    if (!backup || typeof backup !== 'object') throw new Error('Not an object');
   } catch (err) {
     console.error('[Backup] JSON parse failed during import:', err);
     return { ok: false, message: 'Invalid JSON file' };
@@ -182,7 +196,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   if (!backup.version) {
     return { ok: false, message: 'Invalid backup format — missing version' };
   }
-  if (backup.version > BACKUP_VERSION) {
+  if (typeof backup.version === 'number' && backup.version > BACKUP_VERSION) {
     return { ok: false, message: 'Backup was made with a newer version of the app' };
   }
 
@@ -199,42 +213,46 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
   ]);
 
   const subjectIdsByShortCode = new Map<string, number>(
-    subjects.map(subject => [subject.short_code.toLowerCase(), subject.id]),
+    subjects.map((subject) => [subject.short_code.toLowerCase(), subject.id]),
   );
   const topicIdsByRefKey = new Map<string, number>(
-    topics.map(topic => [createTopicRefKey({ subjectShortCode: topic.short_code, topicName: topic.name }), topic.id]),
+    topics.map((topic) => [
+      createTopicRefKey({ subjectShortCode: topic.short_code, topicName: topic.name }),
+      topic.id,
+    ]),
   );
 
-  const tablesFromBackup: Partial<Record<BackupTableName, BackupRow[]>> = (backup.tables && typeof backup.tables === 'object') ? backup.tables : {};
+  const tablesFromBackup: Partial<Record<BackupTableName, BackupRow[]>> =
+    backup.tables && typeof backup.tables === 'object' ? backup.tables : {};
   const restoredCounts: Partial<Record<BackupTableName, number>> = {};
 
   const getColumns = async (table: string): Promise<string[]> => {
     try {
       const info = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
-      return info.map(c => c.name);
-    } catch (err) { 
+      return info.map((c) => c.name);
+    } catch (err) {
       console.error(`[Backup] Failed to get columns for ${table}:`, err);
-      return []; 
+      return [];
     }
   };
 
   const sanitizeRow = (table: BackupTableName, rawRow: BackupRow): BackupRow | null => {
     const row = { ...rawRow };
-    delete (row as any).topic_ref;
-    delete (row as any).subject_ref;
-    delete (row as any).planned_topic_refs;
-    delete (row as any).completed_topic_refs;
+    delete row.topic_ref;
+    delete row.subject_ref;
+    delete row.planned_topic_refs;
+    delete row.completed_topic_refs;
 
     if (table === 'topic_progress' || table === 'ai_cache') {
-      const ref = (rawRow as any).topic_ref;
+      const ref = rawRow.topic_ref as Record<string, unknown> | undefined;
       if (ref && typeof ref.subjectShortCode === 'string' && typeof ref.topicName === 'string') {
-        const tid = topicIdsByRefKey.get(createTopicRefKey(ref));
+        const tid = topicIdsByRefKey.get(createTopicRefKey(ref as unknown as TopicBackupRef));
         if (tid) row.topic_id = tid;
         else return null;
       }
     }
     if (table === 'lecture_notes') {
-      const ref = (rawRow as any).subject_ref;
+      const ref = rawRow.subject_ref as Record<string, unknown> | undefined;
       if (ref && typeof ref.shortCode === 'string') {
         const sid = subjectIdsByShortCode.get(ref.shortCode.toLowerCase());
         if (sid) row.subject_id = sid;
@@ -242,13 +260,21 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
       }
     }
     if (table === 'sessions') {
-      const pRefs = (rawRow as any).planned_topic_refs;
+      const pRefs = rawRow.planned_topic_refs as Array<Record<string, unknown>> | undefined;
       if (Array.isArray(pRefs)) {
-        row.planned_topics = JSON.stringify(pRefs.map((r: any) => topicIdsByRefKey.get(createTopicRefKey(r))).filter(id => !!id));
+        row.planned_topics = JSON.stringify(
+          pRefs
+            .map((r) => topicIdsByRefKey.get(createTopicRefKey(r as unknown as TopicBackupRef)))
+            .filter((id) => !!id),
+        );
       }
-      const cRefs = (rawRow as any).completed_topic_refs;
+      const cRefs = rawRow.completed_topic_refs as Array<Record<string, unknown>> | undefined;
       if (Array.isArray(cRefs)) {
-        row.completed_topics = JSON.stringify(cRefs.map((r: any) => topicIdsByRefKey.get(createTopicRefKey(r))).filter(id => !!id));
+        row.completed_topics = JSON.stringify(
+          cRefs
+            .map((r) => topicIdsByRefKey.get(createTopicRefKey(r as unknown as TopicBackupRef)))
+            .filter((id) => !!id),
+        );
       }
     }
     return row;
@@ -268,10 +294,10 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
     if (tablesFromBackup.user_profile?.[0]) {
       const row = tablesFromBackup.user_profile[0];
       const userCols = await getColumns('user_profile');
-      const setCols = Object.keys(row).filter(c => c !== 'id' && userCols.includes(c));
+      const setCols = Object.keys(row).filter((c) => c !== 'id' && userCols.includes(c));
       if (setCols.length > 0) {
-        const setSql = setCols.map(c => `${c} = ?`).join(', ');
-        const values = setCols.map(c => toBindValue(row[c]));
+        const setSql = setCols.map((c) => `${c} = ?`).join(', ');
+        const values = setCols.map((c) => toBindValue(row[c]));
         await db.runAsync(`UPDATE user_profile SET ${setSql} WHERE id = 1`, values);
       }
       restoredCounts.user_profile = 1;
@@ -286,17 +312,24 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
       for (const rawRow of rows) {
         const sanitizedRow = sanitizeRow(table, rawRow);
         if (!sanitizedRow) continue;
-        const cols = Object.keys(sanitizedRow).filter(c => tableCols.includes(c));
+        const cols = Object.keys(sanitizedRow).filter((c) => tableCols.includes(c));
         const placeholders = cols.map(() => '?').join(', ');
-        const values = cols.map(c => toBindValue(sanitizedRow[c]));
-        await db.runAsync(`INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`, values);
+        const values = cols.map((c) => toBindValue(sanitizedRow[c]));
+        await db.runAsync(
+          `INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`,
+          values,
+        );
         restoredCounts[table] = (restoredCounts[table] ?? 0) + 1;
       }
     }
     await db.execAsync('COMMIT');
   } catch (err) {
     console.error('[Backup] Restore transaction failed:', err);
-    try { await db.execAsync('ROLLBACK'); } catch (rbErr) { console.warn('[Backup] Rollback also failed:', rbErr); }
+    try {
+      await db.execAsync('ROLLBACK');
+    } catch (rbErr) {
+      console.warn('[Backup] Rollback also failed:', rbErr);
+    }
     return { ok: false, message: 'Import failed during restore.' };
   }
 

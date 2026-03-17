@@ -41,8 +41,7 @@ export const MODEL_REGISTRY: Record<WhisperModelSize, WhisperModelInfo> = {
     filename: 'ggml-tiny.en.bin',
     expectedBytes: 77_691_713,
     sha256: '2d9ab1a3894c6b6985e0e0f5e980273b6c8b3d612f1a09a68a0e757c9db2c9d9', // Fill with actual checksum
-    downloadUrl:
-      'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
+    downloadUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
     minRamGb: 2,
     memoryUsageMb: 150,
   },
@@ -51,8 +50,7 @@ export const MODEL_REGISTRY: Record<WhisperModelSize, WhisperModelInfo> = {
     filename: 'ggml-base.en.bin',
     expectedBytes: 147_951_465,
     sha256: 'ed5e8401c63e01c65d07d1fba2a78a824c52aeb6ae1a9d4e49f560a0a1bf5e9a', // Fill with actual checksum
-    downloadUrl:
-      'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin',
+    downloadUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin',
     minRamGb: 3,
     memoryUsageMb: 280,
   },
@@ -61,8 +59,7 @@ export const MODEL_REGISTRY: Record<WhisperModelSize, WhisperModelInfo> = {
     filename: 'ggml-small.en.bin',
     expectedBytes: 487_601_857,
     sha256: 'd4a3c95a62a8b8a0891b7d652185c0c39e8b0c991c3d20a0f7e4e8a9c1e2b3a4', // Fill with actual checksum
-    downloadUrl:
-      'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin',
+    downloadUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin',
     minRamGb: 5,
     memoryUsageMb: 680,
   },
@@ -71,8 +68,7 @@ export const MODEL_REGISTRY: Record<WhisperModelSize, WhisperModelInfo> = {
     filename: 'ggml-medium.en.bin',
     expectedBytes: 1_533_774_781,
     sha256: 'a9c0b7846a696e058c75b0ef1b2a4b0e7e3b1c8d9e0f1a2b3c4d5e6f7a8b9c0d', // Fill with actual checksum
-    downloadUrl:
-      'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin',
+    downloadUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin',
     minRamGb: 8,
     memoryUsageMb: 1800,
   },
@@ -81,8 +77,7 @@ export const MODEL_REGISTRY: Record<WhisperModelSize, WhisperModelInfo> = {
 /** Silero VAD model for voice activity detection */
 const VAD_MODEL_INFO = {
   filename: 'ggml-silero-v6.2.0.bin',
-  downloadUrl:
-    'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-silero-v6.2.0.bin',
+  downloadUrl: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-silero-v6.2.0.bin',
   expectedBytes: 2_200_000, // ~2.2 MB
   sha256: 'b0a7e0d45f6c7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b', // Fill with actual checksum
 };
@@ -113,7 +108,7 @@ async function computeFileSha256(filePath: string): Promise<string> {
     const buffer = Buffer.from(file, 'base64');
     const hash = await crypto.subtle.digest('SHA-256', buffer);
     const hashArray = Array.from(new Uint8Array(hash));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   } catch (err) {
     throw new Error(`Failed to compute SHA-256: ${err}`);
   }
@@ -126,9 +121,7 @@ export class WhisperModelManager {
   private activeModelSize: WhisperModelSize | null = null;
   private downloadResumable: FileSystem.DownloadResumable | null = null;
   private isDownloading = false;
-  private onProgressCallback:
-    | ((progress: ModelDownloadProgress) => void)
-    | null = null;
+  private onProgressCallback: ((progress: ModelDownloadProgress) => void) | null = null;
 
   constructor() {
     this.ensureModelsDir();
@@ -141,14 +134,10 @@ export class WhisperModelManager {
    */
   async getState(): Promise<ModelState> {
     const activeSize = this.activeModelSize;
-    const modelPath = activeSize
-      ? getModelPath(MODEL_REGISTRY[activeSize])
-      : undefined;
+    const modelPath = activeSize ? getModelPath(MODEL_REGISTRY[activeSize]) : undefined;
 
     return {
-      isDownloaded: activeSize
-        ? await this.isModelDownloaded(activeSize)
-        : false,
+      isDownloaded: activeSize ? await this.isModelDownloaded(activeSize) : false,
       isLoaded: this.whisperContext !== null,
       isDownloading: this.isDownloading,
       activeSize: activeSize ?? undefined,
@@ -165,25 +154,29 @@ export class WhisperModelManager {
 
     try {
       const fileInfo = await FileSystem.getInfoAsync(path);
-      if (!fileInfo.exists) return false;
-      
+      if (!fileInfo?.exists) return false;
+
       // Size check as quick validation
       if ('size' in fileInfo) {
         if (Math.abs(fileInfo.size - info.expectedBytes) > 1024) {
-          console.warn(`[WhisperModelManager] Size mismatch for ${size}: expected ${info.expectedBytes}, got ${fileInfo.size}`);
+          console.warn(
+            `[WhisperModelManager] Size mismatch for ${size}: expected ${info.expectedBytes}, got ${fileInfo.size}`,
+          );
           return false;
         }
       }
-      
+
       // Full checksum validation if sha256 is provided and not empty
       if (info.sha256 && info.sha256.length === 64) {
         const actualSha = await computeFileSha256(path);
         if (actualSha !== info.sha256) {
-          console.error(`[WhisperModelManager] Checksum mismatch for ${size}: expected ${info.sha256}, got ${actualSha}`);
+          console.error(
+            `[WhisperModelManager] Checksum mismatch for ${size}: expected ${info.sha256}, got ${actualSha}`,
+          );
           return false;
         }
       }
-      
+
       return true;
     } catch (err) {
       console.warn(`[WhisperModelManager] isModelDownloaded error for ${size}:`, err);
@@ -198,13 +191,13 @@ export class WhisperModelManager {
     const path = getVadModelPath();
     try {
       const info = await FileSystem.getInfoAsync(path);
-      if (!info.exists) return false;
-      
+      if (!info?.exists) return false;
+
       // Size check
       if ('size' in info && info.size < VAD_MODEL_INFO.expectedBytes * 0.95) {
         return false;
       }
-      
+
       // Checksum validation
       if (VAD_MODEL_INFO.sha256 && VAD_MODEL_INFO.sha256.length === 64) {
         const actualSha = await computeFileSha256(path);
@@ -212,7 +205,7 @@ export class WhisperModelManager {
           return false;
         }
       }
-      
+
       return true;
     } catch {
       return false;
@@ -255,7 +248,7 @@ export class WhisperModelManager {
     try {
       // Delete any existing corrupted file
       const existingInfo = await FileSystem.getInfoAsync(modelPath);
-      if (existingInfo.exists) {
+      if (existingInfo?.exists) {
         await FileSystem.deleteAsync(modelPath, { idempotent: true });
       }
 
@@ -266,19 +259,16 @@ export class WhisperModelManager {
         {},
         (downloadProgress) => {
           const elapsed = (Date.now() - downloadStartTime) / 1000;
-          const bytesPerSec =
-            downloadProgress.totalBytesWritten / Math.max(elapsed, 0.1);
+          const bytesPerSec = downloadProgress.totalBytesWritten / Math.max(elapsed, 0.1);
           const remaining =
-            (downloadProgress.totalBytesExpectedToWrite -
-              downloadProgress.totalBytesWritten) /
+            (downloadProgress.totalBytesExpectedToWrite - downloadProgress.totalBytesWritten) /
             Math.max(bytesPerSec, 1);
 
           this.onProgressCallback?.({
             bytesDownloaded: downloadProgress.totalBytesWritten,
             totalBytes: downloadProgress.totalBytesExpectedToWrite,
             percentage: Math.round(
-              (downloadProgress.totalBytesWritten /
-                downloadProgress.totalBytesExpectedToWrite) *
+              (downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite) *
                 100,
             ),
             estimatedSecondsRemaining: Math.round(remaining),
@@ -293,7 +283,7 @@ export class WhisperModelManager {
 
       // Validate downloaded file size
       const fileInfo = await FileSystem.getInfoAsync(modelPath);
-      if (!fileInfo.exists) {
+      if (!fileInfo?.exists) {
         throw new Error('Downloaded file not found on disk');
       }
 
@@ -308,10 +298,7 @@ export class WhisperModelManager {
 
       // Validate checksum
       if (modelInfo.sha256 && modelInfo.sha256.length === 64) {
-        const isValid = await this.validateChecksum(
-          modelPath,
-          modelInfo.sha256,
-        );
+        const isValid = await this.validateChecksum(modelPath, modelInfo.sha256);
         if (!isValid) {
           await FileSystem.deleteAsync(modelPath, { idempotent: true });
           throw new TranscriptionError(
@@ -421,11 +408,7 @@ export class WhisperModelManager {
       this.activeModelSize = null;
 
       const errMsg = String(err);
-      if (
-        errMsg.includes('out of memory') ||
-        errMsg.includes('alloc') ||
-        errMsg.includes('OOM')
-      ) {
+      if (errMsg.includes('out of memory') || errMsg.includes('alloc') || errMsg.includes('OOM')) {
         throw new TranscriptionError(
           'INSUFFICIENT_RAM',
           `Model load OOM: ${err}`,
@@ -493,17 +476,14 @@ export class WhisperModelManager {
   /**
    * List all downloaded models with their sizes.
    */
-  async listDownloadedModels(): Promise<
-    Array<{ size: WhisperModelSize; fileSizeBytes: number }>
-  > {
-    const results: Array<{ size: WhisperModelSize; fileSizeBytes: number }> =
-      [];
+  async listDownloadedModels(): Promise<Array<{ size: WhisperModelSize; fileSizeBytes: number }>> {
+    const results: Array<{ size: WhisperModelSize; fileSizeBytes: number }> = [];
 
     for (const [size, info] of Object.entries(MODEL_REGISTRY)) {
       const path = getModelPath(info);
       try {
         const fileInfo = await FileSystem.getInfoAsync(path);
-        if (fileInfo.exists && 'size' in fileInfo) {
+        if (fileInfo?.exists && 'size' in fileInfo) {
           results.push({
             size: size as WhisperModelSize,
             fileSizeBytes: fileInfo.size,
@@ -531,7 +511,7 @@ export class WhisperModelManager {
     const vadPath = getVadModelPath();
     try {
       await FileSystem.downloadAsync(VAD_MODEL_INFO.downloadUrl, vadPath);
-      
+
       // Validate VAD model
       const actualSha = await computeFileSha256(vadPath);
       if (actualSha !== VAD_MODEL_INFO.sha256) {
@@ -548,10 +528,7 @@ export class WhisperModelManager {
     }
   }
 
-  private async validateChecksum(
-    filePath: string,
-    expectedSha256: string,
-  ): Promise<boolean> {
+  private async validateChecksum(filePath: string, expectedSha256: string): Promise<boolean> {
     try {
       const actualSha = await computeFileSha256(filePath);
       return actualSha === expectedSha256;
@@ -588,7 +565,7 @@ export class WhisperModelManager {
   private async ensureModelsDir(): Promise<void> {
     try {
       const info = await FileSystem.getInfoAsync(MODELS_DIR);
-      if (!info.exists) {
+      if (!info?.exists) {
         await FileSystem.makeDirectoryAsync(MODELS_DIR, {
           intermediates: true,
         });

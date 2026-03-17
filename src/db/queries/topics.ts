@@ -245,6 +245,107 @@ export async function updateTopicProgress(
   });
 }
 
+export interface TopicProgressUpdate {
+  topicId: number;
+  status: TopicProgress['status'];
+  confidence: number;
+  xpToAdd: number;
+  noteToAppend?: string;
+}
+
+export async function updateTopicsProgressBatch(updates: TopicProgressUpdate[]): Promise<void> {
+  if (!updates || updates.length === 0) return;
+
+  const db = getDb();
+  const now = Date.now();
+
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    for (const update of updates) {
+      const existing = await db.getFirstAsync<any>(
+        'SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?',
+        [update.topicId],
+      );
+
+      let card: Card;
+      if (existing && existing.fsrs_last_review) {
+        card = {
+          due: new Date(existing.fsrs_due),
+          stability: existing.fsrs_stability,
+          difficulty: existing.fsrs_difficulty,
+          elapsed_days: existing.fsrs_elapsed_days,
+          scheduled_days: existing.fsrs_scheduled_days,
+          reps: existing.fsrs_reps,
+          lapses: existing.fsrs_lapses,
+          state: existing.fsrs_state,
+          last_review: new Date(existing.fsrs_last_review),
+        };
+      } else {
+        card = getInitialCard();
+      }
+
+      const log = reviewCardFromConfidence(card, update.confidence, new Date());
+      const updatedCard = log.card;
+      const nextReview = updatedCard.due.toISOString().slice(0, 10);
+
+      await db.runAsync(
+        `INSERT INTO topic_progress (
+           topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
+           fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review,
+           user_notes
+         )
+         VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(topic_id) DO UPDATE SET
+           status = excluded.status,
+           confidence = excluded.confidence,
+           last_studied_at = excluded.last_studied_at,
+           times_studied = times_studied + 1,
+           xp_earned = xp_earned + excluded.xp_earned,
+           next_review_date = excluded.next_review_date,
+           fsrs_due = excluded.fsrs_due,
+           fsrs_stability = excluded.fsrs_stability,
+           fsrs_difficulty = excluded.fsrs_difficulty,
+           fsrs_elapsed_days = excluded.fsrs_elapsed_days,
+           fsrs_scheduled_days = excluded.fsrs_scheduled_days,
+           fsrs_reps = excluded.fsrs_reps,
+           fsrs_lapses = excluded.fsrs_lapses,
+           fsrs_state = excluded.fsrs_state,
+           fsrs_last_review = excluded.fsrs_last_review,
+           user_notes = CASE
+             WHEN excluded.user_notes IS NOT NULL AND excluded.user_notes != "" THEN
+               CASE WHEN user_notes IS NULL OR user_notes = ""
+                    THEN excluded.user_notes
+                    ELSE user_notes || "\n\n---\n" || excluded.user_notes
+               END
+             ELSE user_notes
+           END`,
+        [
+          update.topicId,
+          update.status,
+          update.confidence,
+          now,
+          update.xpToAdd,
+          nextReview,
+          updatedCard.due.toISOString(),
+          updatedCard.stability,
+          updatedCard.difficulty,
+          updatedCard.elapsed_days,
+          updatedCard.scheduled_days,
+          updatedCard.reps,
+          updatedCard.lapses,
+          updatedCard.state,
+          updatedCard.last_review?.toISOString() ?? null,
+          update.noteToAppend ?? null,
+        ],
+      );
+    }
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
+}
+
 export async function updateTopicNotes(topicId: number, notes: string): Promise<void> {
   const db = getDb();
   await db.runAsync(
@@ -405,26 +506,41 @@ export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
 
 export async function markNemesisTopics(): Promise<void> {
   const db = getDb();
-  // Reset all nemesis flags
-  await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
-  // Mark topics with 3+ wrong answers and low confidence as nemesis
-  await db.runAsync(
-    `UPDATE topic_progress SET is_nemesis = 1
-     WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
-  );
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    // Reset all nemesis flags
+    await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
+    // Mark topics with 3+ wrong answers and low confidence as nemesis
+    await db.runAsync(
+      `UPDATE topic_progress SET is_nemesis = 1
+       WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
 }
 
 export async function incrementWrongCount(topicId: number): Promise<void> {
   const db = getDb();
-  await db.runAsync('UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?', [
-    topicId,
-  ]);
-  // Auto-mark as nemesis if threshold reached
-  await db.runAsync(
-    `UPDATE topic_progress SET is_nemesis = 1
-     WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
-    [topicId],
-  );
+  await db.execAsync('BEGIN TRANSACTION');
+  try {
+    await db.runAsync(
+      'UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?',
+      [topicId],
+    );
+    // Auto-mark as nemesis if threshold reached
+    await db.runAsync(
+      `UPDATE topic_progress SET is_nemesis = 1
+       WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
+      [topicId],
+    );
+    await db.execAsync('COMMIT TRANSACTION');
+  } catch (err) {
+    await db.execAsync('ROLLBACK TRANSACTION');
+    throw err;
+  }
 }
 
 export interface SubjectBreakdownRow {

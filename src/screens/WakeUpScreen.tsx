@@ -243,6 +243,8 @@ const styles = StyleSheet.create({
   },
   nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
+  _unusedSkipBtn: { alignSelf: 'flex-end', padding: 8, marginBottom: 8 },
+  _unusedSkipBtnText: { color: '#444', fontSize: 13 },
   fogGrid: { width: '100%', gap: 12, marginTop: 20 },
   fogBtn: {
     backgroundColor: '#1A1A24',

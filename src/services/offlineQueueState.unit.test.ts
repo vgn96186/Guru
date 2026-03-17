@@ -21,11 +21,27 @@ function makeItem(overrides: Partial<OfflineQueueItem> = {}): OfflineQueueItem {
 }
 
 describe('offlineQueueState', () => {
-  it('checks retry eligibility', () => {
-    expect(canRetryQueueItem(makeItem({ status: 'pending', attempts: 0 }), 5)).toBe(true);
-    expect(canRetryQueueItem(makeItem({ status: 'failed', attempts: 4 }), 5)).toBe(true);
-    expect(canRetryQueueItem(makeItem({ status: 'failed', attempts: 5 }), 5)).toBe(false);
-    expect(canRetryQueueItem(makeItem({ status: 'completed', attempts: 1 }), 5)).toBe(false);
+  describe('canRetryQueueItem', () => {
+    it('returns true for pending and failed items under maxAttempts', () => {
+      expect(canRetryQueueItem(makeItem({ status: 'pending', attempts: 0 }), 5)).toBe(true);
+      expect(canRetryQueueItem(makeItem({ status: 'failed', attempts: 4 }), 5)).toBe(true);
+    });
+
+    it('returns false for items at or above maxAttempts', () => {
+      expect(canRetryQueueItem(makeItem({ status: 'pending', attempts: 5 }), 5)).toBe(false);
+      expect(canRetryQueueItem(makeItem({ status: 'failed', attempts: 5 }), 5)).toBe(false);
+      expect(canRetryQueueItem(makeItem({ status: 'pending', attempts: 6 }), 5)).toBe(false);
+    });
+
+    it('returns false for completed and processing items regardless of attempts', () => {
+      expect(canRetryQueueItem(makeItem({ status: 'completed', attempts: 0 }), 5)).toBe(false);
+      expect(canRetryQueueItem(makeItem({ status: 'processing', attempts: 0 }), 5)).toBe(false);
+    });
+
+    it('uses default maxAttempts of 5 when not provided', () => {
+      expect(canRetryQueueItem(makeItem({ status: 'pending', attempts: 4 }))).toBe(true);
+      expect(canRetryQueueItem(makeItem({ status: 'pending', attempts: 5 }))).toBe(false);
+    });
   });
 
   it('transitions states', () => {
@@ -42,5 +58,19 @@ describe('offlineQueueState', () => {
     const completed = toCompletedState(failed);
     expect(completed.status).toBe('completed');
     expect(completed.errorMessage).toBeNull();
+  });
+
+  it('toProcessingState uses Date.now() when now is not provided', () => {
+    const now = 1234567890;
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(now);
+
+    const pending = makeItem({ status: 'pending', attempts: 0 });
+    const processing = toProcessingState(pending);
+
+    expect(processing.status).toBe('processing');
+    expect(processing.attempts).toBe(1);
+    expect(processing.lastAttemptAt).toBe(now);
+
+    dateSpy.mockRestore();
   });
 });

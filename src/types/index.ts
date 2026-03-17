@@ -106,6 +106,7 @@ export interface UserProfile {
   streakCurrent: number;
   streakBest: number;
   dailyGoalMinutes: number;
+  examType: 'INICET' | 'NEET';
   inicetDate: string;
   neetDate: string;
   preferredSessionLength: number;

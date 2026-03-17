@@ -12,8 +12,8 @@ interface QuickStatsCardProps {
   completedSessions: number;
 }
 
-const RING_SIZE = 56;
-const STROKE_WIDTH = 5;
+const RING_SIZE = 64;
+const STROKE_WIDTH = 6;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
@@ -87,26 +87,28 @@ export default function QuickStatsCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.panel,
-    borderRadius: 16,
+    borderRadius: theme.radius.xxl,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: 14,
+    padding: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+    ...theme.shadows.card,
   },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: theme.spacing.lg },
   copy: { flex: 1 },
-  title: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
-  sub: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, marginTop: 4 },
+  title: { color: theme.colors.textPrimary, ...theme.typography.title },
+  sub: { color: theme.colors.textSecondary, ...theme.typography.caption, lineHeight: 20, marginTop: theme.spacing.xs },
   ringWrap: { width: RING_SIZE, height: RING_SIZE },
   ringLabel: { alignItems: 'center', justifyContent: 'center' },
   ringPercent: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 11 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm, marginTop: theme.spacing.xl },
   metaChip: {
     backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 999,
+    borderRadius: theme.radius.pill,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
-  metaChipText: { color: theme.colors.textSecondary, fontSize: 10, fontWeight: '700' },
+  metaChipText: { color: theme.colors.textSecondary, ...theme.typography.caption, fontWeight: "700" },
 });

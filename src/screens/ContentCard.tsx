@@ -29,6 +29,7 @@ import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ErrorBoundary from '../components/ErrorBoundary';
+import { theme } from '../constants/theme';
 
 interface TopicImageProps {
   topicName: string;
@@ -73,11 +74,9 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
   const [chatOpen, setChatOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
 
-  useEffect(() => {
-    if (!topicId && flagged) {
-      setFlagged(false);
-    }
-  }, [topicId, flagged]);
+  if (!topicId && flagged) {
+    setFlagged(false);
+  }
 
   useEffect(() => {
     let active = true;
@@ -150,6 +149,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
             style={[s.flagBtn, flagged && s.flagBtnActive]}
             onPress={handleFlag}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={flagged ? 'Unflag content' : 'Flag for review'}
           >
             <Text style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</Text>
           </TouchableOpacity>
@@ -160,6 +161,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
           style={s.askGuruBtn}
           onPress={() => setChatOpen(true)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Ask Guru about this topic"
         >
           <Text style={s.askGuruText}>Ask Guru</Text>
         </TouchableOpacity>
@@ -214,7 +217,9 @@ function KeyPointsCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📌 KEY POINTS</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <View style={s.pointsContainer}>
         {content.points.slice(0, revealIndex + 1).map((pt, i) => (
@@ -247,7 +252,12 @@ function KeyPointsCard({
       ) : (
         <ConfidenceRating onRate={onDone} />
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip content type"
+      >
         <Text style={s.skipText}>Skip content type</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -297,7 +307,9 @@ function QuizCard({
       <Text style={s.cardType}>
         🎯 QUIZ {currentQ + 1}/{content.questions.length}
       </Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
@@ -320,7 +332,9 @@ function QuizCard({
               onPress={() => handleSelect(idx)}
               activeOpacity={0.8}
             >
-              <Text style={s.optionText}>{opt}</Text>
+              <Text style={s.optionText} numberOfLines={4}>
+                {opt}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -344,7 +358,12 @@ function QuizCard({
           </Text>
         </TouchableOpacity>
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip quiz</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -362,7 +381,9 @@ function StoryCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📖 CLINICAL STORY</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <View style={{ marginBottom: theme.spacing.xl }}>
         <MarkdownRender content={content.story} />
@@ -384,7 +405,12 @@ function StoryCard({
       ) : (
         <ConfidenceRating onRate={onDone} />
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip story</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -404,7 +430,9 @@ function MnemonicCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🧠 MNEMONIC</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <View style={s.mnemonicBox}>
         <Text style={s.mnemonicMain}>{content.mnemonic}</Text>
@@ -438,7 +466,12 @@ function MnemonicCard({
       ) : (
         <ConfidenceRating onRate={onDone} />
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip mnemonic</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -481,7 +514,9 @@ function TeachBackCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🎤 TEACH BACK</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <Text style={s.questionText}>{content.prompt}</Text>
       {!submitted ? (
@@ -489,7 +524,7 @@ function TeachBackCard({
           <TextInput
             style={s.textInput}
             placeholder="Type your explanation here..."
-            placeholderTextColor="#555"
+            placeholderTextColor={theme.colors.textMuted}
             multiline
             value={answer}
             onChangeText={setAnswer}
@@ -541,7 +576,12 @@ function TeachBackCard({
           />
         </>
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip this</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -559,7 +599,9 @@ function ErrorHuntCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🔍 ERROR HUNT</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <Text style={s.questionText}>Find the 2 factual errors in this paragraph:</Text>
       <View style={s.paragraphBox}>
@@ -584,7 +626,12 @@ function ErrorHuntCard({
           <ConfidenceRating onRate={onDone} />
         </>
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip this</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -603,7 +650,9 @@ function DetectiveCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🕵️ CLINICAL DETECTIVE</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
       {content.clues.slice(0, revealedClues).map((clue, i) => (
         <View key={i} style={[s.clueBox, i === revealedClues - 1 && s.clueBoxNew]}>
@@ -640,7 +689,12 @@ function DetectiveCard({
           <ConfidenceRating onRate={onDone} />
         </>
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip case</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -658,7 +712,9 @@ function ManualReviewCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</Text>
-      <Text style={s.cardTitle}>{content.topicName}</Text>
+      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
       <TopicImage topicName={content.topicName} />
 
       <View style={s.offlineBox}>
@@ -684,7 +740,12 @@ function ManualReviewCard({
       ) : (
         <ConfidenceRating onRate={onDone} />
       )}
-      <TouchableOpacity onPress={onSkip} style={s.skipBtn}>
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip"
+      >
         <Text style={s.skipText}>Skip topic</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -701,7 +762,7 @@ const s = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: theme.spacing.xs,
   },
-  cardTitle: { color: '#fff', fontWeight: '800', fontSize: 22, marginBottom: theme.spacing.xl },
+  cardTitle: { color: '#fff', fontWeight: '800', fontSize: 22, marginBottom: 20, lineHeight: 28 },
   topicImage: {
     width: '100%',
     height: 200,
@@ -732,10 +793,15 @@ const s = StyleSheet.create({
   },
   disabledBtn: { backgroundColor: '#333' },
   doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  skipBtn: { padding: theme.spacing.lg, alignItems: 'center' },
-  skipText: { color: '#555', fontSize: 13 },
-  ratingContainer: { marginTop: theme.spacing.lg, marginBottom: theme.spacing.md },
-  ratingTitle: { color: '#9E9E9E', fontSize: 14, marginBottom: theme.spacing.md, textAlign: 'center' },
+  skipBtn: { padding: 12, alignItems: 'center' },
+  skipText: { color: theme.colors.textMuted, fontSize: 13 },
+  ratingContainer: { marginTop: 16, marginBottom: 10 },
+  ratingTitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
   ratingRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   ratingBtn: {
     backgroundColor: '#1A1A24',
@@ -748,16 +814,26 @@ const s = StyleSheet.create({
   },
   ratingNum: { color: '#fff', fontWeight: '800', fontSize: 18 },
   ratingLabel: { fontSize: 18 },
-  questionText: { color: '#E0E0E0', fontSize: 16, lineHeight: 24, marginBottom: theme.spacing.lg },
-  optionsContainer: { gap: 8, marginBottom: theme.spacing.md },
-  optionBtn: { borderRadius: theme.radius.xl, padding: theme.spacing.lg, borderWidth: 2 },
+  questionText: { color: '#E0E0E0', fontSize: 16, lineHeight: 24, marginBottom: 16 },
+  optionsContainer: { gap: 8, marginBottom: 12 },
+  optionBtn: { borderRadius: 12, padding: 14, borderWidth: 2, minWidth: 0 },
   optionText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
-  explBox: { backgroundColor: '#1A1A24', borderRadius: theme.radius.xl, padding: theme.spacing.lg, marginBottom: theme.spacing.md },
-  explLabel: { color: '#9E9E9E', fontSize: 11, fontWeight: '700', marginBottom: theme.spacing.xs },
+  explBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 12 },
+  explLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
   explText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
-  storyText: { color: '#E0E0E0', fontSize: 15, lineHeight: 26, marginBottom: theme.spacing.xl },
-  highlightsBox: { backgroundColor: '#1A1A24', borderRadius: theme.radius.xl, padding: theme.spacing.lg, marginBottom: theme.spacing.xl },
-  highlightsLabel: { color: '#9E9E9E', fontSize: 11, fontWeight: '700', marginBottom: theme.spacing.sm },
+  storyText: { color: '#E0E0E0', fontSize: 15, lineHeight: 26, marginBottom: 20 },
+  highlightsBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 20 },
+  highlightsLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
   highlightChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
     backgroundColor: '#6C63FF22',
@@ -806,9 +882,9 @@ const s = StyleSheet.create({
   clueText: { color: '#E0E0E0', fontSize: 15, lineHeight: 22 },
   detectiveActions: { gap: 8, marginTop: theme.spacing.sm },
   hintBtn: { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF' },
-  missedBox: { marginTop: theme.spacing.md, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2A2A38' },
-  missedLabel: { color: '#F44336', fontSize: 11, fontWeight: '700', marginBottom: theme.spacing.xs },
-  missedText: { color: '#9E9E9E', fontSize: 13, fontStyle: 'italic' },
+  missedBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2A2A38' },
+  missedLabel: { color: '#F44336', fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  missedText: { color: theme.colors.textSecondary, fontSize: 13, fontStyle: 'italic' },
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -844,8 +920,13 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333',
   },
-  offlineEmoji: { fontSize: 32, textAlign: 'center', marginBottom: theme.spacing.md },
-  offlineText: { color: '#9E9E9E', fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  offlineEmoji: { fontSize: 32, textAlign: 'center', marginBottom: 12 },
+  offlineText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   promptText: {
     color: '#E0E0E0',
     fontSize: 15,

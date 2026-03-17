@@ -251,7 +251,7 @@ export default function DoomscrollInterceptor() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: '#0A0A14' }]}>
-      <StatusBar barStyle="light-content" backgroundColor="#0A0A14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer>
         <Animated.View
           style={[

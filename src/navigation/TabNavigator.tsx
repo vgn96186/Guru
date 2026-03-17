@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -186,7 +186,7 @@ export default function TabNavigator() {
           tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
           tabBarLabelStyle: {
-            fontSize: 11,
+            fontSize: 12,
             fontWeight: '700',
             marginTop: 0,
             letterSpacing: 0.3,
@@ -287,81 +287,111 @@ export default function TabNavigator() {
 
       {isActionHubOpen ? (
         <View style={styles.sheetRoot} pointerEvents="box-none">
-          <Pressable style={styles.sheetBackdrop} onPress={() => setIsActionHubOpen(false)} />
+          <Pressable
+            style={styles.sheetBackdrop}
+            onPress={() => setIsActionHubOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close action hub"
+          />
           <View style={[styles.sheet, { paddingBottom: bottomInset + theme.spacing.lg }]}>
-            <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
-            <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
-
-            <View style={styles.primaryActions}>
-              <Pressable
-                style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
-                android_ripple={{ color: '#ffffff18' }}
-                onPress={() => openRoute('HomeTab', 'LectureMode', {})}
-              >
-                <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
-                <Text style={styles.primaryActionTitle}>Record Lecture</Text>
-                <Text style={styles.primaryActionSubtitle}>
-                  Capture long-form audio and route it back safely.
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
-                android_ripple={{ color: '#ffffff18' }}
-                onPress={() => openRoute('MenuTab', 'NotesHub')}
-              >
-                <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
-                <Text style={styles.secondaryActionTitle}>Quick Note</Text>
-                <Text style={styles.secondaryActionSubtitle}>
-                  Jump into your notes vault and capture context.
-                </Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.manualActionsContainer}>
-              <Pressable
-                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
-                onPress={handleAudioUpload}
-                disabled={isTranscribingUpload}
-              >
-                <Ionicons
-                  name="document-attach-outline"
-                  size={18}
-                  color={theme.colors.textSecondary}
-                />
-                <Text style={styles.manualActionText}>
-                  {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
-                onPress={() => navigation.navigate('ManualNoteCreation' as never)}
-              >
-                <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Paste Transcript</Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.externalHeader}>
-              <Text style={styles.externalTitle}>Launch External App</Text>
-              <Text style={styles.externalSubtitle}>
-                Speaker capture and overlay stay wired into the flow.
-              </Text>
-            </View>
-            <View style={styles.externalGrid}>
-              {EXTERNAL_APPS.slice(0, 6).map((app) => (
+            <ScrollView
+              style={styles.sheetScroll}
+              contentContainerStyle={styles.sheetScrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
+              <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
+              <View style={styles.primaryActions}>
                 <Pressable
-                  key={app.id}
-                  style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
-                  android_ripple={{ color: `${app.color}22` }}
-                  onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
+                  style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
+                  android_ripple={{ color: '#ffffff18' }}
+                  onPress={() => openRoute('HomeTab', 'LectureMode', {})}
+                  accessibilityRole="button"
+                  accessibilityLabel="Record lecture"
                 >
-                  <Text style={styles.externalEmoji}>{app.iconEmoji}</Text>
-                  <Text style={styles.externalChipLabel}>{app.name}</Text>
+                  <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
+                  <Text style={styles.primaryActionTitle}>Record Lecture</Text>
+                  <Text style={styles.primaryActionSubtitle}>
+                    Capture long-form audio and route it back safely.
+                  </Text>
                 </Pressable>
-              ))}
-            </View>
+
+                <Pressable
+                  style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                  android_ripple={{ color: '#ffffff18' }}
+                  onPress={() => openRoute('MenuTab', 'NotesHub')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quick note, open notes vault"
+                >
+                  <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
+                  <Text style={styles.secondaryActionTitle}>Quick Note</Text>
+                  <Text style={styles.secondaryActionSubtitle}>
+                    Jump into your notes vault and capture context.
+                  </Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.manualActionsContainer}>
+                <Pressable
+                  style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                  onPress={handleAudioUpload}
+                  disabled={isTranscribingUpload}
+                  accessibilityRole="button"
+                  accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
+                >
+                  <Ionicons
+                    name="document-attach-outline"
+                    size={18}
+                    color={theme.colors.textSecondary}
+                  />
+                  <Text style={styles.manualActionText}>
+                    {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                  onPress={() => navigation.navigate('ManualNoteCreation' as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Paste transcript"
+                >
+                  <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
+                  <Text style={styles.manualActionText}>Paste Transcript</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                  onPress={() => navigation.navigate('BrainDumpReview' as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Review parked thoughts"
+                >
+                  <Ionicons name="bulb-outline" size={18} color={theme.colors.textSecondary} />
+                  <Text style={styles.manualActionText}>Parked thoughts</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.externalHeader}>
+                <Text style={styles.externalTitle}>Launch External App</Text>
+                <Text style={styles.externalSubtitle}>
+                  Speaker capture and overlay stay wired into the flow.
+                </Text>
+              </View>
+              <View style={styles.externalGrid}>
+                {EXTERNAL_APPS.slice(0, 6).map((app) => (
+                  <Pressable
+                    key={app.id}
+                    style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
+                    android_ripple={{ color: `${app.color}22` }}
+                    onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${app.name}`}
+                  >
+                    <Text style={styles.externalEmoji}>{app.iconEmoji}</Text>
+                    <Text style={styles.externalChipLabel}>{app.name}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         </View>
       ) : null}
@@ -413,7 +443,14 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.xl,
+    height: '85%',
+  },
+  sheetScroll: {
+    flex: 1,
+  },
+  sheetScrollContent: {
     gap: theme.spacing.lg,
+    paddingBottom: theme.spacing.lg,
   },
   sheetEyebrow: {
     color: theme.colors.primaryLight,

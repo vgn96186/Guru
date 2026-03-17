@@ -1,3 +1,5 @@
+/* eslint-disable no-undef */
+
 const fs = require('fs');
 const path = require('path');
 
@@ -6,9 +8,9 @@ let aiService = fs.readFileSync('../src/services/aiService.ts', 'utf-8');
 if (!aiService.includes("import { z } from 'zod';")) {
   aiService = aiService.replace(
     "import type { AIContent, ContentType, Mood, TopicWithProgress } from '../types';",
-    "import type { AIContent, ContentType, Mood, TopicWithProgress } from '../types';\nimport { z } from 'zod';"
+    "import type { AIContent, ContentType, Mood, TopicWithProgress } from '../types';\nimport { z } from 'zod';",
   );
-  
+
   const zodSchemas = `
 const KeyPointsSchema = z.object({
   type: z.literal('keypoints'),
@@ -84,12 +86,12 @@ const AgendaSchema = z.object({
     parsed = JSON.parse(clean);
   }
   return AIContentSchema.parse(parsed);
-}`
+}`,
   );
 
   aiService = aiService.replace(
     /return JSON\.parse\(text\.replace\(\/\\\`\\\`\\\`json\|\\\`\\\`\\\`\/g, ''\)\) as AgendaResponse;/,
-    "const parsed = JSON.parse(text.replace(/```json|```/g, '')); return AgendaSchema.parse(parsed) as AgendaResponse;"
+    "const parsed = JSON.parse(text.replace(/```json|```/g, '')); return AgendaSchema.parse(parsed) as AgendaResponse;",
   );
 
   fs.writeFileSync('../src/services/aiService.ts', aiService);
@@ -150,19 +152,23 @@ const styles = StyleSheet.create({
   quickStatsDone: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },
 });
 `;
-  
+
   if (!fs.existsSync('../src/components/home')) fs.mkdirSync('../src/components/home');
   fs.writeFileSync('../src/components/home/QuickStatsCard.tsx', quickStatsComponent);
-  
+
   homeScreen = homeScreen.replace(
     `import LoadingOrb from '../components/LoadingOrb';`,
-    `import LoadingOrb from '../components/LoadingOrb';\nimport QuickStatsCard from '../components/home/QuickStatsCard';`
+    `import LoadingOrb from '../components/LoadingOrb';\nimport QuickStatsCard from '../components/home/QuickStatsCard';`,
   );
-  
+
   // Regex to remove the inline QuickStatsCard and replace with <QuickStatsCard ... />
-  const inlineStatsRegex = /<View style=\{styles\.quickStatsCard\}>[\s\S]*?<\/View>\s*<\/View>\s*<\/View>/;
-  homeScreen = homeScreen.replace(inlineStatsRegex, `<QuickStatsCard progressPercent={progressPercent} todayMinutes={todayMinutes} dailyGoal={dailyGoal} minutesLeft={minutesLeft} />`);
-  
+  const inlineStatsRegex =
+    /<View style=\{styles\.quickStatsCard\}>[\s\S]*?<\/View>\s*<\/View>\s*<\/View>/;
+  homeScreen = homeScreen.replace(
+    inlineStatsRegex,
+    `<QuickStatsCard progressPercent={progressPercent} todayMinutes={todayMinutes} dailyGoal={dailyGoal} minutesLeft={minutesLeft} />`,
+  );
+
   fs.writeFileSync('../src/screens/HomeScreen.tsx', homeScreen);
   console.log('Refactored HomeScreen to extract QuickStatsCard');
 }
@@ -246,11 +252,11 @@ console.log('Created backupService.ts');
 let schema = fs.readFileSync('../src/db/schema.ts', 'utf-8');
 if (!schema.includes('is_flagged')) {
   schema = schema.replace(
-    "created_at INTEGER NOT NULL,",
-    "created_at INTEGER NOT NULL,\n  is_flagged INTEGER NOT NULL DEFAULT 0,"
+    'created_at INTEGER NOT NULL,',
+    'created_at INTEGER NOT NULL,\n  is_flagged INTEGER NOT NULL DEFAULT 0,',
   );
   fs.writeFileSync('../src/db/schema.ts', schema);
-  
+
   let database = fs.readFileSync('../src/db/database.ts', 'utf-8');
   // Need to add an alter table if not exists mechanism
   const alterCode = `
@@ -261,11 +267,7 @@ if (!schema.includes('is_flagged')) {
     // Column might already exist
   }
 `;
-  database = database.replace(
-    "await seedInitialData();",
-    "await seedInitialData();\n" + alterCode
-  );
+  database = database.replace('await seedInitialData();', 'await seedInitialData();\n' + alterCode);
   fs.writeFileSync('../src/db/database.ts', database);
   console.log('Updated db/schema.ts and db/database.ts to add is_flagged column');
 }
-

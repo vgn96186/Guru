@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { HomeStackParamList, TabParamList } from '../../navigation/types';
 import { theme } from '../../constants/theme';
 import { useAppStore } from '../../store/useAppStore';
 import { generateDailyAgendaWithRouting } from '../../services/ai';
@@ -8,7 +10,7 @@ import { dailyAgendaRepository, profileRepository } from '../../db/repositories'
 import { showToast } from '../Toast';
 
 export default function TodayPlanCard() {
-  const navigation = useNavigation<any>();
+  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const { profile, todayPlan, setTodayPlan } = useAppStore();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -48,7 +50,7 @@ export default function TodayPlanCard() {
       const plan = await generateDailyAgendaWithRouting(
         profile.displayName,
         stats,
-        profile.dailyGoalMinutes || 480,
+        profile.dailyGoalMinutes || 120,
       );
 
       const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
@@ -64,7 +66,9 @@ export default function TodayPlanCard() {
   };
 
   const navigateToFullSchedule = () => {
-    navigation.navigate('MenuTab', { screen: 'StudyPlan' });
+    navigation
+      .getParent<NavigationProp<TabParamList>>()
+      ?.navigate('MenuTab', { screen: 'StudyPlan' });
   };
 
   if (!todayPlan) {
@@ -72,9 +76,15 @@ export default function TodayPlanCard() {
       <View style={styles.container}>
         <Text style={styles.title}>TODAY'S MISSION</Text>
         <Text style={styles.subtitle}>Guru hasn't planned your day yet.</Text>
-        <TouchableOpacity style={styles.button} onPress={handleGenerate} disabled={isGenerating}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleGenerate}
+          disabled={isGenerating}
+          accessibilityRole="button"
+          accessibilityLabel="Generate daily plan"
+        >
           {isGenerating ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.colors.textInverse} />
           ) : (
             <Text style={styles.buttonText}>GENERATE DAILY PLAN</Text>
           )}
@@ -103,7 +113,12 @@ export default function TodayPlanCard() {
 
       <Text style={styles.guruNote}>"{todayPlan.guruNote}"</Text>
 
-      <TouchableOpacity style={styles.viewFullButton} onPress={navigateToFullSchedule}>
+      <TouchableOpacity
+        style={styles.viewFullButton}
+        onPress={navigateToFullSchedule}
+        accessibilityRole="button"
+        accessibilityLabel="View full schedule"
+      >
         <Text style={styles.viewFullText}>VIEW FULL SCHEDULE</Text>
       </TouchableOpacity>
     </View>
@@ -147,7 +162,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: '#fff',
+    color: theme.colors.textInverse,
     fontWeight: '700',
     fontSize: 13,
   },
@@ -158,7 +173,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   badgeText: {
-    color: '#fff',
+    color: theme.colors.textInverse,
     fontSize: 10,
     fontWeight: '900',
   },

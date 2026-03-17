@@ -12,7 +12,7 @@ export async function getRecordingInfo(filePath: string) {
     const info = await FileSystem.getInfoAsync(
       filePath.startsWith('file://') ? filePath : `file://${filePath}`,
     );
-    if (!(info?.exists)) return { exists: false, sizeBytes: 0, needsChunking: false };
+    if (!info?.exists) return { exists: false, sizeBytes: 0, needsChunking: false };
     return {
       exists: true,
       sizeBytes: info.size ?? 0,
@@ -41,7 +41,7 @@ export async function transcribeWithGroqChunking(
 
   try {
     const dirInfo = await FileSystem.getInfoAsync(checkpointDir);
-    if (!(dirInfo?.exists)) {
+    if (!dirInfo?.exists) {
       await FileSystem.makeDirectoryAsync(checkpointDir, { intermediates: true });
     }
 
@@ -67,10 +67,10 @@ export async function transcribeWithGroqChunking(
         chunkTranscript = await FileSystem.readAsStringAsync(chunkFilePath, {
           encoding: FileSystem.EncodingType.UTF8,
         });
-        console.log(`[Transcription] Resuming chunk ${i} from checkpoint`);
+        if (__DEV__) console.log(`[Transcription] Resuming chunk ${i} from checkpoint`);
       } else {
         // Transcribe and save checkpoint
-        console.log(`[Transcription] Transcribing chunk ${i}...`);
+        if (__DEV__) console.log(`[Transcription] Transcribing chunk ${i}...`);
         chunkTranscript = await transcribeRawWithGroq(chunk.path, groqKey);
         await FileSystem.writeAsStringAsync(chunkFilePath, chunkTranscript, {
           encoding: FileSystem.EncodingType.UTF8,

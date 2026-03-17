@@ -11,7 +11,7 @@ const PUBLIC_BACKUP_DIR = FileSystem.documentDirectory + 'backups/db/';
 export async function runAutoPublicBackup() {
   try {
     const profile = await profileRepository.getProfile();
-    console.log('[AutoBackup] Starting periodic database backup...');
+    if (__DEV__) console.log('[AutoBackup] Starting periodic database backup...');
 
     const DB_NAME = 'neet_study.db';
     const DB_PATH = FileSystem.documentDirectory + 'SQLite/' + DB_NAME;
@@ -32,7 +32,7 @@ export async function runAutoPublicBackup() {
         await FileSystem.writeAsStringAsync(backupUri, dbBase64, {
           encoding: FileSystem.EncodingType.Base64,
         });
-        console.log('[AutoBackup] Cloud/SAF backup successful:', backupName);
+        if (__DEV__) console.log('[AutoBackup] Cloud/SAF backup successful:', backupName);
       } catch (safErr) {
         console.warn('[AutoBackup] Cloud/SAF backup failed:', safErr);
       }
@@ -41,7 +41,7 @@ export async function runAutoPublicBackup() {
     // 2. Secondary Backup: Local Private Document Directory (Survives app updates)
     // Ensure backup dir exists
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_BACKUP_DIR);
-    if (!(dirInfo?.exists)) {
+    if (!dirInfo?.exists) {
       await FileSystem.makeDirectoryAsync(PUBLIC_BACKUP_DIR, { intermediates: true });
     }
 
@@ -50,7 +50,7 @@ export async function runAutoPublicBackup() {
       to: PUBLIC_BACKUP_DIR + backupName,
     });
 
-    console.log('[AutoBackup] Local public backup successful:', backupName);
+    if (__DEV__) console.log('[AutoBackup] Local public backup successful:', backupName);
   } catch (err) {
     console.warn('[AutoBackup] Periodic backup failed:', err);
   }

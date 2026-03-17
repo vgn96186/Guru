@@ -47,25 +47,25 @@ export default function ShortcutTile({ title, icon, accent, onPress }: ShortcutT
       activeOpacity={1}
       accessibilityRole="button"
     >
-      <View style={[styles.iconBox, { backgroundColor: accent + '1A', borderColor: accent + '33' }]}>
-        <Ionicons name={icon} size={22} color={accent} />
+      <View
+        style={[styles.iconWrap, { backgroundColor: `${accent}1F`, borderColor: `${accent}44` }]}
+      >
+        <Ionicons name={icon} size={20} color={accent} />
       </View>
-      <Text style={styles.title} numberOfLines={1}>
+      <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
         {title}
       </Text>
-    </AnimatedTouchableOpacity>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
   tile: {
     flex: 1,
-    minWidth: '45%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.xl,
-    padding: theme.spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minWidth: '30%',
+    minHeight: 44,
+    backgroundColor: theme.colors.panel,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colors.border,
     ...theme.shadows.soft,
@@ -83,5 +83,12 @@ const styles = StyleSheet.create({
     ...theme.typography.caption,
     fontWeight: '700',
     color: theme.colors.textPrimary,
+  },
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

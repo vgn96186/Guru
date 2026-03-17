@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,8 +16,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SyllabusStackParamList } from '../navigation/types';
-import { getAllSubjects, getSubjectCoverage } from '../db/queries/topics';
+import { getAllSubjects, getSubjectStatsAggregated } from '../db/queries/topics';
 import { syncVaultSeedTopics, getDb } from '../db/database';
+import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import SubjectCard from '../components/SubjectCard';
 import type { Subject } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -55,40 +56,8 @@ export default function SyllabusScreen() {
   const [searchMatchIds, setSearchMatchIds] = useState<Set<number>>(new Set());
   const [searchMatchCounts, setSearchMatchCounts] = useState<Map<number, number>>(new Map());
 
-  async function loadData() {
-    const db = getDb();
-
-    // Combine subject fetching, coverage, and metrics into a single query to eliminate N+1 processing and redundant group bys
-    const [subs, combinedRows] = await Promise.all([
-      getAllSubjects(),
-      db.getAllAsync<{
-        subjectId: number;
-        total: number;
-        seen: number;
-        due: number;
-        highYield: number;
-        unseen: number;
-        withNotes: number;
-        weak: number;
-      }>(
-        `SELECT
-           t.subject_id AS subjectId,
-           COUNT(t.id) as total,
-           SUM(CASE WHEN p.status IN ('seen','reviewed','mastered') THEN 1 ELSE 0 END) as seen,
-           SUM(CASE WHEN COALESCE(p.status, 'unseen') != 'unseen' AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE('now')) THEN 1 ELSE 0 END) AS due,
-           SUM(CASE WHEN t.inicet_priority >= 8 THEN 1 ELSE 0 END) AS highYield,
-           SUM(CASE WHEN COALESCE(p.status, 'unseen') = 'unseen' THEN 1 ELSE 0 END) AS unseen,
-           SUM(CASE WHEN TRIM(COALESCE(p.user_notes, '')) <> '' THEN 1 ELSE 0 END) AS withNotes,
-           SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) AS weak
-         FROM topics t
-         LEFT JOIN topic_progress p ON p.topic_id = t.id
-         WHERE NOT EXISTS (
-           SELECT 1 FROM topics c
-           WHERE c.parent_topic_id = t.id
-         )
-         GROUP BY t.subject_id`,
-      ),
-    ]);
+  const loadData = useCallback(async () => {
+    const [subs, combinedRows] = await Promise.all([getAllSubjects(), getSubjectStatsAggregated()]);
 
     const map = new Map<number, { total: number; seen: number }>();
     const metricMap = new Map<number, SubjectMetrics>();
@@ -147,13 +116,23 @@ export default function SyllabusScreen() {
     setSubjects(sortedSubjects);
     setCoverage(map);
     setSubjectMetrics(metricMap);
-  }
+  }, [sortMode]);
 
   useEffect(() => {
     if (isFocused) {
       loadData();
     }
-  }, [isFocused, sortMode]);
+  }, [isFocused, sortMode, loadData]);
+
+  useEffect(() => {
+    const onProgressOrLecture = () => void loadData();
+    dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
+    dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
+    return () => {
+      dbEvents.off(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
+      dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
+    };
+  }, [loadData]);
 
   useEffect(() => {
     const searchLower = searchQuery.trim().toLowerCase();
@@ -167,7 +146,10 @@ export default function SyllabusScreen() {
       .getAllAsync<{
         subject_id: number;
         c: number;
-      }>(`SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`, [`%${searchLower}%`])
+      }>(
+        `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
+        [`%${searchLower}%`],
+      )
       .then((rows) => {
         setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
         setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
@@ -290,7 +272,7 @@ export default function SyllabusScreen() {
 
   return (
     <SafeAreaView style={styles.safe} testID="syllabus-screen">
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
@@ -327,9 +309,15 @@ export default function SyllabusScreen() {
               <Text style={styles.snapshotPill}>Notes {totalWithNotes}</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={handleManualSync} disabled={refreshing} style={styles.syncBtn}>
+          <TouchableOpacity
+            onPress={handleManualSync}
+            disabled={refreshing}
+            style={styles.syncBtn}
+            accessibilityRole="button"
+            accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
+          >
             {refreshing ? (
-              <ActivityIndicator size="small" color="#6C63FF" />
+              <ActivityIndicator size="small" color={theme.colors.primary} />
             ) : (
               <Text style={styles.syncBtnText}>🔄</Text>
             )}
@@ -340,7 +328,7 @@ export default function SyllabusScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholder="Search subjects..."
-            placeholderTextColor="#666"
+            placeholderTextColor={theme.colors.textMuted}
             style={styles.searchInput}
           />
           <View style={styles.sortRow}>
@@ -350,6 +338,9 @@ export default function SyllabusScreen() {
                 style={[styles.sortChip, sortMode === option.key && styles.sortChipActive]}
                 onPress={() => setSortMode(option.key)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`Sort by ${option.label}`}
+                accessibilityState={{ selected: sortMode === option.key }}
               >
                 <Text
                   style={[
@@ -423,7 +414,8 @@ const styles = StyleSheet.create({
   statsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   overallBadge: { flexDirection: 'row', alignItems: 'baseline' },
   overallPct: { color: '#6C63FF', fontWeight: '900', fontSize: 24 },
-  overallLabel: { color: '#9E9E9E', fontSize: 14, marginLeft: 2 },
+  overallLabel: { color: theme.colors.textSecondary, fontSize: 14, marginLeft: 2 },
+  overallLabel: { color: theme.colors.textSecondary, fontSize: 14, marginLeft: 2 },
   pctBadge: {
     backgroundColor: '#2A2A38',
     paddingHorizontal: 10,
@@ -432,7 +424,7 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   pctBadgeGood: { backgroundColor: '#1A2A1A' },
-  pctText: { color: '#888', fontWeight: '800', fontSize: 14 },
+  pctText: { color: theme.colors.textSecondary, fontWeight: '800', fontSize: 14 },
   progressTrack: { height: 6, backgroundColor: '#2A2A38', borderRadius: 3, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 3 },
   snapshotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
@@ -484,5 +476,5 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   emptyState: { alignItems: 'center', paddingVertical: 48 },
   emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  emptySub: { color: '#80869A', fontSize: 13, marginTop: 6 },
+  emptySub: { color: theme.colors.textMuted, fontSize: 13, marginTop: 6 },
 });

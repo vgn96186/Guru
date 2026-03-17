@@ -1,8 +1,16 @@
-import type { Agenda, AgendaItem, Mood, SessionMode, TopicWithProgress, ContentType } from '../types';
+import type {
+  Agenda,
+  AgendaItem,
+  Mood,
+  SessionMode,
+  TopicWithProgress,
+  ContentType,
+} from '../types';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { getRecentlyStudiedTopicNames } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { planSessionWithAI } from './aiService';
+import { MS_PER_DAY } from '../constants/time';
 import { getMoodContentTypes } from '../constants/prompts';
 
 interface BuildSessionOptions {
@@ -23,15 +31,15 @@ function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
   } else if (topic.progress.fsrsDue) {
     const dueTime = new Date(topic.progress.fsrsDue).getTime();
     const nowTime = Date.now();
-    
+
     if (nowTime > dueTime) {
       // Overdue cards get a massive boost based on how overdue they are, capped
-      const daysOverdue = (nowTime - dueTime) / 86400000;
+      const daysOverdue = (nowTime - dueTime) / MS_PER_DAY;
       score += 10 + Math.min(daysOverdue * 2, 10);
     } else {
       // Not due yet, penalty
-      const daysUntilDue = (dueTime - nowTime) / 86400000;
-      score -= (daysUntilDue * 5);
+      const daysUntilDue = (dueTime - nowTime) / MS_PER_DAY;
+      score -= daysUntilDue * 5;
     }
   }
 
@@ -90,17 +98,14 @@ function resolveFocusedContentTypes(
       ? ['quiz' as ContentType]
       : ['keypoints' as ContentType];
   } else if (preferredActionType === 'deep_dive') {
-    focusedTypes = (['keypoints', 'teach_back', 'quiz'] as ContentType[])
-      .filter(ct => !blockedContentTypes.has(ct));
+    focusedTypes = (['keypoints', 'teach_back', 'quiz'] as ContentType[]).filter(
+      (ct) => !blockedContentTypes.has(ct),
+    );
     if (focusedTypes.length === 0) focusedTypes = safeContentTypes;
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  if (
-    topicDueDate(topic) &&
-    topicDueDate(topic)! <= today &&
-    !blockedContentTypes.has('quiz')
-  ) {
+  if (topicDueDate(topic) && topicDueDate(topic)! <= today && !blockedContentTypes.has('quiz')) {
     focusedTypes = ['quiz' as ContentType];
   }
 
@@ -125,7 +130,7 @@ export async function buildSession(
   const sessionMinutes = getSessionLength(mood, preferredMinutes);
   const mode = getSessionMode(mood);
   const rawContentTypes = getMoodContentTypes(mood);
-  const contentTypes = rawContentTypes.filter(ct => !blockedContentTypes.has(ct));
+  const contentTypes = rawContentTypes.filter((ct) => !blockedContentTypes.has(ct));
   const safeContentTypes = contentTypes.length > 0 ? contentTypes : ['keypoints' as ContentType];
   const today = new Date().toISOString().slice(0, 10);
   const explicitTopicIds = options?.focusTopicIds?.length
@@ -136,7 +141,7 @@ export async function buildSession(
 
   if (explicitTopicIds.length > 0) {
     const explicitTopics = explicitTopicIds
-      .map(id => allTopics.find(t => t.id === id))
+      .map((id) => allTopics.find((t) => t.id === id))
       .filter((topic): topic is TopicWithProgress => Boolean(topic));
 
     if (explicitTopics.length > 0) {
@@ -147,7 +152,9 @@ export async function buildSession(
           return aDue.localeCompare(bDue) || b.inicetPriority - a.inicetPriority;
         }
         if (options?.preferredActionType === 'deep_dive') {
-          return b.inicetPriority - a.inicetPriority || a.progress.confidence - b.progress.confidence;
+          return (
+            b.inicetPriority - a.inicetPriority || a.progress.confidence - b.progress.confidence
+          );
         }
         return b.inicetPriority - a.inicetPriority;
       });
@@ -157,7 +164,7 @@ export async function buildSession(
         Math.max(1, Math.min(4, options?.preferredActionType === 'review' ? 4 : 3)),
       );
 
-      const items = slicedTopics.map(topic => ({
+      const items = slicedTopics.map((topic) => ({
         topic,
         contentTypes: resolveFocusedContentTypes(
           topic,
@@ -170,30 +177,35 @@ export async function buildSession(
 
       const totalMinutes = Math.max(
         12,
-        Math.min(sessionMinutes, items.reduce((sum, item) => sum + item.estimatedMinutes, 0)),
+        Math.min(
+          sessionMinutes,
+          items.reduce((sum, item) => sum + item.estimatedMinutes, 0),
+        ),
       );
-      const focusNames = slicedTopics.map(topic => topic.name);
+      const focusNames = slicedTopics.map((topic) => topic.name);
 
       return {
         items,
         totalMinutes,
         focusNote: `Focused ${options?.preferredActionType ?? 'study'}: ${focusNames.join(' + ')}`,
         mode: options?.preferredActionType === 'deep_dive' ? 'deep' : mode,
-        guruMessage: options?.preferredActionType === 'review'
-          ? `Review set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`
-          : `Focused set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`,
+        guruMessage:
+          options?.preferredActionType === 'review'
+            ? `Review set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`
+            : `Focused set ready: ${focusNames.slice(0, 2).join(', ')}${focusNames.length > 2 ? ' and more' : ''}.`,
       };
     }
   }
 
   // Apply focus filter — if subjects are pinned, restrict to those
-  const topicPool = focusSubjectIds.length > 0
-    ? allTopics.filter(t => focusSubjectIds.includes(t.subjectId))
-    : allTopics;
+  const topicPool =
+    focusSubjectIds.length > 0
+      ? allTopics.filter((t) => focusSubjectIds.includes(t.subjectId))
+      : allTopics;
 
   // Score and rank all topics
   const scored = topicPool
-    .map(t => ({ ...t, score: scoreTopicForSession(t, mood) }))
+    .map((t) => ({ ...t, score: scoreTopicForSession(t, mood) }))
     .sort((a, b) => b.score - a.score);
 
   // Take top 15 as candidates
@@ -201,7 +213,8 @@ export async function buildSession(
 
   // Ask AI to pick from candidates (skip AI entirely if no API key configured)
   let agendaResponse: { selectedTopicIds: number[]; focusNote: string; guruMessage: string };
-  const hasAiKey = !!(apiKey?.trim()) || !!(orKey?.trim()) || !!(groqKey?.trim()) || profile.useLocalModel;
+  const hasAiKey =
+    !!apiKey?.trim() || !!orKey?.trim() || !!groqKey?.trim() || profile.useLocalModel;
   if (hasAiKey) {
     try {
       agendaResponse = await planSessionWithAI(candidates, sessionMinutes, mood, recentTopics);
@@ -209,57 +222,71 @@ export async function buildSession(
       // Fallback: just take top 2-3 by score
       const count = mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : 2;
       const recentSet = new Set(recentTopics);
-      const fallbackTopics = candidates.filter(t => !recentSet.has(t.name)).slice(0, count);
+      const fallbackTopics = candidates.filter((t) => !recentSet.has(t.name)).slice(0, count);
       if (fallbackTopics.length === 0 && candidates.length > 0) fallbackTopics.push(candidates[0]);
       agendaResponse = {
-        selectedTopicIds: fallbackTopics.map(t => t.id),
-        focusNote: `Today: ${fallbackTopics.map(t => t.name).join(' + ')}`,
-        guruMessage: mode === 'gentle'
-          ? 'Take it easy today. Small steps still move you forward.'
-          : 'Let\'s get started. You\'ve got this.',
+        selectedTopicIds: fallbackTopics.map((t) => t.id),
+        focusNote: `Today: ${fallbackTopics.map((t) => t.name).join(' + ')}`,
+        guruMessage:
+          mode === 'gentle'
+            ? 'Take it easy today. Small steps still move you forward.'
+            : "Let's get started. You've got this.",
       };
     }
   } else {
     // No AI keys at all — use smart local fallback (no network call)
-    const count = mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : Math.min(3, Math.ceil(sessionMinutes / 15));
+    const count =
+      mode === 'sprint' ? 1 : mode === 'gentle' ? 1 : Math.min(3, Math.ceil(sessionMinutes / 15));
     const recentSet = new Set(recentTopics);
-    const fallbackTopics = candidates.filter(t => !recentSet.has(t.name)).slice(0, count);
+    const fallbackTopics = candidates.filter((t) => !recentSet.has(t.name)).slice(0, count);
     if (fallbackTopics.length === 0 && candidates.length > 0) fallbackTopics.push(candidates[0]);
     const gentleMessages = [
       'Take it easy today. Small steps still move you forward.',
       'No pressure. Even reviewing one topic is progress.',
-      'Consistency > intensity. You showed up — that\'s what matters.',
+      "Consistency > intensity. You showed up — that's what matters.",
     ];
     const normalMessages = [
-      'Let\'s get started. You\'ve got this.',
+      "Let's get started. You've got this.",
       'Your future self will thank you for this session.',
-      'Focus mode: ON. Let\'s make this count.',
+      "Focus mode: ON. Let's make this count.",
     ];
     const msgs = mode === 'gentle' ? gentleMessages : normalMessages;
     agendaResponse = {
-      selectedTopicIds: fallbackTopics.map(t => t.id),
-      focusNote: `Today: ${fallbackTopics.map(t => t.name).join(' + ')}`,
+      selectedTopicIds: fallbackTopics.map((t) => t.id),
+      focusNote: `Today: ${fallbackTopics.map((t) => t.name).join(' + ')}`,
       guruMessage: msgs[Math.floor(Math.random() * msgs.length)],
     };
   }
 
-  const topicMap = new Map(candidates.map(t => [t.id, t]));
+  const topicMap = new Map(candidates.map((t) => [t.id, t]));
   const items: AgendaItem[] = agendaResponse.selectedTopicIds
-    .map(id => topicMap.get(id))
+    .map((id) => topicMap.get(id))
     .filter(Boolean)
-    .map(topic => {
+    .map((topic) => {
       // SRS Override: If topic is strictly due, FORCE QUIZ only.
       const dueDate = topicDueDate(topic!);
       if (dueDate && dueDate <= today && !blockedContentTypes.has('quiz')) {
-        return { topic: topic!, contentTypes: ['quiz' as ContentType], estimatedMinutes: topic!.estimatedMinutes };
+        return {
+          topic: topic!,
+          contentTypes: ['quiz' as ContentType],
+          estimatedMinutes: topic!.estimatedMinutes,
+        };
       }
-      return { topic: topic!, contentTypes: safeContentTypes, estimatedMinutes: topic!.estimatedMinutes };
+      return {
+        topic: topic!,
+        contentTypes: safeContentTypes,
+        estimatedMinutes: topic!.estimatedMinutes,
+      };
     });
 
   // Fallback if AI returned bad IDs
   if (items.length === 0) {
     const fallback = candidates[0];
-    items.push({ topic: fallback, contentTypes: safeContentTypes, estimatedMinutes: fallback.estimatedMinutes });
+    items.push({
+      topic: fallback,
+      contentTypes: safeContentTypes,
+      estimatedMinutes: fallback.estimatedMinutes,
+    });
   }
 
   return {

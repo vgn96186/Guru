@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
@@ -55,6 +55,7 @@ export default function HomeScreen() {
     todayMinutes,
     completedSessions,
     isLoading,
+    loadError,
     reload: reloadHomeDashboard,
   } = useHomeDashboardData();
 
@@ -68,6 +69,12 @@ export default function HomeScreen() {
   const [criticalExpanded, setCriticalExpanded] = useState(false);
 
   useLectureReturnRecovery({ onRecovered: setReturnSheet });
+
+  useFocusEffect(
+    useCallback(() => {
+      reloadHomeDashboard({ silent: true });
+    }, [reloadHomeDashboard]),
+  );
 
   useEffect(() => {
     dailyLogRepository.getDailyLog().then((log) => setMood((log?.mood as Mood) ?? 'good'));
@@ -201,7 +208,7 @@ export default function HomeScreen() {
       title: 'Task Paralysis',
       sub: "Can't get started? Break the loop.",
       badge: 'BLOCKER',
-      accent: '#FF5252',
+      accent: theme.colors.error,
       onPress: () => navigation.navigate('Inertia'),
     },
     {
@@ -209,15 +216,15 @@ export default function HomeScreen() {
       title: 'Harassment Mode',
       sub: 'Stop mindless scrolling now.',
       badge: 'URGENT',
-      accent: '#FFB300',
+      accent: theme.colors.warning,
       onPress: () => navigation.getParent()?.navigate('DoomscrollGuide'),
     },
   ];
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <ResponsiveContainer style={styles.content}>
           <HeroCard
             greeting={greeting}
@@ -233,6 +240,20 @@ export default function HomeScreen() {
             level={levelInfo.level}
             completedSessions={completedSessions}
           />
+
+          {loadError && (
+            <View style={styles.loadErrorRow}>
+              <Text style={styles.loadErrorText}>Couldn&apos;t load agenda.</Text>
+              <TouchableOpacity
+                onPress={() => reloadHomeDashboard()}
+                style={styles.retryButton}
+                accessibilityRole="button"
+                accessibilityLabel="Retry loading"
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           <TodayPlanCard />
 
@@ -250,6 +271,10 @@ export default function HomeScreen() {
               style={styles.collapsibleHeader}
               onPress={() => setCriticalExpanded((prev) => !prev)}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={
+                criticalExpanded ? 'Collapse Critical Now section' : 'Expand Critical Now section'
+              }
             >
               <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
               <Text style={styles.moreChevron}>{criticalExpanded ? '▲' : '▼'}</Text>
@@ -262,6 +287,8 @@ export default function HomeScreen() {
                     style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
                     onPress={item.onPress}
                     activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={item.title}
                   >
                     <View style={styles.criticalCardTop}>
                       <Text style={[styles.criticalBadge, { color: item.accent }]}>
@@ -279,75 +306,115 @@ export default function HomeScreen() {
 
           <View style={isTabletLandscape ? styles.gridLandscape : null}>
             <View style={isTabletLandscape ? { flex: 1.1 } : null}>
-              <Section label="DO THIS NOW">
-                {weakTopics.slice(0, 1).map((t) => (
-                  <AgendaItem
-                    key={t.id}
-                    time="Now"
-                    title={t.name}
-                    type="deep_dive"
-                    subjectName={t.subjectName}
-                    priority={10}
-                    onPress={() =>
-                      navigation.navigate('Session', { mood, focusTopicId: t.id, mode: 'deep' })
-                    }
-                  />
-                ))}
-              </Section>
-              <Section label="UP NEXT">
-                {todayTasks.slice(0, 2).map((t, i) => (
-                  <AgendaItem
-                    key={i}
-                    time={t.timeLabel.split(' ')[0]}
-                    title={t.topic.name}
-                    type={t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')}
-                    subjectName={t.topic.subjectName}
-                    priority={t.topic.inicetPriority}
-                    onPress={() =>
-                      navigation.navigate('Session', {
-                        mood,
-                        focusTopicId: t.topic.id,
-                        preferredActionType: t.type,
-                      })
-                    }
-                  />
-                ))}
-                {todayTasks.length > 2 && (
+              <Section label="DO THIS NOW" accessibilityLabel="Do this now">
+                {weakTopics.length === 0 ? (
                   <TouchableOpacity
+                    style={styles.emptySectionTouchable}
+                    onPress={() => navigation.navigate('Session', { mood })}
+                    accessibilityRole="button"
+                    accessibilityLabel="Start a session to get suggestions"
+                  >
+                    <Text style={styles.emptySectionText}>
+                      No weak topic highlighted — start a session or open Study Plan.
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  weakTopics
+                    .slice(0, 1)
+                    .map((t) => (
+                      <AgendaItem
+                        key={t.id}
+                        time="Now"
+                        title={t.name}
+                        type="deep_dive"
+                        subjectName={t.subjectName}
+                        priority={10}
+                        onPress={() =>
+                          navigation.navigate('Session', { mood, focusTopicId: t.id, mode: 'deep' })
+                        }
+                      />
+                    ))
+                )}
+              </Section>
+              <Section label="UP NEXT" accessibilityLabel="Up next">
+                {todayTasks.length === 0 ? (
+                  <TouchableOpacity
+                    style={styles.emptySectionTouchable}
                     onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
                     activeOpacity={0.7}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open Study Plan"
                   >
+                    <Text style={styles.emptySectionText}>
+                      Nothing scheduled — tap to open Study Plan.
+                    </Text>
                     <Text style={styles.seeAllLink}>See full plan →</Text>
                   </TouchableOpacity>
+                ) : (
+                  <>
+                    {todayTasks.slice(0, 2).map((t, i) => (
+                      <AgendaItem
+                        key={i}
+                        time={t.timeLabel.split(' ')[0]}
+                        title={t.topic.name}
+                        type={
+                          t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')
+                        }
+                        subjectName={t.topic.subjectName}
+                        priority={t.topic.inicetPriority}
+                        onPress={() =>
+                          navigation.navigate('Session', {
+                            mood,
+                            focusTopicId: t.topic.id,
+                            preferredActionType: t.type,
+                          })
+                        }
+                      />
+                    ))}
+                    {todayTasks.length > 2 && (
+                      <TouchableOpacity
+                        onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                        activeOpacity={0.7}
+                        accessibilityRole="button"
+                        accessibilityLabel="See full study plan"
+                      >
+                        <Text style={styles.seeAllLink}>See full plan →</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
                 )}
               </Section>
             </View>
             <View style={isTabletLandscape ? { flex: 0.9 } : null}>
-              <Section label="QUICK ACCESS">
+              <Section label="QUICK ACCESS" accessibilityLabel="Quick access">
                 <View style={styles.shortcutGrid}>
                   <ShortcutTile
                     title="Study Plan"
                     icon="calendar-outline"
                     accent={theme.colors.primary}
                     onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                    accessibilityLabel="Open Study Plan"
                   />
                   <ShortcutTile
                     title="Notes Vault"
                     icon="library-outline"
                     accent={theme.colors.success}
                     onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesHub' })}
+                    accessibilityLabel="Open Notes Vault"
                   />
                   <ShortcutTile
                     title="Inertia"
                     icon="flash-outline"
                     accent={theme.colors.warning}
                     onPress={() => navigation.navigate('Inertia')}
+                    accessibilityLabel="Open Task Paralysis helper"
                   />
                   <ShortcutTile
                     title="Guru Chat"
                     icon="chatbubbles-outline"
                     accent={theme.colors.info}
                     onPress={() => tabsNavigation?.navigate('ChatTab', { screen: 'GuruChat' })}
+                    accessibilityLabel="Open Guru Chat"
                   />
                 </View>
               </Section>
@@ -364,6 +431,10 @@ export default function HomeScreen() {
                 useNativeDriver: true,
               }).start();
             }}
+            accessibilityRole="button"
+            accessibilityLabel={
+              moreExpanded ? 'Collapse Tools and Advanced' : 'Expand Tools and Advanced'
+            }
           >
             <Text style={styles.sectionLabel}>TOOLS & ADVANCED</Text>
             <Animated.Text
@@ -388,6 +459,10 @@ export default function HomeScreen() {
                 style={styles.moreLink}
                 onPress={handleAudioUpload}
                 disabled={isTranscribingUpload}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isTranscribingUpload ? 'Transcribing audio' : 'Transcribe audio file'
+                }
               >
                 <Text style={styles.moreLinkText}>
                   {isTranscribingUpload ? 'Transcribing...' : 'Transcribe Audio'}
@@ -396,12 +471,16 @@ export default function HomeScreen() {
               <TouchableOpacity
                 style={styles.moreLink}
                 onPress={() => navigation.getParent()?.navigate('SleepMode')}
+                accessibilityRole="button"
+                accessibilityLabel="Open Nightstand Mode"
               >
                 <Text style={styles.moreLinkText}>Nightstand Mode</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.moreLink}
                 onPress={() => navigation.navigate('FlaggedReview')}
+                accessibilityRole="button"
+                accessibilityLabel="Open Flagged Review"
               >
                 <Text style={styles.moreLinkText}>Flagged Review</Text>
               </TouchableOpacity>
@@ -426,9 +505,21 @@ export default function HomeScreen() {
   );
 }
 
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
+function Section({
+  label,
+  children,
+  accessibilityLabel,
+}: {
+  label: string;
+  children: React.ReactNode;
+  accessibilityLabel?: string;
+}) {
   return (
-    <View style={styles.section}>
+    <View
+      style={styles.section}
+      accessibilityRole="summary"
+      accessibilityLabel={accessibilityLabel ?? label}
+    >
       <Text style={styles.sectionLabel}>{label}</Text>
       {children}
     </View>
@@ -437,8 +528,39 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  content: { paddingHorizontal: theme.spacing.xl, paddingBottom: theme.spacing.xxxl, paddingTop: theme.spacing.xl },
-  section: { marginBottom: theme.spacing.xxl },
+  scrollContent: { paddingBottom: theme.spacing.xxl },
+  content: { padding: 16 },
+  loadErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.errorSurface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.error,
+  },
+  loadErrorText: { color: theme.colors.textSecondary, fontSize: 13 },
+  retryButton: {
+    backgroundColor: theme.colors.error,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.sm,
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  retryButtonText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 },
+  emptySectionTouchable: {
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+  },
+  emptySectionText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  section: { marginBottom: 20 },
   sectionLabel: {
     ...theme.typography.sectionLabel,
     marginBottom: theme.spacing.md,
@@ -454,7 +576,13 @@ const styles = StyleSheet.create({
   },
   moreChevron: { color: theme.colors.textMuted, fontSize: 14, fontWeight: "800" },
   moreContent: { paddingBottom: 20 },
-  moreLink: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
+  moreLink: {
+    paddingVertical: 14,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.divider,
+  },
   moreLinkText: { color: theme.colors.textSecondary, fontSize: 14 },
 
   // Collapsible UX Audit styles
@@ -495,6 +623,22 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     ...theme.typography.body,
     fontSize: 14,
+  },
+  criticalSub: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  emptyAgendaRow: {
+    paddingVertical: 12,
+    paddingRight: 8,
+  },
+  emptyAgendaText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  emptyAgendaLink: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 6,
   },
   seeAllLink: {
     color: theme.colors.primary,

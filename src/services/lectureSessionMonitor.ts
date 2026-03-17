@@ -38,13 +38,7 @@ export interface LecturePipelineProgress {
 export { startRecordingHealthCheck, stopRecordingHealthCheck, getRecordingInfo };
 
 /** Legacy wrapper for saveLecturePersistence */
-export async function saveLectureAnalysisQuick(opts: {
-  analysis: LectureAnalysis;
-  appName: string;
-  durationMinutes: number;
-  logId: number;
-  embedding?: number[] | null;
-}) {
+export async function saveLectureAnalysisQuick(opts: any) {
   const quickNote = buildQuickLectureNote(opts.analysis);
   return saveLecturePersistence({ ...opts, quickNote });
 }
@@ -172,7 +166,7 @@ export async function runFullTranscriptionPipeline(opts: {
       embedding,
     });
 
-    void enhanceNoteInBackground(noteId as number, logId, analysis).catch(err => {
+    void enhanceNoteInBackground(noteId as number, logId, analysis).catch((err) => {
       console.error('[SessionMonitor] Note enhancement failed:', err);
     });
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
@@ -183,7 +177,7 @@ export async function runFullTranscriptionPipeline(opts: {
   }
 }
 
-async function enhanceNoteInBackground(noteId: number, logId: number, analysis: LectureAnalysis) {
+async function enhanceNoteInBackground(noteId: number, logId: number, analysis: any) {
   try {
     const enhanced = await generateADHDNote(analysis);
     if (enhanced.trim()) {
@@ -212,7 +206,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
     const PUBLIC_REC_DIR = FileSystem.documentDirectory + 'recordings/';
     const dirInfo = await FileSystem.getInfoAsync(PUBLIC_REC_DIR);
-    if (!dirInfo || !dirInfo.exists) return 0;
+    if (!dirInfo.exists) return 0;
 
     const files = await FileSystem.readDirectoryAsync(PUBLIC_REC_DIR);
     if (files.length === 0) return 0;
@@ -251,7 +245,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
         appName: 'Recovered Audio',
         durationMinutes: 0,
         logId: logId as number,
-      }).catch(err => {
+      }).catch((err) => {
         console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
       });
 
@@ -321,6 +315,7 @@ export async function autoRepairLegacyNotes(): Promise<number> {
  * NOT referenced in the database and creates lecture notes for them.
  */
 export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
+  const { useAppStore } = await import('../store/useAppStore');
   try {
     const db = (await import('../db/database')).getDb();
     const FileSystem = await import('expo-file-system/legacy');
@@ -341,48 +336,45 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
     );
 
     let recovered = 0;
+    let recoveryStarted = false;
 
     async function scanDir(dir: string) {
       const dirInfo = await FileSystem.getInfoAsync(dir);
-      if (!dirInfo || !dirInfo.exists) return;
+      if (!dirInfo.exists) return;
 
       const files = await FileSystem.readDirectoryAsync(dir);
-      const orphanedFiles = files.filter(
-        (fileName) => fileName.endsWith('.txt') && !referencedFiles.has(fileName)
-      );
+      for (const fileName of files) {
+        if (!fileName.endsWith('.txt')) continue;
+        if (referencedFiles.has(fileName)) continue;
 
-      // Process in chunks of 5
-      const concurrencyLimit = 5;
-      for (let i = 0; i < orphanedFiles.length; i += concurrencyLimit) {
-        const chunk = orphanedFiles.slice(i, i + concurrencyLimit);
+        // Orphan found — show inline ghost in Notes Hub
+        if (!recoveryStarted) {
+          recoveryStarted = true;
+          useAppStore.getState().setRecoveringBackground(true);
+        }
 
-        await Promise.all(
-          chunk.map(async (fileName) => {
-            // Orphan found!
-            const fileUri = dir + fileName;
-            const content = await FileSystem.readAsStringAsync(fileUri);
+        const fileUri = dir + fileName;
+        const content = await FileSystem.readAsStringAsync(fileUri);
 
-            if (!content.trim()) return;
+        if (!content.trim()) continue;
 
-            console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
+        console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
 
-            const analysis = await analyzeTranscript(content);
-            const quickNote = buildQuickLectureNote(analysis);
+        const analysis = await analyzeTranscript(content);
+        const quickNote = buildQuickLectureNote(analysis);
 
-            const { saveLecturePersistence } = await import('./lecture/persistence');
-            await saveLecturePersistence({
-              analysis: { ...analysis, transcript: content },
-              appName: 'Recovered Folder',
-              durationMinutes: 0,
-              logId: -1,
-              quickNote,
-            });
+        const { saveLecturePersistence } = await import('./lecture/persistence');
+        await saveLecturePersistence({
+          analysis: { ...analysis, transcript: content },
+          appName: 'Recovered Folder',
+          durationMinutes: 0,
+          logId: -1,
+          quickNote,
+        });
 
-            // Add to set so we don't recover it twice if it exists in both dirs
-            referencedFiles.add(fileName);
-            recovered++;
-          })
-        );
+        // Add to set so we don't recover it twice if it exists in both dirs
+        referencedFiles.add(fileName);
+        recovered++;
       }
     }
 
@@ -397,5 +389,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
   } catch (err) {
     console.warn('[Recovery] Orphan scan failed:', err);
     return 0;
+  } finally {
+    useAppStore.getState().setRecoveringBackground(false);
   }
 }

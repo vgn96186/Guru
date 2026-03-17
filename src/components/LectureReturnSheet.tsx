@@ -21,6 +21,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { theme } from '../constants/theme';
+import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
 import { type LecturePipelineStage } from '../services/lectureSessionMonitor';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
 
@@ -135,15 +136,19 @@ export default function LectureReturnSheet(props: Props) {
             activeOpacity={0.9}
           >
             <View style={styles.compactTextWrap}>
-              <Text style={styles.compactEyebrow}>
+              <Text style={styles.compactEyebrow} numberOfLines={1}>
                 {isProcessingPhase
                   ? 'LECTURE PROCESSING'
                   : phase === 'error'
                     ? 'ACTION NEEDED'
                     : 'LECTURE READY'}
               </Text>
-              <Text style={styles.compactTitle}>{getCompactTitle()}</Text>
-              <Text style={styles.compactSubtitle}>{getCompactSubtitle()}</Text>
+              <Text style={styles.compactTitle} numberOfLines={1} ellipsizeMode="tail">
+                {getCompactTitle()}
+              </Text>
+              <Text style={styles.compactSubtitle} numberOfLines={1} ellipsizeMode="tail">
+                {getCompactSubtitle()}
+              </Text>
             </View>
             <View style={styles.compactMeta}>
               {isProcessingPhase ? (
@@ -232,6 +237,8 @@ export default function LectureReturnSheet(props: Props) {
                       style={styles.cancelProcessingBtn}
                       onPress={handleCancelTranscription}
                       activeOpacity={0.8}
+                      accessibilityRole="button"
+                      accessibilityLabel="Cancel transcription"
                     >
                       <Text style={styles.cancelProcessingBtnText}>Cancel transcription</Text>
                     </TouchableOpacity>
@@ -274,7 +281,7 @@ export default function LectureReturnSheet(props: Props) {
                       {analysis.topics.map((t: string, i: number) => (
                         <TouchableOpacity
                           key={`${t}-${i}`}
-                          style={styles.topicPillEditable}
+                          style={[styles.topicPillEditable, { maxWidth: '85%' }]}
                           onPress={() => {
                             // Toggle topic removal/addition
                             if (!analysis) return;
@@ -284,8 +291,12 @@ export default function LectureReturnSheet(props: Props) {
                             setAnalysis({ ...analysis, topics: newTopics });
                           }}
                           activeOpacity={0.6}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Remove topic: ${t}`}
                         >
-                          <Text style={styles.topicPillText}>{t}</Text>
+                          <Text style={styles.topicPillText} numberOfLines={1} ellipsizeMode="tail">
+                            {t}
+                          </Text>
                           <Text style={styles.topicRemoveIcon}>×</Text>
                         </TouchableOpacity>
                       ))}
@@ -310,11 +321,6 @@ export default function LectureReturnSheet(props: Props) {
                   <View style={styles.confidenceSelector}>
                     {([1, 2, 3] as const).map((level) => {
                       const isSelected = (userConfidence ?? analysis.estimatedConfidence) === level;
-                      const labels = {
-                        1: '🌱 Introduced',
-                        2: '🌿 Understood',
-                        3: '🌳 Can explain',
-                      };
                       const colors = {
                         1: theme.colors.error,
                         2: theme.colors.warning,
@@ -339,7 +345,7 @@ export default function LectureReturnSheet(props: Props) {
                               isSelected && { color: colors[level] },
                             ]}
                           >
-                            {labels[level]}
+                            {CONFIDENCE_LABELS_WITH_EMOJI[level]}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -347,13 +353,8 @@ export default function LectureReturnSheet(props: Props) {
                   </View>
                   {userConfidence && userConfidence !== analysis.estimatedConfidence && (
                     <Text style={styles.confidenceOverrideNote}>
-                      AI detected "
-                      {analysis.estimatedConfidence === 1
-                        ? 'Introduced'
-                        : analysis.estimatedConfidence === 2
-                          ? 'Understood'
-                          : 'Can explain'}
-                      " — you're overriding to your selection
+                      AI detected "{CONFIDENCE_LABELS[analysis.estimatedConfidence as 1 | 2 | 3]}" —
+                      you're overriding to your selection
                     </Text>
                   )}
                 </View>
@@ -501,6 +502,14 @@ export default function LectureReturnSheet(props: Props) {
                     onPress={handleMarkAndQuiz}
                     disabled={isSaving}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      isSaving
+                        ? 'Saving'
+                        : quizLoading
+                          ? 'Loading quiz'
+                          : 'Mark as studied and take quick quiz'
+                    }
                   >
                     <Text style={styles.primaryBtnText}>
                       {isSaving
@@ -515,6 +524,8 @@ export default function LectureReturnSheet(props: Props) {
                     onPress={() => handleMarkStudied()}
                     disabled={isSaving}
                     activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Just mark as studied, ${analysis.topics.length * 8} XP`}
                   >
                     <Text style={styles.outlineBtnText}>
                       ✓ Just Mark as Studied (+{analysis.topics.length * 8} XP)
@@ -576,6 +587,8 @@ export default function LectureReturnSheet(props: Props) {
                   style={styles.secondaryBtn}
                   onPress={handleSkip}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Skip and dismiss"
                 >
                   <Text style={styles.secondaryBtnText}>
                     {phase === 'results'
@@ -635,10 +648,10 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.error + '88',
     backgroundColor: theme.colors.errorSurface,
   },
-  compactTextWrap: { flex: 1 },
+  compactTextWrap: { flex: 1, minWidth: 0 },
   compactEyebrow: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.8,
     marginBottom: 4,
@@ -757,7 +770,7 @@ const styles = StyleSheet.create({
   },
   stagePillText: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   stagePillTextActive: {
@@ -823,7 +836,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 14 },
   sectionLabel: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.8,
     marginBottom: 6,
@@ -847,10 +860,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    maxWidth: '85%',
   },
   topicRemoveIcon: { color: theme.colors.primary, fontSize: 16, fontWeight: '700' },
-  topicHint: { color: theme.colors.textMuted, fontSize: 10, marginTop: 6, fontStyle: 'italic' },
-  topicPillText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600' },
+  topicHint: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6, fontStyle: 'italic' },
+  topicPillText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600', flex: 1 },
   conceptItem: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 20 },
   confidenceBadgeRow: {
     flexDirection: 'row',
@@ -880,7 +894,7 @@ const styles = StyleSheet.create({
   },
   confidenceOverrideNote: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 8,
     fontStyle: 'italic',
   },

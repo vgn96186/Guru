@@ -1,12 +1,16 @@
 let mockTotalMemory: number | null = null;
 
-jest.mock('expo-device', () => {
-  return {
-    get totalMemory() {
-      return mockTotalMemory;
-    }
-  };
-}, { virtual: true });
+jest.mock(
+  'expo-device',
+  () => {
+    return {
+      get totalMemory() {
+        return mockTotalMemory;
+      },
+    };
+  },
+  { virtual: true },
+);
 
 // Mock repositories and components to avoid native module errors
 jest.mock('../db/repositories', () => ({

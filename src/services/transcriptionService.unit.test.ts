@@ -6,19 +6,21 @@ const initWhisperMock = jest.fn(async () => ({
 }));
 
 jest.mock('rn-whisper', () => ({
-  initWhisper: (...args: any[]) => initWhisperMock(...args),
+  initWhisper: () => initWhisperMock(),
 }));
 
 const markTopicsFromLectureMock = jest.fn(async () => []);
 const generateEmbeddingMock = jest.fn(async () => [0.1, 0.2, 0.3]);
 
-async function loadTranscriptionService(options: {
-  groqKey?: string;
-  useLocalWhisper?: boolean;
-  localWhisperPath?: string | null;
-  localTranscript?: string;
-  embeddingError?: Error | null;
-} = {}) {
+async function loadTranscriptionService(
+  options: {
+    groqKey?: string;
+    useLocalWhisper?: boolean;
+    localWhisperPath?: string | null;
+    localTranscript?: string;
+    embeddingError?: Error | null;
+  } = {},
+) {
   jest.resetModules();
   // @ts-expect-error test env global
   globalThis.__DEV__ = false;
@@ -32,7 +34,7 @@ async function loadTranscriptionService(options: {
   }));
 
   jest.doMock('./ai/embeddingService', () => ({
-    generateEmbedding: options.embeddingError 
+    generateEmbedding: options.embeddingError
       ? jest.fn(() => Promise.reject(options.embeddingError))
       : generateEmbeddingMock,
   }));
@@ -47,9 +49,9 @@ async function loadTranscriptionService(options: {
     } as any);
   }
 
-  const { transcriptionService } = await import('./transcriptionService');
+  const { transcribeAudio } = await import('./transcriptionService');
   return {
-    transcriptionService,
+    transcribeAudio,
     initWhisperMock,
     markTopicsFromLectureMock,
     generateEmbeddingMock,
@@ -62,7 +64,7 @@ describe('transcriptionService', () => {
   });
 
   it('prefers Groq for transcription when available', async () => {
-    const { transcriptionService, initWhisperMock } = await loadTranscriptionService({
+    const { transcribeAudio, initWhisperMock } = await loadTranscriptionService({
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
       localWhisperPath: '/models/whisper.bin',
@@ -78,7 +80,7 @@ describe('transcriptionService', () => {
         } as unknown as Response;
       });
 
-    const analysis = await transcriptionService.transcribeAudio({
+    const analysis = await transcribeAudio({
       audioFilePath: '/tmp/lecture.m4a',
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
@@ -93,10 +95,7 @@ describe('transcriptionService', () => {
   });
 
   it('falls back to local Whisper when Groq transcription fails', async () => {
-    const {
-      transcriptionService,
-      initWhisperMock,
-    } = await loadTranscriptionService({
+    const { transcribeAudio, initWhisperMock } = await loadTranscriptionService({
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
       localWhisperPath: '/models/local-whisper.bin',
@@ -112,7 +111,7 @@ describe('transcriptionService', () => {
         }) as unknown as Response,
     );
 
-    const analysis = await transcriptionService.transcribeAudio({
+    const analysis = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',
       groqKey: 'groq-test-key',
       useLocalWhisper: true,
@@ -126,28 +125,25 @@ describe('transcriptionService', () => {
   });
 
   it('throws when no transcription backend is available', async () => {
-    const { transcriptionService } = await loadTranscriptionService({
+    const { transcribeAudio } = await loadTranscriptionService({
       groqKey: undefined,
       useLocalWhisper: false,
       localWhisperPath: null,
     });
 
-    await expect(transcriptionService.transcribeAudio({ audioFilePath: '/tmp/lecture.wav' })).rejects.toThrow(
+    await expect(transcribeAudio({ audioFilePath: '/tmp/lecture.wav' })).rejects.toThrow(
       'No transcription engine available',
     );
   });
 
   it('still runs topic matching when embedding generation fails', async () => {
-    const {
-      transcriptionService,
-      generateEmbeddingMock,
-    } = await loadTranscriptionService({
+    const { transcribeAudio, generateEmbeddingMock } = await loadTranscriptionService({
       useLocalWhisper: true,
       localTranscript: 'full transcript text',
       embeddingError: new Error('embedding offline'),
     });
 
-    const analysis = await transcriptionService.transcribeAudio({
+    const analysis = await transcribeAudio({
       audioFilePath: '/tmp/lecture.wav',
       useLocalWhisper: true,
       localWhisperPath: '/models/whisper.bin',

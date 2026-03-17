@@ -19,13 +19,21 @@ jest.mock('expo-notifications', () => ({
   cancelScheduledNotificationAsync: jest.fn(),
 }));
 
-jest.mock('llama.rn', () => ({
-  initLlama: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  'llama.rn',
+  () => ({
+    initLlama: jest.fn(),
+  }),
+  { virtual: true },
+);
 
-jest.mock('whisper.rn', () => ({
-  initWhisper: jest.fn(),
-}), { virtual: true });
+jest.mock(
+  'whisper.rn',
+  () => ({
+    initWhisper: jest.fn(),
+  }),
+  { virtual: true },
+);
 
 jest.mock('react-native', () => ({
   AppState: {
@@ -51,7 +59,7 @@ jest.mock('../db/repositories', () => ({
   },
   dailyLogRepository: {
     getLogsByDate: jest.fn(() => Promise.resolve([])),
-  }
+  },
 }));
 
 // We'll mock the transcribeAudio to avoid full pipeline
@@ -114,7 +122,7 @@ describe('retryFailedTranscriptions', () => {
     const mockPending = [
       { id: 1, recordingPath: '/mock/path/1.m4a', appName: 'MockApp', durationMinutes: 10 },
       { id: 2, recordingPath: '/mock/path/2.m4a', appName: 'MockApp2', durationMinutes: 20 },
-      { id: 3, recordingPath: undefined, appName: 'MockApp3', durationMinutes: 5 } // should be skipped
+      { id: 3, recordingPath: undefined, appName: 'MockApp3', durationMinutes: 5 }, // should be skipped
     ];
 
     externalLogsMock.getFailedOrPendingTranscriptions.mockResolvedValue(mockPending);
@@ -128,7 +136,7 @@ describe('retryFailedTranscriptions', () => {
           keyConcepts: [],
           highYieldPoints: [],
           lectureSummary: 'Mock summary',
-          estimatedConfidence: 2
+          estimatedConfidence: 2,
         };
       }
       if (opts.audioFilePath === '/mock/path/2.m4a') {
@@ -140,7 +148,7 @@ describe('retryFailedTranscriptions', () => {
           keyConcepts: [],
           highYieldPoints: [],
           lectureSummary: '',
-          estimatedConfidence: 2
+          estimatedConfidence: 2,
         };
       }
       throw new Error('Unexpected');
@@ -152,22 +160,28 @@ describe('retryFailedTranscriptions', () => {
     expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalledTimes(2);
 
     // Check first call
-    expect(transcriptionServiceMock.transcribeAudio).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      audioFilePath: '/mock/path/1.m4a',
-      groqKey: 'mock-key',
-    }));
+    expect(transcriptionServiceMock.transcribeAudio).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        audioFilePath: '/mock/path/1.m4a',
+        groqKey: 'mock-key',
+      }),
+    );
 
     // Check second call
-    expect(transcriptionServiceMock.transcribeAudio).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      audioFilePath: '/mock/path/2.m4a',
-      groqKey: 'mock-key',
-    }));
+    expect(transcriptionServiceMock.transcribeAudio).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        audioFilePath: '/mock/path/2.m4a',
+        groqKey: 'mock-key',
+      }),
+    );
   });
 
   it('should continue processing even if one transcription throws an error', async () => {
     const mockPending = [
       { id: 1, recordingPath: '/mock/path/1.m4a', appName: 'MockApp', durationMinutes: 10 },
-      { id: 2, recordingPath: '/mock/path/2.m4a', appName: 'MockApp2', durationMinutes: 20 }
+      { id: 2, recordingPath: '/mock/path/2.m4a', appName: 'MockApp2', durationMinutes: 20 },
     ];
 
     externalLogsMock.getFailedOrPendingTranscriptions.mockResolvedValue(mockPending);
@@ -183,7 +197,7 @@ describe('retryFailedTranscriptions', () => {
         keyConcepts: [],
         highYieldPoints: [],
         lectureSummary: 'Mock summary',
-        estimatedConfidence: 2
+        estimatedConfidence: 2,
       };
     });
 

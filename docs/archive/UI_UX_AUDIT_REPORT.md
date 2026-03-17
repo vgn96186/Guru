@@ -1,6 +1,7 @@
 # Autonomous UI/UX Code Audit Report
 
 ## Phase 1: UI Reconnaissance
+
 - **Frontend Framework**: React Native (Expo SDK 54)
 - **Styling Ecosystem**: React Native `StyleSheet.create`. No centralized theme, design tokens, or global stylesheet found.
 - **Routing**: `@react-navigation/native` (Stack & Tabs).
@@ -11,6 +12,7 @@
 ---
 
 ### Issue 1: Missing Accessibility Roles and Labels
+
 **Category**: Accessibility (a11y)
 **Location**: `src/screens/HomeScreen.tsx` (e.g., lines 193-206) and ~95% of other screens containing `TouchableOpacity`.
 **UX Impact**: Screen readers (VoiceOver/TalkBack) cannot announce interactive elements like buttons properly. Users relying on assistive technologies will hear raw text or "unlabeled button", making the app nearly unusable.
@@ -40,6 +42,7 @@ Add `accessibilityRole="button"` and meaningful `accessibilityLabel` props to al
 ---
 
 ### Issue 2: Hardcoded "Magic Number" Colors and Typography
+
 **Category**: Consistency
 **Location**: `src/screens/SettingsScreen.tsx` (lines ~540-620), `src/screens/HomeScreen.tsx`, and all other styling files.
 **UX Impact**: The app uses hardcoded hex values (e.g., `#0F0F14`, `#6C63FF`, `#1A1A24`). This makes it impossible to globally change the color scheme, support light/dark mode reliably, or ensure contrast ratios remain accessible. It also creates a brittle UI where one screen might use `#0F0F14` while another uses `#0A0A0A`.
@@ -62,6 +65,7 @@ Since no centralized theme object exists, a `theme.ts` should be created and imp
 ---
 
 ### Issue 3: Hardcoded Pixel Layouts Neglecting Viewport Responsiveness
+
 **Category**: Responsiveness
 **Location**: `src/screens/StatsScreen.tsx` (lines 351-380) and throughout.
 **UX Impact**: Components have fixed padding and font sizes (e.g., `fontSize: 14`, `padding: 24`). While `useResponsive.ts` provides scaling functions (`s()`, `f()`, `sz()`), they are rarely used within the actual `StyleSheet.create` calls. This causes UI components to look incredibly small on tablets or overflow on smaller phones.
@@ -81,6 +85,7 @@ Wrap fixed values with the responsive scaling utility hooks provided in `useResp
 ---
 
 ### Issue 4: Poor Perceived Performance on Heavy Computations
+
 **Category**: Perceived UX
 **Location**: `src/screens/StatsScreen.tsx` (lines 37-114).
 **UX Impact**: `loadStats()` loops through the entire SQLite database synchronously. While `LoadingOrb` is rendered initially, the UI thread blocks heavily during SQLite iteration. On older devices, the screen will freeze momentarily before the stats finally render.

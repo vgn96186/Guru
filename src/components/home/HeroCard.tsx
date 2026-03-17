@@ -9,7 +9,12 @@ interface HeroCardProps {
   daysToNeetPg: number;
 }
 
-export default function HeroCard({ greeting, firstName, daysToInicet, daysToNeetPg }: HeroCardProps) {
+export default function HeroCard({
+  greeting,
+  firstName,
+  daysToInicet,
+  daysToNeetPg,
+}: HeroCardProps) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -38,28 +43,35 @@ export default function HeroCard({ greeting, firstName, daysToInicet, daysToNeet
 
   const pulseColor = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [theme.colors.textPrimary, '#FFD700'],
+    outputRange: [theme.colors.textPrimary, theme.colors.accentAlt],
   });
 
   return (
-    <View style={styles.card} accessibilityRole="header" accessible={true} accessibilityLabel={`${greeting}, ${firstName}. Let's lock your next focused hour. INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}>
-      <Text style={styles.greeting}>{greeting}, {firstName}</Text>
+    <View
+      style={styles.card}
+      accessibilityRole="summary"
+      accessible
+      accessibilityLabel={`${greeting}, ${firstName}. INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
+    >
+      <Text style={styles.greeting}>
+        {greeting}, {firstName}
+      </Text>
       <Text style={styles.title}>Let's lock your next focused hour.</Text>
-      
-      <View style={styles.statsRow} importantForAccessibility="no-hide-descendants">
+
+      <View style={styles.statsRow}>
         <View style={styles.stat}>
           <Text style={styles.statLabel}>INICET</Text>
-          <Animated.Text 
+          <Animated.Text
             style={[
-              styles.statValue, 
+              styles.statValue,
               daysToInicet <= 30 && styles.urgent,
-              { 
+              {
                 transform: [{ scale }],
                 color: pulseColor,
                 textShadowColor: 'rgba(255, 215, 0, 0.4)',
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 10,
-              }
+              },
             ]}
           >
             {daysToInicet}d
@@ -68,17 +80,17 @@ export default function HeroCard({ greeting, firstName, daysToInicet, daysToNeet
         <View style={styles.divider} />
         <View style={styles.stat}>
           <Text style={styles.statLabel}>NEET-PG</Text>
-          <Animated.Text 
+          <Animated.Text
             style={[
-              styles.statValue, 
+              styles.statValue,
               daysToNeetPg <= 30 && styles.urgent,
-              { 
+              {
                 transform: [{ scale }],
                 color: pulseColor,
                 textShadowColor: 'rgba(255, 215, 0, 0.4)',
                 textShadowOffset: { width: 0, height: 0 },
                 textShadowRadius: 10,
-              }
+              },
             ]}
           >
             {daysToNeetPg}d
@@ -98,9 +110,20 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     marginBottom: 16,
   },
-  greeting: { color: theme.colors.primaryLight, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
+  greeting: {
+    color: theme.colors.primaryLight,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
   title: { color: theme.colors.textPrimary, fontSize: 22, fontWeight: '900', marginTop: 4 },
-  statsRow: { flexDirection: 'row', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: theme.colors.border },
+  statsRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
+  },
   stat: { flex: 1, alignItems: 'center' },
   statLabel: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '700' },
   statValue: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900', marginTop: 2 },

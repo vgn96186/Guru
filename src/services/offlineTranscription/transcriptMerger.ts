@@ -23,11 +23,7 @@
 
 import { Platform } from 'react-native';
 import * as crypto from 'expo-crypto';
-import {
-  TranscriptSegment,
-  LectureTranscript,
-  TranscriptMetadata,
-} from './types';
+import { TranscriptSegment, LectureTranscript, TranscriptMetadata } from './types';
 
 // ─── Unique ID generation ────────────────────────────────────────────────────
 
@@ -104,9 +100,7 @@ export class TranscriptMerger {
    * overlaps with the start of segment B (by comparing the last N words
    * of A with the first N words of B). If they match, trim B.
    */
-  private deduplicateOverlaps(
-    segments: TranscriptSegment[],
-  ): TranscriptSegment[] {
+  private deduplicateOverlaps(segments: TranscriptSegment[]): TranscriptSegment[] {
     if (segments.length <= 1) return segments;
 
     const result: TranscriptSegment[] = [segments[0]];
@@ -142,10 +136,7 @@ export class TranscriptMerger {
    *   textB: "powerhouse of the cell and it produces"
    *   result: "the cell and it produces"
    */
-  private trimOverlappingText(
-    textA: string,
-    textB: string,
-  ): string | null {
+  private trimOverlappingText(textA: string, textB: string): string | null {
     const wordsA = textA.trim().split(/\s+/);
     const wordsB = textB.trim().split(/\s+/);
 
@@ -192,11 +183,7 @@ export class TranscriptMerger {
   /**
    * Fuzzy word-level matching allowing up to `maxDiffs` word differences.
    */
-  private fuzzyWordMatch(
-    wordsA: string[],
-    wordsB: string[],
-    maxDiffs: number,
-  ): boolean {
+  private fuzzyWordMatch(wordsA: string[], wordsB: string[], maxDiffs: number): boolean {
     if (wordsA.length !== wordsB.length) return false;
 
     let diffs = 0;
@@ -215,9 +202,7 @@ export class TranscriptMerger {
    * Merge very short segments (1–2 words) with their neighbors.
    * This produces more readable transcript output.
    */
-  private consolidateShortSegments(
-    segments: TranscriptSegment[],
-  ): TranscriptSegment[] {
+  private consolidateShortSegments(segments: TranscriptSegment[]): TranscriptSegment[] {
     if (segments.length <= 1) return segments;
 
     const result: TranscriptSegment[] = [];

@@ -15,6 +15,7 @@
  */
 
 import { getDb, nowTs } from '../db/database';
+import { INTERVALS } from '../constants/time';
 import { AppState, AppStateStatus } from 'react-native';
 
 export type OfflineRequestType = 'generate_json' | 'generate_text' | 'transcribe';
@@ -35,11 +36,9 @@ const MAX_QUEUE_SIZE = 100; // Prevent storage exhaustion
 const DEDUPE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const RETRY_BASE_DELAY = 1000; // 1 second base delay for retries
 
-/** Generate a deduplication key for a request */
-function getDedupeKey(requestType: OfflineRequestType, payload: Record<string, unknown>): string {
-  // Create a stable string representation of the payload
-  const payloadStr = JSON.stringify(payload, Object.keys(payload).sort());
-  return `${requestType}:${payloadStr}`;
+/** Canonical JSON string (sorted keys) so dedupe and storage always match. */
+function canonicalPayloadString(payload: Record<string, unknown>): string {
+  return JSON.stringify(payload, Object.keys(payload).sort());
 }
 
 /** Enqueue a failed request for later retry. */
@@ -63,13 +62,13 @@ export async function enqueueRequest(
       return;
     }
 
-    // Check for recent duplicate (within dedupe window)
-    const dedupeKey = getDedupeKey(requestType, payload);
+    // Check for recent duplicate (within dedupe window); use same canonical JSON as storage
+    const payloadStr = canonicalPayloadString(payload);
     const recentRow = await db.getFirstAsync<{ id: number; created_at: number }>(
       `SELECT id, created_at FROM offline_ai_queue 
        WHERE request_type = ? AND payload = ? AND status IN ('pending', 'processing')
        AND created_at > ?`,
-      [requestType, JSON.stringify(payload), nowTs() - DEDUPE_WINDOW_MS],
+      [requestType, payloadStr, nowTs() - DEDUPE_WINDOW_MS],
     );
 
     if (recentRow) {
@@ -82,7 +81,7 @@ export async function enqueueRequest(
     await db.runAsync(
       `INSERT INTO offline_ai_queue (request_type, payload, status, attempts, created_at)
        VALUES (?, ?, 'pending', 0, ?)`,
-      [requestType, JSON.stringify(payload), nowTs()],
+      [requestType, payloadStr, nowTs()],
     );
   } catch (err) {
     console.warn('[OfflineQueue] Failed to enqueue request:', err);
@@ -183,13 +182,13 @@ export function getRetryDelay(attempts: number): number {
 export async function pruneCompletedItems(): Promise<void> {
   try {
     const db = getDb();
-    const cutoff = nowTs() - 7 * 24 * 60 * 60 * 1000;
+    const cutoff = nowTs() - INTERVALS.SEVEN_DAYS;
     const result = await db.runAsync(
       `DELETE FROM offline_ai_queue WHERE status = 'completed' AND created_at < ?`,
       [cutoff],
     );
     if (result.changes > 0) {
-      console.log(`[OfflineQueue] Pruned ${result.changes} old completed items`);
+      if (__DEV__) console.log(`[OfflineQueue] Pruned ${result.changes} old completed items`);
     }
   } catch (error) {
     console.warn('[OfflineQueue] Failed to prune completed items:', error);
@@ -238,7 +237,7 @@ export async function processQueue(): Promise<void> {
       return;
     }
 
-    console.log(`[OfflineQueue] Processing ${items.length} queued request(s)`);
+    if (__DEV__) console.log(`[OfflineQueue] Processing ${items.length} queued request(s)`);
 
     // Process items one at a time (avoid parallel processing issues)
     for (const item of items) {
@@ -259,16 +258,17 @@ export async function processQueue(): Promise<void> {
       // If this is a retry (failed status), apply backoff delay
       if (item.status === 'failed' && item.attempts > 1) {
         const delay = getRetryDelay(item.attempts - 1);
-        console.log(
-          `[OfflineQueue] Item ${item.id} is a retry (attempt ${item.attempts}), waiting ${delay}ms`,
-        );
+        if (__DEV__)
+          console.log(
+            `[OfflineQueue] Item ${item.id} is a retry (attempt ${item.attempts}), waiting ${delay}ms`,
+          );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
 
       try {
         await processor(item);
         await markCompleted(item.id);
-        console.log(`[OfflineQueue] Successfully processed item ${item.id}`);
+        if (__DEV__) console.log(`[OfflineQueue] Successfully processed item ${item.id}`);
       } catch (err: any) {
         const errorMsg = err?.message ?? String(err);
         await markFailed(item.id, errorMsg);

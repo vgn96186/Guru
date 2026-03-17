@@ -1,4 +1,5 @@
-import { describe, it, expect, jest, afterEach } from '@jest/globals';
+import { describe, it, expect, jest, afterEach, beforeEach } from '@jest/globals';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const profileMock = { backupDirectoryUri: 'content://mock/uri' };
 
@@ -191,10 +192,11 @@ describe('transcriptStorage', () => {
 
   describe('loadTranscriptFromFile', () => {
     it('returns null if input is falsy', async () => {
-      const result = await loadTranscriptFromFile(null);
+      const { service } = await loadService();
+      const result = await service.loadTranscriptFromFile(null);
       expect(result).toBeNull();
 
-      const resultEmpty = await loadTranscriptFromFile('');
+      const resultEmpty = await service.loadTranscriptFromFile('');
       expect(resultEmpty).toBeNull();
     });
 
@@ -243,12 +245,13 @@ describe('transcriptStorage', () => {
     });
 
     it('returns an error message if both primary and fallback paths fail', async () => {
+      const { service } = await loadService();
       // Mock failure for both reads
       (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
         Promise.reject(new Error('File not found anywhere')),
       );
 
-      const result = await loadTranscriptFromFile(
+      const result = await service.loadTranscriptFromFile(
         'file:///old/install/path/transcripts/transcript_123.txt',
       );
 
@@ -257,13 +260,14 @@ describe('transcriptStorage', () => {
     });
 
     it('returns an error message immediately if original URI is already the current fallback URI and fails', async () => {
+      const { service } = await loadService();
       // Mock failure for read
       (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
         Promise.reject(new Error('Current path file not found')),
       );
 
       // Give it the exact path that the fallback logic would resolve to
-      const result = await loadTranscriptFromFile(
+      const result = await service.loadTranscriptFromFile(
         'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
       );
 

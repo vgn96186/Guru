@@ -40,24 +40,15 @@ describe('Matching Benchmark', () => {
     // Mock parent topics
     mockDb.getAllAsync.mockImplementation((query, args) => {
       if (query.includes('parent_topic_id')) {
-        return Promise.resolve([
-          { parent_topic_id: 100 },
-          { parent_topic_id: 101 }
-        ]);
+        return Promise.resolve([{ parent_topic_id: 100 }, { parent_topic_id: 101 }]);
       }
       // semantic matches
-      return Promise.resolve([{id: 200, embedding: new Uint8Array()}]);
+      return Promise.resolve([{ id: 200, embedding: new Uint8Array() }]);
     });
 
     const topicNames = ['topic 1', 'topic 2', 'topic 3'];
 
-    await markTopicsFromLecture(
-      mockDb as any,
-      topicNames,
-      3,
-      "Subject1",
-      "Summary"
-    );
+    await markTopicsFromLecture(mockDb as any, topicNames, 3, 'Subject1', 'Summary');
 
     const updateCalls = (topicsDb.updateTopicsProgressBatch as jest.Mock).mock.calls;
     console.log(`[Benchmark] Optimized batch update calls: ${updateCalls.length}`);
@@ -78,6 +69,6 @@ describe('Matching Benchmark', () => {
 
     // Check that regular topics DO have noteToAppend
     const regularTopic = updatesPassed.find((u: any) => u.topicId !== 100 && u.topicId !== 101);
-    expect(regularTopic.noteToAppend).toBe("Summary");
+    expect(regularTopic.noteToAppend).toBe('Summary');
   });
 });

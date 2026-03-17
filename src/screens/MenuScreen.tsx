@@ -59,10 +59,30 @@ export default function MenuScreen() {
             <Text style={styles.kicker}>MENU</Text>
             <Text style={styles.title}>Everything important in one place.</Text>
             <Text style={styles.subtitle}>
-              Use this hub for planning, stats, notes, and deeper configuration. Fast actions live in the center Action Hub.
+              Use this hub for planning, stats, notes, and deeper configuration. Fast actions live
+              in the center Action Hub.
             </Text>
           </View>
 
+          <Pressable
+            style={({ pressed }) => [styles.planBanner, pressed && styles.cardPressed]}
+            onPress={() => navigation.navigate('StudyPlan' as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Open Plan"
+          >
+            <View style={styles.planBannerIconWrap}>
+              <Ionicons name="calendar" size={24} color="#6C63FF" />
+            </View>
+            <View style={styles.planBannerText}>
+              <Text style={styles.planBannerTitle}>Plan</Text>
+              <Text style={styles.planBannerSubtitle}>
+                Daily agenda, buckets, and next best moves
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+          </Pressable>
+
+          <Text style={styles.sectionLabel}>More</Text>
           <View style={styles.grid}>
             {PRIMARY_DESTINATIONS.map((item) => (
               <Pressable
@@ -73,7 +93,12 @@ export default function MenuScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={item.title}
               >
-                <View style={[styles.iconWrap, { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` }]}>
+                <View
+                  style={[
+                    styles.iconWrap,
+                    { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
+                  ]}
+                >
                   <Ionicons name={item.icon} size={22} color={item.tint} />
                 </View>
                 <Text style={styles.cardTitle}>{item.title}</Text>
@@ -129,6 +154,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     marginTop: theme.spacing.md,
+  },
+  planBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(108, 99, 255, 0.4)',
+    padding: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  planBannerIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: 'rgba(108, 99, 255, 0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  planBannerText: { flex: 1 },
+  planBannerTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  planBannerSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  sectionLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: theme.spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   grid: {
     gap: theme.spacing.md,

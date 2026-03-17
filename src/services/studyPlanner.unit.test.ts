@@ -1,5 +1,9 @@
 import { invalidatePlanCache, generateStudyPlan } from './studyPlanner';
-import { getAllTopicsWithProgress, getAllSubjects, getTopicsDueForReview } from '../db/queries/topics';
+import {
+  getAllTopicsWithProgress,
+  getAllSubjects,
+  getTopicsDueForReview,
+} from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
 
 // Mock the dependencies

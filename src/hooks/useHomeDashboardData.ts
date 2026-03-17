@@ -13,21 +13,29 @@ export function useHomeDashboardData() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [completedSessions, setCompletedSessions] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    setIsLoading(true);
+  const reload = useCallback(async (options?: { silent?: boolean }) => {
+    if (!options?.silent) {
+      setLoadError(null);
+      setIsLoading(true);
+    }
     try {
       await markNemesisTopics();
       const [weak, due] = await Promise.all([getWeakestTopics(3), getTopicsDueForReview(5)]);
       setWeakTopics(weak);
       setDueTopics(due);
-      setTodayTasks((await getTodaysAgendaWithTimes()).slice(0, 2));
+      setTodayTasks(await getTodaysAgendaWithTimes());
       setCompletedSessions(await getCompletedSessionCount());
       const log = await dailyLogRepository.getDailyLog();
       setTodayMinutes(log?.totalMinutes ?? 0);
     } catch (err: any) {
       console.error('[Home] Failed to load initial data:', err);
-      Alert.alert('Load Failed', err?.message ?? 'Unable to load home data. Please try again.');
+      const message = err?.message ?? 'Unable to load home data. Please try again.';
+      if (!options?.silent) {
+        setLoadError(message);
+        Alert.alert('Load Failed', message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -50,6 +58,7 @@ export function useHomeDashboardData() {
     todayMinutes,
     completedSessions,
     isLoading,
+    loadError,
     reload,
   };
 }

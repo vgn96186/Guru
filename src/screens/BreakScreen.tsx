@@ -1,5 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, View, Text, StyleSheet, TouchableOpacity, BackHandler, Alert } from 'react-native';
+import {
+  Animated,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  BackHandler,
+  Alert,
+  StatusBar,
+} from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { fetchContent } from '../services/aiService';
@@ -8,6 +17,7 @@ import type { QuizContent, TopicWithProgress } from '../types';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import VisualTimer from '../components/VisualTimer';
 import { useAppStore } from '../store/useAppStore';
+import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 interface Props {
@@ -18,13 +28,25 @@ interface Props {
   onEndSession?: () => void;
 }
 
-export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, onEndSession }: Props) {
-  const profile = useAppStore(s => s.profile);
+export default function BreakScreen({
+  countdown,
+  totalSeconds,
+  topicId,
+  onDone,
+  onEndSession,
+}: Props) {
+  const profile = useAppStore((s) => s.profile);
   const [topic, setTopic] = useState<TopicWithProgress | null>(null);
-  const [quizQuestion, setQuizQuestion] = useState<{ question: string; options: string[]; correct: number } | null>(null);
+  const [quizQuestion, setQuizQuestion] = useState<{
+    question: string;
+    options: string[];
+    correct: number;
+  } | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
-  const optionAnims = useRef(new Map<number, { bg: Animated.Value; border: Animated.Value }>()).current;
+  const optionAnims = useRef(
+    new Map<number, { bg: Animated.Value; border: Animated.Value }>(),
+  ).current;
 
   function getOptionAnim(idx: number) {
     if (!optionAnims.has(idx)) {
@@ -40,11 +62,23 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
     const isCorrect = idx === quizQuestion.correct;
     const selectedAnim = getOptionAnim(idx);
     Animated.timing(selectedAnim.bg, { toValue: 1, duration: 250, useNativeDriver: false }).start();
-    Animated.timing(selectedAnim.border, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+    Animated.timing(selectedAnim.border, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: false,
+    }).start();
     if (!isCorrect) {
       const correctAnim = getOptionAnim(quizQuestion.correct);
-      Animated.timing(correctAnim.bg, { toValue: 1, duration: 250, useNativeDriver: false }).start();
-      Animated.timing(correctAnim.border, { toValue: 1, duration: 250, useNativeDriver: false }).start();
+      Animated.timing(correctAnim.bg, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
+      Animated.timing(correctAnim.border, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: false,
+      }).start();
     }
     setTimeout(() => {
       if (isCorrect) {
@@ -70,7 +104,9 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
       Alert.alert('Stay focused!', 'The break timer is running.', [
         { text: 'Wait it out', style: 'cancel' },
-        ...(onEndSession ? [{ text: 'End Session Early', style: 'destructive' as const, onPress: onEndSession }] : [])
+        ...(onEndSession
+          ? [{ text: 'End Session Early', style: 'destructive' as const, onPress: onEndSession }]
+          : []),
       ]);
       return true;
     });
@@ -87,7 +123,7 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
   useEffect(() => {
     if (!topic) return;
     fetchContent(topic, 'quiz')
-      .then(content => {
+      .then((content) => {
         const q = (content as QuizContent).questions?.[0];
         if (q) {
           setQuizQuestion({
@@ -106,6 +142,7 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
 
   return (
     <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.container}>
         {/* Break header */}
         <View style={styles.timerSection}>
@@ -116,7 +153,9 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
             </View>
           ) : (
             <>
-              <Text style={styles.breakTimer}>{mins}:{secs.toString().padStart(2, '0')}</Text>
+              <Text style={styles.breakTimer}>
+                {mins}:{secs.toString().padStart(2, '0')}
+              </Text>
               <View style={styles.progressTrack}>
                 <View style={[styles.progressFill, { width: `${pct}%` }]} />
               </View>
@@ -149,7 +188,9 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
                   <TouchableOpacity
                     onPress={() => handleOptionPress(idx)}
                     activeOpacity={0.8}
-                    style={{ padding: 12 }}
+                    style={{ padding: 12, minHeight: 44, justifyContent: 'center' }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Answer option ${idx + 1}: ${opt}`}
                   >
                     <Text style={styles.optionText}>{opt}</Text>
                   </TouchableOpacity>
@@ -158,7 +199,9 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
             })}
             {selected !== null && (
               <Text style={styles.result}>
-                {selected === quizQuestion.correct ? '✅ Correct! +20 XP' : `❌ Answer: Option ${quizQuestion.correct + 1}`}
+                {selected === quizQuestion.correct
+                  ? '✅ Correct! +20 XP'
+                  : `❌ Answer: Option ${quizQuestion.correct + 1}`}
               </Text>
             )}
           </View>
@@ -174,18 +217,44 @@ export default function BreakScreen({ countdown, totalSeconds, topicId, onDone, 
 
         {/* Emergency continue */}
         {countdown > 0 && (
-          <TouchableOpacity style={styles.forceBtn} onPress={onDone} activeOpacity={0.8}>
-            <Text style={styles.forceBtnText}>I'm ready now ({mins}:{secs.toString().padStart(2,'0')} left)</Text>
+          <TouchableOpacity
+            style={styles.forceBtn}
+            onPress={onDone}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`I'm ready now, ${mins} minutes ${secs} seconds left`}
+          >
+            <Text style={styles.forceBtnText}>
+              I'm ready now ({mins}:{secs.toString().padStart(2, '0')} left)
+            </Text>
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.askGuruBtn} onPress={() => setChatOpen(true)} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.askGuruBtn}
+          onPress={() => setChatOpen(true)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Ask Guru a question"
+        >
           <Text style={styles.askGuruText}>Ask Guru a question</Text>
         </TouchableOpacity>
 
         {onEndSession && (
-          <TouchableOpacity style={{ alignItems: 'center', marginBottom: 20 }} onPress={onEndSession}>
-            <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>End Session Early</Text>
+          <TouchableOpacity
+            style={{
+              alignItems: 'center',
+              marginBottom: 20,
+              minHeight: 44,
+              justifyContent: 'center',
+            }}
+            onPress={onEndSession}
+            accessibilityRole="button"
+            accessibilityLabel="End session early"
+          >
+            <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>
+              End Session Early
+            </Text>
           </TouchableOpacity>
         )}
       </ResponsiveContainer>
@@ -202,9 +271,22 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#0A0A0F' },
   container: { flex: 1, padding: 24 },
   timerSection: { alignItems: 'center', paddingVertical: 32 },
-  breakLabel: { color: '#4CAF50', fontSize: 12, fontWeight: '700', letterSpacing: 2, marginBottom: 8 },
+  breakLabel: {
+    color: '#4CAF50',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginBottom: 8,
+  },
   breakTimer: { color: '#fff', fontSize: 56, fontWeight: '900', marginBottom: 16 },
-  progressTrack: { width: '100%', height: 6, backgroundColor: '#1A1A24', borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#1A1A24',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
   progressFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 3 },
   breakSubtext: { color: '#555', fontSize: 12, textAlign: 'center' },
   quizSection: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginTop: 8 },
@@ -219,6 +301,15 @@ const styles = StyleSheet.create({
   idleText2: { color: '#9E9E9E', fontSize: 14 },
   forceBtn: { padding: 16, alignItems: 'center' },
   forceBtnText: { color: '#555', fontSize: 13 },
-  askGuruBtn: { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF66', borderRadius: 12, padding: 12, alignItems: 'center', marginHorizontal: 24, marginBottom: 8 },
+  askGuruBtn: {
+    backgroundColor: '#1A1A2E',
+    borderWidth: 1,
+    borderColor: '#6C63FF66',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    marginHorizontal: 24,
+    marginBottom: 8,
+  },
   askGuruText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
 });

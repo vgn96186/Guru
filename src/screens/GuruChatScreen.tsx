@@ -76,9 +76,18 @@ function getStartersForTopic(topicName: string) {
     { icon: 'book-outline', text: `What are the highest-yield exam concepts for ${topicName}?` },
     { icon: 'help-circle-outline', text: `Give me a hard clinical vignette MCQ on ${topicName}.` },
     { icon: 'bulb-outline', text: `Can you share a memory hook or mnemonic for ${topicName}?` },
-    { icon: 'list-outline', text: `What is the diagnostic algorithm or criteria for ${topicName}?` },
-    { icon: 'alert-circle-outline', text: `What are common pitfalls and mistakes when studying ${topicName}?` },
-    { icon: 'medkit-outline', text: `What is the first-line treatment and management for ${topicName}?` },
+    {
+      icon: 'list-outline',
+      text: `What is the diagnostic algorithm or criteria for ${topicName}?`,
+    },
+    {
+      icon: 'alert-circle-outline',
+      text: `What are common pitfalls and mistakes when studying ${topicName}?`,
+    },
+    {
+      icon: 'medkit-outline',
+      text: `What is the first-line treatment and management for ${topicName}?`,
+    },
   ];
 }
 
@@ -99,8 +108,18 @@ function TypingDots() {
       Animated.loop(
         Animated.sequence([
           Animated.delay(index * 150),
-          Animated.timing(dot, { toValue: 1, duration: 300, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
-          Animated.timing(dot, { toValue: 0, duration: 300, useNativeDriver: true, easing: Easing.in(Easing.ease) }),
+          Animated.timing(dot, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.out(Easing.ease),
+          }),
+          Animated.timing(dot, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+            easing: Easing.in(Easing.ease),
+          }),
           Animated.delay((2 - index) * 150),
         ]),
       ),
@@ -117,7 +136,9 @@ function TypingDots() {
           style={[
             styles.dot,
             {
-              transform: [{ translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) }],
+              transform: [
+                { translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
+              ],
               opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
             },
           ]}
@@ -150,7 +171,7 @@ export default function GuruChatScreen() {
   useEffect(() => {
     if (topicName && topicName !== 'General Medicine') {
       void getChatHistory(topicName, 20)
-        .then(history => {
+        .then((history) => {
           if (history.length > 0) {
             setMessages(
               history.map((entry) => ({
@@ -188,7 +209,11 @@ export default function GuruChatScreen() {
 
     if (orKey) {
       OPENROUTER_FREE_MODELS.forEach((model) => {
-        list.push({ id: model, name: model.split('/')[1].split(':')[0].toUpperCase(), group: 'OpenRouter' });
+        list.push({
+          id: model,
+          name: model.split('/')[1].split(':')[0].toUpperCase(),
+          group: 'OpenRouter',
+        });
       });
     }
 
@@ -212,7 +237,11 @@ export default function GuruChatScreen() {
   );
 
   const chatItems = useMemo<ChatItem[]>(() => {
-    const items: ChatItem[] = messages.map((message) => ({ id: message.id, type: 'message', message }));
+    const items: ChatItem[] = messages.map((message) => ({
+      id: message.id,
+      type: 'message',
+      message,
+    }));
     if (loading) {
       items.push({ id: 'typing-indicator', type: 'typing' });
     }
@@ -346,7 +375,9 @@ export default function GuruChatScreen() {
 
       const { message } = item;
       return (
-        <View style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}>
+        <View
+          style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}
+        >
           {message.role === 'guru' ? (
             <View style={styles.guruAvatarTiny}>
               <Ionicons name="sparkles" size={11} color={theme.colors.primary} />
@@ -355,7 +386,12 @@ export default function GuruChatScreen() {
 
           <View style={styles.msgContent}>
             <Pressable onLongPress={() => copyMessage(message.text)} delayLongPress={400}>
-              <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.guruBubble]}>
+              <View
+                style={[
+                  styles.bubble,
+                  message.role === 'user' ? styles.userBubble : styles.guruBubble,
+                ]}
+              >
                 {message.role === 'guru' ? (
                   <FormattedGuruMessage text={message.text} />
                 ) : (
@@ -366,7 +402,9 @@ export default function GuruChatScreen() {
 
             <Text style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}>
               {formatTime(message.timestamp)}
-              {message.role === 'guru' && message.modelUsed ? `  ·  ${message.modelUsed.split('/').pop()}` : ''}
+              {message.role === 'guru' && message.modelUsed
+                ? `  ·  ${message.modelUsed.split('/').pop()}`
+                : ''}
             </Text>
 
             {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
@@ -492,11 +530,20 @@ export default function GuruChatScreen() {
                               setShowModelPicker(false);
                             }}
                           >
-                            <Text style={[styles.modelItemText, chosenModel === model.id && styles.modelItemTextActive]}>
+                            <Text
+                              style={[
+                                styles.modelItemText,
+                                chosenModel === model.id && styles.modelItemTextActive,
+                              ]}
+                            >
                               {model.name}
                             </Text>
                             {chosenModel === model.id ? (
-                              <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                              <Ionicons
+                                name="checkmark-circle"
+                                size={18}
+                                color={theme.colors.primary}
+                              />
                             ) : null}
                           </Pressable>
                         ))}
@@ -504,7 +551,10 @@ export default function GuruChatScreen() {
                     );
                   }}
                 />
-                <Pressable style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]} onPress={() => setShowModelPicker(false)}>
+                <Pressable
+                  style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+                  onPress={() => setShowModelPicker(false)}
+                >
                   <Text style={styles.closeBtnText}>Cancel</Text>
                 </Pressable>
               </View>
@@ -513,8 +563,15 @@ export default function GuruChatScreen() {
 
           {bannerVisible ? (
             <View style={styles.infoBanner}>
-              <Ionicons name="library-outline" size={14} color={theme.colors.primary} style={styles.bannerIcon} />
-              <Text style={styles.infoText}>Grounded with Wikipedia, Europe PMC and PubMed. Sources cited inline.</Text>
+              <Ionicons
+                name="library-outline"
+                size={14}
+                color={theme.colors.primary}
+                style={styles.bannerIcon}
+              />
+              <Text style={styles.infoText}>
+                Grounded with Wikipedia, Europe PMC and PubMed. Sources cited inline.
+              </Text>
               <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
                 <Ionicons name="close" size={14} color={theme.colors.textMuted} />
               </Pressable>
@@ -537,7 +594,12 @@ export default function GuruChatScreen() {
                     onPress={() => handleSend(starter.text)}
                     disabled={loading}
                   >
-                    <Ionicons name={starter.icon as keyof typeof Ionicons.glyphMap} size={16} color={theme.colors.primary} style={styles.starterIcon} />
+                    <Ionicons
+                      name={starter.icon as keyof typeof Ionicons.glyphMap}
+                      size={16}
+                      color={theme.colors.primary}
+                      style={styles.starterIcon}
+                    />
                     <Text style={styles.starterChipText}>{starter.text}</Text>
                   </Pressable>
                 ))}
@@ -562,7 +624,7 @@ export default function GuruChatScreen() {
             <TextInput
               style={styles.input}
               placeholder="Ask a medical question..."
-              placeholderTextColor="#4A4F62"
+              placeholderTextColor={theme.colors.textMuted}
               value={input}
               onChangeText={setInput}
               onSubmitEditing={() => handleSend()}
@@ -667,7 +729,7 @@ const styles = StyleSheet.create({
   },
   modelBadgeText: {
     color: theme.colors.primary,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
@@ -875,7 +937,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 4,
     marginLeft: 2,
   },
@@ -924,7 +986,7 @@ const styles = StyleSheet.create({
   },
   sourceNum: {
     color: theme.colors.primary,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '800',
   },
   sourceImage: {
@@ -945,7 +1007,7 @@ const styles = StyleSheet.create({
   },
   sourceMeta: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     marginTop: 2,
   },
   dotsRow: {

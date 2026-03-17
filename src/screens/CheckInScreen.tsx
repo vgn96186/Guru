@@ -1,8 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet,
-  Animated, StatusBar,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,6 +9,9 @@ import { useAppStore } from '../store/useAppStore';
 import type { Mood } from '../types';
 import { MOOD_LABELS } from '../constants/gamification';
 import { invalidatePlanCache } from '../services/studyPlanner';
+import { requestAllPermissions } from '../services/appPermissions';
+import { theme } from '../constants/theme';
+import { MS_PER_DAY } from '../constants/time';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CheckIn'>;
@@ -19,39 +19,39 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'CheckIn'>;
 const MOODS: Mood[] = ['energetic', 'good', 'okay', 'tired', 'stressed', 'distracted'];
 
 const MOTIVATIONAL_MESSAGES = [
-  "Every question you solve today is one less surprise on exam day.",
+  'Every question you solve today is one less surprise on exam day.',
   "INICET toppers weren't born ready — they showed up daily.",
-  "Your future patients are counting on this version of you.",
-  "Small steps, Doctor. Consistency beats intensity.",
+  'Your future patients are counting on this version of you.',
+  'Small steps, Doctor. Consistency beats intensity.',
   "The only bad study session is the one that didn't happen.",
   "You don't have to be motivated. You just have to begin.",
   "Last week's you would be proud of today's effort.",
-  "One more topic today = one step closer to your rank.",
+  'One more topic today = one step closer to your rank.',
   "Think of this as training, not studying. Athletes don't skip practice.",
-  "Your competition is studying right now. But so are you. 💪",
-  "Discipline is choosing between what you want now and what you want most.",
-  "You chose medicine for a reason. Today, honor that reason.",
+  'Your competition is studying right now. But so are you. 💪',
+  'Discipline is choosing between what you want now and what you want most.',
+  'You chose medicine for a reason. Today, honor that reason.',
 ];
 
 function getMotivationalMessage(): string {
   // Use day of year to cycle through messages (same message all day, changes next day)
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / 86400000);
+  const dayOfYear = Math.floor((now.getTime() - start.getTime()) / MS_PER_DAY);
   return MOTIVATIONAL_MESSAGES[dayOfYear % MOTIVATIONAL_MESSAGES.length];
 }
 
 export default function CheckInScreen() {
   const navigation = useNavigation<Nav>();
-  const refreshProfile = useAppStore(s => s.refreshProfile);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [step, setStep] = useState<'mood' | 'time'>('mood');
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [yesterdayMood, setYesterdayMood] = useState<Mood | null>(null);
-  const setDailyAvailability = useAppStore(s => s.setDailyAvailability);
+  const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const fadeIn = useRef(new Animated.Value(0)).current;
   const fadeOut = useRef(new Animated.Value(1)).current;
 
-  const profile = useAppStore(s => s.profile);
+  const profile = useAppStore((s) => s.profile);
   const daysToInicet = profile ? profileRepository.getDaysToExam(profile.inicetDate) : 0;
 
   useEffect(() => {
@@ -60,7 +60,9 @@ export default function CheckInScreen() {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().slice(0, 10);
-    dailyLogRepository.getDailyLog(yStr).then(yLog => { if (yLog?.mood) setYesterdayMood(yLog.mood); });
+    dailyLogRepository.getDailyLog(yStr).then((yLog) => {
+      if (yLog?.mood) setYesterdayMood(yLog.mood);
+    });
   }, []);
 
   function handleMoodSelect(mood: Mood) {
@@ -82,6 +84,8 @@ export default function CheckInScreen() {
     await profileRepository.updateProfile({ quickStartStreak: currentStreak + 1 });
     invalidatePlanCache();
     await refreshProfile();
+    // Request permissions so reminders, recording, and file access work
+    await requestAllPermissions();
     navigation.replace('Tabs');
   }
 
@@ -93,21 +97,23 @@ export default function CheckInScreen() {
       await profileRepository.updateProfile({ quickStartStreak: 0 });
       invalidatePlanCache();
       await refreshProfile();
+      // Request permissions so reminders, recording, and file access work
+      await requestAllPermissions();
       navigation.replace('Tabs');
     }
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer>
         {step === 'mood' ? (
           <Animated.View style={[styles.container, { opacity: fadeIn }]}>
             <View style={styles.top}>
-              <Text style={styles.greeting}>Good {getTimeOfDay()}, {profile?.displayName ?? 'Doctor'}</Text>
-              <Text style={styles.countdown}>
-                ⚡ {daysToInicet} days to INICET
+              <Text style={styles.greeting}>
+                Good {getTimeOfDay()}, {profile?.displayName ?? 'Doctor'}
               </Text>
+              <Text style={styles.countdown}>⚡ {daysToInicet} days to INICET</Text>
               {(profile?.streakCurrent ?? 0) > 0 && (
                 <Text style={styles.streak}>🔥 {profile?.streakCurrent}-day streak</Text>
               )}
@@ -116,13 +122,17 @@ export default function CheckInScreen() {
 
             <Text style={styles.question}>How are you feeling right now?</Text>
 
-            <TouchableOpacity testID="quick-start-btn" style={styles.quickStartBtn} onPress={handleQuickStart}>
+            <TouchableOpacity
+              testID="quick-start-btn"
+              style={styles.quickStartBtn}
+              onPress={handleQuickStart}
+            >
               <Text style={styles.quickStartText}>⚡ Quick Start</Text>
               <Text style={styles.quickStartSub}>Skip check-in · 30 min session</Text>
             </TouchableOpacity>
 
             <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}>
-              {MOODS.map(mood => {
+              {MOODS.map((mood) => {
                 const info = MOOD_LABELS[mood];
                 const isYesterday = mood === yesterdayMood;
                 return (
@@ -154,29 +164,29 @@ export default function CheckInScreen() {
             <Text style={styles.question}>How much time do you have right now?</Text>
 
             <View style={styles.timeGrid}>
-              <TimeOption 
-                label="Sprint" 
-                sub="15-20 mins" 
-                emoji="⚡" 
-                onPress={() => handleTimeSelect(20)} 
+              <TimeOption
+                label="Sprint"
+                sub="15-20 mins"
+                emoji="⚡"
+                onPress={() => handleTimeSelect(20)}
               />
-              <TimeOption 
-                label="Solid Block" 
-                sub="45-60 mins" 
-                emoji="🧱" 
-                onPress={() => handleTimeSelect(60)} 
+              <TimeOption
+                label="Solid Block"
+                sub="45-60 mins"
+                emoji="🧱"
+                onPress={() => handleTimeSelect(60)}
               />
-              <TimeOption 
-                label="Deep Work" 
-                sub="2+ hours" 
-                emoji="🌊" 
-                onPress={() => handleTimeSelect(120)} 
+              <TimeOption
+                label="Deep Work"
+                sub="2+ hours"
+                emoji="🌊"
+                onPress={() => handleTimeSelect(120)}
               />
-              <TimeOption 
-                label="Just Checking" 
-                sub="0 mins" 
-                emoji="👀" 
-                onPress={() => handleTimeSelect(0)} 
+              <TimeOption
+                label="Just Checking"
+                sub="0 mins"
+                emoji="👀"
+                onPress={() => handleTimeSelect(0)}
               />
             </View>
           </Animated.View>
@@ -186,9 +196,24 @@ export default function CheckInScreen() {
   );
 }
 
-function TimeOption({ label, sub, emoji, onPress }: { label: string, sub: string, emoji: string, onPress: () => void }) {
+function TimeOption({
+  label,
+  sub,
+  emoji,
+  onPress,
+}: {
+  label: string;
+  sub: string;
+  emoji: string;
+  onPress: () => void;
+}) {
   return (
-    <TouchableOpacity style={styles.timeBtn} onPress={onPress} activeOpacity={0.8} testID={`time-${label.toLowerCase().replace(/\s+/g, '-')}`}>
+    <TouchableOpacity
+      style={styles.timeBtn}
+      onPress={onPress}
+      activeOpacity={0.8}
+      testID={`time-${label.toLowerCase().replace(/\s+/g, '-')}`}
+    >
       <Text style={styles.timeEmoji}>{emoji}</Text>
       <View>
         <Text style={styles.timeLabel}>{label}</Text>
@@ -228,7 +253,7 @@ const styles = StyleSheet.create({
   moodLabel: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   moodDesc: { color: '#9E9E9E', fontSize: 11, textAlign: 'center' },
   moodBtnYesterday: { borderColor: '#6C63FF44' },
-  yesterdayTag: { color: '#9E9E9E', fontSize: 9, marginTop: 4 },
+  yesterdayTag: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 4 },
   quickStartBtn: {
     backgroundColor: '#6C63FF',
     borderWidth: 2,

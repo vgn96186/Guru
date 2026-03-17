@@ -92,7 +92,10 @@ describe('jsonBackupService', () => {
       const result = await importJsonBackup();
 
       expect(result).toEqual({ ok: false, message: 'Invalid JSON file' });
-      expect(consoleSpy).toHaveBeenCalledWith('[Backup] JSON parse failed during import:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[Backup] JSON parse failed during import:',
+        expect.any(Error),
+      );
 
       consoleSpy.mockRestore();
     });
@@ -112,7 +115,10 @@ describe('jsonBackupService', () => {
       const result = await importJsonBackup();
 
       expect(result).toEqual({ ok: false, message: 'Invalid JSON file' });
-      expect(consoleSpy).toHaveBeenCalledWith('[Backup] JSON parse failed during import:', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[Backup] JSON parse failed during import:',
+        expect.any(Error),
+      );
 
       consoleSpy.mockRestore();
     });
@@ -140,11 +146,16 @@ describe('jsonBackupService', () => {
       });
 
       const FileSystem = require('expo-file-system/legacy');
-      FileSystem.readAsStringAsync.mockResolvedValueOnce(JSON.stringify({ version: 9999, tables: {} }));
+      FileSystem.readAsStringAsync.mockResolvedValueOnce(
+        JSON.stringify({ version: 9999, tables: {} }),
+      );
 
       const result = await importJsonBackup();
 
-      expect(result).toEqual({ ok: false, message: 'Backup was made with a newer version of the app' });
+      expect(result).toEqual({
+        ok: false,
+        message: 'Backup was made with a newer version of the app',
+      });
     });
 
     it('should restore backup successfully and execute transaction', async () => {
@@ -159,7 +170,11 @@ describe('jsonBackupService', () => {
         tables: {
           user_profile: [{ id: 1, groq_api_key: 'new_key' }],
           topic_progress: [
-            { id: 100, status: 'seen', topic_ref: { subjectShortCode: 'ANA', topicName: 'Upper Limb' } },
+            {
+              id: 100,
+              status: 'seen',
+              topic_ref: { subjectShortCode: 'ANA', topicName: 'Upper Limb' },
+            },
           ],
         },
       };
@@ -173,9 +188,12 @@ describe('jsonBackupService', () => {
       // Mock PRAGMA table_info calls
       mockDb.getAllAsync.mockImplementation(async (query: string) => {
         if (query.includes('FROM subjects')) return [{ id: 1, name: 'Anatomy', short_code: 'ANA' }];
-        if (query.includes('FROM topics')) return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
-        if (query.includes('PRAGMA table_info(user_profile)')) return [{ name: 'id' }, { name: 'groq_api_key' }];
-        if (query.includes('PRAGMA table_info(topic_progress)')) return [{ name: 'id' }, { name: 'topic_id' }, { name: 'status' }];
+        if (query.includes('FROM topics'))
+          return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
+        if (query.includes('PRAGMA table_info(user_profile)'))
+          return [{ name: 'id' }, { name: 'groq_api_key' }];
+        if (query.includes('PRAGMA table_info(topic_progress)'))
+          return [{ name: 'id' }, { name: 'topic_id' }, { name: 'status' }];
         return [];
       });
 
@@ -190,12 +208,15 @@ describe('jsonBackupService', () => {
       expect(mockDb.runAsync).toHaveBeenCalledWith('DELETE FROM topic_progress');
 
       // Check UPDATE for user_profile
-      expect(mockDb.runAsync).toHaveBeenCalledWith('UPDATE user_profile SET groq_api_key = ? WHERE id = 1', ['new_key']);
+      expect(mockDb.runAsync).toHaveBeenCalledWith(
+        'UPDATE user_profile SET groq_api_key = ? WHERE id = 1',
+        ['new_key'],
+      );
 
       // Check INSERT for topic_progress
       expect(mockDb.runAsync).toHaveBeenCalledWith(
         'INSERT OR REPLACE INTO topic_progress (id, status, topic_id) VALUES (?, ?, ?)',
-        [100, 'seen', 10]
+        [100, 'seen', 10],
       );
     });
 
@@ -210,7 +231,11 @@ describe('jsonBackupService', () => {
         version: 3,
         tables: {
           topic_progress: [
-            { id: 100, status: 'seen', topic_ref: { subjectShortCode: 'ANA', topicName: 'Upper Limb' } },
+            {
+              id: 100,
+              status: 'seen',
+              topic_ref: { subjectShortCode: 'ANA', topicName: 'Upper Limb' },
+            },
           ],
         },
       };
@@ -223,8 +248,10 @@ describe('jsonBackupService', () => {
 
       mockDb.getAllAsync.mockImplementation(async (query: string) => {
         if (query.includes('FROM subjects')) return [{ id: 1, name: 'Anatomy', short_code: 'ANA' }];
-        if (query.includes('FROM topics')) return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
-        if (query.includes('PRAGMA table_info(topic_progress)')) return [{ name: 'id' }, { name: 'topic_id' }, { name: 'status' }];
+        if (query.includes('FROM topics'))
+          return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
+        if (query.includes('PRAGMA table_info(topic_progress)'))
+          return [{ name: 'id' }, { name: 'topic_id' }, { name: 'status' }];
         return [];
       });
 
@@ -274,7 +301,7 @@ describe('jsonBackupService', () => {
 
       expect(Sharing.shareAsync).toHaveBeenCalledWith(
         filePath,
-        expect.objectContaining({ mimeType: 'application/json' })
+        expect.objectContaining({ mimeType: 'application/json' }),
       );
       expect(Alert.alert).not.toHaveBeenCalled();
     });
@@ -312,7 +339,8 @@ describe('jsonBackupService', () => {
       // Setup mock to return invalid JSON string for a number array column
       mockDb.getAllAsync.mockImplementation(async (query: string) => {
         if (query.includes('FROM subjects')) return [{ id: 1, name: 'Anatomy', short_code: 'ANA' }];
-        if (query.includes('FROM topics')) return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
+        if (query.includes('FROM topics'))
+          return [{ id: 10, name: 'Upper Limb', subject_id: 1, short_code: 'ANA' }];
         if (query.includes('sessions')) {
           // 'planned_topics' has invalid JSON string
           return [{ id: 300, planned_topics: '{ invalid json }', completed_topics: '[10]' }];
@@ -329,7 +357,7 @@ describe('jsonBackupService', () => {
       expect(result).toBe(true);
       expect(consoleWarnSpy).toHaveBeenCalledWith(
         '[Backup] Failed to parse number array:',
-        expect.any(SyntaxError)
+        expect.any(SyntaxError),
       );
 
       const [, jsonContent] = (FileSystem.writeAsStringAsync as jest.Mock).mock.calls[0];

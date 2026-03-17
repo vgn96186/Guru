@@ -18,10 +18,7 @@
 
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
-import {
-  RecordingState,
-  TranscriptionError,
-} from './types';
+import { RecordingState, TranscriptionError } from './types';
 
 // ─── PCM Stream Library ──────────────────────────────────────────────────────
 // @fugood/react-native-audio-pcm-stream provides raw PCM from the mic.
@@ -191,10 +188,7 @@ export class AudioRecorder {
         this.setState('recording');
         return this.currentWavPath;
       } catch (err) {
-        console.warn(
-          '[AudioRecorder] PCM stream failed, trying fallback:',
-          err,
-        );
+        console.warn('[AudioRecorder] PCM stream failed, trying fallback:', err);
         // Clean up any partial PCM data
         this.pcmChunks = [];
         this.totalPcmBytes = 0;
@@ -430,7 +424,8 @@ export class AudioRecorder {
     }
 
     // Concatenate all PCM chunks with memory safety check
-    if (this.totalPcmBytes > 100 * 1024 * 1024) { // 100MB limit for concatenation
+    if (this.totalPcmBytes > 100 * 1024 * 1024) {
+      // 100MB limit for concatenation
       throw new TranscriptionError(
         'RECORDING_TOO_LONG',
         'Recording exceeds maximum duration',
@@ -445,7 +440,7 @@ export class AudioRecorder {
         // For many chunks, write incrementally to temp file
         const tempPath = `${FileSystem.cacheDirectory}pcm-chunks-${Date.now()}.bin`;
         this.tempFilesToClean.push(tempPath);
-        
+
         let offset = 0;
         const buffer = Buffer.alloc(this.totalPcmBytes);
         for (const chunk of this.pcmChunks) {
@@ -579,15 +574,12 @@ export class AudioRecorder {
     if (Platform.OS !== 'android') return true; // iOS handled by expo-av
 
     try {
-      const result = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        {
-          title: 'Microphone Permission',
-          message: 'Guru needs microphone access to record lectures for transcription.',
-          buttonPositive: 'Allow',
-          buttonNegative: 'Deny',
-        },
-      );
+      const result = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO, {
+        title: 'Microphone Permission',
+        message: 'Guru needs microphone access to record lectures for transcription.',
+        buttonPositive: 'Allow',
+        buttonNegative: 'Deny',
+      });
       return result === PermissionsAndroid.RESULTS.GRANTED;
     } catch (err) {
       console.warn('[AudioRecorder] Permission request failed:', err);
@@ -598,7 +590,7 @@ export class AudioRecorder {
   private async ensureRecordingDir(): Promise<void> {
     try {
       const info = await FileSystem.getInfoAsync(RECORDING_DIR);
-      if (!(info?.exists)) {
+      if (!info?.exists) {
         await FileSystem.makeDirectoryAsync(RECORDING_DIR, {
           intermediates: true,
         });

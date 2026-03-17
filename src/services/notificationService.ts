@@ -8,6 +8,8 @@ import {
   getSubjectBreakdown,
 } from '../db/queries/topics';
 import { todayStr } from '../db/database';
+import { MS_PER_DAY } from '../constants/time';
+import { STREAK_MIN_MINUTES } from '../constants/gamification';
 import type { Mood } from '../types';
 
 let areNotificationsSupported = true;
@@ -333,7 +335,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
   const daysSince = lastStudiedDate
     ? Math.max(
         0,
-        Math.floor((Date.now() - new Date(`${lastStudiedDate}T00:00:00`).getTime()) / 86400000),
+        Math.floor((Date.now() - new Date(`${lastStudiedDate}T00:00:00`).getTime()) / MS_PER_DAY),
       )
     : null;
   const lastStudied =
@@ -359,8 +361,8 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     if (guruFrequency === 'off') {
       const streakBody =
         profile.streakCurrent > 0
-          ? `${profile.streakCurrent}-day streak at risk. Study 20 min to keep it alive.`
-          : 'No streak yet. Start one today — even 20 minutes counts.';
+          ? `${profile.streakCurrent}-day streak at risk. Study ${STREAK_MIN_MINUTES} min to keep it alive.`
+          : `No streak yet. Start one today — even ${STREAK_MIN_MINUTES} minutes counts.`;
       await Notifications.scheduleNotificationAsync({
         identifier: `${ACCOUNTABILITY_ID_PREFIX}streak`,
         content: { title: '🔥 Streak Alert', body: streakBody, sound: true },
@@ -418,7 +420,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
         },
         {
           title: '🔥 Streak Warning',
-          body: streakLine + ' 20 minutes is all it takes.',
+          body: streakLine + ` ${STREAK_MIN_MINUTES} minutes is all it takes.`,
           scheduledFor: 'streak_warning',
         },
       ];

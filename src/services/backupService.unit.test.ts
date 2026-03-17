@@ -6,9 +6,13 @@ import { Alert } from 'react-native';
 import { getDb } from '../db/database';
 
 // Mock expo-updates using virtual mock since it's conditionally required
-jest.mock('expo-updates', () => ({
-  reloadAsync: jest.fn().mockResolvedValue(undefined),
-}), { virtual: true });
+jest.mock(
+  'expo-updates',
+  () => ({
+    reloadAsync: jest.fn().mockResolvedValue(undefined),
+  }),
+  { virtual: true },
+);
 
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///mock-docs/',
@@ -71,7 +75,9 @@ describe('backupService', () => {
 
       await exportDatabase();
 
-      expect(FileSystem.getInfoAsync).toHaveBeenCalledWith('file:///mock-docs/SQLite/neet_study.db');
+      expect(FileSystem.getInfoAsync).toHaveBeenCalledWith(
+        'file:///mock-docs/SQLite/neet_study.db',
+      );
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Database file not found.');
       expect(FileSystem.copyAsync).not.toHaveBeenCalled();
     });
@@ -84,7 +90,7 @@ describe('backupService', () => {
 
       expect(FileSystem.copyAsync).toHaveBeenCalledWith({
         from: 'file:///mock-docs/SQLite/neet_study.db',
-        to: expect.stringContaining('file:///mock-cache/neet_study_backup_')
+        to: expect.stringContaining('file:///mock-cache/neet_study_backup_'),
       });
       expect(Sharing.shareAsync).not.toHaveBeenCalled();
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Sharing is not available on this device');
@@ -102,7 +108,7 @@ describe('backupService', () => {
       const toPath = (FileSystem.copyAsync as jest.Mock).mock.calls[0][0].to;
       expect(Sharing.shareAsync).toHaveBeenCalledWith(toPath, {
         mimeType: 'application/octet-stream',
-        dialogTitle: 'Export Backup'
+        dialogTitle: 'Export Backup',
       });
       expect(Alert.alert).not.toHaveBeenCalled();
     });
@@ -129,7 +135,7 @@ describe('backupService', () => {
     it('should alert invalid backup if file is not valid SQLite', async () => {
       (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
         canceled: false,
-        assets: [{ uri: 'file:///mock-picked-file.db' }]
+        assets: [{ uri: 'file:///mock-picked-file.db' }],
       });
       (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true });
 
@@ -140,13 +146,16 @@ describe('backupService', () => {
 
       expect(FileSystem.readAsStringAsync).toHaveBeenCalled();
       expect(FileSystem.deleteAsync).toHaveBeenCalled();
-      expect(Alert.alert).toHaveBeenCalledWith('Invalid backup', 'Selected file is not a valid SQLite database backup.');
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Invalid backup',
+        'Selected file is not a valid SQLite database backup.',
+      );
     });
 
     it('should replace database and rollback if validation fails', async () => {
       (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
         canceled: false,
-        assets: [{ uri: 'file:///mock-picked-file.db' }]
+        assets: [{ uri: 'file:///mock-picked-file.db' }],
       });
 
       // Directory exists, DB exists, Rollback exists (for cleanup)
@@ -166,36 +175,44 @@ describe('backupService', () => {
       await importDatabase();
 
       // Should have copied DB to rollback path
-      expect(FileSystem.copyAsync).toHaveBeenCalledWith(expect.objectContaining({
-        from: 'file:///mock-docs/SQLite/neet_study.db',
-        to: expect.stringContaining('.rollback_')
-      }));
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'file:///mock-docs/SQLite/neet_study.db',
+          to: expect.stringContaining('.rollback_'),
+        }),
+      );
 
       // Should have attempted to replace DB
-      expect(FileSystem.copyAsync).toHaveBeenCalledWith(expect.objectContaining({
-        from: expect.stringContaining('neet_study_import_tmp_'),
-        to: 'file:///mock-docs/SQLite/neet_study.db'
-      }));
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: expect.stringContaining('neet_study_import_tmp_'),
+          to: 'file:///mock-docs/SQLite/neet_study.db',
+        }),
+      );
 
       // Validation failed, should have restored rollback
-      expect(FileSystem.copyAsync).toHaveBeenCalledWith(expect.objectContaining({
-        from: expect.stringContaining('.rollback_'),
-        to: 'file:///mock-docs/SQLite/neet_study.db'
-      }));
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: expect.stringContaining('.rollback_'),
+          to: 'file:///mock-docs/SQLite/neet_study.db',
+        }),
+      );
 
       // Should have cleaned up rollback
-      expect(FileSystem.deleteAsync).toHaveBeenCalledWith(expect.stringContaining('.rollback_'), { idempotent: true });
+      expect(FileSystem.deleteAsync).toHaveBeenCalledWith(expect.stringContaining('.rollback_'), {
+        idempotent: true,
+      });
 
       expect(Alert.alert).toHaveBeenCalledWith(
         'Invalid Backup',
-        'The backup file failed schema validation. Your original data has been restored.'
+        'The backup file failed schema validation. Your original data has been restored.',
       );
     });
 
     it('should restore old DB if replacement fails during copy', async () => {
       (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
         canceled: false,
-        assets: [{ uri: 'file:///mock-picked-file.db' }]
+        assets: [{ uri: 'file:///mock-picked-file.db' }],
       });
 
       (FileSystem.getInfoAsync as jest.Mock).mockImplementation(async (path: string) => {
@@ -219,16 +236,18 @@ describe('backupService', () => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to import backup.');
 
       // Ensure it tried to restore from rollback
-      expect(FileSystem.copyAsync).toHaveBeenCalledWith(expect.objectContaining({
-        from: expect.stringContaining('.rollback_'),
-        to: 'file:///mock-docs/SQLite/neet_study.db'
-      }));
+      expect(FileSystem.copyAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: expect.stringContaining('.rollback_'),
+          to: 'file:///mock-docs/SQLite/neet_study.db',
+        }),
+      );
     });
 
     it('should successfully restore backup, validate it, clean up, and request restart', async () => {
       (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
         canceled: false,
-        assets: [{ uri: 'file:///mock-picked-file.db' }]
+        assets: [{ uri: 'file:///mock-picked-file.db' }],
       });
 
       // First call DB_DIR (exists), second DB_PATH (exists)
@@ -247,18 +266,20 @@ describe('backupService', () => {
       expect(mockDb.getFirstAsync).toHaveBeenCalledWith('SELECT COUNT(*) FROM subjects');
 
       // Check rollback cleanup
-      expect(FileSystem.deleteAsync).toHaveBeenCalledWith(expect.stringContaining('.rollback_'), { idempotent: true });
+      expect(FileSystem.deleteAsync).toHaveBeenCalledWith(expect.stringContaining('.rollback_'), {
+        idempotent: true,
+      });
 
       // Check success alert
       expect(Alert.alert).toHaveBeenCalledWith(
         'Success',
         'Backup restored successfully! The app will now restart.',
-        expect.any(Array)
+        expect.any(Array),
       );
 
       // Extract the onPress callback from the alert buttons to trigger it
       const alertCalls = (Alert.alert as jest.Mock).mock.calls;
-      const successCall = alertCalls.find(call => call[0] === 'Success');
+      const successCall = alertCalls.find((call) => call[0] === 'Success');
       const buttons = successCall[2];
       const restartButton = buttons.find((b: any) => b.text === 'Restart');
 
@@ -275,7 +296,7 @@ describe('backupService', () => {
     it('should create SQLite directory if it does not exist', async () => {
       (DocumentPicker.getDocumentAsync as jest.Mock).mockResolvedValue({
         canceled: false,
-        assets: [{ uri: 'file:///mock-picked-file.db' }]
+        assets: [{ uri: 'file:///mock-picked-file.db' }],
       });
 
       (FileSystem.getInfoAsync as jest.Mock).mockImplementation(async (path: string) => {
@@ -288,7 +309,9 @@ describe('backupService', () => {
 
       await importDatabase();
 
-      expect(FileSystem.makeDirectoryAsync).toHaveBeenCalledWith('file:///mock-docs/SQLite', { intermediates: true });
+      expect(FileSystem.makeDirectoryAsync).toHaveBeenCalledWith('file:///mock-docs/SQLite', {
+        intermediates: true,
+      });
     });
   });
 });

@@ -33,7 +33,7 @@ export async function backupNoteToPublic(noteId: number, subject: string, noteTe
         await FileSystemLegacy.writeAsStringAsync(backupUri, noteText, {
           encoding: FileSystemLegacy.EncodingType.UTF8,
         });
-        console.log('[TranscriptStorage] Note cloud backup saved:', fileName);
+        if (__DEV__) console.log('[TranscriptStorage] Note cloud backup saved:', fileName);
       } catch (safErr) {
         console.warn('[TranscriptStorage] Note cloud backup failed:', safErr);
       }
@@ -47,7 +47,7 @@ export async function backupNoteToPublic(noteId: number, subject: string, noteTe
     await FileSystemLegacy.writeAsStringAsync(PUBLIC_NOTES_DIR + fileName, noteText, {
       encoding: FileSystemLegacy.EncodingType.UTF8,
     });
-    console.log('[TranscriptStorage] Note local backup saved:', fileName);
+    if (__DEV__) console.log('[TranscriptStorage] Note local backup saved:', fileName);
   } catch (e) {
     console.warn('[TranscriptStorage] Note backup failed:', e);
   }
@@ -95,7 +95,7 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
       await FileSystemLegacy.writeAsStringAsync(backupUri, normalized, {
         encoding: FileSystemLegacy.EncodingType.UTF8,
       });
-      console.log('[TranscriptStorage] Transcript cloud backup saved:', fileName);
+      if (__DEV__) console.log('[TranscriptStorage] Transcript cloud backup saved:', fileName);
     } catch (safErr) {
       console.warn('[TranscriptStorage] Transcript cloud backup failed:', safErr);
     }
@@ -108,11 +108,14 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
       await FileSystemLegacy.makeDirectoryAsync(PUBLIC_TRANSCRIPT_DIR, { intermediates: true });
     }
     await FileSystemLegacy.copyAsync({ from: fileUri, to: PUBLIC_TRANSCRIPT_DIR + fileName });
-    console.log('[TranscriptStorage] Public local backup saved:', PUBLIC_TRANSCRIPT_DIR + fileName);
+    if (__DEV__)
+      console.log(
+        '[TranscriptStorage] Public local backup saved:',
+        PUBLIC_TRANSCRIPT_DIR + fileName,
+      );
   } catch (e) {
     console.warn('[TranscriptStorage] Public local backup failed:', e);
   }
-
   // Ensure loadTranscriptFromFile can recognize this as a file URI
   return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;
 }
@@ -145,10 +148,11 @@ export async function loadTranscriptFromFile(
       const content = await FileSystemLegacy.readAsStringAsync(currentUri, {
         encoding: FileSystemLegacy.EncodingType.UTF8,
       });
-      console.log(
-        '[TranscriptStorage] Successfully recovered transcript from new path:',
-        currentUri,
-      );
+      if (__DEV__)
+        console.log(
+          '[TranscriptStorage] Successfully recovered transcript from new path:',
+          currentUri,
+        );
       return content;
     } catch (err2) {
       console.warn(

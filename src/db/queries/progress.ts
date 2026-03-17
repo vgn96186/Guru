@@ -1,4 +1,5 @@
-import { getDb, todayStr, dateStr } from '../database';
+import { getDb, runInTransaction, todayStr, dateStr } from '../database';
+import { MS_PER_DAY, INTERVALS } from '../../constants/time';
 import type {
   UserProfile,
   DailyLog,
@@ -253,30 +254,32 @@ export async function addXp(
   const currentProfile = await db.getFirstAsync<{ total_xp: number; current_level: number }>(
     'SELECT total_xp, current_level FROM user_profile WHERE id = 1',
   );
-  const oldTotal = currentProfile?.total_xp ?? 0;
   const oldLevel = currentProfile?.current_level ?? 1;
-  const newTotal = oldTotal + amount;
 
-  let newLevel = oldLevel;
-  for (let i = LEVELS.length - 1; i >= 0; i--) {
-    if (newTotal >= LEVELS[i].xpRequired) {
-      newLevel = LEVELS[i].level;
-      break;
-    }
-  }
-
-  const leveledUp = newLevel > oldLevel;
-  await db.execAsync('BEGIN TRANSACTION');
   try {
-    await db.runAsync(
-      'UPDATE user_profile SET total_xp = total_xp + ?, current_level = ? WHERE id = 1',
-      [amount, newLevel],
-    );
-    await db.execAsync('COMMIT TRANSACTION');
+    const result = await runInTransaction(async (tx) => {
+      await tx.runAsync('UPDATE user_profile SET total_xp = total_xp + ? WHERE id = 1', [amount]);
+      const row = await tx.getFirstAsync<{ total_xp: number }>(
+        'SELECT total_xp FROM user_profile WHERE id = 1',
+      );
+      const newTotal = row?.total_xp ?? 0;
+      let newLevel = 1;
+      for (let i = LEVELS.length - 1; i >= 0; i--) {
+        if (newTotal >= LEVELS[i].xpRequired) {
+          newLevel = LEVELS[i].level;
+          break;
+        }
+      }
+      await tx.runAsync('UPDATE user_profile SET current_level = ? WHERE id = 1', [newLevel]);
+      return { newTotal, newLevel };
+    });
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
-    return { newTotal, leveledUp, newLevel };
+    return {
+      newTotal: result.newTotal,
+      leveledUp: result.newLevel > oldLevel,
+      newLevel: result.newLevel,
+    };
   } catch (err: any) {
-    await db.execAsync('ROLLBACK TRANSACTION');
     const { showToast } = require('../../components/Toast');
     showToast(`Failed to update XP: ${err.message || 'Unknown error'}`, 'error');
     throw err;
@@ -307,7 +310,7 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
 
   if (!studiedToday) return;
 
-  const yesterday = dateStr(new Date(Date.now() - 86400000));
+  const yesterday = dateStr(new Date(Date.now() - MS_PER_DAY));
   const newStreak = profile.lastActiveDate === yesterday ? profile.streakCurrent + 1 : 1;
   const newBest = Math.max(newStreak, profile.streakBest);
   const shieldAvailable = newStreak === 1 ? 1 : profile.streakCurrent === 0 ? 1 : 0;
@@ -446,37 +449,35 @@ export async function getDailyMinutesSeries(days = 7): Promise<number[]> {
 }
 
 export async function resetStudyProgress(): Promise<void> {
-  const db = getDb();
-  await db.execAsync('BEGIN TRANSACTION');
   try {
-    await db.runAsync(
-      `UPDATE topic_progress SET
-         status = 'unseen',
-         confidence = 0,
-         last_studied_at = NULL,
-         times_studied = 0,
-         xp_earned = 0,
-         next_review_date = NULL,
-         fsrs_due = NULL,
-         fsrs_stability = 0,
-         fsrs_difficulty = 0,
-         fsrs_elapsed_days = 0,
-         fsrs_scheduled_days = 0,
-         fsrs_reps = 0,
-         fsrs_lapses = 0,
-         fsrs_state = 0,
-         fsrs_last_review = NULL,
-         wrong_count = 0,
-         is_nemesis = 0`,
-    );
-    await db.runAsync(
-      `UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`,
-    );
-    await db.runAsync(`DELETE FROM daily_log`);
-    await db.execAsync('COMMIT TRANSACTION');
+    await runInTransaction(async (tx) => {
+      await tx.runAsync(
+        `UPDATE topic_progress SET
+           status = 'unseen',
+           confidence = 0,
+           last_studied_at = NULL,
+           times_studied = 0,
+           xp_earned = 0,
+           next_review_date = NULL,
+           fsrs_due = NULL,
+           fsrs_stability = 0,
+           fsrs_difficulty = 0,
+           fsrs_elapsed_days = 0,
+           fsrs_scheduled_days = 0,
+           fsrs_reps = 0,
+           fsrs_lapses = 0,
+           fsrs_state = 0,
+           fsrs_last_review = NULL,
+           wrong_count = 0,
+           is_nemesis = 0`,
+      );
+      await tx.runAsync(
+        `UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`,
+      );
+      await tx.runAsync(`DELETE FROM daily_log`);
+    });
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
   } catch (err: any) {
-    await db.execAsync('ROLLBACK TRANSACTION');
     const { showToast } = require('../../components/Toast');
     showToast(`Failed to reset progress: ${err.message || 'Unknown error'}`, 'error');
     throw err;
@@ -520,7 +521,7 @@ export function getDaysToExam(examDateStr: string): number {
   const exam = new Date(examTime);
   exam.setHours(0, 0, 0, 0);
 
-  return Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / 86400000));
+  return Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / MS_PER_DAY));
 }
 
 /**
@@ -552,7 +553,7 @@ export async function applyConfidenceDecay(): Promise<{ decayed: number }> {
   let decayed = 0;
   for (const row of overdue) {
     const reviewDate = new Date(row.fsrs_due);
-    const daysOverdue = Math.floor((Date.now() - reviewDate.getTime()) / 86400000);
+    const daysOverdue = Math.floor((Date.now() - reviewDate.getTime()) / MS_PER_DAY);
 
     let newConf = row.confidence;
     let newStatus = row.status;
@@ -619,7 +620,10 @@ export async function getReviewDueTopics(): Promise<
     subjectName: r.subject_name,
     confidence: r.confidence,
     nextReviewDate: r.fsrs_due.slice(0, 10),
-    daysOverdue: Math.max(0, Math.floor((Date.now() - new Date(r.fsrs_due).getTime()) / 86400000)),
+    daysOverdue: Math.max(
+      0,
+      Math.floor((Date.now() - new Date(r.fsrs_due).getTime()) / MS_PER_DAY),
+    ),
   }));
 }
 
@@ -628,7 +632,7 @@ export async function getReviewDueTopics(): Promise<
  */
 export async function getRecentTopics(limit: number = 10): Promise<string[]> {
   const db = getDb();
-  const twoDaysAgo = Date.now() - 48 * 60 * 60 * 1000;
+  const twoDaysAgo = Date.now() - INTERVALS.TWO_DAYS;
   const rows = await db.getAllAsync<{ topic_name: string }>(
     `SELECT DISTINCT t.name as topic_name
      FROM topic_progress tp

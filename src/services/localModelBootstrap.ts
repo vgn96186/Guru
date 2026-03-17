@@ -66,8 +66,8 @@ export async function bootstrapLocalModels(): Promise<void> {
 
 // Expected minimum sizes to validate downloads aren't partial
 const MIN_MODEL_SIZES: Record<string, number> = {
-  'llm': 1_500_000_000,    // ~1.5GB for Qwen 3B Q4
-  'whisper': 50_000_000,   // ~50MB for Whisper small.en
+  llm: 1_500_000_000, // ~1.5GB for Qwen 3B Q4
+  whisper: 50_000_000, // ~50MB for Whisper small.en
 };
 
 async function downloadModel(
@@ -81,25 +81,30 @@ async function downloadModel(
   try {
     // Check if fully-downloaded file already exists
     const info = await FileSystem.getInfoAsync(targetUri);
-    if ((info?.exists) && (info as any).size >= minSize) {
+    if (info?.exists && (info as any).size >= minSize) {
       // File exists and meets minimum size threshold
       if (type === 'llm') {
         await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
       } else {
-        await profileRepository.updateProfile({ localWhisperPath: targetUri, useLocalWhisper: true });
+        await profileRepository.updateProfile({
+          localWhisperPath: targetUri,
+          useLocalWhisper: true,
+        });
       }
       await useAppStore.getState().refreshProfile();
-      console.log(`[Bootstrap] ${type} model already downloaded at ${targetUri}`);
+      if (__DEV__) console.log(`[Bootstrap] ${type} model already downloaded at ${targetUri}`);
       return;
     }
 
     // Clean up any existing partial or undersized file
     if (info?.exists) {
-      console.warn(`[Bootstrap] Removing invalid/partial ${type} model (size: ${(info as any).size})`);
+      console.warn(
+        `[Bootstrap] Removing invalid/partial ${type} model (size: ${(info as any).size})`,
+      );
       await FileSystem.deleteAsync(targetUri, { idempotent: true });
     }
 
-    console.log(`[Bootstrap] Starting ${type} download: ${model.name}`);
+    if (__DEV__) console.log(`[Bootstrap] Starting ${type} download: ${model.name}`);
 
     // Use createDownloadResumable for resume support
     const downloadResumable = FileSystem.createDownloadResumable(
@@ -108,8 +113,10 @@ async function downloadModel(
       {},
       (progress) => {
         if (progress.totalBytesExpectedToWrite > 0) {
-          const pct = Math.round((progress.totalBytesWritten / progress.totalBytesExpectedToWrite) * 100);
-          if (pct % 10 === 0) console.log(`[Bootstrap] ${type} download: ${pct}%`);
+          const pct = Math.round(
+            (progress.totalBytesWritten / progress.totalBytesExpectedToWrite) * 100,
+          );
+          if (pct % 10 === 0 && __DEV__) console.log(`[Bootstrap] ${type} download: ${pct}%`);
         }
       },
     );
@@ -119,8 +126,10 @@ async function downloadModel(
     if (result && result.status === 200) {
       // Validate downloaded file size
       const downloadedInfo = await FileSystem.getInfoAsync(partialUri);
-      if (!(downloadedInfo?.exists) || (downloadedInfo as any).size < minSize) {
-        console.warn(`[Bootstrap] ${type} download too small: ${(downloadedInfo as any).size} bytes, expected >= ${minSize}`);
+      if (!downloadedInfo?.exists || (downloadedInfo as any).size < minSize) {
+        console.warn(
+          `[Bootstrap] ${type} download too small: ${(downloadedInfo as any).size} bytes, expected >= ${minSize}`,
+        );
         await FileSystem.deleteAsync(partialUri, { idempotent: true });
         return;
       }
@@ -131,10 +140,13 @@ async function downloadModel(
       if (type === 'llm') {
         await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
       } else {
-        await profileRepository.updateProfile({ localWhisperPath: targetUri, useLocalWhisper: true });
+        await profileRepository.updateProfile({
+          localWhisperPath: targetUri,
+          useLocalWhisper: true,
+        });
       }
       await useAppStore.getState().refreshProfile();
-      console.log(`[Bootstrap] ${type} model downloaded successfully`);
+      if (__DEV__) console.log(`[Bootstrap] ${type} model downloaded successfully`);
     } else {
       console.warn(`[Bootstrap] ${type} download failed with status ${result?.status}`);
       await FileSystem.deleteAsync(partialUri, { idempotent: true });

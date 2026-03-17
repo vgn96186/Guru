@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, ScrollView,
-  StyleSheet, StatusBar, Switch, Alert, ActivityIndicator, FlatList, Modal, Platform, Linking
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Switch,
+  Alert,
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -14,9 +26,17 @@ import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
 import { useAppStore } from '../store/useAppStore';
-import { updateUserProfile, getUserProfile, resetStudyProgress, clearAiCache } from '../db/queries/progress';
+import {
+  updateUserProfile,
+  getUserProfile,
+  resetStudyProgress,
+  clearAiCache,
+} from '../db/queries/progress';
 import { getAllSubjects } from '../db/queries/topics';
-import { requestNotificationPermissions, refreshAccountabilityNotifications } from '../services/notificationService';
+import {
+  requestNotificationPermissions,
+  refreshAccountabilityNotifications,
+} from '../services/notificationService';
 import { getDb } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
 import type { ContentType, Subject } from '../types';
@@ -44,7 +64,9 @@ const KNOWN_MODELS = [
   'gemini-1.5-flash',
 ];
 
-async function listGeminiModels(key: string): Promise<{ ok: boolean; models: string[]; error?: string }> {
+async function listGeminiModels(
+  key: string,
+): Promise<{ ok: boolean; models: string[]; error?: string }> {
   try {
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
     if (!res.ok) {
@@ -63,10 +85,16 @@ async function listGeminiModels(key: string): Promise<{ ok: boolean; models: str
 
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
-  const profile = db.getFirstSync<Record<string, unknown>>('SELECT * FROM user_profile WHERE id = 1');
+  const profile = db.getFirstSync<Record<string, unknown>>(
+    'SELECT * FROM user_profile WHERE id = 1',
+  );
   const topicProgress = db.getAllSync<Record<string, unknown>>('SELECT * FROM topic_progress');
-  const dailyLog = db.getAllSync<Record<string, unknown>>('SELECT * FROM daily_log ORDER BY date DESC LIMIT 90');
-  const lectureNotes = db.getAllSync<Record<string, unknown>>('SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500');
+  const dailyLog = db.getAllSync<Record<string, unknown>>(
+    'SELECT * FROM daily_log ORDER BY date DESC LIMIT 90',
+  );
+  const lectureNotes = db.getAllSync<Record<string, unknown>>(
+    'SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500',
+  );
 
   const backup = {
     version: BACKUP_VERSION,
@@ -84,7 +112,10 @@ async function exportBackup(): Promise<boolean> {
 
   if (await Sharing.isAvailableAsync()) {
     try {
-      await Sharing.shareAsync(filePath, { mimeType: 'application/json', dialogTitle: 'Save Guru Backup' });
+      await Sharing.shareAsync(filePath, {
+        mimeType: 'application/json',
+        dialogTitle: 'Save Guru Backup',
+      });
       return true;
     } catch (e) {
       // User cancelled sharing
@@ -97,7 +128,10 @@ async function exportBackup(): Promise<boolean> {
 }
 
 async function importBackup(): Promise<{ ok: boolean; message: string }> {
-  const result = await DocumentPicker.getDocumentAsync({ type: 'application/json', copyToCacheDirectory: true });
+  const result = await DocumentPicker.getDocumentAsync({
+    type: 'application/json',
+    copyToCacheDirectory: true,
+  });
   if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
 
   const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
@@ -130,18 +164,27 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
     const validStatuses = ['unseen', 'seen', 'reviewed', 'mastered'];
     const status = validStatuses.includes(row.status) ? row.status : 'unseen';
     // Validate confidence is number 0-5
-    const confidence = typeof row.confidence === 'number' ? Math.min(5, Math.max(0, row.confidence)) : 0;
+    const confidence =
+      typeof row.confidence === 'number' ? Math.min(5, Math.max(0, row.confidence)) : 0;
 
     db.runSync(
       `INSERT OR REPLACE INTO topic_progress
        (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [row.topic_id, status, confidence, row.last_studied_at,
-       row.times_studied ?? 0, row.xp_earned ?? 0, row.next_review_date ?? null, row.user_notes ?? ''],
+      [
+        row.topic_id,
+        status,
+        confidence,
+        row.last_studied_at,
+        row.times_studied ?? 0,
+        row.xp_earned ?? 0,
+        row.next_review_date ?? null,
+        row.user_notes ?? '',
+      ],
     );
     restoredTopics++;
   }
-  
+
   // Restore daily_log with validation
   for (const row of (backup.daily_log ?? []) as Record<string, any>[]) {
     if (!row.date) {
@@ -151,7 +194,14 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
     db.runSync(
       `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [row.date, row.checked_in ?? 0, row.mood ?? null, row.total_minutes ?? 0, row.xp_earned ?? 0, row.session_count ?? 0],
+      [
+        row.date,
+        row.checked_in ?? 0,
+        row.mood ?? null,
+        row.total_minutes ?? 0,
+        row.xp_earned ?? 0,
+        row.session_count ?? 0,
+      ],
     );
     restoredLogs++;
   }
@@ -164,9 +214,15 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
        streak_current = ?, streak_best = ?,
        daily_goal_minutes = ?, preferred_session_length = ?
        WHERE id = 1`,
-      [p.display_name ?? 'Doctor', p.total_xp ?? 0, p.current_level ?? 1,
-       p.streak_current ?? 0, p.streak_best ?? 0,
-       p.daily_goal_minutes ?? 120, p.preferred_session_length ?? 45],
+      [
+        p.display_name ?? 'Doctor',
+        p.total_xp ?? 0,
+        p.current_level ?? 1,
+        p.streak_current ?? 0,
+        p.streak_best ?? 0,
+        p.daily_goal_minutes ?? 120,
+        p.preferred_session_length ?? 45,
+      ],
     );
   }
 
@@ -175,16 +231,21 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
 
 type ValidationState = 'idle' | 'testing' | 'success' | 'error';
 
-async function validateGeminiKey(key: string): Promise<{ ok: boolean; model?: string; error?: string }> {
+async function validateGeminiKey(
+  key: string,
+): Promise<{ ok: boolean; model?: string; error?: string }> {
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash-preview:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
-        generationConfig: { maxOutputTokens: 5 },
-      }),
-    });
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash-preview:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
+          generationConfig: { maxOutputTokens: 5 },
+        }),
+      },
+    );
     if (res.ok) return { ok: true, model: 'Gemini 3.0 Flash Preview' };
     const data = await res.json().catch(() => ({}));
     return { ok: false, error: data?.error?.message || `HTTP ${res.status}` };
@@ -197,7 +258,7 @@ export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isFocused = useIsFocused();
   const { profile, refreshProfile } = useAppStore();
-  
+
   // Permissions State
   const [permStatus, setPermStatus] = useState({
     notifs: 'undetermined',
@@ -254,7 +315,9 @@ export default function SettingsScreen() {
       const dates = await fetchExamDates(key, or || undefined);
       setInicetDate(dates.inicetDate);
       setNeetDate(dates.neetDate);
-      setFetchDatesMsg(`✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`);
+      setFetchDatesMsg(
+        `✅ Fetched: INICET ${dates.inicetDate} · NEET-PG ${dates.neetDate}. Verify and save.`,
+      );
     } catch (e: any) {
       setFetchDatesMsg(`❌ ${e?.message || 'Could not fetch dates. Try manually.'}`);
     } finally {
@@ -280,8 +343,13 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     const loadSubjects = async () => {
-      try { const subs = await getAllSubjects(); setSubjects(subs); } catch { /* non-critical */ }
-    }
+      try {
+        const subs = await getAllSubjects();
+        setSubjects(subs);
+      } catch {
+        /* non-critical */
+      }
+    };
     loadSubjects();
     if (profile) {
       if (profile.openrouterApiKey.includes('|')) {
@@ -324,7 +392,7 @@ export default function SettingsScreen() {
   async function runValidation(key: string) {
     setValidation('testing');
     setValidationMsg('');
-    
+
     // First, list models
     const listRes = await listGeminiModels(key);
     if (!listRes.ok) {
@@ -334,11 +402,11 @@ export default function SettingsScreen() {
     }
 
     setAvailableModels(listRes.models.length > 0 ? listRes.models : KNOWN_MODELS);
-    
+
     // If current model isn't in list, switch to first available
     if (listRes.models.length > 0 && !listRes.models.includes(selectedModel)) {
       // Prefer flash models if available
-      const best = listRes.models.find(m => m.includes('flash')) || listRes.models[0];
+      const best = listRes.models.find((m) => m.includes('flash')) || listRes.models[0];
       setSelectedModel(best);
     }
 
@@ -351,7 +419,7 @@ export default function SettingsScreen() {
     try {
       // Store model name WITH key (hacky but saves migration)
       const keyToStore = `${apiKey.trim()}|${selectedModel}`;
-      
+
       updateUserProfile({
         openrouterApiKey: keyToStore,
         openrouterKey: orKey.trim(),
@@ -421,7 +489,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F0F14" />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Settings</Text>
 
@@ -429,7 +497,9 @@ export default function SettingsScreen() {
           <Label text="Gemini API Key (Google AI Studio)" />
           <View style={styles.apiKeyRow}>
             <TextInput
-              style={[styles.input, styles.apiKeyInput,
+              style={[
+                styles.input,
+                styles.apiKeyInput,
                 validation === 'success' && styles.inputSuccess,
                 validation === 'error' && styles.inputError,
               ]}
@@ -441,12 +511,13 @@ export default function SettingsScreen() {
               autoCapitalize="none"
             />
             <TouchableOpacity
-              style={[styles.validateBtn,
+              style={[
+                styles.validateBtn,
                 validation === 'success' && styles.validateBtnSuccess,
                 validation === 'error' && styles.validateBtnError,
                 validation === 'testing' && styles.validateBtnTesting,
               ]}
-              onPress={() => apiKey.trim().length > 20 ? runValidation(apiKey.trim()) : null}
+              onPress={() => (apiKey.trim().length > 20 ? runValidation(apiKey.trim()) : null)}
               activeOpacity={0.8}
               disabled={validation === 'testing'}
             >
@@ -460,26 +531,28 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
           {validationMsg ? (
-            <Text style={[styles.validationMsg,
-              validation === 'success' ? styles.validationSuccess : styles.validationError,
-            ]}>
-              {validation === 'success' ? '✅ ' : '❌ '}{validationMsg}
+            <Text
+              style={[
+                styles.validationMsg,
+                validation === 'success' ? styles.validationSuccess : styles.validationError,
+              ]}
+            >
+              {validation === 'success' ? '✅ ' : '❌ '}
+              {validationMsg}
             </Text>
           ) : null}
-          
+
           <Label text="Selected Model" />
-          <TouchableOpacity 
-            style={styles.modelSelector} 
+          <TouchableOpacity
+            style={styles.modelSelector}
             activeOpacity={0.8}
             onPress={() => setShowModelPicker(true)}
           >
             <Text style={styles.modelSelectorText}>{selectedModel}</Text>
             <Text style={styles.modelSelectorArrow}>▼</Text>
           </TouchableOpacity>
-          
-          <Text style={styles.hint}>
-            Get your free key at aistudio.google.com
-          </Text>
+
+          <Text style={styles.hint}>Get your free key at aistudio.google.com</Text>
 
           <Label text="OpenRouter API Key (openrouter.ai) — for free model fallbacks" />
           <TextInput
@@ -492,8 +565,8 @@ export default function SettingsScreen() {
             autoCapitalize="none"
           />
           <Text style={styles.hint}>
-            Optional. When Gemini hits rate limits, Guru auto-retries with free OpenRouter models (Gemini 2.0 Flash, Llama 3.3, Qwen 2.5, etc.).
-            Get a free key at openrouter.ai
+            Optional. When Gemini hits rate limits, Guru auto-retries with free OpenRouter models
+            (Gemini 2.0 Flash, Llama 3.3, Qwen 2.5, etc.). Get a free key at openrouter.ai
           </Text>
         </Section>
 
@@ -504,16 +577,21 @@ export default function SettingsScreen() {
               <Text style={styles.modalTitle}>Select Model</Text>
               <FlatList
                 data={availableModels}
-                keyExtractor={item => item}
+                keyExtractor={(item) => item}
                 renderItem={({ item }) => (
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.modelItem, item === selectedModel && styles.modelItemActive]}
                     onPress={() => {
                       setSelectedModel(item);
                       setShowModelPicker(false);
                     }}
                   >
-                    <Text style={[styles.modelItemText, item === selectedModel && styles.modelItemTextActive]}>
+                    <Text
+                      style={[
+                        styles.modelItemText,
+                        item === selectedModel && styles.modelItemTextActive,
+                      ]}
+                    >
                       {item}
                     </Text>
                     {item === selectedModel && <Text style={styles.checkMark}>✓</Text>}
@@ -550,25 +628,27 @@ export default function SettingsScreen() {
               status={permStatus.overlay}
               onFix={async () => {
                 await requestOverlayPermission();
-                Alert.alert('Overlay Permission', 'Please enable Guru in the settings screen that just opened, then return to the app.');
+                Alert.alert(
+                  'Overlay Permission',
+                  'Please enable Guru in the settings screen that just opened, then return to the app.',
+                );
               }}
             />
           )}
-          <TouchableOpacity 
-            style={styles.diagBtn} 
-            onPress={() => Linking.openSettings()}
-          >
+          <TouchableOpacity style={styles.diagBtn} onPress={() => Linking.openSettings()}>
             <Text style={styles.diagBtnText}>Open System Settings</Text>
           </TouchableOpacity>
         </Section>
 
         <Section title="👤 Profile">
-          <TouchableOpacity 
-            style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]} 
-            onPress={() => navigation.navigate('DeviceLink')} 
+          <TouchableOpacity
+            style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]}
+            onPress={() => navigation.navigate('DeviceLink')}
             activeOpacity={0.8}
           >
-            <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>📱 Link Another Device (Sync)</Text>
+            <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>
+              📱 Link Another Device (Sync)
+            </Text>
           </TouchableOpacity>
           <Label text="Your name" />
           <TextInput
@@ -582,26 +662,44 @@ export default function SettingsScreen() {
 
         <Section title="📅 Exam Dates">
           <Label text="INICET date (YYYY-MM-DD)" />
-          <TextInput style={styles.input} value={inicetDate} onChangeText={setInicetDate} placeholderTextColor="#444" />
+          <TextInput
+            style={styles.input}
+            value={inicetDate}
+            onChangeText={setInicetDate}
+            placeholderTextColor="#444"
+          />
           <Label text="NEET-PG date (YYYY-MM-DD)" />
-          <TextInput style={styles.input} value={neetDate} onChangeText={setNeetDate} placeholderTextColor="#444" />
+          <TextInput
+            style={styles.input}
+            value={neetDate}
+            onChangeText={setNeetDate}
+            placeholderTextColor="#444"
+          />
           <TouchableOpacity
             style={[styles.autoFetchBtn, fetchingDates && styles.autoFetchBtnDisabled]}
             onPress={handleAutoFetchDates}
             disabled={fetchingDates}
             activeOpacity={0.8}
           >
-            {fetchingDates
-              ? <ActivityIndicator size="small" color="#6C63FF" />
-              : <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
-            }
+            {fetchingDates ? (
+              <ActivityIndicator size="small" color="#6C63FF" />
+            ) : (
+              <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
+            )}
           </TouchableOpacity>
           {fetchDatesMsg ? (
-            <Text style={[styles.hint, fetchDatesMsg.startsWith('✅') ? { color: '#4CAF50' } : { color: '#F44336' }]}>
+            <Text
+              style={[
+                styles.hint,
+                fetchDatesMsg.startsWith('✅') ? { color: '#4CAF50' } : { color: '#F44336' },
+              ]}
+            >
               {fetchDatesMsg}
             </Text>
           ) : (
-            <Text style={styles.hint}>Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.</Text>
+            <Text style={styles.hint}>
+              Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.
+            </Text>
           )}
         </Section>
 
@@ -625,7 +723,10 @@ export default function SettingsScreen() {
           <View style={[styles.switchRow, { marginTop: 16 }]}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Strict Mode 👮</Text>
-              <Text style={styles.hint}>Nag you instantly if you leave the app or are idle. Idle time won't count towards session duration.</Text>
+              <Text style={styles.hint}>
+                Nag you instantly if you leave the app or are idle. Idle time won't count towards
+                session duration.
+              </Text>
             </View>
             <Switch
               value={strictMode}
@@ -640,7 +741,9 @@ export default function SettingsScreen() {
           <View style={styles.switchRow}>
             <View>
               <Text style={styles.switchLabel}>Enable Guru's reminders</Text>
-              <Text style={styles.hint}>Guru will send personalized daily accountability messages</Text>
+              <Text style={styles.hint}>
+                Guru will send personalized daily accountability messages
+              </Text>
             </View>
             <Switch
               value={notifs}
@@ -660,7 +763,7 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
           <Label text="Guru presence frequency" />
           <View style={styles.frequencyRow}>
-            {(['rare', 'normal', 'frequent', 'off'] as const).map(freq => (
+            {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
               <TouchableOpacity
                 key={freq}
                 style={[styles.freqBtn, guruFrequency === freq && styles.freqBtnActive]}
@@ -673,7 +776,8 @@ export default function SettingsScreen() {
             ))}
           </View>
           <Text style={styles.hint}>
-            How often Guru sends ambient messages during sessions. Rare: every 30min, Normal: every 20min, Frequent: every 10min.
+            How often Guru sends ambient messages during sessions. Rare: every 30min, Normal: every
+            20min, Frequent: every 10min.
           </Text>
           <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
             <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
@@ -684,7 +788,9 @@ export default function SettingsScreen() {
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Guru presence during sessions</Text>
-              <Text style={styles.hint}>Ambient toast messages and pulsing dot while you study. Helps with focus.</Text>
+              <Text style={styles.hint}>
+                Ambient toast messages and pulsing dot while you study. Helps with focus.
+              </Text>
             </View>
             <Switch
               value={bodyDoubling}
@@ -696,7 +802,9 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title="🃏 Content Type Preferences">
-          <Text style={styles.hint}>Block card types you don't want in sessions. Keypoints can't be blocked.</Text>
+          <Text style={styles.hint}>
+            Block card types you don't want in sessions. Keypoints can't be blocked.
+          </Text>
           <View style={styles.chipGrid}>
             {ALL_CONTENT_TYPES.map(({ type, label }) => {
               const isBlocked = blockedTypes.includes(type);
@@ -704,14 +812,22 @@ export default function SettingsScreen() {
               return (
                 <TouchableOpacity
                   key={type}
-                  style={[styles.typeChip, isBlocked && styles.typeChipBlocked, isLocked && styles.typeChipLocked]}
+                  style={[
+                    styles.typeChip,
+                    isBlocked && styles.typeChipBlocked,
+                    isLocked && styles.typeChipLocked,
+                  ]}
                   onPress={() => {
                     if (isLocked) return;
-                    setBlockedTypes(prev => isBlocked ? prev.filter(t => t !== type) : [...prev, type]);
+                    setBlockedTypes((prev) =>
+                      isBlocked ? prev.filter((t) => t !== type) : [...prev, type],
+                    );
                   }}
                   activeOpacity={isLocked ? 1 : 0.8}
                 >
-                  <Text style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}>{label}</Text>
+                  <Text style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}>
+                    {label}
+                  </Text>
                   {isBlocked && <Text style={styles.typeChipX}> ✕</Text>}
                 </TouchableOpacity>
               );
@@ -720,18 +836,29 @@ export default function SettingsScreen() {
         </Section>
 
         <Section title="🔬 Focus Subjects">
-          <Text style={styles.hint}>Pin subjects to limit sessions to those areas only. Clear all to study everything.</Text>
+          <Text style={styles.hint}>
+            Pin subjects to limit sessions to those areas only. Clear all to study everything.
+          </Text>
           <View style={styles.chipGrid}>
-            {subjects.map(s => {
+            {subjects.map((s) => {
               const isFocused = focusSubjectIds.includes(s.id);
               return (
                 <TouchableOpacity
                   key={s.id}
-                  style={[styles.typeChip, isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex }]}
-                  onPress={() => setFocusSubjectIds(prev => isFocused ? prev.filter(id => id !== s.id) : [...prev, s.id])}
+                  style={[
+                    styles.typeChip,
+                    isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex },
+                  ]}
+                  onPress={() =>
+                    setFocusSubjectIds((prev) =>
+                      isFocused ? prev.filter((id) => id !== s.id) : [...prev, s.id],
+                    )
+                  }
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>{s.shortCode}</Text>
+                  <Text style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>
+                    {s.shortCode}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -765,34 +892,63 @@ export default function SettingsScreen() {
         <Section title="🗑️ Data">
           <TouchableOpacity
             style={styles.dangerBtn}
-            onPress={() => Alert.alert('Clear AI Cache?', 'All cached content cards will be regenerated fresh on next use.', [
-              { text: 'Cancel', style: 'cancel' },
-              { text: 'Clear', style: 'destructive', onPress: () => { clearAiCache(); Alert.alert('Done', 'AI cache cleared.'); } },
-            ])}
+            onPress={() =>
+              Alert.alert(
+                'Clear AI Cache?',
+                'All cached content cards will be regenerated fresh on next use.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Clear',
+                    style: 'destructive',
+                    onPress: () => {
+                      clearAiCache();
+                      Alert.alert('Done', 'AI cache cleared.');
+                    },
+                  },
+                ],
+              )
+            }
             activeOpacity={0.8}
           >
-            <Text style={styles.dangerBtnText}>🧹  Clear AI Content Cache</Text>
+            <Text style={styles.dangerBtnText}>🧹 Clear AI Content Cache</Text>
           </TouchableOpacity>
-          <Text style={styles.hint}>Forces fresh generation of all key points, quizzes, stories, etc.</Text>
+          <Text style={styles.hint}>
+            Forces fresh generation of all key points, quizzes, stories, etc.
+          </Text>
           <TouchableOpacity
             style={[styles.dangerBtn, { borderColor: '#F4433666', marginTop: 10 }]}
-            onPress={() => Alert.alert(
-              'Reset all progress?',
-              'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Reset', style: 'destructive', onPress: () => { resetStudyProgress(); refreshProfile(); Alert.alert('Reset', 'Progress has been wiped. Start fresh!'); } },
-              ],
-            )}
+            onPress={() =>
+              Alert.alert(
+                'Reset all progress?',
+                'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Reset',
+                    style: 'destructive',
+                    onPress: () => {
+                      resetStudyProgress();
+                      refreshProfile();
+                      Alert.alert('Reset', 'Progress has been wiped. Start fresh!');
+                    },
+                  },
+                ],
+              )
+            }
             activeOpacity={0.8}
           >
-            <Text style={[styles.dangerBtnText, { color: '#F44336' }]}>💀  Reset All Progress</Text>
+            <Text style={[styles.dangerBtnText, { color: '#F44336' }]}>💀 Reset All Progress</Text>
           </TouchableOpacity>
-          <Text style={styles.hint}>Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.</Text>
+          <Text style={styles.hint}>
+            Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
+          </Text>
         </Section>
 
         <Section title="💾 Backup & Restore">
-          <Text style={styles.hint}>Export your study progress to a JSON file, or restore from a previous backup.</Text>
+          <Text style={styles.hint}>
+            Export your study progress to a JSON file, or restore from a previous backup.
+          </Text>
           {profile?.lastBackupDate && (
             <Text style={styles.backupDate}>
               Last backup: {new Date(profile.lastBackupDate).toLocaleString()}
@@ -820,10 +976,18 @@ export default function SettingsScreen() {
                 }
               }}
             >
-              {backupBusy ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.backupBtnText}>⬆️  Export</Text>}
+              {backupBusy ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.backupBtnText}>⬆️ Export</Text>
+              )}
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.backupBtn, { borderColor: '#4CAF5066' }, backupBusy && styles.saveBtnDisabled]}
+              style={[
+                styles.backupBtn,
+                { borderColor: '#4CAF5066' },
+                backupBusy && styles.saveBtnDisabled,
+              ]}
               disabled={backupBusy}
               activeOpacity={0.8}
               onPress={async () => {
@@ -852,7 +1016,7 @@ export default function SettingsScreen() {
                 );
               }}
             >
-              <Text style={[styles.backupBtnText, { color: '#4CAF50' }]}>⬇️  Import</Text>
+              <Text style={[styles.backupBtnText, { color: '#4CAF50' }]}>⬇️ Import</Text>
             </TouchableOpacity>
           </View>
         </Section>
@@ -875,11 +1039,23 @@ export default function SettingsScreen() {
   );
 }
 
-function Section({ title, children, initiallyExpanded = false }: { title: string; children: React.ReactNode; initiallyExpanded?: boolean }) {
+function Section({
+  title,
+  children,
+  initiallyExpanded = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  initiallyExpanded?: boolean;
+}) {
   const [expanded, setExpanded] = useState(initiallyExpanded);
   return (
     <View style={styles.section}>
-      <TouchableOpacity style={styles.sectionHeader} onPress={() => setExpanded(!expanded)} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.sectionHeader}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.8}
+      >
         <Text style={styles.sectionTitle}>{title}</Text>
         <Text style={styles.sectionToggle}>{expanded ? '▼' : '▶'}</Text>
       </TouchableOpacity>
@@ -888,7 +1064,15 @@ function Section({ title, children, initiallyExpanded = false }: { title: string
   );
 }
 
-function PermissionRow({ label, status, onFix }: { label: string; status: string; onFix: () => void }) {
+function PermissionRow({
+  label,
+  status,
+  onFix,
+}: {
+  label: string;
+  status: string;
+  onFix: () => void;
+}) {
   const isOk = status === 'granted';
   return (
     <View style={styles.permRow}>
@@ -916,17 +1100,47 @@ const styles = StyleSheet.create({
   content: { padding: 16, paddingBottom: 60 },
   title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 20, marginTop: 8 },
   section: { marginBottom: 24 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
-  sectionTitle: { color: '#9E9E9E', fontSize: 12, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  sectionTitle: {
+    color: '#9E9E9E',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
   sectionToggle: { color: '#6C63FF', fontSize: 12, fontWeight: '700' },
   sectionContent: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16 },
   label: { color: '#9E9E9E', fontSize: 13, marginBottom: 6, marginTop: 8 },
-  input: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, color: '#fff', fontSize: 14, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 4 },
+  input: {
+    backgroundColor: '#0F0F14',
+    borderRadius: 10,
+    padding: 12,
+    color: '#fff',
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    marginBottom: 4,
+  },
   apiKeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   apiKeyInput: { flex: 1, marginBottom: 0 },
   inputSuccess: { borderColor: '#4CAF50' },
   inputError: { borderColor: '#F44336' },
-  validateBtn: { backgroundColor: '#2A2A38', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', minWidth: 52, borderWidth: 1, borderColor: '#444' },
+  validateBtn: {
+    backgroundColor: '#2A2A38',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 52,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
   validateBtnSuccess: { backgroundColor: '#1B3A1F', borderColor: '#4CAF50' },
   validateBtnError: { backgroundColor: '#3A1B1B', borderColor: '#F44336' },
   validateBtnTesting: { backgroundColor: '#1A1A2E', borderColor: '#6C63FF' },
@@ -935,28 +1149,81 @@ const styles = StyleSheet.create({
   validationSuccess: { color: '#4CAF50' },
   validationError: { color: '#F44336' },
   hint: { color: '#555', fontSize: 12, marginBottom: 4 },
-  autoFetchBtn: { marginTop: 10, backgroundColor: '#1A1A2E', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
+  autoFetchBtn: {
+    marginTop: 10,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6C63FF44',
+  },
   autoFetchBtnDisabled: { opacity: 0.5 },
   autoFetchBtnText: { color: '#6C63FF', fontSize: 13, fontWeight: '600' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   switchLabel: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 2 },
-  testBtn: { marginTop: 12, backgroundColor: '#1A1A2E', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
+  testBtn: {
+    marginTop: 12,
+    backgroundColor: '#1A1A2E',
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6C63FF44',
+  },
   testBtnText: { color: '#6C63FF', fontWeight: '600', fontSize: 14 },
-  saveBtn: { backgroundColor: '#6C63FF', borderRadius: 16, padding: 18, alignItems: 'center', marginTop: 8 },
+  saveBtn: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 16,
+    padding: 18,
+    alignItems: 'center',
+    marginTop: 8,
+  },
   saveBtnDisabled: { backgroundColor: '#333' },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 17 },
   backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  backupBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF66' },
+  backupBtn: {
+    flex: 1,
+    backgroundColor: '#0F0F14',
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6C63FF66',
+  },
   backupBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
-  backupDate: { color: '#555', fontSize: 11, textAlign: 'center', fontStyle: 'italic', marginBottom: 8 },
+  backupDate: {
+    color: '#555',
+    fontSize: 11,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
   frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
-  freqBtn: { flex: 1, backgroundColor: '#0F0F14', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#2A2A38' },
+  freqBtn: {
+    flex: 1,
+    backgroundColor: '#0F0F14',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
   freqBtnActive: { backgroundColor: '#6C63FF33', borderColor: '#6C63FF' },
   freqText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
   freqTextActive: { color: '#6C63FF', fontWeight: '700' },
   footer: { color: '#333', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  typeChip: { backgroundColor: '#0F0F14', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1, borderColor: '#2A2A38', flexDirection: 'row', alignItems: 'center' },
+  typeChip: {
+    backgroundColor: '#0F0F14',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   typeChipBlocked: { backgroundColor: '#2A0A0A', borderColor: '#F4433666' },
   typeChipLocked: { borderColor: '#6C63FF44', opacity: 0.5 },
   typeChipText: { color: '#E0E0E0', fontSize: 13, fontWeight: '600' },
@@ -964,28 +1231,88 @@ const styles = StyleSheet.create({
   typeChipX: { color: '#F44336', fontSize: 11 },
   clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
   clearBtnText: { color: '#555', fontSize: 13 },
-  dangerBtn: { backgroundColor: '#0F0F14', borderRadius: 10, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#6C63FF44' },
+  dangerBtn: {
+    backgroundColor: '#0F0F14',
+    borderRadius: 10,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6C63FF44',
+  },
   dangerBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
-  modelSelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F0F14', borderRadius: 10, padding: 12, borderWidth: 1, borderColor: '#2A2A38', marginBottom: 8 },
+  modelSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#0F0F14',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    marginBottom: 8,
+  },
   modelSelectorText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   modelSelectorArrow: { color: '#666', fontSize: 12 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#1A1A24', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' },
-  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
-  modelItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#333' },
-  modelItemActive: { backgroundColor: '#2A2A38', borderRadius: 8, paddingHorizontal: 12, borderBottomWidth: 0 },
+  modalContent: {
+    backgroundColor: '#1A1A24',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '60%',
+  },
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  modelItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modelItemActive: {
+    backgroundColor: '#2A2A38',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    borderBottomWidth: 0,
+  },
   modelItemText: { color: '#9E9E9E', fontSize: 15 },
   modelItemTextActive: { color: '#6C63FF', fontWeight: '700' },
   checkMark: { color: '#6C63FF', fontWeight: 'bold' },
-  closeBtn: { marginTop: 16, padding: 14, alignItems: 'center', backgroundColor: '#333', borderRadius: 12 },
+  closeBtn: {
+    marginTop: 16,
+    padding: 14,
+    alignItems: 'center',
+    backgroundColor: '#333',
+    borderRadius: 12,
+  },
   closeBtnText: { color: '#fff', fontWeight: '600' },
   // Diagnostics
-  permRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#2A2A38' },
+  permRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A2A38',
+  },
   permLabel: { color: '#E0E0E0', fontSize: 14, fontWeight: '600' },
   permStatus: { fontSize: 12, marginTop: 2 },
   permOk: { color: '#4CAF50' },
   permError: { color: '#F44336' },
-  fixBtn: { backgroundColor: '#6C63FF22', borderWidth: 1, borderColor: '#6C63FF', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  fixBtn: {
+    backgroundColor: '#6C63FF22',
+    borderWidth: 1,
+    borderColor: '#6C63FF',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
   fixBtnText: { color: '#6C63FF', fontSize: 12, fontWeight: '800' },
   diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
   diagBtnText: { color: '#666', fontSize: 13, textDecorationLine: 'underline' },

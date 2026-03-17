@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, TouchableOpacity, BackHandler, Alert } from 'react-native';
+import { Text, StyleSheet, TouchableOpacity, BackHandler, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { theme } from '../constants/theme';
 
 export default function LockdownScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -51,6 +52,7 @@ export default function LockdownScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>🔒</Text>
         <Text style={styles.title}>FOCUS TIMER</Text>
@@ -81,8 +83,28 @@ export default function LockdownScreen() {
               },
             })
           }
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${Math.ceil(timeLeft / 60)} minute sprint`}
         >
-          <Text style={styles.studyBtnText}>Start 5-min Sprint →</Text>
+          <Text style={styles.studyBtnText}>Start {Math.ceil(timeLeft / 60)}-min Sprint</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.exitBtn}
+          onPress={() => {
+            Alert.alert('Give up?', 'Are you sure you want to break the lockdown?', [
+              { text: 'Stay Strong', style: 'cancel' },
+              {
+                text: 'I give up',
+                style: 'destructive',
+                onPress: () => navigation.navigate('Tabs'),
+              },
+            ]);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Force exit lockdown"
+        >
+          <Text style={styles.exitBtnText}>Force Exit</Text>
         </TouchableOpacity>
       </ResponsiveContainer>
     </SafeAreaView>
@@ -90,7 +112,7 @@ export default function LockdownScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0A' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 64, marginBottom: 24 },
   title: {
@@ -127,5 +149,5 @@ const styles = StyleSheet.create({
   },
   studyBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' },
   exitBtn: { padding: 12 },
-  exitBtnText: { color: '#555', fontSize: 14, textDecorationLine: 'underline' },
+  exitBtnText: { color: theme.colors.textSecondary, fontSize: 14, textDecorationLine: 'underline' },
 });

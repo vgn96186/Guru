@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Text, StyleSheet, BackHandler, TouchableOpacity } from 'react-native';
+import { Text, StyleSheet, BackHandler, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
+import { theme } from '../constants/theme';
 import * as Haptics from 'expo-haptics';
 import { connectToRoom } from '../services/deviceSyncService';
 import { scheduleBreakEndAlarms, cancelAllNotifications } from '../services/notificationService';
@@ -84,6 +85,7 @@ export default function BreakEnforcerScreen() {
   if (isOver) {
     return (
       <SafeAreaView style={styles.safeError}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.error} />
         <ResponsiveContainer style={styles.container}>
           <Text style={styles.emoji}>🚨</Text>
           <Text style={styles.titleError}>YOUR BREAK IS OVER</Text>
@@ -107,6 +109,7 @@ export default function BreakEnforcerScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>☕</Text>
         <Text style={styles.title}>Break Time</Text>
@@ -144,12 +147,46 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48, lineHeight: 24 },
-  subError: { color: '#fff', fontSize: 24, textAlign: 'center', fontWeight: '800', marginBottom: 48, lineHeight: 32 },
-  warning: { color: '#FFCDD2', fontSize: 16, textAlign: 'center', fontStyle: 'italic', fontWeight: '600' },
-  timer: { color: '#fff', fontSize: 80, fontWeight: '900', fontVariant: ['tabular-nums'], marginBottom: 24 },
+  subError: {
+    color: '#fff',
+    fontSize: 24,
+    textAlign: 'center',
+    fontWeight: '800',
+    marginBottom: 48,
+    lineHeight: 32,
+  },
+  warning: {
+    color: '#FFCDD2',
+    fontSize: 16,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    fontWeight: '600',
+  },
+  timer: {
+    color: '#fff',
+    fontSize: 80,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    marginBottom: 24,
+  },
   footerText: { color: '#666', fontSize: 14, fontStyle: 'italic', marginTop: 32 },
-  manualResumeBtn: { marginTop: 24, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12, borderWidth: 1, borderColor: '#4CAF5066' },
+  manualResumeBtn: {
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#4CAF5066',
+  },
   manualResumeBtnText: { color: '#4CAF50', fontSize: 15, fontWeight: '700' },
-  fallbackBtn: { marginTop: 32, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#ffffff44', backgroundColor: '#ffffff11' },
+  fallbackBtn: {
+    marginTop: 32,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffffff44',
+    backgroundColor: '#ffffff11',
+  },
   fallbackBtnText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
 });

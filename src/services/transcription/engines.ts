@@ -10,9 +10,33 @@ const WHISPER_MEDICAL_PROMPT =
   'ECG, ABG, CSF, MRI, CT scan, CBC, LFT, RFT, ABG. ' +
   'Hindi-English mix (Hinglish). Toh, matlab, yahan pe, dekhiye, samajh lo.';
 
+// Known Whisper hallucination patterns on silent/short audio
+const HALLUCINATION_PATTERNS = [
+  /^(thank you\.?\s*){2,}$/i,
+  /^(thanks for watching\.?\s*){1,}$/i,
+  /^(please subscribe\.?\s*){1,}$/i,
+  /^(♪\s*)+$/,
+  /^\[music\]$/i,
+  /^\[silence\]$/i,
+  /^\(silence\)$/i,
+  /^\[blank audio\]$/i,
+  /^(okay\.?\s*){3,}$/i,
+  /^(um\.?\s*){3,}$/i,
+  /^(uh\.?\s*){3,}$/i,
+  /^(you\.?\s*){4,}$/i,
+  // Repeated phrase hallucinations (e.g. "The muscles. The muscles. The muscles.")
+  /^(.{5,40})\s*[.,]?\s*(\1\s*[.,]?\s*){2,}$/i,
+];
+
+function isLikelyHallucination(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  // Very short single-sentence transcripts from what should be a long recording
+  // are usually hallucinations — handled at call site with file size check.
+  return HALLUCINATION_PATTERNS.some((p) => p.test(trimmed));
+}
+
 function sanitizeTranscript(rawTranscript: string): string {
-  // Only filter out common Whisper hallucination noise or non-speech tags
-  // but keep the line if it's the only thing there and doesn't look like a hallucination.
   const NOISE_PATTERNS = /^\s*(\(background noise\)|\[music\]|\*silence\*|\[inaudible\])\s*$/i;
 
   const cleaned = rawTranscript
@@ -22,8 +46,6 @@ function sanitizeTranscript(rawTranscript: string): string {
     .join('\n')
     .trim();
 
-  // If we cleaned everything away but the original wasn't empty,
-  // maybe it was just short speech. Let's be less aggressive.
   if (!cleaned && rawTranscript.trim().length > 0) {
     return rawTranscript.trim();
   }
@@ -62,7 +84,10 @@ export async function transcribeRawWithGroq(
   }
 
   const data = await res.json();
-  return sanitizeTranscript(String(data?.text ?? '').trim());
+  const transcript = sanitizeTranscript(String(data?.text ?? '').trim());
+  // Reject single short sentences that are classic Whisper hallucinations on silence
+  if (isLikelyHallucination(transcript)) return '';
+  return transcript;
 }
 
 /** Engine 2: Local Whisper.rn */

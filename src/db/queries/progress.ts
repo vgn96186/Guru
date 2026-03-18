@@ -64,6 +64,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     subject_load_overrides_json: string | null;
     harassment_tone: string | null;
     backup_directory_uri: string | null;
+    pomodoro_enabled: number;
+    pomodoro_interval_minutes: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -106,6 +108,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       harassmentTone: 'shame',
       customSubjectLoadMultipliers: {},
       backupDirectoryUri: null,
+      pomodoroEnabled: true,
+      pomodoroIntervalMinutes: 20,
     };
   }
 
@@ -167,6 +171,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       }
     })(),
     backupDirectoryUri: r.backup_directory_uri ?? null,
+    pomodoroEnabled: (r.pomodoro_enabled ?? 1) === 1,
+    pomodoroIntervalMinutes: r.pomodoro_interval_minutes ?? 20,
   };
 }
 
@@ -208,6 +214,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     studyResourceMode: 'study_resource_mode',
     harassmentTone: 'harassment_tone',
     backupDirectoryUri: 'backup_directory_uri',
+    pomodoroEnabled: 'pomodoro_enabled',
+    pomodoroIntervalMinutes: 'pomodoro_interval_minutes',
   };
 
   const setClauses: string[] = [];

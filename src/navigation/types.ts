@@ -16,6 +16,7 @@ export type RootStackParamList = {
   WakeUp: undefined;
   LocalModel: undefined;
   ManualNoteCreation: undefined;
+  PomodoroQuiz: undefined;
 };
 
 export type HomeStackParamList = {
@@ -37,6 +38,7 @@ export type HomeStackParamList = {
   ManualLog: { appId?: string };
   DailyChallenge: undefined;
   FlaggedReview: undefined;
+  GlobalTopicSearch: undefined;
 };
 
 export type SyllabusStackParamList = {

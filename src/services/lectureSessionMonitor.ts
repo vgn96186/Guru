@@ -37,10 +37,20 @@ export interface LecturePipelineProgress {
 
 export { startRecordingHealthCheck, stopRecordingHealthCheck, getRecordingInfo };
 
+interface SaveLectureAnalysisQuickOpts {
+  analysis: LectureAnalysis;
+  appName: string;
+  durationMinutes: number;
+  logId: number;
+  embedding?: number[] | null;
+  noteOverride?: string;
+}
+
 /** Legacy wrapper for saveLecturePersistence */
-export async function saveLectureAnalysisQuick(opts: any) {
-  const quickNote = buildQuickLectureNote(opts.analysis);
-  return saveLecturePersistence({ ...opts, quickNote });
+export async function saveLectureAnalysisQuick(opts: SaveLectureAnalysisQuickOpts) {
+  const quickNote = opts.noteOverride ?? buildQuickLectureNote(opts.analysis);
+  const { noteOverride: _, ...rest } = opts;
+  return saveLecturePersistence({ ...rest, quickNote });
 }
 
 /** Robust transcription with recovery/retry logic */
@@ -170,14 +180,15 @@ export async function runFullTranscriptionPipeline(opts: {
       console.error('[SessionMonitor] Note enhancement failed:', err);
     });
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
-  } catch (e: any) {
-    await updateSessionTranscriptionStatus(logId, 'failed', e?.message);
+  } catch (e: unknown) {
+    const errMsg = e instanceof Error ? e.message : String(e);
+    await updateSessionTranscriptionStatus(logId, 'failed', errMsg);
     await notifyTranscriptionFailure(appName, durationMinutes);
-    return { success: false, error: e?.message };
+    return { success: false, error: errMsg };
   }
 }
 
-async function enhanceNoteInBackground(noteId: number, logId: number, analysis: any) {
+async function enhanceNoteInBackground(noteId: number, logId: number, analysis: LectureAnalysis) {
   try {
     const enhanced = await generateADHDNote(analysis);
     if (enhanced.trim()) {

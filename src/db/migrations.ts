@@ -283,7 +283,17 @@ export const MIGRATIONS: Migration[] = [
     sql: `DROP INDEX IF EXISTS idx_daily_plan_date; CREATE INDEX IF NOT EXISTS idx_daily_agenda_date ON daily_agenda(date);`,
     description: 'Update index name for daily_agenda',
   },
+  {
+    version: 78,
+    sql: `ALTER TABLE user_profile ADD COLUMN pomodoro_enabled INTEGER NOT NULL DEFAULT 1`,
+    description: 'Add Pomodoro enabled flag to user_profile',
+  },
+  {
+    version: 79,
+    sql: `ALTER TABLE user_profile ADD COLUMN pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20`,
+    description: 'Add Pomodoro interval duration to user_profile',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 77;
+export const LATEST_VERSION = 79;

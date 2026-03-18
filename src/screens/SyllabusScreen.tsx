@@ -415,7 +415,6 @@ const styles = StyleSheet.create({
   overallBadge: { flexDirection: 'row', alignItems: 'baseline' },
   overallPct: { color: '#6C63FF', fontWeight: '900', fontSize: 24 },
   overallLabel: { color: theme.colors.textSecondary, fontSize: 14, marginLeft: 2 },
-  overallLabel: { color: theme.colors.textSecondary, fontSize: 14, marginLeft: 2 },
   pctBadge: {
     backgroundColor: '#2A2A38',
     paddingHorizontal: 10,

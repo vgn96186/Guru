@@ -377,7 +377,7 @@ class AppLauncherModule : Module() {
          * @param appName Display name of the app being watched.
          * @param faceTracking If true, opens front camera and runs face detection.
          */
-        AsyncFunction("showOverlay") { appName: String, faceTracking: Boolean ->
+        AsyncFunction("showOverlay") { appName: String, faceTracking: Boolean, pomodoroEnabled: Boolean, pomodoroIntervalMinutes: Int ->
             val context = appContext.reactContext ?: throw Exception("No context")
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(context)) {
                 throw Exception("Overlay permission not granted")
@@ -386,6 +386,8 @@ class AppLauncherModule : Module() {
                 action = OverlayService.ACTION_SHOW
                 putExtra(OverlayService.EXTRA_APP_NAME, appName)
                 putExtra(OverlayService.EXTRA_FACE_TRACKING, faceTracking)
+                putExtra(OverlayService.EXTRA_POMODORO_ENABLED, pomodoroEnabled)
+                putExtra(OverlayService.EXTRA_POMODORO_INTERVAL, pomodoroIntervalMinutes)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)

@@ -138,6 +138,8 @@ export interface UserProfile {
   customSubjectLoadMultipliers?: Record<string, number>;
   harassmentTone?: HarassmentTone;
   backupDirectoryUri?: string | null;
+  pomodoroEnabled?: boolean;
+  pomodoroIntervalMinutes?: number;
 }
 
 // AI Content shapes

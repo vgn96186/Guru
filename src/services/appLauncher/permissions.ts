@@ -14,7 +14,7 @@ export async function requestRecordingPermissions(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
 
   try {
-    const toRequest: string[] = [];
+    const toRequest: (typeof PermissionsAndroid.PERMISSIONS[keyof typeof PermissionsAndroid.PERMISSIONS])[] = [];
     for (const perm of RECORDING_PERMISSIONS) {
       const granted = await PermissionsAndroid.check(perm);
       if (!granted) toRequest.push(perm);

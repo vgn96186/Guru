@@ -35,6 +35,7 @@ import { theme } from '../constants/theme';
 import { CONFIDENCE_LABELS } from '../constants/gamification';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
+import { Audio } from 'expo-av';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -202,6 +203,103 @@ function TranscriptSection({ transcript }: { transcript: string }) {
   );
 }
 
+function AudioPlayer({ uri }: { uri: string }) {
+  const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    return () => {
+      if (sound) {
+        sound.unloadAsync();
+      }
+    };
+  }, [sound]);
+
+  const handlePlayPause = async () => {
+    if (sound) {
+      if (isPlaying) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+      } else {
+        await sound.playAsync();
+        setIsPlaying(true);
+      }
+    } else {
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true },
+        (status) => {
+          if (status.isLoaded) {
+            setPosition(status.positionMillis);
+            setDuration(status.durationMillis || 0);
+            setIsPlaying(status.isPlaying);
+          }
+        },
+      );
+      setSound(newSound);
+      setIsPlaying(true);
+    }
+  };
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <View style={audioStyles.container}>
+      <TouchableOpacity onPress={handlePlayPause} style={audioStyles.playBtn}>
+        <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
+      </TouchableOpacity>
+      <View style={audioStyles.progressWrap}>
+        <View style={audioStyles.progressBar}>
+          <View
+            style={[
+              audioStyles.progressFill,
+              { width: `${duration > 0 ? (position / duration) * 100 : 0}%` },
+            ]}
+          />
+        </View>
+        <View style={audioStyles.timeRow}>
+          <Text style={audioStyles.timeText}>{formatTime(position)}</Text>
+          <Text style={audioStyles.timeText}>{formatTime(duration)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const audioStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1A1A1A',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    marginBottom: 20,
+    gap: 12,
+  },
+  playBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#6C63FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressWrap: { flex: 1, gap: 4 },
+  progressBar: { height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' },
+  progressFill: { height: '100%', backgroundColor: '#6C63FF' },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  timeText: { color: '#888', fontSize: 10, fontFamily: 'monospace' },
+});
+
 export default function TranscriptHistoryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
   const route = useRoute<RouteProp<MenuStackParamList, 'TranscriptHistory'>>();
@@ -223,7 +321,7 @@ export default function TranscriptHistoryScreen() {
   useEffect(() => {
     const onLectureSaved = () => void loadNotes();
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
-    return () => dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
+    return () => { dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved); };
   }, [loadNotes]);
 
   const isSelectionMode = selectedIds.length > 0;
@@ -451,7 +549,7 @@ export default function TranscriptHistoryScreen() {
                 },
               ]}
             >
-              {CONFIDENCE_LABELS[item.confidence]}
+              {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
             </Text>
           </View>
         </View>
@@ -614,7 +712,7 @@ export default function TranscriptHistoryScreen() {
                     },
                   ]}
                 >
-                  {CONFIDENCE_LABELS[selectedNote?.confidence ?? 2]}
+                  {CONFIDENCE_LABELS[(selectedNote?.confidence ?? 2) as 1 | 2 | 3]}
                 </Text>
               </View>
 
@@ -656,6 +754,9 @@ export default function TranscriptHistoryScreen() {
                   </View>
                 </View>
               )}
+
+              {/* Audio Player */}
+              {selectedNote?.recordingPath && <AudioPlayer uri={selectedNote.recordingPath} />}
 
               {/* ADHD-formatted study note */}
               {selectedNote?.note && (

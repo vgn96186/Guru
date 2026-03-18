@@ -6,6 +6,7 @@
 import { Linking, Platform, Alert } from 'react-native';
 import { startExternalAppSession } from '../db/queries/externalLogs';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lectureSessionMonitor';
+import { useAppStore } from '../store/useAppStore';
 import {
   launchApp,
   isAppInstalled,
@@ -137,7 +138,13 @@ async function _launchMedicalAppInner(
       }
 
       try {
-        await showOverlay(app.name, faceTracking);
+        const { profile } = useAppStore.getState();
+        await showOverlay(
+          app.name,
+          faceTracking,
+          profile?.pomodoroEnabled ?? true,
+          profile?.pomodoroIntervalMinutes ?? 20,
+        );
         // Give OverlayService time to start and show the bubble before we switch activities.
         // Otherwise launchApp() can run before onStartCommand(), and the system may block
         // startForeground() when the app is already in background (Android 12+).

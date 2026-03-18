@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -54,9 +54,12 @@ function formatDate(timestamp: number): string {
 import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
+import { getFailedOrPendingTranscriptions, type ExternalAppLog } from '../db/queries/externalLogs';
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
+import { runFullTranscriptionPipeline } from '../services/lectureSessionMonitor';
+import { Audio } from 'expo-av';
 
 export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
@@ -64,6 +67,66 @@ export default function NotesHubScreen() {
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const isRecoveringBackground = useAppStore((s) => s.isRecoveringBackground);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+  const [pendingSessions, setPendingSessions] = useState<ExternalAppLog[]>([]);
+  const [isRetrying, setIsRetrying] = useState<number | null>(null);
+  const [activePlaybackId, setActivePlaybackId] = useState<number | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  const handlePlayPending = async (session: ExternalAppLog) => {
+    if (!session.id || !session.recordingPath) return;
+
+    if (activePlaybackId === session.id) {
+      await soundRef.current?.unloadAsync();
+      soundRef.current = null;
+      setActivePlaybackId(null);
+      return;
+    }
+
+    try {
+      if (soundRef.current) await soundRef.current.unloadAsync();
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: session.recordingPath },
+        { shouldPlay: true },
+        (status) => {
+          if (status.isLoaded && !status.isPlaying && status.didJustFinish) {
+            setActivePlaybackId(null);
+          }
+        },
+      );
+      soundRef.current = sound;
+      setActivePlaybackId(session.id);
+    } catch (e: any) {
+      Alert.alert('Playback Error', 'Could not play this audio file.');
+    }
+  };
+
+  const handleRetry = async (session: ExternalAppLog) => {
+    if (!session.id || !session.recordingPath) return;
+    setIsRetrying(session.id);
+    try {
+      const { profile } = useAppStore.getState();
+      await runFullTranscriptionPipeline({
+        recordingPath: session.recordingPath,
+        appName: session.appName,
+        durationMinutes: session.durationMinutes || 0,
+        logId: session.id,
+        groqKey: profile?.groqApiKey || undefined,
+      });
+      await loadData();
+    } catch (e: any) {
+      Alert.alert('Retry Failed', e.message);
+    } finally {
+      setIsRetrying(null);
+    }
+  };
 
   const handleAudioUpload = async () => {
     const res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
@@ -111,7 +174,7 @@ export default function NotesHubScreen() {
 
   const loadData = useCallback(async () => {
     const db = getDb();
-    const [lectureCountRow, topicNoteCountRow, recentTopicNotes] = await Promise.all([
+    const [lectureCountRow, topicNoteCountRow, recentTopicNotes, failed] = await Promise.all([
       db.getFirstAsync<{ count: number }>('SELECT COUNT(*) AS count FROM lecture_notes'),
       db.getFirstAsync<{ count: number }>(
         `SELECT COUNT(*) AS count
@@ -133,12 +196,14 @@ export default function NotesHubScreen() {
          ORDER BY COALESCE(p.last_studied_at, 0) DESC, t.name ASC
          LIMIT 4`,
       ),
+      getFailedOrPendingTranscriptions(),
     ]);
 
     setStats({
       lectureCount: lectureCountRow?.count ?? 0,
       topicNoteCount: topicNoteCountRow?.count ?? 0,
     });
+    setPendingSessions(failed);
     void getLectureHistory(4).then(setRecentLectures);
     setTopicNotes(
       recentTopicNotes.map((row) => ({
@@ -160,7 +225,7 @@ export default function NotesHubScreen() {
   useEffect(() => {
     const onLectureSaved = () => void loadData();
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
-    return () => dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
+    return () => { dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved); };
   }, [loadData]);
 
   const emptyState = useMemo(
@@ -197,6 +262,61 @@ export default function NotesHubScreen() {
               </Text>
             </View>
           </View>
+
+          {pendingSessions.length > 0 && (
+            <View style={styles.pendingSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.warning }]}>
+                  Unprocessed Recordings ({pendingSessions.length})
+                </Text>
+              </View>
+              {pendingSessions.map((session) => (
+                <View key={session.id} style={styles.pendingCard}>
+                  <View style={styles.pendingInfo}>
+                    <Text style={styles.pendingAppName}>{session.appName}</Text>
+                    <Text style={styles.pendingDate}>{formatDate(session.launchedAt)}</Text>
+                    <Text style={styles.pendingStatus}>
+                      Status:{' '}
+                      <Text style={{ fontWeight: '700' }}>
+                        {session.transcriptionStatus?.toUpperCase()}
+                      </Text>
+                    </Text>
+                    {session.transcriptionError && (
+                      <Text style={styles.pendingError} numberOfLines={1}>
+                        {session.transcriptionError}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={styles.pendingActions}>
+                    <TouchableOpacity
+                      style={[styles.miniActionBtn, { backgroundColor: '#333' }]}
+                      onPress={() => handlePlayPending(session)}
+                    >
+                      <Ionicons
+                        name={activePlaybackId === session.id ? 'stop' : 'play'}
+                        size={16}
+                        color="#fff"
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.retryBtn}
+                      onPress={() => handleRetry(session)}
+                      disabled={isRetrying === session.id}
+                    >
+                      {isRetrying === session.id ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <>
+                          <Ionicons name="refresh" size={16} color="#fff" />
+                          <Text style={styles.retryBtnText}>Retry</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
@@ -405,6 +525,40 @@ export default function NotesHubScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
+  pendingSection: { gap: 10, marginBottom: 8 },
+  pendingCard: {
+    backgroundColor: '#2A1A1A',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#4A2A2A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pendingInfo: { flex: 1, gap: 2 },
+  pendingAppName: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  pendingDate: { color: '#9A9AAC', fontSize: 12 },
+  pendingStatus: { color: '#FFB74D', fontSize: 11, marginTop: 2 },
+  pendingError: { color: '#EF5350', fontSize: 11, fontStyle: 'italic' },
+  pendingActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  miniActionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryBtn: {
+    backgroundColor: '#6C63FF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  retryBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   recoveryGhostRow: {
     flexDirection: 'row',
     alignItems: 'center',

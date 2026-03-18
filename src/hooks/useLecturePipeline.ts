@@ -201,7 +201,7 @@ Summary: ${result.lectureSummary}`;
         appName,
         durationMinutes,
         logId,
-        embedding: (analysis as any).embedding,
+        embedding: analysis.embedding,
         noteOverride: noteToSave,
       });
       await updateSessionNoteEnhancementStatus(logId, 'completed');
@@ -211,13 +211,12 @@ Summary: ${result.lectureSummary}`;
       setActiveStage(null);
       setStageMessage('');
       return true;
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.warn('[LectureReturn] save error:', e);
       setActiveStage(null);
       setStageMessage('');
-      setErrorMsg(
-        `${e?.message ?? 'Failed while saving lecture note'}. Audio has been preserved for retry.`,
-      );
+      const errMsg = e instanceof Error ? e.message : 'Failed while saving lecture note';
+      setErrorMsg(`${errMsg}. Audio has been preserved for retry.`);
       setPhase('error');
       return false;
     } finally {

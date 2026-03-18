@@ -32,6 +32,7 @@ import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
 import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
 import MenuScreen from '../screens/MenuScreen';
+import GlobalTopicSearchScreen from '../screens/GlobalTopicSearchScreen';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
@@ -61,6 +62,7 @@ function HomeStackNav() {
       <HomeStack.Screen name="ManualLog" component={ManualLogScreen} />
       <HomeStack.Screen name="DailyChallenge" component={DailyChallengeScreen} />
       <HomeStack.Screen name="FlaggedReview" component={FlaggedReviewScreen} />
+      <HomeStack.Screen name="GlobalTopicSearch" component={GlobalTopicSearchScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -313,6 +315,20 @@ export default function TabNavigator() {
                   <Text style={styles.primaryActionTitle}>Record Lecture</Text>
                   <Text style={styles.primaryActionSubtitle}>
                     Capture long-form audio and route it back safely.
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                  android_ripple={{ color: '#ffffff18' }}
+                  onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search any topic"
+                >
+                  <Ionicons name="search-outline" size={20} color={theme.colors.info} />
+                  <Text style={styles.secondaryActionTitle}>Search Topics</Text>
+                  <Text style={styles.secondaryActionSubtitle}>
+                    Find any micro-topic globally.
                   </Text>
                 </Pressable>
 

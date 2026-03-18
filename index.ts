@@ -1,5 +1,12 @@
 import { registerRootComponent } from 'expo';
 import { LogBox } from 'react-native';
+import * as Crypto from 'expo-crypto';
+
+// Polyfill for Web Crypto API (required for sync and unique ID generation)
+if (typeof globalThis.crypto === 'undefined') {
+  (globalThis as any).crypto = Crypto;
+}
+
 import App from './App';
 
 // Catch any uncaught JS errors so the app doesn't silently crash

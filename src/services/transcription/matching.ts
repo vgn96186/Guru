@@ -108,6 +108,8 @@ async function findTopicIdByKeywords(
   return null;
 }
 
+const MAX_SEMANTIC_MATCHES = 10;
+
 async function findSemanticMatches(
   db: SQLiteDatabase,
   targetEmbedding: number[],
@@ -120,16 +122,21 @@ async function findSemanticMatches(
   const params = subjectName ? [subjectName.toLowerCase()] : [];
 
   const rows = await db.getAllAsync<{ id: number; embedding: Uint8Array }>(query, params);
-  const matchedIds: number[] = [];
+  const scored: Array<{ id: number; sim: number }> = [];
 
   for (const row of rows) {
     const topicVec = blobToEmbedding(row.embedding);
     const sim = cosineSimilarity(targetEmbedding, topicVec);
     if (sim >= threshold) {
-      matchedIds.push(row.id);
+      scored.push({ id: row.id, sim });
     }
   }
-  return matchedIds;
+
+  // Return top matches sorted by similarity (highest first), capped to avoid memory spikes
+  return scored
+    .sort((a, b) => b.sim - a.sim)
+    .slice(0, MAX_SEMANTIC_MATCHES)
+    .map((s) => s.id);
 }
 
 async function applyLectureProgressToTopic(

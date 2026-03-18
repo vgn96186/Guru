@@ -69,6 +69,8 @@ class OverlayService : Service(), LifecycleOwner {
     private var elapsedSeconds = 0
     private var isPaused = false
     private var appName = "Lecture"
+    private var pomodoroEnabled = true
+    private var pomodoroIntervalMinutes = 20
 
     // Face tracking
     private var faceTrackingEnabled = false
@@ -97,6 +99,8 @@ class OverlayService : Service(), LifecycleOwner {
         const val ACTION_RESUME = "guru.overlay.RESUME"
         const val EXTRA_APP_NAME = "appName"
         const val EXTRA_FACE_TRACKING = "faceTracking"
+        const val EXTRA_POMODORO_ENABLED = "pomodoroEnabled"
+        const val EXTRA_POMODORO_INTERVAL = "pomodoroInterval"
         const val CHANNEL_ID = "guru_overlay_channel"
         const val NOTIF_ID = 9002
         const val ABSENT_NOTIF_ID = 9003
@@ -116,6 +120,8 @@ class OverlayService : Service(), LifecycleOwner {
             ACTION_SHOW -> {
                 appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "Lecture"
                 faceTrackingEnabled = intent.getBooleanExtra(EXTRA_FACE_TRACKING, false)
+                pomodoroEnabled = intent.getBooleanExtra(EXTRA_POMODORO_ENABLED, true)
+                pomodoroIntervalMinutes = intent.getIntExtra(EXTRA_POMODORO_INTERVAL, 20)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     var fgsType = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE or
                         ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
@@ -317,7 +323,7 @@ class OverlayService : Service(), LifecycleOwner {
     private fun showOverlay() {
         if (overlayView != null) return
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        overlayView = InteractiveTimerOverlay(this, appName, faceTrackingEnabled) {
+        overlayView = InteractiveTimerOverlay(this, appName, faceTrackingEnabled, pomodoroEnabled, pomodoroIntervalMinutes) {
             val intent = packageManager.getLaunchIntentForPackage(packageName)
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -335,7 +341,12 @@ class OverlayService : Service(), LifecycleOwner {
         ).apply {
             gravity = Gravity.TOP or Gravity.START
             x = dpToPx(8)
-            y = dpToPx(120)
+            // Position below status bar + safe margin. Query status bar height to avoid notch overlap.
+            val statusBarHeight = try {
+                val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
+                if (resourceId > 0) resources.getDimensionPixelSize(resourceId) else dpToPx(24)
+            } catch (_: Exception) { dpToPx(24) }
+            y = statusBarHeight + dpToPx(16)
         }
         overlayView!!.setDragListener(DragTouchListener(this, params, windowManager!!))
         windowManager!!.addView(overlayView, params)
@@ -380,15 +391,18 @@ class OverlayService : Service(), LifecycleOwner {
         context: Context,
         appLabel: String,
         faceTracking: Boolean,
+        private val pomodoroEnabled: Boolean,
+        private val pomodoroIntervalMinutes: Int,
         val onReturnClick: () -> Unit
     ) : android.widget.FrameLayout(context) {
 
-        private val bubbleView = CompanionBubbleView(context, appLabel, faceTracking) {
+        private val bubbleView = CompanionBubbleView(context, appLabel, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes) {
             toggleExpanded()
         }
 
         private var isExpanded = false
         private var isRecordingPaused = false
+        private var isPomodoroMode = false
 
         private val expandedCard = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -447,6 +461,7 @@ class OverlayService : Service(), LifecycleOwner {
             text = "Pause"
             textSize = 12f
             setSingleLine()
+            ellipsize = android.text.TextUtils.TruncateAt.END
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
@@ -474,6 +489,7 @@ class OverlayService : Service(), LifecycleOwner {
             text = "Finish"
             textSize = 12f
             setSingleLine()
+            ellipsize = android.text.TextUtils.TruncateAt.END
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
@@ -489,10 +505,44 @@ class OverlayService : Service(), LifecycleOwner {
             }
         }
 
+        private val quizBtn = android.widget.TextView(context).apply {
+            text = "Take Quiz"
+            textSize = 12f
+            setSingleLine()
+            ellipsize = android.text.TextUtils.TruncateAt.END
+            setTextColor(Color.WHITE)
+            setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
+            gravity = Gravity.CENTER
+            visibility = View.GONE
+            setPadding(dpToPx(8, context), dpToPx(11, context), dpToPx(8, context), dpToPx(11, context))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.parseColor("#26FF9800")) // orange accent
+                cornerRadius = dpToPx(14, context).toFloat()
+                setStroke(dpToPx(1, context), Color.parseColor("#40FF9800"))
+            }
+            setOnClickListener { v ->
+                vibrateLight(context)
+                // Trigger quiz return
+                isPomodoroMode = false
+                v.visibility = View.GONE
+                statusText.text = "You're in focus mode"
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("guru-study://pomodoro"))
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                context.startActivity(intent)
+            }
+        }
+
         init {
             elevation = 30f
             clipChildren = false
             clipToPadding = false
+
+            bubbleView.onPomodoroSuggest = {
+                if (!isExpanded) {
+                    isPomodoroMode = true
+                    toggleExpanded()
+                }
+            }
 
             // Bubble view draws the entire pill shape (circle when collapsed, elongated pill when expanded)
             val bubbleSize = dpToPx(96, context)
@@ -511,6 +561,9 @@ class OverlayService : Service(), LifecycleOwner {
 
             expandedCard.addView(pauseBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             expandedCard.addView(finishBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dpToPx(10, context)
+            })
+            expandedCard.addView(quizBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dpToPx(10, context)
             })
 
@@ -572,6 +625,19 @@ class OverlayService : Service(), LifecycleOwner {
             bubbleView.animateExpand(isExpanded)
 
             if (isExpanded) {
+                // Adjust visibility for Pomodoro mode
+                if (isPomodoroMode) {
+                    quizBtn.visibility = View.VISIBLE
+                    pauseBtn.visibility = View.GONE
+                    finishBtn.visibility = View.GONE
+                    statusText.text = "Time for a quick quiz?"
+                } else {
+                    quizBtn.visibility = View.GONE
+                    pauseBtn.visibility = View.VISIBLE
+                    finishBtn.visibility = View.VISIBLE
+                    statusText.text = if (isRecordingPaused) "Take your time" else "You're in focus mode"
+                }
+
                 // Show buttons with a slight delay so the pill has started growing
                 expandedCard.visibility = View.VISIBLE
                 expandedCard.alpha = 0f
@@ -580,6 +646,7 @@ class OverlayService : Service(), LifecycleOwner {
                     .setDuration(200)
                     .start()
             } else {
+                isPomodoroMode = false // Reset mode when collapsed
                 expandedCard.animate().alpha(0f)
                     .setDuration(150)
                     .withEndAction { expandedCard.visibility = View.GONE }
@@ -611,8 +678,13 @@ class CompanionBubbleView(
         context: Context,
         private val appLabel: String,
         private val faceTracking: Boolean,
+        private val pomodoroEnabled: Boolean,
+        private val pomodoroIntervalMinutes: Int,
         val onTap: () -> Unit
     ) : View(context) {
+
+        var onPomodoroSuggest: (() -> Unit)? = null
+
 
         private val density = context.resources.displayMetrics.density
         private val scaledDensity = context.resources.displayMetrics.scaledDensity
@@ -668,13 +740,19 @@ class CompanionBubbleView(
         fun updateTime(s: Int) {
             seconds = s
             val mins = s / 60
-            if (mins > 0 && mins % 15 == 0 && mins != lastMilestone) {
+            
+            if (pomodoroEnabled && mins > 0 && mins % pomodoroIntervalMinutes == 0 && mins != lastMilestone) {
+                lastMilestone = mins
+                vibrateMilestone()
+                // Auto-expand to suggest Pomodoro break
+                onPomodoroSuggest?.invoke()
+            } else if (mins > 0 && mins % 15 == 0 && mins != lastMilestone) {
+                // Flash purple circle for 6 seconds at 15-minute intervals if not pomodoro hit
                 lastMilestone = mins
                 milestoneFlashUntil = System.currentTimeMillis() + 6000
                 vibrateMilestone()
             }
             invalidate()
-
         }
         fun setPaused(paused: Boolean) {
             isPaused = paused
@@ -700,10 +778,11 @@ class CompanionBubbleView(
                 interpolator = if (expand) OvershootInterpolator(0.6f) else AccelerateDecelerateInterpolator()
                 addUpdateListener { anim ->
                     expandProgress = anim.animatedValue as Float
-                    // Update view height to accommodate the pill
+                    // Update view height to accommodate the pill, capped to leave room above nav bar
                     val baseSize = dpToPx(96f).toInt()
                     val extraH = (expandProgress * dpToPx(expandedExtraDp)).toInt()
-                    val newH = baseSize + extraH
+                    val screenH = context.resources.displayMetrics.heightPixels
+                    val newH = (baseSize + extraH).coerceAtMost(screenH - dpToPx(96f).toInt())
                     if (layoutParams != null && layoutParams.height != newH) {
                         layoutParams.height = newH
                         requestLayout()
@@ -807,12 +886,16 @@ class CompanionBubbleView(
             canvas.drawText(timeStr, cx, circleCy + dpToPx(18f), timePaint)
 
             // --- Recording indicator dot (bottom-right of circle area) ---
-            if (!isPaused && expandProgress < 0.3f) {
-                val dotBreathe = 0.4f + 0.6f * breathe
-                dotPaint.alpha = (dotBreathe * 255).toInt()
-                val dotX = cx + outerR * 0.77f
-                val dotY = circleCy + outerR * 0.77f
-                canvas.drawCircle(dotX, dotY, dpToPx(3f), dotPaint)
+            // Smoothly fades out as the pill expands (fully hidden by 30% expand)
+            if (!isPaused) {
+                val fadeAlpha = (1f - expandProgress * 3.33f).coerceIn(0f, 1f)
+                if (fadeAlpha > 0f) {
+                    val dotBreathe = 0.4f + 0.6f * breathe
+                    dotPaint.alpha = (fadeAlpha * dotBreathe * 255).toInt()
+                    val dotX = cx + outerR * 0.77f
+                    val dotY = circleCy + outerR * 0.77f
+                    canvas.drawCircle(dotX, dotY, dpToPx(3f), dotPaint)
+                }
             }
 
             // --- Expanded content drawn on canvas (status text) ---
@@ -864,6 +947,7 @@ class CompanionBubbleView(
         private var initialX = 0; private var initialY = 0; private var initialTouchX = 0f; private var initialTouchY = 0f; private var isTap = true; private var isDragging = false
         private val prefs: SharedPreferences = context.getSharedPreferences("guru_overlay_prefs", Context.MODE_PRIVATE)
         private val screenWidth: Int; private val screenHeight: Int
+        private fun dpToPx(dp: Int) = (dp * context.resources.displayMetrics.density).toInt()
         
         init {
             val dm = context.resources.displayMetrics
@@ -884,8 +968,8 @@ class CompanionBubbleView(
         private fun snapToEdge(v: View) {
             val bw = v.width.takeIf { it > 0 } ?: 130
             val cx = params.x + bw / 2
-            val tx = if (cx < screenWidth / 2) 16 else screenWidth - bw - 16
-            val ty = params.y.coerceIn(16, screenHeight - v.height - 64)
+            val tx = if (cx < screenWidth / 2) dpToPx(16) else screenWidth - bw - dpToPx(16)
+            val ty = params.y.coerceIn(dpToPx(16), screenHeight - v.height - dpToPx(64))
             
             val sx = params.x
             val sy = params.y

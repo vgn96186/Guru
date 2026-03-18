@@ -40,6 +40,7 @@ import {
 import { getDb } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
 import type { ContentType, Subject } from '../types';
+import { theme } from '../constants/theme';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'keypoints', label: 'Key Points' },
@@ -286,6 +287,8 @@ export default function SettingsScreen() {
   const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
   const [idleTimeout, setIdleTimeout] = useState('2');
   const [breakDuration, setBreakDuration] = useState('5');
+  const [pomodoroEnabled, setPomodoroEnabled] = useState(true);
+  const [pomodoroInterval, setPomodoroInterval] = useState('20');
   const [notifHour, setNotifHour] = useState('7');
   const [guruFrequency, setGuruFrequency] = useState<'rare' | 'normal' | 'frequent' | 'off'>(
     'normal',
@@ -371,6 +374,8 @@ export default function SettingsScreen() {
       setBlockedTypes(profile.blockedContentTypes ?? []);
       setIdleTimeout((profile.idleTimeoutMinutes ?? 2).toString());
       setBreakDuration((profile.breakDurationMinutes ?? 5).toString());
+      setPomodoroEnabled(profile.pomodoroEnabled ?? true);
+      setPomodoroInterval((profile.pomodoroIntervalMinutes ?? 20).toString());
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
@@ -434,6 +439,8 @@ export default function SettingsScreen() {
         blockedContentTypes: blockedTypes,
         idleTimeoutMinutes: Math.min(60, Math.max(1, parseInt(idleTimeout) || 2)),
         breakDurationMinutes: Math.min(30, Math.max(1, parseInt(breakDuration) || 5)),
+        pomodoroEnabled,
+        pomodoroIntervalMinutes: Math.min(60, Math.max(5, parseInt(pomodoroInterval) || 20)),
         notificationHour: Math.min(23, Math.max(0, parseInt(notifHour) || 7)),
         guruFrequency,
         focusSubjectIds,
@@ -887,6 +894,33 @@ export default function SettingsScreen() {
             keyboardType="number-pad"
             placeholderTextColor="#444"
           />
+        </Section>
+
+        <Section title="🍅 Pomodoro (Lecture Overlay)">
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Enable Pomodoro Suggestion</Text>
+              <Text style={styles.hint}>
+                Auto-expand the overlay every interval to suggest a quick memory quiz break.
+              </Text>
+            </View>
+            <Switch
+              value={pomodoroEnabled}
+              onValueChange={setPomodoroEnabled}
+              trackColor={{ true: '#6C63FF', false: '#333' }}
+              thumbColor="#fff"
+            />
+          </View>
+          <Label text="Pomodoro interval (minutes)" />
+          <TextInput
+            style={styles.input}
+            value={pomodoroInterval}
+            onChangeText={setPomodoroInterval}
+            keyboardType="number-pad"
+            placeholderTextColor="#444"
+            editable={pomodoroEnabled}
+          />
+          <Text style={styles.hint}>Suggested: 20-30 minutes for optimal focus.</Text>
         </Section>
 
         <Section title="🗑️ Data">

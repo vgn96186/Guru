@@ -159,6 +159,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
     CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
   , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'
   , backup_directory_uri TEXT
+  , pomodoro_enabled INTEGER NOT NULL DEFAULT 1
+  , pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20
 )`;
 
 export const CREATE_BRAIN_DUMPS = `

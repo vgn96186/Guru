@@ -12,12 +12,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../navigation/types';
 import { analyzeTranscript, generateADHDNote } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { theme } from '../constants/theme';
 
-export default function ManualNoteCreationScreen() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<RootStackParamList, 'ManualNoteCreation'>) {
   const navigation = useNavigation();
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,8 +55,9 @@ export default function ManualNoteCreationScreen() {
       Alert.alert('Success', 'Notes generated and saved successfully!', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-    } catch (e: any) {
-      Alert.alert('Error', e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      Alert.alert('Error', message);
     } finally {
       setIsProcessing(false);
     }

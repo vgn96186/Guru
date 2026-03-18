@@ -41,16 +41,9 @@ export async function transcribeAudio(opts: {
     audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`,
   );
   if (!fileInfo?.exists || fileInfo.size === 0) {
-    if (__DEV__) console.warn('[Transcription] File does not exist or is empty:', audioFilePath);
-    return {
-      subject: 'Unknown',
-      topics: [],
-      keyConcepts: [],
-      lectureSummary: 'No audio recorded (empty file)',
-      estimatedConfidence: 1,
-      transcript: '',
-      highYieldPoints: [],
-    };
+    throw new Error(
+      `Audio file is missing or empty: ${audioFilePath}. Check that recording started correctly.`,
+    );
   }
 
   onProgress?.({ stage: 'transcribing', message: 'Transcribing lecture audio' });

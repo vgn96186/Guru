@@ -7,6 +7,7 @@ const linking: LinkingOptions<RootStackParamList> = {
     screens: {
       CheckIn: 'check-in',
       BrainDumpReview: 'brain-dump-review',
+      PomodoroQuiz: 'pomodoro',
       Tabs: {
         screens: {
           HomeTab: {

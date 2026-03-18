@@ -280,6 +280,7 @@ export interface LectureHistoryItem {
   durationMinutes: number | null;
   confidence: number;
   createdAt: number;
+  recordingPath?: string | null;
 }
 
 export async function getLectureNoteById(noteId: number): Promise<LectureHistoryItem | null> {
@@ -296,8 +297,9 @@ export async function getLectureNoteById(noteId: number): Promise<LectureHistory
     duration_minutes: number | null;
     confidence: number | null;
     created_at: number;
+    recording_path: string | null;
   }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at, ln.recording_path
      FROM lecture_notes ln
      LEFT JOIN subjects s ON ln.subject_id = s.id
      WHERE ln.id = ?
@@ -319,6 +321,7 @@ export async function getLectureNoteById(noteId: number): Promise<LectureHistory
     durationMinutes: row.duration_minutes,
     confidence: row.confidence ?? 2,
     createdAt: row.created_at,
+    recordingPath: row.recording_path,
   };
 }
 
@@ -336,8 +339,9 @@ export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[
     duration_minutes: number | null;
     confidence: number | null;
     created_at: number;
+    recording_path: string | null;
   }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at, ln.recording_path
      FROM lecture_notes ln
      LEFT JOIN subjects s ON ln.subject_id = s.id
      ORDER BY ln.created_at DESC
@@ -357,6 +361,7 @@ export async function getLectureHistory(limit = 50): Promise<LectureHistoryItem[
     durationMinutes: r.duration_minutes,
     confidence: r.confidence ?? 2,
     createdAt: r.created_at,
+    recordingPath: r.recording_path,
   }));
 }
 
@@ -375,8 +380,9 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
     duration_minutes: number | null;
     confidence: number | null;
     created_at: number;
+    recording_path: string | null;
   }>(
-    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at
+    `SELECT ln.id, ln.subject_id, s.name as subject_name, ln.note, ln.transcript, ln.summary, ln.topics_json, ln.app_name, ln.duration_minutes, ln.confidence, ln.created_at, ln.recording_path
      FROM lecture_notes ln
      LEFT JOIN subjects s ON ln.subject_id = s.id
      WHERE ln.note LIKE ? OR ln.transcript LIKE ? OR ln.summary LIKE ? OR ln.topics_json LIKE ?
@@ -397,6 +403,7 @@ export async function searchLectureNotes(query: string, limit = 20): Promise<Lec
     durationMinutes: r.duration_minutes,
     confidence: r.confidence ?? 2,
     createdAt: r.created_at,
+    recordingPath: r.recording_path,
   }));
 }
 

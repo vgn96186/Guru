@@ -8,6 +8,7 @@ let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
 let llamaContextPromise: Promise<LlamaContext> | null = null;
 let contextInUse = false; // semaphore: true while a generation is in flight
+let appStateListenerRegistered = false;
 
 async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
   if (llamaContext && currentLlamaPath === modelPath) {
@@ -50,52 +51,54 @@ export async function releaseLlamaContext(): Promise<void> {
 }
 
 // Release the 200 MB+ LLM context when app goes to background to prevent OOM kills.
-(function setupAppStateListener() {
+// Guard prevents duplicate listeners on hot reloads in dev.
+if (!appStateListenerRegistered) {
+  appStateListenerRegistered = true;
   AppState.addEventListener('change', async (state: AppStateStatus) => {
     if (state === 'background' || state === 'inactive') {
       await releaseLlamaContext();
     }
   });
-})();
+}
 
 async function callLocalLLM(messages: Message[], modelPath: string, textMode = false): Promise<string> {
   const ctx = await getLlamaContext(modelPath);
   contextInUse = true;
   try {
-  let prompt = '';
-  const isQwen = modelPath.toLowerCase().includes('qwen');
+    let prompt = '';
+    const isQwen = modelPath.toLowerCase().includes('qwen');
 
-  if (isQwen) {
-    // ChatML format for Qwen
-    for (const m of messages) {
-      prompt += `<|im_start|>${m.role}\n${m.content}<|im_end|>\n`;
+    if (isQwen) {
+      // ChatML format for Qwen
+      for (const m of messages) {
+        prompt += `<|im_start|>${m.role}\n${m.content}<|im_end|>\n`;
+      }
+      prompt += `<|im_start|>assistant\n`;
+    } else {
+      // Format as Llama-3 instruction format
+      for (const m of messages) {
+        prompt += `<|start_header_id|>${m.role}<|end_header_id|>\n\n${m.content}<|eot_id|>\n`;
+      }
+      prompt += `<|start_header_id|>assistant<|end_header_id|>\n\n`;
     }
-    prompt += `<|im_start|>assistant\n`;
-  } else {
-    // Format as Llama-3 instruction format
-    for (const m of messages) {
-      prompt += `<|start_header_id|>${m.role}<|end_header_id|>\n\n${m.content}<|eot_id|>\n`;
+
+    if (!textMode) {
+      // Force start of JSON object
+      prompt += `{`;
     }
-    prompt += `<|start_header_id|>assistant<|end_header_id|>\n\n`;
-  }
 
-  if (!textMode) {
-    // Force start of JSON object
-    prompt += `{`;
-  }
+    const result = await ctx.completion({
+      prompt,
+      n_predict: 1500,
+      temperature: 0.7,
+      top_p: 0.9,
+    });
 
-  const result = await ctx.completion({
-    prompt,
-    n_predict: 1500,
-    temperature: 0.7,
-    top_p: 0.9,
-  });
-
-  let text = result.text;
-  if (!textMode) {
-    text = `{${text}`;
-  }
-  return text;
+    let text = result.text;
+    if (!textMode) {
+      text = `{${text}`;
+    }
+    return text;
   } finally {
     contextInUse = false;
   }

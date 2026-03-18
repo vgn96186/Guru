@@ -130,39 +130,38 @@ export default function FlaggedReviewScreen() {
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const load = useCallback(async (active: boolean) => {
-    const items = await getFlaggedContent();
-    if (active) setItems(items);
-  }, []);
-
   useEffect(() => {
     let active = true;
-    void load(active);
+    getFlaggedContent()
+      .then((nextItems) => {
+        if (active) setItems(nextItems);
+      })
+      .catch(() => {
+        if (active) setItems([]);
+      });
     return () => {
       active = false;
     };
-  }, [load]);
+  }, []);
 
-  const handleUnflag = useCallback(
-    (item: FlaggedItem) => {
-      Alert.alert(
-        'Remove flag?',
-        `Unflag "${item.topicName}" (${CONTENT_TYPE_LABELS[item.contentType]})?`,
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Unflag',
-            style: 'destructive',
-            onPress: async () => {
-              await setContentFlagged(item.topicId, item.contentType, false);
-              void load(true);
-            },
+  const handleUnflag = useCallback((item: FlaggedItem) => {
+    Alert.alert(
+      'Remove flag?',
+      `Unflag "${item.topicName}" (${CONTENT_TYPE_LABELS[item.contentType]})?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Unflag',
+          style: 'destructive',
+          onPress: async () => {
+            await setContentFlagged(item.topicId, item.contentType, false);
+            const nextItems = await getFlaggedContent();
+            setItems(nextItems);
           },
-        ],
-      );
-    },
-    [load],
-  );
+        },
+      ],
+    );
+  }, []);
 
   const toggleExpand = useCallback((key: string) => {
     setExpanded((prev) => (prev === key ? null : key));

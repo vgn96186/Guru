@@ -7,9 +7,21 @@ interface Props {
 }
 
 const MESSAGE_VARIATIONS: Record<string, string[]> = {
-  'Guru is planning your session...': ['Analyzing your weak topics...', 'Selecting optimal content...', 'Building your study agenda...'],
-  'Fetching content...': ['Consulting medical knowledge base...', 'Generating study material...', 'Preparing your next card...'],
-  'Loading your progress...': ['Syncing your study data...', 'Calculating streak status...', 'Preparing dashboard...'],
+  'Guru is planning your session...': [
+    'Analyzing your weak topics...',
+    'Selecting optimal content...',
+    'Building your study agenda...',
+  ],
+  'Fetching content...': [
+    'Consulting medical knowledge base...',
+    'Generating study material...',
+    'Preparing your next card...',
+  ],
+  'Loading your progress...': [
+    'Syncing your study data...',
+    'Calculating streak status...',
+    'Preparing dashboard...',
+  ],
   'Loading...': ['Thinking...', 'Processing...', 'Almost there...'],
 };
 
@@ -47,7 +59,7 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
     );
     anim.start();
     return () => anim.stop();
-  }, []);
+  }, [opacity, scale]);
 
   return (
     <View style={styles.container}>

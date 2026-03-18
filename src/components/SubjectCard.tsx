@@ -68,7 +68,7 @@ export default React.memo(function SubjectCard({
         }),
       ]).start();
     }
-  }, [pct]);
+  }, [pct, progressAnim, scaleAnim]);
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 100],

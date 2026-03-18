@@ -37,7 +37,7 @@ export default function StartButton({
     const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(scale, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1.0,  duration: 1200, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.0, duration: 1200, useNativeDriver: true }),
       ]),
     );
     const glowAnim = Animated.loop(
@@ -48,8 +48,11 @@ export default function StartButton({
     );
     pulse.start();
     glowAnim.start();
-    return () => { pulse.stop(); glowAnim.stop(); };
-  }, [disabled]);
+    return () => {
+      pulse.stop();
+      glowAnim.stop();
+    };
+  }, [disabled, glow, scale]);
 
   return (
     <Animated.View style={{ transform: [{ scale }] }}>
@@ -63,14 +66,13 @@ export default function StartButton({
           accessibilityLabel="Start study session"
           accessibilityState={{ disabled }}
           testID="start-session-btn"
-          style={[styles.button, { backgroundColor: disabled ? theme.colors.cardHover : color }, disabled && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            { backgroundColor: disabled ? theme.colors.cardHover : color },
+            disabled && styles.buttonDisabled,
+          ]}
         >
-          <Text
-            style={styles.label}
-            numberOfLines={2}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
-          >
+          <Text style={styles.label} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.75}>
             {disabled ? disabledLabel : label}
           </Text>
           {sublabel ? (

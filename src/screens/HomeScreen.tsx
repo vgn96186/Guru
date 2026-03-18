@@ -26,9 +26,8 @@ import LoadingOrb from '../components/LoadingOrb';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
 import { getSubjectById, getSubjectByName } from '../db/queries/topics';
-import { connectToRoom } from '../services/deviceSyncService';
-import * as DocumentPicker from 'expo-document-picker';
 import { saveLectureTranscript } from '../db/queries/aiCache';
+import { connectToRoom } from '../services/deviceSyncService';
 import { buildQuickLectureNote, transcribeAudio } from '../services/transcriptionService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
@@ -39,6 +38,7 @@ import {
 import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 import type { Mood } from '../types';
+import * as DocumentPicker from 'expo-document-picker';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 

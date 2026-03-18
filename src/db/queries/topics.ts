@@ -2,6 +2,7 @@ import { getDb, runInTransaction, todayStr } from '../database';
 import type { Subject, Topic, TopicProgress, TopicWithProgress } from '../../types';
 import { getInitialCard, reviewCardFromConfidence } from '../../services/fsrsService';
 import type { Card } from 'ts-fsrs';
+import type { SQLiteDatabase } from 'expo-sqlite';
 
 // Removed SM-2 srsNextDate in favor of FSRS
 
@@ -157,6 +158,93 @@ export async function getTopicById(id: number): Promise<TopicWithProgress | null
   return mapTopicRow(r);
 }
 
+export async function updateTopicProgressInTx(
+  tx: SQLiteDatabase,
+  topicId: number,
+  status: TopicProgress['status'],
+  confidence: number,
+  xpToAdd: number,
+  noteToAppend?: string,
+  now = Date.now(),
+): Promise<void> {
+  const existing = await tx.getFirstAsync<any>(
+    'SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?',
+    [topicId],
+  );
+
+  let card: Card;
+  if (existing && existing.fsrs_last_review) {
+    card = {
+      due: new Date(existing.fsrs_due),
+      stability: existing.fsrs_stability,
+      difficulty: existing.fsrs_difficulty,
+      elapsed_days: existing.fsrs_elapsed_days,
+      scheduled_days: existing.fsrs_scheduled_days,
+      reps: existing.fsrs_reps,
+      lapses: existing.fsrs_lapses,
+      state: existing.fsrs_state,
+      last_review: new Date(existing.fsrs_last_review),
+    };
+  } else {
+    card = getInitialCard();
+  }
+
+  const log = reviewCardFromConfidence(card, confidence, new Date());
+  const updatedCard = log.card;
+  const nextReview = updatedCard.due.toISOString().slice(0, 10);
+
+  await tx.runAsync(
+    `INSERT INTO topic_progress (
+       topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
+       fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review,
+       user_notes
+     )
+     VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(topic_id) DO UPDATE SET
+       status = excluded.status,
+       confidence = excluded.confidence,
+       last_studied_at = excluded.last_studied_at,
+       times_studied = times_studied + 1,
+       xp_earned = xp_earned + excluded.xp_earned,
+       next_review_date = excluded.next_review_date,
+       fsrs_due = excluded.fsrs_due,
+       fsrs_stability = excluded.fsrs_stability,
+       fsrs_difficulty = excluded.fsrs_difficulty,
+       fsrs_elapsed_days = excluded.fsrs_elapsed_days,
+       fsrs_scheduled_days = excluded.fsrs_scheduled_days,
+       fsrs_reps = excluded.fsrs_reps,
+       fsrs_lapses = excluded.fsrs_lapses,
+       fsrs_state = excluded.fsrs_state,
+       fsrs_last_review = excluded.fsrs_last_review,
+       user_notes = CASE 
+         WHEN excluded.user_notes IS NOT NULL AND excluded.user_notes != '' THEN 
+           CASE WHEN user_notes IS NULL OR user_notes = '' 
+                THEN excluded.user_notes 
+                ELSE user_notes || '\n\n---\n' || excluded.user_notes 
+           END
+         ELSE user_notes 
+       END`,
+    [
+      topicId,
+      status,
+      confidence,
+      now,
+      xpToAdd,
+      nextReview,
+      updatedCard.due.toISOString(),
+      updatedCard.stability,
+      updatedCard.difficulty,
+      updatedCard.elapsed_days,
+      updatedCard.scheduled_days,
+      updatedCard.reps,
+      updatedCard.lapses,
+      updatedCard.state,
+      updatedCard.last_review?.toISOString() ?? null,
+      noteToAppend ?? null,
+    ],
+  );
+}
+
 export async function updateTopicProgress(
   topicId: number,
   status: TopicProgress['status'],
@@ -164,84 +252,8 @@ export async function updateTopicProgress(
   xpToAdd: number,
   noteToAppend?: string,
 ): Promise<void> {
-  const now = Date.now();
   await runInTransaction(async (tx) => {
-    const existing = await tx.getFirstAsync<any>(
-      'SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?',
-      [topicId],
-    );
-
-    let card: Card;
-    if (existing && existing.fsrs_last_review) {
-      card = {
-        due: new Date(existing.fsrs_due),
-        stability: existing.fsrs_stability,
-        difficulty: existing.fsrs_difficulty,
-        elapsed_days: existing.fsrs_elapsed_days,
-        scheduled_days: existing.fsrs_scheduled_days,
-        reps: existing.fsrs_reps,
-        lapses: existing.fsrs_lapses,
-        state: existing.fsrs_state,
-        last_review: new Date(existing.fsrs_last_review),
-      };
-    } else {
-      card = getInitialCard();
-    }
-
-    const log = reviewCardFromConfidence(card, confidence, new Date());
-    const updatedCard = log.card;
-    const nextReview = updatedCard.due.toISOString().slice(0, 10);
-
-    await tx.runAsync(
-      `INSERT INTO topic_progress (
-         topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date,
-         fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review,
-         user_notes
-       )
-       VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(topic_id) DO UPDATE SET
-         status = excluded.status,
-         confidence = excluded.confidence,
-         last_studied_at = excluded.last_studied_at,
-         times_studied = times_studied + 1,
-         xp_earned = xp_earned + excluded.xp_earned,
-         next_review_date = excluded.next_review_date,
-         fsrs_due = excluded.fsrs_due,
-         fsrs_stability = excluded.fsrs_stability,
-         fsrs_difficulty = excluded.fsrs_difficulty,
-         fsrs_elapsed_days = excluded.fsrs_elapsed_days,
-         fsrs_scheduled_days = excluded.fsrs_scheduled_days,
-         fsrs_reps = excluded.fsrs_reps,
-         fsrs_lapses = excluded.fsrs_lapses,
-         fsrs_state = excluded.fsrs_state,
-         fsrs_last_review = excluded.fsrs_last_review,
-         user_notes = CASE 
-           WHEN excluded.user_notes IS NOT NULL AND excluded.user_notes != '' THEN 
-             CASE WHEN user_notes IS NULL OR user_notes = '' 
-                  THEN excluded.user_notes 
-                  ELSE user_notes || '\n\n---\n' || excluded.user_notes 
-             END
-           ELSE user_notes 
-         END`,
-      [
-        topicId,
-        status,
-        confidence,
-        now,
-        xpToAdd,
-        nextReview,
-        updatedCard.due.toISOString(),
-        updatedCard.stability,
-        updatedCard.difficulty,
-        updatedCard.elapsed_days,
-        updatedCard.scheduled_days,
-        updatedCard.reps,
-        updatedCard.lapses,
-        updatedCard.state,
-        updatedCard.last_review?.toISOString() ?? null,
-        noteToAppend ?? null,
-      ],
-    );
+    await updateTopicProgressInTx(tx, topicId, status, confidence, xpToAdd, noteToAppend);
   });
 }
 

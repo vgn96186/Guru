@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { updateTopicProgress } from '../../db/queries/topics';
+import { updateTopicProgressInTx } from '../../db/queries/topics';
 import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
 
 /**
@@ -147,5 +147,12 @@ async function applyLectureProgressToTopic(
   summary?: string,
 ) {
   const status = 'seen';
-  await updateTopicProgress(topicId, status, confidence, 0, summary);
+  await updateTopicProgressInTx(
+    db,
+    topicId,
+    status,
+    confidence,
+    0,
+    isDirectMatch ? summary : undefined,
+  );
 }

@@ -1,11 +1,11 @@
 import { getDb, nowTs } from '../../db/database';
-import { grantXp } from '../xpService';
 import { markTopicsFromLecture } from '../transcription/matching';
 import { renameRecordingToLectureIdentity, saveTranscriptToFile } from '../transcriptStorage';
 import { embeddingToBlob, generateEmbedding } from '../ai/embeddingService';
 import { runAutoPublicBackup } from '../backgroundBackupService';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
 import { updateSessionRecordingPath } from '../../db/queries/externalLogs';
+import { addXpInTx } from '../../db/queries/progress';
 
 /** Dictionary for fuzzy subject name mapping */
 const SUBJECT_MAPPINGS: Record<string, string> = {
@@ -108,28 +108,26 @@ export async function saveLecturePersistence(opts: {
     }
   }
 
-  // markTopicsFromLecture calls updateTopicProgress which uses runInTransaction internally.
-  // Do NOT wrap in an outer BEGIN — that causes "cannot start a transaction within a transaction".
-  // Instead, run topic marking first, then the note insert atomically.
   try {
-    if (analysis.topics.length > 0 || analysis.lectureSummary) {
-      await markTopicsFromLecture(
-        db,
-        analysis.topics,
-        analysis.estimatedConfidence,
-        analysis.subject,
-        analysis.lectureSummary,
-        embeddingForMatching,
-      );
-      if (analysis.topics.length > 0) await grantXp(analysis.topics.length * 8);
-    }
-
     const subjectId = await findSubjectId(analysis.subject);
 
-    // Atomically insert the note and update the log status
     let noteId!: number;
     await db.execAsync('BEGIN IMMEDIATE');
     try {
+      if (analysis.topics.length > 0 || analysis.lectureSummary) {
+        await markTopicsFromLecture(
+          db,
+          analysis.topics,
+          analysis.estimatedConfidence,
+          analysis.subject,
+          analysis.lectureSummary,
+          embeddingForMatching,
+        );
+        if (analysis.topics.length > 0) {
+          await addXpInTx(db, analysis.topics.length * 8);
+        }
+      }
+
       const result = await db.runAsync(
         `INSERT INTO lecture_notes (
            subject_id, note, created_at, transcript, summary, topics_json, app_name,

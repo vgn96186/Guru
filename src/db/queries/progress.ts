@@ -1,4 +1,5 @@
 import { getDb, runInTransaction, todayStr, dateStr } from '../database';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { MS_PER_DAY, INTERVALS } from '../../constants/time';
 import type {
   UserProfile,
@@ -134,8 +135,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     openrouterKey: r.openrouter_key ?? '',
     groqApiKey: r.groq_api_key ?? '',
     huggingFaceToken: r.huggingface_token ?? '',
-    huggingFaceTranscriptionModel:
-      r.huggingface_transcription_model ?? 'openai/whisper-large-v3',
+    huggingFaceTranscriptionModel: r.huggingface_transcription_model ?? 'openai/whisper-large-v3',
     transcriptionProvider:
       r.transcription_provider === 'groq' ||
       r.transcription_provider === 'huggingface' ||
@@ -310,6 +310,47 @@ export async function addXp(
     showToast(`Failed to update XP: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }
+}
+
+export async function addXpInTx(
+  tx: SQLiteDatabase,
+  amount: number,
+): Promise<{ newTotal: number; leveledUp: boolean; newLevel: number }> {
+  if (amount <= 0) {
+    const row = await tx.getFirstAsync<{ total_xp: number; current_level: number }>(
+      'SELECT total_xp, current_level FROM user_profile WHERE id = 1',
+    );
+    return {
+      newTotal: row?.total_xp ?? 0,
+      leveledUp: false,
+      newLevel: row?.current_level ?? 1,
+    };
+  }
+
+  const currentProfile = await tx.getFirstAsync<{ total_xp: number; current_level: number }>(
+    'SELECT total_xp, current_level FROM user_profile WHERE id = 1',
+  );
+  const oldLevel = currentProfile?.current_level ?? 1;
+
+  await tx.runAsync('UPDATE user_profile SET total_xp = total_xp + ? WHERE id = 1', [amount]);
+  const row = await tx.getFirstAsync<{ total_xp: number }>(
+    'SELECT total_xp FROM user_profile WHERE id = 1',
+  );
+  const newTotal = row?.total_xp ?? 0;
+  let newLevel = 1;
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (newTotal >= LEVELS[i].xpRequired) {
+      newLevel = LEVELS[i].level;
+      break;
+    }
+  }
+  await tx.runAsync('UPDATE user_profile SET current_level = ? WHERE id = 1', [newLevel]);
+
+  return {
+    newTotal,
+    leveledUp: newLevel > oldLevel,
+    newLevel,
+  };
 }
 
 export async function updateStreak(studiedToday: boolean, useShield = false): Promise<void> {

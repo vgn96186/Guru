@@ -37,6 +37,8 @@ export interface LecturePipelineProgress {
 
 export { startRecordingHealthCheck, stopRecordingHealthCheck, getRecordingInfo };
 
+const inFlightLecturePipelines = new Set<number>();
+
 interface SaveLectureAnalysisQuickOpts {
   analysis: LectureAnalysis;
   appName: string;
@@ -148,6 +150,10 @@ export async function runFullTranscriptionPipeline(opts: {
   onProgress?: (progress: LecturePipelineProgress) => void;
 }) {
   const { recordingPath, appName, durationMinutes, logId, onProgress } = opts;
+  if (inFlightLecturePipelines.has(logId)) {
+    return { success: false, error: 'Transcription already in progress for this lecture' };
+  }
+  inFlightLecturePipelines.add(logId);
 
   try {
     const profile = await profileRepository.getProfile();
@@ -192,6 +198,8 @@ export async function runFullTranscriptionPipeline(opts: {
     await updateSessionTranscriptionStatus(logId, 'failed', errMsg);
     await notifyTranscriptionFailure(appName, durationMinutes);
     return { success: false, error: errMsg };
+  } finally {
+    inFlightLecturePipelines.delete(logId);
   }
 }
 

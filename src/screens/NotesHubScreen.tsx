@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -51,7 +52,7 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
+import { transcribeAudio, generateADHDNote, type LectureAnalysis } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getFailedOrPendingTranscriptions, type ExternalAppLog } from '../db/queries/externalLogs';
@@ -67,6 +68,9 @@ export default function NotesHubScreen() {
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const isRecoveringBackground = useAppStore((s) => s.isRecoveringBackground);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+  const [uploadResult, setUploadResult] = useState<LectureAnalysis | null>(null);
+  const [uploadConfidence, setUploadConfidence] = useState<1 | 2 | 3 | null>(null);
+  const [isSavingUpload, setIsSavingUpload] = useState(false);
   const [pendingSessions, setPendingSessions] = useState<ExternalAppLog[]>([]);
   const [isRetrying, setIsRetrying] = useState<number | null>(null);
   const [activePlaybackId, setActivePlaybackId] = useState<number | null>(null);
@@ -147,25 +151,41 @@ export default function NotesHubScreen() {
       if (!hasTranscript || !hasMeaningfulSummary) {
         throw new Error('No usable lecture content was detected in this recording.');
       }
-      const note = await generateADHDNote(analysis);
-      const sub = await getSubjectByName(analysis.subject);
-      await saveLectureTranscript({
-        subjectId: sub?.id ?? null,
-        note,
-        transcript: analysis.transcript,
-        summary: analysis.lectureSummary,
-        topics: analysis.topics,
-        appName: 'Upload',
-        confidence: analysis.estimatedConfidence,
-        embedding: analysis.embedding,
-      });
-      refreshProfile();
-      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
-      loadData();
+      setUploadResult(analysis);
+      setUploadConfidence(analysis.estimatedConfidence as 1 | 2 | 3);
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
       setIsTranscribingUpload(false);
+    }
+  };
+
+  const handleSaveUpload = async () => {
+    if (!uploadResult) return;
+    setIsSavingUpload(true);
+    try {
+      const finalConfidence = uploadConfidence ?? (uploadResult.estimatedConfidence as 1 | 2 | 3);
+      const analysisToSave = { ...uploadResult, estimatedConfidence: finalConfidence };
+      const note = await generateADHDNote(analysisToSave);
+      const sub = await getSubjectByName(analysisToSave.subject);
+      await saveLectureTranscript({
+        subjectId: sub?.id ?? null,
+        note,
+        transcript: analysisToSave.transcript,
+        summary: analysisToSave.lectureSummary,
+        topics: analysisToSave.topics,
+        appName: 'Upload',
+        confidence: finalConfidence,
+        embedding: analysisToSave.embedding,
+      });
+      refreshProfile();
+      setUploadResult(null);
+      setUploadConfidence(null);
+      loadData();
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setIsSavingUpload(false);
     }
   };
   const [stats, setStats] = useState<NotesStats>({ lectureCount: 0, topicNoteCount: 0 });
@@ -518,6 +538,72 @@ export default function NotesHubScreen() {
           )}
         </ScrollView>
       </ResponsiveContainer>
+
+      {/* Upload Review Modal */}
+      <Modal visible={!!uploadResult} transparent animationType="slide" onRequestClose={() => setUploadResult(null)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <Text style={styles.modalTitle}>Lecture Transcribed</Text>
+
+            {uploadResult && uploadResult.topics.length > 0 ? (
+              <>
+                <View style={styles.modalSubjectChip}>
+                  <Text style={styles.modalSubjectText}>{uploadResult.subject}</Text>
+                </View>
+                <Text style={styles.modalSummary} numberOfLines={4}>
+                  {uploadResult.lectureSummary}
+                </Text>
+                <Text style={styles.modalSectionLabel}>TOPICS DETECTED</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.topicScroll}>
+                  <View style={styles.topicRow}>
+                    {uploadResult.topics.map((t, i) => (
+                      <View key={i} style={styles.topicPill}>
+                        <Text style={styles.topicPillText}>{t}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+                <Text style={styles.modalSectionLabel}>YOUR CONFIDENCE LEVEL</Text>
+                <View style={styles.confidenceRow}>
+                  {([1, 2, 3] as const).map((lvl) => {
+                    const colors = { 1: theme.colors.error, 2: theme.colors.warning, 3: theme.colors.success };
+                    const labels = { 1: 'Introduced', 2: 'Understood', 3: 'Confident' };
+                    const selected = (uploadConfidence ?? uploadResult.estimatedConfidence) === lvl;
+                    return (
+                      <TouchableOpacity
+                        key={lvl}
+                        style={[styles.confOption, selected && { borderColor: colors[lvl], backgroundColor: colors[lvl] + '22' }]}
+                        onPress={() => setUploadConfidence(lvl)}
+                      >
+                        <Text style={[styles.confOptionText, selected && { color: colors[lvl] }]}>{labels[lvl]}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            ) : (
+              <View style={styles.noTopicsBlock}>
+                <Text style={styles.noTopicsIcon}>🔇</Text>
+                <Text style={styles.noTopicsText}>No medical topics detected in this recording.</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.modalSaveBtn, isSavingUpload && { opacity: 0.6 }]}
+              onPress={handleSaveUpload}
+              disabled={isSavingUpload || !uploadResult?.topics.length}
+              activeOpacity={0.8}
+            >
+              {isSavingUpload
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.modalSaveBtnText}>Save to Notes Vault</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalDismissBtn} onPress={() => { setUploadResult(null); setUploadConfidence(null); }}>
+              <Text style={styles.modalDismissText}>Discard</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -684,4 +770,26 @@ const styles = StyleSheet.create({
   topicSubject: { color: '#8B86FF', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
   topicTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
   topicPreview: { color: '#B5B5C2', fontSize: 13, lineHeight: 19 },
+  // Upload review modal
+  modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: theme.colors.panel, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, gap: 12 },
+  modalTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  modalSubjectChip: { alignSelf: 'flex-start', backgroundColor: theme.colors.primary + '22', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: theme.colors.primary + '66' },
+  modalSubjectText: { color: theme.colors.primary, fontWeight: '700', fontSize: 13 },
+  modalSummary: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20 },
+  modalSectionLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 4 },
+  topicScroll: { maxHeight: 44 },
+  topicRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap' },
+  topicPill: { backgroundColor: theme.colors.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: theme.colors.border },
+  topicPillText: { color: theme.colors.textPrimary, fontSize: 13 },
+  confidenceRow: { flexDirection: 'row', gap: 8 },
+  confOption: { flex: 1, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, alignItems: 'center' },
+  confOptionText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
+  noTopicsBlock: { alignItems: 'center', paddingVertical: 24, gap: 8 },
+  noTopicsIcon: { fontSize: 36 },
+  noTopicsText: { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center' },
+  modalSaveBtn: { backgroundColor: theme.colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 4 },
+  modalSaveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  modalDismissBtn: { alignItems: 'center', paddingVertical: 8 },
+  modalDismissText: { color: theme.colors.textMuted, fontSize: 14 },
 });

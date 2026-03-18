@@ -93,9 +93,7 @@ export async function saveLecturePersistence(opts: {
     topics: analysis.topics,
   };
   const transcriptUri = await saveTranscriptToFile(analysis.transcript || '', lectureIdentity);
-  const resolvedRecordingPath = opts.recordingPath
-    ? await renameRecordingToLectureIdentity(opts.recordingPath, lectureIdentity)
-    : null;
+  const originalRecordingPath = opts.recordingPath ?? null;
 
   // Compute embedding before the transaction so we don't block the UI with AI/network inside BEGIN
   let embeddingForMatching: number[] | null = opts.embedding ?? null;
@@ -145,7 +143,7 @@ export async function saveLecturePersistence(opts: {
           opts.durationMinutes,
           analysis.estimatedConfidence,
           embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
-          resolvedRecordingPath,
+          originalRecordingPath,
         ],
       );
       noteId = result.lastInsertRowId;
@@ -159,8 +157,18 @@ export async function saveLecturePersistence(opts: {
       throw innerErr;
     }
 
-    if (resolvedRecordingPath) {
-      await updateSessionRecordingPath(opts.logId, resolvedRecordingPath);
+    if (originalRecordingPath) {
+      const renamedRecordingPath = await renameRecordingToLectureIdentity(
+        originalRecordingPath,
+        lectureIdentity,
+      );
+      if (renamedRecordingPath !== originalRecordingPath) {
+        await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
+          renamedRecordingPath,
+          noteId,
+        ]);
+        await updateSessionRecordingPath(opts.logId, renamedRecordingPath);
+      }
     }
 
     // Notify UI to refresh stats and progress

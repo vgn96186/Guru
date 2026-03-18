@@ -4,7 +4,12 @@
  * device speaker on so the mic can capture the lecture.
  */
 import { Linking, Platform, Alert } from 'react-native';
-import { startExternalAppSession } from '../db/queries/externalLogs';
+import {
+  finishExternalAppSession,
+  startExternalAppSession,
+  updateSessionRecordingPath,
+  updateSessionTranscriptionStatus,
+} from '../db/queries/externalLogs';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lectureSessionMonitor';
 import { useAppStore } from '../store/useAppStore';
 import {
@@ -102,6 +107,8 @@ async function _launchMedicalAppInner(
     }
   }
 
+  let logId: number | undefined;
+
   if (installed) {
     try {
       let recordingPath: string | undefined;
@@ -146,12 +153,10 @@ async function _launchMedicalAppInner(
               }
             : undefined,
         );
+        logId = await startExternalAppSession(app.name, recordingPath);
       } catch (e) {
         console.warn('[AppLauncher] Recording start failed:', e);
-        Alert.alert(
-          'Recording Failed',
-          'Could not start background recording. Please try again.',
-        );
+        Alert.alert('Recording Failed', 'Could not start background recording. Please try again.');
         return false;
       }
 
@@ -173,7 +178,6 @@ async function _launchMedicalAppInner(
 
       const opened = await launchApp(targetPackage);
       if (opened) {
-        await startExternalAppSession(app.name, recordingPath);
         return true;
       } else {
         throw new Error(`Could not launch ${app.name}.`);
@@ -183,16 +187,33 @@ async function _launchMedicalAppInner(
       Alert.alert('Launch Error', `Failed to open ${app.name}: ${err?.message || 'Unknown error'}`);
 
       stopRecordingHealthCheck();
+      let finalRecordingPath: string | null = null;
       try {
-        await nativeStopRecording();
+        finalRecordingPath = await nativeStopRecording();
       } catch (stopErr) {
         console.warn('[AppLauncher] Failed to stop recording after launch error:', stopErr);
+      }
+      try {
+        if (typeof logId === 'number') {
+          if (finalRecordingPath) {
+            await updateSessionRecordingPath(logId, finalRecordingPath);
+          }
+          await finishExternalAppSession(logId, 0, 'Launch failed before lecture app opened');
+          await updateSessionTranscriptionStatus(
+            logId,
+            'no_audio',
+            err?.message || 'Launch failed before lecture app opened',
+          );
+        }
+      } catch (sessionErr) {
+        console.warn('[AppLauncher] Failed to finalize aborted session:', sessionErr);
       }
       try {
         await hideOverlay();
       } catch (overlayStopErr) {
         console.warn('[AppLauncher] Failed to hide overlay after launch error:', overlayStopErr);
       }
+      return false;
     }
   }
 

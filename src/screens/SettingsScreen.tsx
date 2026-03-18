@@ -40,6 +40,7 @@ import { fetchExamDates } from '../services/aiService';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
 import { BUNDLED_HF_TOKEN, DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
+import ScreenHeader from '../components/ScreenHeader';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'keypoints', label: 'Key Points' },
@@ -52,7 +53,6 @@ const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
 ];
 
 const BACKUP_VERSION = 1;
-
 
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
@@ -200,7 +200,6 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   return { ok: true, message: `Restored ${restoredTopics} topics, ${restoredLogs} log entries` };
 }
 
-
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const isFocused = useIsFocused();
@@ -305,9 +304,7 @@ export default function SettingsScreen() {
       setGroqKey(profile.groqApiKey ?? '');
       setOrKey(profile.openrouterKey ?? '');
       setHuggingFaceToken(profile.huggingFaceToken ?? BUNDLED_HF_TOKEN);
-      setHuggingFaceModel(
-        profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL,
-      );
+      setHuggingFaceModel(profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
@@ -401,7 +398,7 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Settings</Text>
+        <ScreenHeader title="Settings" subtitle="Control sync, backups, AI, and study behavior." />
 
         <Section title="🤖 AI Configuration" initiallyExpanded={true}>
           <Label text="Groq API Key (console.groq.com)" />
@@ -477,10 +474,7 @@ export default function SettingsScreen() {
             ).map(([provider, label]) => (
               <TouchableOpacity
                 key={provider}
-                style={[
-                  styles.freqBtn,
-                  transcriptionProvider === provider && styles.freqBtnActive,
-                ]}
+                style={[styles.freqBtn, transcriptionProvider === provider && styles.freqBtnActive]}
                 onPress={() => setTranscriptionProvider(provider)}
               >
                 <Text

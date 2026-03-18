@@ -16,6 +16,7 @@ import LoadingOrb from '../components/LoadingOrb';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ReviewCalendar from '../components/ReviewCalendar';
 import { theme } from '../constants/theme';
+import ScreenHeader from '../components/ScreenHeader';
 
 export default function StatsScreen() {
   const profile = useAppStore((s) => s.profile);
@@ -121,8 +122,7 @@ export default function StatsScreen() {
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <ResponsiveContainer>
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Exam Readiness</Text>
-            <Text style={styles.headerSub}>Focus on how far you've come.</Text>
+            <ScreenHeader title="Exam Readiness" subtitle="Focus on how far you've come." />
           </View>
 
           {stats.totalSessions === 0 ? (

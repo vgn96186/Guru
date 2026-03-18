@@ -38,6 +38,7 @@ import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { Audio } from 'expo-av';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { buildLectureDisplayTitle } from '../services/lectureIdentity';
+import ScreenHeader from '../components/ScreenHeader';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -497,6 +498,10 @@ export default function TranscriptHistoryScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <ScreenHeader
+        title="Transcript History"
+        subtitle="Search, review, and manage captured lectures."
+      />
       {/* Search bar */}
       <View style={styles.searchRow}>
         <Ionicons name="search" size={20} color="#888" />

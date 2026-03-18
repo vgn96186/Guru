@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTopicsDueForReview } from '../db/queries/topics';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
+import ScreenHeader from '../components/ScreenHeader';
 
 type Nav = NativeStackNavigationProp<MenuStackParamList>;
 
@@ -193,10 +194,10 @@ export default function StudyPlanScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <ResponsiveContainer>
           <View style={styles.header}>
-            <Text style={styles.title}>Dynamic Plan</Text>
-            <Text style={styles.subtitle}>
-              {summary.daysRemaining} days to INICET · {summary.totalHoursLeft}h content left
-            </Text>
+            <ScreenHeader
+              title="Dynamic Plan"
+              subtitle={`${summary.daysRemaining} days to INICET · ${summary.totalHoursLeft}h content left`}
+            />
             <View style={styles.modeRow}>
               {PLAN_MODES.map((mode) => (
                 <TouchableOpacity

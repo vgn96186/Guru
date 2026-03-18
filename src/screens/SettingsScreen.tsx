@@ -882,10 +882,7 @@ export default function SettingsScreen() {
           <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Settings'}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.footer}>
-          NEET Study — Powered by Guru AI{'\n'}
-          v1.0.0 · Groq · llama-3.3-70b
-        </Text>
+        <Text style={styles.footer}>Guru AI · v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
   );

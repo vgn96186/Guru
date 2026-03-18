@@ -99,7 +99,9 @@ export async function saveLecturePersistence(opts: {
     }
   }
 
-  await db.execAsync('BEGIN IMMEDIATE');
+  // markTopicsFromLecture calls updateTopicProgress which uses runInTransaction internally.
+  // Do NOT wrap in an outer BEGIN — that causes "cannot start a transaction within a transaction".
+  // Instead, run topic marking first, then the note insert atomically.
   try {
     if (analysis.topics.length > 0 || analysis.lectureSummary) {
       await markTopicsFromLecture(
@@ -115,29 +117,36 @@ export async function saveLecturePersistence(opts: {
 
     const subjectId = await findSubjectId(analysis.subject);
 
-    const result = await db.runAsync(
-      `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        subjectId,
-        opts.quickNote,
-        nowTs(),
-        transcriptUri ?? analysis.transcript ?? null,
-        analysis.lectureSummary,
-        analysis.topics ? JSON.stringify(analysis.topics) : null,
-        opts.appName,
-        opts.durationMinutes,
-        analysis.estimatedConfidence,
-        embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
-      ],
-    );
-
-    const noteId = result.lastInsertRowId;
-    await db.runAsync(
-      'UPDATE external_app_logs SET transcription_status = ?, lecture_note_id = ? WHERE id = ?',
-      ['completed', noteId, opts.logId],
-    );
-    await db.execAsync('COMMIT');
+    // Atomically insert the note and update the log status
+    let noteId!: number;
+    await db.execAsync('BEGIN IMMEDIATE');
+    try {
+      const result = await db.runAsync(
+        `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          subjectId,
+          opts.quickNote,
+          nowTs(),
+          transcriptUri ?? analysis.transcript ?? null,
+          analysis.lectureSummary,
+          analysis.topics ? JSON.stringify(analysis.topics) : null,
+          opts.appName,
+          opts.durationMinutes,
+          analysis.estimatedConfidence,
+          embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
+        ],
+      );
+      noteId = result.lastInsertRowId;
+      await db.runAsync(
+        'UPDATE external_app_logs SET transcription_status = ?, lecture_note_id = ? WHERE id = ?',
+        ['completed', noteId, opts.logId],
+      );
+      await db.execAsync('COMMIT');
+    } catch (innerErr) {
+      await db.execAsync('ROLLBACK');
+      throw innerErr;
+    }
 
     // Notify UI to refresh stats and progress
     notifyDbUpdate(DB_EVENT_KEYS.LECTURE_SAVED);
@@ -147,7 +156,6 @@ export async function saveLecturePersistence(opts: {
 
     return noteId;
   } catch (e: unknown) {
-    await db.execAsync('ROLLBACK');
     const { showToast } = require('../../components/Toast');
     const msg = e instanceof Error ? e.message : 'Unknown error';
     showToast(`Failed to save lecture: ${msg}`, 'error');

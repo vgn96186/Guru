@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,8 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
-  FlatList,
-  Modal,
-  Platform,
   Linking,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -54,35 +52,6 @@ const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
 
 const BACKUP_VERSION = 1;
 
-// List of known Gemini models to check against
-const KNOWN_MODELS = [
-  'gemini-3.0-flash-preview',
-  'gemini-3.0-flash',
-  'gemini-2.5-flash',
-  'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-exp',
-  'gemini-1.5-flash',
-];
-
-async function listGeminiModels(
-  key: string,
-): Promise<{ ok: boolean; models: string[]; error?: string }> {
-  try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      return { ok: false, models: [], error: data?.error?.message || `HTTP ${res.status}` };
-    }
-    const data = await res.json();
-    const models = (data.models || [])
-      .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
-      .map((m: any) => m.name.replace('models/', ''));
-    return { ok: true, models };
-  } catch (e: any) {
-    return { ok: false, models: [], error: e?.message || 'Network error' };
-  }
-}
 
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
@@ -230,30 +199,6 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   return { ok: true, message: `Restored ${restoredTopics} topics, ${restoredLogs} log entries` };
 }
 
-type ValidationState = 'idle' | 'testing' | 'success' | 'error';
-
-async function validateGeminiKey(
-  key: string,
-): Promise<{ ok: boolean; model?: string; error?: string }> {
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.0-flash-preview:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: 'Hi' }] }],
-          generationConfig: { maxOutputTokens: 5 },
-        }),
-      },
-    );
-    if (res.ok) return { ok: true, model: 'Gemini 3.0 Flash Preview' };
-    const data = await res.json().catch(() => ({}));
-    return { ok: false, error: data?.error?.message || `HTTP ${res.status}` };
-  } catch (e: any) {
-    return { ok: false, error: e?.message || 'Network error' };
-  }
-}
 
 export default function SettingsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -267,11 +212,8 @@ export default function SettingsScreen() {
     mic: 'undetermined',
   });
 
-  const [apiKey, setApiKey] = useState('');
+  const [groqKey, setGroqKey] = useState('');
   const [orKey, setOrKey] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash');
-  const [availableModels, setAvailableModels] = useState<string[]>(KNOWN_MODELS);
-  const [showModelPicker, setShowModelPicker] = useState(false);
   const [name, setName] = useState('');
   const [inicetDate, setInicetDate] = useState('2026-05-01');
   const [neetDate, setNeetDate] = useState('2026-08-01');
@@ -280,8 +222,6 @@ export default function SettingsScreen() {
   const [notifs, setNotifs] = useState(true);
   const [strictMode, setStrictMode] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [validation, setValidation] = useState<ValidationState>('idle');
-  const [validationMsg, setValidationMsg] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
   const [bodyDoubling, setBodyDoubling] = useState(true);
   const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
@@ -295,7 +235,7 @@ export default function SettingsScreen() {
   );
   const [focusSubjectIds, setFocusSubjectIds] = useState<number[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [fetchingDates, setFetchingDates] = useState(false);
   const [fetchDatesMsg, setFetchDatesMsg] = useState('');
 
@@ -306,12 +246,13 @@ export default function SettingsScreen() {
   }, [isFocused]);
 
   async function handleAutoFetchDates() {
-    const key = apiKey.trim() || profile?.openrouterApiKey || '';
+    const gk = groqKey.trim() || profile?.groqApiKey || '';
     const or = orKey.trim() || profile?.openrouterKey || '';
-    if (!key && !or) {
-      setFetchDatesMsg('Add an API key first to auto-fetch dates.');
+    if (!gk && !or) {
+      setFetchDatesMsg('Add a Groq or OpenRouter key first to auto-fetch dates.');
       return;
     }
+    const key = gk; // fetchExamDates uses first arg as primary key
     setFetchingDates(true);
     setFetchDatesMsg('');
     try {
@@ -355,13 +296,7 @@ export default function SettingsScreen() {
     };
     loadSubjects();
     if (profile) {
-      if (profile.openrouterApiKey.includes('|')) {
-        const parts = profile.openrouterApiKey.split('|');
-        setApiKey(parts[0]);
-        setSelectedModel(parts[1]);
-      } else {
-        setApiKey(profile.openrouterApiKey);
-      }
+      setGroqKey(profile.groqApiKey ?? '');
       setOrKey(profile.openrouterKey ?? '');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
@@ -379,54 +314,14 @@ export default function SettingsScreen() {
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
-      if (profile.openrouterApiKey) setValidation('success');
     }
   }, [profile]);
-
-  function handleApiKeyChange(text: string) {
-    setApiKey(text);
-    setValidation('idle');
-    setValidationMsg('');
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    const trimmed = text.trim();
-    if (trimmed.length > 20) {
-      debounceRef.current = setTimeout(() => runValidation(trimmed), 1200);
-    }
-  }
-
-  async function runValidation(key: string) {
-    setValidation('testing');
-    setValidationMsg('');
-
-    // First, list models
-    const listRes = await listGeminiModels(key);
-    if (!listRes.ok) {
-      setValidation('error');
-      setValidationMsg(listRes.error || 'Invalid key');
-      return;
-    }
-
-    setAvailableModels(listRes.models.length > 0 ? listRes.models : KNOWN_MODELS);
-
-    // If current model isn't in list, switch to first available
-    if (listRes.models.length > 0 && !listRes.models.includes(selectedModel)) {
-      // Prefer flash models if available
-      const best = listRes.models.find((m) => m.includes('flash')) || listRes.models[0];
-      setSelectedModel(best);
-    }
-
-    setValidation('success');
-    setValidationMsg(`Connected — ${listRes.models.length} models found`);
-  }
 
   async function save() {
     setSaving(true);
     try {
-      // Store model name WITH key (hacky but saves migration)
-      const keyToStore = `${apiKey.trim()}|${selectedModel}`;
-
       updateUserProfile({
-        openrouterApiKey: keyToStore,
+        groqApiKey: groqKey.trim(),
         openrouterKey: orKey.trim(),
         displayName: name.trim() || 'Doctor',
         inicetDate,
@@ -447,24 +342,18 @@ export default function SettingsScreen() {
       });
 
       if (notifs) {
-        const granted = await requestNotificationPermissions();
-        if (granted && apiKey.trim()) {
-          await refreshAccountabilityNotifications();
-        }
+        await requestNotificationPermissions();
+        await refreshAccountabilityNotifications();
       }
 
       refreshProfile();
-      Alert.alert('Saved', 'Settings updated! Guru has been notified. 😏');
+      Alert.alert('Saved', 'Settings updated!');
     } finally {
       setSaving(false);
     }
   }
 
   async function testNotification() {
-    if (!apiKey.trim()) {
-      Alert.alert('No API key', 'Add your OpenRouter API key first.');
-      return;
-    }
     try {
       await refreshAccountabilityNotifications();
       Alert.alert('Done', 'Notifications scheduled! Check your notification panel.');
@@ -501,116 +390,37 @@ export default function SettingsScreen() {
         <Text style={styles.title}>Settings</Text>
 
         <Section title="🤖 AI Configuration" initiallyExpanded={true}>
-          <Label text="Gemini API Key (Google AI Studio)" />
-          <View style={styles.apiKeyRow}>
-            <TextInput
-              style={[
-                styles.input,
-                styles.apiKeyInput,
-                validation === 'success' && styles.inputSuccess,
-                validation === 'error' && styles.inputError,
-              ]}
-              placeholder="AIza..."
-              placeholderTextColor="#444"
-              value={apiKey}
-              onChangeText={handleApiKeyChange}
-              secureTextEntry
-              autoCapitalize="none"
-            />
-            <TouchableOpacity
-              style={[
-                styles.validateBtn,
-                validation === 'success' && styles.validateBtnSuccess,
-                validation === 'error' && styles.validateBtnError,
-                validation === 'testing' && styles.validateBtnTesting,
-              ]}
-              onPress={() => (apiKey.trim().length > 20 ? runValidation(apiKey.trim()) : null)}
-              activeOpacity={0.8}
-              disabled={validation === 'testing'}
-            >
-              {validation === 'testing' ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Text style={styles.validateBtnText}>
-                  {validation === 'success' ? '✓' : validation === 'error' ? '✗' : 'Test'}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-          {validationMsg ? (
-            <Text
-              style={[
-                styles.validationMsg,
-                validation === 'success' ? styles.validationSuccess : styles.validationError,
-              ]}
-            >
-              {validation === 'success' ? '✅ ' : '❌ '}
-              {validationMsg}
-            </Text>
-          ) : null}
-
-          <Label text="Selected Model" />
-          <TouchableOpacity
-            style={styles.modelSelector}
-            activeOpacity={0.8}
-            onPress={() => setShowModelPicker(true)}
-          >
-            <Text style={styles.modelSelectorText}>{selectedModel}</Text>
-            <Text style={styles.modelSelectorArrow}>▼</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.hint}>Get your free key at aistudio.google.com</Text>
-
-          <Label text="OpenRouter API Key (openrouter.ai) — for free model fallbacks" />
+          <Label text="Groq API Key (console.groq.com)" />
           <TextInput
             style={styles.input}
-            placeholder="sk-or-..."
+            placeholder="gsk_..."
+            placeholderTextColor="#444"
+            value={groqKey}
+            onChangeText={setGroqKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Used for transcription and AI generation. Get a free key at console.groq.com
+          </Text>
+
+          <Label text="OpenRouter API Key — optional fallback" />
+          <TextInput
+            style={styles.input}
+            placeholder="sk-or-v1-..."
             placeholderTextColor="#444"
             value={orKey}
             onChangeText={setOrKey}
             secureTextEntry
             autoCapitalize="none"
+            autoCorrect={false}
           />
           <Text style={styles.hint}>
-            Optional. When Gemini hits rate limits, Guru auto-retries with free OpenRouter models
-            (Gemini 2.0 Flash, Llama 3.3, Qwen 2.5, etc.). Get a free key at openrouter.ai
+            Optional. Guru falls back to free OpenRouter models (Llama 3.3, Qwen 2.5, etc.) when
+            Groq is unavailable. Get a free key at openrouter.ai
           </Text>
         </Section>
-
-        {/* Model Picker Modal */}
-        <Modal visible={showModelPicker} transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Select Model</Text>
-              <FlatList
-                data={availableModels}
-                keyExtractor={(item) => item}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[styles.modelItem, item === selectedModel && styles.modelItemActive]}
-                    onPress={() => {
-                      setSelectedModel(item);
-                      setShowModelPicker(false);
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.modelItemText,
-                        item === selectedModel && styles.modelItemTextActive,
-                      ]}
-                    >
-                      {item}
-                    </Text>
-                    {item === selectedModel && <Text style={styles.checkMark}>✓</Text>}
-                  </TouchableOpacity>
-                )}
-              />
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setShowModelPicker(false)}>
-                <Text style={styles.closeBtnText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
 
         <Section title="✅ Permissions & Diagnostics">
           <PermissionRow
@@ -1066,7 +876,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.footer}>
           NEET Study — Powered by Guru AI{'\n'}
-          v1.0.0 · Google Gemini 3.0 Flash Preview
+          v1.0.0 · Groq · llama-3.3-70b
         </Text>
       </ScrollView>
     </SafeAreaView>

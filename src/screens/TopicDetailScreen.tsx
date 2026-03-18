@@ -617,7 +617,11 @@ export default function TopicDetailScreen() {
                   </View>
                   <View style={styles.topicRight}>
                     {item.progress.confidence > 0 && (
-                      <View style={styles.confRow}>
+                      <View
+                        style={styles.confRow}
+                        accessibilityLabel={`Confidence: ${item.progress.confidence} of 5`}
+                        accessibilityRole="text"
+                      >
                         {[1, 2, 3, 4, 5].map((i) => (
                           <View
                             key={i}
@@ -702,7 +706,11 @@ export default function TopicDetailScreen() {
                           if (noteText.trim() !== savedNote.trim()) {
                             Alert.alert('Discard changes?', 'You have unsaved notes.', [
                               { text: 'Keep editing', style: 'cancel' },
-                              { text: 'Discard', style: 'destructive', onPress: () => setExpandedId(null) },
+                              {
+                                text: 'Discard',
+                                style: 'destructive',
+                                onPress: () => setExpandedId(null),
+                              },
                             ]);
                           } else {
                             setExpandedId(null);

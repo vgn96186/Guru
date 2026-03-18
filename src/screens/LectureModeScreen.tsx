@@ -1002,7 +1002,12 @@ export default function LectureModeScreen() {
             testID="lecture-timer"
           >
             <Text style={styles.timerLabel}>Lecture Time</Text>
-            <Text style={[styles.timer, proofOfLifeActive && styles.timerWarn]}>
+            <Text
+              style={[styles.timer, proofOfLifeActive && styles.timerWarn]}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              numberOfLines={1}
+            >
               {mins}:{secs.toString().padStart(2, '0')}
             </Text>
           </View>

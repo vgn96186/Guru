@@ -342,7 +342,10 @@ export default function NotesHubScreen() {
                         disabled={isRetrying === session.id}
                       >
                         {isRetrying === session.id ? (
-                          <ActivityIndicator size="small" color="#fff" />
+                          <>
+                            <ActivityIndicator size="small" color="#fff" />
+                            <Text style={styles.retryBtnText}>Transcribing…</Text>
+                          </>
                         ) : (
                           <>
                             <Ionicons name="refresh" size={16} color="#fff" />

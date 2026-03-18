@@ -145,6 +145,10 @@ export default function ManualNoteCreationScreen(
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.label}>Paste your lecture transcript below:</Text>
+        <Text style={styles.formatHint}>
+          Works with any text — lecture transcripts, recorded audio text, textbook paragraphs,
+          notes, or copied slides. Guru will extract topics, summarise, and rate your confidence.
+        </Text>
         <TextInput
           style={styles.input}
           multiline
@@ -194,7 +198,14 @@ const styles = StyleSheet.create({
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   content: { padding: 16, paddingBottom: 120, gap: 4 },
   screenHeaderWrap: { paddingHorizontal: 16, paddingTop: 8 },
-  label: { color: '#FFF', fontSize: 15, marginBottom: 12 },
+  label: { color: '#FFF', fontSize: 15, marginBottom: 6 },
+  formatHint: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginBottom: 12,
+    fontStyle: 'italic',
+  },
   input: {
     backgroundColor: theme.colors.surface,
     color: '#FFF',

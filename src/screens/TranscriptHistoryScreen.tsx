@@ -888,6 +888,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '90%',
+    flex: 0,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -907,7 +908,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   headerActionText: { color: '#A09CF7', fontSize: 12, fontWeight: '600' },
-  modalScroll: { padding: 16 },
+  modalScroll: { padding: 16, flexGrow: 1 },
   modalMeta: { marginBottom: 16 },
   customTitleText: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
   modalMetaText: { color: theme.colors.textSecondary, fontSize: 13 },

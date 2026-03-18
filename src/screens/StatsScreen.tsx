@@ -154,6 +154,9 @@ export default function StatsScreen() {
               You can answer questions on {stats.coveragePercent}% of historically tested topics.
               Keep pushing.
             </Text>
+            <Text style={styles.projectionFormula}>
+              Score estimate = 50 base + (high-yield coverage % × 2.5). Covers up to 300.
+            </Text>
           </View>
 
           {/* Absolute Progress (Anti-Guilt) */}
@@ -532,6 +535,14 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceAlt,
     padding: 12,
     borderRadius: 12,
+  },
+
+  projectionFormula: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 
   absoluteCard: {

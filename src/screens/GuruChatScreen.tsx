@@ -66,9 +66,18 @@ function getStartersForTopic(topicName: string) {
     { icon: 'book-outline', text: `What are the highest-yield exam concepts for ${topicName}?` },
     { icon: 'help-circle-outline', text: `Give me a hard clinical vignette MCQ on ${topicName}.` },
     { icon: 'bulb-outline', text: `Can you share a memory hook or mnemonic for ${topicName}?` },
-    { icon: 'list-outline', text: `What is the diagnostic algorithm or criteria for ${topicName}?` },
-    { icon: 'alert-circle-outline', text: `What are common pitfalls and mistakes when studying ${topicName}?` },
-    { icon: 'medkit-outline', text: `What is the first-line treatment and management for ${topicName}?` },
+    {
+      icon: 'list-outline',
+      text: `What is the diagnostic algorithm or criteria for ${topicName}?`,
+    },
+    {
+      icon: 'alert-circle-outline',
+      text: `What are common pitfalls and mistakes when studying ${topicName}?`,
+    },
+    {
+      icon: 'medkit-outline',
+      text: `What is the first-line treatment and management for ${topicName}?`,
+    },
   ];
 }
 
@@ -96,7 +105,14 @@ async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
        LIMIT 6`,
     );
     if (rows.length < 3) return FALLBACK_STARTERS;
-    const icons = ['book-outline', 'help-circle-outline', 'bulb-outline', 'list-outline', 'alert-circle-outline', 'medkit-outline'];
+    const icons = [
+      'book-outline',
+      'help-circle-outline',
+      'bulb-outline',
+      'list-outline',
+      'alert-circle-outline',
+      'medkit-outline',
+    ];
     const templates = [
       (n: string) => `Explain ${n} for NEET-PG — key points only.`,
       (n: string) => `Give me a clinical vignette MCQ on ${n}.`,
@@ -563,10 +579,16 @@ export default function GuruChatScreen() {
                               if (messages.length > 0 && model.id !== chosenModel) {
                                 Alert.alert(
                                   'Switch model?',
-                                  'Switching models mid-conversation may lose context. The new model won\'t remember earlier messages.',
+                                  "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
                                   [
                                     { text: 'Cancel', style: 'cancel' },
-                                    { text: 'Switch', onPress: () => { setChosenModel(model.id); setShowModelPicker(false); } },
+                                    {
+                                      text: 'Switch',
+                                      onPress: () => {
+                                        setChosenModel(model.id);
+                                        setShowModelPicker(false);
+                                      },
+                                    },
                                   ],
                                 );
                               } else {
@@ -1145,6 +1167,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.inputBg,
     paddingHorizontal: 14,
     paddingVertical: 12,
+    minHeight: 56,
   },
   starterIcon: {
     flexShrink: 0,

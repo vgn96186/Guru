@@ -584,9 +584,10 @@ const styles = StyleSheet.create({
   },
   seeAllLink: {
     color: theme.colors.primary,
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
     marginTop: 4,
     textAlign: 'right',
+    textDecorationLine: 'underline',
   },
 });

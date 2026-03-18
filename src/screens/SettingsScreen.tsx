@@ -253,12 +253,40 @@ export default function SettingsScreen() {
 
   const [fetchingDates, setFetchingDates] = useState(false);
   const [fetchDatesMsg, setFetchDatesMsg] = useState('');
+  const [testingGroqKey, setTestingGroqKey] = useState(false);
+  const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
 
   useEffect(() => {
     if (isFocused) {
       checkPermissions();
     }
   }, [isFocused]);
+
+  async function testGroqKey() {
+    const key = groqKey.trim() || profile?.groqApiKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter a Groq API key first.');
+      return;
+    }
+    setTestingGroqKey(true);
+    setGroqKeyTestResult(null);
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+          max_tokens: 5,
+        }),
+      });
+      setGroqKeyTestResult(res.ok ? 'ok' : 'fail');
+    } catch {
+      setGroqKeyTestResult('fail');
+    } finally {
+      setTestingGroqKey(false);
+    }
+  }
 
   async function handleAutoFetchDates() {
     const gk = groqKey.trim() || profile?.groqApiKey || '';
@@ -425,6 +453,30 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>
             Used for transcription and AI generation. Get a free key at console.groq.com
           </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testGroqKey}
+            disabled={testingGroqKey}
+            activeOpacity={0.8}
+          >
+            {testingGroqKey ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  groqKeyTestResult === 'ok' && { color: theme.colors.success },
+                  groqKeyTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {groqKeyTestResult === 'ok'
+                  ? '✅ Groq key works!'
+                  : groqKeyTestResult === 'fail'
+                    ? '❌ Key invalid or unreachable'
+                    : 'Test Groq Connection'}
+              </Text>
+            )}
+          </TouchableOpacity>
 
           <Label text="OpenRouter API Key — optional fallback" />
           <TextInput

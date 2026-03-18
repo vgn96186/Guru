@@ -929,7 +929,7 @@ const styles = StyleSheet.create({
   topicDoneSub: { color: theme.colors.textSecondary, fontSize: 14 },
   xpPop: {
     position: 'absolute',
-    bottom: 100,
+    top: 16,
     right: theme.spacing.xl,
     backgroundColor: theme.colors.primary,
     borderRadius: 20,

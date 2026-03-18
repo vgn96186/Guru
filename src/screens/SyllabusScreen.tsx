@@ -339,7 +339,10 @@ export default function SyllabusScreen() {
             {refreshing ? (
               <ActivityIndicator size="small" color={theme.colors.primary} />
             ) : (
-              <Text style={styles.syncBtnText}>🔄</Text>
+              <>
+                <Text style={styles.syncBtnText}>🔄</Text>
+                <Text style={styles.syncBtnLabel}>Sync</Text>
+              </>
             )}
           </TouchableOpacity>
         </View>
@@ -505,8 +508,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colors.primaryTintMedium,
+    alignItems: 'center',
+    minWidth: 56,
   },
   syncBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 18 },
+  syncBtnLabel: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 2 },
   controls: { paddingHorizontal: theme.spacing.lg, paddingBottom: 8, gap: 10 },
   searchInput: {
     backgroundColor: theme.colors.panel,

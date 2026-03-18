@@ -310,13 +310,24 @@ export default function TranscriptHistoryScreen() {
   const [renameText, setRenameText] = useState('');
   const [showRenameEditor, setShowRenameEditor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'subject' | 'confidence'>('date');
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const loadNotes = useCallback(async () => {
-    const items = await getLectureHistory(100);
+    const items = await getLectureHistory(200);
     setNotes(items);
     setSelectedIds((prev) => prev.filter((id) => items.some((item) => item.id === id)));
   }, []);
+
+  const sortedNotes = React.useMemo(() => {
+    if (sortBy === 'subject') {
+      return [...notes].sort((a, b) => (a.subjectName ?? '').localeCompare(b.subjectName ?? ''));
+    }
+    if (sortBy === 'confidence') {
+      return [...notes].sort((a, b) => (b.confidence ?? 0) - (a.confidence ?? 0));
+    }
+    return notes; // default: date DESC from DB
+  }, [notes, sortBy]);
 
   useEffect(() => {
     const onLectureSaved = () => void loadNotes();
@@ -621,9 +632,27 @@ export default function TranscriptHistoryScreen() {
         </View>
       )}
 
+      {/* Sort bar */}
+      {notes.length > 0 && !searchQuery && (
+        <View style={styles.sortBar}>
+          {(['date', 'subject', 'confidence'] as const).map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              style={[styles.sortBtn, sortBy === opt && styles.sortBtnActive]}
+              onPress={() => setSortBy(opt)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}>
+                {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Confidence'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Notes list */}
       <FlatList
-        data={notes}
+        data={searchQuery ? notes : sortedNotes}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderNote}
         contentContainerStyle={styles.listContent}
@@ -822,6 +851,11 @@ const styles = StyleSheet.create({
   },
   selectionDeleteText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
+  sortBar: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
+  sortBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
+  sortBtnActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22' },
+  sortBtnText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
+  sortBtnTextActive: { color: theme.colors.primary, fontWeight: '700' },
 
   noteCard: {
     backgroundColor: '#1E1E1E',

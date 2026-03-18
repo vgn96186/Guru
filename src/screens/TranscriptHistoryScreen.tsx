@@ -502,6 +502,16 @@ export default function TranscriptHistoryScreen() {
         title="Transcript History"
         subtitle="Search, review, and manage captured lectures."
       />
+      {isSelectionMode && (
+        <View style={styles.selectionModeBanner}>
+          <Text style={styles.selectionModeBannerText}>
+            ✓ Selection mode — {selectedIds.length} selected · Long-press to add
+          </Text>
+          <TouchableOpacity onPress={cancelSelection}>
+            <Text style={styles.selectionModeCancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {/* Search bar */}
       <View style={styles.searchRow}>
         <Ionicons name="search" size={20} color="#888" />
@@ -974,4 +984,16 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
   },
+  selectionModeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.primary + '22',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.primary + '55',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  selectionModeBannerText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
+  selectionModeCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
 });

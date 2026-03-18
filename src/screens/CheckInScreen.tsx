@@ -138,7 +138,7 @@ export default function CheckInScreen() {
                 return (
                   <TouchableOpacity
                     key={mood}
-                    style={[styles.moodBtn, isYesterday && styles.moodBtnYesterday]}
+                    style={[styles.moodBtn, isYesterday && styles.moodBtnYesterday, selectedMood === mood && styles.moodBtnSelected]}
                     onPress={() => handleMoodSelect(mood)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
   moodLabel: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   moodDesc: { color: '#9E9E9E', fontSize: 11, textAlign: 'center' },
   moodBtnYesterday: { borderColor: '#6C63FF44' },
+  moodBtnSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22', transform: [{ scale: 0.96 }] },
   yesterdayTag: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 4 },
   quickStartBtn: {
     backgroundColor: '#6C63FF',

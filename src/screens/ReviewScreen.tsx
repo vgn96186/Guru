@@ -288,8 +288,9 @@ export default function ReviewScreen() {
               return (
                 <TouchableOpacity
                   key={chip.type}
-                  style={[styles.chip, isActive && styles.chipActive]}
+                  style={[styles.chip, isActive && styles.chipActive, loading && styles.chipDisabled]}
                   onPress={() => {
+                    if (loading) return;
                     setSelectedContentType(chip.type === selectedContentType ? null : chip.type);
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   }}
@@ -471,6 +472,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A24',
   },
   chipActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
+  chipDisabled: { opacity: 0.4 },
   chipText: { color: '#666', fontSize: 11, fontWeight: '700' },
   chipTextActive: { color: '#6C63FF' },
   autoBadge: { color: '#6C63FF', fontSize: 8, fontWeight: '900', marginTop: 2, letterSpacing: 0.5 },

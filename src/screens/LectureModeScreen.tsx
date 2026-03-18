@@ -58,6 +58,7 @@ const LECTURE_STATE_KEY = 'current_lecture_state';
 
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
+const PROOF_OF_LIFE_WARNING = 30; // warn 30s before trigger
 const MAX_RECORDING_RETRIES = 3;
 const RECORDING_RETRY_DELAY = 2000;
 const STATE_SAVE_DEBOUNCE = 2000;
@@ -86,6 +87,7 @@ export default function LectureModeScreen() {
 
   const [proofOfLifeActive, setProofOfLifeActive] = useState(false);
   const [proofOfLifeCountdown, setProofOfLifeCountdown] = useState(0);
+  const [proofWarningActive, setProofWarningActive] = useState(false);
 
   // Animation for proof of life warning
   const proofPulseAnim = useRef(new Animated.Value(1)).current;
@@ -342,8 +344,14 @@ export default function LectureModeScreen() {
     timerRef.current = setInterval(() => {
       setElapsed((e) => {
         const newE = e + 1;
+        // Warn 30s before proof of life trigger
+        if (newE > 0 && newE % PROOF_OF_LIFE_INTERVAL === PROOF_OF_LIFE_INTERVAL - PROOF_OF_LIFE_WARNING && !onBreak) {
+          setProofWarningActive(true);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        }
         // Trigger Proof of Life every 15 mins
         if (newE > 0 && newE % PROOF_OF_LIFE_INTERVAL === 0 && !onBreak) {
+          setProofWarningActive(false);
           setProofOfLifeActive(true);
           setProofOfLifeCountdown(PROOF_OF_LIFE_GRACE);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -988,6 +996,13 @@ export default function LectureModeScreen() {
             </Text>
           </View>
 
+          {/* Pre-warning 30s before proof of life */}
+          {proofWarningActive && !proofOfLifeActive && (
+            <View style={styles.proofWarnBanner}>
+              <Text style={styles.proofWarnText}>⚠️ Listening check in 30s — get ready to type!</Text>
+            </View>
+          )}
+
           {/* Proof of Life Challenge - Enhanced with animation */}
           {proofOfLifeActive && (
             <Animated.View
@@ -1083,13 +1098,16 @@ export default function LectureModeScreen() {
             activeOpacity={0.8}
             testID="auto-scribe-btn"
           >
-            <Text style={styles.transcribeBtnText}>
-              {isRecordingEnabled
-                ? '🎙️ AUTO-SCRIBE ACTIVE (Listening...)'
-                : '🎙️ Enable Auto-Scribe'}
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              {isRecordingEnabled && <View style={styles.recordingDot} />}
+              <Text style={styles.transcribeBtnText}>
+                {isRecordingEnabled
+                  ? 'AUTO-SCRIBE ACTIVE — Recording'
+                  : '🎙️ Enable Auto-Scribe'}
+              </Text>
+            </View>
             {isTranscribing && (
-              <Text style={{ color: theme.colors.textInverse, fontSize: 11 }}>Processing...</Text>
+              <Text style={{ color: theme.colors.textInverse, fontSize: 11 }}>Processing chunk...</Text>
             )}
           </TouchableOpacity>
 
@@ -1415,4 +1433,19 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   resumeBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  proofWarnBanner: {
+    backgroundColor: '#332200',
+    borderRadius: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+    marginBottom: 12,
+  },
+  proofWarnText: { color: '#FF9800', fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  recordingDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#F44336',
+  },
 });

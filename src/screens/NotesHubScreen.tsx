@@ -302,6 +302,7 @@ export default function NotesHubScreen() {
                   Unprocessed Recordings ({pendingSessions.length})
                 </Text>
               </View>
+              <ScrollView style={styles.pendingList} nestedScrollEnabled>
               {pendingSessions.map((session) => (
                 <View key={session.id} style={styles.pendingCard}>
                   <View style={styles.pendingInfo}>
@@ -347,6 +348,7 @@ export default function NotesHubScreen() {
                   </View>
                 </View>
               ))}
+              </ScrollView>
             </View>
           )}
 
@@ -602,6 +604,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
   pendingSection: { gap: 10, marginBottom: 8 },
+  pendingList: { maxHeight: 220 },
   pendingCard: {
     backgroundColor: '#2A1A1A',
     borderRadius: 16,

@@ -560,8 +560,19 @@ export default function GuruChatScreen() {
                             ]}
                             android_ripple={{ color: `${theme.colors.primary}22` }}
                             onPress={() => {
-                              setChosenModel(model.id);
-                              setShowModelPicker(false);
+                              if (messages.length > 0 && model.id !== chosenModel) {
+                                Alert.alert(
+                                  'Switch model?',
+                                  'Switching models mid-conversation may lose context. The new model won\'t remember earlier messages.',
+                                  [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Switch', onPress: () => { setChosenModel(model.id); setShowModelPicker(false); } },
+                                  ],
+                                );
+                              } else {
+                                setChosenModel(model.id);
+                                setShowModelPicker(false);
+                              }
                             }}
                           >
                             <Text

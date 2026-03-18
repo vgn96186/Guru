@@ -659,26 +659,31 @@ export default function SessionScreen() {
           </Animated.View>
         )}
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ flexGrow: 0, flexShrink: 0 }}
-        >
-          <View style={styles.contentTypeTabs}>
-            {item.contentTypes.map((ct, idx) => (
-              <View
-                key={ct}
-                style={[
-                  styles.contentTab,
-                  idx === store.currentContentIndex && styles.contentTabActive,
-                  idx < store.currentContentIndex && styles.contentTabDone,
-                ]}
-              >
-                <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
-              </View>
-            ))}
-          </View>
-        </ScrollView>
+        <View style={styles.tabRowWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0, flexShrink: 0, flex: 1 }}
+          >
+            <View style={styles.contentTypeTabs}>
+              {item.contentTypes.map((ct, idx) => (
+                <View
+                  key={ct}
+                  style={[
+                    styles.contentTab,
+                    idx === store.currentContentIndex && styles.contentTabActive,
+                    idx < store.currentContentIndex && styles.contentTabDone,
+                  ]}
+                >
+                  <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+          <Text style={styles.cardCountText}>
+            {store.currentContentIndex + 1}/{item.contentTypes.length}
+          </Text>
+        </View>
 
         {store.isLoadingContent ? (
           <LoadingOrb message="Fetching content..." />
@@ -999,7 +1004,7 @@ const styles = StyleSheet.create({
   guruToastText: { color: '#D0C8FF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
   pausedOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
@@ -1013,4 +1018,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   resumeOverlayBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  tabRowWrapper: { flexDirection: 'row', alignItems: 'center', flexGrow: 0, flexShrink: 0 },
+  cardCountText: { color: theme.colors.textMuted, fontSize: 12, paddingHorizontal: 10, fontVariant: ['tabular-nums'] },
 });

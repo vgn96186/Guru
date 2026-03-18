@@ -175,21 +175,25 @@ export default function StatsScreen() {
           </View>
 
           {/* Consistency Card utilizing unused getActivityHistory metric */}
-          <View style={[styles.absoluteCard, { backgroundColor: '#1A2A1A' }]}>
-            <Text style={[styles.absoluteTitle, { color: '#4CAF50' }]}>30-Day Consistency</Text>
-            <Text style={[styles.absoluteBig, { color: '#4CAF50' }]}>
+          <View style={[styles.absoluteCard, { backgroundColor: theme.colors.successSurface }]}>
+            <Text style={[styles.absoluteTitle, { color: theme.colors.success }]}>
+              30-Day Consistency
+            </Text>
+            <Text style={[styles.absoluteBig, { color: theme.colors.success }]}>
               {stats.activeDays30} / 30 Days
             </Text>
             <Text style={styles.absoluteSub}>days studied in the past month</Text>
           </View>
 
           {/* Streak Card */}
-          <View style={[styles.absoluteCard, { backgroundColor: '#2A1A0A' }]}>
+          <View style={[styles.absoluteCard, { backgroundColor: theme.colors.warningSurface }]}>
             <View style={styles.streakRow}>
               <Text style={styles.streakEmoji}>🔥</Text>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.absoluteTitle, { color: '#FF9800' }]}>Current Streak</Text>
-                <Text style={[styles.absoluteBig, { color: '#FF9800' }]}>
+                <Text style={[styles.absoluteTitle, { color: theme.colors.warning }]}>
+                  Current Streak
+                </Text>
+                <Text style={[styles.absoluteBig, { color: theme.colors.warning }]}>
                   {stats.currentStreak} Days
                 </Text>
               </View>
@@ -237,11 +241,18 @@ export default function StatsScreen() {
                     <View
                       style={[
                         styles.weekChangeBadge,
-                        { backgroundColor: isUp ? '#1A2A1A' : '#2A1A1A' },
+                        {
+                          backgroundColor: isUp
+                            ? theme.colors.successSurface
+                            : theme.colors.errorSurface,
+                        },
                       ]}
                     >
                       <Text
-                        style={[styles.weekChangeText, { color: isUp ? '#4CAF50' : '#F44336' }]}
+                        style={[
+                          styles.weekChangeText,
+                          { color: isUp ? theme.colors.success : theme.colors.error },
+                        ]}
                       >
                         {isUp ? '↑' : '↓'} {Math.abs(pct)}%
                       </Text>
@@ -251,7 +262,7 @@ export default function StatsScreen() {
               </View>
               <View style={styles.weekCol}>
                 <Text style={styles.weekLabel}>Last Week</Text>
-                <Text style={[styles.weekVal, { color: '#888' }]}>
+                <Text style={[styles.weekVal, { color: theme.colors.textMuted }]}>
                   {Math.floor(stats.lastWeek.minutes / 60)}h {stats.lastWeek.minutes % 60}m
                 </Text>
                 <Text style={styles.weekSub}>
@@ -271,13 +282,17 @@ export default function StatsScreen() {
             <View
               style={[
                 styles.absoluteCard,
-                { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF44' },
+                {
+                  backgroundColor: theme.colors.card,
+                  borderWidth: 1,
+                  borderColor: theme.colors.primaryTintMedium,
+                },
               ]}
             >
-              <Text style={[styles.absoluteTitle, { color: '#6C63FF' }]}>
+              <Text style={[styles.absoluteTitle, { color: theme.colors.primary }]}>
                 📅 Syllabus Completion Projection
               </Text>
-              <Text style={[styles.absoluteBig, { color: '#6C63FF' }]}>
+              <Text style={[styles.absoluteBig, { color: theme.colors.primary }]}>
                 {stats.projectedCompletionDays} days
               </Text>
               <Text style={styles.absoluteSub}>
@@ -291,13 +306,18 @@ export default function StatsScreen() {
                     {
                       marginTop: 12,
                       backgroundColor:
-                        stats.projectedCompletionDays <= daysToInicet ? '#1A2A1A' : '#2A1A1A',
+                        stats.projectedCompletionDays <= daysToInicet
+                          ? theme.colors.successSurface
+                          : theme.colors.errorSurface,
                     },
                   ]}
                 >
                   <Text
                     style={{
-                      color: stats.projectedCompletionDays <= daysToInicet ? '#4CAF50' : '#F44336',
+                      color:
+                        stats.projectedCompletionDays <= daysToInicet
+                          ? theme.colors.success
+                          : theme.colors.error,
                       fontSize: 13,
                       textAlign: 'center',
                     }}
@@ -398,7 +418,11 @@ function WeeklySparkline({ minutes }: { minutes: number[] }) {
           const barH = Math.max(2, Math.round((mins / maxMins) * chartHeight));
           const x = i * (barWidth + gap);
           const isToday = i === 6;
-          const fill = isToday ? '#6C63FF' : mins > 0 ? '#4CAF50' : '#2A2A38';
+          const fill = isToday
+            ? theme.colors.primary
+            : mins > 0
+              ? theme.colors.success
+              : theme.colors.border;
           const label = DAY_LETTERS[(todayDow - (6 - i) + 7) % 7];
           return (
             <React.Fragment key={i}>
@@ -414,7 +438,7 @@ function WeeklySparkline({ minutes }: { minutes: number[] }) {
                 x={x + barWidth / 2}
                 y={chartHeight + 14}
                 fontSize={10}
-                fill={isToday ? '#6C63FF' : '#555'}
+                fill={isToday ? theme.colors.primary : theme.colors.textMuted}
                 textAnchor="middle"
               >
                 {label}
@@ -428,19 +452,24 @@ function WeeklySparkline({ minutes }: { minutes: number[] }) {
 }
 
 const sparkStyles = StyleSheet.create({
-  card: { backgroundColor: '#1A1A24', borderRadius: 20, padding: 24, marginBottom: 20 },
+  card: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: theme.spacing.xl,
+    marginBottom: 20,
+  },
   title: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
 });
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  container: { padding: 16, paddingBottom: 40 },
+  container: { padding: theme.spacing.lg, paddingBottom: 40 },
   emptyHeroCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: 20,
@@ -456,17 +485,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   emptyHeroText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 21 },
-  header: { marginBottom: 24, marginTop: 16 },
-  headerTitle: { color: '#fff', fontSize: 28, fontWeight: '900', letterSpacing: 0.5 },
-  headerSub: { color: '#9E9E9E', fontSize: 14, marginTop: 4 },
+  header: { marginBottom: theme.spacing.xl, marginTop: theme.spacing.lg },
+  headerTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  headerSub: { color: theme.colors.textSecondary, fontSize: 14, marginTop: 4 },
 
   projectionCard: {
-    backgroundColor: '#1A1A2E',
+    backgroundColor: theme.colors.card,
     borderRadius: 20,
-    padding: 24,
+    padding: theme.spacing.xl,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#6C63FF66',
+    borderColor: theme.colors.primaryTintMedium,
   },
   projectionRow: {
     flexDirection: 'row',
@@ -475,57 +509,82 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   projectionStat: { alignItems: 'center', flex: 1 },
-  projectionVal: { color: '#6C63FF', fontSize: 30, fontWeight: '900', textAlign: 'center' },
+  projectionVal: {
+    color: theme.colors.primary,
+    fontSize: 30,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
   projectionLabel: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 11,
     marginTop: 4,
     fontWeight: '600',
     textTransform: 'uppercase',
     textAlign: 'center',
   },
-  projectionDivider: { width: 1, height: 40, backgroundColor: '#333344' },
+  projectionDivider: { width: 1, height: 40, backgroundColor: theme.colors.borderLight },
   projectionNote: {
-    color: '#C5C5D2',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
-    backgroundColor: '#12121A',
+    backgroundColor: theme.colors.surfaceAlt,
     padding: 12,
     borderRadius: 12,
   },
 
-  absoluteCard: { backgroundColor: '#1A1A24', borderRadius: 20, padding: 24, marginBottom: 20 },
+  absoluteCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: theme.spacing.xl,
+    marginBottom: 20,
+  },
   absoluteTitle: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
     marginBottom: 8,
   },
-  absoluteBig: { color: '#fff', fontSize: 34, fontWeight: '900' },
-  absoluteSub: { color: '#666', fontSize: 13, marginBottom: 16 },
-  progressBar: { height: 8, backgroundColor: '#2A2A38', borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 4 },
+  absoluteBig: { color: theme.colors.textPrimary, fontSize: 34, fontWeight: '900' },
+  absoluteSub: { color: theme.colors.textMuted, fontSize: 13, marginBottom: theme.spacing.lg },
+  progressBar: {
+    height: 8,
+    backgroundColor: theme.colors.border,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: theme.colors.success, borderRadius: 4 },
 
   masteredCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2A1A0A',
+    backgroundColor: theme.colors.warningSurface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#FF980066',
+    borderColor: theme.colors.warningTintSoft,
   },
   masteredEmoji: { fontSize: 32, marginRight: 16 },
   masteredInfo: { flex: 1 },
-  masteredTitle: { color: '#FF9800', fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  masteredSub: { color: '#D29D52', fontSize: 13, lineHeight: 18 },
+  masteredTitle: { color: theme.colors.warning, fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  masteredSub: { color: theme.colors.warning, fontSize: 13, lineHeight: 18 },
 
-  sectionTitle: { color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 16, marginTop: 8 },
+  sectionTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: theme.spacing.lg,
+    marginTop: 8,
+  },
   subjectGrid: { gap: 16 },
-  subjectRow: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16 },
+  subjectRow: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    padding: theme.spacing.lg,
+  },
   subjectHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -534,29 +593,39 @@ const styles = StyleSheet.create({
   },
   subjectNameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
   subjectDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10, flexShrink: 0 },
-  subjectName: { color: '#fff', fontSize: 14, fontWeight: '700', flex: 1 },
-  subjectPercent: { color: '#fff', fontSize: 15, fontWeight: '900', flexShrink: 0 },
+  subjectName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', flex: 1 },
+  subjectPercent: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '900',
+    flexShrink: 0,
+  },
   subProgressBar: {
     height: 6,
-    backgroundColor: '#2A2A38',
+    backgroundColor: theme.colors.border,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 8,
   },
   subProgressFill: { height: '100%', borderRadius: 3 },
-  subjectFraction: { color: '#666', fontSize: 11, textAlign: 'right' },
+  subjectFraction: { color: theme.colors.textMuted, fontSize: 11, textAlign: 'right' },
 
   // Streak styles
   streakRow: { flexDirection: 'row', alignItems: 'center' },
   streakEmoji: { fontSize: 40, marginRight: 16 },
   bestStreakBadge: {
-    backgroundColor: '#3A2A1A',
+    backgroundColor: theme.colors.warningSurface,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
-  bestStreakText: { color: '#FF9800', fontSize: 12, fontWeight: '700' },
-  streakMotivation: { color: '#D29D52', fontSize: 13, marginTop: 12, textAlign: 'center' },
+  bestStreakText: { color: theme.colors.warning, fontSize: 12, fontWeight: '700' },
+  streakMotivation: {
+    color: theme.colors.warning,
+    fontSize: 13,
+    marginTop: 12,
+    textAlign: 'center',
+  },
 
   // Week comparison styles
   weekCompRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },

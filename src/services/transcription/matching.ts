@@ -109,6 +109,12 @@ async function findTopicIdByKeywords(
 }
 
 const MAX_SEMANTIC_MATCHES = 10;
+const MAX_SEMANTIC_CANDIDATES = 250;
+const SEMANTIC_YIELD_EVERY = 32;
+
+async function yieldToEventLoop(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 async function findSemanticMatches(
   db: SQLiteDatabase,
@@ -117,18 +123,23 @@ async function findSemanticMatches(
   threshold = 0.82,
 ): Promise<number[]> {
   const query = subjectName
-    ? `SELECT t.id, t.embedding FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE LOWER(s.name) = ? AND t.embedding IS NOT NULL`
-    : `SELECT id, embedding FROM topics WHERE embedding IS NOT NULL`;
+    ? `SELECT t.id, t.embedding FROM topics t JOIN subjects s ON t.subject_id = s.id WHERE LOWER(s.name) = ? AND t.embedding IS NOT NULL LIMIT ${MAX_SEMANTIC_CANDIDATES}`
+    : `SELECT id, embedding FROM topics WHERE embedding IS NOT NULL LIMIT ${MAX_SEMANTIC_CANDIDATES}`;
   const params = subjectName ? [subjectName.toLowerCase()] : [];
 
   const rows = await db.getAllAsync<{ id: number; embedding: Uint8Array }>(query, params);
   const scored: Array<{ id: number; sim: number }> = [];
 
-  for (const row of rows) {
+  for (let index = 0; index < rows.length; index++) {
+    const row = rows[index];
     const topicVec = blobToEmbedding(row.embedding);
     const sim = cosineSimilarity(targetEmbedding, topicVec);
     if (sim >= threshold) {
       scored.push({ id: row.id, sim });
+    }
+
+    if ((index + 1) % SEMANTIC_YIELD_EVERY === 0) {
+      await yieldToEventLoop();
     }
   }
 

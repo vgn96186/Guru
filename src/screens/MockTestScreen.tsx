@@ -3,6 +3,7 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  FlatList,
   StyleSheet,
   StatusBar,
   BackHandler,
@@ -12,14 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
-import { getAllCachedQuestions, type MockQuestion } from '../db/queries/aiCache';
+import { getCachedQuestionCount, getMockQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MockTest'>;
 
-const MAX_QUESTIONS = 20;
 const CORRECT_MARKS = 4;
 const WRONG_MARKS = -1;
 
@@ -39,20 +39,21 @@ export default function MockTestScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    void getAllCachedQuestions().then((all) => {
-      setQuestions(all); // Store ALL initially
-      setAvailableCount(all.length);
-      // Auto-select max available if default 20 > available
-      setSelectedCount(all.length >= 20 ? 20 : all.length);
+    void getCachedQuestionCount().then((count) => {
+      setAvailableCount(count);
+      setSelectedCount(count >= 20 ? 20 : count);
       setPhase('setup');
     });
   }, []);
 
-  function startTest(count: number) {
-    const subset = questions.slice(0, count);
+  async function startTest(count: number) {
+    setPhase('loading');
+    const subset = await getMockQuestions(count);
     setQuestions(subset);
     setAnswers(new Array(subset.length).fill(null));
     setCurrent(0);
+    setSelected(null);
+    setRevealed(false);
     setElapsedSeconds(0);
     setPhase('test');
   }
@@ -105,6 +106,63 @@ export default function MockTestScreen() {
       setPhase('results');
     }
   }
+
+  const resultSummary = useMemo(() => {
+    let correct = 0;
+    let wrong = 0;
+    let skipped = 0;
+
+    answers.forEach((a, i) => {
+      const q = questions[i];
+      if (!q || a === null || a === -1) {
+        skipped++;
+      } else if (a === q.correctIndex) {
+        correct++;
+      } else {
+        wrong++;
+      }
+    });
+
+    const score = correct * CORRECT_MARKS + wrong * WRONG_MARKS;
+    const maxScore = questions.length * CORRECT_MARKS;
+    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+
+    return { correct, wrong, skipped, score, maxScore, pct };
+  }, [answers, questions]);
+
+  const renderReviewItem = useCallback(
+    ({ item, index }: { item: MockQuestion; index: number }) => {
+      const ans = answers[index];
+      const isCorrect = ans === item.correctIndex;
+      const isSkipped = ans === null || ans === -1;
+      const borderColor = isSkipped ? '#555' : isCorrect ? '#4CAF50' : '#F44336';
+
+      return (
+        <View style={[styles.reviewRow, { borderLeftColor: borderColor }]}>
+          <View style={styles.reviewHeader}>
+            <Text style={styles.reviewNum}>Q{index + 1}</Text>
+            <Text style={[styles.reviewStatus, { color: borderColor }]}>
+              {isSkipped ? 'Skipped' : isCorrect ? `+${CORRECT_MARKS}` : `${WRONG_MARKS}`}
+            </Text>
+          </View>
+          <Text style={styles.reviewQ}>{item.question}</Text>
+          <Text style={styles.reviewTopic}>
+            {item.subjectName} · {item.topicName}
+          </Text>
+          {!isSkipped && ans !== null && ans >= 0 && ans < item.options.length && (
+            <Text style={[styles.reviewAns, { color: isCorrect ? '#4CAF50' : '#F44336' }]}>
+              Your answer: {item.options[ans]}
+            </Text>
+          )}
+          <Text style={styles.reviewCorrect}>
+            Correct: {item.options[item.correctIndex] ?? '—'}
+          </Text>
+          <Text style={styles.reviewExplain}>{item.explanation}</Text>
+        </View>
+      );
+    },
+    [answers],
+  );
 
   // ── Setup Phase ────────────────────────────────────────────────
   if (phase === 'setup') {
@@ -189,91 +247,59 @@ export default function MockTestScreen() {
 
   // ── Results ────────────────────────────────────────────────────
   if (phase === 'results') {
-    let correct = 0;
-    let wrong = 0;
-    let skipped = 0;
-    answers.forEach((a, i) => {
-      const q = questions[i];
-      if (!q || a === null || a === -1) {
-        skipped++;
-      } else if (a === q.correctIndex) {
-        correct++;
-      } else {
-        wrong++;
-      }
-    });
-    const score = correct * CORRECT_MARKS + wrong * WRONG_MARKS;
-    const maxScore = questions.length * CORRECT_MARKS;
-    const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-
+    const { correct, wrong, skipped, score, maxScore, pct } = resultSummary;
     const scoreColor = pct >= 60 ? '#4CAF50' : pct >= 40 ? '#FF9800' : '#F44336';
 
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-        <ScrollView contentContainerStyle={styles.resultsContent}>
-          <ResponsiveContainer>
-            <Text style={styles.resultsTitle}>Test Complete</Text>
-            <View style={styles.scoreCircle}>
-              <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
-              <Text style={styles.scoreMax}>/ {maxScore}</Text>
-              <Text style={[styles.scorePct, { color: scoreColor }]}>{pct}%</Text>
-            </View>
-
-            <View style={styles.scoreBreakdown}>
-              <View style={styles.scoreCell}>
-                <Text style={[styles.scoreCellNum, { color: '#4CAF50' }]}>{correct}</Text>
-                <Text style={styles.scoreCellLabel}>Correct +{correct * CORRECT_MARKS}</Text>
+        <FlatList
+          data={questions}
+          keyExtractor={(_, index) => `review-${index}`}
+          renderItem={renderReviewItem}
+          contentContainerStyle={styles.resultsContent}
+          initialNumToRender={8}
+          windowSize={8}
+          maxToRenderPerBatch={10}
+          removeClippedSubviews
+          ListHeaderComponent={
+            <ResponsiveContainer>
+              <Text style={styles.resultsTitle}>Test Complete</Text>
+              <View style={styles.scoreCircle}>
+                <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
+                <Text style={styles.scoreMax}>/ {maxScore}</Text>
+                <Text style={[styles.scorePct, { color: scoreColor }]}>{pct}%</Text>
               </View>
-              <View style={styles.scoreCell}>
-                <Text style={[styles.scoreCellNum, { color: '#F44336' }]}>{wrong}</Text>
-                <Text style={styles.scoreCellLabel}>Wrong {wrong * WRONG_MARKS}</Text>
-              </View>
-              <View style={styles.scoreCell}>
-                <Text style={[styles.scoreCellNum, { color: '#9E9E9E' }]}>{skipped}</Text>
-                <Text style={styles.scoreCellLabel}>Skipped +0</Text>
-              </View>
-            </View>
 
-            <Text style={styles.markingNote}>NEET Marking: +4 correct · -1 wrong · 0 skipped</Text>
-
-            {/* Question review */}
-            <Text style={styles.reviewTitle}>Review</Text>
-            {questions.map((q, i) => {
-              const ans = answers[i];
-              const isCorrect = ans === q.correctIndex;
-              const isSkipped = ans === null || ans === -1;
-              const borderColor = isSkipped ? '#555' : isCorrect ? '#4CAF50' : '#F44336';
-              return (
-                <View key={i} style={[styles.reviewRow, { borderLeftColor: borderColor }]}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewNum}>Q{i + 1}</Text>
-                    <Text style={[styles.reviewStatus, { color: borderColor }]}>
-                      {isSkipped ? 'Skipped' : isCorrect ? `+${CORRECT_MARKS}` : `${WRONG_MARKS}`}
-                    </Text>
-                  </View>
-                  <Text style={styles.reviewQ}>{q.question}</Text>
-                  <Text style={styles.reviewTopic}>
-                    {q.subjectName} · {q.topicName}
-                  </Text>
-                  {!isSkipped && ans !== null && ans >= 0 && ans < q.options.length && (
-                    <Text style={[styles.reviewAns, { color: isCorrect ? '#4CAF50' : '#F44336' }]}>
-                      Your answer: {q.options[ans as number]}
-                    </Text>
-                  )}
-                  <Text style={styles.reviewCorrect}>
-                    Correct: {q.options[q.correctIndex] ?? '—'}
-                  </Text>
-                  <Text style={styles.reviewExplain}>{q.explanation}</Text>
+              <View style={styles.scoreBreakdown}>
+                <View style={styles.scoreCell}>
+                  <Text style={[styles.scoreCellNum, { color: '#4CAF50' }]}>{correct}</Text>
+                  <Text style={styles.scoreCellLabel}>Correct +{correct * CORRECT_MARKS}</Text>
                 </View>
-              );
-            })}
+                <View style={styles.scoreCell}>
+                  <Text style={[styles.scoreCellNum, { color: '#F44336' }]}>{wrong}</Text>
+                  <Text style={styles.scoreCellLabel}>Wrong {wrong * WRONG_MARKS}</Text>
+                </View>
+                <View style={styles.scoreCell}>
+                  <Text style={[styles.scoreCellNum, { color: '#9E9E9E' }]}>{skipped}</Text>
+                  <Text style={styles.scoreCellLabel}>Skipped +0</Text>
+                </View>
+              </View>
 
+              <Text style={styles.markingNote}>
+                NEET Marking: +4 correct · -1 wrong · 0 skipped
+              </Text>
+
+              {/* Question review */}
+              <Text style={styles.reviewTitle}>Review</Text>
+            </ResponsiveContainer>
+          }
+          ListFooterComponent={
             <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
               <Text style={styles.doneBtnText}>Done</Text>
             </TouchableOpacity>
-          </ResponsiveContainer>
-        </ScrollView>
+          }
+        />
       </SafeAreaView>
     );
   }

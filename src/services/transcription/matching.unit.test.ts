@@ -14,7 +14,7 @@ jest.mock('../../db/database', () => ({
 }));
 
 jest.mock('../../db/queries/topics', () => ({
-  updateTopicsProgressBatch: jest.fn(),
+  updateTopicProgressInTx: jest.fn(),
 }));
 
 jest.mock('../ai/embeddingService', () => ({
@@ -26,9 +26,10 @@ jest.mock('../ai/embeddingService', () => ({
 describe('Matching Benchmark', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (topicsDb.updateTopicProgressInTx as jest.Mock).mockResolvedValue(undefined);
   });
 
-  it('should collect parents correctly and call batch update', async () => {
+  it('should collect parents correctly and update direct and parent topics', async () => {
     let mockId = 1;
     mockDb.getFirstAsync.mockImplementation((query, args) => {
       if (query.includes('FROM topics t')) {
@@ -50,25 +51,28 @@ describe('Matching Benchmark', () => {
 
     await markTopicsFromLecture(mockDb as any, topicNames, 3, 'Subject1', 'Summary');
 
-    const updateCalls = (topicsDb.updateTopicsProgressBatch as jest.Mock).mock.calls;
-    console.log(`[Benchmark] Optimized batch update calls: ${updateCalls.length}`);
-    expect(updateCalls.length).toBe(1);
+    const updateCalls = (topicsDb.updateTopicProgressInTx as jest.Mock).mock.calls;
+    expect(updateCalls.length).toBeGreaterThan(1);
 
-    const updatesPassed = updateCalls[0][0];
-    console.log(`[Benchmark] Optimized updates list length: ${updatesPassed.length}`);
-    expect(updatesPassed.length).toBeGreaterThan(1);
+    const updatedTopicIds = updateCalls.map((call) => call[1]);
+    expect(updatedTopicIds).toContain(100);
+    expect(updatedTopicIds).toContain(101);
+    expect(updatedTopicIds).toContain(1);
+    expect(updatedTopicIds).toContain(2);
+    expect(updatedTopicIds).toContain(3);
 
-    // Check that we have 100 and 101 in the list of updates
-    const ids = updatesPassed.map((u: any) => u.topicId);
-    expect(ids).toContain(100);
-    expect(ids).toContain(101);
+    const parent100Call = updateCalls.find((call) => call[1] === 100);
+    expect(parent100Call).toBeDefined();
+    expect(parent100Call?.[2]).toBe('seen');
+    expect(parent100Call?.[3]).toBe(3);
+    expect(parent100Call?.[4]).toBe(0);
+    expect(parent100Call?.[5]).toBeUndefined();
 
-    // Check that parents do not have noteToAppend
-    const parent100 = updatesPassed.find((u: any) => u.topicId === 100);
-    expect(parent100.noteToAppend).toBeUndefined();
-
-    // Check that regular topics DO have noteToAppend
-    const regularTopic = updatesPassed.find((u: any) => u.topicId !== 100 && u.topicId !== 101);
-    expect(regularTopic.noteToAppend).toBe('Summary');
+    const directTopicCall = updateCalls.find((call) => call[1] === 1);
+    expect(directTopicCall).toBeDefined();
+    expect(directTopicCall?.[2]).toBe('seen');
+    expect(directTopicCall?.[3]).toBe(3);
+    expect(directTopicCall?.[4]).toBe(0);
+    expect(directTopicCall?.[5]).toBe('Summary');
   });
 });

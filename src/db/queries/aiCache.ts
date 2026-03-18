@@ -48,20 +48,14 @@ export interface MockQuestion {
   subjectName: string;
 }
 
-export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
-  const db = getDb();
-  const rows = await db.getAllAsync<{
+function parseMockQuestionsFromRows(
+  rows: Array<{
     content_json: string;
     topic_name: string;
     subject_name: string;
-  }>(
-    `SELECT c.content_json, t.name as topic_name, s.name as subject_name
-     FROM ai_cache c
-     JOIN topics t ON c.topic_id = t.id
-     JOIN subjects s ON t.subject_id = s.id
-     WHERE c.content_type = 'quiz'`,
-  );
-
+  }>,
+  limit?: number,
+): MockQuestion[] {
   const all: MockQuestion[] = [];
   for (const row of rows) {
     try {
@@ -75,18 +69,98 @@ export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
       };
       for (const q of quiz.questions ?? []) {
         all.push({ ...q, topicName: row.topic_name, subjectName: row.subject_name });
+        if (limit && all.length >= limit) {
+          return all;
+        }
       }
     } catch (err) {
       if (__DEV__) console.warn('[aiCache] Skipping malformed quiz row:', err);
-      /* skip malformed */
     }
   }
-  // Shuffle
-  for (let i = all.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [all[i], all[j]] = [all[j], all[i]];
-  }
   return all;
+}
+
+function shuffleQuestions(questions: MockQuestion[]): MockQuestion[] {
+  for (let i = questions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [questions[i], questions[j]] = [questions[j], questions[i]];
+  }
+  return questions;
+}
+
+export async function getCachedQuestionCount(): Promise<number> {
+  const db = getDb();
+  try {
+    const row = await db.getFirstAsync<{ count: number }>(
+      `SELECT COALESCE(SUM(json_array_length(content_json, '$.questions')), 0) AS count
+       FROM ai_cache
+       WHERE content_type = 'quiz'`,
+    );
+    return row?.count ?? 0;
+  } catch (err) {
+    if (__DEV__) console.warn('[aiCache] Falling back to JS question counting:', err);
+    const all = await getAllCachedQuestions();
+    return all.length;
+  }
+}
+
+export async function getMockQuestions(limit: number): Promise<MockQuestion[]> {
+  if (limit <= 0) return [];
+
+  const db = getDb();
+  const rowIds = await db.getAllAsync<{ id: number }>(
+    `SELECT id
+     FROM ai_cache
+     WHERE content_type = 'quiz'
+     ORDER BY RANDOM()`,
+  );
+  if (rowIds.length === 0) return [];
+
+  const selectedIds: number[] = [];
+  const batchSize = Math.min(Math.max(Math.ceil(limit / 3), 8), 24);
+  let offset = 0;
+  let parsedQuestions: MockQuestion[] = [];
+
+  while (offset < rowIds.length && parsedQuestions.length < limit) {
+    const ids = rowIds.slice(offset, offset + batchSize).map((row) => row.id);
+    offset += batchSize;
+    if (ids.length === 0) break;
+
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = await db.getAllAsync<{
+      content_json: string;
+      topic_name: string;
+      subject_name: string;
+    }>(
+      `SELECT c.content_json, t.name AS topic_name, s.name AS subject_name
+       FROM ai_cache c
+       JOIN topics t ON c.topic_id = t.id
+       JOIN subjects s ON t.subject_id = s.id
+       WHERE c.id IN (${placeholders})`,
+      ids,
+    );
+    parsedQuestions = parsedQuestions.concat(
+      parseMockQuestionsFromRows(rows, limit - parsedQuestions.length),
+    );
+  }
+
+  return shuffleQuestions(parsedQuestions).slice(0, limit);
+}
+
+export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    content_json: string;
+    topic_name: string;
+    subject_name: string;
+  }>(
+    `SELECT c.content_json, t.name as topic_name, s.name as subject_name
+     FROM ai_cache c
+     JOIN topics t ON c.topic_id = t.id
+     JOIN subjects s ON t.subject_id = s.id
+     WHERE c.content_type = 'quiz'`,
+  );
+  return shuffleQuestions(parseMockQuestionsFromRows(rows));
 }
 
 export async function setContentFlagged(

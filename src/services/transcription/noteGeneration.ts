@@ -3,12 +3,16 @@ import type { LectureAnalysis } from './analysis';
 
 const ADHD_NOTE_SYSTEM_PROMPT = `You create elite medical study notes for a NEET-PG student with ADHD.
 Rules:
-- STRUCTURE: Use clear emoji headers: 🎯 **Subject**, 📌 **Topics**, 💡 **Key Concepts**, 🚀 **High-Yield Facts**.
-- HIGHLIGHTS: Use markdown bolding (**keyword**) for clinical anchors, specific drug names, and diagnostic criteria.
-- SCANNABLE: Short bullet points, never walls of text. Ensure comprehensive coverage of the entire transcript.
+- STRUCTURE: Use clear emoji headers: 🎯 **Subject**, 📌 **Topics**, 💡 **Key Concepts**, 🚀 **High-Yield Facts**, 🧠 **Clinical Links**, 📝 **Integrated Summary**, ❓ **Check Yourself**.
+- HIGHLIGHTS: Use markdown bolding (**keyword**) for clinical anchors, specific drug names, mechanisms, contraindications, diagnostic criteria, staging, scoring systems, and hallmark associations.
+- SCANNABLE: Short bullets, compact subsections, never walls of text. Ensure comprehensive coverage of the ENTIRE lecture, not just the opening or closing segments.
+- STITCHING: Assume the source transcript may have been split and merged from multiple chunks. Your job is to produce ONE coherent note with no repetition, no abrupt transitions, and no chunk-boundary artifacts.
+- COMPLETENESS: Preserve all exam-relevant details that appear in the transcript, including differentials, definitions, classifications, investigations, treatment steps, side effects, exceptions, and classic traps.
+- PRIORITIZATION: Emphasize what is most testable for NEET-PG/INICET, but do not omit secondary details if they help understanding.
 - VISUAL: Use emoji anchors throughout.
 - MEMORABLE: Include one brief mnemonic or clinical anchor for the most tested concept.
-- ACTIONABLE: End with 2 quick "check-your-understanding" questions.
+- ACTIONABLE: End with 2-4 quick "check-your-understanding" questions.
+- OUTPUT: Return polished markdown only. Do not mention chunking, splitting, or missing context.
 `;
 
 export async function generateADHDNote(analysis: LectureAnalysis): Promise<string> {
@@ -44,10 +48,11 @@ ${conceptPoints || '(No key concepts captured)'}
 
 ${highYieldPoints ? `\n🚀 **High-Yield Facts**\n${highYieldPoints}` : ''}
 
-📝 **Summary**: ${analysis.lectureSummary}
+📝 **Integrated Summary**
+${analysis.lectureSummary}
 
 ---
-🧠 **Quick Self-Test**
+❓ **Check Yourself**
 - Q: What is the most high-yield takeaway from this ${analysis.subject} lecture?
 `;
 }

@@ -36,6 +36,7 @@ import { CONFIDENCE_LABELS } from '../constants/gamification';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { Audio } from 'expo-av';
+import { MarkdownRender } from '../components/MarkdownRender';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -72,91 +73,6 @@ function extractFirstLine(note: string): string {
   }
   return lines[0] ?? 'Lecture note';
 }
-
-/** Lightweight markdown renderer for ADHD-formatted notes */
-function renderMarkdownNote(md: string): React.ReactNode {
-  const lines = md.split('\n');
-  const elements: React.ReactNode[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const trimmed = lines[i].trim();
-    if (!trimmed) continue;
-
-    if (trimmed.startsWith('# ')) {
-      elements.push(
-        <Text key={i} style={mdStyles.h1}>
-          {trimmed.slice(2)}
-        </Text>,
-      );
-    } else if (trimmed.startsWith('## ')) {
-      elements.push(
-        <Text key={i} style={mdStyles.h2}>
-          {trimmed.slice(3)}
-        </Text>,
-      );
-    } else if (/^\d+\.\s/.test(trimmed)) {
-      const text = trimmed.replace(/^\d+\.\s/, '');
-      const num = trimmed.match(/^(\d+)\./)?.[1] ?? '';
-      const parts = text.split(/\*\*(.*?)\*\*/);
-      elements.push(
-        <Text key={i} style={mdStyles.listItem}>
-          <Text style={mdStyles.listNum}>{num}. </Text>
-          {parts.map((part, j) =>
-            j % 2 === 1 ? (
-              <Text key={j} style={mdStyles.bold}>
-                {part}
-              </Text>
-            ) : (
-              <Text key={j}>{part}</Text>
-            ),
-          )}
-        </Text>,
-      );
-    } else if (trimmed.startsWith('- ')) {
-      elements.push(
-        <Text key={i} style={mdStyles.bullet}>
-          {trimmed.slice(2)}
-        </Text>,
-      );
-    } else {
-      const parts = trimmed.split(/\*\*(.*?)\*\*/);
-      elements.push(
-        <Text key={i} style={mdStyles.paragraph}>
-          {parts.map((part, j) =>
-            j % 2 === 1 ? (
-              <Text key={j} style={mdStyles.bold}>
-                {part}
-              </Text>
-            ) : (
-              <Text key={j}>{part}</Text>
-            ),
-          )}
-        </Text>,
-      );
-    }
-  }
-
-  return <View style={mdStyles.container}>{elements}</View>;
-}
-
-const mdStyles = StyleSheet.create({
-  container: { gap: 3 },
-  h1: { color: '#fff', fontSize: 17, fontWeight: '800', lineHeight: 24, marginBottom: 6 },
-  h2: {
-    color: '#A09CF7',
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: 12,
-    marginBottom: 3,
-  },
-  paragraph: { color: '#ddd', fontSize: 14, lineHeight: 21, marginBottom: 3 },
-  bold: { color: '#fff', fontWeight: '700' },
-  listItem: { color: '#ddd', fontSize: 14, lineHeight: 21, paddingLeft: 4, marginBottom: 2 },
-  listNum: { color: '#6C63FF', fontWeight: '700' },
-  bullet: { color: '#ddd', fontSize: 14, lineHeight: 21, paddingLeft: 8, marginBottom: 2 },
-});
 
 /** Collapsible transcript section */
 function TranscriptSection({ transcript }: { transcript: string }) {
@@ -332,7 +248,9 @@ export default function TranscriptHistoryScreen() {
   useEffect(() => {
     const onLectureSaved = () => void loadNotes();
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
-    return () => { dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved); };
+    return () => {
+      dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
+    };
   }, [loadNotes]);
 
   const isSelectionMode = selectedIds.length > 0;
@@ -791,7 +709,9 @@ export default function TranscriptHistoryScreen() {
               {selectedNote?.note && (
                 <View style={styles.modalSection}>
                   <Text style={styles.modalSectionTitle}>Study Note</Text>
-                  {renderMarkdownNote(selectedNote.note)}
+                  <View style={styles.studyNoteCard}>
+                    <MarkdownRender content={selectedNote.note} />
+                  </View>
                 </View>
               )}
 
@@ -852,8 +772,18 @@ const styles = StyleSheet.create({
   selectionDeleteText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
   sortBar: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
-  sortBtn: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
-  sortBtnActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22' },
+  sortBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  sortBtnActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '22',
+  },
   sortBtnText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
   sortBtnTextActive: { color: theme.colors.primary, fontWeight: '700' },
 
@@ -1001,6 +931,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  studyNoteCard: {
+    backgroundColor: theme.colors.panel,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
   },
   modalText: { color: '#ddd', fontSize: 15, lineHeight: 22 },
   topicsWrap: { flexDirection: 'row', flexWrap: 'wrap' },

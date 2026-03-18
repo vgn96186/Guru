@@ -455,20 +455,22 @@ class OverlayService : Service(), LifecycleOwner {
         private val actionsRow = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
+            weightSum = 2f
         }
 
         private val pauseBtn = android.widget.TextView(context).apply {
-            text = "Pause"
-            textSize = 12f
-            setSingleLine()
-            ellipsize = android.text.TextUtils.TruncateAt.END
+            text = "\u23F8"
+            textSize = 20f
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(dpToPx(8, context), dpToPx(11, context), dpToPx(8, context), dpToPx(11, context))
+            minWidth = dpToPx(52, context)
+            minHeight = dpToPx(52, context)
+            setPadding(0, 0, 0, dpToPx(2, context))
+            contentDescription = "Pause recording"
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.parseColor("#14FFFFFF"))
-                cornerRadius = dpToPx(14, context).toFloat()
+                cornerRadius = dpToPx(16, context).toFloat()
                 setStroke(dpToPx(1, context), Color.parseColor("#1AFFFFFF"))
             }
             setOnClickListener {
@@ -486,17 +488,18 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         private val finishBtn = android.widget.TextView(context).apply {
-            text = "Finish"
-            textSize = 12f
-            setSingleLine()
-            ellipsize = android.text.TextUtils.TruncateAt.END
+            text = "\u25A0"
+            textSize = 18f
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.SANS_SERIF, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(dpToPx(8, context), dpToPx(11, context), dpToPx(8, context), dpToPx(11, context))
+            minWidth = dpToPx(52, context)
+            minHeight = dpToPx(52, context)
+            setPadding(0, 0, 0, 0)
+            contentDescription = "Finish lecture"
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.parseColor("#266C63FF")) // purple accent
-                cornerRadius = dpToPx(14, context).toFloat()
+                cornerRadius = dpToPx(16, context).toFloat()
                 setStroke(dpToPx(1, context), Color.parseColor("#408A7CFF"))
             }
             setOnClickListener {
@@ -552,17 +555,26 @@ class OverlayService : Service(), LifecycleOwner {
             addView(bubbleView, bubbleParams)
 
             // Buttons overlay the pill's lower section (below the circle area + status text)
-            val cardParams = LayoutParams(dpToPx(80, context), LayoutParams.WRAP_CONTENT).apply {
+            val actionCardWidth = dpToPx(124, context)
+            val cardParams = LayoutParams(actionCardWidth, LayoutParams.WRAP_CONTENT).apply {
                 gravity = Gravity.TOP or Gravity.START
                 // Keep inside the pill body (CompanionBubbleView expands downward).
-                topMargin = dpToPx(96, context) + dpToPx(32, context)
-                leftMargin = dpToPx(8, context)
+                topMargin = bubbleSize + dpToPx(30, context)
+                leftMargin = ((bubbleSize - actionCardWidth) / 2f).toInt()
             }
 
-            expandedCard.addView(pauseBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-            expandedCard.addView(finishBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dpToPx(10, context)
-            })
+            actionsRow.addView(
+                pauseBtn,
+                android.widget.LinearLayout.LayoutParams(0, dpToPx(52, context), 1f).apply {
+                    marginEnd = dpToPx(8, context)
+                }
+            )
+            actionsRow.addView(
+                finishBtn,
+                android.widget.LinearLayout.LayoutParams(0, dpToPx(52, context), 1f)
+            )
+
+            expandedCard.addView(actionsRow, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             expandedCard.addView(quizBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dpToPx(10, context)
             })
@@ -611,7 +623,8 @@ class OverlayService : Service(), LifecycleOwner {
             isRecordingPaused = paused
             bubbleView.setPaused(paused)
 
-            pauseBtn.text = if (paused) "Resume" else "Pause"
+            pauseBtn.text = if (paused) "\u25B6" else "\u23F8"
+            pauseBtn.contentDescription = if (paused) "Resume recording" else "Pause recording"
             statusText.text = if (paused) "Take your time" else "You're in focus mode"
             // Dim rec dot when paused
             recDot.alpha = if (paused) 0.35f else 0.8f

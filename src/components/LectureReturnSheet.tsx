@@ -260,19 +260,21 @@ export default function LectureReturnSheet(props: Props) {
                     </Text>
                   </View>
                 )}
-                <View style={styles.resultsHeader}>
-                  <View
-                    style={[
-                      styles.subjectChip,
-                      { backgroundColor: subjectColor + '22', borderColor: subjectColor + '66' },
-                    ]}
-                  >
-                    <Text style={[styles.subjectChipText, { color: subjectColor }]}>
-                      {analysis.subject}
-                    </Text>
+                {analysis.topics.length > 0 && (
+                  <View style={styles.resultsHeader}>
+                    <View
+                      style={[
+                        styles.subjectChip,
+                        { backgroundColor: subjectColor + '22', borderColor: subjectColor + '66' },
+                      ]}
+                    >
+                      <Text style={[styles.subjectChipText, { color: subjectColor }]}>
+                        {analysis.subject}
+                      </Text>
+                    </View>
+                    <Text style={styles.summaryText}>{analysis.lectureSummary}</Text>
                   </View>
-                  <Text style={styles.summaryText}>{analysis.lectureSummary}</Text>
-                </View>
+                )}
 
                 {analysis.topics.length > 0 && (
                   <View style={styles.section}>
@@ -305,7 +307,7 @@ export default function LectureReturnSheet(props: Props) {
                   </View>
                 )}
 
-                {analysis.keyConcepts.length > 0 && (
+                {analysis.topics.length > 0 && analysis.keyConcepts.length > 0 && (
                   <View style={styles.section}>
                     <Text style={styles.sectionLabel}>KEY CONCEPTS</Text>
                     {analysis.keyConcepts.map((c: string, i: number) => (
@@ -316,53 +318,60 @@ export default function LectureReturnSheet(props: Props) {
                   </View>
                 )}
 
-                <View style={styles.confidenceSection}>
-                  <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
-                  <View style={styles.confidenceSelector}>
-                    {([1, 2, 3] as const).map((level) => {
-                      const isSelected = (userConfidence ?? analysis.estimatedConfidence) === level;
-                      const colors = {
-                        1: theme.colors.error,
-                        2: theme.colors.warning,
-                        3: theme.colors.success,
-                      };
-                      return (
-                        <TouchableOpacity
-                          key={level}
-                          style={[
-                            styles.confidenceOption,
-                            isSelected && {
-                              backgroundColor: colors[level] + '33',
-                              borderColor: colors[level],
-                            },
-                          ]}
-                          onPress={() => setUserConfidence(level)}
-                          activeOpacity={0.7}
-                        >
-                          <Text
+                {analysis.topics.length > 0 && (
+                  <View style={styles.confidenceSection}>
+                    <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
+                    <View style={styles.confidenceSelector}>
+                      {([1, 2, 3] as const).map((level) => {
+                        const isSelected = (userConfidence ?? analysis.estimatedConfidence) === level;
+                        const colors = {
+                          1: theme.colors.error,
+                          2: theme.colors.warning,
+                          3: theme.colors.success,
+                        };
+                        return (
+                          <TouchableOpacity
+                            key={level}
                             style={[
-                              styles.confidenceOptionText,
-                              isSelected && { color: colors[level] },
+                              styles.confidenceOption,
+                              isSelected && {
+                                backgroundColor: colors[level] + '33',
+                                borderColor: colors[level],
+                              },
                             ]}
+                            onPress={() => setUserConfidence(level)}
+                            activeOpacity={0.7}
                           >
-                            {CONFIDENCE_LABELS_WITH_EMOJI[level]}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
+                            <Text
+                              style={[
+                                styles.confidenceOptionText,
+                                isSelected && { color: colors[level] },
+                              ]}
+                            >
+                              {CONFIDENCE_LABELS_WITH_EMOJI[level]}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    {userConfidence && userConfidence !== analysis.estimatedConfidence && (
+                      <Text style={styles.confidenceOverrideNote}>
+                        AI detected "{CONFIDENCE_LABELS[analysis.estimatedConfidence as 1 | 2 | 3]}" —
+                        you're overriding to your selection
+                      </Text>
+                    )}
                   </View>
-                  {userConfidence && userConfidence !== analysis.estimatedConfidence && (
-                    <Text style={styles.confidenceOverrideNote}>
-                      AI detected "{CONFIDENCE_LABELS[analysis.estimatedConfidence as 1 | 2 | 3]}" —
-                      you're overriding to your selection
-                    </Text>
-                  )}
-                </View>
+                )}
 
                 {analysis.topics.length === 0 && (
-                  <Text style={styles.noContentNote}>
-                    No medical topics detected — audio may have been inaudible or mostly silent.
-                  </Text>
+                  <View style={styles.noTopicsCard}>
+                    <Text style={styles.noTopicsIcon}>🔇</Text>
+                    <Text style={styles.noTopicsTitle}>No topics detected</Text>
+                    <Text style={styles.noTopicsHint}>
+                      The audio may have been inaudible, too short, or mostly silent. You can skip
+                      this session or check your microphone settings.
+                    </Text>
+                  </View>
                 )}
               </ScrollView>
             )}
@@ -904,6 +913,25 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     marginVertical: 12,
+  },
+  noTopicsCard: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    gap: 8,
+  },
+  noTopicsIcon: { fontSize: 40 },
+  noTopicsTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  noTopicsHint: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   errorDetail: {
     color: theme.colors.error,

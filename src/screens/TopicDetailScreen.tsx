@@ -199,7 +199,15 @@ export default function TopicDetailScreen() {
     } else {
       // Expand notes for leaf topics
       if (expandedId === t.id) {
-        setExpandedId(null);
+        const savedNote = allTopics.find((x) => x.id === expandedId)?.progress.userNotes ?? '';
+        if (noteText.trim() !== savedNote.trim()) {
+          Alert.alert('Discard changes?', 'You have unsaved notes.', [
+            { text: 'Keep editing', style: 'cancel' },
+            { text: 'Discard', style: 'destructive', onPress: () => setExpandedId(null) },
+          ]);
+        } else {
+          setExpandedId(null);
+        }
       } else {
         setExpandedId(t.id);
         setNoteText(t.progress.userNotes);
@@ -689,7 +697,17 @@ export default function TopicDetailScreen() {
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.notesCancel}
-                        onPress={() => setExpandedId(null)}
+                        onPress={() => {
+                          const savedNote = item.progress.userNotes ?? '';
+                          if (noteText.trim() !== savedNote.trim()) {
+                            Alert.alert('Discard changes?', 'You have unsaved notes.', [
+                              { text: 'Keep editing', style: 'cancel' },
+                              { text: 'Discard', style: 'destructive', onPress: () => setExpandedId(null) },
+                            ]);
+                          } else {
+                            setExpandedId(null);
+                          }
+                        }}
                         accessibilityRole="button"
                         accessibilityLabel="Cancel"
                       >

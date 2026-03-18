@@ -502,7 +502,20 @@ export default function SessionScreen() {
 
   const item = getCurrentAgendaItem(store);
   const contentType = getCurrentContentType(store);
-  if (!item || !contentType) return null;
+  if (!item || !contentType) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ResponsiveContainer style={styles.errorContainer}>
+          <Text style={styles.errorEmoji}>⚠️</Text>
+          <Text style={styles.errorTitle}>Session Error</Text>
+          <Text style={styles.errorMsg}>Could not load the next topic. Your progress has been saved.</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.retryBtnText}>Back to Home</Text>
+          </TouchableOpacity>
+        </ResponsiveContainer>
+      </SafeAreaView>
+    );
+  }
 
   const topicNum = store.currentItemIndex + 1;
   const totalTopics = store.agenda?.items.length ?? 1;

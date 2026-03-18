@@ -33,6 +33,7 @@ import {
 } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import { clearChatHistory, getChatHistory, saveChatMessage } from '../db/queries/aiCache';
+import { getDb } from '../db/database';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { theme } from '../constants/theme';
 import { MarkdownRender } from '../components/MarkdownRender';
@@ -61,34 +62,56 @@ type ChatItem =
   | { id: string; type: 'typing' };
 
 function getStartersForTopic(topicName: string) {
-  if (topicName === 'General Medicine' || !topicName) {
-    return [
-      { icon: 'heart-outline', text: 'First-line treatment for HFrEF?' },
-      { icon: 'fitness-outline', text: 'GLP-1 agonists in obesity - key trials?' },
-      { icon: 'pulse-outline', text: 'Sepsis bundle essentials 2024' },
-      { icon: 'medical-outline', text: 'Hypertension guidelines - thresholds?' },
-      { icon: 'flask-outline', text: 'CKD staging and management approach' },
-      { icon: 'medkit-outline', text: 'Migraine prophylaxis options ranked' },
-    ];
-  }
-
   return [
     { icon: 'book-outline', text: `What are the highest-yield exam concepts for ${topicName}?` },
     { icon: 'help-circle-outline', text: `Give me a hard clinical vignette MCQ on ${topicName}.` },
     { icon: 'bulb-outline', text: `Can you share a memory hook or mnemonic for ${topicName}?` },
-    {
-      icon: 'list-outline',
-      text: `What is the diagnostic algorithm or criteria for ${topicName}?`,
-    },
-    {
-      icon: 'alert-circle-outline',
-      text: `What are common pitfalls and mistakes when studying ${topicName}?`,
-    },
-    {
-      icon: 'medkit-outline',
-      text: `What is the first-line treatment and management for ${topicName}?`,
-    },
+    { icon: 'list-outline', text: `What is the diagnostic algorithm or criteria for ${topicName}?` },
+    { icon: 'alert-circle-outline', text: `What are common pitfalls and mistakes when studying ${topicName}?` },
+    { icon: 'medkit-outline', text: `What is the first-line treatment and management for ${topicName}?` },
   ];
+}
+
+const FALLBACK_STARTERS = [
+  { icon: 'book-outline', text: 'What are the highest-yield NEET-PG topics this week?' },
+  { icon: 'help-circle-outline', text: 'Give me a hard clinical vignette MCQ.' },
+  { icon: 'bulb-outline', text: 'Share a mnemonic for a tricky pharmacology drug.' },
+  { icon: 'list-outline', text: 'What is the diagnostic approach to chest pain?' },
+  { icon: 'alert-circle-outline', text: 'Common exam mistakes in Surgery?' },
+  { icon: 'medkit-outline', text: 'First-line treatment guidelines I should know?' },
+];
+
+async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
+  try {
+    const db = getDb();
+    // Get due/weak topics the student should be working on
+    const rows = await db.getAllAsync<{ name: string; subject: string }>(
+      `SELECT t.name, s.name AS subject
+       FROM topic_progress tp
+       JOIN topics t ON t.id = tp.topic_id
+       JOIN subjects s ON s.id = t.subject_id
+       WHERE tp.status IN ('seen', 'reviewed')
+         AND tp.confidence <= 2
+       ORDER BY tp.confidence ASC, tp.last_studied_at ASC
+       LIMIT 6`,
+    );
+    if (rows.length < 3) return FALLBACK_STARTERS;
+    const icons = ['book-outline', 'help-circle-outline', 'bulb-outline', 'list-outline', 'alert-circle-outline', 'medkit-outline'];
+    const templates = [
+      (n: string) => `Explain ${n} for NEET-PG — key points only.`,
+      (n: string) => `Give me a clinical vignette MCQ on ${n}.`,
+      (n: string) => `Mnemonic or memory trick for ${n}?`,
+      (n: string) => `Diagnostic criteria and approach for ${n}?`,
+      (n: string) => `Common exam traps in ${n}?`,
+      (n: string) => `Treatment algorithm for ${n}?`,
+    ];
+    return rows.map((r, i) => ({
+      icon: icons[i % icons.length],
+      text: templates[i % templates.length](r.name),
+    }));
+  } catch {
+    return FALLBACK_STARTERS;
+  }
 }
 
 function formatTime(ts: number) {
@@ -159,6 +182,17 @@ export default function GuruChatScreen() {
   const topicName = route.params?.topicName ?? 'General Medicine';
   const { profile } = useAppStore();
   const flatListRef = useRef<FlatList<ChatItem>>(null);
+
+  const isGeneralChat = !route.params?.topicName || topicName === 'General Medicine';
+  const [starters, setStarters] = useState(
+    isGeneralChat ? FALLBACK_STARTERS : getStartersForTopic(topicName),
+  );
+
+  useEffect(() => {
+    if (isGeneralChat) {
+      getDynamicStarters().then(setStarters);
+    }
+  }, [isGeneralChat]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState(route.params?.initialQuestion ?? '');
@@ -586,7 +620,7 @@ export default function GuruChatScreen() {
               <Text style={styles.emptyTitle}>What do you want to know?</Text>
               <Text style={styles.emptyHint}>Try a question or pick a prompt below.</Text>
               <View style={styles.starterGrid}>
-                {getStartersForTopic(topicName).map((starter) => (
+                {starters.map((starter) => (
                   <Pressable
                     key={starter.text}
                     style={({ pressed }) => [styles.starterChip, pressed && styles.pressed]}

@@ -12,6 +12,7 @@ import {
   isAppInstalled,
   startRecording,
   showOverlay,
+  hideOverlay,
   stopRecording as nativeStopRecording,
 } from '../../modules/app-launcher';
 import { requestRecordingPermissions } from './appLauncher/permissions';
@@ -120,21 +121,27 @@ async function _launchMedicalAppInner(
       options?.onMicUsed?.();
       try {
         recordingPath = await startRecording('');
-        if (recordingPath) {
-          const groqKey = options?.groqKey?.trim();
-          const localWhisperPath = options?.localWhisperPath?.trim();
-          startRecordingHealthCheck(
-            recordingPath,
-            app.name,
-            groqKey || localWhisperPath ? { groqKey, localWhisperPath } : undefined,
+        if (!recordingPath) {
+          Alert.alert(
+            'Recording Failed',
+            'Could not start background recording. Please try again.',
           );
+          return false;
         }
+        const groqKey = options?.groqKey?.trim();
+        const localWhisperPath = options?.localWhisperPath?.trim();
+        startRecordingHealthCheck(
+          recordingPath,
+          app.name,
+          groqKey || localWhisperPath ? { groqKey, localWhisperPath } : undefined,
+        );
       } catch (e) {
         console.warn('[AppLauncher] Recording start failed:', e);
         Alert.alert(
           'Recording Failed',
-          'Could not start background recording. Audio will not be captured.',
+          'Could not start background recording. Please try again.',
         );
+        return false;
       }
 
       try {
@@ -169,6 +176,11 @@ async function _launchMedicalAppInner(
         await nativeStopRecording();
       } catch (stopErr) {
         console.warn('[AppLauncher] Failed to stop recording after launch error:', stopErr);
+      }
+      try {
+        await hideOverlay();
+      } catch (overlayStopErr) {
+        console.warn('[AppLauncher] Failed to hide overlay after launch error:', overlayStopErr);
       }
     }
   }

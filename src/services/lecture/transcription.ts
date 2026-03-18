@@ -7,6 +7,30 @@ const GROQ_MAX_FILE_SIZE = 24 * 1024 * 1024;
 const GROQ_TARGET_CHUNK_BYTES = 18 * 1024 * 1024;
 const WAV_BYTES_PER_SECOND = 16_000 * 2;
 
+/**
+ * Cleans up any stale transcripts_checkpoint_* directories left by interrupted chunked transcriptions.
+ * Call on app boot to prevent accumulation of orphaned temp dirs.
+ */
+export async function cleanupStaleCheckpointDirs(): Promise<void> {
+  try {
+    const baseDir = FileSystem.documentDirectory;
+    if (!baseDir) return;
+    const entries = await FileSystem.readDirectoryAsync(baseDir);
+    for (const entry of entries) {
+      if (entry.startsWith('transcripts_checkpoint_')) {
+        try {
+          await FileSystem.deleteAsync(baseDir + entry, { idempotent: true });
+          if (__DEV__) console.log(`[Transcription] Cleaned up stale checkpoint dir: ${entry}`);
+        } catch (e) {
+          console.warn(`[Transcription] Failed to delete stale checkpoint dir ${entry}:`, e);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Transcription] cleanupStaleCheckpointDirs failed:', e);
+  }
+}
+
 export async function getRecordingInfo(filePath: string) {
   try {
     const info = await FileSystem.getInfoAsync(
@@ -69,9 +93,23 @@ export async function transcribeWithGroqChunking(
         });
         if (__DEV__) console.log(`[Transcription] Resuming chunk ${i} from checkpoint`);
       } else {
-        // Transcribe and save checkpoint
+        // Transcribe with per-chunk retry (up to 2 retries, 1s delay)
         if (__DEV__) console.log(`[Transcription] Transcribing chunk ${i}...`);
-        chunkTranscript = await transcribeRawWithGroq(chunk.path, groqKey);
+        let chunkAttempt = 0;
+        const chunkMaxRetries = 2;
+        while (true) {
+          try {
+            chunkTranscript = await transcribeRawWithGroq(chunk.path, groqKey);
+            break;
+          } catch (chunkErr) {
+            chunkAttempt++;
+            if (chunkAttempt > chunkMaxRetries) {
+              throw chunkErr;
+            }
+            console.warn(`[Transcription] Chunk ${i} attempt ${chunkAttempt} failed, retrying...`, chunkErr);
+            await new Promise((r) => setTimeout(r, 1000));
+          }
+        }
         await FileSystem.writeAsStringAsync(chunkFilePath, chunkTranscript, {
           encoding: FileSystem.EncodingType.UTF8,
         });

@@ -12,6 +12,7 @@ let healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 let evidenceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
 let lastKnownFileSize = 0;
 let stalledCount = 0;
+let currentGeneration = 0;
 
 const HEALTH_CHECK_INTERVAL = 60_000;
 const STALLED_THRESHOLD = 3;
@@ -33,6 +34,7 @@ export function startRecordingHealthCheck(
   stopRecordingHealthCheck();
   lastKnownFileSize = 0;
   stalledCount = 0;
+  const generation = ++currentGeneration;
 
   const appStateListener = AppState.addEventListener('change', (state) => {
     if (state === 'background' || state === 'inactive') {
@@ -42,8 +44,10 @@ export function startRecordingHealthCheck(
   });
 
   healthCheckTimer = setInterval(async () => {
+    if (generation !== currentGeneration) return;
     try {
       const info = await validateRecordingFile(recordingPath);
+      if (generation !== currentGeneration) return;
       if (!info?.exists || info.size <= lastKnownFileSize) {
         stalledCount++;
       } else {

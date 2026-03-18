@@ -12,6 +12,7 @@ import { registerOfflineQueueProcessors } from './offlineQueueBootstrap';
 import { processQueue } from './offlineQueue';
 import { enforceLocalLlmRamGuard } from './deviceMemory';
 import { retryFailedTasks } from './lectureSessionMonitor';
+import { cleanupStaleCheckpointDirs } from './lecture/transcription';
 
 export interface BootstrapResult {
   success: true;
@@ -68,6 +69,7 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     }
 
     bootstrapLocalModels().catch((e: unknown) => console.log('Local model bootstrap skipped:', e));
+    cleanupStaleCheckpointDirs().catch((e: unknown) => console.warn('[AppBootstrap] Checkpoint cleanup failed:', e));
 
     return { success: true };
   } catch (e) {

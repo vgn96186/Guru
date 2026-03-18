@@ -89,9 +89,15 @@ export async function saveLecturePersistence(opts: {
   const transcriptUri = await saveTranscriptToFile(analysis.transcript || '');
 
   // Compute embedding before the transaction so we don't block the UI with AI/network inside BEGIN
-  const embeddingForMatching =
-    opts.embedding ??
-    (analysis.lectureSummary ? await generateEmbedding(analysis.lectureSummary) : null);
+  let embeddingForMatching: number[] | null = opts.embedding ?? null;
+  if (embeddingForMatching === null && analysis.lectureSummary) {
+    try {
+      embeddingForMatching = await generateEmbedding(analysis.lectureSummary);
+    } catch (embErr) {
+      console.warn('[Persistence] generateEmbedding failed, proceeding without embedding:', embErr);
+      embeddingForMatching = null;
+    }
+  }
 
   await db.execAsync('BEGIN IMMEDIATE');
   try {

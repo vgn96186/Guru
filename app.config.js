@@ -12,8 +12,9 @@ if (missing.length > 0 && isDev) {
 
 const appJson = require('./app.json');
 module.exports = {
-  ...appJson,
+  ...appJson.expo,
   extra: {
+    ...appJson.expo.extra,
     bundledGroqKey: process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '',
   },
 };

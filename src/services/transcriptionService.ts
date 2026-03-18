@@ -88,13 +88,14 @@ export async function transcribeAudio(opts: {
 
   if (!transcript) {
     if (!groqKey?.trim() && (!useLocalWhisper || !localWhisperPath)) {
-      throw new Error('No transcription engine available');
+      throw new Error('No transcription engine available. Configure a Groq API key or enable local Whisper in Settings.');
     }
+    // Transcript is empty but engines were available — likely silence or very short audio
     return {
       subject: 'Unknown',
       topics: [],
       keyConcepts: [],
-      lectureSummary: 'No speech detected (silent audio)',
+      lectureSummary: 'No speech detected in recording (silent or very short audio)',
       estimatedConfidence: 1,
       transcript: '',
       highYieldPoints: [],

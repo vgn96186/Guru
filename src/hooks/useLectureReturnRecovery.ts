@@ -25,6 +25,16 @@ interface UseLectureReturnRecoveryParams {
   onRecovered: (payload: LectureReturnSheetData) => void;
 }
 
+/** Stop health monitoring and hide overlay atomically to avoid ordering bugs. */
+async function stopHealthAndHideOverlay(): Promise<void> {
+  stopRecordingHealthCheck();
+  try {
+    await hideOverlay();
+  } catch (err) {
+    console.warn('[Home] hideOverlay failed:', err);
+  }
+}
+
 export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecoveryParams) {
   const appStateRef = useRef(AppState.currentState);
   const handledReturnLogRef = useRef<number | null>(null);
@@ -72,7 +82,6 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
         const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
         const logId = session.id!;
         handledReturnLogRef.current = logId;
-        stopRecordingHealthCheck();
 
         if (!showPrompt && !session.recordingPath) {
           await finishExternalAppSession(
@@ -132,11 +141,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
           }
         }
 
-        try {
-          await hideOverlay();
-        } catch (err) {
-          console.warn('[Home] hideOverlay failed:', err);
-        }
+        await stopHealthAndHideOverlay();
 
         await finishExternalAppSession(logId, durationMinutes);
         onRecovered({

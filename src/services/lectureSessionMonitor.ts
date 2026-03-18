@@ -83,14 +83,18 @@ export async function retryFailedTranscriptions(groqKey?: string): Promise<numbe
   let recovered = 0;
   for (const session of pending) {
     if (session.recordingPath) {
-      const res = await runFullTranscriptionPipeline({
-        recordingPath: session.recordingPath,
-        appName: session.appName,
-        durationMinutes: session.durationMinutes || 0,
-        logId: session.id!,
-        groqKey,
-      });
-      if (res.success) recovered++;
+      try {
+        const res = await runFullTranscriptionPipeline({
+          recordingPath: session.recordingPath,
+          appName: session.appName,
+          durationMinutes: session.durationMinutes || 0,
+          logId: session.id!,
+          groqKey,
+        });
+        if (res.success) recovered++;
+      } catch (err) {
+        console.error(`[SessionMonitor] retryFailedTranscriptions: session ${session.id} failed:`, err);
+      }
     }
   }
   return recovered;
@@ -110,7 +114,7 @@ export async function retryPendingNoteEnhancements(): Promise<number> {
           keyConcepts: [],
           highYieldPoints: [],
           lectureSummary: note.summary || '',
-          estimatedConfidence: (note.confidence || 2) as 1 | 2 | 3,
+          estimatedConfidence: (Math.max(1, note.confidence || 1)) as 1 | 2 | 3,
           transcript: transcriptText ?? '',
         };
         await enhanceNoteInBackground(session.lectureNoteId, session.id, analysis);
@@ -176,9 +180,7 @@ export async function runFullTranscriptionPipeline(opts: {
       embedding,
     });
 
-    void enhanceNoteInBackground(noteId as number, logId, analysis).catch((err) => {
-      console.error('[SessionMonitor] Note enhancement failed:', err);
-    });
+    void enhanceNoteInBackground(noteId as number, logId, analysis);
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
   } catch (e: unknown) {
     const errMsg = e instanceof Error ? e.message : String(e);
@@ -198,7 +200,8 @@ async function enhanceNoteInBackground(noteId: number, logId: number, analysis: 
       // CRITICAL: Backup final note to Public Storage
       await backupNoteToPublic(noteId, analysis.subject, enhanced);
     }
-  } catch {
+  } catch (err) {
+    console.error('[SessionMonitor] enhanceNoteInBackground failed for noteId', noteId, ':', err);
     await updateSessionNoteEnhancementStatus(logId, 'failed');
   }
 }

@@ -415,7 +415,7 @@ export default function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="gsk_..."
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
             value={groqKey}
             onChangeText={setGroqKey}
             secureTextEntry
@@ -430,7 +430,7 @@ export default function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="sk-or-v1-..."
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
             value={orKey}
             onChangeText={setOrKey}
             secureTextEntry
@@ -446,7 +446,7 @@ export default function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="hf_..."
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
             value={huggingFaceToken}
             onChangeText={setHuggingFaceToken}
             secureTextEntry
@@ -461,7 +461,7 @@ export default function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder={DEFAULT_HF_TRANSCRIPTION_MODEL}
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
             value={huggingFaceModel}
             onChangeText={setHuggingFaceModel}
             autoCapitalize="none"
@@ -548,11 +548,14 @@ export default function SettingsScreen() {
 
         <Section title="👤 Profile">
           <TouchableOpacity
-            style={[styles.testBtn, { marginTop: 0, marginBottom: 16, borderColor: '#4CAF5044' }]}
+            style={[
+              styles.testBtn,
+              { marginTop: 0, marginBottom: 16, borderColor: theme.colors.successTintSoft },
+            ]}
             onPress={() => navigation.navigate('DeviceLink')}
             activeOpacity={0.8}
           >
-            <Text style={[styles.testBtnText, { color: '#4CAF50' }]}>
+            <Text style={[styles.testBtnText, { color: theme.colors.success }]}>
               📱 Link Another Device (Sync)
             </Text>
           </TouchableOpacity>
@@ -560,7 +563,7 @@ export default function SettingsScreen() {
           <TextInput
             style={styles.input}
             placeholder="Dr. ..."
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
             value={name}
             onChangeText={setName}
           />
@@ -572,14 +575,14 @@ export default function SettingsScreen() {
             style={styles.input}
             value={inicetDate}
             onChangeText={setInicetDate}
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
           <Label text="NEET-PG date (YYYY-MM-DD)" />
           <TextInput
             style={styles.input}
             value={neetDate}
             onChangeText={setNeetDate}
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
           <TouchableOpacity
             style={[styles.autoFetchBtn, fetchingDates && styles.autoFetchBtnDisabled]}
@@ -588,7 +591,7 @@ export default function SettingsScreen() {
             activeOpacity={0.8}
           >
             {fetchingDates ? (
-              <ActivityIndicator size="small" color="#6C63FF" />
+              <ActivityIndicator size="small" color={theme.colors.primary} />
             ) : (
               <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
             )}
@@ -597,7 +600,9 @@ export default function SettingsScreen() {
             <Text
               style={[
                 styles.hint,
-                fetchDatesMsg.startsWith('✅') ? { color: '#4CAF50' } : { color: '#F44336' },
+                fetchDatesMsg.startsWith('✅')
+                  ? { color: theme.colors.success }
+                  : { color: theme.colors.error },
               ]}
             >
               {fetchDatesMsg}
@@ -616,7 +621,7 @@ export default function SettingsScreen() {
             value={sessionLength}
             onChangeText={setSessionLength}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
           <Label text="Daily study goal (minutes)" />
           <TextInput
@@ -624,7 +629,7 @@ export default function SettingsScreen() {
             value={dailyGoal}
             onChangeText={setDailyGoal}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
           <View style={[styles.switchRow, { marginTop: 16 }]}>
             <View style={{ flex: 1, paddingRight: 8 }}>
@@ -637,8 +642,8 @@ export default function SettingsScreen() {
             <Switch
               value={strictMode}
               onValueChange={setStrictMode}
-              trackColor={{ true: '#F44336', false: '#333' }}
-              thumbColor="#fff"
+              trackColor={{ true: theme.colors.error, false: theme.colors.border }}
+              thumbColor={theme.colors.textPrimary}
             />
           </View>
         </Section>
@@ -654,8 +659,8 @@ export default function SettingsScreen() {
             <Switch
               value={notifs}
               onValueChange={setNotifs}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
+              trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+              thumbColor={theme.colors.textPrimary}
             />
           </View>
           <Label text="Reminder hour (0–23, e.g. 7 = 7:30 AM)" />
@@ -664,7 +669,7 @@ export default function SettingsScreen() {
             value={notifHour}
             onChangeText={setNotifHour}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
           <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
           <Label text="Guru presence frequency" />
@@ -701,8 +706,8 @@ export default function SettingsScreen() {
             <Switch
               value={bodyDoubling}
               onValueChange={setBodyDoubling}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
+              trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+              thumbColor={theme.colors.textPrimary}
             />
           </View>
         </Section>
@@ -783,7 +788,7 @@ export default function SettingsScreen() {
             value={idleTimeout}
             onChangeText={setIdleTimeout}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
           <Label text="Break duration between topics (minutes)" />
           <TextInput
@@ -791,7 +796,7 @@ export default function SettingsScreen() {
             value={breakDuration}
             onChangeText={setBreakDuration}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
           />
         </Section>
 
@@ -806,8 +811,8 @@ export default function SettingsScreen() {
             <Switch
               value={pomodoroEnabled}
               onValueChange={setPomodoroEnabled}
-              trackColor={{ true: '#6C63FF', false: '#333' }}
-              thumbColor="#fff"
+              trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+              thumbColor={theme.colors.textPrimary}
             />
           </View>
           <Label text="Pomodoro interval (minutes)" />
@@ -816,7 +821,7 @@ export default function SettingsScreen() {
             value={pomodoroInterval}
             onChangeText={setPomodoroInterval}
             keyboardType="number-pad"
-            placeholderTextColor="#444"
+            placeholderTextColor={theme.colors.textMuted}
             editable={pomodoroEnabled}
           />
           <Text style={styles.hint}>Suggested: 20-30 minutes for optimal focus.</Text>
@@ -850,7 +855,7 @@ export default function SettingsScreen() {
             Forces fresh generation of all key points, quizzes, stories, etc.
           </Text>
           <TouchableOpacity
-            style={[styles.dangerBtn, { borderColor: '#F4433666', marginTop: 10 }]}
+            style={[styles.dangerBtn, { borderColor: theme.colors.errorTintSoft, marginTop: 10 }]}
             onPress={() =>
               Alert.alert(
                 'Reset all progress?',
@@ -871,7 +876,9 @@ export default function SettingsScreen() {
             }
             activeOpacity={0.8}
           >
-            <Text style={[styles.dangerBtnText, { color: '#F44336' }]}>💀 Reset All Progress</Text>
+            <Text style={[styles.dangerBtnText, { color: theme.colors.error }]}>
+              💀 Reset All Progress
+            </Text>
           </TouchableOpacity>
           <Text style={styles.hint}>
             Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
@@ -910,7 +917,7 @@ export default function SettingsScreen() {
               }}
             >
               {backupBusy ? (
-                <ActivityIndicator size="small" color="#fff" />
+                <ActivityIndicator size="small" color={theme.colors.textPrimary} />
               ) : (
                 <Text style={styles.backupBtnText}>⬆️ Export</Text>
               )}
@@ -918,7 +925,7 @@ export default function SettingsScreen() {
             <TouchableOpacity
               style={[
                 styles.backupBtn,
-                { borderColor: '#4CAF5066' },
+                { borderColor: theme.colors.successTintSoft },
                 backupBusy && styles.saveBtnDisabled,
               ]}
               disabled={backupBusy}
@@ -949,7 +956,7 @@ export default function SettingsScreen() {
                 );
               }}
             >
-              <Text style={[styles.backupBtnText, { color: '#4CAF50' }]}>⬇️ Import</Text>
+              <Text style={[styles.backupBtnText, { color: theme.colors.success }]}>⬇️ Import</Text>
             </TouchableOpacity>
           </View>
         </Section>
@@ -1026,10 +1033,16 @@ function Label({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
-  content: { padding: 16, paddingBottom: 60 },
-  title: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 20, marginTop: 8 },
-  section: { marginBottom: 24 },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
+  content: { padding: theme.spacing.lg, paddingBottom: 60 },
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: 26,
+    fontWeight: '900',
+    marginBottom: 20,
+    marginTop: 8,
+  },
+  section: { marginBottom: theme.spacing.xl },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1037,31 +1050,35 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   sectionTitle: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  sectionToggle: { color: '#6C63FF', fontSize: 12, fontWeight: '700' },
-  sectionContent: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16 },
-  label: { color: '#9E9E9E', fontSize: 13, marginBottom: 6, marginTop: 8 },
+  sectionToggle: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
+  sectionContent: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    padding: theme.spacing.lg,
+  },
+  label: { color: theme.colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 8 },
   input: {
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     borderRadius: 10,
     padding: 12,
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
     marginBottom: 4,
   },
   apiKeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   apiKeyInput: { flex: 1, marginBottom: 0 },
-  inputSuccess: { borderColor: '#4CAF50' },
-  inputError: { borderColor: '#F44336' },
+  inputSuccess: { borderColor: theme.colors.success },
+  inputError: { borderColor: theme.colors.error },
   validateBtn: {
-    backgroundColor: '#2A2A38',
+    backgroundColor: theme.colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -1069,16 +1086,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 52,
     borderWidth: 1,
-    borderColor: '#444',
+    borderColor: theme.colors.borderLight,
   },
-  validateBtnSuccess: { backgroundColor: '#1B3A1F', borderColor: '#4CAF50' },
-  validateBtnError: { backgroundColor: '#3A1B1B', borderColor: '#F44336' },
-  validateBtnTesting: { backgroundColor: '#1A1A2E', borderColor: '#6C63FF' },
-  validateBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  validateBtnSuccess: {
+    backgroundColor: theme.colors.successSurface,
+    borderColor: theme.colors.success,
+  },
+  validateBtnError: { backgroundColor: theme.colors.errorSurface, borderColor: theme.colors.error },
+  validateBtnTesting: { backgroundColor: theme.colors.card, borderColor: theme.colors.primary },
+  validateBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   validationMsg: { fontSize: 12, marginTop: 6, marginBottom: 2 },
-  validationSuccess: { color: '#4CAF50' },
-  validationError: { color: '#F44336' },
-  hint: { color: '#555', fontSize: 12, marginBottom: 4 },
+  validationSuccess: { color: theme.colors.success },
+  validationError: { color: theme.colors.error },
+  hint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 4 },
   localModelBtn: {
     marginTop: 12,
     backgroundColor: theme.colors.surface,
@@ -1091,49 +1111,54 @@ const styles = StyleSheet.create({
   localModelBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   autoFetchBtn: {
     marginTop: 10,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: theme.colors.card,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: theme.colors.primaryTintMedium,
   },
   autoFetchBtnDisabled: { opacity: 0.5 },
-  autoFetchBtnText: { color: '#6C63FF', fontSize: 13, fontWeight: '600' },
+  autoFetchBtnText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  switchLabel: { color: '#fff', fontWeight: '600', fontSize: 15, marginBottom: 2 },
+  switchLabel: {
+    color: theme.colors.textPrimary,
+    fontWeight: '600',
+    fontSize: 15,
+    marginBottom: 2,
+  },
   testBtn: {
     marginTop: 12,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: theme.colors.card,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: theme.colors.primaryTintMedium,
   },
-  testBtnText: { color: '#6C63FF', fontWeight: '600', fontSize: 14 },
+  testBtnText: { color: theme.colors.primary, fontWeight: '600', fontSize: 14 },
   saveBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
     marginTop: 8,
   },
-  saveBtnDisabled: { backgroundColor: '#333' },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 17 },
+  saveBtnDisabled: { backgroundColor: theme.colors.border },
+  saveBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 17 },
   backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   backupBtn: {
     flex: 1,
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     borderRadius: 10,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6C63FF66',
+    borderColor: theme.colors.primaryTintMedium,
   },
-  backupBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
+  backupBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
   backupDate: {
-    color: '#555',
+    color: theme.colors.textMuted,
     fontSize: 11,
     textAlign: 'center',
     fontStyle: 'italic',
@@ -1142,70 +1167,86 @@ const styles = StyleSheet.create({
   frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
   freqBtn: {
     flex: 1,
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
   },
-  freqBtnActive: { backgroundColor: '#6C63FF33', borderColor: '#6C63FF' },
-  freqText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
-  freqTextActive: { color: '#6C63FF', fontWeight: '700' },
-  footer: { color: '#333', fontSize: 11, textAlign: 'center', marginTop: 24, lineHeight: 18 },
+  freqBtnActive: {
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderColor: theme.colors.primary,
+  },
+  freqText: { color: theme.colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  freqTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  footer: {
+    color: theme.colors.borderLight,
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 24,
+    lineHeight: 18,
+  },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   typeChip: {
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  typeChipBlocked: { backgroundColor: '#2A0A0A', borderColor: '#F4433666' },
-  typeChipLocked: { borderColor: '#6C63FF44', opacity: 0.5 },
-  typeChipText: { color: '#E0E0E0', fontSize: 13, fontWeight: '600' },
-  typeChipTextBlocked: { color: '#F44336' },
-  typeChipX: { color: '#F44336', fontSize: 11 },
+  typeChipBlocked: {
+    backgroundColor: theme.colors.errorSurface,
+    borderColor: theme.colors.errorTintSoft,
+  },
+  typeChipLocked: { borderColor: theme.colors.primaryTintMedium, opacity: 0.5 },
+  typeChipText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  typeChipTextBlocked: { color: theme.colors.error },
+  typeChipX: { color: theme.colors.error, fontSize: 11 },
   clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
-  clearBtnText: { color: '#555', fontSize: 13 },
+  clearBtnText: { color: theme.colors.textMuted, fontSize: 13 },
   dangerBtn: {
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     borderRadius: 10,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: theme.colors.primaryTintMedium,
   },
-  dangerBtnText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
+  dangerBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
   modelSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
     marginBottom: 8,
   },
-  modelSelectorText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  modelSelectorArrow: { color: '#666', fontSize: 12 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'flex-end' },
+  modelSelectorText: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  modelSelectorArrow: { color: theme.colors.textMuted, fontSize: 12 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: theme.colors.backdropStrong,
+    justifyContent: 'flex-end',
+  },
   modalContent: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '60%',
   },
   modalTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
     textAlign: 'center',
   },
   modelItem: {
@@ -1214,46 +1255,46 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: theme.colors.borderLight,
   },
   modelItemActive: {
-    backgroundColor: '#2A2A38',
+    backgroundColor: theme.colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     borderBottomWidth: 0,
   },
-  modelItemText: { color: '#9E9E9E', fontSize: 15 },
-  modelItemTextActive: { color: '#6C63FF', fontWeight: '700' },
-  checkMark: { color: '#6C63FF', fontWeight: 'bold' },
+  modelItemText: { color: theme.colors.textSecondary, fontSize: 15 },
+  modelItemTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  checkMark: { color: theme.colors.primary, fontWeight: 'bold' },
   closeBtn: {
-    marginTop: 16,
+    marginTop: theme.spacing.lg,
     padding: 14,
     alignItems: 'center',
-    backgroundColor: '#333',
+    backgroundColor: theme.colors.border,
     borderRadius: 12,
   },
-  closeBtnText: { color: '#fff', fontWeight: '600' },
+  closeBtnText: { color: theme.colors.textPrimary, fontWeight: '600' },
   // Diagnostics
   permRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#2A2A38',
+    borderBottomColor: theme.colors.border,
   },
-  permLabel: { color: '#E0E0E0', fontSize: 14, fontWeight: '600' },
+  permLabel: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
   permStatus: { fontSize: 12, marginTop: 2 },
-  permOk: { color: '#4CAF50' },
-  permError: { color: '#F44336' },
+  permOk: { color: theme.colors.success },
+  permError: { color: theme.colors.error },
   fixBtn: {
-    backgroundColor: '#6C63FF22',
+    backgroundColor: theme.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: '#6C63FF',
+    borderColor: theme.colors.primary,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  fixBtnText: { color: '#6C63FF', fontSize: 12, fontWeight: '800' },
+  fixBtnText: { color: theme.colors.primary, fontSize: 12, fontWeight: '800' },
   diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
-  diagBtnText: { color: '#666', fontSize: 13, textDecorationLine: 'underline' },
+  diagBtnText: { color: theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
 });

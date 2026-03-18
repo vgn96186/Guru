@@ -10,14 +10,24 @@ import {
   transcribeRawWithLocalWhisper,
 } from './transcription/engines';
 import { analyzeTranscript, type LectureAnalysis } from './transcription/analysis';
-import { generateADHDNote, buildQuickLectureNote } from './transcription/noteGeneration';
+import {
+  generateADHDNote,
+  buildQuickLectureNote,
+  shouldReplaceLectureNote,
+} from './transcription/noteGeneration';
 import { markTopicsFromLecture } from './transcription/matching';
 import { generateEmbedding } from './ai/embeddingService';
 import { BUNDLED_HF_TOKEN, DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
 import type { UserProfile } from '../types';
 
 export type { LectureAnalysis };
-export { generateADHDNote, buildQuickLectureNote, analyzeTranscript, markTopicsFromLecture };
+export {
+  generateADHDNote,
+  buildQuickLectureNote,
+  shouldReplaceLectureNote,
+  analyzeTranscript,
+  markTopicsFromLecture,
+};
 
 type TranscriptionProvider = NonNullable<UserProfile['transcriptionProvider']>;
 

@@ -67,6 +67,9 @@ jest.mock('./transcriptionService', () => ({
   analyzeTranscript: jest.fn(),
   generateADHDNote: jest.fn(),
   buildQuickLectureNote: jest.fn(),
+  shouldReplaceLectureNote: jest.fn(
+    (current: string, candidate: string) => candidate.length > current.length,
+  ),
   transcribeAudio: jest.fn(),
 }));
 
@@ -88,6 +91,17 @@ jest.mock('./lecture/persistence', () => ({
   saveLecturePersistence: jest.fn(),
 }));
 
+jest.mock('../db/queries/aiCache', () => ({
+  updateLectureTranscriptNote: jest.fn(),
+  getLectureNoteById: jest.fn(),
+  getLegacyLectureNotes: jest.fn(),
+}));
+
+jest.mock('./transcriptStorage', () => ({
+  getTranscriptText: jest.fn(),
+  backupNoteToPublic: jest.fn(),
+}));
+
 // We'll mock generateEmbedding to avoid API calls
 jest.mock('./ai/embeddingService', () => ({
   generateEmbedding: jest.fn(),
@@ -103,7 +117,12 @@ describe('retryFailedTranscriptions', () => {
 
     externalLogsMock = require('../db/queries/externalLogs');
     transcriptionServiceMock = require('./transcriptionService');
+    const persistenceMock = require('./lecture/persistence');
+    const aiCacheMock = require('../db/queries/aiCache');
 
+    persistenceMock.saveLecturePersistence.mockResolvedValue(999);
+    transcriptionServiceMock.generateADHDNote.mockResolvedValue('');
+    aiCacheMock.getLectureNoteById.mockResolvedValue({ id: 999, note: 'Saved quick note' });
     lectureSessionMonitor = require('./lectureSessionMonitor');
   });
 
@@ -217,6 +236,7 @@ describe('saveLectureAnalysisQuick', () => {
     jest.resetModules();
     transcriptionServiceMock = require('./transcriptionService');
     persistenceMock = require('./lecture/persistence');
+    transcriptionServiceMock.generateADHDNote.mockResolvedValue('');
     lectureSessionMonitor = require('./lectureSessionMonitor');
   });
 
@@ -253,5 +273,89 @@ describe('saveLectureAnalysisQuick', () => {
       quickNote: mockQuickNote,
     });
     expect(result).toBe(123);
+  });
+});
+
+describe('runFullTranscriptionPipeline note enhancement safety', () => {
+  let lectureSessionMonitor: typeof import('./lectureSessionMonitor');
+  let transcriptionServiceMock: any;
+  let persistenceMock: any;
+  let aiCacheMock: any;
+  let transcriptStorageMock: any;
+  let externalLogsMock: any;
+
+  beforeEach(async () => {
+    jest.resetModules();
+    transcriptionServiceMock = require('./transcriptionService');
+    persistenceMock = require('./lecture/persistence');
+    aiCacheMock = require('../db/queries/aiCache');
+    transcriptStorageMock = require('./transcriptStorage');
+    externalLogsMock = require('../db/queries/externalLogs');
+    lectureSessionMonitor = require('./lectureSessionMonitor');
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('keeps the saved quick note when the enhanced note is weaker', async () => {
+    const analysis = {
+      transcript: 'Full lecture transcript with details',
+      subject: 'Medicine',
+      topics: ['Anemia'],
+      keyConcepts: ['Definition', 'Investigations'],
+      highYieldPoints: ['Microcytic anemia workup'],
+      lectureSummary: 'Detailed lecture summary',
+      estimatedConfidence: 2,
+    };
+
+    transcriptionServiceMock.transcribeAudio.mockResolvedValue(analysis);
+    const savedQuickNote = `🎯 **Subject**: Medicine
+📌 **Topics**: Anemia
+
+💡 **Key Concepts**
+• Definition
+• Investigations
+
+🚀 **High-Yield Facts**
+🚀 **Microcytic anemia workup**
+
+📝 **Integrated Summary**
+Detailed lecture summary
+
+---
+❓ **Check Yourself**
+ - Q: What is the most high-yield takeaway from this Medicine lecture?`;
+    transcriptionServiceMock.buildQuickLectureNote.mockReturnValue(savedQuickNote);
+    transcriptionServiceMock.generateADHDNote.mockResolvedValue('Short note');
+    transcriptionServiceMock.shouldReplaceLectureNote.mockReturnValue(false);
+    persistenceMock.saveLecturePersistence.mockResolvedValue(321);
+    aiCacheMock.getLectureNoteById.mockResolvedValue({
+      id: 321,
+      note: savedQuickNote,
+    });
+
+    const result = await lectureSessionMonitor.runFullTranscriptionPipeline({
+      recordingPath: '/mock/path/1.m4a',
+      appName: 'MockApp',
+      durationMinutes: 10,
+      logId: 55,
+      groqKey: 'mock-key',
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(result.success).toBe(true);
+    expect(aiCacheMock.updateLectureTranscriptNote).not.toHaveBeenCalled();
+    expect(externalLogsMock.updateSessionNoteEnhancementStatus).toHaveBeenCalledWith(
+      55,
+      'completed',
+    );
+    expect(transcriptStorageMock.backupNoteToPublic).toHaveBeenCalledWith(
+      321,
+      { subjectName: 'Medicine', topics: ['Anemia'] },
+      expect.stringContaining('Detailed lecture summary'),
+    );
   });
 });

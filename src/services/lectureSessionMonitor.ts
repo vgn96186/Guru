@@ -5,6 +5,7 @@ import {
   analyzeTranscript,
   generateADHDNote,
   buildQuickLectureNote,
+  shouldReplaceLectureNote,
   transcribeAudio,
   type LectureAnalysis,
 } from './transcriptionService';
@@ -207,18 +208,29 @@ export async function runFullTranscriptionPipeline(opts: {
 
 async function enhanceNoteInBackground(noteId: number, logId: number, analysis: LectureAnalysis) {
   try {
+    const existingNote = await getLectureNoteById(noteId);
+    const currentNote = existingNote?.note?.trim() ?? '';
     const enhanced = await generateADHDNote(analysis);
-    if (enhanced.trim()) {
-      await updateLectureTranscriptNote(noteId, enhanced);
-      await updateSessionNoteEnhancementStatus(logId, 'completed');
+    const normalizedEnhanced = enhanced.trim();
+    const shouldReplace = shouldReplaceLectureNote(currentNote, normalizedEnhanced);
+    const finalNote = shouldReplace ? normalizedEnhanced : currentNote || normalizedEnhanced;
 
-      // CRITICAL: Backup final note to Public Storage
-      await backupNoteToPublic(
-        noteId,
-        { subjectName: analysis.subject, topics: analysis.topics },
-        enhanced,
-      );
+    if (!finalNote) {
+      await updateSessionNoteEnhancementStatus(logId, 'failed');
+      return;
     }
+
+    if (shouldReplace) {
+      await updateLectureTranscriptNote(noteId, normalizedEnhanced);
+    }
+    await updateSessionNoteEnhancementStatus(logId, 'completed');
+
+    // Always back up the final kept note, even if enhancement was skipped.
+    await backupNoteToPublic(
+      noteId,
+      { subjectName: analysis.subject, topics: analysis.topics },
+      finalNote,
+    );
   } catch (err) {
     console.error('[SessionMonitor] enhanceNoteInBackground failed for noteId', noteId, ':', err);
     await updateSessionNoteEnhancementStatus(logId, 'failed');

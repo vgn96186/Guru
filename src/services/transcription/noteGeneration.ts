@@ -15,14 +15,68 @@ Rules:
 - OUTPUT: Return polished markdown only. Do not mention chunking, splitting, or missing context.
 `;
 
+const NOTE_HEADERS = [
+  '🎯 **Subject**',
+  '📌 **Topics**',
+  '💡 **Key Concepts**',
+  '🚀 **High-Yield Facts**',
+  '🧠 **Clinical Links**',
+  '📝 **Integrated Summary**',
+  '❓ **Check Yourself**',
+] as const;
+
+function scoreLectureNote(note: string): number {
+  const trimmed = note.trim();
+  if (!trimmed) return 0;
+
+  const headerScore = NOTE_HEADERS.reduce(
+    (score, header) => score + (trimmed.includes(header) ? 2 : 0),
+    0,
+  );
+  const bulletCount = (trimmed.match(/^[•\-]\s/gm) ?? []).length;
+  const boldCount = (trimmed.match(/\*\*[^*]+\*\*/g) ?? []).length;
+  const questionCount = (trimmed.match(/^\s*[-•]\s+Q:|^\s*\d+\.\s+/gm) ?? []).length;
+  const detailScore = Math.min(4, Math.floor(trimmed.length / 400));
+
+  return (
+    headerScore +
+    Math.min(3, bulletCount) +
+    Math.min(3, Math.floor(boldCount / 3)) +
+    Math.min(2, questionCount) +
+    detailScore
+  );
+}
+
+export function shouldReplaceLectureNote(currentNote: string, candidateNote: string): boolean {
+  const current = currentNote.trim();
+  const candidate = candidateNote.trim();
+
+  if (!candidate) return false;
+  if (!current) return true;
+  if (candidate === current) return false;
+
+  const currentScore = scoreLectureNote(current);
+  const candidateScore = scoreLectureNote(candidate);
+
+  if (candidateScore >= currentScore + 2) return true;
+  if (candidateScore >= currentScore && candidate.length >= current.length + 200) return true;
+  return false;
+}
+
 export async function generateADHDNote(analysis: LectureAnalysis): Promise<string> {
+  const transcriptExcerpt = analysis.transcript?.trim()
+    ? analysis.transcript.trim().slice(0, 12000)
+    : '';
   const input = `Subject: ${analysis.subject}
 Topics: ${analysis.topics.join(', ')}
 Key concepts:
 ${analysis.keyConcepts.map((c: string) => `- ${c}`).join('\n')}
 High-yield facts:
 ${analysis.highYieldPoints.map((p: string) => `- ${p}`).join('\n')}
-Summary: ${analysis.lectureSummary}`;
+Summary: ${analysis.lectureSummary}
+
+Transcript:
+${transcriptExcerpt || '(No transcript available)'}`;
 
   try {
     const { text } = await generateTextWithRouting([

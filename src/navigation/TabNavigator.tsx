@@ -33,6 +33,8 @@ import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
 import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
 import MenuScreen from '../screens/MenuScreen';
 import GlobalTopicSearchScreen from '../screens/GlobalTopicSearchScreen';
+import DeviceLinkScreen from '../screens/DeviceLinkScreen';
+import ManualNoteCreationScreen from '../screens/ManualNoteCreationScreen';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
@@ -91,8 +93,10 @@ function MenuStackNav() {
       <MenuStack.Screen name="StudyPlan" component={StudyPlanScreen} />
       <MenuStack.Screen name="Stats" component={StatsScreen} />
       <MenuStack.Screen name="Settings" component={SettingsScreen} />
+      <MenuStack.Screen name="DeviceLink" component={DeviceLinkScreen} />
       <MenuStack.Screen name="NotesHub" component={NotesHubScreen} />
       <MenuStack.Screen name="NotesSearch" component={NotesSearchScreen} />
+      <MenuStack.Screen name="ManualNoteCreation" component={ManualNoteCreationScreen} />
       <MenuStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} />
     </MenuStack.Navigator>
   );
@@ -370,7 +374,7 @@ export default function TabNavigator() {
 
                 <Pressable
                   style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
-                  onPress={() => navigation.navigate('ManualNoteCreation' as never)}
+                  onPress={() => openRoute('MenuTab', 'ManualNoteCreation')}
                   accessibilityRole="button"
                   accessibilityLabel="Paste transcript"
                 >

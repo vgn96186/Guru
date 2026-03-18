@@ -37,6 +37,14 @@ interface SubjectMetrics {
   weak: number;
 }
 
+interface TopicSearchResult {
+  id: number;
+  name: string;
+  subject_id: number;
+  subject_name: string;
+  color_hex: string;
+}
+
 const SORT_OPTIONS: Array<{ key: SubjectSortMode; label: string }> = [
   { key: 'weight', label: 'Weight' },
   { key: 'due', label: 'Due' },
@@ -55,6 +63,7 @@ export default function SyllabusScreen() {
   const [sortMode, setSortMode] = useState<SubjectSortMode>('weight');
   const [searchMatchIds, setSearchMatchIds] = useState<Set<number>>(new Set());
   const [searchMatchCounts, setSearchMatchCounts] = useState<Map<number, number>>(new Map());
+  const [topicResults, setTopicResults] = useState<TopicSearchResult[]>([]);
 
   const loadData = useCallback(async () => {
     const [subs, combinedRows] = await Promise.all([getAllSubjects(), getSubjectStatsAggregated()]);
@@ -139,21 +148,32 @@ export default function SyllabusScreen() {
     if (!searchLower) {
       setSearchMatchIds(new Set());
       setSearchMatchCounts(new Map());
+      setTopicResults([]);
       return;
     }
     const db = getDb();
-    void db
-      .getAllAsync<{
+    void Promise.all([
+      db.getAllAsync<{
         subject_id: number;
         c: number;
       }>(
         `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
         [`%${searchLower}%`],
-      )
-      .then((rows) => {
-        setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
-        setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
-      });
+      ),
+      db.getAllAsync<TopicSearchResult>(
+        `SELECT t.id, t.name, t.subject_id, s.name as subject_name, s.color_hex
+         FROM topics t
+         JOIN subjects s ON t.subject_id = s.id
+         WHERE LOWER(t.name) LIKE ?
+         ORDER BY t.inicet_priority DESC, t.name ASC
+         LIMIT 24`,
+        [`%${searchLower}%`],
+      ),
+    ]).then(([rows, topics]) => {
+      setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
+      setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
+      setTopicResults(topics);
+    });
   }, [searchQuery]);
 
   async function handleManualSync() {
@@ -327,7 +347,7 @@ export default function SyllabusScreen() {
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search subjects..."
+            placeholder="Search subjects or topics..."
             placeholderTextColor={theme.colors.textMuted}
             style={styles.searchInput}
           />
@@ -358,10 +378,46 @@ export default function SyllabusScreen() {
           data={filteredSubjects}
           keyExtractor={(s) => s.id.toString()}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            searchLower.length >= 2 && topicResults.length > 0 ? (
+              <View style={styles.topicResultsSection}>
+                <Text style={styles.topicResultsLabel}>Direct Topic Matches</Text>
+                {topicResults.map((topic) => (
+                  <TouchableOpacity
+                    key={`topic-${topic.id}`}
+                    style={styles.topicResultCard}
+                    activeOpacity={0.8}
+                    onPress={() =>
+                      navigation.navigate('TopicDetail', {
+                        subjectId: topic.subject_id,
+                        subjectName: topic.subject_name,
+                        initialTopicId: topic.id,
+                        initialSearchQuery: topic.name,
+                      })
+                    }
+                  >
+                    <View style={[styles.topicResultDot, { backgroundColor: topic.color_hex }]} />
+                    <View style={styles.topicResultCopy}>
+                      <Text style={styles.topicResultName} numberOfLines={2}>
+                        {topic.name}
+                      </Text>
+                      <Text style={styles.topicResultSubject}>{topic.subject_name}</Text>
+                    </View>
+                    <Text style={styles.topicResultAction}>Open</Text>
+                  </TouchableOpacity>
+                ))}
+                <Text style={styles.topicResultsDivider}>Matching Subjects</Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No subjects matched</Text>
-              <Text style={styles.emptySub}>Try a different subject name or short code.</Text>
+              <Text style={styles.emptyTitle}>
+                {searchLower.length >= 2 ? 'No subjects or topics matched' : 'No subjects matched'}
+              </Text>
+              <Text style={styles.emptySub}>
+                Try a different subject name, short code, or topic keyword.
+              </Text>
             </View>
           }
           renderItem={({ item }) => (
@@ -473,6 +529,44 @@ const styles = StyleSheet.create({
   sortChipText: { color: '#A9AFBC', fontSize: 12, fontWeight: '700' },
   sortChipTextActive: { color: '#E7E4FF' },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
+  topicResultsSection: { marginBottom: 20 },
+  topicResultsLabel: {
+    color: '#E7E4FF',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  topicResultCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#171722',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    padding: 14,
+    marginBottom: 8,
+  },
+  topicResultDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
+  topicResultCopy: { flex: 1, marginRight: 12 },
+  topicResultName: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 4 },
+  topicResultSubject: { color: theme.colors.textSecondary, fontSize: 12 },
+  topicResultAction: {
+    color: '#B8B1FF',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  topicResultsDivider: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: 8,
+    marginBottom: 6,
+  },
   emptyState: { alignItems: 'center', paddingVertical: 48 },
   emptyTitle: { color: '#fff', fontSize: 16, fontWeight: '700' },
   emptySub: { color: theme.colors.textMuted, fontSize: 13, marginTop: 6 },

@@ -13,17 +13,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
-import { analyzeTranscript, generateADHDNote, type LectureAnalysis } from '../services/transcriptionService';
+import type { MenuStackParamList } from '../navigation/types';
+import {
+  analyzeTranscript,
+  generateADHDNote,
+  type LectureAnalysis,
+} from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { theme } from '../constants/theme';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
+import ScreenHeader from '../components/ScreenHeader';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<RootStackParamList, 'ManualNoteCreation'>) {
+export default function ManualNoteCreationScreen(
+  _props: NativeStackScreenProps<MenuStackParamList, 'ManualNoteCreation'>,
+) {
   const navigation = useNavigation();
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -116,9 +122,11 @@ export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<
             disabled={isSaving}
             activeOpacity={0.8}
           >
-            {isSaving
-              ? <ActivityIndicator color="#fff" size="small" />
-              : <Text style={styles.saveBtnText}>Save to Notes Vault</Text>}
+            {isSaving ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.saveBtnText}>Save to Notes Vault</Text>
+            )}
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -129,11 +137,11 @@ export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} disabled={isProcessing}>
-          <Text style={styles.backText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Paste Transcript</Text>
+      <View style={styles.screenHeaderWrap}>
+        <ScreenHeader
+          title="Paste Transcript"
+          subtitle="Turn copied lecture text into structured notes without leaving the app flow."
+        />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.label}>Paste your lecture transcript below:</Text>
@@ -151,13 +159,22 @@ export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<
           onPress={handleGenerate}
           disabled={!transcript.trim() || isProcessing}
         >
-          {isProcessing
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.btnText}>Generate Notes</Text>}
+          {isProcessing ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.btnText}>Generate Notes</Text>
+          )}
         </TouchableOpacity>
         {isProcessing && (
           <Text style={styles.processingText}>Analyzing transcript and building notes...</Text>
         )}
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.cancelInlineBtn}
+          disabled={isProcessing}
+        >
+          <Text style={styles.cancelInlineText}>Cancel</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -176,6 +193,7 @@ const styles = StyleSheet.create({
   backText: { color: theme.colors.primary, fontSize: 16 },
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   content: { padding: 16, paddingBottom: 120, gap: 4 },
+  screenHeaderWrap: { paddingHorizontal: 16, paddingTop: 8 },
   label: { color: '#FFF', fontSize: 15, marginBottom: 12 },
   input: {
     backgroundColor: theme.colors.surface,
@@ -189,11 +207,30 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  btn: { backgroundColor: theme.colors.primary, padding: 16, borderRadius: 10, alignItems: 'center' },
+  btn: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  processingText: { color: theme.colors.textSecondary, textAlign: 'center', marginTop: 16, fontSize: 14 },
-  sectionLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 16, marginBottom: 8 },
+  processingText: {
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginTop: 16,
+    fontSize: 14,
+  },
+  cancelInlineBtn: { marginTop: 16, alignItems: 'center', padding: 12 },
+  cancelInlineText: { color: theme.colors.textSecondary, fontSize: 15, fontWeight: '600' },
+  sectionLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginTop: 16,
+    marginBottom: 8,
+  },
   noteCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: 12,
@@ -203,6 +240,11 @@ const styles = StyleSheet.create({
   },
   noteText: { color: theme.colors.textPrimary, fontSize: 14, lineHeight: 22 },
   footer: { padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.divider },
-  saveBtn: { backgroundColor: theme.colors.primary, borderRadius: 12, padding: 16, alignItems: 'center' },
+  saveBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
   saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

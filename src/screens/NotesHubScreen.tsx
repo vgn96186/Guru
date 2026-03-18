@@ -15,7 +15,6 @@ import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navig
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { MenuStackParamList, TabParamList } from '../navigation/types';
-import { navigationRef } from '../navigation/navigationRef';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
@@ -63,7 +62,11 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-import { transcribeAudio, generateADHDNote, type LectureAnalysis } from '../services/transcriptionService';
+import {
+  transcribeAudio,
+  generateADHDNote,
+  type LectureAnalysis,
+} from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getFailedOrPendingTranscriptions, type ExternalAppLog } from '../db/queries/externalLogs';
@@ -257,7 +260,9 @@ export default function NotesHubScreen() {
   useEffect(() => {
     const onLectureSaved = () => void loadData();
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
-    return () => { dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved); };
+    return () => {
+      dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onLectureSaved);
+    };
   }, [loadData]);
 
   const emptyState = useMemo(
@@ -303,51 +308,51 @@ export default function NotesHubScreen() {
                 </Text>
               </View>
               <ScrollView style={styles.pendingList} nestedScrollEnabled>
-              {pendingSessions.map((session) => (
-                <View key={session.id} style={styles.pendingCard}>
-                  <View style={styles.pendingInfo}>
-                    <Text style={styles.pendingAppName}>{session.appName}</Text>
-                    <Text style={styles.pendingDate}>{formatDate(session.launchedAt)}</Text>
-                    <Text style={styles.pendingStatus}>
-                      Status:{' '}
-                      <Text style={{ fontWeight: '700' }}>
-                        {session.transcriptionStatus?.toUpperCase()}
+                {pendingSessions.map((session) => (
+                  <View key={session.id} style={styles.pendingCard}>
+                    <View style={styles.pendingInfo}>
+                      <Text style={styles.pendingAppName}>{session.appName}</Text>
+                      <Text style={styles.pendingDate}>{formatDate(session.launchedAt)}</Text>
+                      <Text style={styles.pendingStatus}>
+                        Status:{' '}
+                        <Text style={{ fontWeight: '700' }}>
+                          {session.transcriptionStatus?.toUpperCase()}
+                        </Text>
                       </Text>
-                    </Text>
-                    {session.transcriptionError && (
-                      <Text style={styles.pendingError} numberOfLines={1}>
-                        {session.transcriptionError}
-                      </Text>
-                    )}
-                  </View>
-                  <View style={styles.pendingActions}>
-                    <TouchableOpacity
-                      style={[styles.miniActionBtn, { backgroundColor: '#333' }]}
-                      onPress={() => handlePlayPending(session)}
-                    >
-                      <Ionicons
-                        name={activePlaybackId === session.id ? 'stop' : 'play'}
-                        size={16}
-                        color="#fff"
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.retryBtn}
-                      onPress={() => handleRetry(session)}
-                      disabled={isRetrying === session.id}
-                    >
-                      {isRetrying === session.id ? (
-                        <ActivityIndicator size="small" color="#fff" />
-                      ) : (
-                        <>
-                          <Ionicons name="refresh" size={16} color="#fff" />
-                          <Text style={styles.retryBtnText}>Retry</Text>
-                        </>
+                      {session.transcriptionError && (
+                        <Text style={styles.pendingError} numberOfLines={1}>
+                          {session.transcriptionError}
+                        </Text>
                       )}
-                    </TouchableOpacity>
+                    </View>
+                    <View style={styles.pendingActions}>
+                      <TouchableOpacity
+                        style={[styles.miniActionBtn, { backgroundColor: '#333' }]}
+                        onPress={() => handlePlayPending(session)}
+                      >
+                        <Ionicons
+                          name={activePlaybackId === session.id ? 'stop' : 'play'}
+                          size={16}
+                          color="#fff"
+                        />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.retryBtn}
+                        onPress={() => handleRetry(session)}
+                        disabled={isRetrying === session.id}
+                      >
+                        {isRetrying === session.id ? (
+                          <ActivityIndicator size="small" color="#fff" />
+                        ) : (
+                          <>
+                            <Ionicons name="refresh" size={16} color="#fff" />
+                            <Text style={styles.retryBtnText}>Retry</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
-              ))}
+                ))}
               </ScrollView>
             </View>
           )}
@@ -430,9 +435,7 @@ export default function NotesHubScreen() {
 
             <TouchableOpacity
               style={styles.actionCard}
-              onPress={() => {
-                if (navigationRef.isReady()) navigationRef.navigate('ManualNoteCreation' as never);
-              }}
+              onPress={() => navigation.navigate('ManualNoteCreation')}
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel="Paste transcript"
@@ -554,7 +557,12 @@ export default function NotesHubScreen() {
       </ResponsiveContainer>
 
       {/* Upload Review Modal */}
-      <Modal visible={!!uploadResult} transparent animationType="slide" onRequestClose={() => setUploadResult(null)}>
+      <Modal
+        visible={!!uploadResult}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setUploadResult(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Lecture Transcribed</Text>
@@ -576,7 +584,9 @@ export default function NotesHubScreen() {
             ) : (
               <View style={styles.noTopicsBlock}>
                 <Text style={styles.noTopicsIcon}>🔇</Text>
-                <Text style={styles.noTopicsText}>No medical topics detected in this recording.</Text>
+                <Text style={styles.noTopicsText}>
+                  No medical topics detected in this recording.
+                </Text>
               </View>
             )}
 
@@ -586,11 +596,19 @@ export default function NotesHubScreen() {
               disabled={isSavingUpload || !uploadResult?.topics.length}
               activeOpacity={0.8}
             >
-              {isSavingUpload
-                ? <ActivityIndicator color="#fff" size="small" />
-                : <Text style={styles.modalSaveBtnText}>Save to Notes Vault</Text>}
+              {isSavingUpload ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.modalSaveBtnText}>Save to Notes Vault</Text>
+              )}
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modalDismissBtn} onPress={() => { setUploadResult(null); setUploadConfidence(null); }}>
+            <TouchableOpacity
+              style={styles.modalDismissBtn}
+              onPress={() => {
+                setUploadResult(null);
+                setUploadConfidence(null);
+              }}
+            >
               <Text style={styles.modalDismissText}>Discard</Text>
             </TouchableOpacity>
           </View>
@@ -765,14 +783,33 @@ const styles = StyleSheet.create({
   topicPreview: { color: '#B5B5C2', fontSize: 13, lineHeight: 19 },
   // Upload review modal
   modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'flex-end' },
-  modalSheet: { backgroundColor: theme.colors.panel, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, gap: 12 },
+  modalSheet: {
+    backgroundColor: theme.colors.panel,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 36,
+    gap: 12,
+  },
   modalTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 4 },
   modalSummary: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20 },
-  modalSectionLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 4 },
+  modalSectionLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginTop: 4,
+  },
   noTopicsBlock: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   noTopicsIcon: { fontSize: 36 },
   noTopicsText: { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center' },
-  modalSaveBtn: { backgroundColor: theme.colors.primary, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 4 },
+  modalSaveBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 4,
+  },
   modalSaveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   modalDismissBtn: { alignItems: 'center', paddingVertical: 8 },
   modalDismissText: { color: theme.colors.textMuted, fontSize: 14 },

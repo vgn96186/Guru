@@ -6,7 +6,6 @@ export type RootStackParamList = {
   BedLock: undefined;
   DoomscrollInterceptor: undefined;
   BreakEnforcer: { durationSeconds: number };
-  DeviceLink: undefined;
   DoomscrollGuide: undefined;
   Lockdown: { duration: number };
   CheckIn: undefined;
@@ -15,7 +14,6 @@ export type RootStackParamList = {
   SleepMode: undefined;
   WakeUp: undefined;
   LocalModel: undefined;
-  ManualNoteCreation: undefined;
   PomodoroQuiz: undefined;
 };
 
@@ -60,8 +58,10 @@ export type MenuStackParamList = {
   StudyPlan: undefined;
   Stats: undefined;
   Settings: undefined;
+  DeviceLink: undefined;
   NotesHub: undefined;
   NotesSearch: undefined;
+  ManualNoteCreation: undefined;
   TranscriptHistory: { noteId?: number } | undefined;
 };
 

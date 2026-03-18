@@ -14,9 +14,13 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useIsFocused } from '@react-navigation/native';
+import {
+  useNavigation,
+  useIsFocused,
+  type CompositeNavigationProp,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
+import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -201,7 +205,13 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
 }
 
 export default function SettingsScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<
+      CompositeNavigationProp<
+        NativeStackNavigationProp<MenuStackParamList, 'Settings'>,
+        NativeStackNavigationProp<RootStackParamList>
+      >
+    >();
   const isFocused = useIsFocused();
   const { profile, refreshProfile } = useAppStore();
 

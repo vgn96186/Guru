@@ -12,14 +12,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/types';
+import type { MenuStackParamList } from '../navigation/types';
 import { theme } from '../constants/theme';
 import { useAppStore } from '../store/useAppStore';
 import { profileRepository } from '../db/repositories';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import ScreenHeader from '../components/ScreenHeader';
 
 export default function DeviceLinkScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
   const profile = useAppStore((s) => s.profile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [code, setCode] = useState(profile?.syncCode || '');
@@ -50,9 +51,12 @@ export default function DeviceLinkScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        <ResponsiveContainer style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <ResponsiveContainer style={styles.content}>
+          <ScreenHeader
+            title="Device Linking"
+            subtitle="Keep your phone and lecture device tied to the same study session."
+          />
           <Text style={styles.emoji}>📡</Text>
-          <Text style={styles.title}>Device Linking</Text>
           <Text style={styles.sub}>
             Watch lectures on your tablet and keep this phone synced as a hostage/remote control.
           </Text>
@@ -112,8 +116,8 @@ export default function DeviceLinkScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
+  content: { width: '100%', justifyContent: 'center', alignItems: 'center' },
   emoji: { fontSize: 56, marginBottom: 16 },
-  title: { color: theme.colors.primary, fontSize: 28, fontWeight: '900', marginBottom: 12 },
   sub: {
     color: theme.colors.textMuted,
     fontSize: 16,

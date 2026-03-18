@@ -508,7 +508,9 @@ export default function SessionScreen() {
         <ResponsiveContainer style={styles.errorContainer}>
           <Text style={styles.errorEmoji}>⚠️</Text>
           <Text style={styles.errorTitle}>Session Error</Text>
-          <Text style={styles.errorMsg}>Could not load the next topic. Your progress has been saved.</Text>
+          <Text style={styles.errorMsg}>
+            Could not load the next topic. Your progress has been saved.
+          </Text>
           <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.retryBtnText}>Back to Home</Text>
           </TouchableOpacity>
@@ -770,7 +772,9 @@ function SessionDoneScreen({
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryValue, { color: '#FF9800' }]}>+{xpEarned}</Text>
+              <Text style={[styles.summaryValue, { color: theme.colors.warning }]}>
+                +{xpEarned}
+              </Text>
               <Text style={styles.summaryLabel}>XP</Text>
             </View>
           </View>
@@ -794,7 +798,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: 10,
     backgroundColor: theme.colors.surface,
   },
@@ -847,7 +851,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     minWidth: 200,
     elevation: 12,
-    shadowColor: '#000',
+    shadowColor: theme.colors.textInverse,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 12,
     shadowOpacity: 0.4,
@@ -855,16 +859,16 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: 12,
   },
   menuItemEmoji: { fontSize: 16, marginRight: 10 },
-  menuItemText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  menuItemText: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
   menuDivider: { height: 1, backgroundColor: theme.colors.border, marginHorizontal: 12 },
   contentTypeTabs: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: 8,
     gap: 8,
     backgroundColor: theme.colors.background,
@@ -883,10 +887,15 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.successTintSoft,
   },
   contentTabText: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '600' },
-  revealContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  revealEmoji: { fontSize: 48, marginBottom: 16 },
+  revealContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xxl,
+  },
+  revealEmoji: { fontSize: 48, marginBottom: theme.spacing.lg },
   revealFocus: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 20,
     textAlign: 'center',
@@ -902,46 +911,71 @@ const styles = StyleSheet.create({
   revealSub: { color: theme.colors.textSecondary, fontSize: 13 },
   revealTopic: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   revealDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
-  revealTopicName: { color: '#fff', fontSize: 16, fontWeight: '600', marginRight: 8 },
+  revealTopicName: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
   revealTopicSub: { color: theme.colors.textSecondary, fontSize: 12 },
   topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  topicDoneEmoji: { fontSize: 64, marginBottom: 16 },
-  topicDoneName: { color: '#fff', fontWeight: '800', fontSize: 20, marginBottom: 8 },
+  topicDoneEmoji: { fontSize: 64, marginBottom: theme.spacing.lg },
+  topicDoneName: {
+    color: theme.colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 20,
+    marginBottom: 8,
+  },
   topicDoneSub: { color: theme.colors.textSecondary, fontSize: 14 },
   xpPop: {
     position: 'absolute',
     bottom: 100,
-    right: 24,
-    backgroundColor: '#6C63FF',
+    right: theme.spacing.xl,
+    backgroundColor: theme.colors.primary,
     borderRadius: 20,
-    paddingHorizontal: 16,
+    paddingHorizontal: theme.spacing.lg,
     paddingVertical: 8,
   },
-  xpPopText: { color: '#fff', fontWeight: '900', fontSize: 18 },
-  doneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  doneEmoji: { fontSize: 64, marginBottom: 16 },
-  doneTitle: { color: '#fff', fontWeight: '900', fontSize: 28, marginBottom: 24 },
+  xpPopText: { color: theme.colors.textPrimary, fontWeight: '900', fontSize: 18 },
+  doneContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xxl,
+  },
+  doneEmoji: { fontSize: 64, marginBottom: theme.spacing.lg },
+  doneTitle: {
+    color: theme.colors.textPrimary,
+    fontWeight: '900',
+    fontSize: 28,
+    marginBottom: theme.spacing.xl,
+  },
   summaryCard: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 20,
-    marginBottom: 24,
+    marginBottom: theme.spacing.xl,
     width: '100%',
   },
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
   summaryItem: { alignItems: 'center' },
-  summaryValue: { color: '#fff', fontSize: 28, fontWeight: '900' },
+  summaryValue: { color: theme.colors.textPrimary, fontSize: 28, fontWeight: '900' },
   summaryLabel: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 4 },
   summaryDivider: { width: 1, height: 40, backgroundColor: theme.colors.border },
-  doneStat: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 32 },
+  doneStat: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: theme.spacing.xxl },
   doneBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 16,
     paddingHorizontal: 40,
-    paddingVertical: 16,
+    paddingVertical: theme.spacing.lg,
   },
-  doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  doneBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xxl,
+  },
   errorEmoji: { fontSize: 48, marginBottom: 12 },
   errorTitle: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 22, marginBottom: 8 },
   errorMsg: {
@@ -979,8 +1013,8 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#6C63FF',
-    shadowColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
+    shadowColor: theme.colors.primary,
     shadowRadius: 6,
     shadowOpacity: 0.9,
     elevation: 4,
@@ -989,35 +1023,55 @@ const styles = StyleSheet.create({
   guruToast: {
     position: 'absolute',
     top: 130,
-    left: 16,
-    right: 16,
-    backgroundColor: '#1A1A2E',
+    left: theme.spacing.lg,
+    right: theme.spacing.lg,
+    backgroundColor: theme.colors.card,
     borderRadius: 12,
     borderLeftWidth: 3,
-    borderLeftColor: '#6C63FF',
+    borderLeftColor: theme.colors.primary,
     borderWidth: 1,
-    borderColor: '#6C63FF33',
+    borderColor: theme.colors.primaryTintMedium,
     padding: 12,
     zIndex: 50,
     elevation: 8,
   },
-  guruToastText: { color: '#D0C8FF', fontSize: 13, fontStyle: 'italic', lineHeight: 18 },
+  guruToastText: {
+    color: theme.colors.primaryLight,
+    fontSize: 13,
+    fontStyle: 'italic',
+    lineHeight: 18,
+  },
   pausedOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: theme.colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 100,
   },
-  pausedText: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 10 },
-  pausedSubText: { color: '#9E9E9E', fontSize: 15, textAlign: 'center', marginBottom: 30 },
+  pausedText: {
+    color: theme.colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: 10,
+  },
+  pausedSubText: {
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+    textAlign: 'center',
+    marginBottom: 30,
+  },
   resumeOverlayBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 16,
     paddingHorizontal: 40,
-    paddingVertical: 16,
+    paddingVertical: theme.spacing.lg,
   },
-  resumeOverlayBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  resumeOverlayBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
   tabRowWrapper: { flexDirection: 'row', alignItems: 'center', flexGrow: 0, flexShrink: 0 },
-  cardCountText: { color: theme.colors.textMuted, fontSize: 12, paddingHorizontal: 10, fontVariant: ['tabular-nums'] },
+  cardCountText: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    paddingHorizontal: 10,
+    fontVariant: ['tabular-nums'],
+  },
 });

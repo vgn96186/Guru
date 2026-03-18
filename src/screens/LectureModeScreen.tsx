@@ -345,7 +345,11 @@ export default function LectureModeScreen() {
       setElapsed((e) => {
         const newE = e + 1;
         // Warn 30s before proof of life trigger
-        if (newE > 0 && newE % PROOF_OF_LIFE_INTERVAL === PROOF_OF_LIFE_INTERVAL - PROOF_OF_LIFE_WARNING && !onBreak) {
+        if (
+          newE > 0 &&
+          newE % PROOF_OF_LIFE_INTERVAL === PROOF_OF_LIFE_INTERVAL - PROOF_OF_LIFE_WARNING &&
+          !onBreak
+        ) {
           setProofWarningActive(true);
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         }
@@ -923,17 +927,17 @@ export default function LectureModeScreen() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(255,0,0,0.9)',
+            backgroundColor: theme.colors.error,
             zIndex: 999,
             justifyContent: 'center',
             alignItems: 'center',
-            padding: 32,
+            padding: theme.spacing.xxl,
           }}
         >
           <Text style={{ fontSize: 80, marginBottom: 20 }}>📱❌</Text>
           <Text
             style={{
-              color: '#fff',
+              color: theme.colors.textPrimary,
               fontSize: 32,
               fontWeight: '900',
               textAlign: 'center',
@@ -942,7 +946,14 @@ export default function LectureModeScreen() {
           >
             PUT YOUR PHONE DOWN.
           </Text>
-          <Text style={{ color: '#fff', fontSize: 20, textAlign: 'center', marginTop: 20 }}>
+          <Text
+            style={{
+              color: theme.colors.textPrimary,
+              fontSize: 20,
+              textAlign: 'center',
+              marginTop: 20,
+            }}
+          >
             You are doomscrolling instead of watching this lecture!
           </Text>
         </View>
@@ -966,9 +977,9 @@ export default function LectureModeScreen() {
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {focusState !== 'focused' && !onBreak && (
-            <View style={[styles.hostageInfo, { borderColor: '#F44336' }]}>
+            <View style={[styles.hostageInfo, { borderColor: theme.colors.error }]}>
               <Text style={styles.hostageEmoji}>👀</Text>
-              <Text style={[styles.hostageText, { color: '#F44336' }]}>
+              <Text style={[styles.hostageText, { color: theme.colors.error }]}>
                 Face not detected or distracted! Look at your study materials!
               </Text>
             </View>
@@ -999,7 +1010,9 @@ export default function LectureModeScreen() {
           {/* Pre-warning 30s before proof of life */}
           {proofWarningActive && !proofOfLifeActive && (
             <View style={styles.proofWarnBanner}>
-              <Text style={styles.proofWarnText}>⚠️ Listening check in 30s — get ready to type!</Text>
+              <Text style={styles.proofWarnText}>
+                ⚠️ Listening check in 30s — get ready to type!
+              </Text>
             </View>
           )}
 
@@ -1101,13 +1114,13 @@ export default function LectureModeScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {isRecordingEnabled && <View style={styles.recordingDot} />}
               <Text style={styles.transcribeBtnText}>
-                {isRecordingEnabled
-                  ? 'AUTO-SCRIBE ACTIVE — Recording'
-                  : '🎙️ Enable Auto-Scribe'}
+                {isRecordingEnabled ? 'AUTO-SCRIBE ACTIVE — Recording' : '🎙️ Enable Auto-Scribe'}
               </Text>
             </View>
             {isTranscribing && (
-              <Text style={{ color: theme.colors.textInverse, fontSize: 11 }}>Processing chunk...</Text>
+              <Text style={{ color: theme.colors.textInverse, fontSize: 11 }}>
+                Processing chunk...
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -1179,19 +1192,19 @@ export default function LectureModeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A14' },
-  safeWarn: { backgroundColor: '#1A0505' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safeWarn: { backgroundColor: theme.colors.errorSurface },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: theme.spacing.lg,
     paddingTop: 20,
   },
   backBtn: { padding: 4 },
-  backText: { color: '#F44336', fontSize: 16, fontWeight: '700' },
+  backText: { color: theme.colors.error, fontSize: 16, fontWeight: '700' },
   headerTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '900',
     fontSize: 17,
     textTransform: 'uppercase',
@@ -1199,52 +1212,57 @@ const styles = StyleSheet.create({
   },
   placeholder: { width: 60 },
   scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 60 },
+  content: { padding: theme.spacing.lg, paddingBottom: 60 },
 
   hostageInfo: {
-    backgroundColor: '#1A1A24',
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.border,
     marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
   hostageEmoji: { fontSize: 28, marginRight: 12 },
-  hostageText: { color: '#9E9E9E', flex: 1, fontSize: 13, lineHeight: 18 },
+  hostageText: { color: theme.colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 },
 
   timerBox: {
     alignItems: 'center',
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
+    padding: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   timerBoxWarn: {
-    backgroundColor: '#2A0A0A',
+    backgroundColor: theme.colors.errorSurface,
     borderWidth: 2,
-    borderColor: '#F44336',
+    borderColor: theme.colors.error,
   },
   timerLabel: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     marginBottom: 6,
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  timer: { color: '#fff', fontWeight: '900', fontSize: 64, fontVariant: ['tabular-nums'] },
-  timerWarn: { color: '#F44336' },
+  timer: {
+    color: theme.colors.textPrimary,
+    fontWeight: '900',
+    fontSize: 64,
+    fontVariant: ['tabular-nums'],
+  },
+  timerWarn: { color: theme.colors.error },
 
   proofOfLifeBox: {
-    backgroundColor: '#2A0A0A',
+    backgroundColor: theme.colors.errorSurface,
     borderRadius: 20,
-    padding: 24,
-    marginBottom: 24,
+    padding: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#F44336',
+    borderColor: theme.colors.error,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -1255,10 +1273,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: '#3A1515',
+    backgroundColor: theme.colors.errorTintSoft,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
     position: 'relative',
   },
   proofPulseRing: {
@@ -1273,7 +1291,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   proofTitle: {
-    color: '#F44336',
+    color: theme.colors.error,
     fontWeight: '900',
     fontSize: 20,
     marginBottom: 8,
@@ -1281,7 +1299,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   proofSub: {
-    color: '#FF9800',
+    color: theme.colors.warning,
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 14,
@@ -1296,31 +1314,31 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#1A0505',
+    backgroundColor: theme.colors.errorSurface,
     borderWidth: 3,
-    borderColor: '#F44336',
+    borderColor: theme.colors.error,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   proofTimerText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 36,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
   proofTimerTextUrgent: {
-    color: '#F44336',
+    color: theme.colors.error,
   },
   proofTimerLabel: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   proofWarning: {
-    color: '#FFCDD2',
+    color: theme.colors.textPrimary,
     fontSize: 13,
     textAlign: 'center',
     fontStyle: 'italic',
@@ -1330,7 +1348,7 @@ const styles = StyleSheet.create({
 
   subjectSection: { marginBottom: 20 },
   sectionLabel: {
-    color: '#9E9E9E',
+    color: theme.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
@@ -1343,109 +1361,133 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
   },
   subjectChipText: { fontWeight: '700', fontSize: 13 },
   selectedSubject: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
-    backgroundColor: '#1A1A24',
-    padding: 16,
+    marginBottom: theme.spacing.lg,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
     borderRadius: 12,
   },
-  selectedSubjectText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  changeBtn: { color: '#6C63FF', fontSize: 14, fontWeight: '700' },
+  selectedSubjectText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
+  changeBtn: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
 
   transcribeBtn: {
-    backgroundColor: '#1A1A24',
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#6C63FF',
+    borderColor: theme.colors.primary,
     marginBottom: 12,
     alignItems: 'center',
   },
-  transcribeBtnActive: { backgroundColor: '#2A1A1A', borderColor: '#F44336' },
-  transcribeBtnText: { color: '#6C63FF', fontWeight: '800', fontSize: 14 },
+  transcribeBtnActive: {
+    backgroundColor: theme.colors.errorSurface,
+    borderColor: theme.colors.error,
+  },
+  transcribeBtnText: { color: theme.colors.primary, fontWeight: '800', fontSize: 14 },
   importTranscribeBtn: { marginTop: -4 },
 
   noteSection: { marginBottom: 20 },
   noteInput: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
-    padding: 16,
-    color: '#fff',
+    padding: theme.spacing.lg,
+    color: theme.colors.textPrimary,
     fontSize: 16,
     minHeight: 100,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
     marginBottom: 12,
   },
   noteInputWarn: {
-    backgroundColor: '#2A0A0A',
-    borderColor: '#F44336',
+    backgroundColor: theme.colors.errorSurface,
+    borderColor: theme.colors.error,
     borderWidth: 2,
   },
   noteInputActive: {
-    borderColor: '#4CAF50',
+    borderColor: theme.colors.success,
     borderWidth: 2,
   },
-  saveBtn: { backgroundColor: '#6C63FF', borderRadius: 12, padding: 16, alignItems: 'center' },
-  saveBtnDisabled: { backgroundColor: '#333' },
-  saveBtnWarn: { backgroundColor: '#F44336' },
+  saveBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    padding: theme.spacing.lg,
+    alignItems: 'center',
+  },
+  saveBtnDisabled: { backgroundColor: theme.colors.border },
+  saveBtnWarn: { backgroundColor: theme.colors.error },
   saveBtnText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
 
-  breakTriggerBtn: { padding: 16, alignItems: 'center', marginTop: 8 },
-  breakTriggerText: { color: '#9E9E9E', fontWeight: '700', fontSize: 14 },
+  breakTriggerBtn: { padding: theme.spacing.lg, alignItems: 'center', marginTop: 8 },
+  breakTriggerText: { color: theme.colors.textSecondary, fontWeight: '700', fontSize: 14 },
 
   savedNotes: { marginTop: 8 },
   noteRow: {
     flexDirection: 'row',
     marginBottom: 8,
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     padding: 12,
     borderRadius: 8,
   },
-  noteDot: { color: '#6C63FF', fontSize: 20, marginRight: 8, lineHeight: 22, fontWeight: '900' },
-  noteText: { color: '#E0E0E0', fontSize: 14, flex: 1, lineHeight: 22 },
+  noteDot: {
+    color: theme.colors.primary,
+    fontSize: 20,
+    marginRight: 8,
+    lineHeight: 22,
+    fontWeight: '900',
+  },
+  noteText: { color: theme.colors.textPrimary, fontSize: 14, flex: 1, lineHeight: 22 },
 
   resumeContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0A0A14',
+    backgroundColor: theme.colors.background,
   },
-  resumeTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 16 },
-  resumeTimer: { color: '#6C63FF', fontSize: 80, fontWeight: '900', marginBottom: 40 },
+  resumeTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '800',
+    marginBottom: theme.spacing.lg,
+  },
+  resumeTimer: { color: theme.colors.primary, fontSize: 80, fontWeight: '900', marginBottom: 40 },
   resumeBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 16,
     paddingHorizontal: 40,
-    paddingVertical: 16,
+    paddingVertical: theme.spacing.lg,
   },
-  resumeBtnText: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  resumeBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
   proofWarnBanner: {
-    backgroundColor: '#332200',
+    backgroundColor: theme.colors.warningSurface,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#FF9800',
+    borderColor: theme.colors.warning,
     marginBottom: 12,
   },
-  proofWarnText: { color: '#FF9800', fontWeight: '700', fontSize: 13, textAlign: 'center' },
+  proofWarnText: {
+    color: theme.colors.warning,
+    fontWeight: '700',
+    fontSize: 13,
+    textAlign: 'center',
+  },
   recordingDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#F44336',
+    backgroundColor: theme.colors.error,
   },
 });

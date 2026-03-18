@@ -184,6 +184,7 @@ export default function HomeScreen() {
       const sub = await getSubjectByName(analysis.subject);
       await saveLectureTranscript({
         subjectId: sub?.id ?? null,
+        subjectName: analysis.subject,
         note,
         transcript: analysis.transcript,
         summary: analysis.lectureSummary,

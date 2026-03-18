@@ -37,6 +37,7 @@ import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { Audio } from 'expo-av';
 import { MarkdownRender } from '../components/MarkdownRender';
+import { buildLectureDisplayTitle } from '../services/lectureIdentity';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -72,6 +73,13 @@ function extractFirstLine(note: string): string {
     if (stripped.length > 10) return stripped;
   }
   return lines[0] ?? 'Lecture note';
+}
+
+function getLectureTitle(item: Pick<LectureHistoryItem, 'subjectName' | 'topics'>): string {
+  return buildLectureDisplayTitle({
+    subjectName: item.subjectName,
+    topics: item.topics,
+  });
 }
 
 /** Collapsible transcript section */
@@ -364,10 +372,7 @@ export default function TranscriptHistoryScreen() {
 
   const openRename = () => {
     if (!selectedNote) return;
-    const current =
-      selectedNote.summary && selectedNote.summary.trim().length > 0
-        ? selectedNote.summary
-        : extractFirstLine(selectedNote.note);
+    const current = getLectureTitle(selectedNote);
     setRenameText(current);
     setShowRenameEditor(true);
   };
@@ -442,6 +447,9 @@ export default function TranscriptHistoryScreen() {
         {item.appName && <Text style={styles.appBadge}>via {item.appName}</Text>}
 
         <Text style={styles.summaryText} numberOfLines={2}>
+          {getLectureTitle(item)}
+        </Text>
+        <Text style={styles.summaryPreviewText} numberOfLines={2}>
           {item.summary || extractFirstLine(item.note)}
         </Text>
 
@@ -632,9 +640,7 @@ export default function TranscriptHistoryScreen() {
               {/* Meta info */}
               <View style={styles.modalMeta}>
                 {selectedNote && (
-                  <Text style={styles.customTitleText}>
-                    {selectedNote.summary?.trim() || extractFirstLine(selectedNote.note)}
-                  </Text>
+                  <Text style={styles.customTitleText}>{getLectureTitle(selectedNote)}</Text>
                 )}
                 {selectedNote?.appName && (
                   <Text style={styles.modalMetaText}>
@@ -819,6 +825,7 @@ const styles = StyleSheet.create({
   dateText: { color: '#888', fontSize: 12 },
   appBadge: { color: '#666', fontSize: 11, marginBottom: 6 },
   summaryText: { color: '#ddd', fontSize: 14, lineHeight: 20, marginBottom: 10 },
+  summaryPreviewText: { color: '#8f8fa8', fontSize: 12, lineHeight: 18, marginBottom: 10 },
   noteFooter: {},
   topicsRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
   topicPill: {

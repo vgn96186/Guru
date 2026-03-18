@@ -158,6 +158,7 @@ export default function TabNavigator() {
       const sub = await getSubjectByName(analysis.subject);
       await saveLectureTranscript({
         subjectId: sub?.id ?? null,
+        subjectName: analysis.subject,
         note,
         transcript: analysis.transcript,
         summary: analysis.lectureSummary,
@@ -331,9 +332,7 @@ export default function TabNavigator() {
                 >
                   <Ionicons name="search-outline" size={20} color={theme.colors.info} />
                   <Text style={styles.secondaryActionTitle}>Search Topics</Text>
-                  <Text style={styles.secondaryActionSubtitle}>
-                    Find any micro-topic globally.
-                  </Text>
+                  <Text style={styles.secondaryActionSubtitle}>Find any micro-topic globally.</Text>
                 </Pressable>
 
                 <Pressable

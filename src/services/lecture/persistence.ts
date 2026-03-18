@@ -1,10 +1,11 @@
 import { getDb, nowTs } from '../../db/database';
 import { grantXp } from '../xpService';
 import { markTopicsFromLecture } from '../transcription/matching';
-import { saveTranscriptToFile } from '../transcriptStorage';
+import { renameRecordingToLectureIdentity, saveTranscriptToFile } from '../transcriptStorage';
 import { embeddingToBlob, generateEmbedding } from '../ai/embeddingService';
 import { runAutoPublicBackup } from '../backgroundBackupService';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
+import { updateSessionRecordingPath } from '../../db/queries/externalLogs';
 
 /** Dictionary for fuzzy subject name mapping */
 const SUBJECT_MAPPINGS: Record<string, string> = {
@@ -83,10 +84,18 @@ export async function saveLecturePersistence(opts: {
   logId: number;
   quickNote: string;
   embedding?: number[] | null;
+  recordingPath?: string | null;
 }) {
   const db = getDb();
   const { analysis } = opts;
-  const transcriptUri = await saveTranscriptToFile(analysis.transcript || '');
+  const lectureIdentity = {
+    subjectName: analysis.subject,
+    topics: analysis.topics,
+  };
+  const transcriptUri = await saveTranscriptToFile(analysis.transcript || '', lectureIdentity);
+  const resolvedRecordingPath = opts.recordingPath
+    ? await renameRecordingToLectureIdentity(opts.recordingPath, lectureIdentity)
+    : null;
 
   // Compute embedding before the transaction so we don't block the UI with AI/network inside BEGIN
   let embeddingForMatching: number[] | null = opts.embedding ?? null;
@@ -122,8 +131,11 @@ export async function saveLecturePersistence(opts: {
     await db.execAsync('BEGIN IMMEDIATE');
     try {
       const result = await db.runAsync(
-        `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO lecture_notes (
+           subject_id, note, created_at, transcript, summary, topics_json, app_name,
+           duration_minutes, confidence, embedding, recording_path
+         )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           subjectId,
           opts.quickNote,
@@ -135,6 +147,7 @@ export async function saveLecturePersistence(opts: {
           opts.durationMinutes,
           analysis.estimatedConfidence,
           embeddingForMatching ? embeddingToBlob(embeddingForMatching) : null,
+          resolvedRecordingPath,
         ],
       );
       noteId = result.lastInsertRowId;
@@ -146,6 +159,10 @@ export async function saveLecturePersistence(opts: {
     } catch (innerErr) {
       await db.execAsync('ROLLBACK');
       throw innerErr;
+    }
+
+    if (resolvedRecordingPath) {
+      await updateSessionRecordingPath(opts.logId, resolvedRecordingPath);
     }
 
     // Notify UI to refresh stats and progress

@@ -640,6 +640,7 @@ export default function LectureModeScreen() {
     // Save lecture transcript with enhanced metadata
     const lectureNoteId = await saveLectureTranscript({
       subjectId: selectedSubjectId,
+      subjectName: analysis.subject,
       note: noteText,
       transcript: analysis.transcript,
       summary: analysis.lectureSummary,

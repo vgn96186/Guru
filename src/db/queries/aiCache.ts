@@ -222,6 +222,7 @@ export async function saveLectureNote(
 /** Extended lecture note with full transcript data */
 export interface LectureNoteData {
   subjectId: number | null;
+  subjectName?: string | null;
   note: string;
   transcript?: string;
   summary?: string;
@@ -229,16 +230,25 @@ export interface LectureNoteData {
   appName?: string;
   durationMinutes?: number;
   confidence?: number;
+  recordingPath?: string | null;
 }
 
 export async function saveLectureTranscript(
   data: LectureNoteData & { embedding?: number[] | null },
 ): Promise<number> {
   const db = getDb();
-  const transcriptValue = data.transcript ? await saveTranscriptToFile(data.transcript) : null;
+  const transcriptValue = data.transcript
+    ? await saveTranscriptToFile(data.transcript, {
+        subjectName: data.subjectName,
+        topics: data.topics,
+      })
+    : null;
   const result = await db.runAsync(
-    `INSERT INTO lecture_notes (subject_id, note, created_at, transcript, summary, topics_json, app_name, duration_minutes, confidence, embedding)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO lecture_notes (
+       subject_id, note, created_at, transcript, summary, topics_json, app_name,
+       duration_minutes, confidence, embedding, recording_path
+     )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.subjectId,
       data.note,
@@ -250,6 +260,7 @@ export async function saveLectureTranscript(
       data.durationMinutes ?? null,
       data.confidence ?? 2,
       data.embedding ? embeddingToBlob(data.embedding) : null,
+      data.recordingPath ?? null,
     ],
   );
   return result.lastInsertRowId as number;

@@ -23,6 +23,7 @@ import {
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
+import { buildLectureDisplayTitle } from '../services/lectureIdentity';
 
 interface TopicNoteResult {
   type: 'topic';
@@ -115,6 +116,13 @@ export default function NotesSearchScreen() {
       .join(' ')
       .replace(/\*\*/g, '')
       .slice(0, 150);
+  }
+
+  function getLectureTitle(lecture: LectureHistoryItem): string {
+    return buildLectureDisplayTitle({
+      subjectName: lecture.subjectName,
+      topics: lecture.topics,
+    });
   }
 
   function removeLectureNote(id: number) {
@@ -237,7 +245,7 @@ export default function NotesSearchScreen() {
                 <Text style={styles.lectureBadge}>LECTURE</Text>
                 {lecture.appName && <Text style={styles.appName}>via {lecture.appName}</Text>}
               </View>
-              <Text style={styles.topic}>{lecture.subjectName ?? 'Lecture'}</Text>
+              <Text style={styles.topic}>{getLectureTitle(lecture)}</Text>
               <Text style={styles.note} numberOfLines={3}>
                 {extractPreview(lecture.note)}
               </Text>

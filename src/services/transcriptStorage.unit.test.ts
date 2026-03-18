@@ -13,6 +13,7 @@ async function loadService() {
     makeDirectoryAsync: jest.fn(async (_u: string, _o?: any) => {}),
     getInfoAsync: jest.fn(async (_u: string) => ({ exists: true })),
     copyAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
+    moveAsync: jest.fn(async (_o: { from: string; to: string }) => {}),
     StorageAccessFramework: {
       createFileAsync: jest.fn(
         async (_u: string, _f: string, _m: string) => 'content://mock/uri/file.txt',
@@ -45,6 +46,9 @@ describe('transcriptStorage', () => {
     (FileSystem.makeDirectoryAsync as jest.Mock).mockClear();
     (FileSystem.getInfoAsync as jest.Mock).mockClear();
     (FileSystem.copyAsync as jest.Mock).mockClear();
+    if ((FileSystem as any).moveAsync) {
+      ((FileSystem as any).moveAsync as jest.Mock).mockClear();
+    }
     (FileSystem.StorageAccessFramework.createFileAsync as jest.Mock).mockClear();
 
     // Ensure mock return values are reset in case any tests override them
@@ -64,12 +68,16 @@ describe('transcriptStorage', () => {
   describe('backupNoteToPublic', () => {
     it('should save to cloud (SAF) and local public dir on Android', async () => {
       const { service, mockFileSystem } = await loadService();
-      await service.backupNoteToPublic(1, 'Anatomy', 'This is a note.');
+      await service.backupNoteToPublic(
+        1,
+        { subjectName: 'Anatomy', topics: ['Upper Limb'] },
+        'This is a note.',
+      );
 
       // Check SAF Cloud Backup
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
-        expect.stringMatching(/^note_anatomy_1_\d+\.txt$/),
+        expect.stringMatching(/^anatomy__upper-limb__note__\d+\.txt$/),
         'text/plain',
       );
 
@@ -88,7 +96,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
         expect.stringMatching(
-          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_anatomy_1_\d+\.txt$/,
+          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/anatomy__upper-limb__note__\d+\.txt$/,
         ),
         'This is a note.',
         { encoding: 'utf8' },
@@ -101,7 +109,11 @@ describe('transcriptStorage', () => {
       const originalUri = profileMock.backupDirectoryUri;
       (profileMock as any).backupDirectoryUri = null;
 
-      await service.backupNoteToPublic(2, 'Physiology', 'Another note.');
+      await service.backupNoteToPublic(
+        2,
+        { subjectName: 'Physiology', topics: ['Cardiac Cycle'] },
+        'Another note.',
+      );
 
       // Should not call SAF
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).not.toHaveBeenCalled();
@@ -110,7 +122,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledTimes(1);
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/note_physiology_2_\d+\.txt$/,
+          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/physiology__cardiac-cycle__note__\d+\.txt$/,
         ),
         'Another note.',
         { encoding: 'utf8' },
@@ -124,7 +136,11 @@ describe('transcriptStorage', () => {
       const { service, mockFileSystem } = await loadService();
       mockFileSystem.getInfoAsync.mockResolvedValueOnce({ exists: false } as any);
 
-      await service.backupNoteToPublic(3, 'Pathology', 'A third note.');
+      await service.backupNoteToPublic(
+        3,
+        { subjectName: 'Pathology', topics: ['Inflammation'] },
+        'A third note.',
+      );
 
       // Check SAF Cloud Backup
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalled();
@@ -143,13 +159,16 @@ describe('transcriptStorage', () => {
   describe('saveTranscriptToFile', () => {
     it('should save transcript locally, to SAF cloud, and public local backup', async () => {
       const { service, mockFileSystem } = await loadService();
-      const uri = await service.saveTranscriptToFile('lecture text');
+      const uri = await service.saveTranscriptToFile('lecture text', {
+        subjectName: 'Anatomy',
+        topics: ['Upper Limb'],
+      });
 
       // Main app directory
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         1,
         expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
         ),
         'lecture text',
         { encoding: 'utf8' },
@@ -158,7 +177,7 @@ describe('transcriptStorage', () => {
       // Cloud SAF backup
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
-        expect.stringMatching(/^transcript_\d+_[a-z0-9]+\.txt$/),
+        expect.stringMatching(/^anatomy__upper-limb__transcript__\d+\.txt$/),
         'text/plain',
       );
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
@@ -171,15 +190,15 @@ describe('transcriptStorage', () => {
       // Public local backup
       expect(mockFileSystem.copyAsync).toHaveBeenCalledWith({
         from: expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
         ),
         to: expect.stringMatching(
-          /^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+          /^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
         ),
       });
 
       expect(uri).toMatch(
-        /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/transcript_\d+_[a-z0-9]+\.txt$/,
+        /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
       );
     });
 
@@ -245,9 +264,9 @@ describe('transcriptStorage', () => {
     });
 
     it('returns an error message if both primary and fallback paths fail', async () => {
-      const { service } = await loadService();
+      const { service, mockFileSystem } = await loadService();
       // Mock failure for both reads
-      (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
+      mockFileSystem.readAsStringAsync.mockImplementation(() =>
         Promise.reject(new Error('File not found anywhere')),
       );
 
@@ -255,14 +274,14 @@ describe('transcriptStorage', () => {
         'file:///old/install/path/transcripts/transcript_123.txt',
       );
 
-      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
+      expect(mockFileSystem.readAsStringAsync).toHaveBeenCalledTimes(2);
       expect(result).toBe('Transcript file could not be loaded.');
     });
 
     it('returns an error message immediately if original URI is already the current fallback URI and fails', async () => {
-      const { service } = await loadService();
+      const { service, mockFileSystem } = await loadService();
       // Mock failure for read
-      (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(() =>
+      mockFileSystem.readAsStringAsync.mockImplementation(() =>
         Promise.reject(new Error('Current path file not found')),
       );
 
@@ -271,7 +290,7 @@ describe('transcriptStorage', () => {
         'file:///data/user/0/com.app/files/transcripts/transcript_123.txt',
       );
 
-      expect(FileSystem.readAsStringAsync).toHaveBeenCalledTimes(1);
+      expect(mockFileSystem.readAsStringAsync).toHaveBeenCalledTimes(1);
       expect(result).toBe('Transcript file could not be loaded.');
     });
   });

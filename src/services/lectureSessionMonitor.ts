@@ -44,6 +44,7 @@ interface SaveLectureAnalysisQuickOpts {
   logId: number;
   embedding?: number[] | null;
   noteOverride?: string;
+  recordingPath?: string | null;
 }
 
 /** Legacy wrapper for saveLecturePersistence */
@@ -93,7 +94,10 @@ export async function retryFailedTranscriptions(groqKey?: string): Promise<numbe
         });
         if (res.success) recovered++;
       } catch (err) {
-        console.error(`[SessionMonitor] retryFailedTranscriptions: session ${session.id} failed:`, err);
+        console.error(
+          `[SessionMonitor] retryFailedTranscriptions: session ${session.id} failed:`,
+          err,
+        );
       }
     }
   }
@@ -114,7 +118,7 @@ export async function retryPendingNoteEnhancements(): Promise<number> {
           keyConcepts: [],
           highYieldPoints: [],
           lectureSummary: note.summary || '',
-          estimatedConfidence: (Math.max(1, note.confidence || 1)) as 1 | 2 | 3,
+          estimatedConfidence: Math.max(1, note.confidence || 1) as 1 | 2 | 3,
           transcript: transcriptText ?? '',
         };
         await enhanceNoteInBackground(session.lectureNoteId, session.id, analysis);
@@ -178,6 +182,7 @@ export async function runFullTranscriptionPipeline(opts: {
       logId,
       quickNote,
       embedding,
+      recordingPath,
     });
 
     void enhanceNoteInBackground(noteId as number, logId, analysis);
@@ -198,7 +203,11 @@ async function enhanceNoteInBackground(noteId: number, logId: number, analysis: 
       await updateSessionNoteEnhancementStatus(logId, 'completed');
 
       // CRITICAL: Backup final note to Public Storage
-      await backupNoteToPublic(noteId, analysis.subject, enhanced);
+      await backupNoteToPublic(
+        noteId,
+        { subjectName: analysis.subject, topics: analysis.topics },
+        enhanced,
+      );
     }
   } catch (err) {
     console.error('[SessionMonitor] enhanceNoteInBackground failed for noteId', noteId, ':', err);

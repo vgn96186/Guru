@@ -120,6 +120,21 @@ export async function updateSessionNoteEnhancementStatus(
   }
 }
 
+export async function updateSessionRecordingPath(
+  logId: number,
+  recordingPath: string,
+): Promise<void> {
+  const db = getDb();
+  try {
+    await db.runAsync('UPDATE external_app_logs SET recording_path = ? WHERE id = ?', [
+      recordingPath,
+      logId,
+    ]);
+  } catch (err) {
+    if (__DEV__) console.warn('[externalLogs] Failed to update recording path:', err);
+  }
+}
+
 function parseTelemetry(raw: string | null | undefined): SessionPipelineTelemetry | null {
   if (!raw) return null;
   try {

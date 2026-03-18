@@ -2,6 +2,7 @@ import * as FileSystemLegacy from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
 import { generateSecureRandomString } from './cryptoUtils';
+import { buildLectureArtifactFileName } from './lectureIdentity';
 
 const TRANSCRIPT_DIR = FileSystemLegacy.documentDirectory + 'transcripts/';
 const RECOVERY_DIR = FileSystemLegacy.documentDirectory + 'recovery/';
@@ -15,11 +16,27 @@ const PUBLIC_ROOT =
 const PUBLIC_TRANSCRIPT_DIR = PUBLIC_ROOT + 'Transcripts/';
 const PUBLIC_NOTES_DIR = PUBLIC_ROOT + 'Notes/';
 
-export async function backupNoteToPublic(noteId: number, subject: string, noteText: string) {
+export interface LectureStorageIdentity {
+  subjectName?: string | null;
+  topics?: string[] | null;
+}
+
+function toFileUri(path: string): string {
+  return path.startsWith('file://') ? path : `file://${path}`;
+}
+
+function fromFileUri(path: string, preserveRawPath: boolean): string {
+  return preserveRawPath ? path.replace(/^file:\/\//, '') : path;
+}
+
+export async function backupNoteToPublic(
+  noteId: number,
+  identity: LectureStorageIdentity,
+  noteText: string,
+) {
   try {
     const profile = await profileRepository.getProfile();
-    const safeSubject = subject.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const fileName = `note_${safeSubject}_${noteId}_${Date.now()}.txt`;
+    const fileName = buildLectureArtifactFileName('note', identity, Date.now(), '.txt');
 
     // 1. Cloud/SAF Backup
     if (Platform.OS === 'android' && profile.backupDirectoryUri) {
@@ -66,14 +83,17 @@ export async function moveFileToRecovery(fileUri: string): Promise<string> {
   }
 }
 
-export async function saveTranscriptToFile(transcriptText: string): Promise<string> {
+export async function saveTranscriptToFile(
+  transcriptText: string,
+  identity?: LectureStorageIdentity,
+): Promise<string> {
   const normalized = transcriptText.trim();
   if (!normalized) return '';
   if (normalized.startsWith('file://')) return normalized;
 
   const profile = await profileRepository.getProfile();
   await FileSystemLegacy.makeDirectoryAsync(TRANSCRIPT_DIR, { intermediates: true });
-  const fileName = 'transcript_' + Date.now() + '_' + generateSecureRandomString(7) + '.txt';
+  const fileName = buildLectureArtifactFileName('transcript', identity ?? {}, Date.now(), '.txt');
   const fileUri = TRANSCRIPT_DIR + fileName;
 
   await FileSystemLegacy.writeAsStringAsync(fileUri, normalized, {
@@ -118,6 +138,35 @@ export async function saveTranscriptToFile(transcriptText: string): Promise<stri
   }
   // Ensure loadTranscriptFromFile can recognize this as a file URI
   return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;
+}
+
+export async function renameRecordingToLectureIdentity(
+  recordingPath: string,
+  identity: LectureStorageIdentity,
+): Promise<string> {
+  if (!recordingPath) return recordingPath;
+
+  const preserveRawPath = !recordingPath.startsWith('file://');
+  const sourceUri = toFileUri(recordingPath);
+  const sourceInfo = await FileSystemLegacy.getInfoAsync(sourceUri);
+  if (!sourceInfo.exists) return recordingPath;
+
+  const extensionMatch = sourceUri.match(/\.[a-z0-9]+$/i);
+  const extension = extensionMatch?.[0] ?? '.m4a';
+  const targetUri = sourceUri.replace(
+    /[^/]+$/,
+    buildLectureArtifactFileName('recording', identity, Date.now(), extension),
+  );
+
+  if (targetUri === sourceUri) return recordingPath;
+
+  try {
+    await FileSystemLegacy.moveAsync({ from: sourceUri, to: targetUri });
+    return fromFileUri(targetUri, preserveRawPath);
+  } catch (err) {
+    console.warn('[TranscriptStorage] Recording rename failed:', err);
+    return recordingPath;
+  }
 }
 
 export async function loadTranscriptFromFile(

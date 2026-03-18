@@ -96,7 +96,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
         expect.stringMatching(
-          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/anatomy__upper-limb__note__\d+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Notes\/anatomy__upper-limb__note__\d+\.txt$/,
         ),
         'This is a note.',
         { encoding: 'utf8' },
@@ -122,7 +122,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledTimes(1);
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^file:\/\/\/sdcard\/Documents\/Guru\/Notes\/physiology__cardiac-cycle__note__\d+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Notes\/physiology__cardiac-cycle__note__\d+\.txt$/,
         ),
         'Another note.',
         { encoding: 'utf8' },
@@ -147,7 +147,7 @@ describe('transcriptStorage', () => {
 
       // Should make the directory since it didn't exist
       expect(mockFileSystem.makeDirectoryAsync).toHaveBeenCalledWith(
-        'file:///sdcard/Documents/Guru/Notes/',
+        'file:///data/user/0/com.app/files/backups/Notes/',
         { intermediates: true },
       );
 
@@ -193,7 +193,7 @@ describe('transcriptStorage', () => {
           /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
         ),
         to: expect.stringMatching(
-          /^file:\/\/\/sdcard\/Documents\/Guru\/Transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
         ),
       });
 

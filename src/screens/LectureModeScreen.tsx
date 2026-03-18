@@ -60,10 +60,8 @@ const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
 const MAX_RECORDING_RETRIES = 3;
 const RECORDING_RETRY_DELAY = 2000;
-
-// Throttle state persistence to avoid excessive writes
-let lastStateSave = 0;
-const STATE_SAVE_THROTTLE = 5000; // Save at most every 5 seconds
+const STATE_SAVE_DEBOUNCE = 2000;
+const STATE_SAVE_CHECKPOINT = 30;
 
 export default function LectureModeScreen() {
   useKeepAwake(); // Keep phone screen on like a dashboard
@@ -107,8 +105,50 @@ export default function LectureModeScreen() {
   const backHandlerRef = useRef<any>(null);
   const proofOfLifeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
+  const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedSnapshotRef = useRef<string>('');
 
   const { focusState } = useFaceTracking();
+
+  const buildLectureState = useCallback(
+    () => ({
+      elapsed,
+      notes,
+      currentNote,
+      selectedSubjectId,
+      sessionId: sessionIdRef.current,
+      isRecordingEnabled,
+      timestamp: Date.now(),
+    }),
+    [elapsed, notes, currentNote, selectedSubjectId, isRecordingEnabled],
+  );
+
+  const persistLectureState = useCallback(
+    async (force = false) => {
+      if (!isHydratedRef.current) return;
+
+      const state = buildLectureState();
+      const snapshot = JSON.stringify({
+        elapsed: state.elapsed,
+        notes: state.notes,
+        currentNote: state.currentNote,
+        selectedSubjectId: state.selectedSubjectId,
+        sessionId: state.sessionId,
+        isRecordingEnabled: state.isRecordingEnabled,
+      });
+
+      if (!force && snapshot === lastSavedSnapshotRef.current) return;
+
+      lastSavedSnapshotRef.current = snapshot;
+
+      try {
+        await AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn('[LectureMode] Failed to save state:', err);
+      }
+    },
+    [buildLectureState],
+  );
 
   // ── Hydration & Persistence ──────────────────────────────────────────────
 
@@ -125,9 +165,18 @@ export default function LectureModeScreen() {
               if (isMounted) {
                 setElapsed(state.elapsed);
                 setNotes(state.notes);
+                setCurrentNote(state.currentNote ?? '');
                 setSelectedSubjectId(state.selectedSubjectId);
                 sessionIdRef.current = state.sessionId;
                 if (state.isRecordingEnabled) setIsRecordingEnabled(true);
+                lastSavedSnapshotRef.current = JSON.stringify({
+                  elapsed: state.elapsed,
+                  notes: state.notes,
+                  currentNote: state.currentNote ?? '',
+                  selectedSubjectId: state.selectedSubjectId,
+                  sessionId: state.sessionId,
+                  isRecordingEnabled: !!state.isRecordingEnabled,
+                });
               }
             } else {
               await AsyncStorage.removeItem(LECTURE_STATE_KEY);
@@ -151,28 +200,30 @@ export default function LectureModeScreen() {
     };
   }, []);
 
-  // Throttled state persistence
+  // Persist semantic state changes with a short debounce.
   useEffect(() => {
     if (!isHydratedRef.current) return;
+    if (saveStateTimeoutRef.current) {
+      clearTimeout(saveStateTimeoutRef.current);
+    }
+    saveStateTimeoutRef.current = setTimeout(() => {
+      void persistLectureState();
+    }, STATE_SAVE_DEBOUNCE);
 
-    const now = Date.now();
-    if (now - lastStateSave < STATE_SAVE_THROTTLE) return;
-
-    lastStateSave = now;
-
-    const state = {
-      elapsed,
-      notes,
-      selectedSubjectId,
-      sessionId: sessionIdRef.current,
-      isRecordingEnabled,
-      timestamp: Date.now(),
+    return () => {
+      if (saveStateTimeoutRef.current) {
+        clearTimeout(saveStateTimeoutRef.current);
+        saveStateTimeoutRef.current = null;
+      }
     };
+  }, [notes, currentNote, selectedSubjectId, isRecordingEnabled, persistLectureState]);
 
-    AsyncStorage.setItem(LECTURE_STATE_KEY, JSON.stringify(state)).catch((err) => {
-      console.warn('[LectureMode] Failed to save state:', err);
-    });
-  }, [elapsed, notes, selectedSubjectId, isRecordingEnabled]);
+  // Persist periodic recovery checkpoints without writing every timer tick.
+  useEffect(() => {
+    if (!isHydratedRef.current) return;
+    if (elapsed <= 0 || elapsed % STATE_SAVE_CHECKPOINT !== 0) return;
+    void persistLectureState();
+  }, [elapsed, persistLectureState]);
 
   // ── Session Management ───────────────────────────────────────────────────
 
@@ -265,6 +316,7 @@ export default function LectureModeScreen() {
         !onBreak &&
         elapsed > 0
       ) {
+        void persistLectureState(true);
         if (!hasTriggeredDoomscrollRef.current) {
           hasTriggeredDoomscrollRef.current = true;
           // They put the phone down or switched to Instagram
@@ -283,7 +335,7 @@ export default function LectureModeScreen() {
     return () => {
       subscription.remove();
     };
-  }, [onBreak, elapsed]);
+  }, [elapsed, onBreak, persistLectureState]);
 
   // Main Timer loop
   useEffect(() => {
@@ -405,12 +457,22 @@ export default function LectureModeScreen() {
 
     try {
       await AsyncStorage.removeItem(LECTURE_STATE_KEY);
+      lastSavedSnapshotRef.current = '';
     } catch (err) {
       console.warn('[LectureMode] Failed to clear state:', err);
     }
 
     navigation.goBack();
   }, [elapsed, notes, currentNote, selectedSubjectId, navigation, refreshProfile]);
+
+  useEffect(() => {
+    return () => {
+      if (saveStateTimeoutRef.current) {
+        clearTimeout(saveStateTimeoutRef.current);
+        saveStateTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   function startBreak() {
     setOnBreak(true);

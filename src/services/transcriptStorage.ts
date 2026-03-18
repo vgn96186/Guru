@@ -6,15 +6,12 @@ import { buildLectureArtifactFileName } from './lectureIdentity';
 
 const TRANSCRIPT_DIR = FileSystemLegacy.documentDirectory + 'transcripts/';
 const RECOVERY_DIR = FileSystemLegacy.documentDirectory + 'recovery/';
+const BACKUP_ROOT = FileSystemLegacy.documentDirectory + 'backups/';
+const PUBLIC_TRANSCRIPT_DIR = BACKUP_ROOT + 'Transcripts/';
+const PUBLIC_NOTES_DIR = BACKUP_ROOT + 'Notes/';
 
-// Persistent storage that survives reinstall on Android
-// Points to /sdcard/Documents/Guru/
-const PUBLIC_ROOT =
-  Platform.OS === 'android'
-    ? 'file:///sdcard/Documents/Guru/'
-    : FileSystemLegacy.documentDirectory + 'backups/';
-const PUBLIC_TRANSCRIPT_DIR = PUBLIC_ROOT + 'Transcripts/';
-const PUBLIC_NOTES_DIR = PUBLIC_ROOT + 'Notes/';
+// Durable external backups on Android should go through SAF when configured.
+// The local fallback stays inside app-controlled storage instead of hardcoding /sdcard paths.
 
 export interface LectureStorageIdentity {
   subjectName?: string | null;

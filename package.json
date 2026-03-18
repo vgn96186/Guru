@@ -9,7 +9,7 @@
     "android:dev": "bash ./scripts/android-dev.sh",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "prepare": "node ./node_modules/husky/bin.js",
+    "prepare": "node ./node_modules/husky/bin.js && find .husky -type f | xargs sed -i 's|/data/data/com.termux/files/usr/glibc/bin/sh|/data/data/com.termux/files/usr/bin/sh|g' 2>/dev/null; true",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.{ts,tsx}\" \"modules/**/*.{ts,tsx}\" App.tsx index.ts",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" \"modules/**/*.{ts,tsx}\" App.tsx index.ts --fix",

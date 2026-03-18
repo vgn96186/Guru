@@ -25,6 +25,7 @@ import StartButton from '../components/StartButton';
 import LoadingOrb from '../components/LoadingOrb';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
+import { getDb } from '../db/database';
 import { getSubjectById } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -59,6 +60,7 @@ export default function HomeScreen() {
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
   const [mood, setMood] = useState<Mood>('good');
   const [moreExpanded, setMoreExpanded] = useState(false);
+  const [sessionResumeValid, setSessionResumeValid] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
 
   // Added from UI-UX audit branch
@@ -69,6 +71,17 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       reloadHomeDashboard({ silent: true });
+      // Validate that the Zustand session ID still exists in SQLite
+      // (OS can purge in-memory store on low-RAM devices)
+      const { sessionId, sessionState } = useSessionStore.getState();
+      if (sessionId && sessionState !== 'session_done') {
+        getDb()
+          .getFirstAsync<{ id: number }>('SELECT id FROM sessions WHERE id = ?', [sessionId])
+          .then((row) => setSessionResumeValid(!!row))
+          .catch(() => setSessionResumeValid(false));
+      } else {
+        setSessionResumeValid(false);
+      }
     }, [reloadHomeDashboard]),
   );
 
@@ -129,8 +142,7 @@ export default function HomeScreen() {
   const firstName = profile.displayName?.split(' ')[0] || 'Doctor';
 
   const heroCta = (() => {
-    const session = useSessionStore.getState();
-    if (session.sessionId && session.sessionState !== 'session_done') {
+    if (sessionResumeValid) {
       return {
         label: 'CONTINUE SESSION',
         sublabel: 'Pick up where you left off',

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -118,6 +118,16 @@ export default function TabNavigator() {
     profile?.useLocalWhisper && profile?.localWhisperPath ? profile.localWhisperPath : undefined;
   const [isActionHubOpen, setIsActionHubOpen] = useState(false);
   const bottomInset = Math.max(insets.bottom, 8);
+
+  // Intercept Android hardware/gesture back to close the sheet instead of popping navigator
+  useEffect(() => {
+    if (!isActionHubOpen) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setIsActionHubOpen(false);
+      return true; // consumed — prevents navigator from going back
+    });
+    return () => sub.remove();
+  }, [isActionHubOpen]);
 
   async function launchExternalAction(appId: SupportedMedicalApp) {
     setIsActionHubOpen(false);

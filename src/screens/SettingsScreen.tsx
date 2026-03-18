@@ -420,6 +420,14 @@ export default function SettingsScreen() {
             Optional. Guru falls back to free OpenRouter models (Llama 3.3, Qwen 2.5, etc.) when
             Groq is unavailable. Get a free key at openrouter.ai
           </Text>
+
+          <TouchableOpacity
+            style={styles.localModelBtn}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('LocalModel' as any)}
+          >
+            <Text style={styles.localModelBtnText}>🧠 Download Local AI Models (Offline)</Text>
+          </TouchableOpacity>
         </Section>
 
         <Section title="✅ Permissions & Diagnostics">
@@ -993,6 +1001,16 @@ const styles = StyleSheet.create({
   validationSuccess: { color: '#4CAF50' },
   validationError: { color: '#F44336' },
   hint: { color: '#555', fontSize: 12, marginBottom: 4 },
+  localModelBtn: {
+    marginTop: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    alignItems: 'center',
+  },
+  localModelBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   autoFetchBtn: {
     marginTop: 10,
     backgroundColor: '#1A1A2E',

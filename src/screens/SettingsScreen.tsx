@@ -39,7 +39,7 @@ import {
   requestNotificationPermissions,
   refreshAccountabilityNotifications,
 } from '../services/notificationService';
-import { getDb } from '../db/database';
+import { getDb, runInTransaction } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
@@ -58,20 +58,43 @@ const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
 
 const BACKUP_VERSION = 1;
 
+type BackupRow = Record<string, unknown>;
+
+interface AppBackup {
+  version: number;
+  exportedAt: string;
+  user_profile: BackupRow | null;
+  topic_progress: BackupRow[];
+  daily_log: BackupRow[];
+  lecture_notes: BackupRow[];
+}
+
+function yieldToUi(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function asNullableString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null;
+}
+
 async function exportBackup(): Promise<boolean> {
   const db = getDb();
-  const profile = db.getFirstSync<Record<string, unknown>>(
-    'SELECT * FROM user_profile WHERE id = 1',
-  );
-  const topicProgress = db.getAllSync<Record<string, unknown>>('SELECT * FROM topic_progress');
-  const dailyLog = db.getAllSync<Record<string, unknown>>(
-    'SELECT * FROM daily_log ORDER BY date DESC LIMIT 90',
-  );
-  const lectureNotes = db.getAllSync<Record<string, unknown>>(
-    'SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500',
-  );
+  const [profile, topicProgress, dailyLog, lectureNotes] = await Promise.all([
+    db.getFirstAsync<BackupRow>('SELECT * FROM user_profile WHERE id = 1'),
+    db.getAllAsync<BackupRow>('SELECT * FROM topic_progress'),
+    db.getAllAsync<BackupRow>('SELECT * FROM daily_log ORDER BY date DESC LIMIT 90'),
+    db.getAllAsync<BackupRow>('SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500'),
+  ]);
 
-  const backup = {
+  const backup: AppBackup = {
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     user_profile: profile,
@@ -110,7 +133,7 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
   if (result.canceled || !result.assets?.[0]) return { ok: false, message: 'Cancelled' };
 
   const content = await FileSystem.readAsStringAsync(result.assets[0].uri);
-  let backup: any;
+  let backup: AppBackup;
   try {
     backup = JSON.parse(content);
   } catch {
@@ -124,82 +147,90 @@ async function importBackup(): Promise<{ ok: boolean; message: string }> {
     return { ok: false, message: 'Backup was made with a newer version of the app' };
   }
 
-  const db = getDb();
   let restoredTopics = 0;
   let restoredLogs = 0;
 
-  // Restore topic_progress with validation
-  for (const row of backup.topic_progress as Record<string, any>[]) {
-    // Validate required fields exist
-    if (!row.topic_id || typeof row.status === 'undefined') {
-      if (__DEV__) console.warn('Skipping invalid topic_progress row:', row);
-      continue;
-    }
-    // Validate status is valid
-    const validStatuses = ['unseen', 'seen', 'reviewed', 'mastered'];
-    const status = validStatuses.includes(row.status) ? row.status : 'unseen';
-    // Validate confidence is number 0-5
-    const confidence =
-      typeof row.confidence === 'number' ? Math.min(5, Math.max(0, row.confidence)) : 0;
+  await runInTransaction(async (tx) => {
+    const validStatuses = new Set(['unseen', 'seen', 'reviewed', 'mastered']);
 
-    db.runSync(
-      `INSERT OR REPLACE INTO topic_progress
-       (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        row.topic_id,
-        status,
-        confidence,
-        row.last_studied_at,
-        row.times_studied ?? 0,
-        row.xp_earned ?? 0,
-        row.next_review_date ?? null,
-        row.user_notes ?? '',
-      ],
-    );
-    restoredTopics++;
-  }
+    for (const [index, row] of (backup.topic_progress ?? []).entries()) {
+      const typedRow = row as Record<string, unknown>;
+      if (!typedRow.topic_id || typeof typedRow.status === 'undefined') {
+        if (__DEV__) console.warn('Skipping invalid topic_progress row:', typedRow);
+        continue;
+      }
 
-  // Restore daily_log with validation
-  for (const row of (backup.daily_log ?? []) as Record<string, any>[]) {
-    if (!row.date) {
-      if (__DEV__) console.warn('Skipping invalid daily_log row:', row);
-      continue;
+      const status =
+        typeof typedRow.status === 'string' && validStatuses.has(typedRow.status)
+          ? typedRow.status
+          : 'unseen';
+      const confidence =
+        typeof typedRow.confidence === 'number' ? Math.min(5, Math.max(0, typedRow.confidence)) : 0;
+
+      await tx.runAsync(
+        `INSERT OR REPLACE INTO topic_progress
+         (topic_id, status, confidence, last_studied_at, times_studied, xp_earned, next_review_date, user_notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          asNumber(typedRow.topic_id),
+          status,
+          confidence,
+          asNullableString(typedRow.last_studied_at),
+          asNumber(typedRow.times_studied),
+          asNumber(typedRow.xp_earned),
+          asNullableString(typedRow.next_review_date),
+          asString(typedRow.user_notes),
+        ],
+      );
+      restoredTopics++;
+
+      if ((index + 1) % 50 === 0) await yieldToUi();
     }
-    db.runSync(
-      `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [
-        row.date,
-        row.checked_in ?? 0,
-        row.mood ?? null,
-        row.total_minutes ?? 0,
-        row.xp_earned ?? 0,
-        row.session_count ?? 0,
-      ],
-    );
-    restoredLogs++;
-  }
-  // Restore key profile fields (keep api key from current settings)
-  const p = backup.user_profile as Record<string, any>;
-  if (p) {
-    db.runSync(
-      `UPDATE user_profile SET
-       display_name = ?, total_xp = ?, current_level = ?,
-       streak_current = ?, streak_best = ?,
-       daily_goal_minutes = ?, preferred_session_length = ?
-       WHERE id = 1`,
-      [
-        p.display_name ?? 'Doctor',
-        p.total_xp ?? 0,
-        p.current_level ?? 1,
-        p.streak_current ?? 0,
-        p.streak_best ?? 0,
-        p.daily_goal_minutes ?? 120,
-        p.preferred_session_length ?? 45,
-      ],
-    );
-  }
+
+    for (const [index, row] of (backup.daily_log ?? []).entries()) {
+      const typedRow = row as Record<string, unknown>;
+      if (!typedRow.date) {
+        if (__DEV__) console.warn('Skipping invalid daily_log row:', typedRow);
+        continue;
+      }
+
+      await tx.runAsync(
+        `INSERT OR REPLACE INTO daily_log (date, checked_in, mood, total_minutes, xp_earned, session_count)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          asString(typedRow.date),
+          asNumber(typedRow.checked_in),
+          asNullableString(typedRow.mood),
+          asNumber(typedRow.total_minutes),
+          asNumber(typedRow.xp_earned),
+          asNumber(typedRow.session_count),
+        ],
+      );
+      restoredLogs++;
+
+      if ((index + 1) % 50 === 0) await yieldToUi();
+    }
+
+    const p = backup.user_profile as Record<string, unknown> | null;
+    if (p) {
+      await tx.runAsync(
+        `UPDATE user_profile SET
+         display_name = ?, total_xp = ?, current_level = ?,
+         streak_current = ?, streak_best = ?,
+         daily_goal_minutes = ?, preferred_session_length = ?
+         WHERE id = 1`,
+        [
+          asString(p.display_name, 'Doctor'),
+          asNumber(p.total_xp),
+          asNumber(p.current_level, 1),
+          asNumber(p.streak_current),
+          asNumber(p.streak_best),
+          asNumber(p.daily_goal_minutes, 120),
+          asNumber(p.preferred_session_length, 45),
+        ],
+      );
+    }
+  });
 
   return { ok: true, message: `Restored ${restoredTopics} topics, ${restoredLogs} log entries` };
 }
@@ -238,6 +269,7 @@ export default function SettingsScreen() {
   const [strictMode, setStrictMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
   const [bodyDoubling, setBodyDoubling] = useState(true);
   const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
   const [idleTimeout, setIdleTimeout] = useState('2');
@@ -431,6 +463,25 @@ export default function SettingsScreen() {
       Alert.alert('Error', 'Failed to configure backup directory.');
     }
   };
+
+  async function runMaintenanceTask(
+    key: string,
+    task: () => Promise<number>,
+    labels: { done: string; none: string; failed: string },
+  ) {
+    setMaintenanceBusy(key);
+    try {
+      const count = await task();
+      Alert.alert(
+        count > 0 ? labels.done : labels.none,
+        count > 0 ? `${count} item(s) processed.` : 'Nothing needed fixing.',
+      );
+    } catch (err) {
+      Alert.alert(labels.failed, err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setMaintenanceBusy(null);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -1013,6 +1064,116 @@ export default function SettingsScreen() {
           </View>
         </Section>
 
+        <Section title="🛠️ Library Maintenance">
+          <Text style={styles.hint}>
+            Run repair and recovery only when you need it instead of during startup.
+          </Text>
+          <TouchableOpacity
+            style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
+            disabled={maintenanceBusy !== null}
+            activeOpacity={0.8}
+            onPress={() =>
+              runMaintenanceTask(
+                'retry',
+                async () => {
+                  const { retryFailedTasks } = await import('../services/lectureSessionMonitor');
+                  const activeProfile = await getUserProfile();
+                  return retryFailedTasks(activeProfile?.groqApiKey || undefined);
+                },
+                {
+                  done: 'Lecture retry finished',
+                  none: 'Lecture retry checked',
+                  failed: 'Lecture retry failed',
+                },
+              )
+            }
+          >
+            {maintenanceBusy === 'retry' ? (
+              <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+            ) : (
+              <Text style={styles.maintenanceBtnText}>Retry failed lecture processing</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
+            disabled={maintenanceBusy !== null}
+            activeOpacity={0.8}
+            onPress={() =>
+              runMaintenanceTask(
+                'legacy',
+                async () => {
+                  const { autoRepairLegacyNotes } =
+                    await import('../services/lectureSessionMonitor');
+                  return autoRepairLegacyNotes();
+                },
+                {
+                  done: 'Legacy notes repaired',
+                  none: 'Legacy notes checked',
+                  failed: 'Legacy note repair failed',
+                },
+              )
+            }
+          >
+            {maintenanceBusy === 'legacy' ? (
+              <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+            ) : (
+              <Text style={styles.maintenanceBtnText}>Repair legacy lecture notes</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
+            disabled={maintenanceBusy !== null}
+            activeOpacity={0.8}
+            onPress={() =>
+              runMaintenanceTask(
+                'transcripts',
+                async () => {
+                  const { scanAndRecoverOrphanedTranscripts } =
+                    await import('../services/lectureSessionMonitor');
+                  return scanAndRecoverOrphanedTranscripts();
+                },
+                {
+                  done: 'Orphan transcripts recovered',
+                  none: 'Transcript folders checked',
+                  failed: 'Transcript recovery failed',
+                },
+              )
+            }
+          >
+            {maintenanceBusy === 'transcripts' ? (
+              <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+            ) : (
+              <Text style={styles.maintenanceBtnText}>Recover orphan transcripts</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
+            disabled={maintenanceBusy !== null}
+            activeOpacity={0.8}
+            onPress={() =>
+              runMaintenanceTask(
+                'recordings',
+                async () => {
+                  const { scanAndRecoverOrphanedRecordings } =
+                    await import('../services/lectureSessionMonitor');
+                  return scanAndRecoverOrphanedRecordings();
+                },
+                {
+                  done: 'Orphan recordings recovered',
+                  none: 'Recording folders checked',
+                  failed: 'Recording recovery failed',
+                },
+              )
+            }
+          >
+            {maintenanceBusy === 'recordings' ? (
+              <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+            ) : (
+              <Text style={styles.maintenanceBtnText}>Recover orphan recordings</Text>
+            )}
+          </TouchableOpacity>
+        </Section>
+
         <TouchableOpacity
           style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
           onPress={save}
@@ -1260,6 +1421,17 @@ const styles = StyleSheet.create({
   typeChipX: { color: theme.colors.error, fontSize: 11 },
   clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
   clearBtnText: { color: theme.colors.textMuted, fontSize: 13 },
+  maintenanceBtn: {
+    marginTop: 10,
+    backgroundColor: theme.colors.card,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  maintenanceBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   dangerBtn: {
     backgroundColor: theme.colors.background,
     borderRadius: 10,

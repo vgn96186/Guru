@@ -187,36 +187,12 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 
   await db.execAsync('PRAGMA foreign_keys = ON');
 
-  // Ensure user_profile row exists and run maintenance (now safe as migrations are done)
+  // Ensure user_profile row exists
   const profile = await db.getFirstAsync<{ id: number; groq_api_key: string | null }>(
     'SELECT id, groq_api_key FROM user_profile WHERE id = 1',
   );
   if (!profile) {
     await seedUserProfile(db);
-  } else {
-    // Run background maintenance
-    try {
-      const {
-        retryFailedTasks,
-        autoRepairLegacyNotes,
-        scanAndRecoverOrphanedTranscripts,
-        scanAndRecoverOrphanedRecordings,
-      } = await import('../services/lectureSessionMonitor');
-      void retryFailedTasks(profile.groq_api_key || undefined).catch((e) =>
-        console.error('[DB] retryFailedTasks failed:', e),
-      );
-      void autoRepairLegacyNotes().catch((e) =>
-        console.error('[DB] autoRepairLegacyNotes failed:', e),
-      );
-      void scanAndRecoverOrphanedTranscripts().catch((e) =>
-        console.error('[DB] scanAndRecoverOrphanedTranscripts failed:', e),
-      );
-      void scanAndRecoverOrphanedRecordings().catch((e) =>
-        console.error('[DB] scanAndRecoverOrphanedRecordings failed:', e),
-      );
-    } catch (e) {
-      console.error('[DB] Failed to run background maintenance tasks:', e);
-    }
   }
 
   // Update streak on open

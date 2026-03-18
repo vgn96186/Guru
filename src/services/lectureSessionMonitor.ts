@@ -131,14 +131,16 @@ export async function retryPendingNoteEnhancements(): Promise<number> {
   return recovered;
 }
 
-export async function retryFailedTasks(groqKey?: string) {
+export async function retryFailedTasks(groqKey?: string): Promise<number> {
   const recoveredTx = await retryFailedTranscriptions(groqKey);
   const recoveredEnh = await retryPendingNoteEnhancements();
   if (recoveredTx > 0 || recoveredEnh > 0) {
-    console.log(
-      `[Recovery] Recovered ${recoveredTx} transcripts and ${recoveredEnh} note enhancements.`,
-    );
+    if (__DEV__)
+      console.log(
+        `[Recovery] Recovered ${recoveredTx} transcripts and ${recoveredEnh} note enhancements.`,
+      );
   }
+  return recoveredTx + recoveredEnh;
 }
 
 export async function runFullTranscriptionPipeline(opts: {

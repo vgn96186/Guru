@@ -1,0 +1,44 @@
+import React from 'react';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { theme } from '../constants/theme';
+
+interface Props {
+  topics: string[];
+  /** If true, wraps onto multiple lines instead of horizontal scroll */
+  wrap?: boolean;
+}
+
+export default function TopicPillRow({ topics, wrap = false }: Props) {
+  if (topics.length === 0) return null;
+
+  const pills = topics.map((t, i) => (
+    <View key={i} style={styles.pill}>
+      <Text style={styles.pillText}>{t}</Text>
+    </View>
+  ));
+
+  if (wrap) {
+    return <View style={styles.wrapRow}>{pills}</View>;
+  }
+
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroll}>
+      <View style={styles.scrollRow}>{pills}</View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  scroll: { maxHeight: 44 },
+  scrollRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap' },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  pillText: { color: theme.colors.textPrimary, fontSize: 13 },
+});

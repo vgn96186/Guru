@@ -18,8 +18,9 @@ import { analyzeTranscript, generateADHDNote, type LectureAnalysis } from '../se
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { theme } from '../constants/theme';
-
-const CONFIDENCE_LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduced', 2: 'Understood', 3: 'Confident' };
+import ConfidenceSelector from '../components/ConfidenceSelector';
+import TopicPillRow from '../components/TopicPillRow';
+import SubjectChip from '../components/SubjectChip';
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<RootStackParamList, 'ManualNoteCreation'>) {
@@ -57,6 +58,7 @@ export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<
       const sub = await getSubjectByName(result.analysis.subject);
       await saveLectureTranscript({
         subjectId: sub?.id ?? null,
+        subjectName: result.analysis.subject,
         note: result.note,
         transcript: transcript.trim(),
         summary: result.analysis.lectureSummary,
@@ -86,47 +88,21 @@ export default function ManualNoteCreationScreen(_props: NativeStackScreenProps<
           <Text style={styles.title}>Review Notes</Text>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
-          {/* Subject + topics */}
-          <View style={styles.subjectRow}>
-            <View style={styles.subjectChip}>
-              <Text style={styles.subjectChipText}>{analysis.subject}</Text>
-            </View>
-          </View>
+          <SubjectChip subject={analysis.subject} />
 
           {analysis.topics.length > 0 && (
             <>
               <Text style={styles.sectionLabel}>TOPICS DETECTED</Text>
-              <View style={styles.topicRow}>
-                {analysis.topics.map((t, i) => (
-                  <View key={i} style={styles.topicPill}>
-                    <Text style={styles.topicPillText}>{t}</Text>
-                  </View>
-                ))}
-              </View>
+              <TopicPillRow topics={analysis.topics} wrap />
             </>
           )}
 
-          {/* Confidence selector */}
           <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
-          <View style={styles.confidenceRow}>
-            {([1, 2, 3] as const).map((lvl) => {
-              const colors = { 1: theme.colors.error, 2: theme.colors.warning, 3: theme.colors.success };
-              const selected = (confidence ?? analysis.estimatedConfidence) === lvl;
-              return (
-                <TouchableOpacity
-                  key={lvl}
-                  style={[styles.confOption, selected && { borderColor: colors[lvl], backgroundColor: colors[lvl] + '22' }]}
-                  onPress={() => setConfidence(lvl)}
-                >
-                  <Text style={[styles.confOptionText, selected && { color: colors[lvl] }]}>
-                    {CONFIDENCE_LABELS[lvl]}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <ConfidenceSelector
+            value={confidence ?? (analysis.estimatedConfidence as 1 | 2 | 3)}
+            onChange={setConfidence}
+          />
 
-          {/* Generated note */}
           <Text style={styles.sectionLabel}>GENERATED NOTES</Text>
           <View style={styles.noteCard}>
             <Text style={styles.noteText}>{note}</Text>
@@ -199,7 +175,7 @@ const styles = StyleSheet.create({
   backBtn: { marginRight: 16 },
   backText: { color: theme.colors.primary, fontSize: 16 },
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
-  content: { padding: 16, paddingBottom: 120 },
+  content: { padding: 16, paddingBottom: 120, gap: 4 },
   label: { color: '#FFF', fontSize: 15, marginBottom: 12 },
   input: {
     backgroundColor: theme.colors.surface,
@@ -217,32 +193,7 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.5 },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   processingText: { color: theme.colors.textSecondary, textAlign: 'center', marginTop: 16, fontSize: 14 },
-  // result view
-  subjectRow: { marginBottom: 12 },
-  subjectChip: {
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.primary + '22',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.primary + '66',
-  },
-  subjectChipText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
   sectionLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 16, marginBottom: 8 },
-  topicRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
-  topicPill: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  topicPillText: { color: theme.colors.textPrimary, fontSize: 13 },
-  confidenceRow: { flexDirection: 'row', gap: 8 },
-  confOption: { flex: 1, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, alignItems: 'center' },
-  confOptionText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
   noteCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: 12,

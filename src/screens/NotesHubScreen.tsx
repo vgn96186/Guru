@@ -21,6 +21,10 @@ import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
 import { getDb } from '../db/database';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
+import { buildLectureDisplayTitle } from '../services/lectureIdentity';
+import ConfidenceSelector from '../components/ConfidenceSelector';
+import TopicPillRow from '../components/TopicPillRow';
+import SubjectChip from '../components/SubjectChip';
 
 type Nav = NativeStackNavigationProp<MenuStackParamList, 'NotesHub'>;
 
@@ -39,6 +43,13 @@ interface NotesStats {
 
 function extractPreview(text: string): string {
   return text.replace(/#+\s*/g, '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
+}
+
+function getLectureTitle(lecture: Pick<LectureHistoryItem, 'subjectName' | 'topics'>): string {
+  return buildLectureDisplayTitle({
+    subjectName: lecture.subjectName,
+    topics: lecture.topics,
+  });
 }
 
 function formatDate(timestamp: number): string {
@@ -170,6 +181,7 @@ export default function NotesHubScreen() {
       const sub = await getSubjectByName(analysisToSave.subject);
       await saveLectureTranscript({
         subjectId: sub?.id ?? null,
+        subjectName: analysisToSave.subject,
         note,
         transcript: analysisToSave.transcript,
         summary: analysisToSave.lectureSummary,
@@ -477,11 +489,11 @@ export default function NotesHubScreen() {
                     onPress={() => navigation.navigate('TranscriptHistory', { noteId: lecture.id })}
                     activeOpacity={0.8}
                     accessibilityRole="button"
-                    accessibilityLabel={`Open lecture note: ${lecture.subjectName ?? 'Lecture'}`}
+                    accessibilityLabel={`Open lecture note: ${getLectureTitle(lecture)}`}
                   >
                     <View style={styles.lectureMetaRow}>
                       <Text style={styles.lectureSubject} numberOfLines={1} ellipsizeMode="tail">
-                        {lecture.subjectName ?? 'Lecture note'}
+                        {getLectureTitle(lecture)}
                       </Text>
                       <Text style={styles.lectureDate}>{formatDate(lecture.createdAt)}</Text>
                     </View>
@@ -547,39 +559,17 @@ export default function NotesHubScreen() {
 
             {uploadResult && uploadResult.topics.length > 0 ? (
               <>
-                <View style={styles.modalSubjectChip}>
-                  <Text style={styles.modalSubjectText}>{uploadResult.subject}</Text>
-                </View>
+                <SubjectChip subject={uploadResult.subject} />
                 <Text style={styles.modalSummary} numberOfLines={4}>
                   {uploadResult.lectureSummary}
                 </Text>
                 <Text style={styles.modalSectionLabel}>TOPICS DETECTED</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.topicScroll}>
-                  <View style={styles.topicRow}>
-                    {uploadResult.topics.map((t, i) => (
-                      <View key={i} style={styles.topicPill}>
-                        <Text style={styles.topicPillText}>{t}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </ScrollView>
+                <TopicPillRow topics={uploadResult.topics} />
                 <Text style={styles.modalSectionLabel}>YOUR CONFIDENCE LEVEL</Text>
-                <View style={styles.confidenceRow}>
-                  {([1, 2, 3] as const).map((lvl) => {
-                    const colors = { 1: theme.colors.error, 2: theme.colors.warning, 3: theme.colors.success };
-                    const labels = { 1: 'Introduced', 2: 'Understood', 3: 'Confident' };
-                    const selected = (uploadConfidence ?? uploadResult.estimatedConfidence) === lvl;
-                    return (
-                      <TouchableOpacity
-                        key={lvl}
-                        style={[styles.confOption, selected && { borderColor: colors[lvl], backgroundColor: colors[lvl] + '22' }]}
-                        onPress={() => setUploadConfidence(lvl)}
-                      >
-                        <Text style={[styles.confOptionText, selected && { color: colors[lvl] }]}>{labels[lvl]}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                <ConfidenceSelector
+                  value={uploadConfidence ?? (uploadResult.estimatedConfidence as 1 | 2 | 3)}
+                  onChange={setUploadConfidence}
+                />
               </>
             ) : (
               <View style={styles.noTopicsBlock}>
@@ -774,17 +764,8 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: theme.colors.panel, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36, gap: 12 },
   modalTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  modalSubjectChip: { alignSelf: 'flex-start', backgroundColor: theme.colors.primary + '22', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: theme.colors.primary + '66' },
-  modalSubjectText: { color: theme.colors.primary, fontWeight: '700', fontSize: 13 },
   modalSummary: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20 },
   modalSectionLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginTop: 4 },
-  topicScroll: { maxHeight: 44 },
-  topicRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap' },
-  topicPill: { backgroundColor: theme.colors.surface, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: theme.colors.border },
-  topicPillText: { color: theme.colors.textPrimary, fontSize: 13 },
-  confidenceRow: { flexDirection: 'row', gap: 8 },
-  confOption: { flex: 1, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.border, paddingVertical: 10, alignItems: 'center' },
-  confOptionText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
   noTopicsBlock: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   noTopicsIcon: { fontSize: 36 },
   noTopicsText: { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center' },

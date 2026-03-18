@@ -19,10 +19,16 @@ import { theme } from '../constants/theme';
 
 const RECOMMENDED_MODELS = [
   {
+    id: 'medgemma-4b',
+    name: 'medgemma-4b-it-q4_k_m.gguf',
+    url: 'https://huggingface.co/hungqbui/medgemma-4b-it-Q4_K_M-GGUF/resolve/main/medgemma-4b-it-q4_k_m.gguf',
+    desc: 'Recommended. MedGemma 4B instruction model tuned for medical tasks with stronger domain fit (~2.5 GB).',
+  },
+  {
     id: 'qwen-3b',
     name: 'qwen2.5-3b-instruct-q4_k_m.gguf',
     url: 'https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf',
-    desc: 'Recommended. 3B parameter model with strong medical reasoning and reliable JSON output (~2.0 GB).',
+    desc: 'Solid fallback. Strong JSON reliability and generally good reasoning (~2.0 GB).',
   },
   {
     id: 'llama-1b',
@@ -34,10 +40,22 @@ const RECOMMENDED_MODELS = [
 
 const WHISPER_MODELS = [
   {
+    id: 'whisper-large-v3-turbo',
+    name: 'ggml-large-v3-turbo.bin',
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
+    desc: 'Recommended. Whisper large-v3-turbo for the best local accuracy, but it is very large (~1.6 GB).',
+  },
+  {
     id: 'whisper-tiny',
     name: 'ggml-tiny.en.bin',
     url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin',
     desc: 'Tiny English model (~75 MB). Fast but low accuracy — only works with clear, close-mic audio.',
+  },
+  {
+    id: 'whisper-base',
+    name: 'ggml-base.en.bin',
+    url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin',
+    desc: 'Base English model (~141 MB). Better than tiny without the storage hit of small.',
   },
   {
     id: 'whisper-small',
@@ -49,7 +67,7 @@ const WHISPER_MODELS = [
     id: 'whisper-medium',
     name: 'ggml-medium.en.bin',
     url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.en.bin',
-    desc: 'Medium English model (~1.5 GB). Best accuracy for mic-captured lectures. Recommended.',
+    desc: 'Medium English model (~1.5 GB). Strong local accuracy with lower memory demand than large-v3-turbo.',
   },
 ];
 
@@ -285,7 +303,9 @@ export default function LocalModelScreen() {
 
           <Text style={styles.sectionHeader}>🎙️ Transcriber (Whisper Model)</Text>
           <Text style={styles.desc}>
-            Powers offline audio transcription for Hostage Mode automatically.
+            Powers offline audio transcription for Hostage Mode automatically. Only
+            `whisper.cpp`-compatible files work here; Hugging Face Whisper Turbo is available as a
+            cloud provider in Settings.
           </Text>
 
           {isWhisperDownloaded ? (

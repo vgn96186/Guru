@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { initWhisper } from 'whisper.rn';
 import { convertToWav } from '../../../modules/app-launcher';
+import { DEFAULT_HF_TRANSCRIPTION_MODEL } from '../../config/appConfig';
 
 const WHISPER_MEDICAL_PROMPT =
   'Medical lecture: NEET-PG, INICET preparation. ' +
@@ -52,6 +53,15 @@ function sanitizeTranscript(rawTranscript: string): string {
   return cleaned;
 }
 
+function getAudioMimeType(audioFilePath: string): string {
+  const normalizedPath = audioFilePath.toLowerCase();
+  if (normalizedPath.endsWith('.wav')) return 'audio/wav';
+  if (normalizedPath.endsWith('.mp3')) return 'audio/mpeg';
+  if (normalizedPath.endsWith('.aac')) return 'audio/aac';
+  if (normalizedPath.endsWith('.m4a') || normalizedPath.endsWith('.mp4')) return 'audio/mp4';
+  return 'application/octet-stream';
+}
+
 /** Cloud fallback: Groq Whisper transcription */
 export async function transcribeRawWithGroq(
   audioFilePath: string,
@@ -86,6 +96,54 @@ export async function transcribeRawWithGroq(
   const data = await res.json();
   const transcript = sanitizeTranscript(String(data?.text ?? '').trim());
   // Reject single short sentences that are classic Whisper hallucinations on silence
+  if (isLikelyHallucination(transcript)) return '';
+  return transcript;
+}
+
+/** Cloud fallback: Hugging Face Automatic Speech Recognition */
+export async function transcribeRawWithHuggingFace(
+  audioFilePath: string,
+  huggingFaceToken: string,
+  modelId = DEFAULT_HF_TRANSCRIPTION_MODEL,
+): Promise<string> {
+  if (!huggingFaceToken?.trim()) {
+    throw new Error('Hugging Face token missing. Add one in Settings or choose another provider.');
+  }
+
+  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+  const response = await fetch(fileUri);
+  if (!response.ok) {
+    throw new Error(`Failed to read local audio file for Hugging Face: ${response.status}`);
+  }
+
+  const audioBlob = await response.blob();
+  const res = await fetch(
+    `https://router.huggingface.co/hf-inference/models/${encodeURIComponent(modelId)}`,
+    {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${huggingFaceToken}`,
+      'Content-Type': getAudioMimeType(audioFilePath),
+    },
+    body: audioBlob,
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Hugging Face transcription error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const rawText =
+    typeof data?.text === 'string'
+      ? data.text
+      : typeof data?.generated_text === 'string'
+        ? data.generated_text
+        : Array.isArray(data) && typeof data[0]?.text === 'string'
+          ? data[0].text
+          : '';
+  const transcript = sanitizeTranscript(rawText.trim());
   if (isLikelyHallucination(transcript)) return '';
   return transcript;
 }

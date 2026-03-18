@@ -6,7 +6,11 @@ import {
   notifyTranscriptionEvidenceNoSpeech,
   notifyTranscriptionEvidenceError,
 } from '../notificationService';
-import { transcribeRawWithGroq, transcribeRawWithLocalWhisper } from '../transcription/engines';
+import {
+  transcribeRawWithGroq,
+  transcribeRawWithHuggingFace,
+  transcribeRawWithLocalWhisper,
+} from '../transcription/engines';
 
 let healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 let evidenceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -22,6 +26,9 @@ const TRANSCRIPTION_EVIDENCE_DELAY_MS = 90_000;
 export interface RecordingHealthCheckOptions {
   /** If set, run an early transcription test and notify success/failure. */
   groqKey?: string;
+  /** If set, try Hugging Face when Groq is unavailable. */
+  huggingFaceToken?: string;
+  huggingFaceModel?: string;
   /** If set and no Groq key, use local Whisper for the evidence check. */
   localWhisperPath?: string;
 }
@@ -65,11 +72,17 @@ export function startRecordingHealthCheck(
   }, HEALTH_CHECK_INTERVAL);
 
   const groqKey = options?.groqKey?.trim();
+  const huggingFaceToken = options?.huggingFaceToken?.trim();
   const localWhisperPath = options?.localWhisperPath?.trim();
-  if (groqKey || localWhisperPath) {
+  if (groqKey || huggingFaceToken || localWhisperPath) {
     evidenceCheckTimeout = setTimeout(() => {
       evidenceCheckTimeout = null;
-      runTranscriptionEvidenceCheck(recordingPath, appName, { groqKey, localWhisperPath });
+      runTranscriptionEvidenceCheck(recordingPath, appName, {
+        groqKey,
+        huggingFaceToken,
+        huggingFaceModel: options?.huggingFaceModel,
+        localWhisperPath,
+      });
     }, TRANSCRIPTION_EVIDENCE_DELAY_MS);
   }
 }
@@ -77,7 +90,7 @@ export function startRecordingHealthCheck(
 async function runTranscriptionEvidenceCheck(
   recordingPath: string,
   appName: string,
-  opts: { groqKey?: string; localWhisperPath?: string },
+  opts: { groqKey?: string; huggingFaceToken?: string; huggingFaceModel?: string; localWhisperPath?: string },
 ): Promise<void> {
   try {
     let transcript = '';
@@ -86,6 +99,19 @@ async function runTranscriptionEvidenceCheck(
         transcript = await transcribeRawWithGroq(recordingPath, opts.groqKey);
       } catch (e) {
         console.warn('[Health] Transcription evidence (Groq) failed:', e);
+        await notifyTranscriptionEvidenceError(appName);
+        return;
+      }
+    }
+    if (!transcript?.trim() && opts.huggingFaceToken) {
+      try {
+        transcript = await transcribeRawWithHuggingFace(
+          recordingPath,
+          opts.huggingFaceToken,
+          opts.huggingFaceModel,
+        );
+      } catch (e) {
+        console.warn('[Health] Transcription evidence (Hugging Face) failed:', e);
         await notifyTranscriptionEvidenceError(appName);
         return;
       }

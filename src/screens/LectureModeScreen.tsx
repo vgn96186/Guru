@@ -53,6 +53,7 @@ import { getDb } from '../db/database';
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'LectureMode'>;
 type Route = RouteProp<HomeStackParamList, 'LectureMode'>;
 const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
+const BUNDLED_HF_TOKEN = (process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '').trim();
 const LECTURE_STATE_KEY = 'current_lecture_state';
 
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
@@ -751,11 +752,12 @@ export default function LectureModeScreen() {
 
   function toggleAutoScribe() {
     const groqKey = profile?.groqApiKey?.trim() || BUNDLED_GROQ_KEY;
+    const huggingFaceToken = profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN;
     const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-    if (!isRecordingEnabled && !groqKey && !hasLocalWhisper) {
+    if (!isRecordingEnabled && !groqKey && !huggingFaceToken && !hasLocalWhisper) {
       Alert.alert(
         'Transcription Required',
-        'Add a Groq API key or enable Local Whisper in Settings to use Auto-Scribe.',
+        'Add Groq or Hugging Face credentials, or enable Local Whisper in Settings to use Auto-Scribe.',
       );
       return;
     }

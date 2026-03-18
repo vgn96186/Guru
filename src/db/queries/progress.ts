@@ -60,6 +60,9 @@ export async function getUserProfile(): Promise<UserProfile> {
     local_whisper_path: string | null;
     quick_start_streak: number;
     groq_api_key: string;
+    huggingface_token: string;
+    huggingface_transcription_model: string;
+    transcription_provider: UserProfile['transcriptionProvider'] | null;
     study_resource_mode: StudyResourceMode | null;
     subject_load_overrides_json: string | null;
     harassment_tone: string | null;
@@ -83,6 +86,9 @@ export async function getUserProfile(): Promise<UserProfile> {
       openrouterApiKey: '',
       openrouterKey: '',
       groqApiKey: '',
+      huggingFaceToken: '',
+      huggingFaceTranscriptionModel: 'openai/whisper-large-v3',
+      transcriptionProvider: 'auto',
       notificationsEnabled: true,
       lastActiveDate: null,
       syncCode: null,
@@ -127,6 +133,15 @@ export async function getUserProfile(): Promise<UserProfile> {
     openrouterApiKey: r.openrouter_api_key,
     openrouterKey: r.openrouter_key ?? '',
     groqApiKey: r.groq_api_key ?? '',
+    huggingFaceToken: r.huggingface_token ?? '',
+    huggingFaceTranscriptionModel:
+      r.huggingface_transcription_model ?? 'openai/whisper-large-v3',
+    transcriptionProvider:
+      r.transcription_provider === 'groq' ||
+      r.transcription_provider === 'huggingface' ||
+      r.transcription_provider === 'local'
+        ? r.transcription_provider
+        : 'auto',
     notificationsEnabled: r.notifications_enabled === 1,
     lastActiveDate: r.last_active_date,
     syncCode: r.sync_code,
@@ -211,6 +226,9 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     localWhisperPath: 'local_whisper_path',
     quickStartStreak: 'quick_start_streak',
     groqApiKey: 'groq_api_key',
+    huggingFaceToken: 'huggingface_token',
+    huggingFaceTranscriptionModel: 'huggingface_transcription_model',
+    transcriptionProvider: 'transcription_provider',
     studyResourceMode: 'study_resource_mode',
     harassmentTone: 'harassment_tone',
     backupDirectoryUri: 'backup_directory_uri',

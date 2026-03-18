@@ -293,7 +293,41 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20`,
     description: 'Add Pomodoro interval duration to user_profile',
   },
+  {
+    version: 80,
+    sql: `ALTER TABLE user_profile ADD COLUMN huggingface_token TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Hugging Face API token to user_profile',
+  },
+  {
+    version: 81,
+    sql: `ALTER TABLE user_profile ADD COLUMN huggingface_transcription_model TEXT NOT NULL DEFAULT 'openai/whisper-large-v3'`,
+    description: 'Add Hugging Face transcription model to user_profile',
+  },
+  {
+    version: 82,
+    sql: `ALTER TABLE user_profile ADD COLUMN transcription_provider TEXT NOT NULL DEFAULT 'auto'`,
+    description: 'Add preferred transcription provider to user_profile',
+  },
+  {
+    version: 83,
+    sql: `UPDATE user_profile
+          SET transcription_provider = CASE
+            WHEN transcription_provider NOT IN ('auto','groq','huggingface','local') OR transcription_provider IS NULL OR transcription_provider = ''
+            THEN 'auto'
+            ELSE transcription_provider
+          END`,
+    description: 'Normalize transcription provider values',
+  },
+  {
+    version: 84,
+    sql: `UPDATE user_profile
+          SET huggingface_transcription_model = 'openai/whisper-large-v3'
+          WHERE huggingface_transcription_model IS NULL
+             OR huggingface_transcription_model = ''
+             OR huggingface_transcription_model = 'openai/whisper-large-v3-turbo'`,
+    description: 'Move Hugging Face transcription default to whisper-large-v3',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 79;
+export const LATEST_VERSION = 84;

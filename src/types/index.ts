@@ -118,6 +118,9 @@ export interface UserProfile {
   openrouterApiKey: string; // Legacy API key field (kept for backward compatibility)
   openrouterKey: string; // Actual OpenRouter key for free model fallbacks
   groqApiKey: string; // Groq API key for fast cloud inference fallback
+  huggingFaceToken?: string;
+  huggingFaceTranscriptionModel?: string;
+  transcriptionProvider?: 'auto' | 'groq' | 'huggingface' | 'local';
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
   bodyDoublingEnabled: boolean;

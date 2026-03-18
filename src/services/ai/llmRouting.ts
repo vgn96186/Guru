@@ -215,7 +215,12 @@ export async function attemptLocalLLM(
   textMode: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
   const isQwen = localModelPath.toLowerCase().includes('qwen');
-  const modelUsed = isQwen ? 'local-qwen-2.5-3b' : 'local-llama-3.2-1b';
+  const isMedGemma = localModelPath.toLowerCase().includes('medgemma');
+  const modelUsed = isMedGemma
+    ? 'local-medgemma-4b'
+    : isQwen
+      ? 'local-qwen-2.5-3b'
+      : 'local-llama-3.2-1b';
   const text = await callLocalLLM(messages, localModelPath, textMode);
   if (!text || !text.trim()) {
     throw new Error('Local model returned an empty response');

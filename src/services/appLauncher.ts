@@ -60,6 +60,9 @@ export interface LaunchMedicalAppOptions {
   /** If set, an early transcription check runs ~45s after start and notifies if capture + API work. */
   groqKey?: string;
   /** If set, used for the early transcription check when Groq is not available. */
+  huggingFaceToken?: string;
+  huggingFaceModel?: string;
+  /** If set, used for the early transcription check when Groq is not available. */
   localWhisperPath?: string;
 }
 
@@ -129,11 +132,19 @@ async function _launchMedicalAppInner(
           return false;
         }
         const groqKey = options?.groqKey?.trim();
+        const huggingFaceToken = options?.huggingFaceToken?.trim();
         const localWhisperPath = options?.localWhisperPath?.trim();
         startRecordingHealthCheck(
           recordingPath,
           app.name,
-          groqKey || localWhisperPath ? { groqKey, localWhisperPath } : undefined,
+          groqKey || huggingFaceToken || localWhisperPath
+            ? {
+                groqKey,
+                huggingFaceToken,
+                huggingFaceModel: options?.huggingFaceModel,
+                localWhisperPath,
+              }
+            : undefined,
         );
       } catch (e) {
         console.warn('[AppLauncher] Recording start failed:', e);

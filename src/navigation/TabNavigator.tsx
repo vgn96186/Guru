@@ -37,7 +37,7 @@ import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
-import { BUNDLED_GROQ_KEY } from '../config/appConfig';
+import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import * as DocumentPicker from 'expo-document-picker';
 import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
@@ -108,6 +108,8 @@ export default function TabNavigator() {
   const { profile, refreshProfile } = useAppStore();
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
+  const huggingFaceToken = (profile?.huggingFaceToken || BUNDLED_HF_TOKEN || '').trim();
+  const huggingFaceModel = profile?.huggingFaceTranscriptionModel?.trim();
   const localWhisperPath =
     profile?.useLocalWhisper && profile?.localWhisperPath ? profile.localWhisperPath : undefined;
   const [isActionHubOpen, setIsActionHubOpen] = useState(false);
@@ -118,6 +120,8 @@ export default function TabNavigator() {
     try {
       await launchMedicalApp(appId, faceTrackingEnabled, {
         groqKey: groqKey || undefined,
+        huggingFaceToken: huggingFaceToken || undefined,
+        huggingFaceModel: huggingFaceModel || undefined,
         localWhisperPath,
       });
     } catch (error: any) {

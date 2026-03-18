@@ -8,7 +8,7 @@
  * while still allowing users to delete models from Settings.
  *
  * Downloads Whisper first (75MB) since it's needed for transcription,
- * then Qwen-2.5-3B (~2GB) for topic extraction and content generation.
+ * then MedGemma 4B (~2.5GB) for topic extraction and content generation.
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
@@ -18,13 +18,13 @@ import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMe
 import { showToast } from '../components/Toast';
 
 const LLM_MODEL = {
-  name: 'qwen2.5-3b-instruct-q4_k_m.gguf',
-  url: 'https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf',
+  name: 'medgemma-4b-it-q4_k_m.gguf',
+  url: 'https://huggingface.co/hungqbui/medgemma-4b-it-Q4_K_M-GGUF/resolve/main/medgemma-4b-it-q4_k_m.gguf',
 };
 
 const WHISPER_MODEL = {
-  name: 'ggml-small.en.bin',
-  url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.en.bin',
+  name: 'ggml-large-v3-turbo.bin',
+  url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
 };
 
 /**
@@ -53,12 +53,12 @@ export async function bootstrapLocalModels(): Promise<void> {
     }
   }
 
-  // Download Whisper first (75MB) — it's critical for transcription
+  // Download Whisper first — it's critical for transcription
   if (needsWhisper) {
     await downloadModel(WHISPER_MODEL, 'whisper');
   }
 
-  // Then download LLM (~2GB) — used for topic extraction and content generation
+  // Then download LLM (~2.5GB) — used for topic extraction and content generation
   if (needsLlm) {
     await downloadModel(LLM_MODEL, 'llm');
   }
@@ -66,8 +66,8 @@ export async function bootstrapLocalModels(): Promise<void> {
 
 // Expected minimum sizes to validate downloads aren't partial
 const MIN_MODEL_SIZES: Record<string, number> = {
-  llm: 1_500_000_000, // ~1.5GB for Qwen 3B Q4
-  whisper: 50_000_000, // ~50MB for Whisper small.en
+  llm: 2_200_000_000, // ~2.5GB for MedGemma 4B Q4_K_M
+  whisper: 1_400_000_000, // ~1.6GB for Whisper large-v3-turbo
 };
 
 async function downloadModel(

@@ -67,8 +67,8 @@ modules/
 ### AI Service Routing (`src/services/aiService.ts` and `src/services/ai/`)
 - Implementation lives in `src/services/ai/` (config, types, schemas, jsonRepair, llmRouting, generate, medicalSearch, content, planning, chat, notifications, catalyze). `aiService.ts` is a thin barrel re-exporting the public API.
 - **Module aliases:** LlmRouter = llmRouting, JsonRepair = jsonRepair, MedicalGrounding = medicalSearch, ContentGeneration = content.
-- Local LLM: llama.rn / Qwen via `profile.localModelPath` when `profile.useLocalModel = true`.
-- Default local model: **Qwen-2.5-3B** (reliable JSON, good medical reasoning).
+- Local LLM: llama.rn / MedGemma/Qwen via `profile.localModelPath` when `profile.useLocalModel = true`.
+- Default local model: **MedGemma 4B** (best domain fit for medical reasoning on-device).
 - Local Whisper: whisper.rn via `profile.localWhisperPath` when `profile.useLocalWhisper = true`.
 - Cloud fallback chain: **Groq** (fastest, bundled key) → OpenRouter free models.
 - Groq: `profile.groqApiKey` or bundled `BUNDLED_GROQ_KEY`. Models: llama-3.3-70b-versatile, llama-3.1-8b-instant.

@@ -155,6 +155,10 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , local_whisper_path TEXT
   , quick_start_streak INTEGER NOT NULL DEFAULT 0
   , groq_api_key TEXT NOT NULL DEFAULT ''
+  , huggingface_token TEXT NOT NULL DEFAULT ''
+  , huggingface_transcription_model TEXT NOT NULL DEFAULT 'openai/whisper-large-v3'
+  , transcription_provider TEXT NOT NULL DEFAULT 'auto'
+    CHECK(transcription_provider IN ('auto','groq','huggingface','local'))
   , study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'
     CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
   , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'

@@ -39,6 +39,7 @@ import { getDb } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
+import { BUNDLED_HF_TOKEN, DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'keypoints', label: 'Key Points' },
@@ -214,6 +215,11 @@ export default function SettingsScreen() {
 
   const [groqKey, setGroqKey] = useState('');
   const [orKey, setOrKey] = useState('');
+  const [huggingFaceToken, setHuggingFaceToken] = useState('');
+  const [huggingFaceModel, setHuggingFaceModel] = useState(DEFAULT_HF_TRANSCRIPTION_MODEL);
+  const [transcriptionProvider, setTranscriptionProvider] = useState<
+    'auto' | 'groq' | 'huggingface' | 'local'
+  >('auto');
   const [name, setName] = useState('');
   const [inicetDate, setInicetDate] = useState('2026-05-01');
   const [neetDate, setNeetDate] = useState('2026-08-01');
@@ -298,6 +304,11 @@ export default function SettingsScreen() {
     if (profile) {
       setGroqKey(profile.groqApiKey ?? '');
       setOrKey(profile.openrouterKey ?? '');
+      setHuggingFaceToken(profile.huggingFaceToken ?? BUNDLED_HF_TOKEN);
+      setHuggingFaceModel(
+        profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL,
+      );
+      setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
       setNeetDate(profile.neetDate);
@@ -323,6 +334,9 @@ export default function SettingsScreen() {
       updateUserProfile({
         groqApiKey: groqKey.trim(),
         openrouterKey: orKey.trim(),
+        huggingFaceToken: huggingFaceToken.trim(),
+        huggingFaceTranscriptionModel: huggingFaceModel.trim() || DEFAULT_HF_TRANSCRIPTION_MODEL,
+        transcriptionProvider,
         displayName: name.trim() || 'Doctor',
         inicetDate,
         neetDate,
@@ -419,6 +433,69 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>
             Optional. Guru falls back to free OpenRouter models (Llama 3.3, Qwen 2.5, etc.) when
             Groq is unavailable. Get a free key at openrouter.ai
+          </Text>
+
+          <Label text="Hugging Face token — optional transcription provider" />
+          <TextInput
+            style={styles.input}
+            placeholder="hf_..."
+            placeholderTextColor="#444"
+            value={huggingFaceToken}
+            onChangeText={setHuggingFaceToken}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Used only for speech-to-text. Create a token at huggingface.co/settings/tokens.
+          </Text>
+
+          <Label text="Hugging Face transcription model" />
+          <TextInput
+            style={styles.input}
+            placeholder={DEFAULT_HF_TRANSCRIPTION_MODEL}
+            placeholderTextColor="#444"
+            value={huggingFaceModel}
+            onChangeText={setHuggingFaceModel}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Example: `openai/whisper-large-v3-turbo`. This is cloud inference, not the local
+            whisper.cpp downloader below.
+          </Text>
+
+          <Label text="Preferred transcription provider" />
+          <View style={styles.frequencyRow}>
+            {(
+              [
+                ['auto', 'Auto'],
+                ['groq', 'Groq'],
+                ['huggingface', 'Hugging Face'],
+                ['local', 'Local Whisper'],
+              ] as const
+            ).map(([provider, label]) => (
+              <TouchableOpacity
+                key={provider}
+                style={[
+                  styles.freqBtn,
+                  transcriptionProvider === provider && styles.freqBtnActive,
+                ]}
+                onPress={() => setTranscriptionProvider(provider)}
+              >
+                <Text
+                  style={[
+                    styles.freqText,
+                    transcriptionProvider === provider && styles.freqTextActive,
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.hint}>
+            `Auto` tries Groq first, then Hugging Face, then Local Whisper if enabled.
           </Text>
 
           <TouchableOpacity

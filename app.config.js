@@ -16,5 +16,6 @@ module.exports = {
   extra: {
     ...appJson.expo.extra,
     bundledGroqKey: process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '',
+    bundledHfToken: process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '',
   },
 };

@@ -33,8 +33,7 @@ start_debug*.log
 .DS_Store
 *.pem
 
-# local env files (keep .env.example committed)
-.env
+# local env files (keep .env and .env.example committed)
 .env*.local
 
 # typescript

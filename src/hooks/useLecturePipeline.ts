@@ -12,6 +12,7 @@ import {
   type LecturePipelineStage,
 } from '../services/lectureSessionMonitor';
 import { catalyzeTranscript } from '../services/aiService';
+import { BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { profileRepository } from '../db/repositories';
 import {
   updateSessionTranscriptionStatus,
@@ -75,7 +76,8 @@ export function useLecturePipeline({
   const transcriptionRunIdRef = useRef(0);
 
   const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
-  const canTranscribe = !!(recordingPath && (groqKey || hasLocalWhisper));
+  const hasHuggingFace = !!(profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
+  const canTranscribe = !!(recordingPath && (groqKey || hasHuggingFace || hasLocalWhisper));
 
   const cleanupAndClose = useCallback(async () => {
     if (!sessionSaved && transcriptionCompleted) {
@@ -331,15 +333,24 @@ Summary: ${result.lectureSummary}`;
       );
       void updateSessionTranscriptionStatus(logId, 'no_audio', 'No recording file captured');
       setPhase('error');
-    } else if (visible && recordingPath && !groqKey && !hasLocalWhisper) {
+    } else if (visible && recordingPath && !groqKey && !hasHuggingFace && !hasLocalWhisper) {
       setIsExpanded(true);
       setErrorMsg(
-        'Local Whisper is unavailable. Enable Local Transcription or add a Groq API key in Settings.',
+        'No transcription engine is configured. Add Groq or Hugging Face credentials, or enable Local Transcription in Settings.',
       );
       void updateSessionTranscriptionStatus(logId, 'failed', 'No transcription engine configured');
       setPhase('error');
     }
-  }, [visible, recordingPath, groqKey, hasLocalWhisper, canTranscribe, logId, runTranscription]);
+  }, [
+    visible,
+    recordingPath,
+    groqKey,
+    hasHuggingFace,
+    hasLocalWhisper,
+    canTranscribe,
+    logId,
+    runTranscription,
+  ]);
 
   useEffect(() => {
     if (!visible) {

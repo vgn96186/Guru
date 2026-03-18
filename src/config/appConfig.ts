@@ -14,6 +14,9 @@ export const DEFAULT_NEET_DATE =
 /** Optional bundled Groq key from env, used as primary cloud backend when provided. */
 export const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
 
+/** Optional bundled Hugging Face token from env, used for transcription fallback when provided. */
+export const BUNDLED_HF_TOKEN = (process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '').trim();
+
 /** OpenRouter free models — tried in order when Groq unavailable. */
 export const OPENROUTER_FREE_MODELS = [
   'meta-llama/llama-3.3-70b-instruct:free',
@@ -29,3 +32,8 @@ export const GROQ_MODELS = [
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
 ] as const;
+
+/** Default Hugging Face speech-to-text model. */
+export const DEFAULT_HF_TRANSCRIPTION_MODEL =
+  (process.env.EXPO_PUBLIC_DEFAULT_HF_TRANSCRIPTION_MODEL ?? 'openai/whisper-large-v3').trim() ||
+  'openai/whisper-large-v3';

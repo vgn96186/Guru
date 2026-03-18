@@ -25,10 +25,8 @@ import StartButton from '../components/StartButton';
 import LoadingOrb from '../components/LoadingOrb';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
-import { getSubjectById, getSubjectByName } from '../db/queries/topics';
-import { saveLectureTranscript } from '../db/queries/aiCache';
+import { getSubjectById } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
-import { buildQuickLectureNote, transcribeAudio } from '../services/transcriptionService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import {
@@ -38,7 +36,6 @@ import {
 import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 import type { Mood } from '../types';
-import * as DocumentPicker from 'expo-document-picker';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -61,7 +58,6 @@ export default function HomeScreen() {
 
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
   const [mood, setMood] = useState<Mood>('good');
-  const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
   const [moreExpanded, setMoreExpanded] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
 
@@ -160,48 +156,6 @@ export default function HomeScreen() {
       onPress: () => navigation.navigate('Session', { mood }),
     };
   })();
-
-  const handleAudioUpload = async () => {
-    const res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
-    if (res.canceled || !res.assets[0]) return;
-    setIsTranscribingUpload(true);
-    try {
-      const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
-      const hasTranscript = !!analysis.transcript?.trim();
-      const hasMeaningfulSummary =
-        !!analysis.lectureSummary &&
-        ![
-          'No audio recorded (empty file)',
-          'No speech detected (silent audio)',
-          'No speech detected',
-          'Lecture content recorded',
-          'No medical content detected',
-        ].includes(analysis.lectureSummary);
-      if (!hasTranscript || !hasMeaningfulSummary) {
-        throw new Error('No usable lecture content was detected in this recording.');
-      }
-      const note = buildQuickLectureNote(analysis);
-      const sub = await getSubjectByName(analysis.subject);
-      await saveLectureTranscript({
-        subjectId: sub?.id ?? null,
-        subjectName: analysis.subject,
-        note,
-        transcript: analysis.transcript,
-        summary: analysis.lectureSummary,
-        topics: analysis.topics,
-        appName: 'Upload',
-        confidence: analysis.estimatedConfidence,
-        embedding: analysis.embedding,
-      });
-      reloadHomeDashboard();
-      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Unknown error';
-      Alert.alert('Error', message);
-    } finally {
-      setIsTranscribingUpload(false);
-    }
-  };
 
   const criticalItems = [
     {
@@ -456,19 +410,6 @@ export default function HomeScreen() {
 
           {moreExpanded && (
             <View style={styles.moreContent}>
-              <TouchableOpacity
-                style={styles.moreLink}
-                onPress={handleAudioUpload}
-                disabled={isTranscribingUpload}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isTranscribingUpload ? 'Transcribing audio' : 'Transcribe audio file'
-                }
-              >
-                <Text style={styles.moreLinkText}>
-                  {isTranscribingUpload ? 'Transcribing...' : 'Transcribe Audio'}
-                </Text>
-              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.moreLink}
                 onPress={() => navigation.getParent()?.navigate('SleepMode')}

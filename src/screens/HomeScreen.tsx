@@ -36,6 +36,7 @@ import {
 } from '../hooks/useLectureReturnRecovery';
 import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
+import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood } from '../types';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -163,9 +164,9 @@ export default function HomeScreen() {
       };
     }
     return {
-      label: 'START SESSION',
-      sublabel: `~${profile.preferredSessionLength} min`,
-      onPress: () => navigation.navigate('Session', { mood }),
+      label: 'START',
+      sublabel: 'Quiz · stop anytime',
+      onPress: () => navigation.navigate('Session', { mood, mode: 'warmup' }),
     };
   })();
 
@@ -191,8 +192,32 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+
+      {/* ── Above fold: greeting + Start button + stat chip ── */}
+      <View style={styles.aboveFold}>
+        <Text style={styles.greetingText}>
+          {greeting}, {firstName}
+        </Text>
+        <View style={styles.startArea}>
+          <StartButton
+            onPress={heroCta.onPress}
+            label={heroCta.label}
+            sublabel={heroCta.sublabel}
+          />
+        </View>
+        <View style={styles.statChipRow}>
+          <Text style={styles.statChip}>
+            🔥 {profile.streakCurrent} day streak · {progressClamped}% today
+          </Text>
+          <AiStatusDot profile={profile} />
+        </View>
+      </View>
+
+      {/* ── Below fold: rest of content ── */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <ResponsiveContainer style={styles.content}>
+          <TodayPlanCard />
+
           <HeroCard
             greeting={greeting}
             firstName={firstName}
@@ -221,16 +246,6 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           )}
-
-          <TodayPlanCard />
-
-          <View style={styles.startArea}>
-            <StartButton
-              onPress={heroCta.onPress}
-              label={heroCta.label}
-              sublabel={heroCta.sublabel}
-            />
-          </View>
 
           {/* CRITICAL NOW Section from UX Audit */}
           <View style={styles.collapsibleSection}>
@@ -459,6 +474,40 @@ export default function HomeScreen() {
   );
 }
 
+function AiStatusDot({
+  profile,
+}: {
+  profile: NonNullable<ReturnType<typeof useAppStore>['profile']>;
+}) {
+  const hasGroq = !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY);
+  const hasOpenRouter = !!profile.openrouterKey?.trim();
+  const hasLocal = isLocalLlmUsable(profile);
+
+  let label: string;
+  let color: string;
+
+  if (hasGroq) {
+    label = 'Groq';
+    color = '#22c55e'; // green
+  } else if (hasOpenRouter) {
+    label = 'OpenRouter';
+    color = '#a78bfa'; // purple
+  } else if (hasLocal) {
+    label = 'Local';
+    color = '#60a5fa'; // blue
+  } else {
+    label = 'No AI';
+    color = '#ef4444'; // red
+  }
+
+  return (
+    <View style={styles.aiDotRow}>
+      <View style={[styles.aiDot, { backgroundColor: color }]} />
+      <Text style={styles.aiDotLabel}>{label}</Text>
+    </View>
+  );
+}
+
 function Section({
   label,
   children,
@@ -484,6 +533,32 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   scrollContent: { paddingBottom: theme.spacing.xxl },
   content: { padding: 16 },
+  aboveFold: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: theme.colors.background,
+  },
+  greetingText: {
+    color: theme.colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 8,
+  },
+  statChip: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  aiDot: { width: 7, height: 7, borderRadius: 4 },
+  aiDotLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '600' },
   loadErrorRow: {
     flexDirection: 'row',
     alignItems: 'center',

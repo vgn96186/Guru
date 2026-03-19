@@ -10,7 +10,7 @@ import { retryFailedTasks } from '../services/lectureSessionMonitor';
 import { invalidatePlanCache } from '../services/studyPlanner';
 
 /**
- * Master initialization hook. 
+ * Master initialization hook.
  * Orchestrates all startup side-effects in a single, predictable flow.
  */
 export function useAppBootstrap(): void {
@@ -33,18 +33,30 @@ export function useAppBootstrap(): void {
       if (!state.hasCheckedInToday && (profile?.quickStartStreak ?? 0) >= 3) {
         await dailyLogRepository.checkinToday('good');
         setDailyAvailability(30);
-        await profileRepository.updateProfile({ quickStartStreak: (profile?.quickStartStreak ?? 0) + 1 });
+        await profileRepository.updateProfile({
+          quickStartStreak: (profile?.quickStartStreak ?? 0) + 1,
+        });
         invalidatePlanCache();
         await refreshProfile();
       }
 
       // 3. Sync and Maintenance
-      syncExamDatesFromInternet().then(res => { if (res.updated) refreshProfile(); }).catch((e) => console.error('[Sync] Exam date sync failed:', e));
-      refreshAccountabilityNotifications().catch((e) => console.error('[Notifications] Refresh failed:', e));
-      
-      // 4. Recovery
+      syncExamDatesFromInternet()
+        .then((res) => {
+          if (res.updated) refreshProfile();
+        })
+        .catch((e) => console.error('[Sync] Exam date sync failed:', e));
+      refreshAccountabilityNotifications().catch((e) =>
+        console.error('[Notifications] Refresh failed:', e),
+      );
+
+      // 4. Deferred Recovery (10s delay to stay out of critical path)
       if (profile?.groqApiKey) {
-        retryFailedTasks(profile.groqApiKey).catch((e) => console.error('[Recovery] Transcription retry failed:', e));
+        setTimeout(() => {
+          retryFailedTasks(profile.groqApiKey).catch((e) =>
+            console.error('[Recovery] Transcription retry failed:', e),
+          );
+        }, 10000);
       }
     };
 
@@ -60,7 +72,9 @@ export function useAppBootstrap(): void {
     const appStateSub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'active') {
         refreshProfile();
-        refreshAccountabilityNotifications().catch((e) => console.error('[Notifications] Refresh failed on foreground:', e));
+        refreshAccountabilityNotifications().catch((e) =>
+          console.error('[Notifications] Refresh failed on foreground:', e),
+        );
       }
     });
 

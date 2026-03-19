@@ -109,26 +109,11 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
         const logId = session.id!;
         handledReturnLogRef.current = logId;
 
-        if (!showPrompt && !session.recordingPath) {
-          await finishExternalAppSession(
-            logId,
-            durationMinutes,
-            'Recovered silently on cold app launch',
-          );
-          return;
-        }
-
-        if (!showPrompt) {
-          await finishExternalAppSession(
-            logId,
-            durationMinutes,
-            'Stale session cleaned on cold launch',
-          );
-          return;
-        }
-
         let recordingPath = session.recordingPath ?? null;
 
+        // Always attempt to stop the native recorder.
+        // This ensures the native service isn't left running and gives us a chance
+        // to recover the path if it was missing from the DB due to a race.
         try {
           const stoppedPath = await Promise.race<string | null>([
             stopRecording(),
@@ -147,8 +132,24 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
           console.warn('[Home] stopRecording failed:', err);
         }
 
-        if (!recordingPath && session.recordingPath) {
-          recordingPath = session.recordingPath;
+        // If after stopping we still have no path, finish silently.
+        if (!recordingPath) {
+          await finishExternalAppSession(
+            logId,
+            durationMinutes,
+            showPrompt ? 'Finished without recording' : 'Recovered silently on cold app launch',
+          );
+          await stopHealthAndHideOverlay();
+          return;
+        }
+
+        if (!showPrompt) {
+          await finishExternalAppSession(
+            logId,
+            durationMinutes,
+            'Stale session cleaned on cold launch',
+          );
+          return;
         }
 
         if (recordingPath) {

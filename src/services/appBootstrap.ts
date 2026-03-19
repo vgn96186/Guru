@@ -12,7 +12,6 @@ import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { registerOfflineQueueProcessors } from './offlineQueueBootstrap';
 import { processQueue } from './offlineQueue';
 import { enforceLocalLlmRamGuard } from './deviceMemory';
-import { retryFailedTasks } from './lectureSessionMonitor';
 import { cleanupStaleCheckpointDirs } from './lecture/transcription';
 import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
 import { showToast } from '../components/Toast';
@@ -77,15 +76,6 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     await enforceLocalLlmRamGuard();
     registerOfflineQueueProcessors();
     processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
-    // Pass groq key so retry logic can attempt cloud transcription
-    profileRepository
-      .getProfile()
-      .then((profile) => {
-        retryFailedTasks(profile.groqApiKey || undefined).catch((e) =>
-          console.warn('[AppBootstrap] Transcription retry failed:', e),
-        );
-      })
-      .catch((e) => console.warn('[AppBootstrap] Could not load profile for retry:', e));
     await registerBackgroundFetch().catch((e: unknown) => {
       if (__DEV__) console.log('Background task not registered:', e);
     });

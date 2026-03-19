@@ -298,4 +298,83 @@ describe('transcriptStorage', () => {
       expect(result).toBe('Transcript file could not be loaded.');
     });
   });
+
+  describe('moveFileToRecovery', () => {
+    it('copies file to recovery folder and returns new URI', async () => {
+      const { service, mockFileSystem } = await loadService();
+      const result = await service.moveFileToRecovery('file:///tmp/source.m4a');
+
+      expect(mockFileSystem.makeDirectoryAsync).toHaveBeenCalledWith(
+        'file:///data/user/0/com.app/files/recovery/',
+        { intermediates: true },
+      );
+      expect(mockFileSystem.copyAsync).toHaveBeenCalledWith({
+        from: 'file:///tmp/source.m4a',
+        to: expect.stringMatching(
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/recovery\/recovery_\d+_[a-zA-Z0-9]{7}\.m4a$/,
+        ),
+      });
+      expect(result).toMatch(
+        /^file:\/\/\/data\/user\/0\/com\.app\/files\/recovery\/recovery_\d+_[a-zA-Z0-9]{7}\.m4a$/,
+      );
+    });
+
+    it('returns original URI when recovery copy fails', async () => {
+      const { service, mockFileSystem } = await loadService();
+      mockFileSystem.copyAsync.mockRejectedValueOnce(new Error('copy failed'));
+
+      const result = await service.moveFileToRecovery('file:///tmp/source.m4a');
+      expect(result).toBe('file:///tmp/source.m4a');
+    });
+  });
+
+  describe('renameRecordingToLectureIdentity', () => {
+    it('renames file URI and returns updated URI', async () => {
+      const { service, mockFileSystem } = await loadService();
+      const result = await service.renameRecordingToLectureIdentity('file:///tmp/recording.m4a', {
+        subjectName: 'Anatomy',
+        topics: ['Upper Limb'],
+      });
+
+      expect(mockFileSystem.moveAsync).toHaveBeenCalledWith({
+        from: 'file:///tmp/recording.m4a',
+        to: expect.stringMatching(/^file:\/\/\/tmp\/anatomy__upper-limb__recording__\d+\.m4a$/),
+      });
+      expect(result).toMatch(/^file:\/\/\/tmp\/anatomy__upper-limb__recording__\d+\.m4a$/);
+    });
+
+    it('preserves raw path format when input has no file:// prefix', async () => {
+      const { service, mockFileSystem } = await loadService();
+      const result = await service.renameRecordingToLectureIdentity('/tmp/recording.m4a', {
+        subjectName: 'Pathology',
+        topics: ['Inflammation'],
+      });
+
+      expect(mockFileSystem.moveAsync).toHaveBeenCalledWith({
+        from: 'file:///tmp/recording.m4a',
+        to: expect.stringMatching(/^file:\/\/\/tmp\/pathology__inflammation__recording__\d+\.m4a$/),
+      });
+      expect(result).toMatch(/^\/tmp\/pathology__inflammation__recording__\d+\.m4a$/);
+    });
+  });
+
+  describe('getTranscriptText', () => {
+    it('returns null for blank inputs', async () => {
+      const { service } = await loadService();
+      await expect(service.getTranscriptText(null)).resolves.toBeNull();
+      await expect(service.getTranscriptText('')).resolves.toBeNull();
+      await expect(service.getTranscriptText('   ')).resolves.toBeNull();
+    });
+
+    it('resolves transcript text for non-blank values', async () => {
+      const { service, mockFileSystem } = await loadService();
+      mockFileSystem.readAsStringAsync.mockResolvedValueOnce('loaded');
+
+      const result = await service.getTranscriptText('file:///tmp/transcript.txt');
+      expect(mockFileSystem.readAsStringAsync).toHaveBeenCalledWith('file:///tmp/transcript.txt', {
+        encoding: 'utf8',
+      });
+      expect(result).toBe('loaded');
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Alert, AppState } from 'react-native';
+import { Audio } from 'expo-av';
 import { stopRecording, hideOverlay, validateRecordingFile } from '../../modules/app-launcher';
 import {
   getIncompleteExternalSession,
@@ -23,6 +24,26 @@ export interface LectureReturnSheetData {
 
 interface UseLectureReturnRecoveryParams {
   onRecovered: (payload: LectureReturnSheetData) => void;
+}
+
+/** Read actual audio duration from file headers using expo-av. Fast — does not decode audio. */
+async function getAudioDurationMinutes(path: string): Promise<number | null> {
+  let sound: Audio.Sound | null = null;
+  try {
+    const { sound: s, status } = await Audio.Sound.createAsync(
+      { uri: path },
+      { shouldPlay: false },
+    );
+    sound = s;
+    if (status.isLoaded && status.durationMillis && status.durationMillis > 0) {
+      return Math.max(1, Math.round(status.durationMillis / 60000));
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    sound?.unloadAsync().catch(() => {});
+  }
 }
 
 /** Stop health monitoring and hide overlay atomically to avoid ordering bugs. */
@@ -143,10 +164,17 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
 
         await stopHealthAndHideOverlay();
 
-        await finishExternalAppSession(logId, durationMinutes);
+        // Use actual audio duration if we have the file; fall back to wall-clock
+        let finalDurationMinutes = durationMinutes;
+        if (recordingPath) {
+          const audioDuration = await getAudioDurationMinutes(recordingPath);
+          if (audioDuration !== null) finalDurationMinutes = audioDuration;
+        }
+
+        await finishExternalAppSession(logId, finalDurationMinutes);
         onRecovered({
           appName: session.appName,
-          durationMinutes,
+          durationMinutes: finalDurationMinutes,
           recordingPath,
           logId,
         });

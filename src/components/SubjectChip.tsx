@@ -6,13 +6,13 @@ interface Props {
   subject: string;
 }
 
-export default function SubjectChip({ subject }: Props) {
+export default React.memo(function SubjectChip({ subject }: Props) {
   return (
     <View style={styles.chip}>
       <Text style={styles.text}>{subject}</Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   chip: {

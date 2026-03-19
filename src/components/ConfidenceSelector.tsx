@@ -14,7 +14,7 @@ interface Props {
   onChange: (v: 1 | 2 | 3) => void;
 }
 
-export default function ConfidenceSelector({ value, onChange }: Props) {
+export default React.memo(function ConfidenceSelector({ value, onChange }: Props) {
   return (
     <View style={styles.row}>
       {([1, 2, 3] as const).map((lvl) => {
@@ -22,16 +22,21 @@ export default function ConfidenceSelector({ value, onChange }: Props) {
         return (
           <TouchableOpacity
             key={lvl}
-            style={[styles.option, selected && { borderColor: COLORS[lvl], backgroundColor: COLORS[lvl] + '22' }]}
+            style={[
+              styles.option,
+              selected && { borderColor: COLORS[lvl], backgroundColor: COLORS[lvl] + '22' },
+            ]}
             onPress={() => onChange(lvl)}
           >
-            <Text style={[styles.optionText, selected && { color: COLORS[lvl] }]}>{LABELS[lvl]}</Text>
+            <Text style={[styles.optionText, selected && { color: COLORS[lvl] }]}>
+              {LABELS[lvl]}
+            </Text>
           </TouchableOpacity>
         );
       })}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },

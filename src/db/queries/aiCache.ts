@@ -267,20 +267,6 @@ export async function clearTopicCache(topicId: number): Promise<void> {
   await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);
 }
 
-export async function getCacheStats(): Promise<{
-  totalCached: number;
-  byType: Record<string, number>;
-}> {
-  const db = getDb();
-  const total = await db.getFirstAsync<{ count: number }>('SELECT COUNT(*) as count FROM ai_cache');
-  const byTypeRows = await db.getAllAsync<{ content_type: string; count: number }>(
-    'SELECT content_type, COUNT(*) as count FROM ai_cache GROUP BY content_type',
-  );
-  const byType: Record<string, number> = {};
-  for (const row of byTypeRows) byType[row.content_type] = row.count;
-  return { totalCached: total?.count ?? 0, byType };
-}
-
 export async function saveLectureNote(
   subjectId: number | null,
   note: string,

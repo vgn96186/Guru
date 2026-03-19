@@ -57,6 +57,33 @@ interface AppState {
   setStudyResourceMode: (mode: StudyResourceMode) => Promise<void>;
 }
 
+/**
+ * Shared profile fetcher used by both loadProfile (cold start) and refreshProfile (hot reload).
+ * @param resetOnError — when true (loadProfile), nulls out profile on failure; when false (refreshProfile), preserves existing.
+ */
+async function fetchProfile(
+  get: () => AppState,
+  set: (partial: Partial<AppState>) => void,
+  resetOnError: boolean,
+) {
+  if (get().loading) return;
+  set({ loading: true });
+  try {
+    const profile = await profileRepository.getProfile();
+    const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
+    const todayLog = await dailyLogRepository.getDailyLog();
+    set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
+  } catch (err) {
+    const label = resetOnError ? 'load' : 'refresh';
+    console.error(`[useAppStore] Failed to ${label} profile:`, err);
+    if (resetOnError) {
+      set({ profile: null, levelInfo: null, hasCheckedInToday: false });
+    }
+  } finally {
+    set({ loading: false });
+  }
+}
+
 // Track if listeners are set up
 let listenersInitialized = false;
 
@@ -94,34 +121,11 @@ export const useAppStore = create<AppState>((set, get) => {
     setRecoveringBackground: (value: boolean) => set({ isRecoveringBackground: value }),
 
     loadProfile: async () => {
-      if (get().loading) return;
-      set({ loading: true });
-      try {
-        const profile = await profileRepository.getProfile();
-        const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
-        const todayLog = await dailyLogRepository.getDailyLog();
-        set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
-      } catch (err) {
-        console.error('[useAppStore] Failed to load profile:', err);
-        set({ profile: null, levelInfo: null, hasCheckedInToday: false });
-      } finally {
-        set({ loading: false });
-      }
+      await fetchProfile(get, set, true);
     },
 
     refreshProfile: async () => {
-      if (get().loading) return;
-      set({ loading: true });
-      try {
-        const profile = await profileRepository.getProfile();
-        const levelInfo = getLevelInfo(profile.totalXp, profile.currentLevel);
-        const todayLog = await dailyLogRepository.getDailyLog();
-        set({ profile, levelInfo, hasCheckedInToday: todayLog?.checkedIn ?? false });
-      } catch (err) {
-        console.error('[useAppStore] Failed to refresh profile:', err);
-      } finally {
-        set({ loading: false });
-      }
+      await fetchProfile(get, set, false);
     },
 
     setDailyAvailability: (mins: number) => {

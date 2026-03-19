@@ -8,7 +8,7 @@ interface Props {
   wrap?: boolean;
 }
 
-export default function TopicPillRow({ topics, wrap = false }: Props) {
+export default React.memo(function TopicPillRow({ topics, wrap = false }: Props) {
   if (topics.length === 0) return null;
 
   const pills = topics.map((t, i) => (
@@ -26,7 +26,7 @@ export default function TopicPillRow({ topics, wrap = false }: Props) {
       <View style={styles.scrollRow}>{pills}</View>
     </ScrollView>
   );
-}
+});
 
 const styles = StyleSheet.create({
   scroll: { maxHeight: 44 },

@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
 import { generateSecureRandomString } from './cryptoUtils';
 import { buildLectureArtifactFileName } from './lectureIdentity';
+import { copyFileToPublicBackup } from '../../modules/app-launcher';
 
 const TRANSCRIPT_DIR = FileSystemLegacy.documentDirectory + 'transcripts/';
 const RECOVERY_DIR = FileSystemLegacy.documentDirectory + 'recovery/';
@@ -58,10 +59,12 @@ export async function backupNoteToPublic(
     if (!dirInfo?.exists) {
       await FileSystemLegacy.makeDirectoryAsync(PUBLIC_NOTES_DIR, { intermediates: true });
     }
-    await FileSystemLegacy.writeAsStringAsync(PUBLIC_NOTES_DIR + fileName, noteText, {
+    const localUri = PUBLIC_NOTES_DIR + fileName;
+    await FileSystemLegacy.writeAsStringAsync(localUri, noteText, {
       encoding: FileSystemLegacy.EncodingType.UTF8,
     });
-    if (__DEV__) console.log('[TranscriptStorage] Note local backup saved:', fileName);
+    await copyFileToPublicBackup(localUri.replace('file://', ''), fileName);
+    if (__DEV__) console.log('[TranscriptStorage] Note native backup saved:', fileName);
   } catch (e) {
     console.warn('[TranscriptStorage] Note backup failed:', e);
   }
@@ -83,9 +86,9 @@ export async function moveFileToRecovery(fileUri: string): Promise<string> {
 export async function saveTranscriptToFile(
   transcriptText: string,
   identity?: LectureStorageIdentity,
-): Promise<string> {
+): Promise<string | null> {
   const normalized = transcriptText.trim();
-  if (!normalized) return '';
+  if (!normalized) return null;
   if (normalized.startsWith('file://')) return normalized;
 
   const profile = await profileRepository.getProfile();
@@ -118,20 +121,12 @@ export async function saveTranscriptToFile(
     }
   }
 
-  // 2. Local Public Backup
+  // 2. Local Public Backup (Native)
   try {
-    const publicExists = await FileSystemLegacy.getInfoAsync(PUBLIC_TRANSCRIPT_DIR);
-    if (!publicExists?.exists) {
-      await FileSystemLegacy.makeDirectoryAsync(PUBLIC_TRANSCRIPT_DIR, { intermediates: true });
-    }
-    await FileSystemLegacy.copyAsync({ from: fileUri, to: PUBLIC_TRANSCRIPT_DIR + fileName });
-    if (__DEV__)
-      console.log(
-        '[TranscriptStorage] Public local backup saved:',
-        PUBLIC_TRANSCRIPT_DIR + fileName,
-      );
+    await copyFileToPublicBackup(fileUri.replace('file://', ''), fileName);
+    if (__DEV__) console.log('[TranscriptStorage] Native public backup saved:', fileName);
   } catch (e) {
-    console.warn('[TranscriptStorage] Public local backup failed:', e);
+    console.warn('[TranscriptStorage] Native public backup failed:', e);
   }
   // Ensure loadTranscriptFromFile can recognize this as a file URI
   return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;

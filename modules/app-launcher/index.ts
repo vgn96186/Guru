@@ -18,7 +18,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, name: string): Promise<
  * @returns `true` if the launch intent was fired, `false` if the app is not installed.
  */
 export async function launchApp(packageName: string): Promise<boolean> {
-    return withTimeout(GuruAppLauncher.launchApp(packageName), 10_000, 'launchApp');
+  return withTimeout(GuruAppLauncher.launchApp(packageName), 10_000, 'launchApp');
 }
 
 /**
@@ -27,12 +27,12 @@ export async function launchApp(packageName: string): Promise<boolean> {
  * @returns `true` if installed and accessible via PackageManager.
  */
 export async function isAppInstalled(packageName: string): Promise<boolean> {
-    return withTimeout(GuruAppLauncher.isAppInstalled(packageName), 5_000, 'isAppInstalled');
+  return withTimeout(GuruAppLauncher.isAppInstalled(packageName), 5_000, 'isAppInstalled');
 }
 
 /** Returns the Linux UID of an installed app, or -1 if not found. */
 export async function getAppUid(packageName: string): Promise<number> {
-    return GuruAppLauncher.getAppUid(packageName);
+  return GuruAppLauncher.getAppUid(packageName);
 }
 
 /**
@@ -42,7 +42,7 @@ export async function getAppUid(packageName: string): Promise<number> {
  * @note On Android < 10 this always returns `false` — fall back to microphone recording.
  */
 export async function requestMediaProjection(): Promise<boolean> {
-    return GuruAppLauncher.requestMediaProjection();
+  return GuruAppLauncher.requestMediaProjection();
 }
 
 /**
@@ -58,7 +58,7 @@ export async function requestMediaProjection(): Promise<boolean> {
  * @returns A promise that resolves when the service has started (does not wait for recording to finish).
  */
 export async function startRecording(targetPackage: string = ''): Promise<string> {
-    return withTimeout(GuruAppLauncher.startRecording(targetPackage), 15_000, 'startRecording');
+  return withTimeout(GuruAppLauncher.startRecording(targetPackage), 15_000, 'startRecording');
 }
 
 /**
@@ -69,7 +69,7 @@ export async function startRecording(targetPackage: string = ''): Promise<string
  *   Use `validateRecordingFile()` with retry logic after calling this.
  */
 export async function stopRecording(): Promise<string | null> {
-    return withTimeout(GuruAppLauncher.stopRecording(), 30_000, 'stopRecording');
+  return withTimeout(GuruAppLauncher.stopRecording(), 30_000, 'stopRecording');
 }
 
 /**
@@ -78,7 +78,7 @@ export async function stopRecording(): Promise<string | null> {
  * @returns `true` if deleted successfully, `false` if file was not found.
  */
 export async function deleteRecording(path: string): Promise<boolean> {
-    return GuruAppLauncher.deleteRecording(path);
+  return GuruAppLauncher.deleteRecording(path);
 }
 
 /**
@@ -87,8 +87,10 @@ export async function deleteRecording(path: string): Promise<boolean> {
  * @param path - Absolute file path to check.
  * @returns `{ exists: boolean; size: number }` — size is 0 if file does not exist.
  */
-export async function validateRecordingFile(path: string): Promise<{ exists: boolean; size: number }> {
-    return GuruAppLauncher.validateRecordingFile(path);
+export async function validateRecordingFile(
+  path: string,
+): Promise<{ exists: boolean; size: number }> {
+  return GuruAppLauncher.validateRecordingFile(path);
 }
 
 /**
@@ -98,13 +100,13 @@ export async function validateRecordingFile(path: string): Promise<{ exists: boo
  * @returns Absolute path to the output `.wav` file, or `null` if conversion failed.
  */
 export async function convertToWav(m4aPath: string): Promise<string | null> {
-    return withTimeout(GuruAppLauncher.convertToWav(m4aPath), 60_000, 'convertToWav');
+  return withTimeout(GuruAppLauncher.convertToWav(m4aPath), 60_000, 'convertToWav');
 }
 
 export interface NativeWavChunk {
-    path: string;
-    startSec: number;
-    durationSec: number;
+  path: string;
+  startSec: number;
+  durationSec: number;
 }
 
 /**
@@ -112,12 +114,12 @@ export interface NativeWavChunk {
  * Avoids loading large base64 blobs in JS memory.
  */
 export async function splitWavIntoChunks(
-    wavPath: string,
-    chunkDataBytes: number,
-    stepBytes: number,
-    minChunkBytes: number = 32_000,
+  wavPath: string,
+  chunkDataBytes: number,
+  stepBytes: number,
+  minChunkBytes: number = 32_000,
 ): Promise<NativeWavChunk[]> {
-    return GuruAppLauncher.splitWavIntoChunks(wavPath, chunkDataBytes, stepBytes, minChunkBytes);
+  return GuruAppLauncher.splitWavIntoChunks(wavPath, chunkDataBytes, stepBytes, minChunkBytes);
 }
 
 /**
@@ -125,7 +127,7 @@ export async function splitWavIntoChunks(
  * @returns `true` if the recording was paused successfully.
  */
 export async function pauseRecording(): Promise<boolean> {
-    return GuruAppLauncher.pauseRecording();
+  return GuruAppLauncher.pauseRecording();
 }
 
 /**
@@ -133,14 +135,14 @@ export async function pauseRecording(): Promise<boolean> {
  * @returns `true` if the recording was resumed successfully.
  */
 export async function resumeRecording(): Promise<boolean> {
-    return GuruAppLauncher.resumeRecording();
+  return GuruAppLauncher.resumeRecording();
 }
 
 // ── Floating overlay ──────────────────────────────────────────────
 
 /** Checks if the app has the `SYSTEM_ALERT_WINDOW` ("draw over other apps") permission. */
 export async function canDrawOverlays(): Promise<boolean> {
-    return GuruAppLauncher.canDrawOverlays();
+  return GuruAppLauncher.canDrawOverlays();
 }
 
 /**
@@ -148,7 +150,7 @@ export async function canDrawOverlays(): Promise<boolean> {
  * @returns Resolves after the settings intent is sent (does not wait for user action).
  */
 export async function requestOverlayPermission(): Promise<boolean> {
-    return GuruAppLauncher.requestOverlayPermission();
+  return GuruAppLauncher.requestOverlayPermission();
 }
 
 /**
@@ -167,19 +169,41 @@ export async function requestOverlayPermission(): Promise<boolean> {
  * @param pomodoroIntervalMinutes - Frequency of pomodoro suggestions in minutes.
  */
 export async function showOverlay(
-    appName: string, 
-    faceTracking = false, 
-    pomodoroEnabled = true, 
-    pomodoroIntervalMinutes = 20
+  appName: string,
+  faceTracking = false,
+  pomodoroEnabled = true,
+  pomodoroIntervalMinutes = 20,
 ): Promise<boolean> {
-    return withTimeout(
-        GuruAppLauncher.showOverlay(appName, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes), 
-        10_000, 
-        'showOverlay'
-    );
+  return withTimeout(
+    GuruAppLauncher.showOverlay(appName, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes),
+    10_000,
+    'showOverlay',
+  );
 }
 
 /** Hides the floating timer bubble and stops `OverlayService`. */
 export async function hideOverlay(): Promise<boolean> {
-    return withTimeout(GuruAppLauncher.hideOverlay(), 5_000, 'hideOverlay');
+  return withTimeout(GuruAppLauncher.hideOverlay(), 5_000, 'hideOverlay');
+}
+
+export async function copyFileToPublicBackup(
+  sourcePath: string,
+  destFilename: string,
+): Promise<boolean> {
+  return GuruAppLauncher.copyFileToPublicBackup(sourcePath, destFilename);
+}
+
+export async function copyFileFromPublicBackup(
+  filename: string,
+  destPath: string,
+): Promise<boolean> {
+  return GuruAppLauncher.copyFileFromPublicBackup(filename, destPath);
+}
+
+export async function listPublicBackups(): Promise<string[]> {
+  return GuruAppLauncher.listPublicBackups();
+}
+
+export async function getPublicBackupDir(): Promise<string> {
+  return GuruAppLauncher.getPublicBackupDir();
 }

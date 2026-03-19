@@ -51,6 +51,18 @@ const DetectiveSchema = z.object({
   explanation: z.string(),
 });
 
+const SocraticSchema = z.object({
+  type: z.literal('socratic'),
+  topicName: z.string(),
+  questions: z.array(
+    z.object({
+      question: z.string(),
+      answer: z.string(),
+      whyItMatters: z.string(),
+    }),
+  ),
+});
+
 export const AIContentSchema = z.union([
   KeyPointsSchema,
   QuizSchema,
@@ -59,6 +71,7 @@ export const AIContentSchema = z.union([
   TeachBackSchema,
   ErrorHuntSchema,
   DetectiveSchema,
+  SocraticSchema,
 ]);
 
 export const AgendaSchema = z.object({

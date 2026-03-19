@@ -21,6 +21,9 @@ import {
 } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
+import { markTopicsFromLecture } from '../services/transcription/matching';
+import { getDb } from '../db/database';
+import { showToast } from '../components/Toast';
 import { theme } from '../constants/theme';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
@@ -46,8 +49,10 @@ export default function ManualNoteCreationScreen(
     setIsProcessing(true);
     try {
       const analysis = await analyzeTranscript(text);
-      const note = await generateADHDNote(analysis);
-      setResult({ analysis, note });
+      // Attach raw transcript so generateADHDNote has content to work with
+      const analysisWithTranscript = { ...analysis, transcript: text };
+      const note = await generateADHDNote(analysisWithTranscript);
+      setResult({ analysis: analysisWithTranscript, note });
       setConfidence(analysis.estimatedConfidence as 1 | 2 | 3);
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : String(e));
@@ -73,6 +78,21 @@ export default function ManualNoteCreationScreen(
         confidence: finalConfidence,
         embedding: undefined,
       });
+      // Mark topics as studied (+ create new topics if unmatched)
+      if (result.analysis.topics?.length) {
+        try {
+          await markTopicsFromLecture(
+            getDb(),
+            result.analysis.topics,
+            finalConfidence,
+            result.analysis.subject,
+            result.analysis.lectureSummary,
+          );
+        } catch (e) {
+          console.warn('[ManualNote] markTopicsFromLecture failed:', e);
+        }
+      }
+      showToast('Note saved and topics updated', 'success');
       navigation.goBack();
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : String(e));

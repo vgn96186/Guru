@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Alert, AppState } from 'react-native';
 import { Audio } from 'expo-av';
-import { stopRecording, hideOverlay, validateRecordingFile } from '../../modules/app-launcher';
+import {
+  stopRecording,
+  hideOverlay,
+  validateRecordingFile,
+  copyFileToPublicBackup,
+} from '../../modules/app-launcher';
 import {
   getIncompleteExternalSession,
   finishExternalAppSession,
@@ -129,7 +134,15 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
             stopRecording(),
             new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
           ]);
-          if (stoppedPath) recordingPath = stoppedPath;
+          if (stoppedPath) {
+            recordingPath = stoppedPath;
+            if (recordingPath.includes('/data/')) {
+              const fileName = recordingPath.split('/').pop() || `backup_rec_${Date.now()}.m4a`;
+              copyFileToPublicBackup(recordingPath.replace('file://', ''), fileName).catch(
+                () => {},
+              );
+            }
+          }
         } catch (err) {
           console.warn('[Home] stopRecording failed:', err);
         }

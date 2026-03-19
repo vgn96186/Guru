@@ -21,6 +21,7 @@ import type {
   ErrorHuntContent,
   DetectiveContent,
   ManualContent,
+  SocraticContent,
 } from '../types';
 
 import { askGuru } from '../services/aiService';
@@ -74,9 +75,11 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
   const [chatOpen, setChatOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
 
-  if (!topicId && flagged) {
-    setFlagged(false);
-  }
+  useEffect(() => {
+    if (!topicId && flagged) {
+      setFlagged(false);
+    }
+  }, [topicId, flagged]);
 
   useEffect(() => {
     let active = true;
@@ -135,6 +138,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
         return <DetectiveCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'manual':
         return <ManualReviewCard content={content} onDone={onDone} onSkip={onSkip} />;
+      case 'socratic':
+        return <SocraticCard content={content} onDone={onDone} onSkip={onSkip} />;
       default:
         return null;
     }
@@ -281,6 +286,9 @@ function QuizCard({
   const q = content.questions[currentQ];
   if (!q) return null;
 
+  const scoreRef = React.useRef(score);
+  scoreRef.current = score;
+
   function handleSelect(idx: number) {
     if (selected !== null) return;
     setSelected(idx);
@@ -296,8 +304,10 @@ function QuizCard({
       setSelected(null);
       setShowExpl(false);
     } else {
-      onQuizComplete?.(score, content.questions.length);
-      const confidence = Math.round((score / content.questions.length) * 4) + 1;
+      // Use ref to get the latest score (setScore may not have flushed yet)
+      const finalScore = scoreRef.current;
+      onQuizComplete?.(finalScore, content.questions.length);
+      const confidence = Math.round((finalScore / content.questions.length) * 4) + 1;
       onDone(Math.min(5, confidence));
     }
   }
@@ -748,6 +758,167 @@ function ManualReviewCard({
       >
         <Text style={s.skipText}>Skip topic</Text>
       </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+// ── SocraticCard ────────────────────────────────────────────────────────────
+function SocraticCard({
+  content,
+  onDone,
+  onSkip,
+}: {
+  content: SocraticContent;
+  onDone: (confidence: number) => void;
+  onSkip: () => void;
+}) {
+  const [index, setIndex] = useState(0);
+  const [revealed, setRevealed] = useState(false);
+
+  const question = content.questions[index];
+  const isLast = index === content.questions.length - 1;
+
+  function next(knew: boolean) {
+    if (isLast) {
+      onDone(knew ? 4 : 2);
+    } else {
+      setIndex(index + 1);
+      setRevealed(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!content.questions || content.questions.length === 0) onDone(3);
+  }, [content.questions, onDone]);
+
+  if (!question) {
+    return null;
+  }
+
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 }}>
+        <Text
+          style={{
+            color: '#6C63FF',
+            fontSize: 11,
+            fontWeight: '800',
+            letterSpacing: 1.2,
+            marginBottom: 16,
+          }}
+        >
+          QUESTION {index + 1} / {content.questions.length}
+        </Text>
+
+        <View
+          style={{
+            backgroundColor: '#1A1A2E',
+            borderRadius: 16,
+            padding: 20,
+            marginBottom: 20,
+            borderWidth: 1,
+            borderColor: '#2A2A4A',
+          }}
+        >
+          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', lineHeight: 28 }}>
+            {question.question}
+          </Text>
+        </View>
+
+        {!revealed ? (
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#6C63FF',
+              borderRadius: 14,
+              paddingVertical: 14,
+              alignItems: 'center',
+              marginBottom: 12,
+            }}
+            onPress={() => setRevealed(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 15 }}>Reveal Answer</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <View
+              style={{
+                backgroundColor: '#0D1F0D',
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 8,
+                borderWidth: 1,
+                borderColor: '#1E5C1E',
+              }}
+            >
+              <MarkdownRender content={question.answer} />
+            </View>
+            <Text
+              style={{
+                color: '#888',
+                fontSize: 12,
+                fontStyle: 'italic',
+                marginBottom: 20,
+                paddingHorizontal: 4,
+              }}
+            >
+              {question.whyItMatters}
+            </Text>
+            <Text
+              style={{
+                color: '#CCC',
+                fontSize: 14,
+                fontWeight: '600',
+                textAlign: 'center',
+                marginBottom: 12,
+              }}
+            >
+              Did you know this?
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: '#1E3A1E',
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: '#2E6A2E',
+                }}
+                onPress={() => next(true)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: '#4CAF50', fontWeight: '800', fontSize: 15 }}>Yes ✓</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{
+                  flex: 1,
+                  backgroundColor: '#2A1A1A',
+                  borderRadius: 14,
+                  paddingVertical: 14,
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: '#5C1E1E',
+                }}
+                onPress={() => next(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={{ color: '#EF5350', fontWeight: '800', fontSize: 15 }}>Not quite</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+
+        <TouchableOpacity
+          style={s.skipBtn}
+          onPress={onSkip}
+          accessibilityRole="button"
+          accessibilityLabel="Skip"
+        >
+          <Text style={s.skipText}>Skip topic</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }

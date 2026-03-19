@@ -37,7 +37,7 @@ import {
 import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { isLocalLlmUsable } from '../services/deviceMemory';
-import type { Mood } from '../types';
+import type { Mood, UserProfile } from '../types';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -474,11 +474,7 @@ export default function HomeScreen() {
   );
 }
 
-function AiStatusDot({
-  profile,
-}: {
-  profile: NonNullable<ReturnType<typeof useAppStore>['profile']>;
-}) {
+function AiStatusDot({ profile }: { profile: NonNullable<UserProfile | null> }) {
   // LLM backend
   const hasGroq = !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY);
   const hasOpenRouter = !!profile.openrouterKey?.trim();

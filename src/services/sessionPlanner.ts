@@ -17,6 +17,7 @@ interface BuildSessionOptions {
   focusTopicId?: number;
   focusTopicIds?: number[];
   preferredActionType?: 'study' | 'review' | 'deep_dive';
+  mode?: SessionMode;
 }
 
 function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
@@ -203,6 +204,12 @@ export async function buildSession(
       ? allTopics.filter((t) => focusSubjectIds.includes(t.subjectId))
       : allTopics;
 
+  if (topicPool.length === 0) {
+    throw new Error(
+      'No topics available for this session. Try adding topics to your syllabus first.',
+    );
+  }
+
   // Score and rank all topics
   const scored = topicPool
     .map((t) => ({ ...t, score: scoreTopicForSession(t, mood) }))
@@ -210,6 +217,44 @@ export async function buildSession(
 
   // Take top 15 as candidates
   const candidates = scored.slice(0, 15);
+
+  // ── Warmup fast path: unlimited quiz questions, no AI call, no breaks ────────
+  if (options?.mode === 'warmup') {
+    const warmupTopics = scored.length > 0 ? scored : candidates;
+    return {
+      items: warmupTopics.map((t) => ({
+        topic: t,
+        contentTypes: !blockedContentTypes.has('quiz')
+          ? ['quiz' as ContentType]
+          : ['keypoints' as ContentType],
+        estimatedMinutes: 2,
+      })),
+      totalMinutes: 60,
+      focusNote: 'Quiz — end anytime',
+      mode: 'warmup' as SessionMode,
+      guruMessage: "Let's go. Stop whenever you're ready.",
+      skipBreaks: true,
+    };
+  }
+
+  // ── MCQ Block fast path: 12 topics, quiz-only, no breaks ────────────────────
+  if (options?.mode === 'mcq_block') {
+    const blockTopics = scored.slice(0, 12);
+    return {
+      items: blockTopics.map((t) => ({
+        topic: t,
+        contentTypes: !blockedContentTypes.has('quiz')
+          ? ['quiz' as ContentType]
+          : ['keypoints' as ContentType],
+        estimatedMinutes: 5,
+      })),
+      totalMinutes: 60,
+      focusNote: 'MCQ Block: rapid-fire quiz sprint',
+      mode: 'mcq_block' as SessionMode,
+      guruMessage: 'Full MCQ block. No breaks. Stay focused.',
+      skipBreaks: true,
+    };
+  }
 
   // Ask AI to pick from candidates (skip AI entirely if no API key configured)
   let agendaResponse: { selectedTopicIds: number[]; focusNote: string; guruMessage: string };

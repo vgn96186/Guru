@@ -68,6 +68,13 @@ class AppLauncherModule : Module() {
         return if (guruDir.exists()) guruDir else appContext.reactContext?.filesDir ?: File("/tmp")
     }
 
+    private fun getPublicGuruBackupDir(): File {
+        val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        val dir = File(publicDir, "Guru/Backups")
+        if (!dir.exists()) dir.mkdirs()
+        return if (dir.exists()) dir else appContext.reactContext?.filesDir ?: File("/tmp")
+    }
+
     private fun splitWavIntoChunksNative(
         wavPath: String,
         chunkDataBytes: Int,
@@ -133,6 +140,45 @@ class AppLauncherModule : Module() {
 
     override fun definition() = ModuleDefinition {
         Name("GuruAppLauncher")
+
+        AsyncFunction("copyFileToPublicBackup") { sourcePath: String, destFilename: String ->
+            return@AsyncFunction try {
+                val sourceFile = File(sourcePath)
+                if (!sourceFile.exists()) return@AsyncFunction false
+                val destFile = File(getPublicGuruBackupDir(), destFilename)
+                sourceFile.copyTo(destFile, overwrite = true)
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "copyFileToPublicBackup failed", e)
+                false
+            }
+        }
+
+        AsyncFunction("copyFileFromPublicBackup") { filename: String, destPath: String ->
+            return@AsyncFunction try {
+                val sourceFile = File(getPublicGuruBackupDir(), filename)
+                if (!sourceFile.exists()) return@AsyncFunction false
+                val destFile = File(destPath)
+                sourceFile.copyTo(destFile, overwrite = true)
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "copyFileFromPublicBackup failed", e)
+                false
+            }
+        }
+
+        AsyncFunction("listPublicBackups") { ->
+            return@AsyncFunction try {
+                getPublicGuruBackupDir().list()?.toList() ?: emptyList<String>()
+            } catch (e: Exception) {
+                Log.e(TAG, "listPublicBackups failed", e)
+                emptyList<String>()
+            }
+        }
+
+        AsyncFunction("getPublicBackupDir") { ->
+            return@AsyncFunction getPublicGuruBackupDir().absolutePath
+        }
 
         // ── Activity result handler for MediaProjection ────────────
         OnActivityResult { _, payload ->

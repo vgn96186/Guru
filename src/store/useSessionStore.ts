@@ -36,6 +36,7 @@ interface SessionStoreState {
   nextContent: () => void;
   nextTopic: () => void;
   markTopicComplete: () => void;
+  nextTopicNoBreak: () => void;
   addQuizResult: (result: QuizResult) => void;
   startBreak: (seconds: number) => void;
   endBreak: () => void;
@@ -112,6 +113,27 @@ export const useSessionStore = create<SessionStoreState>()(
         const topic = agenda.items[currentItemIndex]?.topic;
         if (topic && !completedTopicIds.includes(topic.id)) {
           set({ completedTopicIds: [...completedTopicIds, topic.id] });
+        }
+      },
+
+      nextTopicNoBreak: () => {
+        const { agenda, currentItemIndex, completedTopicIds } = get();
+        if (!agenda) return;
+        const currentTopic = agenda.items[currentItemIndex];
+        const newCompleted =
+          currentTopic && !completedTopicIds.includes(currentTopic.topic.id)
+            ? [...completedTopicIds, currentTopic.topic.id]
+            : completedTopicIds;
+        if (currentItemIndex < agenda.items.length - 1) {
+          set({
+            currentItemIndex: currentItemIndex + 1,
+            currentContentIndex: 0,
+            currentContent: null,
+            completedTopicIds: newCompleted,
+            sessionState: 'studying',
+          });
+        } else {
+          set({ completedTopicIds: newCompleted, sessionState: 'session_done' });
         }
       },
 

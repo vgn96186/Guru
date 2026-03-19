@@ -97,6 +97,7 @@ export interface Agenda {
   focusNote: string;
   mode: SessionMode;
   guruMessage: string;
+  skipBreaks?: boolean;
 }
 
 export interface UserProfile {
@@ -209,6 +210,18 @@ export interface ManualContent {
   topicName: string;
 }
 
+export interface SocraticQuestion {
+  question: string;
+  answer: string;
+  whyItMatters: string;
+}
+
+export interface SocraticContent {
+  type: 'socratic';
+  topicName: string;
+  questions: SocraticQuestion[];
+}
+
 export type AIContent =
   | KeyPointsContent
   | QuizContent
@@ -217,7 +230,8 @@ export type AIContent =
   | TeachBackContent
   | ErrorHuntContent
   | DetectiveContent
-  | ManualContent;
+  | ManualContent
+  | SocraticContent;
 
 export interface AccountabilityMessage {
   title: string;

@@ -6,14 +6,7 @@ import { z } from 'zod';
 
 // ── Enums / Unions ─────────────────────────────────────────────────────────
 
-export const MoodSchema = z.enum([
-  'energetic',
-  'good',
-  'okay',
-  'tired',
-  'stressed',
-  'distracted',
-]);
+export const MoodSchema = z.enum(['energetic', 'good', 'okay', 'tired', 'stressed', 'distracted']);
 export type Mood = z.infer<typeof MoodSchema>;
 
 export const ContentTypeSchema = z.enum([
@@ -25,13 +18,22 @@ export const ContentTypeSchema = z.enum([
   'error_hunt',
   'detective',
   'manual',
+  'socratic',
 ]);
 export type ContentType = z.infer<typeof ContentTypeSchema>;
 
 export const TopicStatusSchema = z.enum(['unseen', 'seen', 'reviewed', 'mastered']);
 export type TopicStatus = z.infer<typeof TopicStatusSchema>;
 
-export const SessionModeSchema = z.enum(['normal', 'sprint', 'gentle', 'deep', 'external']);
+export const SessionModeSchema = z.enum([
+  'normal',
+  'sprint',
+  'gentle',
+  'deep',
+  'external',
+  'warmup',
+  'mcq_block',
+]);
 export type SessionMode = z.infer<typeof SessionModeSchema>;
 
 export const StudyResourceModeSchema = z.enum(['standard', 'btr', 'dbmci_live', 'hybrid']);

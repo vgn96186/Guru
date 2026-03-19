@@ -4,7 +4,8 @@
  * Replaces the former scripts/ patching approach with a single orchestration point.
  */
 import * as SplashScreen from 'expo-splash-screen';
-import { initDatabase } from '../db/database';
+import * as FileSystem from 'expo-file-system/legacy';
+import { initDatabase, getDb } from '../db/database';
 import { registerBackgroundFetch } from './backgroundTasks';
 import { bootstrapLocalModels } from './localModelBootstrap';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
@@ -13,6 +14,8 @@ import { processQueue } from './offlineQueue';
 import { enforceLocalLlmRamGuard } from './deviceMemory';
 import { retryFailedTasks } from './lectureSessionMonitor';
 import { cleanupStaleCheckpointDirs } from './lecture/transcription';
+import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
+import { showToast } from '../components/Toast';
 
 export interface BootstrapResult {
   success: true;
@@ -26,6 +29,28 @@ export interface BootstrapError {
 export type BootstrapOutcome = BootstrapResult | BootstrapError;
 
 export type InitialRoute = 'Tabs' | 'CheckIn';
+
+async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
+  const db = getDb();
+  const count = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) as c FROM lecture_notes');
+  if (count && count.c > 0) return false; // Already has data
+
+  const backups = await listPublicBackups();
+  if (!backups.includes('guru_latest.db')) return false;
+
+  // Close current DB
+  db.closeSync();
+  (global as any).__GURU_DB__ = null;
+
+  // Copy backup over current DB
+  const dbPath = FileSystem.documentDirectory + 'SQLite/neet_study.db';
+  await copyFileFromPublicBackup('guru_latest.db', dbPath.replace('file://', ''));
+
+  // Re-init and run migrations
+  await initDatabase();
+  showToast('Restored your lecture notes from backup', 'success', undefined, 5000);
+  return true;
+}
 
 /**
  * Resolves the initial navigation route from DB (async). Keeps the UI thread responsive.
@@ -48,15 +73,19 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
   try {
     await SplashScreen.preventAutoHideAsync();
     await initDatabase();
+    await checkAndRestoreFromPublicBackup();
     await enforceLocalLlmRamGuard();
     registerOfflineQueueProcessors();
     processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
     // Pass groq key so retry logic can attempt cloud transcription
-    profileRepository.getProfile().then((profile) => {
-      retryFailedTasks(profile.groqApiKey || undefined).catch((e) =>
-        console.warn('[AppBootstrap] Transcription retry failed:', e),
-      );
-    }).catch((e) => console.warn('[AppBootstrap] Could not load profile for retry:', e));
+    profileRepository
+      .getProfile()
+      .then((profile) => {
+        retryFailedTasks(profile.groqApiKey || undefined).catch((e) =>
+          console.warn('[AppBootstrap] Transcription retry failed:', e),
+        );
+      })
+      .catch((e) => console.warn('[AppBootstrap] Could not load profile for retry:', e));
     await registerBackgroundFetch().catch((e: unknown) => {
       if (__DEV__) console.log('Background task not registered:', e);
     });
@@ -69,7 +98,9 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     }
 
     bootstrapLocalModels().catch((e: unknown) => console.log('Local model bootstrap skipped:', e));
-    cleanupStaleCheckpointDirs().catch((e: unknown) => console.warn('[AppBootstrap] Checkpoint cleanup failed:', e));
+    cleanupStaleCheckpointDirs().catch((e: unknown) =>
+      console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
+    );
 
     return { success: true };
   } catch (e) {

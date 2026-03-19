@@ -178,7 +178,7 @@ Summary: ${result.lectureSummary}`;
   }, [logId, recordingPath, groqKey, profile, visible, handlePipelineProgress, generateQuiz]);
 
   const saveSessionQuickly = useCallback(async (): Promise<boolean> => {
-    if (!analysis || !recordingPath) return false;
+    if (!analysis) return false;
 
     try {
       setIsSaving(true);

@@ -195,7 +195,7 @@ export async function getIncompleteExternalSession(): Promise<ExternalAppLog | n
       launched_at: number;
       recording_path: string | null;
     }>(
-      'SELECT id, app_name, launched_at, recording_path FROM external_app_logs WHERE returned_at IS NULL AND recording_path IS NOT NULL ORDER BY launched_at DESC LIMIT 1',
+      'SELECT id, app_name, launched_at, recording_path FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1',
     );
   } catch {
     r = await db.getFirstAsync<{
@@ -203,7 +203,7 @@ export async function getIncompleteExternalSession(): Promise<ExternalAppLog | n
       app_name: string;
       launched_at: number;
     }>(
-      'SELECT id, app_name, launched_at FROM external_app_logs WHERE returned_at IS NULL AND recording_path IS NOT NULL ORDER BY launched_at DESC LIMIT 1',
+      'SELECT id, app_name, launched_at FROM external_app_logs WHERE returned_at IS NULL ORDER BY launched_at DESC LIMIT 1',
     );
   }
 

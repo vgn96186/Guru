@@ -116,29 +116,34 @@ export default function SessionScreen() {
     disabled: store.sessionState !== 'studying' || store.isOnBreak,
   });
 
+  const activeElapsedRef = useRef(activeElapsedSeconds);
+  useEffect(() => {
+    activeElapsedRef.current = activeElapsedSeconds;
+  }, [activeElapsedSeconds]);
+
   const finishSession = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const { sessionId, completedTopicIds, quizResults, agenda } = store;
-    if (!sessionId) {
+    const s = useSessionStore.getState();
+    if (!s.sessionId) {
       navigation.goBack();
       return;
     }
-    const durationMin = Math.round(activeElapsedSeconds / 60);
-    const completedTopics = (agenda?.items ?? [])
-      .filter((i: AgendaItem) => completedTopicIds.includes(i.topic.id))
+    const durationMin = Math.round(activeElapsedRef.current / 60);
+    const completedTopics = (s.agenda?.items ?? [])
+      .filter((i: AgendaItem) => s.completedTopicIds.includes(i.topic.id))
       .map((i: AgendaItem) => i.topic);
     const dailyLog = await dailyLogRepository.getDailyLog();
     const isFirstToday = (dailyLog?.sessionCount ?? 0) === 0;
-    const xpResult = await calculateAndAwardSessionXp(completedTopics, quizResults, isFirstToday);
-    await endSession(sessionId, completedTopicIds, xpResult.total, durationMin);
+    const xpResult = await calculateAndAwardSessionXp(completedTopics, s.quizResults, isFirstToday);
+    await endSession(s.sessionId, s.completedTopicIds, xpResult.total, durationMin);
     await profileRepository.updateStreak(durationMin >= STREAK_MIN_MINUTES);
     setSessionXpTotal(xpResult.total);
     refreshProfile().catch((err) =>
       console.error('[Session] Post-session profile refresh failed:', err),
     );
     invalidatePlanCache();
-    store.setSessionState('session_done');
-  }, [store, activeElapsedSeconds, navigation, refreshProfile]);
+    s.setSessionState('session_done');
+  }, [navigation, refreshProfile]);
 
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -175,20 +180,24 @@ export default function SessionScreen() {
     setAiError(null);
     store.setSessionState('planning');
     try {
+      const isWarmup = forcedMode === 'warmup';
+      const isMcqBlock = forcedMode === 'mcq_block';
       const sessionLength = forcedMinutes
         ? forcedMinutes
-        : forcedMode === 'sprint'
-          ? 10
-          : dailyAvailability && dailyAvailability > 0
-            ? dailyAvailability
-            : (profile?.preferredSessionLength ?? 45);
+        : isWarmup
+          ? 5
+          : forcedMode === 'sprint'
+            ? 10
+            : dailyAvailability && dailyAvailability > 0
+              ? dailyAvailability
+              : (profile?.preferredSessionLength ?? 45);
       const agenda = await buildSession(
         mood,
         sessionLength,
         profile?.openrouterApiKey ?? '',
         profile?.openrouterKey,
         profile?.groqApiKey,
-        { focusTopicId, focusTopicIds, preferredActionType },
+        { focusTopicId, focusTopicIds, preferredActionType, mode: forcedMode },
       );
       const sessionId = await createSession(
         agenda.items.map((i) => i.topic.id),
@@ -198,8 +207,12 @@ export default function SessionScreen() {
       store.setSessionId(sessionId);
       store.setAgenda(agenda);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      store.setSessionState('agenda_reveal');
-      setTimeout(() => store.setSessionState('studying'), 3000);
+      if (isWarmup || isMcqBlock) {
+        store.setSessionState('studying');
+      } else {
+        store.setSessionState('agenda_reveal');
+        setTimeout(() => store.setSessionState('studying'), 3000);
+      }
     } catch (e: any) {
       setAiError(e?.message ?? 'Could not plan session');
     }
@@ -252,57 +265,74 @@ export default function SessionScreen() {
 
   useEffect(() => {
     if (!store.isOnBreak) return;
-    const t = setInterval(() => store.tickBreak(), 1000);
+    const tickBreak = useSessionStore.getState().tickBreak;
+    const t = setInterval(tickBreak, 1000);
     return () => clearInterval(t);
-  }, [store]);
+  }, [store.isOnBreak]);
 
   const handleContentDone = useCallback(() => {
-    const item = getCurrentAgendaItem(store);
-    const contentType = getCurrentContentType(store);
+    const s = useSessionStore.getState();
+    const item = getCurrentAgendaItem(s);
+    const contentType = getCurrentContentType(s);
     if (!item || !contentType) return;
-    if (store.currentContentIndex < item.contentTypes.length - 1) {
-      store.nextContent();
+    if (s.currentContentIndex < item.contentTypes.length - 1) {
+      s.nextContent();
     } else {
-      store.markTopicComplete();
-      const isLast = store.currentItemIndex >= (store.agenda?.items.length ?? 1) - 1;
-      if (isLast) store.nextTopic();
-      else store.startBreak((profile?.breakDurationMinutes ?? 5) * 60);
+      s.markTopicComplete();
+      const isLast = s.currentItemIndex >= (s.agenda?.items.length ?? 1) - 1;
+      if (isLast) {
+        s.nextTopic();
+      } else if (s.agenda?.skipBreaks) {
+        s.nextTopicNoBreak();
+      } else {
+        s.startBreak((profile?.breakDurationMinutes ?? 5) * 60);
+      }
     }
-  }, [store, profile?.breakDurationMinutes]);
+  }, [profile?.breakDurationMinutes]);
 
   useEffect(() => {
     if (store.sessionState !== 'studying') return;
+    if (store.currentContent || store.isLoadingContent) return;
     const item = getCurrentAgendaItem(store);
     const contentType = getCurrentContentType(store);
-    if (!item || !contentType || store.currentContent) return;
+    if (!item || !contentType) return;
     setAiError(null);
     store.setLoadingContent(true);
     fetchContent(item.topic, contentType)
       .then((content) => {
-        store.setCurrentContent(content);
-        store.setLoadingContent(false);
+        const s = useSessionStore.getState();
+        s.setCurrentContent(content);
+        s.setLoadingContent(false);
       })
       .catch((e) => {
-        store.setLoadingContent(false);
+        const s = useSessionStore.getState();
+        s.setLoadingContent(false);
         setAiError(e?.message ?? 'AI content failed');
       });
-  }, [store]);
+  }, [
+    store.sessionState,
+    store.currentItemIndex,
+    store.currentContentIndex,
+    store.currentContent,
+    store.isLoadingContent,
+  ]);
 
   useEffect(() => {
     if (!store.agenda) return;
     const nextItem = store.agenda.items[store.currentItemIndex + 1];
     if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes);
-  }, [store]);
+  }, [store.currentItemIndex, store.agenda]);
 
   const handleStartManualReview = useCallback(() => {
     setAiError(null);
-    const item = getCurrentAgendaItem(store);
+    const s = useSessionStore.getState();
+    const item = getCurrentAgendaItem(s);
     if (item) {
-      store.setCurrentContent({ type: 'manual', topicName: item.topic.name });
+      s.setCurrentContent({ type: 'manual', topicName: item.topic.name });
     } else {
       navigation.goBack();
     }
-  }, [store, navigation]);
+  }, [navigation]);
 
   const handleContinueWithoutAi = useCallback(() => {
     setAiError(null);
@@ -311,19 +341,22 @@ export default function SessionScreen() {
       return;
     }
     handleContentDone();
-  }, [store.agenda, handleStartManualReview, handleContentDone]);
+  }, [handleStartManualReview, handleContentDone]);
 
   const handleBreakDone = useCallback(() => {
-    store.endBreak();
-    store.nextTopic();
-    if (store.sessionState !== 'session_done') {
-      store.setSessionState('studying');
+    const s = useSessionStore.getState();
+    s.endBreak();
+    s.nextTopic();
+    // Re-read state after mutations
+    if (useSessionStore.getState().sessionState !== 'session_done') {
+      useSessionStore.getState().setSessionState('studying');
     }
-  }, [store]);
+  }, []);
 
   const handleConfidenceRating = useCallback(
     async (confidence: number) => {
-      const item = getCurrentAgendaItem(store);
+      const s = useSessionStore.getState();
+      const item = getCurrentAgendaItem(s);
       if (!item) return;
       const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
       const xp =
@@ -339,7 +372,7 @@ export default function SessionScreen() {
       else triggerEvent('card_done');
       handleContentDone();
     },
-    [store, xpAnim, triggerEvent, handleContentDone],
+    [xpAnim, triggerEvent, handleContentDone],
   );
 
   const handleDowngrade = useCallback(() => {
@@ -348,26 +381,29 @@ export default function SessionScreen() {
       {
         text: 'Downgrade',
         onPress: () => {
-          store.downgradeSession();
-          store.setLoadingContent(true);
-          store.setCurrentContent(null);
-          const item = getCurrentAgendaItem(store);
-          const contentType = getCurrentContentType(store);
+          const s = useSessionStore.getState();
+          s.downgradeSession();
+          s.setLoadingContent(true);
+          s.setCurrentContent(null);
+          const item = getCurrentAgendaItem(s);
+          const contentType = getCurrentContentType(s);
           if (item && contentType) {
             fetchContent(item.topic, contentType)
               .then((c) => {
-                store.setCurrentContent(c);
-                store.setLoadingContent(false);
+                const st = useSessionStore.getState();
+                st.setCurrentContent(c);
+                st.setLoadingContent(false);
               })
-              .catch(() => store.setLoadingContent(false));
+              .catch(() => useSessionStore.getState().setLoadingContent(false));
           }
         },
       },
     ]);
-  }, [store]);
+  }, []);
 
   const handleMarkForReview = useCallback(() => {
-    const item = getCurrentAgendaItem(store);
+    const s = useSessionStore.getState();
+    const item = getCurrentAgendaItem(s);
     if (!item) return;
     Alert.alert(
       'Mark for Review?',
@@ -377,11 +413,12 @@ export default function SessionScreen() {
         {
           text: 'Flag Topic',
           onPress: async () => {
+            const st = useSessionStore.getState();
             let flaggedType: string;
-            if (store.currentContent?.type === 'manual') {
+            if (st.currentContent?.type === 'manual') {
               flaggedType = await flagTopicForReview(item.topic.id, item.topic.name);
             } else {
-              const currentType = store.currentContent?.type;
+              const currentType = st.currentContent?.type;
               if (currentType) {
                 await setContentFlagged(item.topic.id, currentType, true);
                 flaggedType = currentType;
@@ -394,7 +431,7 @@ export default function SessionScreen() {
         },
       ],
     );
-  }, [store, flagTopicForReview, setContentFlagged]);
+  }, []);
 
   if (aiError) {
     return (
@@ -474,7 +511,34 @@ export default function SessionScreen() {
     );
   }
 
-  if (store.sessionState === 'session_done')
+  if (store.sessionState === 'session_done') {
+    if (forcedMode === 'warmup') {
+      const correctTotal = store.quizResults.reduce((s, r) => s + r.correct, 0);
+      const answeredTotal = store.quizResults.reduce((s, r) => s + r.total, 0);
+      return (
+        <WarmUpMomentumScreen
+          correctTotal={correctTotal}
+          answeredTotal={answeredTotal}
+          mood={mood}
+          onMCQBlock={() => {
+            store.resetSession();
+            navigation.replace('Session', { mood, mode: 'mcq_block', forcedMinutes: 60 });
+          }}
+          onContinue={() => {
+            store.resetSession();
+            navigation.replace('Session', { mood });
+          }}
+          onLecture={() => {
+            store.resetSession();
+            navigation.navigate('LectureMode', {});
+          }}
+          onDone={() => {
+            store.resetSession();
+            navigation.popToTop();
+          }}
+        />
+      );
+    }
     return (
       <SessionDoneScreen
         completedCount={store.completedTopicIds.length}
@@ -483,6 +547,7 @@ export default function SessionScreen() {
         onClose={() => navigation.popToTop()}
       />
     );
+  }
 
   if (store.sessionState === 'topic_done') {
     return (
@@ -736,6 +801,75 @@ export default function SessionScreen() {
           </View>
         )}
         <BrainDumpFab />
+      </ResponsiveContainer>
+    </SafeAreaView>
+  );
+}
+
+function WarmUpMomentumScreen({
+  correctTotal,
+  answeredTotal,
+  mood,
+  onMCQBlock,
+  onContinue,
+  onLecture,
+  onDone,
+}: {
+  correctTotal: number;
+  answeredTotal: number;
+  mood: Mood;
+  onMCQBlock: () => void;
+  onContinue: () => void;
+  onLecture: () => void;
+  onDone: () => void;
+}) {
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ResponsiveContainer style={styles.doneContainer}>
+        <Text style={styles.doneEmoji}>⚡</Text>
+        <Text style={styles.doneTitle}>Nice work, Doctor.</Text>
+        <Text style={[styles.doneStat, { marginBottom: 8 }]}>
+          {answeredTotal > 0 ? `${correctTotal}/${answeredTotal} correct` : 'Session complete'}
+        </Text>
+        <Text style={[styles.doneStat, { marginBottom: 32 }]}>What's next?</Text>
+        <TouchableOpacity style={styles.doneBtn} onPress={onLecture}>
+          <Text style={styles.doneBtnText}>🎥 Watch a lecture</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.doneBtn,
+            {
+              marginTop: 12,
+              backgroundColor: theme.colors.surface,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          onPress={onMCQBlock}
+        >
+          <Text style={[styles.doneBtnText, { color: theme.colors.textPrimary }]}>
+            📝 50 MCQ Block
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.doneBtn,
+            {
+              marginTop: 12,
+              backgroundColor: theme.colors.surface,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            },
+          ]}
+          onPress={onContinue}
+        >
+          <Text style={[styles.doneBtnText, { color: theme.colors.textPrimary }]}>
+            📚 Continue studying
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ paddingVertical: 20, marginTop: 4 }} onPress={onDone}>
+          <Text style={styles.leaveBtnText}>✋ That&apos;s enough for now</Text>
+        </TouchableOpacity>
       </ResponsiveContainer>
     </SafeAreaView>
   );

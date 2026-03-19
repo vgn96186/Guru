@@ -39,7 +39,7 @@ async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
 
 /** Release the native LLM context to free memory. Safe to call at any time. */
 export async function releaseLlamaContext(): Promise<void> {
-  if (contextInUse) return; // don't interrupt in-flight generation
+  if (contextInUse || llamaContextPromise) return; // don't interrupt in-flight generation or init
   if (llamaContext) {
     try {
       await llamaContext.release();

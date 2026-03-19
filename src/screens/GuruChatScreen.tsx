@@ -63,31 +63,22 @@ type ChatItem =
 
 function getStartersForTopic(topicName: string) {
   return [
-    { icon: 'book-outline', text: `What are the highest-yield exam concepts for ${topicName}?` },
-    { icon: 'help-circle-outline', text: `Give me a hard clinical vignette MCQ on ${topicName}.` },
-    { icon: 'bulb-outline', text: `Can you share a memory hook or mnemonic for ${topicName}?` },
-    {
-      icon: 'list-outline',
-      text: `What is the diagnostic algorithm or criteria for ${topicName}?`,
-    },
-    {
-      icon: 'alert-circle-outline',
-      text: `What are common pitfalls and mistakes when studying ${topicName}?`,
-    },
-    {
-      icon: 'medkit-outline',
-      text: `What is the first-line treatment and management for ${topicName}?`,
-    },
+    { icon: 'book-outline', text: `Let's discuss ${topicName}. Ask me something.` },
+    { icon: 'help-circle-outline', text: `Quiz me on ${topicName}.` },
+    { icon: 'bulb-outline', text: `Walk me through ${topicName} step by step.` },
+    { icon: 'list-outline', text: `Test my understanding of ${topicName}.` },
+    { icon: 'alert-circle-outline', text: `I'm fuzzy on ${topicName}. Start from the basics.` },
+    { icon: 'medkit-outline', text: `What should I know about ${topicName} for the exam?` },
   ];
 }
 
 const FALLBACK_STARTERS = [
-  { icon: 'book-outline', text: 'What are the highest-yield NEET-PG topics this week?' },
-  { icon: 'help-circle-outline', text: 'Give me a hard clinical vignette MCQ.' },
-  { icon: 'bulb-outline', text: 'Share a mnemonic for a tricky pharmacology drug.' },
-  { icon: 'list-outline', text: 'What is the diagnostic approach to chest pain?' },
-  { icon: 'alert-circle-outline', text: 'Common exam mistakes in Surgery?' },
-  { icon: 'medkit-outline', text: 'First-line treatment guidelines I should know?' },
+  { icon: 'book-outline', text: 'Pick a high-yield topic and quiz me.' },
+  { icon: 'help-circle-outline', text: 'Test my understanding of something important.' },
+  { icon: 'bulb-outline', text: 'Walk me through a clinical scenario.' },
+  { icon: 'list-outline', text: "Start with something I probably don't know well." },
+  { icon: 'alert-circle-outline', text: 'Quiz me on pharmacology.' },
+  { icon: 'medkit-outline', text: 'Ask me about a common exam topic.' },
 ];
 
 async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
@@ -114,12 +105,12 @@ async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
       'medkit-outline',
     ];
     const templates = [
-      (n: string) => `Explain ${n} for NEET-PG — key points only.`,
-      (n: string) => `Give me a clinical vignette MCQ on ${n}.`,
-      (n: string) => `Mnemonic or memory trick for ${n}?`,
-      (n: string) => `Diagnostic criteria and approach for ${n}?`,
-      (n: string) => `Common exam traps in ${n}?`,
-      (n: string) => `Treatment algorithm for ${n}?`,
+      (n: string) => `Let's discuss ${n}. Ask me something.`,
+      (n: string) => `Quiz me on ${n}.`,
+      (n: string) => `Walk me through ${n} step by step.`,
+      (n: string) => `Test my understanding of ${n}.`,
+      (n: string) => `I'm fuzzy on ${n}. Start from the basics.`,
+      (n: string) => `What should I know about ${n} for the exam?`,
     ];
     return rows.map((r, i) => ({
       icon: icons[i % icons.length],

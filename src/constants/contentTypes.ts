@@ -10,4 +10,5 @@ export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   error_hunt: 'Error Hunt',
   detective: 'Detective',
   manual: 'Manual',
+  socratic: 'Discussion',
 };

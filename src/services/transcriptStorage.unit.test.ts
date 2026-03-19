@@ -34,6 +34,10 @@ async function loadService() {
     },
   }));
 
+  jest.doMock('../../modules/app-launcher', () => ({
+    copyFileToPublicBackup: jest.fn(async () => true),
+  }));
+
   const service = await import('./transcriptStorage');
   return { service, mockFileSystem };
 }
@@ -188,14 +192,14 @@ describe('transcriptStorage', () => {
       );
 
       // Public local backup
-      expect(mockFileSystem.copyAsync).toHaveBeenCalledWith({
-        from: expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
+      // In the module mock we defined copyFileToPublicBackup, let's just get it and check
+      const appLauncher = await import('../../modules/app-launcher');
+      expect(appLauncher.copyFileToPublicBackup).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /^\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
         ),
-        to: expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
-        ),
-      });
+        expect.stringMatching(/^anatomy__upper-limb__transcript__\d+\.txt$/),
+      );
 
       expect(uri).toMatch(
         /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,

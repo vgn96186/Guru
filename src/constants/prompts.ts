@@ -131,6 +131,30 @@ Return JSON:
 }`;
 }
 
+export function buildSocraticPrompt(topicName: string, subjectName: string): string {
+  return `Generate 4 Socratic questions about "${topicName}" (${subjectName}) for a NEET-PG student.
+
+Each question should test ONE high-yield concept in a simple, conversational way.
+
+Return JSON:
+{
+  "type": "socratic",
+  "topicName": "${topicName}",
+  "questions": [
+    {
+      "question": "A simple, direct question about one key concept?",
+      "answer": "Short answer in 1-2 sentences. Use **bold** for the key fact.",
+      "whyItMatters": "One sentence on why this is tested in NEET-PG/INICET."
+    }
+  ]
+}
+
+Rules:
+- Questions must be simple and conversational — no clinical vignettes.
+- Answers must be short. If it needs more than 2 sentences, split into two questions.
+- Focus only on the most frequently tested aspects. No obscure facts.`;
+}
+
 export function buildManualPrompt(topicName: string, subjectName: string): string {
   return `Return strict JSON:
 {
@@ -362,6 +386,7 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
   error_hunt: buildErrorHuntPrompt,
   detective: buildDetectivePrompt,
   manual: buildManualPrompt,
+  socratic: buildSocraticPrompt,
 };
 
 export function getMoodContentTypes(mood: Mood): ContentType[] {
@@ -369,16 +394,16 @@ export function getMoodContentTypes(mood: Mood): ContentType[] {
     case 'energetic':
       return ['quiz', 'error_hunt', 'detective', 'keypoints'];
     case 'good':
-      return ['keypoints', 'story', 'quiz', 'detective'];
+      return ['socratic', 'keypoints', 'quiz', 'detective'];
     case 'okay':
-      return ['keypoints', 'detective', 'quiz', 'story'];
+      return ['socratic', 'keypoints', 'detective', 'quiz'];
     case 'tired':
-      return ['story', 'keypoints', 'detective'];
+      return ['socratic', 'story', 'keypoints'];
     case 'stressed':
-      return ['story', 'keypoints', 'detective'];
+      return ['socratic', 'story', 'keypoints'];
     case 'distracted':
-      return ['keypoints', 'detective'];
+      return ['socratic', 'keypoints'];
     default:
-      return ['keypoints', 'story', 'detective', 'quiz'];
+      return ['socratic', 'keypoints', 'detective', 'quiz'];
   }
 }

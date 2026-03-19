@@ -9,7 +9,9 @@ import {
 } from '../services/studyPlanner';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList, TabParamList } from '../navigation/types';
+import type { MenuStackParamList, TabParamList, HomeStackParamList } from '../navigation/types';
+import { navigationRef } from '../navigation/navigationRef';
+import { showToast } from '../components/Toast';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
@@ -83,17 +85,36 @@ export default function StudyPlanScreen() {
     setMissedTopics(overdue.slice(0, 8));
   }
 
+  function navigateToSession(params: HomeStackParamList['Session']) {
+    try {
+      // Prefer navigationRef (works across any navigator context)
+      if (navigationRef.isReady()) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (navigationRef as any).navigate('Tabs', {
+          screen: 'HomeTab',
+          params: { screen: 'Session', params },
+        });
+        return;
+      }
+      // Fallback: getParent() from MenuStack → Tab
+      navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
+        screen: 'Session',
+        params,
+      });
+    } catch (err) {
+      console.error('[StudyPlan] Navigation to Session failed:', err);
+      showToast('Could not start session. Try again.', 'error');
+    }
+  }
+
   function handleStartPlannedTopic(day: DailyPlan, index: number) {
     const item = day.items[index];
     if (!item) return;
-    navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
-      screen: 'Session',
-      params: {
-        mood: item.type === 'deep_dive' ? 'energetic' : 'good',
-        mode: item.type === 'deep_dive' ? 'deep' : undefined,
-        focusTopicId: item.topic.id,
-        preferredActionType: item.type,
-      },
+    navigateToSession({
+      mood: item.type === 'deep_dive' ? 'energetic' : 'good',
+      ...(item.type === 'deep_dive' ? { mode: 'deep' } : {}),
+      focusTopicId: item.topic.id,
+      preferredActionType: item.type,
     });
   }
 
@@ -103,14 +124,11 @@ export default function StudyPlanScreen() {
   ) {
     const ids = topics.slice(0, actionType === 'review' ? 4 : 3).map((topic) => topic.id);
     if (ids.length === 0) return;
-    navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
-      screen: 'Session',
-      params: {
-        mood: actionType === 'deep_dive' ? 'energetic' : 'good',
-        mode: actionType === 'deep_dive' ? 'deep' : undefined,
-        focusTopicIds: ids,
-        preferredActionType: actionType,
-      },
+    navigateToSession({
+      mood: actionType === 'deep_dive' ? 'energetic' : 'good',
+      ...(actionType === 'deep_dive' ? { mode: 'deep' } : {}),
+      focusTopicIds: ids,
+      preferredActionType: actionType,
     });
   }
 

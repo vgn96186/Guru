@@ -657,17 +657,31 @@ export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
 };
 
 export async function markNemesisTopics(): Promise<void> {
-  await runInTransaction(async (db) => {
+  const db = getDb();
+  // Use SAVEPOINT so this is safe even if called within an existing transaction.
+  const sp = 'sp_mark_nemesis_topics';
+  await db.execAsync(`SAVEPOINT ${sp}`);
+  try {
+    // Reset all nemesis flags
     await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
     await db.runAsync(
       `UPDATE topic_progress SET is_nemesis = 1
        WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
     );
-  });
+    await db.execAsync(`RELEASE ${sp}`);
+  } catch (err) {
+    await db.execAsync(`ROLLBACK TO ${sp}`);
+    await db.execAsync(`RELEASE ${sp}`);
+    throw err;
+  }
 }
 
 export async function incrementWrongCount(topicId: number): Promise<void> {
-  await runInTransaction(async (db) => {
+  const db = getDb();
+  // Use SAVEPOINT so this is safe even if called within an existing transaction.
+  const sp = 'sp_increment_wrong_count';
+  await db.execAsync(`SAVEPOINT ${sp}`);
+  try {
     await db.runAsync(
       'UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?',
       [topicId],
@@ -677,7 +691,12 @@ export async function incrementWrongCount(topicId: number): Promise<void> {
        WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
       [topicId],
     );
-  });
+    await db.execAsync(`RELEASE ${sp}`);
+  } catch (err) {
+    await db.execAsync(`ROLLBACK TO ${sp}`);
+    await db.execAsync(`RELEASE ${sp}`);
+    throw err;
+  }
 }
 
 export interface SubjectBreakdownRow {

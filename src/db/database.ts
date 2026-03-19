@@ -147,11 +147,26 @@ export async function initDatabase(forceSeed = false): Promise<void> {
         try {
           await db.execAsync(m.sql);
         } catch (err: any) {
-          // If the column already exists, we can safely skip this migration step
+          // Some migrations can be safely skipped when re-applying on partially-migrated DBs.
           const msg = err?.message || '';
+
+          // If the column already exists, we can safely skip this migration step.
           if (msg.includes('duplicate column name')) {
             if (__DEV__)
               console.log(`[DB] Migration ${m.version} column already exists, skipping.`);
+          }
+          // v76: `daily_plan` → `daily_agenda` rename. If `daily_agenda` already exists,
+          // the rename fails with "already another table or index with this name" but the
+          // desired end-state is already present, so we treat it as applied.
+          else if (
+            m.version === 76 &&
+            m.sql.includes('RENAME TO daily_agenda') &&
+            msg.includes('already another table or index with this name')
+          ) {
+            if (__DEV__)
+              console.log(
+                `[DB] Migration ${m.version} already applied (daily_agenda exists), skipping.`,
+              );
           } else {
             if (__DEV__) console.error('[DB] Migration failed:', m.version, m.sql, err);
             throw err;

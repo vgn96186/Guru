@@ -129,17 +129,31 @@ export async function getRecentSessions(limit = 7): Promise<StudySession[]> {
     mood: string | null;
     mode: string;
   }>('SELECT * FROM sessions ORDER BY started_at DESC LIMIT ?', [limit]);
-  return rows.map((r) => ({
-    id: r.id,
-    startedAt: r.started_at,
-    endedAt: r.ended_at,
-    plannedTopics: JSON.parse(r.planned_topics),
-    completedTopics: JSON.parse(r.completed_topics),
-    totalXpEarned: r.total_xp_earned,
-    durationMinutes: r.duration_minutes,
-    mood: r.mood as Mood | null,
-    mode: r.mode as SessionMode,
-  }));
+  return rows.map((r) => {
+    let plannedTopics: number[] = [];
+    let completedTopics: number[] = [];
+    try {
+      plannedTopics = JSON.parse(r.planned_topics);
+    } catch {
+      /* corrupted row — skip */
+    }
+    try {
+      completedTopics = JSON.parse(r.completed_topics);
+    } catch {
+      /* corrupted row — skip */
+    }
+    return {
+      id: r.id,
+      startedAt: r.started_at,
+      endedAt: r.ended_at,
+      plannedTopics,
+      completedTopics,
+      totalXpEarned: r.total_xp_earned,
+      durationMinutes: r.duration_minutes,
+      mood: r.mood as Mood | null,
+      mode: r.mode as SessionMode,
+    };
+  });
 }
 
 export async function getRecentlyStudiedTopicNames(sessionCount = 3): Promise<string[]> {
@@ -148,7 +162,13 @@ export async function getRecentlyStudiedTopicNames(sessionCount = 3): Promise<st
     'SELECT completed_topics FROM sessions WHERE ended_at IS NOT NULL ORDER BY started_at DESC LIMIT ?',
     [sessionCount],
   );
-  const topicIds = rows.flatMap((r) => JSON.parse(r.completed_topics) as number[]);
+  const topicIds = rows.flatMap((r) => {
+    try {
+      return JSON.parse(r.completed_topics) as number[];
+    } catch {
+      return [];
+    }
+  });
   if (topicIds.length === 0) return [];
   const placeholders = topicIds.map(() => '?').join(',');
   const nameRows = await db.getAllAsync<{ name: string }>(

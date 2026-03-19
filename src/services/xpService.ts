@@ -1,6 +1,7 @@
 import { XP_REWARDS, LEVELS } from '../constants/gamification';
 import { profileRepository } from '../db/repositories';
-import { getDb } from '../db/database';
+import { runInTransaction } from '../db/database';
+import { addXpInTx } from '../db/queries/progress';
 import type { TopicWithProgress, LevelInfo } from '../types';
 
 export interface XpBreakdown {
@@ -39,15 +40,14 @@ export async function calculateAndAwardSessionXp(
   for (const result of quizResults) {
     if (result.correct > 0) {
       totalQuizCorrect += result.correct;
-      breakdown.push({ label: 'Quiz correct answers', amount: result.correct * XP_REWARDS.QUIZ_CORRECT });
+      breakdown.push({
+        label: 'Quiz correct answers',
+        amount: result.correct * XP_REWARDS.QUIZ_CORRECT,
+      });
     }
     if (result.correct === result.total && result.total > 0) {
       breakdown.push({ label: 'Perfect quiz bonus!', amount: XP_REWARDS.QUIZ_PERFECT });
     }
-  }
-
-  if (totalQuizCorrect > 0) {
-    await getDb().runAsync('UPDATE user_profile SET quiz_correct_count = quiz_correct_count + ? WHERE id = 1', [totalQuizCorrect]);
   }
 
   if (isFirstSessionToday) {
@@ -62,19 +62,31 @@ export async function calculateAndAwardSessionXp(
   if (streakBonus > 0) {
     const bonus = Math.round(total * streakBonus);
     total += bonus;
-    breakdown.push({ label: `🔥 ${_profile.streakCurrent}-day streak (+${Math.round(streakBonus * 100)}%)`, amount: bonus });
+    breakdown.push({
+      label: `🔥 ${_profile.streakCurrent}-day streak (+${Math.round(streakBonus * 100)}%)`,
+      amount: bonus,
+    });
   }
 
-  const { newTotal, leveledUp, newLevel } = await profileRepository.addXp(total);
+  // Atomic: update quiz count + XP in a single transaction to prevent drift on crash
+  const { newTotal, leveledUp, newLevel } = await runInTransaction(async (db) => {
+    if (totalQuizCorrect > 0) {
+      await db.runAsync(
+        'UPDATE user_profile SET quiz_correct_count = quiz_correct_count + ? WHERE id = 1',
+        [totalQuizCorrect],
+      );
+    }
+    return addXpInTx(db, total);
+  });
 
-  const levelInfo = LEVELS.find(l => l.level === newLevel) ?? LEVELS[0];
+  const levelInfo = LEVELS.find((l) => l.level === newLevel) ?? LEVELS[0];
 
   return { total, breakdown, leveledUp, newLevel, newLevelName: levelInfo.name };
 }
 
 export function getLevelInfo(totalXp: number, currentLevel: number): LevelInfo {
-  const level = LEVELS.find(l => l.level === currentLevel) ?? LEVELS[0];
-  const nextLevel = LEVELS.find(l => l.level === currentLevel + 1);
+  const level = LEVELS.find((l) => l.level === currentLevel) ?? LEVELS[0];
+  const nextLevel = LEVELS.find((l) => l.level === currentLevel + 1);
 
   const xpInCurrentLevel = totalXp - level.xpRequired;
   const xpForNext = nextLevel ? nextLevel.xpRequired - level.xpRequired : 1;

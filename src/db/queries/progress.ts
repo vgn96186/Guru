@@ -617,7 +617,11 @@ export async function applyConfidenceDecay(): Promise<{ decayed: number }> {
     [today],
   );
 
-  let decayed = 0;
+  if (overdue.length === 0) return { decayed: 0 };
+
+  // Compute new values in JS, then apply atomically in one transaction
+  const updates: Array<{ topicId: number; newConf: number; newStatus: string }> = [];
+
   for (const row of overdue) {
     const reviewDate = new Date(row.fsrs_due);
     const daysOverdue = Math.floor((Date.now() - reviewDate.getTime()) / MS_PER_DAY);
@@ -635,17 +639,25 @@ export async function applyConfidenceDecay(): Promise<{ decayed: number }> {
     }
 
     if (newConf !== row.confidence || newStatus !== row.status) {
-      await db.runAsync(`UPDATE topic_progress SET confidence = ?, status = ? WHERE topic_id = ?`, [
-        newConf,
-        newStatus,
-        row.topic_id,
-      ]);
-      decayed++;
+      updates.push({ topicId: row.topic_id, newConf, newStatus });
     }
   }
 
-  if (decayed > 0) notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
-  return { decayed };
+  if (updates.length === 0) return { decayed: 0 };
+
+  // Atomic batch: all-or-nothing so a crash can't leave partial decay
+  await runInTransaction(async (tx) => {
+    for (const u of updates) {
+      await tx.runAsync(`UPDATE topic_progress SET confidence = ?, status = ? WHERE topic_id = ?`, [
+        u.newConf,
+        u.newStatus,
+        u.topicId,
+      ]);
+    }
+  });
+
+  notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
+  return { decayed: updates.length };
 }
 
 /**

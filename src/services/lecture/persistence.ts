@@ -1,4 +1,4 @@
-import { getDb, nowTs } from '../../db/database';
+import { getDb, nowTs, runInTransaction } from '../../db/database';
 import { markTopicsFromLecture } from '../transcription/matching';
 import { renameRecordingToLectureIdentity, saveTranscriptToFile } from '../transcriptStorage';
 import { embeddingToBlob, generateEmbedding } from '../ai/embeddingService';
@@ -109,12 +109,12 @@ export async function saveLecturePersistence(opts: {
   try {
     const subjectId = await findSubjectId(analysis.subject);
 
-    let noteId!: number;
-    await db.execAsync('BEGIN IMMEDIATE');
-    try {
+    // Use runInTransaction instead of manual BEGIN/COMMIT to avoid
+    // orphaned recording paths and ensure proper rollback on failure.
+    const noteId = await runInTransaction(async (tx) => {
       if (analysis.topics.length > 0 || analysis.lectureSummary) {
         await markTopicsFromLecture(
-          db,
+          tx,
           analysis.topics,
           analysis.estimatedConfidence,
           analysis.subject,
@@ -122,11 +122,11 @@ export async function saveLecturePersistence(opts: {
           embeddingForMatching,
         );
         if (analysis.topics.length > 0) {
-          await addXpInTx(db, analysis.topics.length * 8);
+          await addXpInTx(tx, analysis.topics.length * 8);
         }
       }
 
-      const result = await db.runAsync(
+      const result = await tx.runAsync(
         `INSERT INTO lecture_notes (
            subject_id, note, created_at, transcript, summary, topics_json, app_name,
            duration_minutes, confidence, embedding, recording_path
@@ -146,28 +146,31 @@ export async function saveLecturePersistence(opts: {
           originalRecordingPath,
         ],
       );
-      noteId = result.lastInsertRowId;
-      await db.runAsync(
+      const id = result.lastInsertRowId;
+      await tx.runAsync(
         'UPDATE external_app_logs SET transcription_status = ?, lecture_note_id = ? WHERE id = ?',
-        ['completed', noteId, opts.logId],
+        ['completed', id, opts.logId],
       );
-      await db.execAsync('COMMIT');
-    } catch (innerErr) {
-      await db.execAsync('ROLLBACK');
-      throw innerErr;
-    }
+      return id;
+    });
 
+    // Recording rename is safe outside the transaction — it's cosmetic.
+    // If it fails, recording_path still points to the original valid file.
     if (originalRecordingPath) {
-      const renamedRecordingPath = await renameRecordingToLectureIdentity(
-        originalRecordingPath,
-        lectureIdentity,
-      );
-      if (renamedRecordingPath !== originalRecordingPath) {
-        await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
-          renamedRecordingPath,
-          noteId,
-        ]);
-        await updateSessionRecordingPath(opts.logId, renamedRecordingPath);
+      try {
+        const renamedRecordingPath = await renameRecordingToLectureIdentity(
+          originalRecordingPath,
+          lectureIdentity,
+        );
+        if (renamedRecordingPath !== originalRecordingPath) {
+          await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
+            renamedRecordingPath,
+            noteId,
+          ]);
+          await updateSessionRecordingPath(opts.logId, renamedRecordingPath);
+        }
+      } catch (renameErr) {
+        console.warn('[Persistence] Recording rename failed, keeping original path:', renameErr);
       }
     }
 

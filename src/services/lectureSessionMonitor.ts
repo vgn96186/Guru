@@ -86,22 +86,22 @@ export async function retryFailedTranscriptions(groqKey?: string): Promise<numbe
   if (pending.length === 0) return 0;
   let recovered = 0;
   for (const session of pending) {
-    if (session.recordingPath) {
-      try {
-        const res = await runFullTranscriptionPipeline({
-          recordingPath: session.recordingPath,
-          appName: session.appName,
-          durationMinutes: session.durationMinutes || 0,
-          logId: session.id!,
-          groqKey,
-        });
-        if (res.success) recovered++;
-      } catch (err) {
-        console.error(
-          `[SessionMonitor] retryFailedTranscriptions: session ${session.id} failed:`,
-          err,
-        );
-      }
+    // Guard: skip sessions already being transcribed by another caller
+    if (!session.recordingPath || inFlightLecturePipelines.has(session.id!)) continue;
+    try {
+      const res = await runFullTranscriptionPipeline({
+        recordingPath: session.recordingPath,
+        appName: session.appName,
+        durationMinutes: session.durationMinutes || 0,
+        logId: session.id!,
+        groqKey,
+      });
+      if (res.success) recovered++;
+    } catch (err) {
+      console.error(
+        `[SessionMonitor] retryFailedTranscriptions: session ${session.id} failed:`,
+        err,
+      );
     }
   }
   return recovered;

@@ -98,9 +98,14 @@ export async function updateSessionTranscriptionStatus(
              WHERE id = ?`,
       [status, error ?? null, lectureNoteId ?? null, logId],
     );
-  } catch (err) {
-    // Old schema — silently ignore
-    if (__DEV__) console.warn('[externalLogs] Update failed, likely old schema:', err);
+  } catch (err: any) {
+    const msg = err?.message ?? '';
+    // Only swallow errors from genuinely missing columns (old schema)
+    if (msg.includes('no such column') || msg.includes('no column named')) {
+      if (__DEV__) console.warn('[externalLogs] Update failed, old schema:', msg);
+    } else {
+      throw err; // real constraint/corruption errors must propagate
+    }
   }
 }
 
@@ -114,9 +119,13 @@ export async function updateSessionNoteEnhancementStatus(
       status,
       logId,
     ]);
-  } catch (err) {
-    // Old schema — silently ignore
-    if (__DEV__) console.warn('[externalLogs] Query failed, likely old schema:', err);
+  } catch (err: any) {
+    const msg = err?.message ?? '';
+    if (msg.includes('no such column') || msg.includes('no column named')) {
+      if (__DEV__) console.warn('[externalLogs] Query failed, old schema:', msg);
+    } else {
+      throw err;
+    }
   }
 }
 
@@ -173,9 +182,13 @@ export async function updateSessionPipelineTelemetry(
       JSON.stringify(merged),
       logId,
     ]);
-  } catch (err) {
-    // Old schema — silently ignore
-    if (__DEV__) console.warn('[externalLogs] Query failed, likely old schema:', err);
+  } catch (err: any) {
+    const msg = err?.message ?? '';
+    if (msg.includes('no such column') || msg.includes('no column named')) {
+      if (__DEV__) console.warn('[externalLogs] Query failed, old schema:', msg);
+    } else {
+      throw err;
+    }
   }
 }
 

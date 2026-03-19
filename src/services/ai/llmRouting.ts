@@ -8,8 +8,29 @@ import { RateLimitError } from './schemas';
 let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
 let llamaContextPromise: Promise<LlamaContext> | null = null;
-let contextInUse = false; // semaphore: true while a generation is in flight
 let appStateListenerRegistered = false;
+
+// Promise-based mutex: prevents concurrent LLM generation which corrupts native context.
+// Unlike a boolean flag, this properly queues callers and can't deadlock on thrown errors.
+let _contextLockPromise: Promise<void> = Promise.resolve();
+let _contextLockCount = 0;
+
+function acquireContextLock(): Promise<() => void> {
+  let release!: () => void;
+  const prev = _contextLockPromise;
+  _contextLockPromise = new Promise<void>((resolve) => {
+    release = () => {
+      _contextLockCount--;
+      resolve();
+    };
+  });
+  _contextLockCount++;
+  return prev.then(() => release);
+}
+
+function isContextInUse(): boolean {
+  return _contextLockCount > 0;
+}
 
 async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
   if (llamaContext && currentLlamaPath === modelPath) {
@@ -39,7 +60,7 @@ async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
 
 /** Release the native LLM context to free memory. Safe to call at any time. */
 export async function releaseLlamaContext(): Promise<void> {
-  if (contextInUse || llamaContextPromise) return; // don't interrupt in-flight generation or init
+  if (isContextInUse() || llamaContextPromise) return; // don't interrupt in-flight generation or init
   if (llamaContext) {
     try {
       await llamaContext.release();
@@ -68,7 +89,7 @@ async function callLocalLLM(
   textMode = false,
 ): Promise<string> {
   const ctx = await getLlamaContext(modelPath);
-  contextInUse = true;
+  const release = await acquireContextLock();
   try {
     let prompt = '';
     const isQwen = modelPath.toLowerCase().includes('qwen');
@@ -105,7 +126,7 @@ async function callLocalLLM(
     }
     return text;
   } finally {
-    contextInUse = false;
+    release();
   }
 }
 

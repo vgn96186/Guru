@@ -1,6 +1,7 @@
 import { AppState, AppStateStatus } from 'react-native';
 import { initLlama, LlamaContext } from 'llama.rn';
 import type { Message } from './types';
+import { profileRepository } from '../../db/repositories';
 import { OPENROUTER_FREE_MODELS, GROQ_MODELS } from './config';
 import { RateLimitError } from './schemas';
 
@@ -61,7 +62,11 @@ if (!appStateListenerRegistered) {
   });
 }
 
-async function callLocalLLM(messages: Message[], modelPath: string, textMode = false): Promise<string> {
+async function callLocalLLM(
+  messages: Message[],
+  modelPath: string,
+  textMode = false,
+): Promise<string> {
   const ctx = await getLlamaContext(modelPath);
   contextInUse = true;
   try {
@@ -104,16 +109,12 @@ async function callLocalLLM(messages: Message[], modelPath: string, textMode = f
   }
 }
 
-async function callOpenRouter(
-  messages: Message[],
-  orKey: string,
-  model: string,
-): Promise<string> {
+async function callOpenRouter(messages: Message[], orKey: string, model: string): Promise<string> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${orKey}`,
+      Authorization: `Bearer ${orKey}`,
       'HTTP-Referer': 'neet-study-app',
       'X-Title': 'Guru Study App',
     },
@@ -140,16 +141,12 @@ async function callOpenRouter(
   return text;
 }
 
-async function callGroq(
-  messages: Message[],
-  groqKey: string,
-  model: string,
-): Promise<string> {
+async function callGroq(messages: Message[], groqKey: string, model: string): Promise<string> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${groqKey}`,
+      Authorization: `Bearer ${groqKey}`,
     },
     body: JSON.stringify({
       model,
@@ -175,16 +172,12 @@ async function callGroq(
   return text;
 }
 
-async function callGroqText(
-  messages: Message[],
-  groqKey: string,
-  model: string,
-): Promise<string> {
+async function callGroqText(messages: Message[], groqKey: string, model: string): Promise<string> {
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${groqKey}`,
+      Authorization: `Bearer ${groqKey}`,
     },
     body: JSON.stringify({
       model,
@@ -221,11 +214,33 @@ export async function attemptLocalLLM(
     : isQwen
       ? 'local-qwen-2.5-3b'
       : 'local-llama-3.2-1b';
-  const text = await callLocalLLM(messages, localModelPath, textMode);
-  if (!text || !text.trim()) {
-    throw new Error('Local model returned an empty response');
+  try {
+    const text = await callLocalLLM(messages, localModelPath, textMode);
+    if (!text || !text.trim()) {
+      throw new Error('Local model returned an empty response');
+    }
+    return { text, modelUsed };
+  } catch (err: unknown) {
+    const msg = (err as Error)?.message ?? String(err);
+    // If the model file failed to load (corrupt/missing), clear the stored path
+    // so the bootstrap will re-download it on next startup.
+    if (
+      msg.toLowerCase().includes('failed to load') ||
+      msg.toLowerCase().includes('no such file') ||
+      msg.toLowerCase().includes('invalid model')
+    ) {
+      llamaContext = null;
+      currentLlamaPath = null;
+      llamaContextPromise = null;
+      profileRepository
+        .updateProfile({ localModelPath: null, useLocalModel: false })
+        .catch(() => {});
+      throw new Error(
+        'Local model file is missing or corrupt — it will re-download on next startup.',
+      );
+    }
+    throw err;
   }
-  return { text, modelUsed };
 }
 
 export async function attemptCloudLLM(
@@ -238,9 +253,10 @@ export async function attemptCloudLLM(
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
     : undefined;
-  const preferredOpenRouterModel = chosenModel && !chosenModel.startsWith('groq/') && chosenModel !== 'local'
-    ? chosenModel
-    : undefined;
+  const preferredOpenRouterModel =
+    chosenModel && !chosenModel.startsWith('groq/') && chosenModel !== 'local'
+      ? chosenModel
+      : undefined;
 
   let lastCloudError: Error | null = null;
 
@@ -253,7 +269,11 @@ export async function attemptCloudLLM(
       return { text, modelUsed: `groq/${preferredGroqModel}` };
     } catch (err) {
       lastCloudError = err as Error;
-      if (__DEV__) console.warn(`[AI] Groq preferred model ${preferredGroqModel} failed:`, lastCloudError.message);
+      if (__DEV__)
+        console.warn(
+          `[AI] Groq preferred model ${preferredGroqModel} failed:`,
+          lastCloudError.message,
+        );
     }
   }
 
@@ -278,10 +298,12 @@ export async function attemptCloudLLM(
 
   // 2. Try OpenRouter free models
   if (orKey) {
-    const openRouterCandidates = Array.from(new Set([
-      ...(preferredOpenRouterModel ? [preferredOpenRouterModel] : []),
-      ...OPENROUTER_FREE_MODELS,
-    ]));
+    const openRouterCandidates = Array.from(
+      new Set([
+        ...(preferredOpenRouterModel ? [preferredOpenRouterModel] : []),
+        ...OPENROUTER_FREE_MODELS,
+      ]),
+    );
     for (const model of openRouterCandidates) {
       try {
         const text = await callOpenRouter(messages, orKey, model);

@@ -67,7 +67,7 @@ export async function bootstrapLocalModels(): Promise<void> {
 // Expected minimum sizes to validate downloads aren't partial
 const MIN_MODEL_SIZES: Record<string, number> = {
   llm: 2_200_000_000, // ~2.5GB for MedGemma 4B Q4_K_M
-  whisper: 1_400_000_000, // ~1.6GB for Whisper large-v3-turbo
+  whisper: 750_000_000, // ~809MB for ggml-large-v3-turbo.bin
 };
 
 async function downloadModel(

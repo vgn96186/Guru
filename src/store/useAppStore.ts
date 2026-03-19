@@ -7,6 +7,31 @@ import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../service
 import { showToast } from '../components/Toast';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 
+/**
+ * Helper: optimistic profile field update with automatic rollback on DB failure.
+ * Eliminates ~150 lines of repeated toggle/set boilerplate.
+ */
+function makeProfileSetter<K extends keyof UserProfile>(
+  get: () => AppState,
+  set: (partial: Partial<AppState>) => void,
+  key: K,
+  errorLabel: string,
+) {
+  return async (value: UserProfile[K]) => {
+    const state = get();
+    if (!state.profile) return;
+    const prev = state.profile[key];
+    set({ profile: { ...state.profile, [key]: value } });
+    try {
+      await profileRepository.updateProfile({ [key]: value } as Partial<UserProfile>);
+    } catch (err) {
+      set({ profile: { ...get().profile!, [key]: prev } });
+      console.error(`[useAppStore] Failed to ${errorLabel}:`, err);
+      showToast(`Failed to update ${errorLabel}`, 'error');
+    }
+  };
+}
+
 interface AppState {
   profile: UserProfile | null;
   levelInfo: LevelInfo | null;
@@ -110,46 +135,34 @@ export const useAppStore = create<AppState>((set, get) => {
     toggleFocusAudio: async () => {
       const state = get();
       if (!state.profile) return;
-      const prev = state.profile.focusAudioEnabled;
-      const newValue = !prev;
-      set({ profile: { ...state.profile, focusAudioEnabled: newValue } });
-      try {
-        await profileRepository.updateProfile({ focusAudioEnabled: newValue });
-      } catch (err) {
-        set({ profile: { ...get().profile!, focusAudioEnabled: prev } });
-        console.error('[useAppStore] Failed to toggle focus audio:', err);
-        showToast('Failed to update audio setting', 'error');
-      }
+      await makeProfileSetter(
+        get,
+        set,
+        'focusAudioEnabled',
+        'audio setting',
+      )(!state.profile.focusAudioEnabled);
     },
 
     toggleVisualTimers: async () => {
       const state = get();
       if (!state.profile) return;
-      const prev = state.profile.visualTimersEnabled;
-      const newValue = !prev;
-      set({ profile: { ...state.profile, visualTimersEnabled: newValue } });
-      try {
-        await profileRepository.updateProfile({ visualTimersEnabled: newValue });
-      } catch (err) {
-        set({ profile: { ...get().profile!, visualTimersEnabled: prev } });
-        console.error('[useAppStore] Failed to toggle visual timers:', err);
-        showToast('Failed to update timer setting', 'error');
-      }
+      await makeProfileSetter(
+        get,
+        set,
+        'visualTimersEnabled',
+        'timer setting',
+      )(!state.profile.visualTimersEnabled);
     },
 
     toggleFaceTracking: async () => {
       const state = get();
       if (!state.profile) return;
-      const prev = state.profile.faceTrackingEnabled;
-      const newValue = !prev;
-      set({ profile: { ...state.profile, faceTrackingEnabled: newValue } });
-      try {
-        await profileRepository.updateProfile({ faceTrackingEnabled: newValue });
-      } catch (err) {
-        set({ profile: { ...get().profile!, faceTrackingEnabled: prev } });
-        console.error('[useAppStore] Failed to toggle face tracking:', err);
-        showToast('Failed to update face tracking setting', 'error');
-      }
+      await makeProfileSetter(
+        get,
+        set,
+        'faceTrackingEnabled',
+        'face tracking setting',
+      )(!state.profile.faceTrackingEnabled);
     },
 
     setUseLocalModel: async (use: boolean) => {
@@ -161,71 +174,19 @@ export const useAppStore = create<AppState>((set, get) => {
         set({ profile: { ...state.profile, useLocalModel: false } });
         return;
       }
-      const prev = state.profile.useLocalModel;
-      set({ profile: { ...state.profile, useLocalModel: use } });
-      try {
-        await profileRepository.updateProfile({ useLocalModel: use });
-      } catch (err) {
-        set({ profile: { ...get().profile!, useLocalModel: prev } });
-        console.error('[useAppStore] Failed to set use local model:', err);
-        showToast('Failed to update AI setting', 'error');
-      }
+      await makeProfileSetter(get, set, 'useLocalModel', 'AI setting')(use);
     },
 
-    setLocalModelPath: async (path: string | null) => {
-      const state = get();
-      if (!state.profile) return;
-      const prev = state.profile.localModelPath;
-      set({ profile: { ...state.profile, localModelPath: path } });
-      try {
-        await profileRepository.updateProfile({ localModelPath: path });
-      } catch (err) {
-        set({ profile: { ...get().profile!, localModelPath: prev } });
-        console.error('[useAppStore] Failed to set local model path:', err);
-        showToast('Failed to update model path', 'error');
-      }
-    },
+    setLocalModelPath: (path: string | null) =>
+      makeProfileSetter(get, set, 'localModelPath', 'model path')(path),
 
-    setUseLocalWhisper: async (use: boolean) => {
-      const state = get();
-      if (!state.profile) return;
-      const prev = state.profile.useLocalWhisper;
-      set({ profile: { ...state.profile, useLocalWhisper: use } });
-      try {
-        await profileRepository.updateProfile({ useLocalWhisper: use });
-      } catch (err) {
-        set({ profile: { ...get().profile!, useLocalWhisper: prev } });
-        console.error('[useAppStore] Failed to set use local whisper:', err);
-        showToast('Failed to update whisper setting', 'error');
-      }
-    },
+    setUseLocalWhisper: (use: boolean) =>
+      makeProfileSetter(get, set, 'useLocalWhisper', 'whisper setting')(use),
 
-    setLocalWhisperPath: async (path: string | null) => {
-      const state = get();
-      if (!state.profile) return;
-      const prev = state.profile.localWhisperPath;
-      set({ profile: { ...state.profile, localWhisperPath: path } });
-      try {
-        await profileRepository.updateProfile({ localWhisperPath: path });
-      } catch (err) {
-        set({ profile: { ...get().profile!, localWhisperPath: prev } });
-        console.error('[useAppStore] Failed to set local whisper path:', err);
-        showToast('Failed to update whisper path', 'error');
-      }
-    },
+    setLocalWhisperPath: (path: string | null) =>
+      makeProfileSetter(get, set, 'localWhisperPath', 'whisper path')(path),
 
-    setStudyResourceMode: async (mode: StudyResourceMode) => {
-      const state = get();
-      if (!state.profile) return;
-      const prev = state.profile.studyResourceMode;
-      set({ profile: { ...state.profile, studyResourceMode: mode } });
-      try {
-        await profileRepository.updateProfile({ studyResourceMode: mode });
-      } catch (err) {
-        set({ profile: { ...get().profile!, studyResourceMode: prev } });
-        console.error('[useAppStore] Failed to set study resource mode:', err);
-        showToast('Failed to update resource mode', 'error');
-      }
-    },
+    setStudyResourceMode: (mode: StudyResourceMode) =>
+      makeProfileSetter(get, set, 'studyResourceMode', 'resource mode')(mode),
   };
 });

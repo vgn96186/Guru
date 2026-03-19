@@ -6,19 +6,18 @@ import { parseStructuredJson } from './jsonRepair';
 import { attemptLocalLLM, attemptCloudLLM } from './llmRouting';
 import { isTransientNetworkError } from '../offlineQueueErrors';
 import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
+import type { UserProfile } from '../../types';
 
-export async function generateJSONWithRouting<T>(
-  messages: Message[],
-  schema: z.ZodType<T>,
-  _taskComplexity: 'low' | 'high' = 'low',
-  queueOnFailure = true,
-): Promise<{ parsed: T; modelUsed: string }> {
-  const profile = await profileRepository.getProfile();
+/** Resolve backend attempt order from profile. Used by both JSON and text routing. */
+function getBackendAttemptOrder(profile: UserProfile): {
+  attempts: ('local' | 'cloud')[];
+  orKey: string | undefined;
+  groqKey: string | undefined;
+} {
   const { orKey, groqKey } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
   const hasCloud = !!orKey || !!groqKey;
 
-  // Define the order of backends to try — cloud first for reliability
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
   if (hasLocal) attempts.push('local');
@@ -27,6 +26,18 @@ export async function generateJSONWithRouting<T>(
     throw new Error(
       'No AI backend available. Download a local model or add an API key in Settings.',
     );
+
+  return { attempts, orKey, groqKey };
+}
+
+export async function generateJSONWithRouting<T>(
+  messages: Message[],
+  schema: z.ZodType<T>,
+  _taskComplexity: 'low' | 'high' = 'low',
+  queueOnFailure = true,
+): Promise<{ parsed: T; modelUsed: string }> {
+  const profile = await profileRepository.getProfile();
+  const { attempts, orKey, groqKey } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -60,31 +71,19 @@ export async function generateTextWithRouting(
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
-  const { orKey, groqKey } = getApiKeys(profile);
-  const hasLocal = isLocalLlmUsable(profile);
-  const hasCloud = !!orKey || !!groqKey;
 
-  // If a specific model is chosen and it's local (e.g., matching the local model path name or 'local')
-  if (options?.chosenModel === 'local' && profile.localModelPath && !hasLocal) {
+  // If a specific model is chosen and it's local
+  if (options?.chosenModel === 'local' && profile.localModelPath && !isLocalLlmUsable(profile)) {
     throw new Error(
       getLocalLlmRamWarning() ??
         'On-device text AI is disabled on this device to avoid low-memory crashes.',
     );
   }
-  if (options?.chosenModel === 'local' && hasLocal) {
+  if (options?.chosenModel === 'local' && isLocalLlmUsable(profile)) {
     return await attemptLocalLLM(messages, profile.localModelPath!, true);
   }
 
-  // Enforce consistent backend order for all text pipelines:
-  // Groq -> OpenRouter free models -> local model fallback.
-  const attempts: ('local' | 'cloud')[] = [];
-  if (hasCloud) attempts.push('cloud');
-  if (hasLocal) attempts.push('local');
-
-  if (attempts.length === 0)
-    throw new Error(
-      'No AI backend available. Download a local model or add an API key in Settings.',
-    );
+  const { attempts, orKey, groqKey } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {

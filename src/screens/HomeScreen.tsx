@@ -87,13 +87,19 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
-    dailyLogRepository.getDailyLog().then((log) => setMood((log?.mood as Mood) ?? 'good'));
+    dailyLogRepository
+      .getDailyLog()
+      .then((log) => setMood((log?.mood as Mood) ?? 'good'))
+      .catch((err) => console.warn('[Home] Failed to load daily log:', err));
 
     // Load daily agenda on mount
     const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
-    dailyAgendaRepository.getDailyAgenda(date).then((plan) => {
-      if (plan) setTodayPlan(plan);
-    });
+    dailyAgendaRepository
+      .getDailyAgenda(date)
+      .then((plan) => {
+        if (plan) setTodayPlan(plan);
+      })
+      .catch((err) => console.warn('[Home] Failed to load daily agenda:', err));
   }, [setTodayPlan]);
 
   useEffect(() => {
@@ -214,7 +220,11 @@ export default function HomeScreen() {
       </View>
 
       {/* ── Below fold: rest of content ── */}
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        testID="home-scroll"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <ResponsiveContainer style={styles.content}>
           <TodayPlanCard />
 
@@ -404,6 +414,7 @@ export default function HomeScreen() {
           </View>
 
           <TouchableOpacity
+            testID="tools-library-header"
             style={styles.moreHeader}
             onPress={() => {
               setMoreExpanded(!moreExpanded);

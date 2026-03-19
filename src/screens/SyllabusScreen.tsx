@@ -16,7 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SyllabusStackParamList } from '../navigation/types';
-import { getAllSubjects, getSubjectStatsAggregated } from '../db/queries/topics';
+import {
+  approveTopicSuggestion,
+  getAllSubjects,
+  getPendingTopicSuggestions,
+  getSubjectStatsAggregated,
+  rejectTopicSuggestion,
+  type TopicSuggestion,
+} from '../db/queries/topics';
 import { syncVaultSeedTopics, getDb } from '../db/database';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import SubjectCard from '../components/SubjectCard';
@@ -64,9 +71,15 @@ export default function SyllabusScreen() {
   const [searchMatchIds, setSearchMatchIds] = useState<Set<number>>(new Set());
   const [searchMatchCounts, setSearchMatchCounts] = useState<Map<number, number>>(new Map());
   const [topicResults, setTopicResults] = useState<TopicSearchResult[]>([]);
+  const [pendingSuggestions, setPendingSuggestions] = useState<TopicSuggestion[]>([]);
+  const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
 
   const loadData = useCallback(async () => {
-    const [subs, combinedRows] = await Promise.all([getAllSubjects(), getSubjectStatsAggregated()]);
+    const [subs, combinedRows, suggestions] = await Promise.all([
+      getAllSubjects(),
+      getSubjectStatsAggregated(),
+      getPendingTopicSuggestions(),
+    ]);
 
     const map = new Map<number, { total: number; seen: number }>();
     const metricMap = new Map<number, SubjectMetrics>();
@@ -125,6 +138,7 @@ export default function SyllabusScreen() {
     setSubjects(sortedSubjects);
     setCoverage(map);
     setSubjectMetrics(metricMap);
+    setPendingSuggestions(suggestions);
   }, [sortMode]);
 
   useEffect(() => {
@@ -201,7 +215,37 @@ export default function SyllabusScreen() {
     );
   }
 
-  async function runDiagnostics() {
+  async function handleApproveSuggestion(suggestion: TopicSuggestion) {
+    setSuggestionBusyId(suggestion.id);
+    try {
+      const topicId = await approveTopicSuggestion(suggestion.id);
+      await loadData();
+      Alert.alert(
+        'Topic approved',
+        topicId
+          ? `"${suggestion.name}" is now part of ${suggestion.subjectName}.`
+          : `"${suggestion.name}" was already available.`,
+      );
+    } catch (e: any) {
+      Alert.alert('Approval failed', e?.message ?? 'Unknown error');
+    } finally {
+      setSuggestionBusyId(null);
+    }
+  }
+
+  async function handleRejectSuggestion(suggestion: TopicSuggestion) {
+    setSuggestionBusyId(suggestion.id);
+    try {
+      await rejectTopicSuggestion(suggestion.id);
+      await loadData();
+    } catch (e: any) {
+      Alert.alert('Reject failed', e?.message ?? 'Unknown error');
+    } finally {
+      setSuggestionBusyId(null);
+    }
+  }
+
+  async function _runDiagnostics() {
     const db = getDb();
     const [countRow, subjects, coverage] = await Promise.all([
       db.getFirstAsync<{ c: number }>('SELECT COUNT(*) as c FROM topics'),
@@ -282,7 +326,7 @@ export default function SyllabusScreen() {
     }
 
     return () => countAnim.removeListener(listener);
-  }, [overallPct, seenTopics]);
+  }, [countAnim, overallPct, progressAnim, seenTopics]);
 
   const progressWidth = progressAnim.interpolate({
     inputRange: [0, 100],
@@ -377,6 +421,63 @@ export default function SyllabusScreen() {
             ))}
           </View>
         </View>
+        {pendingSuggestions.length > 0 ? (
+          <View style={styles.suggestionSection}>
+            <Text style={styles.suggestionTitle}>Lecture Topic Suggestions</Text>
+            <Text style={styles.suggestionSubtitle}>
+              Review unmatched lecture topics before adding them to the syllabus.
+            </Text>
+            {pendingSuggestions.slice(0, 6).map((suggestion) => {
+              const busy = suggestionBusyId === suggestion.id;
+              return (
+                <View key={suggestion.id} style={styles.suggestionCard}>
+                  <View style={styles.suggestionHeader}>
+                    <View
+                      style={[
+                        styles.suggestionDot,
+                        { backgroundColor: suggestion.subjectColor || theme.colors.primary },
+                      ]}
+                    />
+                    <View style={styles.suggestionCopy}>
+                      <Text style={styles.suggestionName}>{suggestion.name}</Text>
+                      <Text style={styles.suggestionMeta}>
+                        {suggestion.subjectName} · seen {suggestion.mentionCount} time
+                        {suggestion.mentionCount > 1 ? 's' : ''}
+                      </Text>
+                    </View>
+                  </View>
+                  {suggestion.sourceSummary ? (
+                    <Text style={styles.suggestionSummary} numberOfLines={2}>
+                      {suggestion.sourceSummary}
+                    </Text>
+                  ) : null}
+                  <View style={styles.suggestionActions}>
+                    <TouchableOpacity
+                      style={[styles.suggestionActionBtn, styles.suggestionRejectBtn]}
+                      disabled={busy}
+                      onPress={() => handleRejectSuggestion(suggestion)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={styles.suggestionRejectText}>Reject</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.suggestionActionBtn, styles.suggestionApproveBtn]}
+                      disabled={busy}
+                      onPress={() => handleApproveSuggestion(suggestion)}
+                      activeOpacity={0.8}
+                    >
+                      {busy ? (
+                        <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                      ) : (
+                        <Text style={styles.suggestionApproveText}>Add to syllabus</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
         <FlatList
           data={filteredSubjects}
           keyExtractor={(s) => s.id.toString()}
@@ -514,6 +615,54 @@ const styles = StyleSheet.create({
   syncBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 18 },
   syncBtnLabel: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 2 },
   controls: { paddingHorizontal: theme.spacing.lg, paddingBottom: 8, gap: 10 },
+  suggestionSection: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  suggestionTitle: {
+    color: theme.colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  suggestionSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  suggestionCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 14,
+    gap: 10,
+  },
+  suggestionHeader: { flexDirection: 'row', alignItems: 'center' },
+  suggestionDot: { width: 10, height: 10, borderRadius: 999, marginRight: 10 },
+  suggestionCopy: { flex: 1 },
+  suggestionName: { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
+  suggestionMeta: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  suggestionSummary: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  suggestionActions: { flexDirection: 'row', gap: 10 },
+  suggestionActionBtn: {
+    flex: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+  },
+  suggestionApproveBtn: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  suggestionRejectBtn: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.borderLight,
+  },
+  suggestionApproveText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '800' },
+  suggestionRejectText: { color: theme.colors.textSecondary, fontSize: 13, fontWeight: '700' },
   searchInput: {
     backgroundColor: theme.colors.panel,
     borderRadius: 12,

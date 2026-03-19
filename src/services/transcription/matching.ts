@@ -1,5 +1,5 @@
 import { SQLiteDatabase } from 'expo-sqlite';
-import { updateTopicProgressInTx } from '../../db/queries/topics';
+import { queueTopicSuggestionInTx, updateTopicProgressInTx } from '../../db/queries/topics';
 import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embeddingService';
 
 /**
@@ -8,7 +8,7 @@ import { generateEmbedding, cosineSimilarity, blobToEmbedding } from '../ai/embe
  * 2. LIKE contains within subject
  * 3. Reverse contains within subject (DB name inside AI topic string)
  * 4. Semantic matching fallback (Cosine similarity vs cached topic embeddings)
- * 5. Cross-subject fallback
+ * 5. Queue unmatched names for manual syllabus review
  */
 export async function markTopicsFromLecture(
   db: SQLiteDatabase,
@@ -21,16 +21,23 @@ export async function markTopicsFromLecture(
   if ((!topics || topics.length === 0) && !lectureSummary) return;
 
   const matchedTopicIds = new Set<number>();
+  const unmatchedTopicNames: string[] = [];
+  const seenNames = new Set<string>();
 
-  // 1-3: Keyword matching
+  // 1-3: Keyword matching (deduplicated)
   for (const topicName of topics) {
     const sanitized = topicName.trim().toLowerCase();
-    if (!sanitized) continue;
+    if (!sanitized || seenNames.has(sanitized)) continue;
+    seenNames.add(sanitized);
 
     const match = await findTopicIdByKeywords(db, sanitized, subjectName);
     if (match) {
       matchedTopicIds.add(match);
       await applyLectureProgressToTopic(db, match, confidence, true, lectureSummary);
+    } else {
+      // Store with title-like casing for display in syllabus
+      const display = topicName.trim().replace(/\b\w/g, (c) => c.toUpperCase());
+      unmatchedTopicNames.push(display);
     }
   }
 
@@ -50,6 +57,24 @@ export async function markTopicsFromLecture(
       }
     } catch (err) {
       if (__DEV__) console.warn('[Matching] Semantic matching failed:', err);
+    }
+  }
+
+  // 5: Queue unmatched lecture topics for manual review (if subject is known)
+  if (unmatchedTopicNames.length > 0 && subjectName) {
+    const subject = await db.getFirstAsync<{ id: number }>(
+      'SELECT id FROM subjects WHERE LOWER(name) = LOWER(?)',
+      [subjectName],
+    );
+    if (subject) {
+      for (const name of unmatchedTopicNames) {
+        try {
+          await queueTopicSuggestionInTx(db, subject.id, name, lectureSummary);
+          if (__DEV__) console.log(`[Matching] Queued topic suggestion from lecture: "${name}"`);
+        } catch (err) {
+          if (__DEV__) console.warn(`[Matching] Failed to queue topic suggestion "${name}":`, err);
+        }
+      }
     }
   }
 
@@ -90,13 +115,23 @@ async function findTopicIdByKeywords(
     if (r1) return r1.id;
 
     const likeName = escapeLikePattern(name);
+    // LIKE contains: AI topic name inside DB topic name
     const r2 = await db.getFirstAsync<{ id: number }>(
-      `SELECT t.id FROM topics t 
-       JOIN subjects s ON t.subject_id = s.id 
+      `SELECT t.id FROM topics t
+       JOIN subjects s ON t.subject_id = s.id
        WHERE LOWER(t.name) LIKE ? ESCAPE '\\' AND LOWER(s.name) = ? LIMIT 1`,
       [`%${likeName}%`, subjectName.toLowerCase()],
     );
     if (r2) return r2.id;
+
+    // Reverse contains: DB topic name inside AI topic name (e.g. DB has "Mitral Valve", AI detected "Mitral Valve Prolapse")
+    const r3 = await db.getFirstAsync<{ id: number }>(
+      `SELECT t.id FROM topics t
+       JOIN subjects s ON t.subject_id = s.id
+       WHERE ? LIKE '%' || LOWER(t.name) || '%' AND LOWER(s.name) = ? AND LENGTH(t.name) >= 4 LIMIT 1`,
+      [name, subjectName.toLowerCase()],
+    );
+    if (r3) return r3.id;
   }
 
   const r4 = await db.getFirstAsync<{ id: number }>(

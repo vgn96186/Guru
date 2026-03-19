@@ -233,6 +233,22 @@ CREATE TABLE IF NOT EXISTS plan_events (
   created_at INTEGER NOT NULL
 )`;
 
+export const CREATE_TOPIC_SUGGESTIONS = `
+CREATE TABLE IF NOT EXISTS topic_suggestions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  normalized_name TEXT NOT NULL,
+  source_summary TEXT,
+  mention_count INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK(status IN ('pending','approved','rejected')),
+  approved_topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  first_detected_at INTEGER NOT NULL,
+  last_detected_at INTEGER NOT NULL,
+  UNIQUE(subject_id, normalized_name)
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
@@ -259,6 +275,7 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_daily_agenda_date ON daily_agenda(date)`,
   // Plan events lookup by date
   `CREATE INDEX IF NOT EXISTS idx_plan_events_date ON plan_events(date)`,
+  `CREATE INDEX IF NOT EXISTS idx_topic_suggestions_status ON topic_suggestions(status, subject_id, last_detected_at DESC)`,
   // Lecture learned topics for quick lookup
   `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_lecture ON lecture_learned_topics(lecture_note_id)`,
   `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_topic ON lecture_learned_topics(topic_id)`,
@@ -281,5 +298,6 @@ export const ALL_SCHEMAS = [
   CREATE_CHAT_HISTORY,
   CREATE_DAILY_AGENDA,
   CREATE_PLAN_EVENTS,
+  CREATE_TOPIC_SUGGESTIONS,
   CREATE_LECTURE_LEARNED_TOPICS,
 ];

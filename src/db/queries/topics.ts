@@ -1,5 +1,5 @@
 import { getDb, runInTransaction, todayStr } from '../database';
-import type { Subject, Topic, TopicProgress, TopicWithProgress } from '../../types';
+import type { Subject, TopicProgress, TopicWithProgress } from '../../types';
 import { getInitialCard, reviewCardFromConfidence } from '../../services/fsrsService';
 import type { Card } from 'ts-fsrs';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -36,6 +36,20 @@ type TopicRow = {
   short_code: string;
   color_hex: string;
 };
+
+export interface TopicSuggestion {
+  id: number;
+  subjectId: number;
+  subjectName: string;
+  subjectColor: string;
+  name: string;
+  sourceSummary: string | null;
+  mentionCount: number;
+  status: 'pending' | 'approved' | 'rejected';
+  approvedTopicId: number | null;
+  firstDetectedAt: number;
+  lastDetectedAt: number;
+}
 
 export async function getAllSubjects(): Promise<Subject[]> {
   const db = getDb();
@@ -103,6 +117,138 @@ export async function getSubjectById(id: number): Promise<Subject | null> {
     neetWeight: r.neet_weight,
     displayOrder: r.display_order,
   };
+}
+
+export async function queueTopicSuggestionInTx(
+  tx: SQLiteDatabase,
+  subjectId: number,
+  topicName: string,
+  sourceSummary?: string,
+): Promise<void> {
+  const trimmedName = topicName.trim();
+  const normalizedName = trimmedName.toLowerCase();
+  if (!trimmedName) return;
+
+  const existingTopic = await tx.getFirstAsync<{ id: number }>(
+    'SELECT id FROM topics WHERE subject_id = ? AND LOWER(name) = ?',
+    [subjectId, normalizedName],
+  );
+  if (existingTopic) return;
+
+  const existingSuggestion = await tx.getFirstAsync<{ id: number; mention_count: number }>(
+    'SELECT id, mention_count FROM topic_suggestions WHERE subject_id = ? AND normalized_name = ?',
+    [subjectId, normalizedName],
+  );
+  const now = Date.now();
+
+  if (existingSuggestion) {
+    await tx.runAsync(
+      `UPDATE topic_suggestions
+       SET name = ?, source_summary = COALESCE(?, source_summary), mention_count = mention_count + 1,
+           status = CASE WHEN status = 'rejected' THEN 'pending' ELSE status END,
+           last_detected_at = ?
+       WHERE id = ?`,
+      [trimmedName, sourceSummary ?? null, now, existingSuggestion.id],
+    );
+    return;
+  }
+
+  await tx.runAsync(
+    `INSERT INTO topic_suggestions (
+       subject_id, name, normalized_name, source_summary, mention_count, status,
+       first_detected_at, last_detected_at
+     )
+     VALUES (?, ?, ?, ?, 1, 'pending', ?, ?)`,
+    [subjectId, trimmedName, normalizedName, sourceSummary ?? null, now, now],
+  );
+}
+
+export async function getPendingTopicSuggestions(): Promise<TopicSuggestion[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    subject_id: number;
+    subject_name: string;
+    color_hex: string;
+    name: string;
+    source_summary: string | null;
+    mention_count: number;
+    status: 'pending' | 'approved' | 'rejected';
+    approved_topic_id: number | null;
+    first_detected_at: number;
+    last_detected_at: number;
+  }>(
+    `SELECT ts.id, ts.subject_id, s.name AS subject_name, s.color_hex, ts.name,
+            ts.source_summary, ts.mention_count, ts.status, ts.approved_topic_id,
+            ts.first_detected_at, ts.last_detected_at
+     FROM topic_suggestions ts
+     JOIN subjects s ON s.id = ts.subject_id
+     WHERE ts.status = 'pending'
+     ORDER BY ts.last_detected_at DESC`,
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    subjectId: row.subject_id,
+    subjectName: row.subject_name,
+    subjectColor: row.color_hex,
+    name: row.name,
+    sourceSummary: row.source_summary,
+    mentionCount: row.mention_count,
+    status: row.status,
+    approvedTopicId: row.approved_topic_id,
+    firstDetectedAt: row.first_detected_at,
+    lastDetectedAt: row.last_detected_at,
+  }));
+}
+
+export async function approveTopicSuggestion(suggestionId: number): Promise<number | null> {
+  return runInTransaction(async (tx) => {
+    const suggestion = await tx.getFirstAsync<{
+      id: number;
+      subject_id: number;
+      name: string;
+    }>('SELECT id, subject_id, name FROM topic_suggestions WHERE id = ? AND status = ?', [
+      suggestionId,
+      'pending',
+    ]);
+    if (!suggestion) return null;
+
+    let topicId: number | null = null;
+    const existingTopic = await tx.getFirstAsync<{ id: number }>(
+      'SELECT id FROM topics WHERE subject_id = ? AND LOWER(name) = LOWER(?)',
+      [suggestion.subject_id, suggestion.name],
+    );
+    if (existingTopic) {
+      topicId = existingTopic.id;
+    } else {
+      const result = await tx.runAsync(
+        `INSERT INTO topics (subject_id, name, inicet_priority, estimated_minutes)
+         VALUES (?, ?, 5, 20)`,
+        [suggestion.subject_id, suggestion.name],
+      );
+      topicId = result.lastInsertRowId as number;
+      await tx.runAsync('INSERT OR IGNORE INTO topic_progress (topic_id) VALUES (?)', [topicId]);
+    }
+
+    await tx.runAsync(
+      `UPDATE topic_suggestions
+       SET status = 'approved', approved_topic_id = ?, last_detected_at = ?
+       WHERE id = ?`,
+      [topicId, Date.now(), suggestionId],
+    );
+    return topicId;
+  });
+}
+
+export async function rejectTopicSuggestion(suggestionId: number): Promise<void> {
+  const db = getDb();
+  await db.runAsync(
+    `UPDATE topic_suggestions
+     SET status = 'rejected', last_detected_at = ?
+     WHERE id = ?`,
+    [Date.now(), suggestionId],
+  );
 }
 
 const TOPIC_SELECT = `SELECT 
@@ -268,11 +414,9 @@ export interface TopicProgressUpdate {
 export async function updateTopicsProgressBatch(updates: TopicProgressUpdate[]): Promise<void> {
   if (!updates || updates.length === 0) return;
 
-  const db = getDb();
   const now = Date.now();
 
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
+  await runInTransaction(async (db) => {
     for (const update of updates) {
       const existing = await db.getFirstAsync<any>(
         'SELECT fsrs_due, fsrs_stability, fsrs_difficulty, fsrs_elapsed_days, fsrs_scheduled_days, fsrs_reps, fsrs_lapses, fsrs_state, fsrs_last_review FROM topic_progress WHERE topic_id = ?',
@@ -351,11 +495,7 @@ export async function updateTopicsProgressBatch(updates: TopicProgressUpdate[]):
         ],
       );
     }
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (err) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw err;
-  }
+  });
 }
 
 export async function updateTopicNotes(topicId: number, notes: string): Promise<void> {
@@ -517,42 +657,27 @@ export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {
 };
 
 export async function markNemesisTopics(): Promise<void> {
-  const db = getDb();
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
-    // Reset all nemesis flags
+  await runInTransaction(async (db) => {
     await db.runAsync('UPDATE topic_progress SET is_nemesis = 0');
-    // Mark topics with 3+ wrong answers and low confidence as nemesis
     await db.runAsync(
       `UPDATE topic_progress SET is_nemesis = 1
        WHERE wrong_count >= 3 AND confidence < 3 AND times_studied > 0`,
     );
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (err) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw err;
-  }
+  });
 }
 
 export async function incrementWrongCount(topicId: number): Promise<void> {
-  const db = getDb();
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
+  await runInTransaction(async (db) => {
     await db.runAsync(
       'UPDATE topic_progress SET wrong_count = wrong_count + 1 WHERE topic_id = ?',
       [topicId],
     );
-    // Auto-mark as nemesis if threshold reached
     await db.runAsync(
       `UPDATE topic_progress SET is_nemesis = 1
        WHERE topic_id = ? AND wrong_count >= 3 AND confidence < 3`,
       [topicId],
     );
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (err) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw err;
-  }
+  });
 }
 
 export interface SubjectBreakdownRow {

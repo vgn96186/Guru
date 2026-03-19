@@ -327,7 +327,30 @@ export const MIGRATIONS: Migration[] = [
              OR huggingface_transcription_model = 'openai/whisper-large-v3-turbo'`,
     description: 'Move Hugging Face transcription default to whisper-large-v3',
   },
+  {
+    version: 85,
+    sql: `CREATE TABLE IF NOT EXISTS topic_suggestions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  subject_id INTEGER NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  normalized_name TEXT NOT NULL,
+  source_summary TEXT,
+  mention_count INTEGER NOT NULL DEFAULT 1,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK(status IN ('pending','approved','rejected')),
+  approved_topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  first_detected_at INTEGER NOT NULL,
+  last_detected_at INTEGER NOT NULL,
+  UNIQUE(subject_id, normalized_name)
+)`,
+    description: 'Add review queue for syllabus topics suggested by lectures',
+  },
+  {
+    version: 86,
+    sql: `CREATE INDEX IF NOT EXISTS idx_topic_suggestions_status ON topic_suggestions(status, subject_id, last_detected_at DESC)`,
+    description: 'Index pending topic suggestions for syllabus review',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 84;
+export const LATEST_VERSION = 86;

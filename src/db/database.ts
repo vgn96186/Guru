@@ -25,13 +25,19 @@ export async function runInTransaction<T>(
   fn: (db: SQLite.SQLiteDatabase) => Promise<T>,
 ): Promise<T> {
   const db = getDb();
+  const inTx = await db.isInTransactionAsync();
+  if (inTx) {
+    return fn(db);
+  }
   await db.execAsync('BEGIN TRANSACTION');
   try {
     const result = await fn(db);
     await db.execAsync('COMMIT TRANSACTION');
     return result;
   } catch (e) {
-    await db.execAsync('ROLLBACK TRANSACTION');
+    try {
+      await db.execAsync('ROLLBACK TRANSACTION');
+    } catch {}
     throw e;
   }
 }
@@ -252,8 +258,7 @@ async function seedSubjects(db: SQLite.SQLiteDatabase): Promise<void> {
 }
 
 async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
+  await runInTransaction(async (db) => {
     // Pass 1: Insert all topics without parent links (ensures parents exist)
     for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
       const result = await db.runAsync(
@@ -282,18 +287,11 @@ async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
         }
       }
     }
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (e) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw e;
-  }
+  });
 }
 
 async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
-  await db.execAsync('BEGIN TRANSACTION');
-  try {
-    let inserted = 0;
-    let ignored = 0;
+  await runInTransaction(async (db) => {
     const vaultTopicIds: number[] = [];
 
     for (const [subjectId, name, priority, minutes] of VAULT_TOPICS_SEED) {
@@ -310,10 +308,7 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
         );
         if (existingTopic) {
           topicId = existingTopic.id;
-          ignored++;
         }
-      } else {
-        inserted++;
       }
 
       if (topicId) {
@@ -333,11 +328,7 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
         vaultTopicIds,
       );
     }
-    await db.execAsync('COMMIT TRANSACTION');
-  } catch (e) {
-    await db.execAsync('ROLLBACK TRANSACTION');
-    throw e;
-  }
+  });
 }
 
 async function seedUserProfile(db: SQLite.SQLiteDatabase): Promise<void> {

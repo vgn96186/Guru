@@ -185,7 +185,7 @@ async function ensureConnected(code: string): Promise<void> {
           return;
         }
 
-        const msg = decrypted.payload as any;
+        const msg = decrypted.payload as Record<string, unknown>;
         if (!msg?.type) {
           console.warn('[DeviceSync] Message missing type field');
           return;
@@ -200,7 +200,7 @@ async function ensureConnected(code: string): Promise<void> {
           'BREAK_STARTED',
           'LECTURE_RESUMED',
         ];
-        if (!validTypes.includes(msg.type)) {
+        if (typeof msg.type !== 'string' || !validTypes.includes(msg.type)) {
           console.warn('[DeviceSync] Unknown message type:', msg.type);
           return;
         }

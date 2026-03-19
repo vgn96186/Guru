@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions, StatusBar } from 'react-native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getSubjectBreakdown } from '../db/queries/topics';
+import { getSubjectBreakdown, type SubjectBreakdownRow } from '../db/queries/topics';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import {
   getTotalStudyMinutes,
@@ -27,7 +27,7 @@ export default function StatsScreen() {
     masteredCount: 0,
     coveragePercent: 0,
     projectedScore: 0,
-    subjectBreakdown: [] as any[],
+    subjectBreakdown: [] as SubjectBreakdownRow[],
     masteredTopics: [] as string[],
     totalAppMinutes: 0,
     totalExternalMinutes: 0,

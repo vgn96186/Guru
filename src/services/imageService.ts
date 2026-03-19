@@ -1,6 +1,9 @@
 export async function fetchWikipediaImage(topicName: string): Promise<string | null> {
   const cleaned = topicName
-    .replace(/^(Anatomy of|Physiology of|Pathology of|Mechanism of|Management of|Treatment of|Introduction to|Overview of)\s+/i, '')
+    .replace(
+      /^(Anatomy of|Physiology of|Pathology of|Mechanism of|Management of|Treatment of|Introduction to|Overview of)\s+/i,
+      '',
+    )
     .trim();
 
   async function searchWiki(query: string): Promise<string | null> {
@@ -21,7 +24,7 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
   // 1. Try exact match & cleaned match
   let url = await searchWiki(topicName);
   if (url) return url;
-  
+
   if (cleaned !== topicName) {
     url = await searchWiki(cleaned);
     if (url) return url;
@@ -37,7 +40,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
       url = await searchWiki(firstResult);
       if (url) return url;
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    if (__DEV__) console.debug('[imageService] Fallback search failed:', e);
+  }
 
   // 3. Wikimedia Commons Media (Files directly)
   try {
@@ -45,7 +50,7 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
     const commonsRes = await fetch(commonsUrl);
     const commonsData = await commonsRes.json();
     const fileTitle = commonsData?.query?.search?.[0]?.title;
-    
+
     if (fileTitle) {
       const fileInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(fileTitle)}&prop=imageinfo&iiprop=url&iiurlwidth=500&format=json&origin=*`;
       const fileInfoRes = await fetch(fileInfoUrl);
@@ -58,7 +63,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
         }
       }
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    if (__DEV__) console.debug('[imageService] Fallback search failed:', e);
+  }
 
   // 4. Ultimate Fallback: Return null to avoid rendering random irrelevant images.
   return null;

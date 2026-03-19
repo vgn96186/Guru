@@ -40,6 +40,9 @@ try {
   console.warn('[AudioRecorder] app-launcher native module not available');
 }
 
+// ─── PCM listener tracking (avoids monkey-patching AudioPcmStream) ──────────
+let _pcmDataListener: ((data: string) => void) | null = null;
+
 // ─── Constants ───────────────────────────────────────────────────────────────
 
 const SAMPLE_RATE = 16000;
@@ -381,16 +384,13 @@ export class AudioRecorder {
     };
 
     AudioPcmStream.on('data', dataHandler);
-
-    // Store listener for cleanup
-    (AudioPcmStream as any)._dataListener = dataHandler;
+    _pcmDataListener = dataHandler;
 
     try {
       await AudioPcmStream.start();
     } catch (err) {
-      // Clean up listener
       AudioPcmStream.off('data', dataHandler);
-      delete (AudioPcmStream as any)._dataListener;
+      _pcmDataListener = null;
       throw new TranscriptionError(
         'PCM_START_FAILED',
         `Failed to start PCM recording: ${err}`,
@@ -407,11 +407,9 @@ export class AudioRecorder {
       // Continue to write whatever we have
     }
 
-    // Clean up listener
-    const dataHandler = (AudioPcmStream as any)._dataListener;
-    if (dataHandler) {
-      AudioPcmStream.off('data', dataHandler);
-      delete (AudioPcmStream as any)._dataListener;
+    if (_pcmDataListener) {
+      AudioPcmStream.off('data', _pcmDataListener);
+      _pcmDataListener = null;
     }
 
     // Check if we have any audio data

@@ -18,53 +18,52 @@ import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 function renderPreview(item: FlaggedItem) {
-  const c = item.content as any;
-  if (item.contentType === 'keypoints') {
-    return (c.points as string[]).slice(0, 3).map((p: string, i: number) => (
-      <Text key={i} style={styles.previewLine}>
-        • {p}
-      </Text>
-    ));
+  const c = item.content;
+  switch (c.type) {
+    case 'keypoints':
+      return c.points.slice(0, 3).map((p, i) => (
+        <Text key={i} style={styles.previewLine}>
+          • {p}
+        </Text>
+      ));
+    case 'quiz': {
+      const q = c.questions?.[0];
+      if (!q) return null;
+      return (
+        <>
+          <Text style={styles.previewLine}>Q: {q.question}</Text>
+          <Text style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</Text>
+          <Text style={styles.previewExplain}>{q.explanation}</Text>
+        </>
+      );
+    }
+    case 'mnemonic':
+      return (
+        <>
+          <Text style={styles.previewLine}>{c.mnemonic}</Text>
+          {c.expansion.slice(0, 3).map((e, i) => (
+            <Text key={i} style={styles.previewSub}>
+              {' '}
+              {e}
+            </Text>
+          ))}
+        </>
+      );
+    case 'story':
+      return (
+        <Text style={styles.previewLine} numberOfLines={4}>
+          {c.story}
+        </Text>
+      );
+    case 'error_hunt':
+      return c.errors.slice(0, 2).map((e, i) => (
+        <Text key={i} style={styles.previewLine}>
+          ✗ {e.wrong} → {e.correct}
+        </Text>
+      ));
+    default:
+      return null;
   }
-  if (item.contentType === 'quiz') {
-    const q = c.questions?.[0];
-    if (!q) return null;
-    return (
-      <>
-        <Text style={styles.previewLine}>Q: {q.question}</Text>
-        <Text style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</Text>
-        <Text style={styles.previewExplain}>{q.explanation}</Text>
-      </>
-    );
-  }
-  if (item.contentType === 'mnemonic') {
-    return (
-      <>
-        <Text style={styles.previewLine}>{c.mnemonic}</Text>
-        {(c.expansion as string[]).slice(0, 3).map((e: string, i: number) => (
-          <Text key={i} style={styles.previewSub}>
-            {' '}
-            {e}
-          </Text>
-        ))}
-      </>
-    );
-  }
-  if (item.contentType === 'story') {
-    return (
-      <Text style={styles.previewLine} numberOfLines={4}>
-        {c.story}
-      </Text>
-    );
-  }
-  if (item.contentType === 'error_hunt') {
-    return (c.errors as any[]).slice(0, 2).map((e: any, i: number) => (
-      <Text key={i} style={styles.previewLine}>
-        ✗ {e.wrong} → {e.correct}
-      </Text>
-    ));
-  }
-  return null;
 }
 
 const FlaggedItemCard = React.memo(

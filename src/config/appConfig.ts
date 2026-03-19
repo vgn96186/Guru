@@ -37,3 +37,15 @@ export const GROQ_MODELS = [
 export const DEFAULT_HF_TRANSCRIPTION_MODEL =
   (process.env.EXPO_PUBLIC_DEFAULT_HF_TRANSCRIPTION_MODEL ?? 'openai/whisper-large-v3').trim() ||
   'openai/whisper-large-v3';
+
+/** Enable mock external lecture flow (browser audio instead of installed lecture apps). */
+export const MOCK_EXTERNAL_LECTURE_AUDIO_ENABLED = ['1', 'true', 'yes', 'on'].includes(
+  (process.env.EXPO_PUBLIC_MOCK_EXTERNAL_LECTURE_AUDIO ?? '').trim().toLowerCase(),
+);
+
+/** Audio URL opened in mock external lecture flow. */
+export const MOCK_EXTERNAL_LECTURE_AUDIO_URL =
+  (
+    process.env.EXPO_PUBLIC_MOCK_EXTERNAL_LECTURE_AUDIO_URL ??
+    'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3'
+  ).trim() || 'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3';

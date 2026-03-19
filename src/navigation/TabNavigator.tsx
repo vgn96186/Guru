@@ -264,6 +264,7 @@ export default function TabNavigator() {
               <Pressable
                 style={({ pressed }) => [styles.fabSlot, pressed && styles.actionPressed]}
                 onPress={() => setIsActionHubOpen((value) => !value)}
+                testID="action-hub-toggle"
                 accessibilityRole="button"
                 accessibilityLabel="Open action hub"
                 accessibilityHint="Opens the quick actions sheet"
@@ -327,6 +328,7 @@ export default function TabNavigator() {
                   style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
                   android_ripple={{ color: '#ffffff18' }}
                   onPress={() => openRoute('HomeTab', 'LectureMode', {})}
+                  testID="action-hub-record-lecture"
                   accessibilityRole="button"
                   accessibilityLabel="Record lecture"
                 >
@@ -341,6 +343,7 @@ export default function TabNavigator() {
                   style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
                   android_ripple={{ color: '#ffffff18' }}
                   onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
+                  testID="action-hub-search-topics"
                   accessibilityRole="button"
                   accessibilityLabel="Search any topic"
                 >
@@ -353,6 +356,7 @@ export default function TabNavigator() {
                   style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
                   android_ripple={{ color: '#ffffff18' }}
                   onPress={() => openRoute('MenuTab', 'NotesHub')}
+                  testID="action-hub-quick-note"
                   accessibilityRole="button"
                   accessibilityLabel="Quick note, open notes vault"
                 >
@@ -369,6 +373,7 @@ export default function TabNavigator() {
                   style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
                   onPress={handleAudioUpload}
                   disabled={isTranscribingUpload}
+                  testID="action-hub-upload-audio"
                   accessibilityRole="button"
                   accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
                 >
@@ -385,6 +390,7 @@ export default function TabNavigator() {
                 <Pressable
                   style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
                   onPress={() => openRoute('MenuTab', 'ManualNoteCreation')}
+                  testID="action-hub-paste-transcript"
                   accessibilityRole="button"
                   accessibilityLabel="Paste transcript"
                 >
@@ -395,6 +401,7 @@ export default function TabNavigator() {
                 <Pressable
                   style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
                   onPress={() => navigation.navigate('BrainDumpReview' as never)}
+                  testID="action-hub-parked-thoughts"
                   accessibilityRole="button"
                   accessibilityLabel="Review parked thoughts"
                 >
@@ -416,6 +423,7 @@ export default function TabNavigator() {
                     style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
                     android_ripple={{ color: `${app.color}22` }}
                     onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
+                    testID={`action-hub-external-${app.id}`}
                     accessibilityRole="button"
                     accessibilityLabel={`Open ${app.name}`}
                   >

@@ -13,6 +13,10 @@ import {
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lectureSessionMonitor';
 import { useAppStore } from '../store/useAppStore';
 import {
+  MOCK_EXTERNAL_LECTURE_AUDIO_ENABLED,
+  MOCK_EXTERNAL_LECTURE_AUDIO_URL,
+} from '../config/appConfig';
+import {
   launchApp,
   isAppInstalled,
   startRecording,
@@ -92,6 +96,10 @@ async function _launchMedicalAppInner(
 ): Promise<boolean> {
   const app = MEDICAL_APP_SCHEMES[appKey];
   if (Platform.OS !== 'android') return false;
+
+  if (MOCK_EXTERNAL_LECTURE_AUDIO_ENABLED) {
+    return launchMockLectureAudio(app.name, faceTracking, options);
+  }
 
   let targetPackage = app.androidStore;
   let installed = await isAppInstalled(targetPackage);
@@ -229,4 +237,95 @@ async function _launchMedicalAppInner(
     }
   }
   return false;
+}
+
+async function launchMockLectureAudio(
+  appName: string,
+  faceTracking: boolean,
+  options?: LaunchMedicalAppOptions,
+): Promise<boolean> {
+  let logId: number | undefined;
+  try {
+    const micGranted = await requestRecordingPermissions();
+    if (!micGranted) {
+      Alert.alert(
+        'Microphone Required',
+        'Guru needs microphone access to capture the mock lecture audio.',
+      );
+      return false;
+    }
+
+    const hasOverlay = await ensureOverlayPermission();
+    if (!hasOverlay) return false;
+
+    options?.onMicUsed?.();
+    const recordingPath = await startRecording('');
+    if (!recordingPath) {
+      Alert.alert('Recording Failed', 'Could not start background recording. Please try again.');
+      return false;
+    }
+
+    const groqKey = options?.groqKey?.trim();
+    const huggingFaceToken = options?.huggingFaceToken?.trim();
+    const localWhisperPath = options?.localWhisperPath?.trim();
+    startRecordingHealthCheck(
+      recordingPath,
+      `${appName} (Mock Audio)`,
+      groqKey || huggingFaceToken || localWhisperPath
+        ? {
+            groqKey,
+            huggingFaceToken,
+            huggingFaceModel: options?.huggingFaceModel,
+            localWhisperPath,
+          }
+        : undefined,
+    );
+    logId = await startExternalAppSession(`${appName} (Mock Audio)`, recordingPath);
+
+    const { profile } = useAppStore.getState();
+    await showOverlay(
+      `${appName} Mock`,
+      faceTracking,
+      profile?.pomodoroEnabled ?? true,
+      profile?.pomodoroIntervalMinutes ?? 20,
+    );
+    await new Promise((r) => setTimeout(r, 600));
+
+    await Linking.openURL(MOCK_EXTERNAL_LECTURE_AUDIO_URL);
+    return true;
+  } catch (err: any) {
+    console.error('[AppLauncher] Mock lecture launch failed:', err);
+    Alert.alert(
+      'Mock Lecture Launch Error',
+      `Failed to open mock lecture audio: ${err?.message || 'Unknown error'}`,
+    );
+    stopRecordingHealthCheck();
+    let finalRecordingPath: string | null = null;
+    try {
+      finalRecordingPath = await nativeStopRecording();
+    } catch (stopErr) {
+      console.warn('[AppLauncher] Failed to stop recording after mock launch error:', stopErr);
+    }
+    try {
+      if (typeof logId === 'number') {
+        if (finalRecordingPath) {
+          await updateSessionRecordingPath(logId, finalRecordingPath);
+        }
+        await finishExternalAppSession(logId, 0, 'Mock lecture launch failed');
+        await updateSessionTranscriptionStatus(
+          logId,
+          'no_audio',
+          err?.message || 'Mock lecture launch failed',
+        );
+      }
+    } catch (sessionErr) {
+      console.warn('[AppLauncher] Failed to finalize mock session:', sessionErr);
+    }
+    try {
+      await hideOverlay();
+    } catch (overlayStopErr) {
+      console.warn('[AppLauncher] Failed to hide overlay after mock launch error:', overlayStopErr);
+    }
+    return false;
+  }
 }

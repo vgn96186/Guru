@@ -18,7 +18,13 @@
     "test": "npm run test:unit",
     "test:unit": "jest --config jest.unit.config.js",
     "verify": "npm run typecheck && npm run lint && npm run test:unit",
-    "repo-map": "node scripts/generate-repo-map.js"
+    "repo-map": "node scripts/generate-repo-map.js",
+    "detox:build:android:phone:debug": "npx detox build -c android.phone.debug",
+    "detox:test:android:phone:debug": "npx detox test -c android.phone.debug --headless",
+    "detox:build:android:emu:debug": "npx detox build -c android.emu.debug",
+    "detox:test:android:emu:debug": "npx detox test -c android.emu.debug --headless",
+    "detox:build:android:att:release": "npx detox build -c android.att.release",
+    "detox:test:android:att:release": "npx detox test -c android.att.release"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

@@ -19,16 +19,18 @@ export async function fetchContent(
     { role: 'user', content: userPrompt },
   ];
 
-  const { parsed, modelUsed } = await generateJSONWithRouting(messages, AIContentSchema, 'low');
-  await setCachedContent(topic.id, contentType, parsed as any, modelUsed);
-  return parsed as any;
+  const { parsed, modelUsed } = await generateJSONWithRouting<AIContent>(
+    messages,
+    AIContentSchema,
+    'low',
+  );
+  await setCachedContent(topic.id, contentType, parsed, modelUsed);
+  return parsed;
 }
 
 export async function prefetchTopicContent(
   topic: TopicWithProgress,
   contentTypes: ContentType[],
 ): Promise<void> {
-  await Promise.allSettled(
-    contentTypes.map(ct => fetchContent(topic, ct)),
-  );
+  await Promise.allSettled(contentTypes.map((ct) => fetchContent(topic, ct)));
 }

@@ -77,17 +77,19 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     registerOfflineQueueProcessors();
     processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
     await registerBackgroundFetch().catch((e: unknown) => {
-      if (__DEV__) console.log('Background task not registered:', e);
+      if (__DEV__) console.warn('[AppBootstrap] Background task not registered:', e);
     });
 
     try {
       const { decayed } = await profileRepository.applyConfidenceDecay();
-      if (decayed > 0) console.log(`[ConfidenceDecay] ${decayed} topics decayed`);
+      if (decayed > 0 && __DEV__) console.log(`[ConfidenceDecay] ${decayed} topics decayed`);
     } catch (e) {
       console.warn('[ConfidenceDecay] Error:', e);
     }
 
-    bootstrapLocalModels().catch((e: unknown) => console.log('Local model bootstrap skipped:', e));
+    bootstrapLocalModels().catch((e: unknown) =>
+      console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
+    );
     cleanupStaleCheckpointDirs().catch((e: unknown) =>
       console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
     );

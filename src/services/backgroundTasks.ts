@@ -5,7 +5,7 @@ import { prefetchTopicContent } from './aiService';
 import { profileRepository } from '../db/repositories';
 import { refreshAccountabilityNotifications } from './notificationService';
 import { getMoodContentTypes } from '../constants/prompts';
-import type { ContentType } from '../types';
+import type { ContentType, TopicWithProgress } from '../types';
 
 const PREFETCH_TASK = 'PREFETCH_AI_CONTENT';
 
@@ -16,22 +16,30 @@ try {
 
       const allTopics = await getAllTopicsWithProgress();
       const candidates = allTopics
-        .filter((t: any) => t.progress.status === 'unseen' || (t.progress.fsrsDue && new Date(t.progress.fsrsDue).getTime() <= Date.now()))
-        .sort((a: any, b: any) => b.inicetPriority - a.inicetPriority)
+        .filter(
+          (t: TopicWithProgress) =>
+            t.progress.status === 'unseen' ||
+            (t.progress.fsrsDue && new Date(t.progress.fsrsDue).getTime() <= Date.now()),
+        )
+        .sort((a: TopicWithProgress, b: TopicWithProgress) => b.inicetPriority - a.inicetPriority)
         .slice(0, 3);
 
       if (candidates.length === 0) {
         return BackgroundFetch.BackgroundFetchResult.NoData;
       }
 
-      const contentTypes = getMoodContentTypes('good').filter((ct: any) => !profile.blockedContentTypes.includes(ct)) as ContentType[];
+      const contentTypes = getMoodContentTypes('good').filter(
+        (ct: ContentType) => !profile.blockedContentTypes.includes(ct),
+      );
       const typesToFetch: ContentType[] = contentTypes.length > 0 ? contentTypes : ['keypoints'];
 
       await Promise.allSettled(
-        candidates.map(topic => prefetchTopicContent(topic, typesToFetch))
+        candidates.map((topic) => prefetchTopicContent(topic, typesToFetch)),
       );
 
-      await refreshAccountabilityNotifications().catch(e => console.log('BG notif refresh failed:', e));
+      await refreshAccountabilityNotifications().catch((e) =>
+        console.warn('[BG] Notification refresh failed:', e),
+      );
 
       return BackgroundFetch.BackgroundFetchResult.NewData;
     } catch (error) {

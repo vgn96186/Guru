@@ -37,13 +37,9 @@ async function getDerivedKey(syncCode: string): Promise<CryptoKey> {
   if (_cachedKey && _cachedCode === syncCode) return _cachedKey;
 
   const raw = new TextEncoder().encode(syncCode);
-  const base = await globalThis.crypto.subtle.importKey(
-    'raw',
-    raw,
-    { name: 'PBKDF2' },
-    false,
-    ['deriveKey'],
-  );
+  const base = await globalThis.crypto.subtle.importKey('raw', raw, { name: 'PBKDF2' }, false, [
+    'deriveKey',
+  ]);
 
   const key = await globalThis.crypto.subtle.deriveKey(
     {
@@ -63,19 +59,27 @@ async function getDerivedKey(syncCode: string): Promise<CryptoKey> {
   return key;
 }
 
+/** Typed global for base64 helpers (btoa/atob in browser, Buffer in Node). */
+const _g = globalThis as typeof globalThis & {
+  btoa?: (data: string) => string;
+  atob?: (data: string) => string;
+  Buffer?: {
+    from: (data: Uint8Array | string, enc?: string) => { toString: (enc?: string) => string };
+  };
+};
+
 function toBase64(buffer: ArrayBuffer): string {
-  const g = globalThis as any;
-  if (typeof g.btoa === 'function') {
-    return g.btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  if (typeof _g.btoa === 'function') {
+    return _g.btoa(String.fromCharCode(...new Uint8Array(buffer)));
   }
-  return g.Buffer.from(new Uint8Array(buffer)).toString('base64');
+  return _g.Buffer!.from(new Uint8Array(buffer)).toString('base64');
 }
 
 function fromBase64(b64: string): ArrayBuffer {
-  const g = globalThis as any;
-  const binary = typeof g.atob === 'function'
-    ? g.atob(b64)
-    : g.Buffer.from(b64, 'base64').toString('binary');
+  const binary =
+    typeof _g.atob === 'function'
+      ? _g.atob(b64)
+      : _g.Buffer!.from(b64, 'base64').toString('binary');
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
@@ -86,7 +90,7 @@ function fromBase64(b64: string): ArrayBuffer {
 function randomMessageId(): string {
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(8));
   return Array.from(bytes)
-    .map(b => b.toString(16).padStart(2, '0'))
+    .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
 }
 
@@ -125,7 +129,10 @@ export async function encryptPayload(syncCode: string, payload: object): Promise
  * Returns the parsed payload object, or `null` if decryption fails
  * (stale message, wrong key, or malformed envelope).
  */
-export async function decryptPayload(syncCode: string, envelope: string): Promise<DecryptedSyncPayload | null> {
+export async function decryptPayload(
+  syncCode: string,
+  envelope: string,
+): Promise<DecryptedSyncPayload | null> {
   try {
     const parsedEnvelope = JSON.parse(envelope) as {
       v?: number;
@@ -140,18 +147,19 @@ export async function decryptPayload(syncCode: string, envelope: string): Promis
     const key = await getDerivedKey(syncCode);
     const iv = fromBase64(ivB64);
     const ciphertext = fromBase64(ctB64);
-    const aad = v === 2
-      ? new TextEncoder().encode(JSON.stringify({
-          v: 2 as const,
-          ts: parsedEnvelope.ts,
-          msgId: parsedEnvelope.msgId,
-        }))
-      : undefined;
+    const aad =
+      v === 2
+        ? new TextEncoder().encode(
+            JSON.stringify({
+              v: 2 as const,
+              ts: parsedEnvelope.ts,
+              msgId: parsedEnvelope.msgId,
+            }),
+          )
+        : undefined;
 
     const plaintext = await globalThis.crypto.subtle.decrypt(
-      aad
-        ? { name: 'AES-GCM', iv, additionalData: aad }
-        : { name: 'AES-GCM', iv },
+      aad ? { name: 'AES-GCM', iv, additionalData: aad } : { name: 'AES-GCM', iv },
       key,
       ciphertext,
     );
@@ -160,7 +168,8 @@ export async function decryptPayload(syncCode: string, envelope: string): Promis
     return {
       payload,
       ts: v === 2 ? (typeof parsedEnvelope.ts === 'number' ? parsedEnvelope.ts : null) : null,
-      msgId: v === 2 ? (typeof parsedEnvelope.msgId === 'string' ? parsedEnvelope.msgId : null) : null,
+      msgId:
+        v === 2 ? (typeof parsedEnvelope.msgId === 'string' ? parsedEnvelope.msgId : null) : null,
       version: v as 1 | 2,
     };
   } catch {

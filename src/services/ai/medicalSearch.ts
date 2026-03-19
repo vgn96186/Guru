@@ -135,7 +135,7 @@ async function searchWikimediaCommons(
         url: page.url, // Link to the file page
         imageUrl: url,
         snippet: clipText(cleanDesc || `Medical image from Wikimedia Commons: ${title}`, 420),
-        source: 'Wikimedia Commons' as any,
+        source: 'Wikimedia Commons',
         author: clipText(author, 100),
         license: metadata.LicenseShortName?.value || 'CC BY-SA',
       });
@@ -180,7 +180,7 @@ async function searchOpenI(query: string, maxResults: number): Promise<MedicalGr
           url: `https://openi.nlm.nih.gov/detail.jsp?img=${r.uuid}`,
           imageUrl,
           snippet: clipText(cleanDesc, 420),
-          source: 'Open i (NIH)' as any,
+          source: 'Open i (NIH)',
           author: r.owner || 'NIH',
           license: 'Public Domain (U.S. Government)',
         };

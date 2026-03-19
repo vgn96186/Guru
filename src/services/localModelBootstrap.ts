@@ -81,7 +81,7 @@ async function downloadModel(
   try {
     // Check if fully-downloaded file already exists
     const info = await FileSystem.getInfoAsync(targetUri);
-    if (info?.exists && (info as any).size >= minSize) {
+    if (info.exists && info.size >= minSize) {
       // File exists and meets minimum size threshold
       if (type === 'llm') {
         await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
@@ -97,10 +97,8 @@ async function downloadModel(
     }
 
     // Clean up any existing partial or undersized file
-    if (info?.exists) {
-      console.warn(
-        `[Bootstrap] Removing invalid/partial ${type} model (size: ${(info as any).size})`,
-      );
+    if (info.exists) {
+      console.warn(`[Bootstrap] Removing invalid/partial ${type} model (size: ${info.size})`);
       await FileSystem.deleteAsync(targetUri, { idempotent: true });
     }
 
@@ -126,9 +124,9 @@ async function downloadModel(
     if (result && result.status === 200) {
       // Validate downloaded file size
       const downloadedInfo = await FileSystem.getInfoAsync(partialUri);
-      if (!downloadedInfo?.exists || (downloadedInfo as any).size < minSize) {
+      if (!downloadedInfo.exists || downloadedInfo.size < minSize) {
         console.warn(
-          `[Bootstrap] ${type} download too small: ${(downloadedInfo as any).size} bytes, expected >= ${minSize}`,
+          `[Bootstrap] ${type} download too small: ${downloadedInfo.exists ? downloadedInfo.size : 0} bytes, expected >= ${minSize}`,
         );
         await FileSystem.deleteAsync(partialUri, { idempotent: true });
         return;

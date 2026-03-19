@@ -274,7 +274,7 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
 
       // Orphan audio found!
       const fileUri = PUBLIC_REC_DIR + fileName;
-      console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
+      if (__DEV__) console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
 
       // Create a dummy log entry
       const logResult = await db.runAsync(
@@ -321,7 +321,7 @@ export async function autoRepairLegacyNotes(): Promise<number> {
     const transcriptText = await getTranscriptText(note.transcript);
     if (!transcriptText?.trim()) continue;
     try {
-      console.log(`[Repair] Repairing note ${note.id}...`);
+      if (__DEV__) console.log(`[Repair] Repairing note ${note.id}...`);
       const analysis = await analyzeTranscript(transcriptText);
       if (
         analysis.subject === 'Unknown' &&
@@ -403,7 +403,8 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
 
         if (!content.trim()) continue;
 
-        console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
+        if (__DEV__)
+          console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
 
         const analysis = await analyzeTranscript(content);
         const quickNote = buildQuickLectureNote(analysis);

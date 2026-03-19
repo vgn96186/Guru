@@ -12,6 +12,7 @@ import type {
 import { LEVELS } from '../../constants/gamification';
 import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../../services/databaseEvents';
+import { showToast } from '../../components/Toast';
 
 function isValidFutureDate(dateStr: string | null): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
@@ -267,7 +268,6 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     await db.runAsync(`UPDATE user_profile SET ${setClauses.join(', ')} WHERE id = ?`, values);
     notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
   } catch (err: any) {
-    const { showToast } = require('../../components/Toast');
     showToast(`Failed to update profile: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }
@@ -306,7 +306,6 @@ export async function addXp(
       newLevel: result.newLevel,
     };
   } catch (err: any) {
-    const { showToast } = require('../../components/Toast');
     showToast(`Failed to update XP: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }
@@ -369,7 +368,6 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
       notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
       return;
     } catch (err: any) {
-      const { showToast } = require('../../components/Toast');
       showToast(`Failed to use shield: ${err.message || 'Unknown error'}`, 'error');
       throw err;
     }
@@ -389,7 +387,6 @@ export async function updateStreak(studiedToday: boolean, useShield = false): Pr
     );
     notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED);
   } catch (err: any) {
-    const { showToast } = require('../../components/Toast');
     showToast(`Failed to update streak: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }
@@ -440,7 +437,6 @@ export async function checkinToday(mood: Mood): Promise<void> {
     );
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
   } catch (err: any) {
-    const { showToast } = require('../../components/Toast');
     showToast(`Check-in failed: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }
@@ -545,7 +541,6 @@ export async function resetStudyProgress(): Promise<void> {
     });
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED);
   } catch (err: any) {
-    const { showToast } = require('../../components/Toast');
     showToast(`Failed to reset progress: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }
@@ -555,7 +550,6 @@ export async function clearAiCache(): Promise<void> {
   try {
     await getDb().runAsync('DELETE FROM ai_cache');
   } catch (err: any) {
-    const { showToast } = require('../../components/Toast');
     showToast(`Failed to clear AI cache: ${err.message || 'Unknown error'}`, 'error');
     throw err;
   }

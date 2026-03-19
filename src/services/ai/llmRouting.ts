@@ -162,50 +162,29 @@ async function callOpenRouter(messages: Message[], orKey: string, model: string)
   return text;
 }
 
-async function callGroq(messages: Message[], groqKey: string, model: string): Promise<string> {
+async function callGroq(
+  messages: Message[],
+  groqKey: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  const body: Record<string, unknown> = {
+    model,
+    messages,
+    temperature: 0.7,
+    max_tokens: 2000,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${groqKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: 2000,
-      response_format: { type: 'json_object' },
-    }),
-  });
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Groq rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Groq error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from Groq model ${model}`);
-  return text;
-}
-
-async function callGroqText(messages: Message[], groqKey: string, model: string): Promise<string> {
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${groqKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.7,
-      max_tokens: 2000,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (res.status === 429) {
@@ -285,7 +264,7 @@ export async function attemptCloudLLM(
   if (preferredGroqModel && groqKey) {
     try {
       const text = textMode
-        ? await callGroqText(messages, groqKey, preferredGroqModel)
+        ? await callGroq(messages, groqKey, preferredGroqModel, false)
         : await callGroq(messages, groqKey, preferredGroqModel);
       return { text, modelUsed: `groq/${preferredGroqModel}` };
     } catch (err) {
@@ -304,7 +283,7 @@ export async function attemptCloudLLM(
       if (preferredGroqModel && model === preferredGroqModel) continue;
       try {
         const text = textMode
-          ? await callGroqText(messages, groqKey, model)
+          ? await callGroq(messages, groqKey, model, false)
           : await callGroq(messages, groqKey, model);
         return { text, modelUsed: `groq/${model}` };
       } catch (err) {

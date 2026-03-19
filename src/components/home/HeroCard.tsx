@@ -9,7 +9,7 @@ interface HeroCardProps {
   daysToNeetPg: number;
 }
 
-export default function HeroCard({
+export default React.memo(function HeroCard({
   greeting,
   firstName,
   daysToInicet,
@@ -99,7 +99,7 @@ export default function HeroCard({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

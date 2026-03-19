@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -91,8 +91,13 @@ export default function SessionScreen() {
 
   const isStudying = store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused;
 
+  const topicNames = useMemo(
+    () => store.agenda?.items.map((i) => i.topic.name) ?? [],
+    [store.agenda],
+  );
+
   const { currentMessage, presencePulse, toastOpacity, triggerEvent } = useGuruPresence({
-    topicNames: store.agenda?.items.map((i) => i.topic.name) ?? [],
+    topicNames,
     isActive: isStudying && (profile?.bodyDoublingEnabled ?? true),
     frequency: profile?.guruFrequency ?? 'normal',
   });

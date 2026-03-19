@@ -17,7 +17,7 @@ const STROKE_WIDTH = 5;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
-export default function QuickStatsCard({
+export default React.memo(function QuickStatsCard({
   progressPercent,
   todayMinutes,
   dailyGoal,
@@ -88,7 +88,7 @@ export default function QuickStatsCard({
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

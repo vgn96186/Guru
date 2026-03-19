@@ -13,7 +13,7 @@ interface ShortcutTileProps {
   testID?: string;
 }
 
-export default function ShortcutTile({
+export default React.memo(function ShortcutTile({
   title,
   icon,
   accent,
@@ -43,7 +43,7 @@ export default function ShortcutTile({
       </Text>
     </TouchableOpacity>
   );
-}
+});
 
 const styles = StyleSheet.create({
   tile: {

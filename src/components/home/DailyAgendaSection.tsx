@@ -8,7 +8,11 @@ interface Props {
   onStartSession: () => void;
 }
 
-export default function DailyAgendaSection({ todayTasks, hasNewTopics, onStartSession }: Props) {
+export default React.memo(function DailyAgendaSection({
+  todayTasks,
+  hasNewTopics,
+  onStartSession,
+}: Props) {
   if (todayTasks.length > 0) {
     return (
       <View style={styles.section}>
@@ -57,7 +61,7 @@ export default function DailyAgendaSection({ todayTasks, hasNewTopics, onStartSe
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 16 },

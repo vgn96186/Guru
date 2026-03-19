@@ -5,7 +5,7 @@
  */
 import * as SplashScreen from 'expo-splash-screen';
 import * as FileSystem from 'expo-file-system/legacy';
-import { initDatabase, getDb } from '../db/database';
+import { initDatabase, getDb, resetDbSingleton } from '../db/database';
 import { registerBackgroundFetch } from './backgroundTasks';
 import { bootstrapLocalModels } from './localModelBootstrap';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
@@ -39,7 +39,7 @@ async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
 
   // Close current DB
   db.closeSync();
-  (global as any).__GURU_DB__ = null;
+  resetDbSingleton();
 
   // Copy backup over current DB
   const dbPath = FileSystem.documentDirectory + 'SQLite/neet_study.db';

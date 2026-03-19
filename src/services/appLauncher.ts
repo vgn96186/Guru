@@ -27,6 +27,9 @@ import {
 import { requestRecordingPermissions } from './appLauncher/permissions';
 import { ensureOverlayPermission } from './appLauncher/overlay';
 
+/** Time for OverlayService to call startForeground() before we switch away (Android 12+ requirement). */
+const OVERLAY_START_DELAY_MS = 900;
+
 export type SupportedMedicalApp =
   | 'marrow'
   | 'dbmci'
@@ -176,10 +179,7 @@ async function _launchMedicalAppInner(
           profile?.pomodoroEnabled ?? true,
           profile?.pomodoroIntervalMinutes ?? 20,
         );
-        // Give OverlayService time to start and show the bubble before we switch activities.
-        // Otherwise launchApp() can run before onStartCommand(), and the system may block
-        // startForeground() when the app is already in background (Android 12+).
-        await new Promise((r) => setTimeout(r, 900));
+        await new Promise((r) => setTimeout(r, OVERLAY_START_DELAY_MS));
       } catch (overlayErr) {
         console.error('[AppLauncher] Overlay failed:', overlayErr);
       }

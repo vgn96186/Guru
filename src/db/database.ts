@@ -9,12 +9,19 @@ import { MS_PER_DAY } from '../constants/time';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
+/** Typed access to the global DB slot (survives hot reloads in dev). */
+const _globalDb = global as unknown as { __GURU_DB__?: SQLite.SQLiteDatabase };
+
 export function getDb(): SQLite.SQLiteDatabase {
-  // Check global for persistence across hot reloads in some environments
-  const g = global as any;
-  const db = _db || g.__GURU_DB__;
+  const db = _db || _globalDb.__GURU_DB__;
   if (!db) throw new Error('DB not initialized — call initDatabase() first');
   return db;
+}
+
+/** Clear the DB singleton (used before re-importing a backup). */
+export function resetDbSingleton(): void {
+  _db = null;
+  _globalDb.__GURU_DB__ = undefined;
 }
 
 /**
@@ -37,17 +44,15 @@ export async function runInTransaction<T>(
   } catch (e) {
     try {
       await db.execAsync('ROLLBACK TRANSACTION');
-    } catch {}
+    } catch (rollbackErr) {
+      if (__DEV__) console.warn('[DB] Rollback failed:', rollbackErr);
+    }
     throw e;
   }
 }
 
 export async function initDatabase(forceSeed = false): Promise<void> {
-  const g = global as any;
-  // Use provided forceSeed parameter (default false)
-  const actualForce = forceSeed;
-
-  if (!g.__GURU_DB__ || actualForce) {
+  if (!_globalDb.__GURU_DB__ || forceSeed) {
     // ─── Database File Migration (Stale Filenames) ───────────────────────────
     const dbDir = FileSystem.documentDirectory + 'SQLite/';
     const oldDbPath = dbDir + 'study_guru.db';
@@ -69,12 +74,12 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     _db = await SQLite.openDatabaseAsync('neet_study.db');
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
-    g.__GURU_DB__ = _db;
+    _globalDb.__GURU_DB__ = _db;
 
     // Migrate legacy public files to private storage on startup
     // DEPRECATED: Handled by lectureSessionMonitor scanAndRecoverOrphanedTranscripts
   } else {
-    _db = g.__GURU_DB__;
+    _db = _globalDb.__GURU_DB__;
   }
 
   const db = _db!;
@@ -117,8 +122,8 @@ export async function initDatabase(forceSeed = false): Promise<void> {
   // Ensure all subjects exist on every boot (safe due to INSERT OR IGNORE)
   await seedSubjects(db);
 
-  if (topicCount === 0 || actualForce) {
-    if (actualForce) {
+  if (topicCount === 0 || forceSeed) {
+    if (forceSeed) {
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
       await db.execAsync('DELETE FROM subjects');
@@ -176,7 +181,7 @@ export async function initDatabase(forceSeed = false): Promise<void> {
         try {
           await db.runAsync(
             'INSERT INTO migration_history (version, applied_at, description) VALUES (?, ?, ?)',
-            [m.version, Math.floor(Date.now() / 1000), m.description ?? ''],
+            [m.version, Math.floor(nowTs() / 1000), m.description ?? ''],
           );
         } catch {
           // migration_history exists only from v59 onward

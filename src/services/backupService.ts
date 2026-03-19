@@ -92,7 +92,8 @@ export async function importDatabase() {
     } catch (err) {
       if (__DEV__) console.warn('[Backup] Failed to close DB before import:', err);
     }
-    (global as any).__GURU_DB__ = null;
+    const { resetDbSingleton } = require('../db/database');
+    resetDbSingleton();
 
     const existing = await FileSystem.getInfoAsync(DB_PATH);
     if (existing?.exists) {

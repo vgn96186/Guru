@@ -35,7 +35,7 @@ import {
   type LectureReturnSheetData,
 } from '../hooks/useLectureReturnRecovery';
 import { theme } from '../constants/theme';
-import { BUNDLED_GROQ_KEY } from '../config/appConfig';
+import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood } from '../types';
 
@@ -479,31 +479,55 @@ function AiStatusDot({
 }: {
   profile: NonNullable<ReturnType<typeof useAppStore>['profile']>;
 }) {
+  // LLM backend
   const hasGroq = !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY);
   const hasOpenRouter = !!profile.openrouterKey?.trim();
   const hasLocal = isLocalLlmUsable(profile);
 
-  let label: string;
-  let color: string;
-
+  let llmLabel: string;
+  let llmColor: string;
   if (hasGroq) {
-    label = 'Groq';
-    color = '#22c55e'; // green
+    llmLabel = 'Groq';
+    llmColor = '#22c55e';
   } else if (hasOpenRouter) {
-    label = 'OpenRouter';
-    color = '#a78bfa'; // purple
+    llmLabel = 'OpenRouter';
+    llmColor = '#a78bfa';
   } else if (hasLocal) {
-    label = 'Local';
-    color = '#60a5fa'; // blue
+    llmLabel = 'Local';
+    llmColor = '#60a5fa';
   } else {
-    label = 'No AI';
-    color = '#ef4444'; // red
+    llmLabel = 'No AI';
+    llmColor = '#ef4444';
+  }
+
+  // STT (transcription) backend
+  const hasHF = !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
+  const hasLocalWhisper = !!(profile.useLocalWhisper && profile.localWhisperPath);
+  const hasGroqSTT = hasGroq; // Groq also handles transcription
+
+  let sttLabel: string;
+  let sttColor: string;
+  if (hasLocalWhisper) {
+    sttLabel = 'Whisper·local';
+    sttColor = '#60a5fa';
+  } else if (hasGroqSTT) {
+    sttLabel = 'Whisper·cloud';
+    sttColor = '#22c55e';
+  } else if (hasHF) {
+    sttLabel = 'HF';
+    sttColor = '#f59e0b';
+  } else {
+    sttLabel = 'No STT';
+    sttColor = '#ef4444';
   }
 
   return (
     <View style={styles.aiDotRow}>
-      <View style={[styles.aiDot, { backgroundColor: color }]} />
-      <Text style={styles.aiDotLabel}>{label}</Text>
+      <View style={[styles.aiDot, { backgroundColor: llmColor }]} />
+      <Text style={styles.aiDotLabel}>{llmLabel}</Text>
+      <Text style={styles.aiDotSep}>·</Text>
+      <View style={[styles.aiDot, { backgroundColor: sttColor }]} />
+      <Text style={styles.aiDotLabel}>{sttLabel}</Text>
     </View>
   );
 }
@@ -556,9 +580,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   aiDot: { width: 7, height: 7, borderRadius: 4 },
   aiDotLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '600' },
+  aiDotSep: { color: theme.colors.textMuted, fontSize: 11, marginHorizontal: 2 },
   loadErrorRow: {
     flexDirection: 'row',
     alignItems: 'center',

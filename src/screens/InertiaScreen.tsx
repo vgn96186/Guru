@@ -48,7 +48,7 @@ export default function InertiaScreen() {
   const [topic, setTopic] = useState<TopicWithProgress | null>(null);
   const [revealStep, setRevealStep] = useState(1);
   const [isSolved, setIsSolved] = useState(false);
-  const [showSkip, setShowSkip] = useState(false);
+  const [showSkip, setShowSkip] = useState(true);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -56,7 +56,7 @@ export default function InertiaScreen() {
   useEffect(() => {
     startBreathing();
     fetchMicroWin();
-    setTimeout(() => setShowSkip(true), 8000);
+    // Skip button visible immediately (was 8s delay — bad for ADHD users who need help NOW)
   }, []);
 
   function startBreathing() {

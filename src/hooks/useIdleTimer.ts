@@ -20,8 +20,12 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
 
   const onIdleRef = useRef(onIdle);
   const onActiveRef = useRef(onActive);
-  useEffect(() => { onIdleRef.current = onIdle; }, [onIdle]);
-  useEffect(() => { onActiveRef.current = onActive; }, [onActive]);
+  useEffect(() => {
+    onIdleRef.current = onIdle;
+  }, [onIdle]);
+  useEffect(() => {
+    onActiveRef.current = onActive;
+  }, [onActive]);
 
   const resetTimer = useCallback(() => {
     if (disabled) return;
@@ -39,17 +43,15 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
   // Handle app state changes (background/foreground)
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (
-        appState.current.match(/active/) &&
-        nextAppState.match(/inactive|background/)
-      ) {
-        // App going to background - treat as idle
-        resetTimer();
-      } else if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
-        // App coming to foreground - reset timer
+      if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // App going to background - fire idle immediately (user left)
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (!isIdleRef.current) {
+          setIsIdle(true);
+          onIdleRef.current();
+        }
+      } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App coming to foreground - reset timer (user returned)
         resetTimer();
       }
       appState.current = nextAppState;
@@ -69,12 +71,20 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
 
   // Keep a ref to the latest resetTimer to avoid stale closures in PanResponder
   const resetTimerRef = useRef(resetTimer);
-  useEffect(() => { resetTimerRef.current = resetTimer; }, [resetTimer]);
+  useEffect(() => {
+    resetTimerRef.current = resetTimer;
+  }, [resetTimer]);
 
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponderCapture: () => { resetTimerRef.current(); return false; },
-      onMoveShouldSetPanResponderCapture: () => { resetTimerRef.current(); return false; },
+      onStartShouldSetPanResponderCapture: () => {
+        resetTimerRef.current();
+        return false;
+      },
+      onMoveShouldSetPanResponderCapture: () => {
+        resetTimerRef.current();
+        return false;
+      },
     }),
   ).current;
 

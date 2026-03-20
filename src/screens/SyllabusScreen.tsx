@@ -165,29 +165,33 @@ export default function SyllabusScreen() {
       setTopicResults([]);
       return;
     }
-    const db = getDb();
-    void Promise.all([
-      db.getAllAsync<{
-        subject_id: number;
-        c: number;
-      }>(
-        `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
-        [`%${searchLower}%`],
-      ),
-      db.getAllAsync<TopicSearchResult>(
-        `SELECT t.id, t.name, t.subject_id, s.name as subject_name, s.color_hex
+    // Debounce search queries to avoid LIKE spam on every keystroke
+    const timer = setTimeout(() => {
+      const db = getDb();
+      void Promise.all([
+        db.getAllAsync<{
+          subject_id: number;
+          c: number;
+        }>(
+          `SELECT subject_id, COUNT(*) as c FROM topics WHERE LOWER(name) LIKE ? GROUP BY subject_id`,
+          [`%${searchLower}%`],
+        ),
+        db.getAllAsync<TopicSearchResult>(
+          `SELECT t.id, t.name, t.subject_id, s.name as subject_name, s.color_hex
          FROM topics t
          JOIN subjects s ON t.subject_id = s.id
          WHERE LOWER(t.name) LIKE ?
          ORDER BY t.inicet_priority DESC, t.name ASC
          LIMIT 24`,
-        [`%${searchLower}%`],
-      ),
-    ]).then(([rows, topics]) => {
-      setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
-      setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
-      setTopicResults(topics);
-    });
+          [`%${searchLower}%`],
+        ),
+      ]).then(([rows, topics]) => {
+        setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
+        setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
+        setTopicResults(topics);
+      });
+    }, 250);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   async function handleManualSync() {
@@ -481,7 +485,14 @@ export default function SyllabusScreen() {
         <FlatList
           data={filteredSubjects}
           keyExtractor={(s) => s.id.toString()}
+          keyboardDismissMode="on-drag"
           contentContainerStyle={styles.list}
+          onRefresh={async () => {
+            setRefreshing(true);
+            await loadData();
+            setRefreshing(false);
+          }}
+          refreshing={refreshing}
           ListHeaderComponent={
             searchLower.length >= 2 && topicResults.length > 0 ? (
               <View style={styles.topicResultsSection}>

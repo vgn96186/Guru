@@ -30,6 +30,8 @@ export default function PunishmentMode() {
   const [shameLevel, setShameLevel] = useState(0);
   const [lastStudyTime, setLastStudyTime] = useState(0);
   const [showGuiltScreen, setShowGuiltScreen] = useState(true);
+  const [reducedIntensity, setReducedIntensity] = useState(false);
+  const [hasVibrated, setHasVibrated] = useState(false);
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
@@ -70,16 +72,23 @@ export default function PunishmentMode() {
     const harassmentTimer = setInterval(
       () => {
         // Intense vibration pattern based on shame level
-        const patterns = [
+        const fullPatterns = [
           [0, 500, 200, 500], // Level 1
           [0, 1000, 300, 1000, 300, 1000], // Level 2
           [0, 1500, 500, 1500, 500, 1500, 500, 1500], // Level 3
         ];
+        const reducedPatterns = [
+          [0, 200], // Level 1
+          [0, 300, 100, 300], // Level 2
+          [0, 500, 200, 500], // Level 3
+        ];
 
+        const patterns = reducedIntensity ? reducedPatterns : fullPatterns;
         const pattern = patterns[Math.min(shameLevel - 1, patterns.length - 1)];
         Vibration.vibrate(pattern);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
+        setHasVibrated(true);
         // Show guilt screen again
         setShowGuiltScreen(true);
       },
@@ -87,7 +96,7 @@ export default function PunishmentMode() {
     ); // More frequent for higher shame
 
     return () => clearInterval(harassmentTimer);
-  }, [isActive, shameLevel]);
+  }, [isActive, shameLevel, reducedIntensity]);
 
   // Idle time tracking
   useEffect(() => {
@@ -280,6 +289,18 @@ export default function PunishmentMode() {
           <Text style={styles.footerText}>
             Punishment Level {shameLevel}/3 • Idle: {minutesIdle}min
           </Text>
+
+          {hasVibrated && !reducedIntensity && (
+            <TouchableOpacity
+              style={styles.reduceIntensityBtn}
+              onPress={() => setReducedIntensity(true)}
+            >
+              <Text style={styles.reduceIntensityText}>{'🔇 Reduce vibration'}</Text>
+            </TouchableOpacity>
+          )}
+          {reducedIntensity && (
+            <Text style={styles.reduceIntensityText}>{'🔇 Vibration reduced'}</Text>
+          )}
         </Animated.View>
       </ResponsiveContainer>
     </SafeAreaView>
@@ -373,6 +394,8 @@ const styles = StyleSheet.create({
   disableBtnText: { color: theme.colors.error, fontSize: 14 },
 
   footerText: { color: theme.colors.borderLight, fontSize: 12 },
+  reduceIntensityBtn: { marginTop: 12, padding: 8 },
+  reduceIntensityText: { color: theme.colors.textMuted, fontSize: 13, marginTop: 4 },
 
   // Minimized view
   minimizedContainer: {

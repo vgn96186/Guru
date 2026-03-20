@@ -41,47 +41,62 @@ export default function BossBattleScreen() {
   const [bossHp, setBossHp] = useState(BOSS_HP);
   const [playerHp, setPlayerHp] = useState(PLAYER_HP);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [startingBattle, setStartingBattle] = useState(false);
+  const [questionCounts, setQuestionCounts] = useState<Map<string, number>>(new Map());
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     void getAllSubjects().then(setSubjects);
+    void getAllCachedQuestions().then((allQs) => {
+      const counts = new Map<string, number>();
+      for (const q of allQs) {
+        counts.set(q.subjectName, (counts.get(q.subjectName) ?? 0) + 1);
+      }
+      setQuestionCounts(counts);
+    });
   }, []);
 
   async function startBattle(subjectName: string) {
-    let subjectQs = (await getAllCachedQuestions()).filter((q) => q.subjectName === subjectName);
+    if (startingBattle) return;
+    setStartingBattle(true);
+    try {
+      let subjectQs = (await getAllCachedQuestions()).filter((q) => q.subjectName === subjectName);
 
-    if (subjectQs.length < 5) {
-      // Generate fresh questions from studied topics
-      setPhase('loading');
-      const subjects = await getAllSubjects();
-      const subject = subjects.find((s) => s.name === subjectName);
-      if (subject) {
-        const topics = (await getTopicsBySubject(subject.id))
-          .filter((t) => t.progress.timesStudied > 0)
-          .slice(0, 3);
-        await Promise.allSettled(topics.map((t) => fetchContent(t, 'quiz')));
-        subjectQs = (await getAllCachedQuestions()).filter((q) => q.subjectName === subjectName);
+      if (subjectQs.length < 5) {
+        // Generate fresh questions from studied topics
+        setPhase('loading');
+        const subjects = await getAllSubjects();
+        const subject = subjects.find((s) => s.name === subjectName);
+        if (subject) {
+          const topics = (await getTopicsBySubject(subject.id))
+            .filter((t) => t.progress.timesStudied > 0)
+            .slice(0, 3);
+          await Promise.allSettled(topics.map((t) => fetchContent(t, 'quiz')));
+          subjectQs = (await getAllCachedQuestions()).filter((q) => q.subjectName === subjectName);
+        }
       }
-    }
 
-    if (subjectQs.length < 5) {
-      Alert.alert(
-        'Not enough questions',
-        `Study more ${subjectName} topics to unlock this boss! (Need 5+ questions, have ${subjectQs.length})`,
-      );
-      setPhase('select');
-      return;
-    }
-    // Shuffle
-    subjectQs = subjectQs.sort(() => 0.5 - Math.random()).slice(0, 15);
+      if (subjectQs.length < 5) {
+        Alert.alert(
+          'Not enough questions',
+          `Study more ${subjectName} topics to unlock this boss! (Need 5+ questions, have ${subjectQs.length})`,
+        );
+        setPhase('select');
+        return;
+      }
+      // Shuffle
+      subjectQs = subjectQs.sort(() => 0.5 - Math.random()).slice(0, 15);
 
-    setSelectedSubject(subjectName);
-    setQuestions(subjectQs);
-    setBossHp(BOSS_HP);
-    setPlayerHp(PLAYER_HP);
-    setCurrentQ(0);
-    setPhase('battle');
+      setSelectedSubject(subjectName);
+      setQuestions(subjectQs);
+      setBossHp(BOSS_HP);
+      setPlayerHp(PLAYER_HP);
+      setCurrentQ(0);
+      setPhase('battle');
+    } finally {
+      setStartingBattle(false);
+    }
   }
 
   function handleAnswer(idx: number) {
@@ -168,16 +183,28 @@ export default function BossBattleScreen() {
         </View>
         <ScrollView contentContainerStyle={styles.grid}>
           <ResponsiveContainer>
-            {subjects.map((s) => (
-              <TouchableOpacity
-                key={s.id}
-                style={[styles.subjectCard, { borderColor: s.colorHex }]}
-                onPress={() => startBattle(s.name)}
-              >
-                <Text style={styles.subjectEmoji}>👹</Text>
-                <Text style={[styles.subjectName, { color: s.colorHex }]}>{s.name}</Text>
-              </TouchableOpacity>
-            ))}
+            {subjects.map((s) => {
+              const count = questionCounts.get(s.name) ?? 0;
+              const needsMore = count < 5;
+              return (
+                <TouchableOpacity
+                  key={s.id}
+                  style={[
+                    styles.subjectCard,
+                    { borderColor: needsMore ? theme.colors.warning : s.colorHex },
+                  ]}
+                  onPress={() => startBattle(s.name)}
+                  disabled={startingBattle}
+                >
+                  <Text style={styles.subjectEmoji}>👹</Text>
+                  <Text style={[styles.subjectName, { color: s.colorHex }]}>{s.name}</Text>
+                  <Text style={[styles.qBadge, needsMore && { color: theme.colors.warning }]}>
+                    {count}/5 Qs
+                  </Text>
+                  {needsMore && <Text style={styles.qHint}>Need {5 - count} more</Text>}
+                </TouchableOpacity>
+              );
+            })}
           </ResponsiveContainer>
         </ScrollView>
       </SafeAreaView>
@@ -314,6 +341,8 @@ const styles = StyleSheet.create({
   },
   subjectEmoji: { fontSize: 32, marginBottom: 8 },
   subjectName: { fontWeight: '800', fontSize: 14, textAlign: 'center' },
+  qBadge: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '700', marginTop: 4 },
+  qHint: { color: theme.colors.warning, fontSize: 10, marginTop: 2, textAlign: 'center' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emoji: { fontSize: 80, marginBottom: 20 },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 20 },

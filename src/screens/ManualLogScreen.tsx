@@ -9,6 +9,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -38,6 +39,7 @@ export default function ManualLogScreen() {
   const [subjectTopics, setSubjectTopics] = useState<TopicWithProgress[]>([]);
   const [topicName, setTopicName] = useState('');
   const [duration, setDuration] = useState('30');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!selectedSubjectId) {
     if (subjectTopics.length > 0) setSubjectTopics([]);
@@ -70,40 +72,47 @@ export default function ManualLogScreen() {
   }, [selectedSubjectId]);
 
   async function handleSubmit() {
+    if (submitting) return;
     const mins = parseInt(duration) || 0;
     if (mins <= 0) {
       Alert.alert('Invalid Duration', 'Please enter a duration greater than 0 minutes.');
       return;
     }
 
-    // Log the session
-    const sessionId = await createSession([], 'good', 'external'); // external mode
+    setSubmitting(true);
+    try {
+      // Log the session
+      const sessionId = await createSession([], 'good', 'external'); // external mode
 
-    // Calculate XP: 10 XP per minute for external study (slightly less than Guru active study)
-    const xp = mins * 10;
+      // Calculate XP: 10 XP per minute for external study (slightly less than Guru active study)
+      const xp = mins * 10;
 
-    // End immediately (it's a retroactive log)
-    // We pass [] as completed topic IDs since we don't track granular topics externally yet,
-    // unless we create a dummy topic? For now, just log XP and time.
-    await endSession(sessionId, [], xp, mins);
+      // End immediately (it's a retroactive log)
+      // We pass [] as completed topic IDs since we don't track granular topics externally yet,
+      // unless we create a dummy topic? For now, just log XP and time.
+      await endSession(sessionId, [], xp, mins);
 
-    // Update SRS for selected topic if applicable
-    if (selectedTopicId) {
-      const confidence = mins >= 60 ? 4 : mins >= 30 ? 3 : 2;
-      await updateTopicProgress(selectedTopicId, 'seen', confidence, xp);
+      // Update SRS for selected topic if applicable
+      if (selectedTopicId) {
+        const confidence = mins >= 60 ? 4 : mins >= 30 ? 3 : 2;
+        await updateTopicProgress(selectedTopicId, 'seen', confidence, xp);
+      }
+
+      // Update streak if above minimum
+      await profileRepository.updateStreak(mins >= STREAK_MIN_MINUTES);
+
+      await refreshProfile();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      navigation.goBack();
+    } finally {
+      setSubmitting(false);
     }
-
-    // Update streak if above minimum
-    await profileRepository.updateStreak(mins >= STREAK_MIN_MINUTES);
-
-    await refreshProfile();
-    navigation.goBack();
   }
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardDismissMode="on-drag">
         <ResponsiveContainer>
           <Text style={styles.title}>Log External Study</Text>
           <Text style={styles.subtitle}>
@@ -245,13 +254,14 @@ export default function ManualLogScreen() {
           />
 
           <TouchableOpacity
-            style={styles.submitBtn}
+            style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
             onPress={handleSubmit}
+            disabled={submitting}
             accessibilityRole="button"
             accessibilityLabel={`Log session, ${parseInt(duration || '0') * 10} XP`}
           >
             <Text style={styles.submitText}>
-              Log Session (+{parseInt(duration || '0') * 10} XP)
+              {submitting ? 'Logging...' : `Log Session (+${parseInt(duration || '0') * 10} XP)`}
             </Text>
           </TouchableOpacity>
         </ResponsiveContainer>

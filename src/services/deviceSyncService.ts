@@ -7,6 +7,7 @@ export type SyncMessage =
   | { type: 'LECTURE_RESUMED' };
 
 import { encryptPayload, decryptPayload, clearKeyCache } from './syncCrypto';
+import { showToast } from '../components/Toast';
 
 const BROKER_URL = 'wss://broker.emqx.io:8084/mqtt';
 // v2 prefix: incompatible with old un-encrypted v1 clients
@@ -242,11 +243,13 @@ async function ensureConnected(code: string): Promise<void> {
     nextClient.on('error', (err: any) => {
       isConnected = false;
       console.error('[DeviceSync] MQTT error:', err?.message ?? err);
+      showToast('Device sync connection lost', 'warning');
     });
 
     nextClient.on('offline', () => {
       isConnected = false;
       console.warn('[DeviceSync] MQTT went offline');
+      showToast('Device sync connection lost', 'warning');
     });
 
     nextClient.on('close', () => {
@@ -295,6 +298,7 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
 
   ensureConnected(cleanCode).catch((err) => {
     console.warn('[DeviceSync] Failed to connect:', err);
+    showToast('Device sync connection lost', 'warning');
   });
 
   return () => {
@@ -313,6 +317,7 @@ export function sendSyncMessage(msg: SyncMessage) {
       outgoingQueue.push(msg);
     } else {
       console.warn('[DeviceSync] Outgoing queue full, dropping message');
+      showToast('Sync message queue full \u2014 some messages dropped', 'warning');
     }
     return;
   }

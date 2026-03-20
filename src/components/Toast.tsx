@@ -64,7 +64,7 @@ const WIDTH = Dimensions.get('window').width - 32;
 const ToastItem = React.memo(
   ({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) => {
     const opacity = useRef(new Animated.Value(0)).current;
-    const translateY = useRef(new Animated.Value(20)).current;
+    const translateY = useRef(new Animated.Value(-20)).current;
 
     useEffect(() => {
       if (payload.type === 'error') {
@@ -84,7 +84,7 @@ const ToastItem = React.memo(
       const timer = setTimeout(() => {
         Animated.parallel([
           Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }),
-          Animated.timing(translateY, { toValue: 20, duration: 250, useNativeDriver: true }),
+          Animated.timing(translateY, { toValue: -20, duration: 250, useNativeDriver: true }),
         ]).start(() => onDone());
       }, payload.duration);
 
@@ -139,10 +139,7 @@ export function ToastContainer() {
   }, [addToast]);
 
   return (
-    <Animated.View
-      pointerEvents="box-none"
-      style={[styles.container, { bottom: insets.bottom + 16 }]}
-    >
+    <Animated.View pointerEvents="box-none" style={[styles.container, { top: insets.top + 12 }]}>
       {toasts.map((t) => (
         <ToastItem
           key={t.id}

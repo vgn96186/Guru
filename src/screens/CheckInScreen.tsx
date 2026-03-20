@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, StatusBar } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -47,6 +48,7 @@ export default function CheckInScreen() {
   const [step, setStep] = useState<'mood' | 'time'>('mood');
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [yesterdayMood, setYesterdayMood] = useState<Mood | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const fadeIn = useRef(new Animated.Value(0)).current;
   const fadeOut = useRef(new Animated.Value(1)).current;
@@ -66,6 +68,7 @@ export default function CheckInScreen() {
   }, []);
 
   function handleMoodSelect(mood: Mood) {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedMood(mood);
     // Animate out
     Animated.timing(fadeOut, { toValue: 0, duration: 200, useNativeDriver: true }).start(() => {
@@ -76,30 +79,43 @@ export default function CheckInScreen() {
   }
 
   async function handleQuickStart() {
-    // Quick start with default mood and 30min availability
-    await dailyLogRepository.checkinToday('good');
-    setDailyAvailability(30);
-    // Track consecutive Quick Start usage for auto-skip
-    const currentStreak = profile?.quickStartStreak ?? 0;
-    await profileRepository.updateProfile({ quickStartStreak: currentStreak + 1 });
-    invalidatePlanCache();
-    await refreshProfile();
-    // Request permissions so reminders, recording, and file access work
-    await requestAllPermissions();
-    navigation.replace('Tabs');
-  }
-
-  async function handleTimeSelect(minutes: number) {
-    if (selectedMood) {
-      await dailyLogRepository.checkinToday(selectedMood);
-      setDailyAvailability(minutes);
-      // Reset Quick Start streak when user manually picks mood
-      await profileRepository.updateProfile({ quickStartStreak: 0 });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      // Quick start with default mood and 30min availability
+      await dailyLogRepository.checkinToday('good');
+      setDailyAvailability(30);
+      // Track consecutive Quick Start usage for auto-skip
+      const currentStreak = profile?.quickStartStreak ?? 0;
+      await profileRepository.updateProfile({ quickStartStreak: currentStreak + 1 });
       invalidatePlanCache();
       await refreshProfile();
       // Request permissions so reminders, recording, and file access work
       await requestAllPermissions();
       navigation.replace('Tabs');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleTimeSelect(minutes: number) {
+    if (submitting) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (selectedMood) {
+      setSubmitting(true);
+      try {
+        await dailyLogRepository.checkinToday(selectedMood);
+        setDailyAvailability(minutes);
+        // Reset Quick Start streak when user manually picks mood
+        await profileRepository.updateProfile({ quickStartStreak: 0 });
+        invalidatePlanCache();
+        await refreshProfile();
+        // Request permissions so reminders, recording, and file access work
+        await requestAllPermissions();
+        navigation.replace('Tabs');
+      } finally {
+        setSubmitting(false);
+      }
     }
   }
 
@@ -124,8 +140,9 @@ export default function CheckInScreen() {
 
             <TouchableOpacity
               testID="quick-start-btn"
-              style={styles.quickStartBtn}
+              style={[styles.quickStartBtn, submitting && { opacity: 0.6 }]}
               onPress={handleQuickStart}
+              disabled={submitting}
             >
               <Text style={styles.quickStartText}>⚡ Quick Start</Text>
               <Text style={styles.quickStartSub}>Skip check-in · 30 min session</Text>
@@ -138,7 +155,11 @@ export default function CheckInScreen() {
                 return (
                   <TouchableOpacity
                     key={mood}
-                    style={[styles.moodBtn, isYesterday && styles.moodBtnYesterday, selectedMood === mood && styles.moodBtnSelected]}
+                    style={[
+                      styles.moodBtn,
+                      isYesterday && styles.moodBtnYesterday,
+                      selectedMood === mood && styles.moodBtnSelected,
+                    ]}
                     onPress={() => handleMoodSelect(mood)}
                     activeOpacity={0.8}
                     accessibilityRole="button"
@@ -156,6 +177,16 @@ export default function CheckInScreen() {
           </Animated.View>
         ) : (
           <Animated.View style={[styles.container, { opacity: fadeOut }]}>
+            <TouchableOpacity
+              onPress={() => {
+                setStep('mood');
+                fadeOut.setValue(1);
+              }}
+              style={styles.changeMoodBtn}
+            >
+              <Text style={styles.changeMoodText}>← Change Mood</Text>
+            </TouchableOpacity>
+
             <View style={styles.top}>
               <Text style={styles.greeting}>One last thing...</Text>
               <Text style={styles.subGreeting}>To build your schedule for today:</Text>
@@ -169,24 +200,28 @@ export default function CheckInScreen() {
                 sub="15-20 mins"
                 emoji="⚡"
                 onPress={() => handleTimeSelect(20)}
+                disabled={submitting}
               />
               <TimeOption
                 label="Solid Block"
                 sub="45-60 mins"
                 emoji="🧱"
                 onPress={() => handleTimeSelect(60)}
+                disabled={submitting}
               />
               <TimeOption
                 label="Deep Work"
                 sub="2+ hours"
                 emoji="🌊"
                 onPress={() => handleTimeSelect(120)}
+                disabled={submitting}
               />
               <TimeOption
                 label="Just Checking"
                 sub="0 mins"
                 emoji="👀"
                 onPress={() => handleTimeSelect(0)}
+                disabled={submitting}
               />
             </View>
           </Animated.View>
@@ -201,17 +236,20 @@ function TimeOption({
   sub,
   emoji,
   onPress,
+  disabled,
 }: {
   label: string;
   sub: string;
   emoji: string;
   onPress: () => void;
+  disabled?: boolean;
 }) {
   return (
     <TouchableOpacity
-      style={styles.timeBtn}
+      style={[styles.timeBtn, disabled && { opacity: 0.6 }]}
       onPress={onPress}
       activeOpacity={0.8}
+      disabled={disabled}
       testID={`time-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <Text style={styles.timeEmoji}>{emoji}</Text>
@@ -253,7 +291,11 @@ const styles = StyleSheet.create({
   moodLabel: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 2 },
   moodDesc: { color: '#9E9E9E', fontSize: 11, textAlign: 'center' },
   moodBtnYesterday: { borderColor: '#6C63FF44' },
-  moodBtnSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '22', transform: [{ scale: 0.96 }] },
+  moodBtnSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '22',
+    transform: [{ scale: 0.96 }],
+  },
   yesterdayTag: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 4 },
   quickStartBtn: {
     backgroundColor: '#6C63FF',
@@ -268,6 +310,8 @@ const styles = StyleSheet.create({
   quickStartText: { color: '#fff', fontSize: 17, fontWeight: '800' },
   quickStartSub: { color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 },
   subGreeting: { color: '#9E9E9E', fontSize: 16 },
+  changeMoodBtn: { paddingVertical: 8 },
+  changeMoodText: { color: theme.colors.textMuted, fontSize: 14 },
   timeGrid: { gap: 12 },
   timeBtn: {
     flexDirection: 'row',

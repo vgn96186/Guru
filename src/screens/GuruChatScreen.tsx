@@ -673,6 +673,7 @@ export default function GuruChatScreen() {
               contentContainerStyle={styles.messagesContent}
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               inverted
               maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             />

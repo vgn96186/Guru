@@ -9,6 +9,7 @@ import {
   PanResponder,
   ScrollView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
 import * as Haptics from 'expo-haptics';
@@ -54,6 +55,8 @@ export default function ReviewScreen() {
   const [loading, setLoading] = useState(false);
   const [selectedContentType, setSelectedContentType] = useState<ContentType | null>(null);
 
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
+
   const flipAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
   const panXY = useRef(new Animated.ValueXY()).current;
@@ -62,10 +65,23 @@ export default function ReviewScreen() {
 
   useEffect(() => {
     void getTopicsDueForReview(20).then(setQueue);
+    AsyncStorage.getItem('review_swipe_hint_shown').then((v) => {
+      if (!v) setShowSwipeHint(true);
+    });
     return () => {
       Speech.stop();
     };
   }, []);
+
+  // Auto-dismiss swipe hint after 5 seconds
+  useEffect(() => {
+    if (!showSwipeHint) return;
+    const timer = setTimeout(() => {
+      setShowSwipeHint(false);
+      AsyncStorage.setItem('review_swipe_hint_shown', 'true');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [showSwipeHint]);
 
   const currentTopic = queue[currentIdx];
 
@@ -119,6 +135,10 @@ export default function ReviewScreen() {
       },
       onPanResponderMove: Animated.event([null, { dx: panXY.x }], { useNativeDriver: false }),
       onPanResponderRelease: (_, gs) => {
+        if (Math.abs(gs.dx) > 80 || gs.dy < -80) {
+          setShowSwipeHint(false);
+          AsyncStorage.setItem('review_swipe_hint_shown', 'true');
+        }
         if (gs.dx > 80) {
           Animated.timing(panXY, {
             toValue: { x: 500, y: 0 },
@@ -354,6 +374,14 @@ export default function ReviewScreen() {
           </Animated.View>
         </View>
 
+        {showSwipeHint && (
+          <View style={styles.swipeHintBanner}>
+            <Text style={styles.swipeHintBannerText}>
+              Swipe left: Again · Swipe right: Good · Swipe up: Easy
+            </Text>
+          </View>
+        )}
+
         {/* Controls */}
         <View style={styles.controls}>
           {isFlipped ? (
@@ -581,6 +609,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 24,
   },
+  swipeHintBanner: { alignItems: 'center', marginTop: 4, marginBottom: -8 },
+  swipeHintBannerText: { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center' },
   error: { color: theme.colors.error },
   controls: { padding: 20, height: 120 },
   flipBtn: {

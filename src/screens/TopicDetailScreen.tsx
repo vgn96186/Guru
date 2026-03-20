@@ -78,6 +78,7 @@ export default function TopicDetailScreen() {
   const { subjectId, subjectName, initialTopicId, initialSearchQuery } = route.params;
   const [allTopics, setAllTopics] = useState<TopicWithProgress[]>([]);
   const [displayTopics, setDisplayTopics] = useState<TopicWithProgress[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [collapsedParents, setCollapsedParents] = useState<Set<number>>(new Set());
   const [noteText, setNoteText] = useState('');
@@ -488,7 +489,14 @@ export default function TopicDetailScreen() {
         <FlatList
           data={displayTopics}
           keyExtractor={(t) => t.id.toString()}
+          keyboardDismissMode="on-drag"
           contentContainerStyle={styles.list}
+          onRefresh={async () => {
+            setRefreshing(true);
+            await getTopicsBySubject(subjectId).then(setAllTopics);
+            setRefreshing(false);
+          }}
+          refreshing={refreshing}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>No topics found. 🧐</Text>

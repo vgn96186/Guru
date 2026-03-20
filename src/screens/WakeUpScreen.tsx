@@ -153,6 +153,14 @@ export default function WakeUpScreen() {
             >
               <Text style={styles.nextBtnText}>Done</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.skipBtn}
+              onPress={() => setPhase('fog_check')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.skipBtnText}>{'Skip \u2192'}</Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -229,7 +237,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  skipBtnText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
+  skipBtnText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '600' },
 
   groundText: {
     color: theme.colors.primary,

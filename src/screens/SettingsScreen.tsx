@@ -20,6 +20,7 @@ import {
   type CompositeNavigationProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
@@ -245,6 +246,43 @@ export default function SettingsScreen() {
     >();
   const isFocused = useIsFocused();
   const { profile, refreshProfile } = useAppStore();
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['ai_config']));
+
+  function SectionToggle({
+    id,
+    title,
+    children,
+  }: {
+    id: string;
+    title: string;
+    children: React.ReactNode;
+  }) {
+    const isExpanded = expandedSections.has(id);
+    return (
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() =>
+            setExpandedSections((prev) => {
+              const next = new Set(prev);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            })
+          }
+          activeOpacity={0.8}
+        >
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <Ionicons
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={theme.colors.textMuted}
+          />
+        </TouchableOpacity>
+        {isExpanded && <View style={styles.sectionContent}>{children}</View>}
+      </View>
+    );
+  }
 
   // Permissions State
   const [permStatus, setPermStatus] = useState({
@@ -489,7 +527,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <ScreenHeader title="Settings" subtitle="Control sync, backups, AI, and study behavior." />
 
-        <Section title="🤖 AI Configuration" initiallyExpanded={true}>
+        <SectionToggle id="ai_config" title="🤖 AI Configuration">
           <Label text="Groq API Key (console.groq.com)" />
           <TextInput
             style={styles.input}
@@ -612,9 +650,9 @@ export default function SettingsScreen() {
           >
             <Text style={styles.localModelBtnText}>🧠 Download Local AI Models (Offline)</Text>
           </TouchableOpacity>
-        </Section>
+        </SectionToggle>
 
-        <Section title="✅ Permissions & Diagnostics">
+        <SectionToggle id="permissions" title="✅ Permissions & Diagnostics">
           <PermissionRow
             label="Notifications"
             status={permStatus.notifs}
@@ -647,9 +685,9 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.diagBtn} onPress={() => Linking.openSettings()}>
             <Text style={styles.diagBtnText}>Open System Settings</Text>
           </TouchableOpacity>
-        </Section>
+        </SectionToggle>
 
-        <Section title="👤 Profile">
+        <SectionToggle id="profile" title="👤 Profile">
           <TouchableOpacity
             style={[
               styles.testBtn,
@@ -670,9 +708,9 @@ export default function SettingsScreen() {
             value={name}
             onChangeText={setName}
           />
-        </Section>
+        </SectionToggle>
 
-        <Section title="📅 Exam Dates">
+        <SectionToggle id="exam_dates" title="📅 Exam Dates">
           <Label text="INICET date (YYYY-MM-DD)" />
           <TextInput
             style={styles.input}
@@ -715,9 +753,9 @@ export default function SettingsScreen() {
               Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.
             </Text>
           )}
-        </Section>
+        </SectionToggle>
 
-        <Section title="⏱️ Study Preferences">
+        <SectionToggle id="study_prefs" title="⏱️ Study Preferences">
           <Label text="Preferred session length (minutes)" />
           <TextInput
             style={styles.input}
@@ -749,9 +787,9 @@ export default function SettingsScreen() {
               thumbColor={theme.colors.textPrimary}
             />
           </View>
-        </Section>
+        </SectionToggle>
 
-        <Section title="🔔 Notifications">
+        <SectionToggle id="notifications" title="🔔 Notifications">
           <View style={styles.switchRow}>
             <View>
               <Text style={styles.switchLabel}>Enable Guru's reminders</Text>
@@ -796,9 +834,9 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
             <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
           </TouchableOpacity>
-        </Section>
+        </SectionToggle>
 
-        <Section title="👻 Body Doubling">
+        <SectionToggle id="body_doubling" title="👻 Body Doubling">
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Guru presence during sessions</Text>
@@ -813,9 +851,9 @@ export default function SettingsScreen() {
               thumbColor={theme.colors.textPrimary}
             />
           </View>
-        </Section>
+        </SectionToggle>
 
-        <Section title="🃏 Content Type Preferences">
+        <SectionToggle id="content" title="🃏 Content Type Preferences">
           <Text style={styles.hint}>
             Block card types you don't want in sessions. Keypoints can't be blocked.
           </Text>
@@ -847,9 +885,9 @@ export default function SettingsScreen() {
               );
             })}
           </View>
-        </Section>
+        </SectionToggle>
 
-        <Section title="🔬 Focus Subjects">
+        <SectionToggle id="focus_subjects" title="🔬 Focus Subjects">
           <Text style={styles.hint}>
             Pin subjects to limit sessions to those areas only. Clear all to study everything.
           </Text>
@@ -882,9 +920,9 @@ export default function SettingsScreen() {
               <Text style={styles.clearBtnText}>Clear focus (study all subjects)</Text>
             </TouchableOpacity>
           )}
-        </Section>
+        </SectionToggle>
 
-        <Section title="⏱️ Session Timing">
+        <SectionToggle id="session" title="⏱️ Session Timing">
           <Label text="Idle timeout (minutes before auto-pause)" />
           <TextInput
             style={styles.input}
@@ -901,9 +939,9 @@ export default function SettingsScreen() {
             keyboardType="number-pad"
             placeholderTextColor={theme.colors.textMuted}
           />
-        </Section>
+        </SectionToggle>
 
-        <Section title="🍅 Pomodoro (Lecture Overlay)">
+        <SectionToggle id="pomodoro" title="🍅 Pomodoro (Lecture Overlay)">
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Enable Pomodoro Suggestion</Text>
@@ -928,9 +966,9 @@ export default function SettingsScreen() {
             editable={pomodoroEnabled}
           />
           <Text style={styles.hint}>Suggested: 20-30 minutes for optimal focus.</Text>
-        </Section>
+        </SectionToggle>
 
-        <Section title="🗑️ Data">
+        <SectionToggle id="data" title="🗑️ Data">
           <TouchableOpacity
             style={styles.dangerBtn}
             onPress={() =>
@@ -986,9 +1024,9 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>
             Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
           </Text>
-        </Section>
+        </SectionToggle>
 
-        <Section title="💾 Backup & Restore">
+        <SectionToggle id="backup" title="💾 Backup & Restore">
           <Text style={styles.hint}>
             Export your study progress to a JSON file, or restore from a previous backup.
           </Text>
@@ -1062,9 +1100,9 @@ export default function SettingsScreen() {
               <Text style={[styles.backupBtnText, { color: theme.colors.success }]}>⬇️ Import</Text>
             </TouchableOpacity>
           </View>
-        </Section>
+        </SectionToggle>
 
-        <Section title="🛠️ Library Maintenance">
+        <SectionToggle id="advanced" title="🛠️ Library Maintenance">
           <Text style={styles.hint}>
             Run repair and recovery only when you need it instead of during startup.
           </Text>
@@ -1172,7 +1210,7 @@ export default function SettingsScreen() {
               <Text style={styles.maintenanceBtnText}>Recover orphan recordings</Text>
             )}
           </TouchableOpacity>
-        </Section>
+        </SectionToggle>
 
         <TouchableOpacity
           style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
@@ -1186,31 +1224,6 @@ export default function SettingsScreen() {
         <Text style={styles.footer}>Guru AI · v1.0.0</Text>
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-function Section({
-  title,
-  children,
-  initiallyExpanded = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  initiallyExpanded?: boolean;
-}) {
-  const [expanded, setExpanded] = useState(initiallyExpanded);
-  return (
-    <View style={styles.section}>
-      <TouchableOpacity
-        style={styles.sectionHeader}
-        onPress={() => setExpanded(!expanded)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.sectionToggle}>{expanded ? '▼' : '▶'}</Text>
-      </TouchableOpacity>
-      {expanded && <View style={styles.sectionContent}>{children}</View>}
-    </View>
   );
 }
 
@@ -1269,7 +1282,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  sectionToggle: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
   sectionContent: {
     backgroundColor: theme.colors.surface,
     borderRadius: 16,

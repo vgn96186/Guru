@@ -731,6 +731,25 @@ export default function SessionScreen() {
           </Animated.View>
         )}
 
+        {/* Topic progress indicator */}
+        {store.sessionState === 'studying' && store.agenda && (
+          <View style={styles.topicProgressSection}>
+            <Text style={styles.topicProgressLabel}>
+              {store.currentItemIndex + 1} of {store.agenda.items.length} topics
+            </Text>
+            <View style={styles.topicProgressTrack}>
+              <View
+                style={[
+                  styles.topicProgressFill,
+                  {
+                    width: `${(store.currentItemIndex / store.agenda.items.length) * 100}%`,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        )}
+
         <View style={styles.tabRowWrapper}>
           <ScrollView
             horizontal
@@ -933,6 +952,27 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   storyBarContainer: { height: 3, backgroundColor: theme.colors.border },
   storyBarFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 0 },
+  topicProgressSection: {
+    paddingHorizontal: theme.spacing.lg,
+    marginBottom: 8,
+  },
+  topicProgressLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    textAlign: 'right',
+    marginBottom: 4,
+  },
+  topicProgressTrack: {
+    height: 3,
+    backgroundColor: theme.colors.border,
+    borderRadius: 1.5,
+    overflow: 'hidden',
+  },
+  topicProgressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 1.5,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

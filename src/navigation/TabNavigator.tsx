@@ -1,9 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  BackHandler,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   ChatStackParamList,
@@ -44,6 +53,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
+import { getDb } from '../db/database';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -117,7 +127,36 @@ export default function TabNavigator() {
   const localWhisperPath =
     profile?.useLocalWhisper && profile?.localWhisperPath ? profile.localWhisperPath : undefined;
   const [isActionHubOpen, setIsActionHubOpen] = useState(false);
+  const sheetAnim = useRef(new Animated.Value(0)).current;
   const bottomInset = Math.max(insets.bottom, 8);
+  const [dueCount, setDueCount] = useState(0);
+
+  const refreshDueCount = useCallback(() => {
+    getDb()
+      .getFirstAsync<{ c: number }>(
+        "SELECT COUNT(*) as c FROM topic_progress WHERE next_review_date <= datetime('now') AND status != 'unseen'",
+      )
+      .then((r) => setDueCount(r?.c ?? 0));
+  }, []);
+
+  useEffect(() => {
+    refreshDueCount();
+  }, [refreshDueCount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshDueCount();
+    }, [refreshDueCount]),
+  );
+
+  useEffect(() => {
+    Animated.spring(sheetAnim, {
+      toValue: isActionHubOpen ? 1 : 0,
+      tension: 65,
+      friction: 11,
+      useNativeDriver: true,
+    }).start();
+  }, [isActionHubOpen]);
 
   // Intercept Android hardware/gesture back to close the sheet instead of popping navigator
   useEffect(() => {
@@ -252,6 +291,8 @@ export default function TabNavigator() {
             tabBarLabel: 'Syllabus',
             tabBarButtonTestID: 'tab-syllabus',
             tabBarAccessibilityLabel: 'Syllabus tab',
+            tabBarBadge: dueCount > 0 ? dueCount : undefined,
+            tabBarBadgeStyle: { backgroundColor: theme.colors.error, fontSize: 10 },
           }}
         />
         <Tab.Screen
@@ -307,135 +348,153 @@ export default function TabNavigator() {
         />
       </Tab.Navigator>
 
-      {isActionHubOpen ? (
-        <View style={styles.sheetRoot} pointerEvents="box-none">
+      <View style={styles.sheetRoot} pointerEvents="box-none">
+        <Animated.View
+          style={[styles.sheetBackdrop, { opacity: sheetAnim }]}
+          pointerEvents={isActionHubOpen ? 'auto' : 'none'}
+        >
           <Pressable
-            style={styles.sheetBackdrop}
+            style={StyleSheet.absoluteFill}
             onPress={() => setIsActionHubOpen(false)}
             accessibilityRole="button"
             accessibilityLabel="Close action hub"
           />
-          <View style={[styles.sheet, { paddingBottom: bottomInset + theme.spacing.lg }]}>
-            <ScrollView
-              style={styles.sheetScroll}
-              contentContainerStyle={styles.sheetScrollContent}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
-              <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
-              <View style={styles.primaryActions}>
-                <Pressable
-                  style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
-                  android_ripple={{ color: '#ffffff18' }}
-                  onPress={() => openRoute('HomeTab', 'LectureMode', {})}
-                  testID="action-hub-record-lecture"
-                  accessibilityRole="button"
-                  accessibilityLabel="Record lecture"
-                >
-                  <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
-                  <Text style={styles.primaryActionTitle}>Record Lecture</Text>
-                  <Text style={styles.primaryActionSubtitle}>
-                    Capture long-form audio and route it back safely.
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
-                  android_ripple={{ color: '#ffffff18' }}
-                  onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
-                  testID="action-hub-search-topics"
-                  accessibilityRole="button"
-                  accessibilityLabel="Search any topic"
-                >
-                  <Ionicons name="search-outline" size={20} color={theme.colors.info} />
-                  <Text style={styles.secondaryActionTitle}>Search Topics</Text>
-                  <Text style={styles.secondaryActionSubtitle}>Find any micro-topic globally.</Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
-                  android_ripple={{ color: '#ffffff18' }}
-                  onPress={() => openRoute('MenuTab', 'NotesHub')}
-                  testID="action-hub-quick-note"
-                  accessibilityRole="button"
-                  accessibilityLabel="Quick note, open notes vault"
-                >
-                  <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
-                  <Text style={styles.secondaryActionTitle}>Quick Note</Text>
-                  <Text style={styles.secondaryActionSubtitle}>
-                    Jump into your notes vault and capture context.
-                  </Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.manualActionsContainer}>
-                <Pressable
-                  style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
-                  onPress={handleAudioUpload}
-                  disabled={isTranscribingUpload}
-                  testID="action-hub-upload-audio"
-                  accessibilityRole="button"
-                  accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
-                >
-                  <Ionicons
-                    name="document-attach-outline"
-                    size={18}
-                    color={theme.colors.textSecondary}
-                  />
-                  <Text style={styles.manualActionText}>
-                    {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
-                  onPress={() => openRoute('MenuTab', 'ManualNoteCreation')}
-                  testID="action-hub-paste-transcript"
-                  accessibilityRole="button"
-                  accessibilityLabel="Paste transcript"
-                >
-                  <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
-                  <Text style={styles.manualActionText}>Paste Transcript</Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
-                  onPress={() => navigation.navigate('BrainDumpReview' as never)}
-                  testID="action-hub-parked-thoughts"
-                  accessibilityRole="button"
-                  accessibilityLabel="Review parked thoughts"
-                >
-                  <Ionicons name="bulb-outline" size={18} color={theme.colors.textSecondary} />
-                  <Text style={styles.manualActionText}>Parked thoughts</Text>
-                </Pressable>
-              </View>
-
-              <View style={styles.externalHeader}>
-                <Text style={styles.externalTitle}>Launch External App</Text>
-                <Text style={styles.externalSubtitle}>
-                  Speaker capture and overlay stay wired into the flow.
+        </Animated.View>
+        <Animated.View
+          style={[
+            styles.sheet,
+            { paddingBottom: bottomInset + theme.spacing.lg },
+            {
+              transform: [
+                {
+                  translateY: sheetAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [800, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <ScrollView
+            style={styles.sheetScroll}
+            contentContainerStyle={styles.sheetScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
+            <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
+            <View style={styles.primaryActions}>
+              <Pressable
+                style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'LectureMode', {})}
+                testID="action-hub-record-lecture"
+                accessibilityRole="button"
+                accessibilityLabel="Record lecture"
+              >
+                <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
+                <Text style={styles.primaryActionTitle}>Record Lecture</Text>
+                <Text style={styles.primaryActionSubtitle}>
+                  Capture long-form audio and route it back safely.
                 </Text>
-              </View>
-              <View style={styles.externalGrid}>
-                {EXTERNAL_APPS.slice(0, 6).map((app) => (
-                  <Pressable
-                    key={app.id}
-                    style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
-                    android_ripple={{ color: `${app.color}22` }}
-                    onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
-                    testID={`action-hub-external-${app.id}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Open ${app.name}`}
-                  >
-                    <Text style={styles.externalEmoji}>{app.iconEmoji}</Text>
-                    <Text style={styles.externalChipLabel}>{app.name}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        </View>
-      ) : null}
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
+                testID="action-hub-search-topics"
+                accessibilityRole="button"
+                accessibilityLabel="Search any topic"
+              >
+                <Ionicons name="search-outline" size={20} color={theme.colors.info} />
+                <Text style={styles.secondaryActionTitle}>Search Topics</Text>
+                <Text style={styles.secondaryActionSubtitle}>Find any micro-topic globally.</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                android_ripple={{ color: '#ffffff18' }}
+                onPress={() => openRoute('MenuTab', 'NotesHub')}
+                testID="action-hub-quick-note"
+                accessibilityRole="button"
+                accessibilityLabel="Quick note, open notes vault"
+              >
+                <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
+                <Text style={styles.secondaryActionTitle}>Quick Note</Text>
+                <Text style={styles.secondaryActionSubtitle}>
+                  Jump into your notes vault and capture context.
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.manualActionsContainer}>
+              <Pressable
+                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                onPress={handleAudioUpload}
+                disabled={isTranscribingUpload}
+                testID="action-hub-upload-audio"
+                accessibilityRole="button"
+                accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
+              >
+                <Ionicons
+                  name="document-attach-outline"
+                  size={18}
+                  color={theme.colors.textSecondary}
+                />
+                <Text style={styles.manualActionText}>
+                  {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                onPress={() => openRoute('MenuTab', 'ManualNoteCreation')}
+                testID="action-hub-paste-transcript"
+                accessibilityRole="button"
+                accessibilityLabel="Paste transcript"
+              >
+                <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
+                <Text style={styles.manualActionText}>Paste Transcript</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                onPress={() => navigation.navigate('BrainDumpReview' as never)}
+                testID="action-hub-parked-thoughts"
+                accessibilityRole="button"
+                accessibilityLabel="Review parked thoughts"
+              >
+                <Ionicons name="bulb-outline" size={18} color={theme.colors.textSecondary} />
+                <Text style={styles.manualActionText}>Parked thoughts</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.externalHeader}>
+              <Text style={styles.externalTitle}>Launch External App</Text>
+              <Text style={styles.externalSubtitle}>
+                Speaker capture and overlay stay wired into the flow.
+              </Text>
+            </View>
+            <View style={styles.externalGrid}>
+              {EXTERNAL_APPS.slice(0, 6).map((app) => (
+                <Pressable
+                  key={app.id}
+                  style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
+                  android_ripple={{ color: `${app.color}22` }}
+                  onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
+                  testID={`action-hub-external-${app.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${app.name}`}
+                >
+                  <Text style={styles.externalEmoji}>{app.iconEmoji}</Text>
+                  <Text style={styles.externalChipLabel}>{app.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+        </Animated.View>
+      </View>
     </View>
   );
 }

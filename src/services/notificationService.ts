@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import { showToast } from '../components/Toast';
 import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import {
@@ -76,6 +77,7 @@ export async function scheduleStreakWarning(): Promise<void> {
     });
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule streak warning:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -96,6 +98,7 @@ export async function scheduleMorningReminder(
     });
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule morning reminder:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -112,6 +115,7 @@ export async function scheduleEveningNudge(title: string, body: string, hour = 1
     });
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule evening nudge:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -133,6 +137,7 @@ export async function scheduleBossFightTarget(nemesisName: string): Promise<void
     });
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule boss fight:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -150,6 +155,7 @@ export async function sendImmediateNag(title: string, body: string): Promise<voi
     });
   } catch (error) {
     if (__DEV__) console.warn('Failed to send immediate nag:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -266,6 +272,7 @@ export async function scheduleHarassment(
     await Promise.allSettled(promises);
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule harassment:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -295,6 +302,7 @@ export async function scheduleBreakEndAlarms(durationSeconds: number): Promise<v
     await Promise.allSettled(promises);
   } catch (error) {
     if (__DEV__) console.warn('Failed to schedule break alarms:', error);
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
   }
 }
 
@@ -467,6 +475,7 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
     });
     await Promise.allSettled(promises);
   } catch {
+    showToast('Notification scheduling failed \u2014 check permissions', 'warning');
     // Last-resort fallback — at minimum schedule a streak reminder
     try {
       await Notifications.scheduleNotificationAsync({

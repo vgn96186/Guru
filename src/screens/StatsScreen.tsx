@@ -1,5 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, StatusBar } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  useWindowDimensions,
+  RefreshControl,
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSubjectBreakdown, type SubjectBreakdownRow } from '../db/queries/topics';
@@ -19,8 +29,10 @@ import { theme } from '../constants/theme';
 import ScreenHeader from '../components/ScreenHeader';
 
 export default function StatsScreen() {
+  const navigation = useNavigation<any>();
   const profile = useAppStore((s) => s.profile);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [stats, setStats] = useState({
     totalCovered: 0,
     totalTopics: 0,
@@ -43,8 +55,16 @@ export default function StatsScreen() {
     last7DayMinutes: [] as number[],
   });
 
-  useEffect(() => {
+  // Reload stats every time screen gains focus (not just on mount)
+  const loadStatsCb = useCallback(() => {
     loadStats();
+  }, []);
+  useFocusEffect(loadStatsCb);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadStats();
+    setRefreshing(false);
   }, []);
 
   async function loadStats() {
@@ -110,6 +130,10 @@ export default function StatsScreen() {
     setLoading(false);
   }
 
+  const { width: screenWidth } = useWindowDimensions();
+  // Respect ResponsiveContainer max width (tablet caps at ~600px)
+  const containerWidth = Math.min(screenWidth, 600) - theme.spacing.lg * 2;
+
   if (loading) return <LoadingOrb message="Calculating your progress..." />;
 
   const daysToInicet = profile?.inicetDate
@@ -119,7 +143,18 @@ export default function StatsScreen() {
   return (
     <SafeAreaView style={styles.safe} testID="stats-screen">
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.primary}
+            colors={[theme.colors.primary]}
+          />
+        }
+      >
         <ResponsiveContainer>
           <View style={styles.header}>
             <ScreenHeader title="Exam Readiness" subtitle="Focus on how far you've come." />
@@ -127,11 +162,19 @@ export default function StatsScreen() {
 
           {stats.totalSessions === 0 ? (
             <View style={styles.emptyHeroCard}>
+              <Text style={styles.emptyHeroEmoji}>📊</Text>
               <Text style={styles.emptyHeroTitle}>No study data yet</Text>
               <Text style={styles.emptyHeroText}>
                 Your first session, lecture capture, or review block will unlock streaks,
                 projections, and coverage trends here.
               </Text>
+              <TouchableOpacity
+                style={styles.emptyHeroCta}
+                onPress={() => navigation.navigate('HomeTab' as never)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.emptyHeroCtaText}>Start Your First Session →</Text>
+              </TouchableOpacity>
             </View>
           ) : null}
 
@@ -277,7 +320,7 @@ export default function StatsScreen() {
 
           {/* Weekly Activity Sparkline */}
           {stats.last7DayMinutes.length === 7 && (
-            <WeeklySparkline minutes={stats.last7DayMinutes} />
+            <WeeklySparkline minutes={stats.last7DayMinutes} containerWidth={containerWidth} />
           )}
 
           {/* Projected Completion */}
@@ -403,10 +446,15 @@ export default function StatsScreen() {
 
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-function WeeklySparkline({ minutes }: { minutes: number[] }) {
-  const { width: screenWidth } = Dimensions.get('window');
+function WeeklySparkline({
+  minutes,
+  containerWidth,
+}: {
+  minutes: number[];
+  containerWidth: number;
+}) {
   const chartPadding = 32;
-  const chartWidth = screenWidth - chartPadding * 2;
+  const chartWidth = containerWidth - chartPadding;
   const gap = 4;
   const barWidth = Math.floor((chartWidth - gap * 6) / 7);
   const chartHeight = 60;
@@ -476,18 +524,43 @@ const styles = StyleSheet.create({
   emptyHeroCard: {
     backgroundColor: theme.colors.surface,
     borderRadius: 20,
-    padding: 20,
+    padding: 24,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  emptyHeroEmoji: {
+    fontSize: 48,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   emptyHeroTitle: {
     color: theme.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
     marginBottom: 8,
+    textAlign: 'center',
   },
-  emptyHeroText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 21 },
+  emptyHeroText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  emptyHeroCta: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    marginTop: 16,
+    alignSelf: 'center',
+  },
+  emptyHeroCtaText: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
   header: { marginBottom: theme.spacing.xl, marginTop: theme.spacing.lg },
   headerTitle: {
     color: theme.colors.textPrimary,

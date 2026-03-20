@@ -15,9 +15,7 @@ jobs:
   build-apk:
     name: Build Debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Only run on commits that touch source code (skip docs/test-only pushes)
-    needs: []
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +37,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate native Android project
+        run: npx expo prebuild --platform android --clean
 
       - name: Build debug APK
         working-directory: android

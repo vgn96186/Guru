@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { theme } from '../constants/theme';
 
 const LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduced', 2: 'Understood', 3: 'Confident' };
@@ -26,7 +27,16 @@ export default React.memo(function ConfidenceSelector({ value, onChange }: Props
               styles.option,
               selected && { borderColor: COLORS[lvl], backgroundColor: COLORS[lvl] + '22' },
             ]}
-            onPress={() => onChange(lvl)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onChange(lvl);
+            }}
+            activeOpacity={0.7}
+            accessibilityRole="radio"
+            accessibilityState={{ selected }}
+            accessibilityLabel={LABELS[lvl]}
+            accessibilityHint={selected ? 'Currently selected' : 'Double tap to select'}
+            hitSlop={theme.hitSlop}
           >
             <Text style={[styles.optionText, selected && { color: COLORS[lvl] }]}>
               {LABELS[lvl]}
@@ -39,14 +49,20 @@ export default React.memo(function ConfidenceSelector({ value, onChange }: Props
 });
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', gap: 8 },
+  row: { flexDirection: 'row', gap: theme.spacing.md },
   option: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingVertical: 10,
+    paddingVertical: theme.spacing.lg,
     alignItems: 'center',
+    minHeight: theme.minTouchSize,
+    justifyContent: 'center',
   },
-  optionText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
+  optionText: {
+    color: theme.colors.textMuted,
+    ...theme.typography.bodySmall,
+    fontWeight: '600',
+  },
 });

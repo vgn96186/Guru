@@ -40,40 +40,41 @@ export default function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
   backBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: theme.minTouchSize,
+    height: theme.minTouchSize,
+    borderRadius: theme.minTouchSize / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 2,
-    backgroundColor: theme.colors.surfaceAlt,
+    marginRight: theme.spacing.md,
+    marginTop: theme.spacing.xs,
+    backgroundColor: theme.colors.card,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    ...theme.shadows.sm,
   },
   backSpacer: {
-    width: 48,
+    width: theme.minTouchSize + theme.spacing.md,
   },
   copy: {
     flex: 1,
+    paddingTop: theme.spacing.xs,
   },
   title: {
     color: theme.colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 0.3,
+    ...theme.typography.h1,
+    letterSpacing: -0.3,
   },
   subtitle: {
     color: theme.colors.textSecondary,
-    fontSize: 14,
+    ...theme.typography.bodySmall,
     lineHeight: 20,
-    marginTop: 4,
+    marginTop: theme.spacing.sm,
   },
 });

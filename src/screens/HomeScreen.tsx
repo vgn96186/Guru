@@ -579,35 +579,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   headerLeft: { flex: 1 },
   greetingText: {
     color: theme.colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '800',
+    ...theme.typography.h3,
     letterSpacing: -0.3,
   },
   examCountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 6,
+    marginTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
   examChip: {
     color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
+    ...theme.typography.caption,
+    fontWeight: '600',
     letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   examDivider: {
     color: theme.colors.border,
-    fontSize: 12,
+    ...theme.typography.caption,
   },
 
   // ── AI Status ──
-  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
-  aiDot: { width: 8, height: 8, borderRadius: 4 },
+  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm, marginTop: theme.spacing.md },
+  aiDot: { width: 10, height: 10, borderRadius: 5 },
 
   // ── Hero section ──
   heroSection: {
@@ -618,26 +618,25 @@ const styles = StyleSheet.create({
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.xl,
+    gap: theme.spacing.xxl,
   },
   heroStatItem: { alignItems: 'center' },
   heroStatValue: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '900',
+    ...theme.typography.h2,
     letterSpacing: -0.3,
   },
   heroStatLabel: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    ...theme.typography.caption,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: theme.spacing.xs,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   heroStatDivider: {
     width: 1,
-    height: 24,
+    height: 32,
     backgroundColor: theme.colors.border,
   },
 
@@ -647,44 +646,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: theme.colors.errorSurface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
     marginBottom: CARD_GAP,
     borderWidth: 1,
     borderColor: theme.colors.error,
   },
-  loadErrorText: { color: theme.colors.textSecondary, fontSize: 13 },
+  loadErrorText: {
+    color: theme.colors.textSecondary,
+    ...theme.typography.bodySmall,
+  },
   retryButton: {
     backgroundColor: theme.colors.error,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
-    minHeight: 44,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    minHeight: theme.minTouchSize,
     justifyContent: 'center',
   },
-  retryButtonText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 },
+  retryButtonText: {
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
+    ...theme.typography.bodySmall,
+  },
 
   // ── Empty sections ──
   emptySectionTouchable: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderStyle: 'dashed',
+    minHeight: 88,
+    justifyContent: 'center',
   },
   emptySectionText: {
     color: theme.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
+    ...theme.typography.bodySmall,
+    lineHeight: 20,
   },
 
   // ── Sections ──
   section: { marginBottom: SECTION_GAP },
   sectionLabel: {
     color: theme.colors.textMuted,
-    fontWeight: '800',
-    fontSize: 11,
+    ...theme.typography.caption,
+    fontWeight: '700',
     letterSpacing: 1.5,
     marginBottom: theme.spacing.md,
     textTransform: 'uppercase',
@@ -692,7 +700,7 @@ const styles = StyleSheet.create({
 
   // ── Layouts ──
   gridLandscape: { flexDirection: 'row', gap: CARD_GAP },
-  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.md },
 
   // ── Tools section ──
   moreHeader: {
@@ -705,13 +713,17 @@ const styles = StyleSheet.create({
   moreLink: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    minHeight: 44,
+    paddingVertical: theme.spacing.lg,
+    minHeight: theme.minTouchSize,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.border,
     gap: theme.spacing.md,
   },
-  moreLinkText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  moreLinkText: {
+    color: theme.colors.textSecondary,
+    ...theme.typography.bodySmall,
+    fontWeight: '500',
+  },
 
   // ── Critical section ──
   collapsibleSection: { marginBottom: SECTION_GAP },
@@ -719,34 +731,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
   },
-  criticalSectionContent: { gap: 10, marginTop: theme.spacing.sm },
+  criticalSectionContent: { gap: theme.spacing.md, marginTop: theme.spacing.md },
   criticalCard: {
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     padding: theme.spacing.lg,
     borderColor: theme.colors.border,
+    ...theme.shadows.sm,
   },
   criticalCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: theme.spacing.md,
   },
   criticalBadge: {
-    fontSize: 10,
-    fontWeight: '900',
+    ...theme.typography.caption,
+    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  criticalArrow: { fontSize: 18, fontWeight: '800' },
+  criticalArrow: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
   criticalTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 3,
+    ...theme.typography.body,
+    fontWeight: '600',
+    marginBottom: theme.spacing.sm,
   },
   criticalSub: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
 

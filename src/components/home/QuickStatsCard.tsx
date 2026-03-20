@@ -93,12 +93,13 @@ function MetaChip({ label }: { label: string }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
+    ...theme.shadows.sm,
   },
   topRow: {
     flexDirection: 'row',
@@ -109,38 +110,40 @@ const styles = StyleSheet.create({
   ringLabel: { alignItems: 'center', justifyContent: 'center' },
   ringPercent: {
     color: theme.colors.textPrimary,
-    fontWeight: '800',
-    fontSize: 13,
+    fontWeight: '700',
+    fontSize: 14,
   },
   copy: { flex: 1 },
   title: {
     color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
+    ...theme.typography.body,
+    fontWeight: '600',
   },
   sub: {
     color: theme.colors.textMuted,
-    fontSize: 13,
-    marginTop: 3,
+    ...theme.typography.bodySmall,
+    marginTop: theme.spacing.sm,
   },
   metaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: theme.spacing.sm,
     marginTop: theme.spacing.md,
     paddingTop: theme.spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.colors.border,
   },
   metaChip: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: theme.colors.cardHover,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   metaChipText: {
     color: theme.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
+    ...theme.typography.caption,
+    fontWeight: '600',
   },
 });

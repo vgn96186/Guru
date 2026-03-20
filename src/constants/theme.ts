@@ -10,58 +10,58 @@
 
 export const theme = {
   colors: {
-    // Backgrounds
-    background: '#0F0F14',
-    surface: '#1A1A24',
-    surfaceAlt: '#13131A',
-    card: '#1E1E2E',
-    cardHover: '#252535',
+    // Backgrounds — Modern & Minimal with better contrast
+    background: '#0A0A0F',
+    surface: '#151520',
+    surfaceAlt: '#0E0E14',
+    card: '#1A1A24',
+    cardHover: '#22222E',
 
-    // Brand
-    primary: '#6C63FF',
-    primaryLight: '#8B85FF',
-    primaryDark: '#4A43CC',
+    // Brand — Refined accent colors
+    primary: '#7C73FF',
+    primaryLight: '#9B94FF',
+    primaryDark: '#5A52D5',
     accent: '#FF6B9D',
     accentAlt: '#FFD700',
 
     // Semantic
-    success: '#4CAF50',
-    warning: '#FF9800',
-    error: '#F44336',
+    success: '#52D273',
+    warning: '#FFA500',
+    error: '#FF5252',
     info: '#2196F3',
 
-    // Text
-    textPrimary: '#FFFFFF',
-    textSecondary: '#B8B8D0',
-    textMuted: '#8080A0',
-    textInverse: '#0F0F14',
+    // Text — Enhanced for accessibility (WCAG AA)
+    textPrimary: '#F8F8FB',
+    textSecondary: '#C2C2D6',
+    textMuted: '#888899',
+    textInverse: '#0A0A0F',
 
-    // Borders
-    border: '#2A2A3C',
-    borderLight: '#3A3A4C',
+    // Borders — More defined for hierarchy
+    border: '#262633',
+    borderLight: '#3A3A47',
     divider: '#1E1E2A',
 
     // Semantic surfaces
-    panel: '#171722',
-    panelAlt: '#15151E',
-    inputBg: '#13131E',
-    overlay: 'rgba(6, 8, 14, 0.72)',
-    backdropStrong: 'rgba(0, 0, 0, 0.82)',
-    successSurface: '#1A2A1A',
-    warningSurface: '#2A1A0A',
-    errorSurface: '#2A1A1A',
-    primaryTint: '#25205A',
-    primaryTintSoft: '#6C63FF22',
-    primaryTintMedium: '#6C63FF44',
-    warningTintSoft: '#FF980022',
-    errorTintSoft: '#F4433622',
-    successTintSoft: '#4CAF5022',
+    panel: '#131318',
+    panelAlt: '#0F0F14',
+    inputBg: '#10101A',
+    overlay: 'rgba(10, 10, 15, 0.8)',
+    backdropStrong: 'rgba(0, 0, 0, 0.88)',
+    successSurface: '#0F2E1A',
+    warningSurface: '#2D1F0A',
+    errorSurface: '#2D1515',
+    primaryTint: '#2A2456',
+    primaryTintSoft: '#7C73FF15',
+    primaryTintMedium: '#7C73FF35',
+    warningTintSoft: '#FFA50015',
+    errorTintSoft: '#FF525215',
+    successTintSoft: '#52D27315',
 
     // Status
-    unseen: '#606080',
+    unseen: '#6A7A95',
     seen: '#2196F3',
-    reviewed: '#FF9800',
-    mastered: '#4CAF50',
+    reviewed: '#FFA500',
+    mastered: '#52D273',
   },
   alpha: {
     pressed: 0.88,
@@ -79,17 +79,18 @@ export const theme = {
   },
 
   typography: {
-    h0: { fontSize: 28, fontWeight: '900' as const },
-    h1: { fontSize: 26, fontWeight: '900' as const },
-    h2: { fontSize: 22, fontWeight: '800' as const },
-    h3: { fontSize: 18, fontWeight: '700' as const },
-    h4: { fontSize: 16, fontWeight: '700' as const },
-    body: { fontSize: 15, fontWeight: '400' as const },
-    bodySmall: { fontSize: 14, fontWeight: '400' as const },
-    caption: { fontSize: 12, fontWeight: '400' as const },
-    captionSmall: { fontSize: 11, fontWeight: '400' as const },
-    label: { fontSize: 13, fontWeight: '600' as const },
-    button: { fontSize: 16, fontWeight: '700' as const },
+    // Modern hierarchy: Display, Heading1-2, Body, Caption
+    h0: { fontSize: 32, fontWeight: '700' as const, lineHeight: 40 },
+    h1: { fontSize: 28, fontWeight: '700' as const, lineHeight: 36 },
+    h2: { fontSize: 24, fontWeight: '600' as const, lineHeight: 32 },
+    h3: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28 },
+    h4: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24 },
+    body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24 },
+    bodySmall: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
+    caption: { fontSize: 12, fontWeight: '500' as const, lineHeight: 18 },
+    captionSmall: { fontSize: 11, fontWeight: '500' as const, lineHeight: 16 },
+    label: { fontSize: 13, fontWeight: '600' as const, lineHeight: 18 },
+    button: { fontSize: 16, fontWeight: '700' as const, lineHeight: 20 },
   },
 
   borderRadius: {
@@ -105,28 +106,43 @@ export const theme = {
     sm: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.25,
       shadowRadius: 4,
-      elevation: 3,
+      elevation: 2,
     },
     md: {
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
+      shadowOpacity: 0.3,
       shadowRadius: 8,
+      elevation: 4,
+    },
+    lg: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.35,
+      shadowRadius: 12,
       elevation: 6,
     },
     glow: (color: string) => ({
       shadowColor: color,
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.6,
-      shadowRadius: 12,
+      shadowOpacity: 0.5,
+      shadowRadius: 16,
       elevation: 8,
     }),
   },
+
+  // Animation durations for consistent transitions
+  animations: {
+    quick: 150,
+    standard: 300,
+    slow: 500,
+  },
+
   /** Minimum touch target size (Android Material: 48dp, Apple HIG: 44pt) */
-  hitSlop: { top: 10, bottom: 10, left: 10, right: 10 },
-  minTouchSize: 44,
+  hitSlop: { top: 12, bottom: 12, left: 12, right: 12 },
+  minTouchSize: 48,
 } as const;
 
 export type ThemeColors = typeof theme.colors;

@@ -1,19 +1,86 @@
-/* eslint-env jest */
-/* global jest, require, module, __DEV__ */
+/* global jest, require, module, __DEV__, console, global, beforeEach */
+
+/** Expo: avoid loading native Constants / Expo.fx when tests import expo-haptics (e.g. via Toast). */
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    appOwnership: 'standalone',
+    executionEnvironment: 'standalone',
+    expoVersion: '54.0.0',
+    installationId: 'jest-installation-id',
+    nativeAppVersion: '1.0.0',
+    nativeBuildVersion: '1',
+    sessionId: 'jest-session',
+    expoConfig: { name: 'Guru', slug: 'guru', version: '1.0.0' },
+    manifest: {},
+  },
+}));
+
+jest.mock('expo-haptics', () => ({
+  __esModule: true,
+  impactAsync: jest.fn(() => Promise.resolve()),
+  notificationAsync: jest.fn(() => Promise.resolve()),
+  selectionAsync: jest.fn(() => Promise.resolve()),
+  ImpactFeedbackStyle: {
+    Light: 'light',
+    Medium: 'medium',
+    Heavy: 'heavy',
+    Rigid: 'rigid',
+    Soft: 'soft',
+  },
+  NotificationFeedbackType: { Success: 'success' },
+}));
+
+jest.mock('react-native-reanimated', () => {
+  try {
+    return require('react-native-reanimated/mock');
+  } catch {
+    const React = require('react');
+    const { View } = require('react-native');
+    return {
+      __esModule: true,
+      default: {
+        View,
+        createAnimatedComponent: (C) => C,
+      },
+      useSharedValue: (init) => ({ value: init }),
+      useAnimatedProps: () => ({}),
+      withTiming: (to) => to,
+      Easing: { linear: (x) => x },
+      interpolateColor: () => '#000000',
+    };
+  }
+});
+
+jest.mock('react-native-svg', () => {
+  const React = require('react');
+  const el = (tag) => (props) => React.createElement(tag, props, props.children);
+  return {
+    __esModule: true,
+    default: el('Svg'),
+    Svg: el('Svg'),
+    Circle: el('Circle'),
+    G: el('G'),
+  };
+});
 
 jest.mock('react-native', () => {
   const React = require('react');
   const View = ({ children, ...props }) => React.createElement('View', props, children);
   const Text = ({ children, ...props }) => React.createElement('Text', props, children);
   const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children);
-  const TouchableOpacity = ({ children, ...props }) => React.createElement('TouchableOpacity', props, children);
+  const TouchableOpacity = ({ children, ...props }) =>
+    React.createElement('TouchableOpacity', props, children);
   const TextInput = (props) => React.createElement('TextInput', props);
   const ActivityIndicator = (props) => React.createElement('ActivityIndicator', props);
   const Switch = (props) => React.createElement('Switch', props);
   const Image = (props) => React.createElement('Image', props);
-  const Modal = ({ children, visible, ...props }) => (visible ? React.createElement('Modal', props, children) : null);
-  const KeyboardAvoidingView = ({ children, ...props }) => React.createElement('KeyboardAvoidingView', props, children);
-  
+  const Modal = ({ children, visible, ...props }) =>
+    visible ? React.createElement('Modal', props, children) : null;
+  const KeyboardAvoidingView = ({ children, ...props }) =>
+    React.createElement('KeyboardAvoidingView', props, children);
+  const StatusBar = (props) => React.createElement('StatusBar', props);
+
   return {
     Platform: {
       OS: 'android',
@@ -29,6 +96,19 @@ jest.mock('react-native', () => {
     Image,
     Modal,
     KeyboardAvoidingView,
+    StatusBar,
+    Alert: {
+      alert: jest.fn(),
+    },
+    AppState: {
+      currentState: 'active',
+      addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+    },
+    Linking: {
+      openURL: jest.fn(),
+      canOpenURL: jest.fn(() => Promise.resolve(true)),
+      getInitialURL: jest.fn(() => Promise.resolve(null)),
+    },
     StyleSheet: {
       create: (styles) => styles,
       flatten: (style) => (Array.isArray(style) ? Object.assign({}, ...style) : style || {}),
@@ -36,64 +116,64 @@ jest.mock('react-native', () => {
     Dimensions: {
       get: () => ({ width: 375, height: 812 }),
     },
-    Animated: {
-      Value: class {
-        constructor() {
-          this.setValue = jest.fn();
-          this.interpolate = jest.fn(() => ({}));
-          this.addListener = jest.fn();
-          this.removeListener = jest.fn();
-          this.removeAllListeners = jest.fn();
-          this.stopAnimation = jest.fn();
-          this.resetAnimation = jest.fn();
-          this.setOffset = jest.fn();
-          this.flattenOffset = jest.fn();
-          this.extractOffset = jest.fn();
-        }
-      },
-      timing: jest.fn(() => ({
-        start: jest.fn((cb) => cb && cb({ finished: true })),
-        stop: jest.fn(),
-        reset: jest.fn(),
-      })),
-      spring: jest.fn(() => ({
-        start: jest.fn((cb) => cb && cb({ finished: true })),
-        stop: jest.fn(),
-        reset: jest.fn(),
-      })),
-      parallel: jest.fn(() => ({
-        start: jest.fn((cb) => cb && cb({ finished: true })),
-        stop: jest.fn(),
-        reset: jest.fn(),
-      })),
-      sequence: jest.fn(() => ({
-        start: jest.fn((cb) => cb && cb({ finished: true })),
-        stop: jest.fn(),
-        reset: jest.fn(),
-      })),
-      loop: jest.fn(() => ({
-        start: jest.fn(),
-        stop: jest.fn(),
-        reset: jest.fn(),
-      })),
-      delay: jest.fn(() => ({
-        start: jest.fn((cb) => cb && cb({ finished: true })),
-        stop: jest.fn(),
-        reset: jest.fn(),
-      })),
-      add: jest.fn(),
-      subtract: jest.fn(),
-      divide: jest.fn(),
-      multiply: jest.fn(),
-      modulo: jest.fn(),
-      diffClamp: jest.fn(),
-      event: jest.fn(),
-      createAnimatedComponent: jest.fn((Component) => Component),
-      View: ({ children, ...props }) => React.createElement('View', props, children),
-      Text: ({ children, ...props }) => React.createElement('Text', props, children),
-      ScrollView: ({ children, ...props }) => React.createElement('ScrollView', props, children),
-      Image: (props) => React.createElement('Image', props),
+    Easing: {
+      linear: (t) => t,
+      /** @param { (t: number) => number } fn */
+      out: (fn) => fn,
+      cubic: (t) => t * t * t,
     },
+    Animated: (() => {
+      const makeAnim = () => ({
+        start: (cb) => cb && cb({ finished: true }),
+        stop: () => {},
+        reset: () => {},
+      });
+      return {
+        Value: class {
+          constructor() {
+            this.setValue = jest.fn();
+            this.interpolate = jest.fn(() => ({}));
+            this.addListener = jest.fn();
+            this.removeListener = jest.fn();
+            this.removeAllListeners = jest.fn();
+            this.stopAnimation = jest.fn();
+            this.resetAnimation = jest.fn();
+            this.setOffset = jest.fn();
+            this.flattenOffset = jest.fn();
+            this.extractOffset = jest.fn();
+          }
+        },
+        timing: jest.fn(() => makeAnim()),
+        spring: jest.fn(() => makeAnim()),
+        parallel: jest.fn(() => makeAnim()),
+        sequence: jest.fn(() => makeAnim()),
+        loop: jest.fn(() => makeAnim()),
+        delay: jest.fn(() => makeAnim()),
+        add: jest.fn(),
+        subtract: jest.fn(),
+        divide: jest.fn(),
+        multiply: jest.fn(),
+        modulo: jest.fn(),
+        diffClamp: jest.fn(),
+        event: jest.fn(),
+        createAnimatedComponent: jest.fn((Component) => Component),
+        View: ({ children, ...props }) => React.createElement('View', props, children),
+        Text: ({ children, ...props }) => React.createElement('Text', props, children),
+        ScrollView: ({ children, ...props }) => React.createElement('ScrollView', props, children),
+        Image: (props) => React.createElement('Image', props),
+      };
+    })(),
+  };
+});
+
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  const inset = { top: 0, right: 0, bottom: 34, left: 0 };
+  return {
+    SafeAreaProvider: ({ children }) => children,
+    SafeAreaView: ({ children, ...props }) => React.createElement('View', props, children),
+    useSafeAreaInsets: () => inset,
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 390, height: 844 }),
   };
 });
 
@@ -102,21 +182,34 @@ jest.mock('expo-modules-core', () => ({
     OS: 'android',
     select: (objs) => objs.android || objs.default,
   },
+  requireNativeModule: jest.fn(() => ({})),
+  requireOptionalNativeModule: jest.fn(() => ({})),
+  EventEmitter: class EventEmitter {
+    addListener() {
+      return { remove: jest.fn() };
+    }
+    removeAllListeners() {}
+  },
 }));
 
 // Mocking expo-sqlite as it requires native module support
 jest.mock('expo-sqlite', () => ({
-  openDatabaseAsync: jest.fn(async () => ({
-    execAsync: jest.fn(async () => []),
-    runAsync: jest.fn(async () => ({ lastInsertRowId: 1, changes: 1 })),
-    getFirstAsync: jest.fn(async () => null),
-    getAllAsync: jest.fn(async () => []),
-  })),
+  openDatabaseAsync: jest.fn(async () => {
+    return {
+      execAsync: jest.fn(async () => []),
+      runAsync: jest.fn(async () => ({ lastInsertRowId: 1, changes: 1 })),
+      getFirstAsync: jest.fn(async () => null),
+      getAllAsync: jest.fn(async () => []),
+      isInTransactionAsync: jest.fn(async () => false),
+      closeSync: jest.fn(),
+    };
+  }),
 }));
 
 // Mocking expo-file-system as it requires native module support
 jest.mock('expo-file-system/legacy', () => ({
-  documentDirectory: 'file:///data/user/0/host.exp.exponent/files/ExperienceData/%40anonymous%2FGuru/',
+  documentDirectory:
+    'file:///data/user/0/host.exp.exponent/files/ExperienceData/%40anonymous%2FGuru/',
   getInfoAsync: jest.fn(async () => ({ exists: true })),
   makeDirectoryAsync: jest.fn(async () => {}),
   writeAsStringAsync: jest.fn(async () => {}),
@@ -149,3 +242,21 @@ jest.mock('@expo/vector-icons', () => ({
 }));
 
 global.__DEV__ = true;
+
+/** Jest `resetMocks` clears `jest.fn` implementations — restore RN Animated helpers each test. */
+beforeEach(() => {
+  const RN = require('react-native');
+  const A = RN.Animated;
+  if (!A?.timing) return;
+  const makeAnim = () => ({
+    start: (cb) => cb && cb({ finished: true }),
+    stop: () => {},
+    reset: () => {},
+  });
+  if (A.timing?.mockImplementation) A.timing.mockImplementation(() => makeAnim());
+  if (A.spring?.mockImplementation) A.spring.mockImplementation(() => makeAnim());
+  if (A.parallel?.mockImplementation) A.parallel.mockImplementation(() => makeAnim());
+  if (A.sequence?.mockImplementation) A.sequence.mockImplementation(() => makeAnim());
+  if (A.loop?.mockImplementation) A.loop.mockImplementation(() => makeAnim());
+  if (A.delay?.mockImplementation) A.delay.mockImplementation(() => makeAnim());
+});

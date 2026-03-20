@@ -1,78 +1,107 @@
 import { markTopicsFromLecture } from './matching';
-import * as topicsDb from '../../db/queries/topics';
-
-// Mock sqlite for unit testing
-const mockDb = {
-  getFirstAsync: jest.fn(),
-  getAllAsync: jest.fn(),
-  runAsync: jest.fn(),
-  execAsync: jest.fn(),
-};
-
-jest.mock('../../db/database', () => ({
-  getDb: () => mockDb,
-}));
+import * as topicsQueries from '../../db/queries/topics';
+import * as embeddingService from '../ai/embeddingService';
 
 jest.mock('../../db/queries/topics', () => ({
-  updateTopicProgressInTx: jest.fn(),
+  queueTopicSuggestionInTx: jest.fn().mockResolvedValue(undefined),
+  updateTopicProgressInTx: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../ai/embeddingService', () => ({
-  generateEmbedding: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),
-  cosineSimilarity: jest.fn().mockReturnValue(0.9),
-  blobToEmbedding: jest.fn().mockReturnValue([0.1, 0.2, 0.3]),
+  generateEmbedding: jest.fn(),
+  cosineSimilarity: jest.fn(),
+  blobToEmbedding: jest.fn(),
 }));
 
-describe('Matching Benchmark', () => {
+function mockDb(
+  overrides: Partial<{
+    getFirstAsync: jest.Mock;
+    getAllAsync: jest.Mock;
+  }> = {},
+) {
+  return {
+    getFirstAsync: jest.fn().mockResolvedValue(null),
+    getAllAsync: jest.fn().mockResolvedValue([]),
+    ...overrides,
+  } as unknown as import('expo-sqlite').SQLiteDatabase;
+}
+
+describe('markTopicsFromLecture', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (topicsDb.updateTopicProgressInTx as jest.Mock).mockResolvedValue(undefined);
   });
 
-  it('should collect parents correctly and update direct and parent topics', async () => {
-    let mockId = 1;
-    mockDb.getFirstAsync.mockImplementation((query, args) => {
-      if (query.includes('FROM topics t')) {
-        return Promise.resolve({ id: mockId++ });
-      }
-      return Promise.resolve(null);
+  it('returns immediately when no topics and no lecture summary', async () => {
+    const db = mockDb();
+    await markTopicsFromLecture(db, [], 2, 'Anatomy');
+    expect(db.getFirstAsync).not.toHaveBeenCalled();
+    expect(topicsQueries.updateTopicProgressInTx).not.toHaveBeenCalled();
+  });
+
+  it('matches a topic by keyword and updates progress', async () => {
+    const db = mockDb({
+      getFirstAsync: jest.fn().mockImplementation((sql: string) => {
+        if (sql.includes('JOIN subjects') && sql.includes('LOWER(t.name) =')) {
+          return Promise.resolve({ id: 101 });
+        }
+        return Promise.resolve(null);
+      }),
+      getAllAsync: jest.fn().mockResolvedValue([]),
     });
 
-    // Mock parent topics
-    mockDb.getAllAsync.mockImplementation((query, args) => {
-      if (query.includes('parent_topic_id')) {
-        return Promise.resolve([{ parent_topic_id: 100 }, { parent_topic_id: 101 }]);
-      }
-      // semantic matches
-      return Promise.resolve([{ id: 200, embedding: new Uint8Array() }]);
+    await markTopicsFromLecture(db, ['  diabetes  '], 2, 'Medicine');
+
+    expect(topicsQueries.updateTopicProgressInTx).toHaveBeenCalledWith(
+      db,
+      101,
+      'seen',
+      2,
+      0,
+      undefined,
+    );
+  });
+
+  it('runs semantic matching when lectureSummary is provided', async () => {
+    (embeddingService.generateEmbedding as jest.Mock).mockResolvedValue([0.1, 0.2, 0.3]);
+    (embeddingService.cosineSimilarity as jest.Mock).mockReturnValue(0.9);
+    (embeddingService.blobToEmbedding as jest.Mock).mockReturnValue([0.1, 0.2, 0.3]);
+
+    const rows = [{ id: 55, embedding: new Uint8Array([1, 2, 3]) }];
+    const db = mockDb({
+      getFirstAsync: jest.fn().mockResolvedValue(null),
+      getAllAsync: jest.fn().mockImplementation((sql: string) => {
+        if (sql.includes('embedding')) {
+          return Promise.resolve(rows);
+        }
+        return Promise.resolve([]);
+      }),
     });
 
-    const topicNames = ['topic 1', 'topic 2', 'topic 3'];
+    // Pass undefined so the pipeline generates an embedding (null would skip generation)
+    await markTopicsFromLecture(db, [], 2, 'Pathology', 'Some lecture about kidneys', undefined);
 
-    await markTopicsFromLecture(mockDb as any, topicNames, 3, 'Subject1', 'Summary');
+    expect(embeddingService.generateEmbedding).toHaveBeenCalledWith('Some lecture about kidneys');
+    expect(topicsQueries.updateTopicProgressInTx).toHaveBeenCalled();
+  });
 
-    const updateCalls = (topicsDb.updateTopicProgressInTx as jest.Mock).mock.calls;
-    expect(updateCalls.length).toBeGreaterThan(1);
+  it('queues unmatched topic names when subject exists', async () => {
+    const db = mockDb({
+      getFirstAsync: jest.fn().mockImplementation((sql: string, params?: string[]) => {
+        if (sql.includes('FROM subjects') && params?.[0]?.toLowerCase() === 'surgery') {
+          return Promise.resolve({ id: 9 });
+        }
+        return Promise.resolve(null);
+      }),
+      getAllAsync: jest.fn().mockResolvedValue([]),
+    });
 
-    const updatedTopicIds = updateCalls.map((call) => call[1]);
-    expect(updatedTopicIds).toContain(100);
-    expect(updatedTopicIds).toContain(101);
-    expect(updatedTopicIds).toContain(1);
-    expect(updatedTopicIds).toContain(2);
-    expect(updatedTopicIds).toContain(3);
+    await markTopicsFromLecture(db, ['Totally Unknown Topic Xyz'], 2, 'Surgery', undefined);
 
-    const parent100Call = updateCalls.find((call) => call[1] === 100);
-    expect(parent100Call).toBeDefined();
-    expect(parent100Call?.[2]).toBe('seen');
-    expect(parent100Call?.[3]).toBe(3);
-    expect(parent100Call?.[4]).toBe(0);
-    expect(parent100Call?.[5]).toBeUndefined();
-
-    const directTopicCall = updateCalls.find((call) => call[1] === 1);
-    expect(directTopicCall).toBeDefined();
-    expect(directTopicCall?.[2]).toBe('seen');
-    expect(directTopicCall?.[3]).toBe(3);
-    expect(directTopicCall?.[4]).toBe(0);
-    expect(directTopicCall?.[5]).toBe('Summary');
+    expect(topicsQueries.queueTopicSuggestionInTx).toHaveBeenCalledWith(
+      db,
+      9,
+      'Totally Unknown Topic Xyz',
+      undefined,
+    );
   });
 });

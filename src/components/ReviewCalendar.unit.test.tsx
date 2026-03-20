@@ -49,21 +49,21 @@ describe('ReviewCalendar', () => {
 
   it('renders current month and year correctly', async () => {
     const { getByText } = render(<ReviewCalendar />);
-    
+
     await waitFor(() => {
       expect(getByText('October 2023')).toBeTruthy();
     });
-    
+
     expect(getReviewCalendarData).toHaveBeenCalledWith(2023, 9);
   });
 
   it('navigates to previous month', async () => {
     const { getByText, UNSAFE_getAllByType } = render(<ReviewCalendar />);
-    
+
     // Find the back button - it's the first TouchableOpacity in the header
     const buttons = UNSAFE_getAllByType(TouchableOpacity);
     const backBtn = buttons[0];
-    
+
     await act(async () => {
       fireEvent.press(backBtn);
     });
@@ -71,16 +71,16 @@ describe('ReviewCalendar', () => {
     await waitFor(() => {
       expect(getByText('September 2023')).toBeTruthy();
     });
-    
+
     expect(getReviewCalendarData).toHaveBeenCalledWith(2023, 8);
   });
 
   it('navigates to next month', async () => {
     const { getByText, UNSAFE_getAllByType } = render(<ReviewCalendar />);
-    
+
     const buttons = UNSAFE_getAllByType(TouchableOpacity);
     const nextBtn = buttons[1];
-    
+
     await act(async () => {
       fireEvent.press(nextBtn);
     });
@@ -88,15 +88,15 @@ describe('ReviewCalendar', () => {
     await waitFor(() => {
       expect(getByText('November 2023')).toBeTruthy();
     });
-    
+
     expect(getReviewCalendarData).toHaveBeenCalledWith(2023, 10);
   });
 
   it('displays review data correctly', async () => {
     (getReviewCalendarData as jest.Mock).mockResolvedValue(mockReviewData);
-    
+
     const { getByText, getByLabelText } = render(<ReviewCalendar />);
-    
+
     await waitFor(() => {
       expect(getByText('101 reviews scheduled')).toBeTruthy();
     });
@@ -113,27 +113,27 @@ describe('ReviewCalendar', () => {
 
   it('shows details when a day with reviews is selected', async () => {
     (getReviewCalendarData as jest.Mock).mockResolvedValue(mockReviewData);
-    
+
     const { getByLabelText, getByText, queryByText } = render(<ReviewCalendar />);
-    
+
     await waitFor(() => {
       expect(getByText('101 reviews scheduled')).toBeTruthy();
     });
 
     const day15 = getByLabelText('15 October, 2 reviews scheduled');
-    
+
     await act(async () => {
       fireEvent.press(day15);
     });
 
     expect(getByText(/Topic 1/)).toBeTruthy();
     expect(getByText(/Topic 2/)).toBeTruthy();
-    
+
     // Selecting again should close details
     await act(async () => {
       fireEvent.press(day15);
     });
-    
+
     expect(queryByText(/Topic 1/)).toBeNull();
   });
 
@@ -152,5 +152,5 @@ describe('ReviewCalendar', () => {
     await waitFor(() => {
       expect(getByText('December 2022')).toBeTruthy();
     });
-  });
+  }, 20_000);
 });

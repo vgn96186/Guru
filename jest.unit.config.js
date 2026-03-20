@@ -1,4 +1,4 @@
-/* eslint-env node */
+/* global module */
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   preset: 'ts-jest',
@@ -14,12 +14,32 @@ module.exports = {
   restoreMocks: true,
   testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.unit.test.{ts,tsx}',
+    '!src/**/__tests__/**',
+    '!src/**/*.d.ts',
+  ],
+  coveragePathIgnorePatterns: ['/node_modules/', '/e2e/'],
+  /** CI gates use `jest.unit.logic.config.js` (logic allowlist). Full-tree runs are informational. */
+  moduleNameMapper: {
+    '^expo-updates$': '<rootDir>/__mocks__/expo-updates.js',
+    '^expo-asset$': '<rootDir>/__mocks__/expo-asset.js',
+    '^whisper.rn$': '<rootDir>/__mocks__/whisper.rn.js',
+    '^llama.rn$': '<rootDir>/__mocks__/llama.rn.js',
+    '^expo-sqlite$': '<rootDir>/__mocks__/expo-sqlite.js',
+    '^react-native-worklets$': '<rootDir>/__mocks__/react-native-worklets.js',
+    '^react-native-worklets-core$': '<rootDir>/__mocks__/react-native-worklets.js',
+  },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { module: 'commonjs', jsx: 'react' }, isolatedModules: true }],
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      { tsconfig: { module: 'commonjs', jsx: 'react' }, isolatedModules: true },
+    ],
     '^.+\\.(js|jsx)$': 'babel-jest',
     'node_modules/.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    "node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*)/)"
+    'node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*)/)',
   ],
 };

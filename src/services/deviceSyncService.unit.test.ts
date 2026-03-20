@@ -1,3 +1,13 @@
+async function waitFor(condition: () => boolean, timeoutMs = 15000, stepMs = 10): Promise<void> {
+  const start = Date.now();
+  while (!condition()) {
+    if (Date.now() - start > timeoutMs) {
+      throw new Error('waitFor: condition not met within timeout');
+    }
+    await new Promise((resolve) => setTimeout(resolve, stepMs));
+  }
+}
+
 describe('deviceSyncService', () => {
   beforeEach(() => {
     jest.resetModules();
@@ -28,11 +38,13 @@ describe('deviceSyncService', () => {
     }));
 
     jest.doMock('./syncCrypto', () => ({
-      encryptPayload: jest.fn(async (_code: string, msg: unknown) => JSON.stringify({
-        payload: msg,
-        ts: Date.now(),
-        msgId: `enc-${Date.now()}`,
-      })),
+      encryptPayload: jest.fn(async (_code: string, msg: unknown) =>
+        JSON.stringify({
+          payload: msg,
+          ts: Date.now(),
+          msgId: `enc-${Date.now()}`,
+        }),
+      ),
       decryptPayload: decryptPayloadMock,
       clearKeyCache: clearKeyCacheMock,
     }));
@@ -44,37 +56,36 @@ describe('deviceSyncService', () => {
     const unsubscribeA = connectToRoom('room-123', listenerA);
     const unsubscribeB = connectToRoom('room-123', listenerB);
 
-    // Wait for async ensureConnected to register the 'connect' handler
-    while (!handlers.connect) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
+    // ensureConnected runs async (microtasks); avoid infinite spin under --coverage
+    await waitFor(() => !!handlers.connect);
 
     expect(connectMock).toHaveBeenCalledTimes(1);
 
     // Simulate connection success and topic subscription
     handlers.connect();
-    
-    // Wait for subscribe to be called
-    while (mockClient.subscribe.mock.calls.length === 0) {
-      await new Promise(resolve => setTimeout(resolve, 5));
-    }
+
+    await waitFor(() => mockClient.subscribe.mock.calls.length > 0);
 
     const subscribedTopic = mockClient.subscribe.mock.calls[0][0];
 
-    handlers.message?.(
-      subscribedTopic,
-      { toString: () => JSON.stringify({ payload: { type: 'BREAK_STARTED', durationSeconds: 90 }, ts: Date.now(), msgId: 'm1' }) },
-    );
+    handlers.message?.(subscribedTopic, {
+      toString: () =>
+        JSON.stringify({
+          payload: { type: 'BREAK_STARTED', durationSeconds: 90 },
+          ts: Date.now(),
+          msgId: 'm1',
+        }),
+    });
     await Promise.resolve(); // allow decryptPayload to resolve
 
     expect(listenerA).toHaveBeenCalledWith({ type: 'BREAK_STARTED', durationSeconds: 90 });
     expect(listenerB).toHaveBeenCalledWith({ type: 'BREAK_STARTED', durationSeconds: 90 });
 
     unsubscribeA();
-    handlers.message?.(
-      subscribedTopic,
-      { toString: () => JSON.stringify({ payload: { type: 'LECTURE_RESUMED' }, ts: Date.now(), msgId: 'm2' }) },
-    );
+    handlers.message?.(subscribedTopic, {
+      toString: () =>
+        JSON.stringify({ payload: { type: 'LECTURE_RESUMED' }, ts: Date.now(), msgId: 'm2' }),
+    });
     await Promise.resolve();
 
     expect(listenerA).toHaveBeenCalledTimes(1);
@@ -83,5 +94,5 @@ describe('deviceSyncService', () => {
 
     unsubscribeB();
     expect(mockClient.end).toHaveBeenCalledTimes(1);
-  });
+  }, 30000);
 });

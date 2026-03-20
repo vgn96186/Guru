@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import type { HomeStackParamList, TabParamList } from '../../navigation/types';
 import { theme } from '../../constants/theme';
 import { useAppStore } from '../../store/useAppStore';
@@ -53,7 +54,7 @@ export default function TodayPlanCard() {
         profile.dailyGoalMinutes || 120,
       );
 
-      const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+      const date = new Date().toLocaleDateString('en-CA');
       await dailyAgendaRepository.saveDailyAgenda(date, plan);
       setTodayPlan(plan);
       showToast("Today's plan ready, Doctor.", 'success');
@@ -74,19 +75,23 @@ export default function TodayPlanCard() {
   if (!todayPlan) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>TODAY'S MISSION</Text>
-        <Text style={styles.subtitle}>Guru hasn't planned your day yet.</Text>
+        <View style={styles.headerRow}>
+          <Ionicons name="compass-outline" size={18} color={theme.colors.textMuted} />
+          <Text style={styles.label}>TODAY'S MISSION</Text>
+        </View>
+        <Text style={styles.subtitle}>No plan generated yet.</Text>
         <TouchableOpacity
-          style={styles.button}
+          style={styles.generateBtn}
           onPress={handleGenerate}
           disabled={isGenerating}
+          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Generate daily plan"
         >
           {isGenerating ? (
-            <ActivityIndicator color={theme.colors.textInverse} />
+            <ActivityIndicator color={theme.colors.textPrimary} size="small" />
           ) : (
-            <Text style={styles.buttonText}>GENERATE DAILY PLAN</Text>
+            <Text style={styles.generateBtnText}>GENERATE PLAN</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -97,15 +102,18 @@ export default function TodayPlanCard() {
 
   return (
     <View style={[styles.container, styles.activeContainer]}>
-      <View style={styles.header}>
-        <Text style={styles.title}>TODAY BY GURU</Text>
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>ACTIVE</Text>
+      <View style={styles.activeHeader}>
+        <View style={styles.headerRow}>
+          <Ionicons name="compass" size={18} color={theme.colors.primary} />
+          <Text style={[styles.label, { color: theme.colors.primary }]}>TODAY BY GURU</Text>
+        </View>
+        <View style={styles.activeBadge}>
+          <Text style={styles.activeBadgeText}>ACTIVE</Text>
         </View>
       </View>
 
       {nextTask && (
-        <View style={styles.taskInfo}>
+        <View style={styles.taskBlock}>
           <Text style={styles.taskTitle}>{nextTask.title}</Text>
           <Text style={styles.taskWhy}>{nextTask.why}</Text>
         </View>
@@ -114,12 +122,14 @@ export default function TodayPlanCard() {
       <Text style={styles.guruNote}>"{todayPlan.guruNote}"</Text>
 
       <TouchableOpacity
-        style={styles.viewFullButton}
+        style={styles.viewFullBtn}
         onPress={navigateToFullSchedule}
+        activeOpacity={0.7}
         accessibilityRole="button"
         accessibilityLabel="View full schedule"
       >
-        <Text style={styles.viewFullText}>VIEW FULL SCHEDULE</Text>
+        <Text style={styles.viewFullText}>View full schedule</Text>
+        <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} />
       </TouchableOpacity>
     </View>
   );
@@ -128,23 +138,21 @@ export default function TodayPlanCard() {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: theme.colors.divider,
+    borderColor: theme.colors.border,
   },
   activeContainer: {
-    borderColor: theme.colors.primary,
-    borderWidth: 2,
+    borderColor: theme.colors.primaryTintMedium,
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 8,
   },
-  title: {
+  label: {
     color: theme.colors.textMuted,
     fontWeight: '800',
     fontSize: 11,
@@ -153,36 +161,47 @@ const styles = StyleSheet.create({
   subtitle: {
     color: theme.colors.textSecondary,
     fontSize: 14,
-    marginBottom: 16,
+    marginTop: 8,
+    marginBottom: theme.spacing.lg,
   },
-  button: {
+  generateBtn: {
     backgroundColor: theme.colors.primary,
-    borderRadius: 8,
+    borderRadius: theme.borderRadius.sm,
     paddingVertical: 12,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  buttonText: {
-    color: theme.colors.textInverse,
-    fontWeight: '700',
+  generateBtnText: {
+    color: theme.colors.textPrimary,
+    fontWeight: '800',
     fontSize: 13,
+    letterSpacing: 0.8,
   },
-  badge: {
-    backgroundColor: theme.colors.primary,
+  activeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.md,
+  },
+  activeBadge: {
+    backgroundColor: theme.colors.primaryTintSoft,
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 3,
+    borderRadius: 6,
   },
-  badgeText: {
-    color: theme.colors.textInverse,
+  activeBadgeText: {
+    color: theme.colors.primary,
     fontSize: 10,
     fontWeight: '900',
+    letterSpacing: 0.5,
   },
-  taskInfo: {
-    marginBottom: 16,
+  taskBlock: {
+    marginBottom: theme.spacing.md,
   },
   taskTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
     marginBottom: 4,
   },
@@ -190,19 +209,23 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 13,
     fontStyle: 'italic',
+    lineHeight: 19,
   },
   guruNote: {
-    color: theme.colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 20,
-    marginBottom: 16,
+    color: theme.colors.primaryLight,
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 19,
+    marginBottom: theme.spacing.md,
   },
-  viewFullButton: {
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.divider,
-    paddingTop: 12,
+  viewFullBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: theme.spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    gap: 4,
   },
   viewFullText: {
     color: theme.colors.textMuted,

@@ -11,6 +11,18 @@ interface AgendaItemProps {
   onPress: () => void;
 }
 
+const TYPE_COLORS = {
+  new: theme.colors.primary,
+  review: theme.colors.success,
+  deep_dive: theme.colors.error,
+} as const;
+
+const TYPE_LABELS = {
+  new: 'NEW',
+  review: 'REVIEW',
+  deep_dive: 'DEEP DIVE',
+} as const;
+
 export default React.memo(function AgendaItem({
   time,
   title,
@@ -19,6 +31,8 @@ export default React.memo(function AgendaItem({
   priority,
   onPress,
 }: AgendaItemProps) {
+  const accent = TYPE_COLORS[type];
+
   return (
     <TouchableOpacity
       style={styles.row}
@@ -31,23 +45,21 @@ export default React.memo(function AgendaItem({
       <View style={styles.timeWrap}>
         <Text style={styles.timeText}>{time}</Text>
       </View>
-      <View
-        style={[
-          styles.card,
-          type === 'review' && styles.review,
-          type === 'deep_dive' && styles.deep,
-        ]}
-      >
-        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-          {title}
-        </Text>
-        <Text style={styles.sub} numberOfLines={1} ellipsizeMode="tail">
-          {type.toUpperCase().replace('_', ' ')} · {subjectName}
-        </Text>
-        <View style={styles.badgeRow}>
-          {type === 'review' && <Text style={styles.badge}>Due now</Text>}
-          {type === 'deep_dive' && <Text style={styles.badge}>Weak topic</Text>}
-          {priority >= 8 && <Text style={styles.badge}>High yield</Text>}
+      <View style={[styles.card, { borderLeftColor: accent }]}>
+        <View style={styles.cardTop}>
+          <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+            {title}
+          </Text>
+          {priority >= 8 && (
+            <View style={styles.yieldBadge}>
+              <Text style={styles.yieldText}>HY</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.meta}>
+          <Text style={[styles.typeBadge, { color: accent }]}>{TYPE_LABELS[type]}</Text>
+          <Text style={styles.dot}>·</Text>
+          <Text style={styles.subject}>{subjectName}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -55,34 +67,74 @@ export default React.memo(function AgendaItem({
 });
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', marginBottom: 8, alignItems: 'center' },
-  timeWrap: { width: 44, alignItems: 'flex-end', marginRight: 10 },
-  timeText: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700' },
+  row: {
+    flexDirection: 'row',
+    marginBottom: 10,
+    alignItems: 'stretch',
+  },
+  timeWrap: {
+    width: 40,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    marginRight: theme.spacing.md,
+  },
+  timeText: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
   card: {
     flex: 1,
     backgroundColor: theme.colors.surface,
-    padding: 12,
-    borderRadius: 10,
+    padding: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
     borderLeftWidth: 3,
     borderLeftColor: theme.colors.primary,
   },
-  review: { borderLeftColor: theme.colors.success },
-  deep: { borderLeftColor: theme.colors.error },
-  title: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600', lineHeight: 18 },
-  sub: {
-    color: theme.colors.textSecondary,
-    fontSize: 11,
-    marginTop: 2,
-    textTransform: 'uppercase',
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  badge: {
-    color: theme.colors.textSecondary,
+  title: {
+    flex: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  yieldBadge: {
+    backgroundColor: theme.colors.warningTintSoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  yieldText: {
+    color: theme.colors.warning,
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  meta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 5,
+  },
+  typeBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  dot: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+  },
+  subject: {
+    color: theme.colors.textMuted,
     fontSize: 11,
-    fontWeight: '700',
-    backgroundColor: theme.colors.card,
-    borderRadius: 999,
-    paddingHorizontal: 7,
-    paddingVertical: 4,
+    fontWeight: '500',
   },
 });

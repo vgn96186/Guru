@@ -10,13 +10,14 @@ import {
   Alert,
   useWindowDimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { useSessionStore } from '../store/useSessionStore';
-import HeroCard from '../components/home/HeroCard';
+// HeroCard removed — exam countdown consolidated into header row
 import QuickStatsCard from '../components/home/QuickStatsCard';
 import ShortcutTile from '../components/home/ShortcutTile';
 import AgendaItem from '../components/home/AgendaItem';
@@ -195,45 +196,61 @@ export default function HomeScreen() {
     },
   ];
 
+  const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate);
+  const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate);
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
 
-      {/* ── Above fold: greeting + Start button + stat chip ── */}
-      <View style={styles.aboveFold}>
-        <Text style={styles.greetingText}>
-          {greeting}, {firstName}
-        </Text>
-        <View style={styles.startArea}>
-          <StartButton
-            onPress={heroCta.onPress}
-            label={heroCta.label}
-            sublabel={heroCta.sublabel}
-          />
-        </View>
-        <View style={styles.statChipRow}>
-          <Text style={styles.statChip}>
-            🔥 {profile.streakCurrent} day streak · {progressClamped}% today
-          </Text>
-          <AiStatusDot profile={profile} />
-        </View>
-      </View>
-
-      {/* ── Below fold: rest of content ── */}
       <ScrollView
         testID="home-scroll"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <ResponsiveContainer style={styles.content}>
+          {/* ── Header row: greeting + AI status ── */}
+          <View style={styles.headerRow}>
+            <View style={styles.headerLeft}>
+              <Text style={styles.greetingText}>
+                {greeting}, {firstName}
+              </Text>
+              <View style={styles.examCountRow}>
+                <Text style={styles.examChip}>INICET {daysToInicet}d</Text>
+                <Text style={styles.examDivider}>·</Text>
+                <Text style={styles.examChip}>NEET {daysToNeetPg}d</Text>
+              </View>
+            </View>
+            <AiStatusDot profile={profile} />
+          </View>
+
+          {/* ── Hero: Start button + inline stats ── */}
+          <View style={styles.heroSection}>
+            <StartButton
+              onPress={heroCta.onPress}
+              label={heroCta.label}
+              sublabel={heroCta.sublabel}
+            />
+            <View style={styles.heroStats}>
+              <View style={styles.heroStatItem}>
+                <Text style={styles.heroStatValue}>{profile.streakCurrent}</Text>
+                <Text style={styles.heroStatLabel}>streak</Text>
+              </View>
+              <View style={styles.heroStatDivider} />
+              <View style={styles.heroStatItem}>
+                <Text style={styles.heroStatValue}>{progressClamped}%</Text>
+                <Text style={styles.heroStatLabel}>today</Text>
+              </View>
+              <View style={styles.heroStatDivider} />
+              <View style={styles.heroStatItem}>
+                <Text style={styles.heroStatValue}>{levelInfo.level}</Text>
+                <Text style={styles.heroStatLabel}>level</Text>
+              </View>
+            </View>
+          </View>
+
           <TodayPlanCard />
 
-          <HeroCard
-            greeting={greeting}
-            firstName={firstName}
-            daysToInicet={profileRepository.getDaysToExam(profile.inicetDate)}
-            daysToNeetPg={profileRepository.getDaysToExam(profile.neetDate)}
-          />
           <QuickStatsCard
             progressPercent={progressClamped}
             todayMinutes={todayMinutes}
@@ -269,7 +286,11 @@ export default function HomeScreen() {
               }
             >
               <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
-              <Text style={styles.moreChevron}>{criticalExpanded ? '▲' : '▼'}</Text>
+              <Ionicons
+                name={criticalExpanded ? 'chevron-up' : 'chevron-down'}
+                size={16}
+                color={theme.colors.textMuted}
+              />
             </TouchableOpacity>
             {criticalExpanded && (
               <View style={styles.criticalSectionContent}>
@@ -430,7 +451,7 @@ export default function HomeScreen() {
             }
           >
             <Text style={styles.sectionLabel}>TOOLS & ADVANCED</Text>
-            <Animated.Text
+            <Animated.View
               style={{
                 transform: [
                   {
@@ -442,8 +463,8 @@ export default function HomeScreen() {
                 ],
               }}
             >
-              ▼
-            </Animated.Text>
+              <Ionicons name="chevron-down" size={16} color={theme.colors.textMuted} />
+            </Animated.View>
           </TouchableOpacity>
 
           {moreExpanded && (
@@ -454,6 +475,7 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Open Nightstand Mode"
               >
+                <Ionicons name="moon-outline" size={18} color={theme.colors.textMuted} />
                 <Text style={styles.moreLinkText}>Nightstand Mode</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -462,6 +484,7 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Open Flagged Review"
               >
+                <Ionicons name="flag-outline" size={18} color={theme.colors.textMuted} />
                 <Text style={styles.moreLinkText}>Flagged Review</Text>
               </TouchableOpacity>
             </View>
@@ -491,50 +514,31 @@ function AiStatusDot({ profile }: { profile: NonNullable<UserProfile | null> }) 
   const hasOpenRouter = !!profile.openrouterKey?.trim();
   const hasLocal = isLocalLlmUsable(profile);
 
-  let llmLabel: string;
-  let llmColor: string;
-  if (hasGroq) {
-    llmLabel = 'Groq';
-    llmColor = '#22c55e';
-  } else if (hasOpenRouter) {
-    llmLabel = 'OpenRouter';
-    llmColor = '#a78bfa';
-  } else if (hasLocal) {
-    llmLabel = 'Local';
-    llmColor = '#60a5fa';
-  } else {
-    llmLabel = 'No AI';
-    llmColor = '#ef4444';
-  }
+  const llmColor = hasGroq
+    ? '#22c55e'
+    : hasOpenRouter
+      ? '#a78bfa'
+      : hasLocal
+        ? '#60a5fa'
+        : '#ef4444';
 
   // STT (transcription) backend
   const hasHF = !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
   const hasLocalWhisper = !!(profile.useLocalWhisper && profile.localWhisperPath);
-  const hasGroqSTT = hasGroq; // Groq also handles transcription
+  const hasGroqSTT = hasGroq;
 
-  let sttLabel: string;
-  let sttColor: string;
-  if (hasLocalWhisper) {
-    sttLabel = 'Whisper·local';
-    sttColor = '#60a5fa';
-  } else if (hasGroqSTT) {
-    sttLabel = 'Whisper·cloud';
-    sttColor = '#22c55e';
-  } else if (hasHF) {
-    sttLabel = 'HF';
-    sttColor = '#f59e0b';
-  } else {
-    sttLabel = 'No STT';
-    sttColor = '#ef4444';
-  }
+  const sttColor = hasLocalWhisper
+    ? '#60a5fa'
+    : hasGroqSTT
+      ? '#22c55e'
+      : hasHF
+        ? '#f59e0b'
+        : '#ef4444';
 
   return (
     <View style={styles.aiDotRow}>
       <View style={[styles.aiDot, { backgroundColor: llmColor }]} />
-      <Text style={styles.aiDotLabel}>{llmLabel}</Text>
-      <Text style={styles.aiDotSep}>·</Text>
       <View style={[styles.aiDot, { backgroundColor: sttColor }]} />
-      <Text style={styles.aiDotLabel}>{sttLabel}</Text>
     </View>
   );
 }
@@ -560,37 +564,84 @@ function Section({
   );
 }
 
+// ── Consistent spacing scale ──
+const HP = theme.spacing.xl; // 24 — horizontal page padding
+const CARD_GAP = theme.spacing.lg; // 16 — gap between cards
+const SECTION_GAP = theme.spacing.xl; // 24 — gap between sections
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  scrollContent: { paddingBottom: theme.spacing.xxl },
-  content: { padding: 16 },
-  aboveFold: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-    backgroundColor: theme.colors.background,
+  scrollContent: { paddingBottom: 40 },
+  content: { paddingHorizontal: HP, paddingTop: theme.spacing.lg },
+
+  // ── Header ──
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: theme.spacing.sm,
   },
+  headerLeft: { flex: 1 },
   greetingText: {
-    color: theme.colors.textSecondary,
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
+    color: theme.colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
-  statChipRow: {
+  examCountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingBottom: 8,
+    marginTop: 4,
+    gap: 6,
   },
-  statChip: {
+  examChip: {
     color: theme.colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
-  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  aiDot: { width: 7, height: 7, borderRadius: 4 },
-  aiDotLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '600' },
-  aiDotSep: { color: theme.colors.textMuted, fontSize: 11, marginHorizontal: 2 },
+  examDivider: {
+    color: theme.colors.border,
+    fontSize: 12,
+  },
+
+  // ── AI Status ──
+  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
+  aiDot: { width: 8, height: 8, borderRadius: 4 },
+
+  // ── Hero section ──
+  heroSection: {
+    alignItems: 'center',
+    paddingVertical: SECTION_GAP,
+    gap: theme.spacing.lg,
+  },
+  heroStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xl,
+  },
+  heroStatItem: { alignItems: 'center' },
+  heroStatValue: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3,
+  },
+  heroStatLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  heroStatDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: theme.colors.border,
+  },
+
+  // ── Error row ──
   loadErrorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -598,7 +649,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.errorSurface,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
+    marginBottom: CARD_GAP,
     borderWidth: 1,
     borderColor: theme.colors.error,
   },
@@ -612,59 +663,70 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   retryButtonText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 },
+
+  // ── Empty sections ──
   emptySectionTouchable: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderStyle: 'dashed',
   },
   emptySectionText: {
     color: theme.colors.textSecondary,
     fontSize: 13,
-    marginBottom: 4,
+    lineHeight: 19,
   },
-  section: { marginBottom: 20 },
+
+  // ── Sections ──
+  section: { marginBottom: SECTION_GAP },
   sectionLabel: {
     color: theme.colors.textMuted,
     fontWeight: '800',
     fontSize: 11,
     letterSpacing: 1.5,
-    marginBottom: 10,
+    marginBottom: theme.spacing.md,
     textTransform: 'uppercase',
   },
-  startArea: { paddingVertical: 30, alignItems: 'center' },
-  gridLandscape: { flexDirection: 'row', gap: 16 },
-  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+
+  // ── Layouts ──
+  gridLandscape: { flexDirection: 'row', gap: CARD_GAP },
+  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+
+  // ── Tools section ──
   moreHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: theme.spacing.md,
     alignItems: 'center',
   },
-  moreChevron: { color: theme.colors.textMuted, fontSize: 12 },
-  moreContent: { paddingBottom: 20 },
+  moreContent: { paddingBottom: SECTION_GAP },
   moreLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 14,
     minHeight: 44,
-    justifyContent: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.divider,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.border,
+    gap: theme.spacing.md,
   },
-  moreLinkText: { color: theme.colors.textSecondary, fontSize: 14 },
+  moreLinkText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '500' },
 
-  // Collapsible UX Audit styles
-  collapsibleSection: { marginBottom: 20 },
+  // ── Critical section ──
+  collapsibleSection: { marginBottom: SECTION_GAP },
   collapsibleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: theme.spacing.sm,
   },
-  criticalSectionContent: { paddingBottom: 10 },
+  criticalSectionContent: { gap: 10, marginTop: theme.spacing.sm },
   criticalCard: {
     backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 16,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    padding: 16,
-    marginBottom: 10,
+    padding: theme.spacing.lg,
     borderColor: theme.colors.border,
   },
   criticalCardTop: {
@@ -674,39 +736,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   criticalBadge: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
-  criticalArrow: { fontSize: 20, fontWeight: '800' },
+  criticalArrow: { fontSize: 18, fontWeight: '800' },
   criticalTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 3,
   },
   criticalSub: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
-  emptyAgendaRow: {
-    paddingVertical: 12,
-    paddingRight: 8,
-  },
-  emptyAgendaText: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  emptyAgendaLink: {
-    color: theme.colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 6,
-  },
+
+  // ── See all link ──
   seeAllLink: {
     color: theme.colors.primary,
     fontSize: 13,
     fontWeight: '700',
-    marginTop: 4,
+    marginTop: 6,
     textAlign: 'right',
-    textDecorationLine: 'underline',
   },
 });

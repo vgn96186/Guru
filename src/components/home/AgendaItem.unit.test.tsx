@@ -14,10 +14,11 @@ describe('AgendaItem', () => {
 
   it('renders correctly with default props', () => {
     const { getByText, getByLabelText } = render(<AgendaItem {...defaultProps} />);
-    
+
     expect(getByText('10:00 AM')).toBeTruthy();
     expect(getByText('Test Agenda Item')).toBeTruthy();
-    expect(getByText(/NEW · Test Subject/i)).toBeTruthy();
+    expect(getByText('NEW')).toBeTruthy();
+    expect(getByText('Test Subject')).toBeTruthy();
     expect(getByLabelText('Open Test Agenda Item')).toBeTruthy();
   });
 
@@ -27,31 +28,25 @@ describe('AgendaItem', () => {
     expect(defaultProps.onPress).toHaveBeenCalled();
   });
 
-  it('renders review badge and style when type is review', () => {
+  it('renders review type badge', () => {
     const { getByText } = render(<AgendaItem {...defaultProps} type="review" />);
-    expect(getByText('Due now')).toBeTruthy();
-    expect(getByText(/REVIEW · Test Subject/i)).toBeTruthy();
+    expect(getByText('REVIEW')).toBeTruthy();
+    expect(getByText('Test Subject')).toBeTruthy();
   });
 
-  it('renders deep dive badge and style when type is deep_dive', () => {
+  it('renders deep dive type badge', () => {
     const { getByText } = render(<AgendaItem {...defaultProps} type="deep_dive" />);
-    expect(getByText('Weak topic')).toBeTruthy();
-    expect(getByText(/DEEP DIVE · Test Subject/i)).toBeTruthy();
+    expect(getByText('DEEP DIVE')).toBeTruthy();
+    expect(getByText('Test Subject')).toBeTruthy();
   });
 
   it('renders high yield badge when priority is 8 or higher', () => {
-    const { getByText, queryByText } = render(<AgendaItem {...defaultProps} priority={8} />);
-    expect(getByText('High yield')).toBeTruthy();
-
-    const { queryByText: queryByTextLow } = render(<AgendaItem {...defaultProps} priority={7} />);
-    expect(queryByTextLow('High yield')).toBeNull();
+    const { getByText } = render(<AgendaItem {...defaultProps} priority={8} />);
+    expect(getByText('HY')).toBeTruthy();
   });
 
-  it('renders multiple badges when applicable', () => {
-    const { getByText } = render(
-      <AgendaItem {...defaultProps} type="review" priority={9} />
-    );
-    expect(getByText('Due now')).toBeTruthy();
-    expect(getByText('High yield')).toBeTruthy();
+  it('does not render high yield badge when priority is below 8', () => {
+    const { queryByText } = render(<AgendaItem {...defaultProps} priority={7} />);
+    expect(queryByText('HY')).toBeNull();
   });
 });

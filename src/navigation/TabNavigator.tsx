@@ -613,7 +613,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   primaryActionSubtitle: {
-    color: '#D9D4FF',
+    color: theme.colors.primaryLight,
     fontSize: 13,
     lineHeight: 19,
   },

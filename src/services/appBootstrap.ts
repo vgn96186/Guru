@@ -75,7 +75,12 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     await checkAndRestoreFromPublicBackup();
     await enforceLocalLlmRamGuard();
     registerOfflineQueueProcessors();
-    processQueue().catch((e) => console.warn('[OfflineQueue] bootstrap processing failed:', e));
+    // Await queue processing before confidence decay — both use the same DB
+    // connection and concurrent transactions cause "cannot start transaction
+    // within transaction" crashes.
+    await processQueue().catch((e) =>
+      console.warn('[OfflineQueue] bootstrap processing failed:', e),
+    );
     await registerBackgroundFetch().catch((e: unknown) => {
       if (__DEV__) console.warn('[AppBootstrap] Background task not registered:', e);
     });

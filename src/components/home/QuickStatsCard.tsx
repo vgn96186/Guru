@@ -12,7 +12,7 @@ interface QuickStatsCardProps {
   completedSessions: number;
 }
 
-const RING_SIZE = 56;
+const RING_SIZE = 64;
 const STROKE_WIDTH = 5;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
@@ -27,22 +27,13 @@ export default React.memo(function QuickStatsCard({
 }: QuickStatsCardProps) {
   const progressClamped = Math.min(100, Math.max(0, progressPercent));
   const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100;
+  const done = progressClamped >= 100;
+  const ringColor = done ? theme.colors.success : theme.colors.primary;
+  const minutesLeft = Math.max(0, dailyGoal - todayMinutes);
 
   return (
-    <View
-      style={styles.card}
-      accessibilityRole="summary"
-      accessibilityLabel={`Your progress today. ${progressClamped}% of daily goal. ${streak} day streak. Level ${level}. ${completedSessions} sessions.`}
-    >
+    <View style={styles.card} accessibilityRole="summary">
       <View style={styles.topRow}>
-        <View style={styles.copy}>
-          <Text style={styles.title}>Your Progress</Text>
-          <Text style={styles.sub}>
-            {progressClamped >= 100
-              ? 'Daily goal complete. Stack one more high-yield block.'
-              : `${Math.max(0, dailyGoal - todayMinutes)} min left to hit today target.`}
-          </Text>
-        </View>
         <View style={styles.ringWrap}>
           <Svg width={RING_SIZE} height={RING_SIZE}>
             <Circle
@@ -57,7 +48,7 @@ export default React.memo(function QuickStatsCard({
               cx={RING_SIZE / 2}
               cy={RING_SIZE / 2}
               r={RADIUS}
-              stroke={progressClamped >= 100 ? theme.colors.success : theme.colors.primary}
+              stroke={ringColor}
               strokeWidth={STROKE_WIDTH}
               fill="transparent"
               strokeDasharray={CIRCUMFERENCE}
@@ -68,51 +59,88 @@ export default React.memo(function QuickStatsCard({
             />
           </Svg>
           <View style={[StyleSheet.absoluteFill, styles.ringLabel]} pointerEvents="none">
-            <Text style={styles.ringPercent}>{progressClamped}%</Text>
+            <Text style={[styles.ringPercent, done && { color: theme.colors.success }]}>
+              {progressClamped}%
+            </Text>
           </View>
+        </View>
+        <View style={styles.copy}>
+          <Text style={styles.title}>{done ? 'Goal reached' : `${minutesLeft} min left`}</Text>
+          <Text style={styles.sub}>
+            {done
+              ? 'Stack one more high-yield block.'
+              : `${todayMinutes} of ${dailyGoal} min today`}
+          </Text>
         </View>
       </View>
 
       <View style={styles.metaRow}>
-        <View style={styles.metaChip}>
-          <Text style={styles.metaChipText}>{streak} day streak</Text>
-        </View>
-        <View style={styles.metaChip}>
-          <Text style={styles.metaChipText}>Level {level}</Text>
-        </View>
-        <View style={styles.metaChip}>
-          <Text style={styles.metaChipText}>
-            {completedSessions} session{completedSessions === 1 ? '' : 's'}
-          </Text>
-        </View>
+        <MetaChip label={`${streak}d streak`} />
+        <MetaChip label={`Lv ${level}`} />
+        <MetaChip label={`${completedSessions} session${completedSessions === 1 ? '' : 's'}`} />
       </View>
     </View>
   );
 });
 
+function MetaChip({ label }: { label: string }) {
+  return (
+    <View style={styles.metaChip}>
+      <Text style={styles.metaChipText}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.panel,
-    borderRadius: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: 14,
+    padding: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  copy: { flex: 1 },
-  title: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
-  sub: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, marginTop: 4 },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.lg,
+  },
   ringWrap: { width: RING_SIZE, height: RING_SIZE },
   ringLabel: { alignItems: 'center', justifyContent: 'center' },
-  ringPercent: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 11 },
-  metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  ringPercent: {
+    color: theme.colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 13,
+  },
+  copy: { flex: 1 },
+  title: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  sub: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    marginTop: 3,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+  },
   metaChip: {
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
-  metaChipText: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '700' },
+  metaChipText: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
 });

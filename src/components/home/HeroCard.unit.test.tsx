@@ -12,8 +12,6 @@ describe('HeroCard', () => {
   };
 
   beforeEach(() => {
-    // We need to ensure that these return an object with a .start() method
-    // Since Animated is already mocked in jest.setup.js, we just ensure the implementations
     (Animated.timing as jest.Mock).mockReturnValue({
       start: jest.fn((cb) => cb && cb({ finished: true })),
       stop: jest.fn(),
@@ -28,26 +26,21 @@ describe('HeroCard', () => {
     });
   });
 
-  it('renders correctly with default props', () => {
-    const { getByText, getByLabelText } = render(<HeroCard {...defaultProps} />);
-    
-    expect(getByText('Good Morning, John')).toBeTruthy();
-    expect(getByText("Let's lock your next focused hour.")).toBeTruthy();
-    expect(getByText('45d')).toBeTruthy();
-    expect(getByText('120d')).toBeTruthy();
-    
-    expect(getByLabelText('Good Morning, John. INICET in 45 days, NEET-PG in 120 days.')).toBeTruthy();
-  });
-
-  it('renders INICET label and NEET-PG label', () => {
+  it('renders exam countdown labels', () => {
     const { getByText } = render(<HeroCard {...defaultProps} />);
+
+    expect(getByText('EXAM COUNTDOWN')).toBeTruthy();
     expect(getByText('INICET')).toBeTruthy();
     expect(getByText('NEET-PG')).toBeTruthy();
+    expect(getByText('45')).toBeTruthy();
+    expect(getByText('120')).toBeTruthy();
   });
 
-  it('applies urgent styling when days are 30 or less', () => {
-    const { getByText } = render(<HeroCard {...defaultProps} daysToInicet={20} daysToNeetPg={15} />);
-    expect(getByText('20d')).toBeTruthy();
-    expect(getByText('15d')).toBeTruthy();
+  it('renders day counts for urgent values', () => {
+    const { getByText } = render(
+      <HeroCard {...defaultProps} daysToInicet={20} daysToNeetPg={15} />,
+    );
+    expect(getByText('20')).toBeTruthy();
+    expect(getByText('15')).toBeTruthy();
   });
 });

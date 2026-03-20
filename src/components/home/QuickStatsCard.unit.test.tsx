@@ -25,18 +25,14 @@ describe('QuickStatsCard', () => {
   };
 
   it('renders correctly with default props', () => {
-    const { getByText, getByLabelText } = render(<QuickStatsCard {...defaultProps} />);
+    const { getByText } = render(<QuickStatsCard {...defaultProps} />);
 
-    expect(getByText('Your Progress')).toBeTruthy();
-    expect(getByText('55 min left to hit today target.')).toBeTruthy();
+    expect(getByText('55 min left')).toBeTruthy();
+    expect(getByText('45 of 100 min today')).toBeTruthy();
     expect(getByText('45%')).toBeTruthy();
-    expect(getByText('5 day streak')).toBeTruthy();
-    expect(getByText('Level 12')).toBeTruthy();
+    expect(getByText('5d streak')).toBeTruthy();
+    expect(getByText('Lv 12')).toBeTruthy();
     expect(getByText('3 sessions')).toBeTruthy();
-
-    expect(
-      getByLabelText('Your progress today. 45% of daily goal. 5 day streak. Level 12. 3 sessions.'),
-    ).toBeTruthy();
   });
 
   it('renders "1 session" (singular) when completedSessions is 1', () => {
@@ -53,34 +49,27 @@ describe('QuickStatsCard', () => {
     const { getByText } = render(
       <QuickStatsCard {...defaultProps} progressPercent={100} todayMinutes={100} />,
     );
-    expect(getByText('Daily goal complete. Stack one more high-yield block.')).toBeTruthy();
+    expect(getByText('Goal reached')).toBeTruthy();
+    expect(getByText('Stack one more high-yield block.')).toBeTruthy();
   });
 
   it('renders goal complete message when progressPercent exceeds 100', () => {
-    const { getByText, getByLabelText } = render(
+    const { getByText } = render(
       <QuickStatsCard {...defaultProps} progressPercent={120} todayMinutes={120} />,
     );
-    expect(getByText('Daily goal complete. Stack one more high-yield block.')).toBeTruthy();
+    expect(getByText('Goal reached')).toBeTruthy();
     expect(getByText('100%')).toBeTruthy();
-    expect(
-      getByLabelText(
-        'Your progress today. 100% of daily goal. 5 day streak. Level 12. 3 sessions.',
-      ),
-    ).toBeTruthy();
   });
 
-  it('handles negative todayMinutes gracefully in remaining time calculation', () => {
+  it('handles negative todayMinutes gracefully', () => {
     const { getByText } = render(<QuickStatsCard {...defaultProps} todayMinutes={-10} />);
-    expect(getByText('110 min left to hit today target.')).toBeTruthy();
+    expect(getByText('110 min left')).toBeTruthy();
   });
 
   it('handles negative progressPercent by clamping to 0%', () => {
-    const { getByText, getByLabelText } = render(
+    const { getByText } = render(
       <QuickStatsCard {...defaultProps} progressPercent={-10} todayMinutes={-10} />,
     );
     expect(getByText('0%')).toBeTruthy();
-    expect(
-      getByLabelText('Your progress today. 0% of daily goal. 5 day streak. Level 12. 3 sessions.'),
-    ).toBeTruthy();
   });
 });

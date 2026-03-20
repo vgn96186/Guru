@@ -28,17 +28,15 @@ export default React.memo(function ShortcutTile({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         onPress();
       }}
-      activeOpacity={0.8}
+      activeOpacity={0.75}
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <View
-        style={[styles.iconWrap, { backgroundColor: `${accent}1F`, borderColor: `${accent}44` }]}
-      >
-        <Ionicons name={icon} size={20} color={accent} />
+      <View style={[styles.iconWrap, { backgroundColor: `${accent}18` }]}>
+        <Ionicons name={icon} size={22} color={accent} />
       </View>
-      <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
         {title}
       </Text>
     </TouchableOpacity>
@@ -48,29 +46,28 @@ export default React.memo(function ShortcutTile({
 const styles = StyleSheet.create({
   tile: {
     flex: 1,
-    minWidth: '30%',
-    minHeight: 44,
-    backgroundColor: theme.colors.panel,
-    borderRadius: 12,
+    minWidth: '22%',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    padding: 14,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
     alignItems: 'center',
     gap: 8,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    borderWidth: 1,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    color: theme.colors.textPrimary,
-    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontSize: 11,
     fontWeight: '700',
     textAlign: 'center',
-    lineHeight: 16,
+    letterSpacing: 0.2,
   },
 });

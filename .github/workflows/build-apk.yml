@@ -1,4 +1,4 @@
-name: Build Test APK
+name: Build Release APK
 
 on:
   push:
@@ -13,9 +13,9 @@ on:
 
 jobs:
   build-apk:
-    name: Build Debug APK
+    name: Build Release APK
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v4
@@ -41,13 +41,71 @@ jobs:
       - name: Generate native Android project
         run: npx expo prebuild --platform android --clean
 
-      - name: Build debug APK
+      - name: Generate release keystore
+        run: |
+          keytool -genkey -v \
+            -keystore android/app/release.keystore \
+            -alias guru \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Guru,OU=Dev,O=Guru,L=City,S=State,C=IN" \
+            -storepass gururelease \
+            -keypass gururelease
+
+      - name: Configure release signing
+        run: |
+          cat >> android/gradle.properties << 'EOF'
+          MYAPP_RELEASE_STORE_FILE=release.keystore
+          MYAPP_RELEASE_KEY_ALIAS=guru
+          MYAPP_RELEASE_STORE_PASSWORD=gururelease
+          MYAPP_RELEASE_KEY_PASSWORD=gururelease
+          EOF
+
+      - name: Patch build.gradle for release signing
+        run: |
+          python3 - << 'PYEOF'
+          import re
+
+          with open('android/app/build.gradle', 'r') as f:
+              content = f.read()
+
+          signing_config = """
+              release {
+                  storeFile file(MYAPP_RELEASE_STORE_FILE)
+                  storePassword MYAPP_RELEASE_STORE_PASSWORD
+                  keyAlias MYAPP_RELEASE_KEY_ALIAS
+                  keyPassword MYAPP_RELEASE_KEY_PASSWORD
+              }
+          """
+
+          # Insert release signing config after debug block inside signingConfigs
+          content = re.sub(
+              r'(signingConfigs\s*\{[^}]*debug\s*\{[^}]*\})',
+              r'\1' + signing_config,
+              content,
+              count=1
+          )
+
+          # Wire release build type to use release signing config
+          content = re.sub(
+              r'(buildTypes\s*\{[^}]*release\s*\{)',
+              r'\1\n            signingConfig signingConfigs.release',
+              content,
+              count=1
+          )
+
+          with open('android/app/build.gradle', 'w') as f:
+              f.write(content)
+          PYEOF
+
+      - name: Bundle JS and build release APK
         working-directory: android
-        run: ./gradlew assembleDebug --no-daemon -x lint
+        run: ./gradlew assembleRelease --no-daemon -x lint
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: guru-debug-${{ github.sha }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: guru-release-${{ github.sha }}
+          path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 14

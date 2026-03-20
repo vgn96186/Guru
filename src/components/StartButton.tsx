@@ -38,9 +38,23 @@ export default function StartButton({
 
   const scale = useRef(new Animated.Value(1)).current;
   const glow = useRef(new Animated.Value(0)).current;
+  const pressScale = useRef(new Animated.Value(1)).current;
 
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Quick press feedback animation
+    Animated.sequence([
+      Animated.timing(pressScale, {
+        toValue: 0.95,
+        duration: theme.animations.quick,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pressScale, {
+        toValue: 1,
+        duration: theme.animations.quick,
+        useNativeDriver: true,
+      }),
+    ]).start();
     onPress();
   }
 
@@ -50,16 +64,33 @@ export default function StartButton({
       glow.setValue(0);
       return;
     }
+    // Subtle breathing pulse animation
     const pulse = Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1.0, duration: 1200, useNativeDriver: true }),
+        Animated.timing(scale, {
+          toValue: 1.03,
+          duration: theme.animations.slow,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1.0,
+          duration: theme.animations.slow,
+          useNativeDriver: true,
+        }),
       ]),
     );
     const glowAnim = Animated.loop(
       Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 1200, useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: true }),
+        Animated.timing(glow, {
+          toValue: 1,
+          duration: theme.animations.slow,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glow, {
+          toValue: 0,
+          duration: theme.animations.slow,
+          useNativeDriver: true,
+        }),
       ]),
     );
     pulse.start();
@@ -71,7 +102,7 @@ export default function StartButton({
   }, [disabled, glow, scale]);
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
+    <Animated.View style={{ transform: [{ scale: Animated.multiply(scale, pressScale) }] }}>
       <View style={[styles.glowWrapper, { width: size, height: size }]}>
         <Animated.View
           style={[
@@ -137,40 +168,40 @@ const styles = StyleSheet.create({
     position: 'absolute',
     shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 24,
-    shadowOpacity: 0.65,
+    shadowRadius: 28,
+    shadowOpacity: 0.6,
     elevation: 16,
   },
   button: {
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 10,
-    paddingHorizontal: 18,
+    ...theme.shadows.md,
+    paddingHorizontal: theme.spacing.lg,
   },
   buttonDisabled: { opacity: 0.6 },
   label: {
     color: theme.colors.textPrimary,
-    fontWeight: '900',
+    fontWeight: '700',
     fontSize: 17,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
     textAlign: 'center',
     width: '90%',
+    ...theme.typography.button,
   },
   labelTablet: {
     fontSize: 22,
-    letterSpacing: 1.4,
+    letterSpacing: 1.2,
   },
   sublabel: {
     color: 'rgba(255,255,255,0.7)',
-    fontSize: 12,
-    marginTop: 6,
+    ...theme.typography.bodySmall,
+    marginTop: theme.spacing.md,
     textAlign: 'center',
     width: '90%',
-    lineHeight: 17,
   },
   sublabelTablet: {
     fontSize: 15,
-    marginTop: 8,
+    marginTop: theme.spacing.lg,
     lineHeight: 21,
   },
 });

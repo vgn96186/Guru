@@ -62,19 +62,21 @@ export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: Hero
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.card,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
+    ...theme.shadows.sm,
   },
   label: {
     color: theme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
+    ...theme.typography.caption,
+    fontWeight: '700',
     letterSpacing: 1.5,
     marginBottom: theme.spacing.md,
+    textTransform: 'uppercase',
   },
   row: {
     flexDirection: 'row',
@@ -86,26 +88,26 @@ const styles = StyleSheet.create({
   },
   examLabel: {
     color: theme.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
+    ...theme.typography.caption,
+    fontWeight: '600',
     letterSpacing: 1,
-    marginBottom: 4,
+    marginBottom: theme.spacing.sm,
+    textTransform: 'uppercase',
   },
   examDays: {
     color: theme.colors.textPrimary,
-    fontSize: 32,
-    fontWeight: '900',
+    ...theme.typography.h1,
     letterSpacing: -1,
   },
   examUnit: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    ...theme.typography.caption,
     fontWeight: '600',
-    marginTop: 2,
+    marginTop: theme.spacing.sm,
   },
   divider: {
     width: 1,
-    height: 48,
+    height: 56,
     backgroundColor: theme.colors.border,
   },
 });

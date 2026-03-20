@@ -70,18 +70,27 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
 });
 
 const styles = StyleSheet.create({
-  container: { alignItems: 'center', justifyContent: 'center', padding: 32 },
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.xxxl,
+  },
   orb: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
     backgroundColor: theme.colors.primary,
     shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 20,
-    shadowOpacity: 0.8,
-    elevation: 10,
-    marginBottom: 20,
+    shadowRadius: 24,
+    shadowOpacity: 0.7,
+    elevation: 12,
+    marginBottom: theme.spacing.lg,
   },
-  text: { color: theme.colors.textMuted, fontSize: 14, fontStyle: 'italic' },
+  text: {
+    color: theme.colors.textSecondary,
+    ...theme.typography.bodySmall,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
 });

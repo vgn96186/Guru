@@ -21,64 +21,98 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
   return (
     <Stack.Navigator
       initialRouteName={initialRoute}
-      screenOptions={{ headerShown: false, animation: 'fade' }}
+      screenOptions={{
+        headerShown: false,
+        animation: 'fade',
+        animationEnabled: true,
+        cardStyle: { backgroundColor: 'transparent' },
+      }}
     >
       <Stack.Screen name="CheckIn" component={CheckInScreen} />
       <Stack.Screen name="Tabs" component={TabNavigator} />
       <Stack.Screen
         name="Lockdown"
         component={LockdownScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+          animationEnabled: true,
+        }}
       />
       <Stack.Screen
         name="DoomscrollGuide"
         component={DoomscrollGuideScreen}
-        options={{ presentation: 'modal' }}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="BreakEnforcer"
         component={BreakEnforcerScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+        }}
       />
       <Stack.Screen
         name="BrainDumpReview"
         component={BrainDumpReviewScreen}
-        options={{ presentation: 'modal' }}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="SleepMode"
         component={SleepModeScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+        }}
       />
       <Stack.Screen
         name="WakeUp"
         component={WakeUpScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'fade',
+        }}
       />
       <Stack.Screen
         name="PunishmentMode"
         component={PunishmentMode}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'none',
+        }}
       />
       <Stack.Screen
         name="BedLock"
         component={BedLockScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'none',
+        }}
       />
       <Stack.Screen
         name="DoomscrollInterceptor"
         component={DoomscrollInterceptor}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
+        options={{
+          gestureEnabled: false,
+          presentation: 'fullScreenModal',
+          animation: 'none',
+        }}
       />
       <Stack.Screen
         name="LocalModel"
         component={LocalModelScreen}
-        options={{ presentation: 'modal' }}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name="PomodoroQuiz"
         component={PomodoroQuizScreen}
-        options={{ presentation: 'fullScreenModal' }}
+        options={{ presentation: 'fullScreenModal', animation: 'fade' }}
       />
     </Stack.Navigator>
   );

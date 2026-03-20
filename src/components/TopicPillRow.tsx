@@ -29,16 +29,22 @@ export default React.memo(function TopicPillRow({ topics, wrap = false }: Props)
 });
 
 const styles = StyleSheet.create({
-  scroll: { maxHeight: 44 },
-  scrollRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap' },
-  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  scroll: { maxHeight: 48 },
+  scrollRow: { flexDirection: 'row', gap: theme.spacing.sm, flexWrap: 'nowrap' },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing.sm },
   pill: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    minHeight: theme.minTouchSize,
+    justifyContent: 'center',
   },
-  pillText: { color: theme.colors.textPrimary, fontSize: 13 },
+  pillText: {
+    color: theme.colors.textPrimary,
+    ...theme.typography.bodySmall,
+    fontWeight: '500',
+  },
 });

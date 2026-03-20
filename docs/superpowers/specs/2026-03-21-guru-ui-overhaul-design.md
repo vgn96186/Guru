@@ -33,6 +33,24 @@ The redesign should remain on the `v2.0` branch and must not touch `main`.
 - Do not merge artifacts, analytics, chat, and planning into one overloaded destination.
 - Do not touch `main` during implementation of this work.
 
+## UI Creation Workflow
+
+For implementation of this redesign, `Gemini CLI` should be the preferred tool for UI creation and visual generation work.
+
+This means:
+
+- use `Gemini CLI` for screen composition, UI ideation, visual exploration, and high-fidelity interface generation
+- use this spec as the product-direction source of truth regardless of which UI generation tool is used
+- use Codex primarily for product architecture, navigation restructuring, data-model alignment, integration with the existing React Native codebase, validation, and implementation planning
+
+In practice, the workflow should be:
+
+1. use `Gemini CLI` to generate or refine the visual UI direction for major surfaces
+2. translate the accepted direction into the existing app structure on `v2.0`
+3. preserve the behavioral and architectural rules in this spec while integrating the generated UI
+
+The intent is not to hand over product design decisions to a model blindly. The intent is to use `Gemini CLI` as the stronger visual-generation tool while keeping the app’s architecture, adaptive study logic, and integration strategy disciplined.
+
 ## User Model
 
 The target user studies across three main external sources:

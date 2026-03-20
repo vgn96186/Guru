@@ -69,6 +69,7 @@ module.exports = [
       'metro.config.js',
       'babel.config.js',
       'eslint.config.js',
+      'scripts/**/*.js',
     ],
     languageOptions: {
       globals: {

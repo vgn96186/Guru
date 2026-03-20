@@ -25,7 +25,7 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import type { ChatStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import {
-  chatWithGuruGrounded,
+  chatWithGuruGroundedStreaming,
   type MedicalGroundingSource,
   GROQ_MODELS,
   OPENROUTER_FREE_MODELS,
@@ -334,26 +334,69 @@ export default function GuruChatScreen() {
       // Persistence should not block the main conversation flow.
     }
 
+    const guruTs = Date.now();
+    const guruId = `g-${guruTs}`;
+    let sawFirstToken = false;
+
     try {
-      const grounded = await chatWithGuruGrounded(
+      const grounded = await chatWithGuruGroundedStreaming(
         question,
         topicName,
         nextHistory,
         chosenModel === 'auto' ? undefined : chosenModel,
+        (delta) => {
+          if (!sawFirstToken) {
+            sawFirstToken = true;
+            setLoading(false);
+          }
+          setMessages((current) => {
+            const idx = current.findIndex((m) => m.id === guruId);
+            if (idx === -1) {
+              return [
+                ...current,
+                {
+                  id: guruId,
+                  role: 'guru' as const,
+                  text: delta,
+                  timestamp: guruTs,
+                },
+              ];
+            }
+            const next = [...current];
+            const prev = next[idx];
+            next[idx] = { ...prev, text: prev.text + delta };
+            return next;
+          });
+          scrollToLatest(0);
+        },
       );
-      const guruTs = Date.now();
-      setMessages((current) => [
-        ...current,
-        {
-          id: `g-${guruTs}`,
-          role: 'guru',
+      setMessages((current) => {
+        const idx = current.findIndex((m) => m.id === guruId);
+        if (idx === -1) {
+          return [
+            ...current,
+            {
+              id: guruId,
+              role: 'guru',
+              text: grounded.reply,
+              sources: grounded.sources,
+              modelUsed: grounded.modelUsed,
+              searchQuery: grounded.searchQuery,
+              timestamp: guruTs,
+            },
+          ];
+        }
+        const next = [...current];
+        const prev = next[idx];
+        next[idx] = {
+          ...prev,
           text: grounded.reply,
           sources: grounded.sources,
           modelUsed: grounded.modelUsed,
           searchQuery: grounded.searchQuery,
-          timestamp: guruTs,
-        },
-      ]);
+        };
+        return next;
+      });
       try {
         await saveChatMessage(topicName, 'guru', grounded.reply, guruTs);
       } catch {

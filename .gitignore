@@ -73,3 +73,6 @@ window_dump.xml
 *.swp
 *.swo
 *~
+
+# Jest coverage output
+coverage/

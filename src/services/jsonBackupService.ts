@@ -1,8 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { Alert } from 'react-native';
 import { getDb } from '../db/database';
+import { shareBackupFileOrAlert } from './backupShare';
 
 const BACKUP_VERSION = 3;
 const JSON_BACKUP_TABLES = [
@@ -159,20 +158,15 @@ export async function exportJsonBackup(): Promise<boolean> {
   const filePath = `${FileSystem.cacheDirectory}guru_backup_${dateStr}.json`;
   await FileSystem.writeAsStringAsync(filePath, json);
 
-  if (await Sharing.isAvailableAsync()) {
-    try {
-      await Sharing.shareAsync(filePath, {
-        mimeType: 'application/json',
-        dialogTitle: 'Save Guru Backup',
-      });
-      return true;
-    } catch (err) {
-      console.error('[Backup] Sharing failed:', err);
-      return false;
-    }
-  } else {
-    Alert.alert('Backup saved', `File written to:\n${filePath}`);
+  try {
+    await shareBackupFileOrAlert(filePath, {
+      mimeType: 'application/json',
+      dialogTitle: 'Save Guru Backup',
+    });
     return true;
+  } catch (err) {
+    console.error('[Backup] Sharing failed:', err);
+    return false;
   }
 }
 

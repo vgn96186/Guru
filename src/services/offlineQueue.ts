@@ -41,6 +41,21 @@ function canonicalPayloadString(payload: Record<string, unknown>): string {
   return JSON.stringify(payload, Object.keys(payload).sort());
 }
 
+async function runQueueStatusUpdate(
+  sql: string,
+  params: Array<string | number | null>,
+  failureLogPrefix: string,
+): Promise<boolean> {
+  try {
+    const db = getDb();
+    const result = await db.runAsync(sql, params);
+    return result.changes > 0;
+  } catch (err) {
+    console.warn(failureLogPrefix, err);
+    return false;
+  }
+}
+
 /** Enqueue a failed request for later retry. */
 export async function enqueueRequest(
   requestType: OfflineRequestType,
@@ -131,42 +146,31 @@ export async function getPendingRequests(): Promise<OfflineQueueItem[]> {
 
 /** Mark a queued item as processing (optimistic lock). */
 async function markProcessing(id: number): Promise<boolean> {
-  try {
-    const db = getDb();
-    const result = await db.runAsync(
-      `UPDATE offline_ai_queue 
-       SET status = 'processing', last_attempt_at = ?, attempts = attempts + 1
-       WHERE id = ? AND status IN ('pending', 'failed')`,
-      [nowTs(), id],
-    );
-    return result.changes > 0;
-  } catch (err) {
-    console.warn('[OfflineQueue] markProcessing failed:', err);
-    return false;
-  }
+  return runQueueStatusUpdate(
+    `UPDATE offline_ai_queue 
+     SET status = 'processing', last_attempt_at = ?, attempts = attempts + 1
+     WHERE id = ? AND status IN ('pending', 'failed')`,
+    [nowTs(), id],
+    '[OfflineQueue] markProcessing failed:',
+  );
 }
 
 /** Mark an item as completed and remove it from the active queue. */
 export async function markCompleted(id: number): Promise<void> {
-  try {
-    const db = getDb();
-    await db.runAsync(`UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?`, [id]);
-  } catch (err) {
-    console.warn('[OfflineQueue] markCompleted failed:', err);
-  }
+  await runQueueStatusUpdate(
+    `UPDATE offline_ai_queue SET status = 'completed' WHERE id = ?`,
+    [id],
+    '[OfflineQueue] markCompleted failed:',
+  );
 }
 
 /** Mark an item as failed with an error message. */
 export async function markFailed(id: number, errorMessage: string): Promise<void> {
-  try {
-    const db = getDb();
-    await db.runAsync(
-      `UPDATE offline_ai_queue SET status = 'failed', error_message = ? WHERE id = ?`,
-      [errorMessage, id],
-    );
-  } catch (err) {
-    console.warn('[OfflineQueue] markFailed failed:', err);
-  }
+  await runQueueStatusUpdate(
+    `UPDATE offline_ai_queue SET status = 'failed', error_message = ? WHERE id = ?`,
+    [errorMessage, id],
+    '[OfflineQueue] markFailed failed:',
+  );
 }
 
 /** Calculate retry delay with exponential backoff */

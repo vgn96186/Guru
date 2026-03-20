@@ -13,7 +13,9 @@
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
-import { initWhisper } from 'whisper.rn';
+// whisper.rn has an exports map that does not allow importing the package root.
+// Import the explicit entrypoint to avoid Metro warnings during builds.
+import { initWhisper } from 'whisper.rn/index.js';
 
 /** The context type returned by initWhisper() */
 type WhisperContextType = Awaited<ReturnType<typeof initWhisper>>;
@@ -119,6 +121,7 @@ async function computeFileSha256(filePath: string): Promise<string> {
 export class WhisperModelManager {
   private whisperContext: WhisperContextType | null = null;
   private activeModelSize: WhisperModelSize | null = null;
+  private activeModelFilePath: string | null = null;
   private downloadResumable: FileSystem.DownloadResumable | null = null;
   private isDownloading = false;
   private onProgressCallback: ((progress: ModelDownloadProgress) => void) | null = null;
@@ -134,10 +137,14 @@ export class WhisperModelManager {
    */
   async getState(): Promise<ModelState> {
     const activeSize = this.activeModelSize;
-    const modelPath = activeSize ? getModelPath(MODEL_REGISTRY[activeSize]) : undefined;
+    const modelPath = this.activeModelFilePath
+      ? this.activeModelFilePath
+      : activeSize
+        ? getModelPath(MODEL_REGISTRY[activeSize])
+        : undefined;
 
     return {
-      isDownloaded: activeSize ? await this.isModelDownloaded(activeSize) : false,
+      isDownloaded: activeSize ? await this.isModelDownloaded(activeSize) : !!this.activeModelFilePath,
       isLoaded: this.whisperContext !== null,
       isDownloading: this.isDownloading,
       activeSize: activeSize ?? undefined,
@@ -402,10 +409,12 @@ export class WhisperModelManager {
         isBundleAsset: false,
       });
       this.activeModelSize = targetSize;
+      this.activeModelFilePath = modelPath;
       return this.whisperContext;
     } catch (err) {
       this.whisperContext = null;
       this.activeModelSize = null;
+      this.activeModelFilePath = null;
 
       const errMsg = String(err);
       if (errMsg.includes('out of memory') || errMsg.includes('alloc') || errMsg.includes('OOM')) {
@@ -436,6 +445,59 @@ export class WhisperModelManager {
       }
       this.whisperContext = null;
       this.activeModelSize = null;
+      this.activeModelFilePath = null;
+    }
+  }
+
+  /**
+   * Load a whisper context from an arbitrary filePath and reuse it across transcriptions.
+   * This is specifically for the legacy/local flow where the profile stores a direct model path.
+   */
+  async loadModelFromFilePath(filePath: string): Promise<WhisperContextType> {
+    if (this.whisperContext && this.activeModelFilePath === filePath) {
+      return this.whisperContext;
+    }
+
+    const fileInfo = await FileSystem.getInfoAsync(filePath);
+    if (!fileInfo?.exists || fileInfo.size === 0) {
+      throw new TranscriptionError(
+        'MODEL_MISSING',
+        `Model file missing at ${filePath}`,
+        'No speech recognition model found. Please download one from Settings.',
+      );
+    }
+
+    if (this.whisperContext) {
+      await this.unloadModel();
+    }
+
+    try {
+      this.whisperContext = await initWhisper({
+        filePath,
+        isBundleAsset: false,
+      });
+      this.activeModelSize = null;
+      this.activeModelFilePath = filePath;
+      return this.whisperContext;
+    } catch (err) {
+      this.whisperContext = null;
+      this.activeModelSize = null;
+      this.activeModelFilePath = null;
+
+      const errMsg = String(err);
+      if (errMsg.includes('out of memory') || errMsg.includes('alloc') || errMsg.includes('OOM')) {
+        throw new TranscriptionError(
+          'INSUFFICIENT_RAM',
+          `Model load OOM: ${err}`,
+          'Not enough memory to load the speech recognition model. Try closing other apps or using a smaller model.',
+        );
+      }
+
+      throw new TranscriptionError(
+        'MODEL_LOAD_FAILED',
+        `initWhisper failed: ${err}`,
+        'Failed to load the speech recognition model. It may be corrupted — try re-downloading.',
+      );
     }
   }
 

@@ -4,11 +4,16 @@
 import { profileRepository } from '../db/repositories';
 import * as FileSystem from 'expo-file-system/legacy';
 import { getApiKeys } from './aiService';
+import { toFileUri } from './fileUri';
 import {
   transcribeRawWithGroq,
   transcribeRawWithHuggingFace,
   transcribeRawWithLocalWhisper,
 } from './transcription/engines';
+import {
+  runTranscriptionProviders,
+  type TranscriptionProvider,
+} from './transcription/providerFallback';
 import { analyzeTranscript, type LectureAnalysis } from './transcription/analysis';
 import {
   generateADHDNote,
@@ -28,35 +33,6 @@ export {
   analyzeTranscript,
   markTopicsFromLecture,
 };
-
-type TranscriptionProvider = NonNullable<UserProfile['transcriptionProvider']>;
-
-function buildProviderOrder(
-  preferredProvider: TranscriptionProvider,
-  hasGroq: boolean,
-  hasHuggingFace: boolean,
-  hasLocalWhisper: boolean,
-): TranscriptionProvider[] {
-  const orderedProviders: TranscriptionProvider[] =
-    preferredProvider === 'groq'
-      ? ['groq', 'huggingface', 'local']
-      : preferredProvider === 'huggingface'
-        ? ['huggingface', 'groq', 'local']
-        : preferredProvider === 'local'
-          ? ['local', 'groq', 'huggingface']
-          : ['groq', 'huggingface', 'local'];
-
-  return orderedProviders.filter((provider, index) => {
-    if (
-      (provider === 'groq' && !hasGroq) ||
-      (provider === 'huggingface' && !hasHuggingFace) ||
-      (provider === 'local' && !hasLocalWhisper)
-    ) {
-      return false;
-    }
-    return orderedProviders.indexOf(provider) === index;
-  });
-}
 
 /**
  * Unified transcription entry point — Groq first, local Whisper fallback.
@@ -88,9 +64,7 @@ export async function transcribeAudio(opts: {
     logId,
   } = opts;
 
-  const fileInfo = await FileSystem.getInfoAsync(
-    audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`,
-  );
+  const fileInfo = await FileSystem.getInfoAsync(toFileUri(audioFilePath));
   if (!fileInfo?.exists || fileInfo.size === 0) {
     throw new Error(
       `Audio file is missing or empty: ${audioFilePath}. Check that recording started correctly.`,
@@ -103,68 +77,74 @@ export async function transcribeAudio(opts: {
   const hasGroq = !!groqKey?.trim();
   const hasHuggingFace = !!huggingFaceToken?.trim();
   const hasLocalWhisper = !!(useLocalWhisper && localWhisperPath);
-  const providerOrder = buildProviderOrder(
-    transcriptionProvider,
-    hasGroq,
-    hasHuggingFace,
-    hasLocalWhisper,
-  );
-  let lastError: unknown;
+  const { result, lastError } = await runTranscriptionProviders<string>({
+    preferredProvider: transcriptionProvider,
+    availability: {
+      groq: hasGroq,
+      huggingface: hasHuggingFace,
+      local: hasLocalWhisper,
+    },
+    isUsableResult: (value) => value.trim().length > 0,
+    fallbackOnError: true,
+    onProviderStart: (provider) => {
+      if (provider === 'groq') {
+        onProgress?.({ stage: 'transcribing', message: 'Transcribing with Groq Whisper' });
+      } else if (provider === 'huggingface') {
+        onProgress?.({ stage: 'transcribing', message: 'Transcribing with Hugging Face' });
+      } else {
+        onProgress?.({ stage: 'transcribing', message: 'Using local transcription engine...' });
+      }
+    },
+    onProviderError: (provider, err) => {
+      if (provider === 'groq') {
+        if (__DEV__) {
+          console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
+        }
+      } else if (provider === 'huggingface') {
+        if (__DEV__) console.warn('[Transcription] Hugging Face failed:', err);
+      } else {
+        if (__DEV__) console.warn('[Transcription] Local Whisper failed:', err);
+      }
+    },
+    runners: {
+      groq: async () => {
+        if (!groqKey?.trim()) return '';
 
-  for (const provider of providerOrder) {
-    if (transcript) break;
-
-    if (provider === 'groq' && groqKey?.trim()) {
-      let attempt = 0;
-      while (attempt <= maxRetries) {
-        try {
-          onProgress?.({ stage: 'transcribing', message: 'Transcribing with Groq Whisper' });
-          if (process.env.NODE_ENV === 'test') {
-            transcript = await transcribeRawWithGroq(audioFilePath, groqKey);
-          } else {
+        let attempt = 0;
+        let providerError: unknown;
+        while (attempt <= maxRetries) {
+          try {
+            if (process.env.NODE_ENV === 'test') {
+              return await transcribeRawWithGroq(audioFilePath, groqKey);
+            }
             const { transcribeWithGroqChunking } = await import('./lecture/transcription');
             const res = await transcribeWithGroqChunking(audioFilePath, groqKey, logId);
-            transcript = res.transcript;
-          }
-          if (transcript) break;
-        } catch (err) {
-          lastError = err;
-          attempt++;
-          if (attempt > maxRetries) {
-            if (__DEV__) {
-              console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
+            return res.transcript;
+          } catch (err) {
+            providerError = err;
+            attempt++;
+            if (attempt > maxRetries) {
+              throw providerError;
             }
-          } else {
             const delay = process.env.NODE_ENV === 'test' ? 10 : Math.pow(2, attempt) * 1000;
             await new Promise((resolve) => setTimeout(resolve, delay));
           }
         }
-      }
-    }
+        return '';
+      },
+      huggingface: async () => {
+        if (!huggingFaceToken?.trim()) return '';
+        return transcribeRawWithHuggingFace(audioFilePath, huggingFaceToken, huggingFaceModel);
+      },
+      local: async () => {
+        if (!(useLocalWhisper && localWhisperPath)) return '';
+        return transcribeRawWithLocalWhisper(audioFilePath, localWhisperPath);
+      },
+    },
+  });
 
-    if (!transcript && provider === 'huggingface' && huggingFaceToken?.trim()) {
-      onProgress?.({ stage: 'transcribing', message: 'Transcribing with Hugging Face' });
-      try {
-        transcript = await transcribeRawWithHuggingFace(
-          audioFilePath,
-          huggingFaceToken,
-          huggingFaceModel,
-        );
-      } catch (err) {
-        lastError = err;
-        if (__DEV__) console.warn('[Transcription] Hugging Face failed:', err);
-      }
-    }
-
-    if (!transcript && provider === 'local' && useLocalWhisper && localWhisperPath) {
-      onProgress?.({ stage: 'transcribing', message: 'Using local transcription engine...' });
-      try {
-        transcript = await transcribeRawWithLocalWhisper(audioFilePath, localWhisperPath);
-      } catch (err) {
-        lastError = err;
-        if (__DEV__) console.warn('[Transcription] Local Whisper failed:', err);
-      }
-    }
+  if (result) {
+    transcript = result;
   }
 
   if (!transcript) {

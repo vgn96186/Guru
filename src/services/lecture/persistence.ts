@@ -188,16 +188,3 @@ export async function saveLecturePersistence(opts: {
     throw e;
   }
 }
-
-export async function getFailedTranscriptions() {
-  const db = getDb();
-  return db.getAllAsync<{
-    id: number;
-    app_name: string;
-    duration_minutes: number;
-    recording_path: string;
-    transcription_status: string;
-  }>(
-    "SELECT * FROM external_app_logs WHERE returned_at IS NOT NULL AND recording_path IS NOT NULL AND transcription_status IN ('pending', 'failed', 'transcribing')",
-  );
-}

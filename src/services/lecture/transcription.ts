@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { convertToWav, splitWavIntoChunks } from '../../../modules/app-launcher';
 import { transcribeRawWithGroq } from '../transcription/engines';
+import { toFileUri } from '../fileUri';
 import { showToast } from '../../components/Toast';
 
 const GROQ_MAX_FILE_SIZE = 24 * 1024 * 1024;
@@ -33,9 +34,7 @@ export async function cleanupStaleCheckpointDirs(): Promise<void> {
 
 export async function getRecordingInfo(filePath: string) {
   try {
-    const info = await FileSystem.getInfoAsync(
-      filePath.startsWith('file://') ? filePath : `file://${filePath}`,
-    );
+    const info = await FileSystem.getInfoAsync(toFileUri(filePath));
     if (!info?.exists) return { exists: false, sizeBytes: 0, needsChunking: false };
     return {
       exists: true,
@@ -137,10 +136,7 @@ export async function transcribeWithGroqChunking(
     if (nativeChunks.length > 0) {
       for (const chunk of nativeChunks) {
         try {
-          await FileSystem.deleteAsync(
-            chunk.path.startsWith('file://') ? chunk.path : `file://${chunk.path}`,
-            { idempotent: true },
-          );
+          await FileSystem.deleteAsync(toFileUri(chunk.path), { idempotent: true });
         } catch (_e) {
           console.warn('[Transcription] Failed to delete chunk:', chunk.path, _e);
         }
@@ -148,10 +144,7 @@ export async function transcribeWithGroqChunking(
     }
     if (wavPath) {
       try {
-        await FileSystem.deleteAsync(
-          wavPath.startsWith('file://') ? wavPath : `file://${wavPath}`,
-          { idempotent: true },
-        );
+        await FileSystem.deleteAsync(toFileUri(wavPath), { idempotent: true });
       } catch (_e) {
         console.warn('[Transcription] Failed to delete wavPath:', wavPath, _e);
       }

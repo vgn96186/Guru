@@ -11,6 +11,7 @@ import {
   transcribeRawWithHuggingFace,
   transcribeRawWithLocalWhisper,
 } from '../transcription/engines';
+import { runTranscriptionProviders } from '../transcription/providerFallback';
 
 let healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 let evidenceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -93,38 +94,44 @@ async function runTranscriptionEvidenceCheck(
   opts: { groqKey?: string; huggingFaceToken?: string; huggingFaceModel?: string; localWhisperPath?: string },
 ): Promise<void> {
   try {
-    let transcript = '';
-    if (opts.groqKey) {
-      try {
-        transcript = await transcribeRawWithGroq(recordingPath, opts.groqKey);
-      } catch (e) {
-        console.warn('[Health] Transcription evidence (Groq) failed:', e);
-        await notifyTranscriptionEvidenceError(appName);
-        return;
-      }
-    }
-    if (!transcript?.trim() && opts.huggingFaceToken) {
-      try {
-        transcript = await transcribeRawWithHuggingFace(
-          recordingPath,
-          opts.huggingFaceToken,
-          opts.huggingFaceModel,
-        );
-      } catch (e) {
-        console.warn('[Health] Transcription evidence (Hugging Face) failed:', e);
-        await notifyTranscriptionEvidenceError(appName);
-        return;
-      }
-    }
-    if (!transcript?.trim() && opts.localWhisperPath) {
-      try {
-        transcript = await transcribeRawWithLocalWhisper(recordingPath, opts.localWhisperPath);
-      } catch (e) {
-        console.warn('[Health] Transcription evidence (local) failed:', e);
-        await notifyTranscriptionEvidenceError(appName);
-        return;
-      }
-    }
+    const { result: transcript } = await runTranscriptionProviders<string>({
+      preferredProvider: 'auto',
+      availability: {
+        groq: !!opts.groqKey,
+        huggingface: !!opts.huggingFaceToken,
+        local: !!opts.localWhisperPath,
+      },
+      isUsableResult: (value) => value.trim().length > 0,
+      fallbackOnError: false,
+      onProviderError: (provider, error) => {
+        if (provider === 'groq') {
+          console.warn('[Health] Transcription evidence (Groq) failed:', error);
+        } else if (provider === 'huggingface') {
+          console.warn('[Health] Transcription evidence (Hugging Face) failed:', error);
+        } else {
+          console.warn('[Health] Transcription evidence (local) failed:', error);
+        }
+      },
+      runners: {
+        groq: async () => {
+          if (!opts.groqKey) return '';
+          return transcribeRawWithGroq(recordingPath, opts.groqKey);
+        },
+        huggingface: async () => {
+          if (!opts.huggingFaceToken) return '';
+          return transcribeRawWithHuggingFace(
+            recordingPath,
+            opts.huggingFaceToken,
+            opts.huggingFaceModel,
+          );
+        },
+        local: async () => {
+          if (!opts.localWhisperPath) return '';
+          return transcribeRawWithLocalWhisper(recordingPath, opts.localWhisperPath);
+        },
+      },
+    });
+
     if (transcript?.trim()) {
       await notifyTranscriptionEvidenceOk(appName);
     } else {

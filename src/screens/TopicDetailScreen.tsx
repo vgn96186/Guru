@@ -26,6 +26,7 @@ import { getTopicsBySubject, updateTopicNotes, updateTopicProgress } from '../db
 import { clearTopicCache } from '../db/queries/aiCache';
 import { fetchWikipediaImage } from '../services/imageService';
 import type { TopicWithProgress, TopicStatus } from '../types';
+import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
@@ -186,6 +187,13 @@ export default function TopicDetailScreen() {
     setDisplayTopics(list);
   }, [activeFilter, allTopics, collapsedParents, searchQuery]);
 
+  function confirmDiscardUnsavedNotes(onDiscard: () => void) {
+    Alert.alert('Discard changes?', 'You have unsaved notes.', [
+      { text: 'Keep editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: onDiscard },
+    ]);
+  }
+
   function handleTopicPress(t: TopicWithProgress) {
     const hasChildren = allTopics.some((child) => child.parentTopicId === t.id);
 
@@ -202,10 +210,7 @@ export default function TopicDetailScreen() {
       if (expandedId === t.id) {
         const savedNote = allTopics.find((x) => x.id === expandedId)?.progress.userNotes ?? '';
         if (noteText.trim() !== savedNote.trim()) {
-          Alert.alert('Discard changes?', 'You have unsaved notes.', [
-            { text: 'Keep editing', style: 'cancel' },
-            { text: 'Discard', style: 'destructive', onPress: () => setExpandedId(null) },
-          ]);
+          confirmDiscardUnsavedNotes(() => setExpandedId(null));
         } else {
           setExpandedId(null);
         }
@@ -374,19 +379,13 @@ export default function TopicDetailScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
+        <ScreenHeader
+          title={subjectName}
+          titleNumberOfLines={1}
+          containerStyle={styles.screenHeader}
+          titleStyle={styles.screenHeaderTitle}
+        >
           <View style={styles.headerCenter}>
-            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-              {subjectName}
-            </Text>
             <View style={styles.progressRow}>
               <Text style={styles.subtitle}>
                 {displayCount}/{leafTopics.length} micro-topics
@@ -414,7 +413,7 @@ export default function TopicDetailScreen() {
               <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
             </View>
           </View>
-        </View>
+        </ScreenHeader>
 
         <View style={styles.controls}>
           <TextInput
@@ -712,14 +711,7 @@ export default function TopicDetailScreen() {
                         onPress={() => {
                           const savedNote = item.progress.userNotes ?? '';
                           if (noteText.trim() !== savedNote.trim()) {
-                            Alert.alert('Discard changes?', 'You have unsaved notes.', [
-                              { text: 'Keep editing', style: 'cancel' },
-                              {
-                                text: 'Discard',
-                                style: 'destructive',
-                                onPress: () => setExpandedId(null),
-                              },
-                            ]);
+                            confirmDiscardUnsavedNotes(() => setExpandedId(null));
                           } else {
                             setExpandedId(null);
                           }
@@ -770,11 +762,9 @@ export default function TopicDetailScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'flex-start', padding: 16, paddingTop: 20 },
-  backBtn: { padding: 4, marginRight: 12, marginTop: 4 },
-  backText: { color: '#6C63FF', fontSize: 22 },
-  headerCenter: { flex: 1, minWidth: 0 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '800' },
+  screenHeader: { padding: 16, paddingTop: 20, marginBottom: 0 },
+  headerCenter: { minWidth: 0 },
+  screenHeaderTitle: { fontSize: 22, fontWeight: '800' },
   topicImage: {
     width: '100%',
     height: 180,

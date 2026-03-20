@@ -1,14 +1,16 @@
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState } from 'react-native';
 import { initLlama, LlamaContext } from 'llama.rn';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
 import { OPENROUTER_FREE_MODELS, GROQ_MODELS } from './config';
 import { RateLimitError } from './schemas';
+import { readOpenAiCompatibleSse } from './openaiSseStream';
 
 let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
 let llamaContextPromise: Promise<LlamaContext> | null = null;
-let appStateListenerRegistered = false;
+type AppStateSubscription = { remove?: () => void };
+const APPSTATE_SUB_KEY = '__guru_llmRouting_appState_sub_v1';
 
 // Promise-based mutex: prevents concurrent LLM generation which corrupts native context.
 // Unlike a boolean flag, this properly queues callers and can't deadlock on thrown errors.
@@ -46,7 +48,17 @@ async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
       await llamaContext.release();
       llamaContext = null;
     }
-    const ctx = await initLlama({ model: modelPath, n_context: 2048, use_mlock: false } as any);
+    // Performance defaults tuned for quantized GGUF on mid-range Android.
+    const ctx = await initLlama(
+      {
+        model: modelPath,
+        n_context: 2048,
+        n_batch: 384,
+        k_type: 2,
+        v_type: 2,
+        use_mlock: false,
+      } as any,
+    );
     llamaContext = ctx;
     currentLlamaPath = modelPath;
     return ctx;
@@ -73,15 +85,14 @@ export async function releaseLlamaContext(): Promise<void> {
 }
 
 // Release the 200 MB+ LLM context when app goes to background to prevent OOM kills.
-// Guard prevents duplicate listeners on hot reloads in dev.
-if (!appStateListenerRegistered) {
-  appStateListenerRegistered = true;
-  AppState.addEventListener('change', async (state: AppStateStatus) => {
-    if (state === 'background' || state === 'inactive') {
-      await releaseLlamaContext();
-    }
-  });
-}
+// Store the subscription on `globalThis` so hot reload can't stack listeners.
+const prevSub = (globalThis as any)[APPSTATE_SUB_KEY] as AppStateSubscription | undefined;
+if (prevSub?.remove) prevSub.remove();
+(globalThis as any)[APPSTATE_SUB_KEY] = AppState.addEventListener('change', async (state) => {
+  if (state === 'background' || state === 'inactive') {
+    await releaseLlamaContext();
+  }
+}) as AppStateSubscription;
 
 async function callLocalLLM(
   messages: Message[],
@@ -113,9 +124,10 @@ async function callLocalLLM(
       prompt += `{`;
     }
 
+    const n_predict = textMode ? 2000 : 1024;
     const result = await ctx.completion({
       prompt,
-      n_predict: 1500,
+      n_predict,
       temperature: 0.7,
       top_p: 0.9,
     });
@@ -202,6 +214,167 @@ async function callGroq(
   return text;
 }
 
+/** Groq chat with SSE; falls back to non-streaming JSON if the runtime has no response body stream. */
+async function streamGroqChat(
+  messages: Message[],
+  groqKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${groqKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: true,
+    }),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Groq rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Groq error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    const text = await callGroq(messages, groqKey, model, false);
+    onDelta(text);
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from Groq model ${model}`);
+  return text;
+}
+
+/** OpenRouter chat with SSE; falls back to non-streaming if no body stream. */
+async function streamOpenRouterChat(
+  messages: Message[],
+  orKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${orKey}`,
+      'HTTP-Referer': 'neet-study-app',
+      'X-Title': 'Guru Study App',
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 1200,
+      stream: true,
+    }),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`OpenRouter rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`OpenRouter error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    const text = await callOpenRouter(messages, orKey, model);
+    onDelta(text);
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from OpenRouter model ${model}`);
+  return text;
+}
+
+/**
+ * Same routing policy as attemptCloudLLM, but streams assistant tokens via onDelta.
+ * (JSON / structured output is not streamed — use {@link attemptCloudLLM} instead.)
+ */
+export async function attemptCloudLLMStream(
+  messages: Message[],
+  orKey: string | undefined,
+  groqKey: string | undefined,
+  chosenModel: string | undefined,
+  onDelta: (delta: string) => void,
+): Promise<{ text: string; modelUsed: string }> {
+  const preferredGroqModel = chosenModel?.startsWith('groq/')
+    ? chosenModel.replace('groq/', '')
+    : undefined;
+  const preferredOpenRouterModel =
+    chosenModel && !chosenModel.startsWith('groq/') && chosenModel !== 'local'
+      ? chosenModel
+      : undefined;
+
+  let lastCloudError: Error | null = null;
+
+  if (preferredGroqModel && groqKey) {
+    try {
+      const text = await streamGroqChat(messages, groqKey, preferredGroqModel, onDelta);
+      return { text, modelUsed: `groq/${preferredGroqModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+      if (__DEV__)
+        console.warn(
+          `[AI] Groq preferred model stream ${preferredGroqModel} failed:`,
+          lastCloudError.message,
+        );
+    }
+  }
+
+  if (groqKey) {
+    for (const model of GROQ_MODELS) {
+      if (preferredGroqModel && model === preferredGroqModel) continue;
+      try {
+        const text = await streamGroqChat(messages, groqKey, model, onDelta);
+        return { text, modelUsed: `groq/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        if (__DEV__) console.warn(`[AI] Groq stream ${model} failed:`, (err as Error).message);
+        continue;
+      }
+    }
+  }
+
+  if (orKey) {
+    const openRouterCandidates = Array.from(
+      new Set([
+        ...(preferredOpenRouterModel ? [preferredOpenRouterModel] : []),
+        ...OPENROUTER_FREE_MODELS,
+      ]),
+    );
+    for (const model of openRouterCandidates) {
+      try {
+        const text = await streamOpenRouterChat(messages, orKey, model, onDelta);
+        return { text, modelUsed: model };
+      } catch (err) {
+        lastCloudError = err as Error;
+        continue;
+      }
+    }
+  }
+
+  if (lastCloudError) {
+    throw lastCloudError;
+  }
+
+  throw new Error('No AI backend available. Download a local model or add an API key in Settings.');
+}
+
 export async function attemptLocalLLM(
   messages: Message[],
   localModelPath: string,
@@ -229,6 +402,14 @@ export async function attemptLocalLLM(
       msg.toLowerCase().includes('no such file') ||
       msg.toLowerCase().includes('invalid model')
     ) {
+      // Important: free native memory on load failures to prevent leaks.
+      if (!isContextInUse() && llamaContext) {
+        try {
+          await llamaContext.release();
+        } catch (releaseErr) {
+          console.warn('[LLM] Failed to release native context after load error:', releaseErr);
+        }
+      }
       llamaContext = null;
       currentLlamaPath = null;
       llamaContextPromise = null;

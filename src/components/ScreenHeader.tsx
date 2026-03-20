@@ -1,5 +1,13 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../constants/theme';
@@ -7,14 +15,27 @@ import { theme } from '../constants/theme';
 interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
+  children?: React.ReactNode;
+  containerStyle?: StyleProp<ViewStyle>;
+  titleStyle?: StyleProp<TextStyle>;
+  subtitleStyle?: StyleProp<TextStyle>;
+  titleNumberOfLines?: number;
 }
 
-export default function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
+export default function ScreenHeader({
+  title,
+  subtitle,
+  children,
+  containerStyle,
+  titleStyle,
+  subtitleStyle,
+  titleNumberOfLines,
+}: ScreenHeaderProps) {
   const navigation = useNavigation();
   const canGoBack = navigation.canGoBack();
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, containerStyle]}>
       <View style={styles.row}>
         {canGoBack ? (
           <TouchableOpacity
@@ -30,8 +51,11 @@ export default function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
           <View style={styles.backSpacer} />
         )}
         <View style={styles.copy}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <Text style={[styles.title, titleStyle]} numberOfLines={titleNumberOfLines}>
+            {title}
+          </Text>
+          {subtitle ? <Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Text> : null}
+          {children}
         </View>
       </View>
     </View>

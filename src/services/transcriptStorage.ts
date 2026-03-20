@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
 import { generateSecureRandomString } from './cryptoUtils';
 import { buildLectureArtifactFileName } from './lectureIdentity';
+import { isFileUri, stripFileUri, toFileUri } from './fileUri';
 import { copyFileToPublicBackup } from '../../modules/app-launcher';
 
 const TRANSCRIPT_DIR = FileSystemLegacy.documentDirectory + 'transcripts/';
@@ -10,6 +11,7 @@ const RECOVERY_DIR = FileSystemLegacy.documentDirectory + 'recovery/';
 const BACKUP_ROOT = FileSystemLegacy.documentDirectory + 'backups/';
 const PUBLIC_TRANSCRIPT_DIR = BACKUP_ROOT + 'Transcripts/';
 const PUBLIC_NOTES_DIR = BACKUP_ROOT + 'Notes/';
+const TRANSCRIPT_LOAD_FAILED_MESSAGE = 'Transcript file could not be loaded.';
 
 // Durable external backups on Android should go through SAF when configured.
 // The local fallback stays inside app-controlled storage instead of hardcoding /sdcard paths.
@@ -19,12 +21,54 @@ export interface LectureStorageIdentity {
   topics?: string[] | null;
 }
 
-function toFileUri(path: string): string {
-  return path.startsWith('file://') ? path : `file://${path}`;
+async function ensureDirectoryExists(path: string): Promise<void> {
+  const dirInfo = await FileSystemLegacy.getInfoAsync(path);
+  if (!dirInfo?.exists) {
+    await FileSystemLegacy.makeDirectoryAsync(path, { intermediates: true });
+  }
+}
+
+async function backupTextToConfiguredSaf(
+  backupDirectoryUri: string | null | undefined,
+  fileName: string,
+  content: string,
+  successLogPrefix: string,
+  failureLogPrefix: string,
+): Promise<void> {
+  if (!(Platform.OS === 'android' && backupDirectoryUri)) return;
+
+  try {
+    const { StorageAccessFramework } = FileSystemLegacy;
+    const backupUri = await StorageAccessFramework.createFileAsync(
+      backupDirectoryUri,
+      fileName,
+      'text/plain',
+    );
+    await FileSystemLegacy.writeAsStringAsync(backupUri, content, {
+      encoding: FileSystemLegacy.EncodingType.UTF8,
+    });
+    if (__DEV__) console.log(successLogPrefix, fileName);
+  } catch (safErr) {
+    console.warn(failureLogPrefix, safErr);
+  }
+}
+
+async function copyNativePublicBackupWithLogging(
+  localUri: string,
+  fileName: string,
+  successLogPrefix: string,
+  failureLogPrefix: string,
+): Promise<void> {
+  try {
+    await copyFileToPublicBackup(stripFileUri(localUri), fileName);
+    if (__DEV__) console.log(successLogPrefix, fileName);
+  } catch (err) {
+    console.warn(failureLogPrefix, err);
+  }
 }
 
 function fromFileUri(path: string, preserveRawPath: boolean): string {
-  return preserveRawPath ? path.replace(/^file:\/\//, '') : path;
+  return preserveRawPath ? stripFileUri(path) : path;
 }
 
 export async function backupNoteToPublic(
@@ -36,35 +80,26 @@ export async function backupNoteToPublic(
     const profile = await profileRepository.getProfile();
     const fileName = buildLectureArtifactFileName('note', identity, Date.now(), '.txt');
 
-    // 1. Cloud/SAF Backup
-    if (Platform.OS === 'android' && profile.backupDirectoryUri) {
-      try {
-        const { StorageAccessFramework } = FileSystemLegacy;
-        const backupUri = await StorageAccessFramework.createFileAsync(
-          profile.backupDirectoryUri,
-          fileName,
-          'text/plain',
-        );
-        await FileSystemLegacy.writeAsStringAsync(backupUri, noteText, {
-          encoding: FileSystemLegacy.EncodingType.UTF8,
-        });
-        if (__DEV__) console.log('[TranscriptStorage] Note cloud backup saved:', fileName);
-      } catch (safErr) {
-        console.warn('[TranscriptStorage] Note cloud backup failed:', safErr);
-      }
-    }
+    await backupTextToConfiguredSaf(
+      profile.backupDirectoryUri,
+      fileName,
+      noteText,
+      '[TranscriptStorage] Note cloud backup saved:',
+      '[TranscriptStorage] Note cloud backup failed:',
+    );
 
     // 2. Local Public Backup
-    const dirInfo = await FileSystemLegacy.getInfoAsync(PUBLIC_NOTES_DIR);
-    if (!dirInfo?.exists) {
-      await FileSystemLegacy.makeDirectoryAsync(PUBLIC_NOTES_DIR, { intermediates: true });
-    }
+    await ensureDirectoryExists(PUBLIC_NOTES_DIR);
     const localUri = PUBLIC_NOTES_DIR + fileName;
     await FileSystemLegacy.writeAsStringAsync(localUri, noteText, {
       encoding: FileSystemLegacy.EncodingType.UTF8,
     });
-    await copyFileToPublicBackup(localUri.replace('file://', ''), fileName);
-    if (__DEV__) console.log('[TranscriptStorage] Note native backup saved:', fileName);
+    await copyNativePublicBackupWithLogging(
+      localUri,
+      fileName,
+      '[TranscriptStorage] Note native backup saved:',
+      '[TranscriptStorage] Note backup failed:',
+    );
   } catch (e) {
     console.warn('[TranscriptStorage] Note backup failed:', e);
   }
@@ -89,7 +124,7 @@ export async function saveTranscriptToFile(
 ): Promise<string | null> {
   const normalized = transcriptText.trim();
   if (!normalized) return null;
-  if (normalized.startsWith('file://')) return normalized;
+  if (isFileUri(normalized)) return normalized;
 
   const profile = await profileRepository.getProfile();
   await FileSystemLegacy.makeDirectoryAsync(TRANSCRIPT_DIR, { intermediates: true });
@@ -101,35 +136,25 @@ export async function saveTranscriptToFile(
   });
 
   // CRITICAL: AUTO-BACKUP to Public/Cloud Storage
-  if (!profile) return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;
+  if (!profile) return toFileUri(fileUri);
 
-  // 1. Cloud/SAF Backup
-  if (Platform.OS === 'android' && profile.backupDirectoryUri) {
-    try {
-      const { StorageAccessFramework } = FileSystemLegacy;
-      const backupUri = await StorageAccessFramework.createFileAsync(
-        profile.backupDirectoryUri,
-        fileName,
-        'text/plain',
-      );
-      await FileSystemLegacy.writeAsStringAsync(backupUri, normalized, {
-        encoding: FileSystemLegacy.EncodingType.UTF8,
-      });
-      if (__DEV__) console.log('[TranscriptStorage] Transcript cloud backup saved:', fileName);
-    } catch (safErr) {
-      console.warn('[TranscriptStorage] Transcript cloud backup failed:', safErr);
-    }
-  }
+  await backupTextToConfiguredSaf(
+    profile.backupDirectoryUri,
+    fileName,
+    normalized,
+    '[TranscriptStorage] Transcript cloud backup saved:',
+    '[TranscriptStorage] Transcript cloud backup failed:',
+  );
 
   // 2. Local Public Backup (Native)
-  try {
-    await copyFileToPublicBackup(fileUri.replace('file://', ''), fileName);
-    if (__DEV__) console.log('[TranscriptStorage] Native public backup saved:', fileName);
-  } catch (e) {
-    console.warn('[TranscriptStorage] Native public backup failed:', e);
-  }
+  await copyNativePublicBackupWithLogging(
+    fileUri,
+    fileName,
+    '[TranscriptStorage] Native public backup saved:',
+    '[TranscriptStorage] Native public backup failed:',
+  );
   // Ensure loadTranscriptFromFile can recognize this as a file URI
-  return fileUri.startsWith('file://') ? fileUri : 'file://' + fileUri;
+  return toFileUri(fileUri);
 }
 
 export async function renameRecordingToLectureIdentity(
@@ -138,7 +163,7 @@ export async function renameRecordingToLectureIdentity(
 ): Promise<string> {
   if (!recordingPath) return recordingPath;
 
-  const preserveRawPath = !recordingPath.startsWith('file://');
+  const preserveRawPath = !isFileUri(recordingPath);
   const sourceUri = toFileUri(recordingPath);
   const sourceInfo = await FileSystemLegacy.getInfoAsync(sourceUri);
   if (!sourceInfo.exists) return recordingPath;
@@ -165,7 +190,7 @@ export async function loadTranscriptFromFile(
   transcriptUriOrText: string | null,
 ): Promise<string | null> {
   if (!transcriptUriOrText) return null;
-  if (!transcriptUriOrText.startsWith('file://')) return transcriptUriOrText;
+  if (!isFileUri(transcriptUriOrText)) return transcriptUriOrText;
 
   try {
     const content = await FileSystemLegacy.readAsStringAsync(transcriptUriOrText, {
@@ -182,7 +207,7 @@ export async function loadTranscriptFromFile(
     if (currentUri === transcriptUriOrText) {
       // It's already the current path, so it really is missing
       console.warn('[TranscriptStorage] Failed to read transcript file (not found):', err);
-      return 'Transcript file could not be loaded.';
+      return TRANSCRIPT_LOAD_FAILED_MESSAGE;
     }
 
     try {
@@ -201,7 +226,7 @@ export async function loadTranscriptFromFile(
         err,
         err2,
       );
-      return 'Transcript file could not be loaded.';
+      return TRANSCRIPT_LOAD_FAILED_MESSAGE;
     }
   }
 }

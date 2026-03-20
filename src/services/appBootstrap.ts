@@ -12,6 +12,7 @@ import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { registerOfflineQueueProcessors } from './offlineQueueBootstrap';
 import { processQueue } from './offlineQueue';
 import { enforceLocalLlmRamGuard } from './deviceMemory';
+import { stripFileUri } from './fileUri';
 import { cleanupStaleCheckpointDirs } from './lecture/transcription';
 import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
 import { showToast } from '../components/Toast';
@@ -43,7 +44,7 @@ async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
 
   // Copy backup over current DB
   const dbPath = FileSystem.documentDirectory + 'SQLite/neet_study.db';
-  await copyFileFromPublicBackup('guru_latest.db', dbPath.replace('file://', ''));
+  await copyFileFromPublicBackup('guru_latest.db', stripFileUri(dbPath));
 
   // Re-init and run migrations
   await initDatabase();

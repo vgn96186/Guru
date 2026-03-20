@@ -22,6 +22,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { initWhisper } from 'whisper.rn';
 import { splitWavIntoChunks } from '../../../modules/app-launcher';
+import { stripFileUri } from '../fileUri';
 
 type WhisperContextType = Awaited<ReturnType<typeof initWhisper>>;
 import {
@@ -246,12 +247,8 @@ export class BatchTranscriber {
     const chunkBytes = Math.max(bytesPerSecond, Math.floor(chunkDuration * bytesPerSecond));
     const overlapBytes = Math.max(0, Math.floor(overlap * bytesPerSecond));
     const stepBytes = Math.max(bytesPerSecond, chunkBytes - overlapBytes);
-    const normalizedPath = wavFilePath.startsWith('file://')
-      ? wavFilePath.replace('file://', '')
-      : wavFilePath;
-
     const nativeChunks = await splitWavIntoChunks(
-      normalizedPath,
+      stripFileUri(wavFilePath),
       chunkBytes,
       stepBytes,
       bytesPerSecond,

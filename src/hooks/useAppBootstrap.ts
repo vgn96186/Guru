@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
-import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useAppStore } from '../store/useAppStore';
 import { syncExamDatesFromInternet } from '../services/examDateSyncService';
-import { refreshAccountabilityNotifications } from '../services/notificationService';
+import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
 import { navigationRef } from '../navigation/navigationRef';
 import { dailyLogRepository, profileRepository } from '../db/repositories';
 import { retryFailedTasks } from '../services/lectureSessionMonitor';
 import { invalidatePlanCache } from '../services/studyPlanner';
+import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
+import { useAppStateTransition } from './useAppStateTransition';
 
 /**
  * Master initialization hook.
@@ -18,6 +19,15 @@ export function useAppBootstrap(): void {
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const initialized = useRef(false);
+
+  useAppStateTransition({
+    onActive: () => {
+      refreshProfile();
+      void refreshAccountabilityNotificationsSafely((e) =>
+        console.error('[Notifications] Refresh failed on foreground:', e),
+      );
+    },
+  });
 
   useEffect(() => {
     if (initialized.current) return;
@@ -40,20 +50,39 @@ export function useAppBootstrap(): void {
         await refreshProfile();
       }
 
+      // 3. Seed bundled API keys into the profile on first run.
+      //    This makes bundled defaults persist across Expo + bare RN builds without copy/paste.
+      const bundledGroq = BUNDLED_GROQ_KEY.trim();
+      const bundledHf = BUNDLED_HF_TOKEN.trim();
+      const bundledOr = BUNDLED_OPENROUTER_KEY.trim();
+      const currentProfile = useAppStore.getState().profile;
+      const needsGroq = !!bundledGroq && !currentProfile?.groqApiKey;
+      const needsHf = !!bundledHf && !currentProfile?.huggingFaceToken;
+      const needsOr = !!bundledOr && !currentProfile?.openrouterKey;
+      if (needsGroq || needsHf || needsOr) {
+        await profileRepository.updateProfile({
+          ...(needsGroq ? { groqApiKey: bundledGroq } : {}),
+          ...(needsHf ? { huggingFaceToken: bundledHf } : {}),
+          ...(needsOr ? { openrouterKey: bundledOr } : {}),
+        });
+        await refreshProfile();
+      }
+
       // 3. Sync and Maintenance
       syncExamDatesFromInternet()
         .then((res) => {
           if (res.updated) refreshProfile();
         })
         .catch((e) => console.error('[Sync] Exam date sync failed:', e));
-      refreshAccountabilityNotifications().catch((e) =>
+      void refreshAccountabilityNotificationsSafely((e) =>
         console.error('[Notifications] Refresh failed:', e),
       );
 
       // 4. Deferred Recovery (10s delay to stay out of critical path)
-      if (profile?.groqApiKey) {
+      const profileForRecovery = useAppStore.getState().profile;
+      if (profileForRecovery?.groqApiKey) {
         setTimeout(() => {
-          retryFailedTasks(profile.groqApiKey).catch((e) =>
+          retryFailedTasks(profileForRecovery.groqApiKey).catch((e) =>
             console.error('[Recovery] Transcription retry failed:', e),
           );
         }, 10000);
@@ -69,18 +98,8 @@ export function useAppBootstrap(): void {
       }
     });
 
-    const appStateSub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        refreshProfile();
-        refreshAccountabilityNotifications().catch((e) =>
-          console.error('[Notifications] Refresh failed on foreground:', e),
-        );
-      }
-    });
-
     return () => {
       sub.remove();
-      appStateSub.remove();
     };
   }, []);
 }

@@ -98,6 +98,10 @@ export default function NotesHubScreen() {
     };
   }, []);
 
+  const showErrorAlert = (title: string, error: unknown) => {
+    Alert.alert(title, error instanceof Error ? error.message : String(error));
+  };
+
   const handlePlayPending = async (session: ExternalAppLog) => {
     if (!session.id || !session.recordingPath) return;
 
@@ -140,7 +144,7 @@ export default function NotesHubScreen() {
       });
       await loadData();
     } catch (e: any) {
-      Alert.alert('Retry Failed', e.message);
+      showErrorAlert('Retry Failed', e);
     } finally {
       setIsRetrying(null);
     }
@@ -168,7 +172,7 @@ export default function NotesHubScreen() {
       setUploadResult(analysis);
       setUploadConfidence(analysis.estimatedConfidence as 1 | 2 | 3);
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      showErrorAlert('Error', e);
     } finally {
       setIsTranscribingUpload(false);
     }
@@ -198,7 +202,7 @@ export default function NotesHubScreen() {
       setUploadConfidence(null);
       loadData();
     } catch (e: any) {
-      Alert.alert('Error', e.message);
+      showErrorAlert('Error', e);
     } finally {
       setIsSavingUpload(false);
     }

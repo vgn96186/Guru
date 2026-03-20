@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { Alert } from 'react-native';
+import { shareBackupFileOrAlert } from './backupShare';
 
 const Updates = (() => {
   try {
@@ -42,14 +42,14 @@ export async function exportDatabase() {
     const tempPath = `${FileSystem.cacheDirectory}neet_study_backup_${new Date().toISOString().slice(0, 10)}.db`;
     await FileSystem.copyAsync({ from: DB_PATH, to: tempPath });
 
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(tempPath, {
-        mimeType: 'application/octet-stream',
-        dialogTitle: 'Export Backup',
-      });
-    } else {
-      Alert.alert('Error', 'Sharing is not available on this device');
-    }
+    await shareBackupFileOrAlert(tempPath, {
+      mimeType: 'application/octet-stream',
+      dialogTitle: 'Export Backup',
+      unavailableAlert: {
+        title: 'Error',
+        message: 'Sharing is not available on this device',
+      },
+    });
   } catch (e) {
     if (__DEV__) console.error('Backup error', e);
     Alert.alert('Error', 'Failed to export backup.');

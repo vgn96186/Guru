@@ -18,7 +18,11 @@ export { parseStructuredJson } from './jsonRepair';
 export { releaseLlamaContext } from './llmRouting';
 
 // Core generation
-export { generateJSONWithRouting, generateTextWithRouting } from './generate';
+export {
+  generateJSONWithRouting,
+  generateTextWithRouting,
+  generateTextWithRoutingStream,
+} from './generate';
 
 // MedicalGrounding — Wikipedia, PubMed, EuropePMC
 export {
@@ -40,7 +44,7 @@ export {
 } from './planning';
 
 // Chat
-export { chatWithGuru, chatWithGuruGrounded, askGuru } from './chat';
+export { chatWithGuru, chatWithGuruGrounded, chatWithGuruGroundedStreaming, askGuru } from './chat';
 
 // Notifications
 export { generateWakeUpMessage, generateBreakEndMessages } from './notifications';

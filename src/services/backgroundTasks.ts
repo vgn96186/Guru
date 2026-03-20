@@ -3,7 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { prefetchTopicContent } from './aiService';
 import { profileRepository } from '../db/repositories';
-import { refreshAccountabilityNotifications } from './notificationService';
+import { refreshAccountabilityNotificationsSafely } from './notificationService';
 import { getMoodContentTypes } from '../constants/prompts';
 import type { ContentType, TopicWithProgress } from '../types';
 
@@ -37,7 +37,7 @@ try {
         candidates.map((topic) => prefetchTopicContent(topic, typesToFetch)),
       );
 
-      await refreshAccountabilityNotifications().catch((e) =>
+      await refreshAccountabilityNotificationsSafely((e) =>
         console.warn('[BG] Notification refresh failed:', e),
       );
 

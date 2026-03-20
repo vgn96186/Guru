@@ -1,7 +1,9 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { initWhisper } from 'whisper.rn';
 import { convertToWav } from '../../../modules/app-launcher';
+import { BatchTranscriber } from '../offlineTranscription/batchTranscriber';
 import { DEFAULT_HF_TRANSCRIPTION_MODEL } from '../../config/appConfig';
+import { toFileUri } from '../fileUri';
+import { getWhisperModelManager } from '../offlineTranscription/whisperModelManager';
 
 const WHISPER_MEDICAL_PROMPT =
   'Medical lecture: NEET-PG, INICET preparation. ' +
@@ -28,6 +30,21 @@ const HALLUCINATION_PATTERNS = [
   // Repeated phrase hallucinations (e.g. "The muscles. The muscles. The muscles.")
   /^(.{5,40})\s*[.,]?\s*(\1\s*[.,]?\s*){2,}$/i,
 ];
+
+const HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES = 20 * 1024 * 1024;
+const LOCAL_WHISPER_BATCH_THRESHOLD_BYTES = 24 * 1024 * 1024;
+
+// Keep local Whisper transcriptions serialized.
+// whisper.rn contexts are native resources and should not be shared concurrently.
+let _whisperTranscriptionMutex: Promise<void> = Promise.resolve();
+function acquireWhisperTranscriptionMutex(): Promise<() => void> {
+  let release!: () => void;
+  const prev = _whisperTranscriptionMutex;
+  _whisperTranscriptionMutex = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  return prev.then(() => release);
+}
 
 function isLikelyHallucination(text: string): boolean {
   const trimmed = text.trim();
@@ -62,6 +79,10 @@ function getAudioMimeType(audioFilePath: string): string {
   return 'application/octet-stream';
 }
 
+function formatMegabytes(bytes: number): string {
+  return `${Math.round(bytes / (1024 * 1024))} MB`;
+}
+
 /** Cloud fallback: Groq Whisper transcription */
 export async function transcribeRawWithGroq(
   audioFilePath: string,
@@ -70,7 +91,7 @@ export async function transcribeRawWithGroq(
   if (!groqKey?.trim()) {
     throw new Error('Groq API key missing. Add one in Settings or enable Local Whisper.');
   }
-  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+  const fileUri = toFileUri(audioFilePath);
 
   const formData = new FormData();
   formData.append('file', {
@@ -110,7 +131,17 @@ export async function transcribeRawWithHuggingFace(
     throw new Error('Hugging Face token missing. Add one in Settings or choose another provider.');
   }
 
-  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+  const fileUri = toFileUri(audioFilePath);
+  const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  if (!fileInfo?.exists || fileInfo.size === 0) {
+    throw new Error(`Audio file is missing or empty: ${audioFilePath}`);
+  }
+  if (fileInfo.size > HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES) {
+    throw new Error(
+      `Hugging Face transcription is limited to ${formatMegabytes(HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES)} files in Guru to avoid memory crashes. Use Groq or Local Whisper for larger recordings.`,
+    );
+  }
+
   const response = await fetch(fileUri);
   if (!response.ok) {
     throw new Error(`Failed to read local audio file for Hugging Face: ${response.status}`);
@@ -120,12 +151,12 @@ export async function transcribeRawWithHuggingFace(
   const res = await fetch(
     `https://router.huggingface.co/hf-inference/models/${encodeURIComponent(modelId)}`,
     {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${huggingFaceToken}`,
-      'Content-Type': getAudioMimeType(audioFilePath),
-    },
-    body: audioBlob,
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${huggingFaceToken}`,
+        'Content-Type': getAudioMimeType(audioFilePath),
+      },
+      body: audioBlob,
     },
   );
 
@@ -153,7 +184,7 @@ export async function transcribeRawWithLocalWhisper(
   audioFilePath: string,
   localWhisperPath: string,
 ): Promise<string> {
-  const fileUri = audioFilePath.startsWith('file://') ? audioFilePath : `file://${audioFilePath}`;
+  const fileUri = toFileUri(audioFilePath);
 
   const fileInfo = await FileSystem.getInfoAsync(fileUri);
   if (!fileInfo?.exists || fileInfo.size === 0) return '';
@@ -162,13 +193,37 @@ export async function transcribeRawWithLocalWhisper(
   if (audioFilePath.endsWith('.m4a') || audioFilePath.endsWith('.mp4')) {
     const wavPath = await convertToWav(audioFilePath);
     if (wavPath) {
-      whisperInputUri = wavPath.startsWith('file://') ? wavPath : `file://${wavPath}`;
+      whisperInputUri = toFileUri(wavPath);
     }
   }
 
-  const whisperContext = await initWhisper({ filePath: localWhisperPath });
+  const whisperModelManager = getWhisperModelManager();
+  const whisperInputInfo = await FileSystem.getInfoAsync(whisperInputUri);
+  if (!whisperInputInfo?.exists || whisperInputInfo.size === 0) return '';
 
+  const release = await acquireWhisperTranscriptionMutex();
   try {
+    await whisperModelManager.loadModelFromFilePath(localWhisperPath);
+
+    if (whisperInputInfo.size > LOCAL_WHISPER_BATCH_THRESHOLD_BYTES) {
+      const batch = new BatchTranscriber(whisperModelManager, {
+        chunkDurationSec: 30,
+        overlapSec: 1,
+        beamSize: 1,
+        bestOf: 1,
+        nThreads: 4,
+      });
+      const { segments } = await batch.transcribe(whisperInputUri);
+      return sanitizeTranscript(
+        segments
+          .map((segment) => segment.text.trim())
+          .filter(Boolean)
+          .join(' ')
+          .trim(),
+      );
+    }
+
+    const whisperContext = whisperModelManager.getContext();
     const { promise } = whisperContext.transcribe(whisperInputUri, {
       language: 'en',
       maxThreads: 4,
@@ -184,7 +239,7 @@ export async function transcribeRawWithLocalWhisper(
     const { result } = await promise;
     return sanitizeTranscript(result?.trim() ?? '');
   } finally {
-    await whisperContext.release();
+    release();
     if (whisperInputUri !== fileUri) {
       try {
         await FileSystem.deleteAsync(whisperInputUri, { idempotent: true });

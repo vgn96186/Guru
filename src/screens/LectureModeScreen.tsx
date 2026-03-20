@@ -10,7 +10,6 @@ import {
   BackHandler,
   Alert,
   Vibration,
-  AppState,
   Platform,
   Animated,
 } from 'react-native';
@@ -46,6 +45,7 @@ import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
 import BreakScreen from './BreakScreen';
 import FocusAudioPlayer from '../components/FocusAudioPlayer';
 import { useFaceTracking } from '../hooks/useFaceTracking';
+import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getDb } from '../db/database';
@@ -102,7 +102,6 @@ export default function LectureModeScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef<number | null>(null);
   const isHydratedRef = useRef(false);
-  const appStateSubscriptionRef = useRef<any>(null);
   const backHandlerRef = useRef<any>(null);
   const proofOfLifeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
@@ -307,20 +306,15 @@ export default function LectureModeScreen() {
   // Handle App sending to background (doomscrolling attempt)
   const hasTriggeredDoomscrollRef = useRef(false);
 
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (nextAppState === 'active') {
-        hasTriggeredDoomscrollRef.current = false;
-      }
-      if (
-        (nextAppState === 'background' || nextAppState === 'inactive') &&
-        !onBreak &&
-        elapsed > 0
-      ) {
+  useAppStateTransition({
+    onActive: () => {
+      hasTriggeredDoomscrollRef.current = false;
+    },
+    onBackground: () => {
+      if (!onBreak && elapsed > 0) {
         void persistLectureState(true);
         if (!hasTriggeredDoomscrollRef.current) {
           hasTriggeredDoomscrollRef.current = true;
-          // They put the phone down or switched to Instagram
           sendSyncMessage({ type: 'DOOMSCROLL_DETECTED' });
           sendImmediateNag(
             '🚨 DOOMSCROLL DETECTED',
@@ -329,14 +323,8 @@ export default function LectureModeScreen() {
           Vibration.vibrate([0, 500, 200, 500]);
         }
       }
-    });
-
-    appStateSubscriptionRef.current = subscription;
-
-    return () => {
-      subscription.remove();
-    };
-  }, [elapsed, onBreak, persistLectureState]);
+    },
+  });
 
   // Main Timer loop
   useEffect(() => {

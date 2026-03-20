@@ -8,7 +8,7 @@ import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import {
   requestNotificationPermissions,
-  refreshAccountabilityNotifications,
+  refreshAccountabilityNotificationsSafely,
 } from './notificationService';
 import { requestRecordingPermissions } from './appLauncher/permissions';
 
@@ -16,6 +16,10 @@ export interface AppPermissionsResult {
   notifications: boolean;
   audio: boolean;
   recordingAndStorage: boolean;
+}
+
+function refreshAccountabilityNotificationsSilently(): void {
+  void refreshAccountabilityNotificationsSafely();
 }
 
 /**
@@ -26,7 +30,7 @@ export async function requestNotifications(): Promise<boolean> {
   try {
     const { status } = await Notifications.getPermissionsAsync();
     if (status === 'granted') {
-      refreshAccountabilityNotifications().catch(() => {});
+      refreshAccountabilityNotificationsSilently();
       return true;
     }
   } catch {
@@ -34,7 +38,7 @@ export async function requestNotifications(): Promise<boolean> {
   }
   const granted = await requestNotificationPermissions();
   if (granted) {
-    refreshAccountabilityNotifications().catch(() => {});
+    refreshAccountabilityNotificationsSilently();
   }
   return granted;
 }

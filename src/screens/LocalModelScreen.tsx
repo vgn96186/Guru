@@ -9,13 +9,17 @@ import {
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAppStore } from '../store/useAppStore';
+import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { theme } from '../constants/theme';
+import {
+  deleteLocalModelFile,
+  getLocalModelFilePath,
+  validateLocalModelFile,
+} from '../services/localModelFiles';
 
 const RECOMMENDED_MODELS = [
   {
@@ -72,7 +76,6 @@ const WHISPER_MODELS = [
 ];
 
 export default function LocalModelScreen() {
-  const navigation = useNavigation();
   const { profile, setUseLocalModel, setLocalModelPath, setUseLocalWhisper, setLocalWhisperPath } =
     useAppStore();
   const localLlmWarning = getLocalLlmRamWarning();
@@ -98,7 +101,7 @@ export default function LocalModelScreen() {
 
   useEffect(() => {
     if (localModelPath) {
-      FileSystem.getInfoAsync(localModelPath).then((info) => {
+      validateLocalModelFile({ path: localModelPath }).then((info) => {
         if (!info.exists) {
           setLocalModelPath(null);
           setUseLocalModel(false);
@@ -106,7 +109,7 @@ export default function LocalModelScreen() {
       });
     }
     if (localWhisperPath) {
-      FileSystem.getInfoAsync(localWhisperPath).then((info) => {
+      validateLocalModelFile({ path: localWhisperPath }).then((info) => {
         if (!info.exists) {
           setLocalWhisperPath(null);
           setUseLocalWhisper(false);
@@ -126,8 +129,8 @@ export default function LocalModelScreen() {
         setProgressWhisper(0);
       }
 
-      const targetUri = FileSystem.documentDirectory + model.name;
-      const fileInfo = await FileSystem.getInfoAsync(targetUri);
+      const targetUri = getLocalModelFilePath(model.name);
+      const fileInfo = await validateLocalModelFile({ path: targetUri });
 
       if (fileInfo.exists) {
         if (isLlm) setLocalModelPath(targetUri);
@@ -192,11 +195,11 @@ export default function LocalModelScreen() {
           style: 'destructive',
           onPress: async () => {
             if (type === 'llm' && localModelPath) {
-              await FileSystem.deleteAsync(localModelPath, { idempotent: true });
+              await deleteLocalModelFile(localModelPath);
               setLocalModelPath(null);
               setUseLocalModel(false);
             } else if (type === 'whisper' && localWhisperPath) {
-              await FileSystem.deleteAsync(localWhisperPath, { idempotent: true });
+              await deleteLocalModelFile(localWhisperPath);
               setLocalWhisperPath(null);
               setUseLocalWhisper(false);
             }
@@ -209,15 +212,14 @@ export default function LocalModelScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={18} color={theme.colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>On-Device AI Setup</Text>
-      </View>
-
       <ScrollView contentContainerStyle={styles.content}>
         <ResponsiveContainer>
+          <ScreenHeader
+            title="On-Device AI Setup"
+            subtitle="Download and manage offline text and transcription models."
+            containerStyle={styles.screenHeader}
+            titleStyle={styles.screenHeaderTitle}
+          />
           <Text style={styles.sectionHeader}>🧠 Study AI (Text Model)</Text>
           <Text style={styles.desc}>Powers flashcards, summaries, and quizzes offline.</Text>
           {localLlmWarning ? (
@@ -369,26 +371,9 @@ export default function LocalModelScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    gap: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.divider,
-  },
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: theme.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  title: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, flex: 1 },
   content: { padding: 20, paddingBottom: 60 },
+  screenHeader: { marginBottom: 24 },
+  screenHeaderTitle: { fontSize: 24, fontWeight: '800' },
   sectionHeader: { color: '#FFF', fontSize: 22, fontWeight: '900', marginBottom: 8 },
   divider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 30 },
   desc: { color: '#AAA', fontSize: 15, lineHeight: 22, marginBottom: 20 },

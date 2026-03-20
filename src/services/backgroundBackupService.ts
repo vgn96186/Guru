@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
+import { stripFileUri } from './fileUri';
 import { copyFileToPublicBackup } from '../../modules/app-launcher';
 
 const PUBLIC_BACKUP_DIR = FileSystem.documentDirectory + 'backups/db/';
@@ -40,7 +41,7 @@ export async function runAutoPublicBackup() {
     }
 
     // 2. Secondary Backup: Native Public Storage (Survives app uninstall)
-    const success = await copyFileToPublicBackup(DB_PATH.replace('file://', ''), 'guru_latest.db');
+    const success = await copyFileToPublicBackup(stripFileUri(DB_PATH), 'guru_latest.db');
     if (__DEV__) {
       if (success) console.log('[AutoBackup] Native public backup successful: guru_latest.db');
       else console.warn('[AutoBackup] Native public backup failed.');

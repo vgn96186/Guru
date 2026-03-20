@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { AppState, AppStateStatus, PanResponder } from 'react-native';
+import { PanResponder } from 'react-native';
+import { useAppStateTransition } from './useAppStateTransition';
 
 interface UseIdleTimerProps {
   onIdle: () => void;
@@ -12,7 +13,6 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isIdle, setIsIdle] = useState(false);
   const isIdleRef = useRef(false);
-  const appState = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     isIdleRef.current = isIdle;
@@ -40,26 +40,18 @@ export function useIdleTimer({ onIdle, onActive, timeout, disabled }: UseIdleTim
     }, timeout);
   }, [disabled, timeout]);
 
-  // Handle app state changes (background/foreground)
-  useEffect(() => {
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
-        // App going to background - fire idle immediately (user left)
-        if (timerRef.current) clearTimeout(timerRef.current);
-        if (!isIdleRef.current) {
-          setIsIdle(true);
-          onIdleRef.current();
-        }
-      } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App coming to foreground - reset timer (user returned)
-        resetTimer();
+  useAppStateTransition({
+    onBackground: () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (!isIdleRef.current) {
+        setIsIdle(true);
+        onIdleRef.current();
       }
-      appState.current = nextAppState;
-    };
-
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => subscription.remove();
-  }, [resetTimer]);
+    },
+    onForeground: () => {
+      resetTimer();
+    },
+  });
 
   // Initial start and cleanup
   useEffect(() => {

@@ -205,6 +205,7 @@ Summary: ${result.lectureSummary}`;
         logId,
         embedding: analysis.embedding,
         noteOverride: noteToSave,
+        recordingPath: recordingPath ?? undefined,
       });
       await updateSessionNoteEnhancementStatus(logId, 'completed');
 

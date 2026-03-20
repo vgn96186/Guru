@@ -11,11 +11,8 @@ export const DEFAULT_INICET_DATE =
 export const DEFAULT_NEET_DATE =
   (process.env.EXPO_PUBLIC_DEFAULT_NEET_DATE ?? '2026-08-30').trim() || '2026-08-30';
 
-/** Optional bundled Groq key from env, used as primary cloud backend when provided. */
-export const BUNDLED_GROQ_KEY = (process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
-
-/** Optional bundled Hugging Face token from env, used for transcription fallback when provided. */
-export const BUNDLED_HF_TOKEN = (process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '').trim();
+// Bundled defaults generated from `.env` by `scripts/generate-bundled-env.js`.
+export { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from './bundledEnv';
 
 /** OpenRouter free models — tried in order when Groq unavailable. */
 export const OPENROUTER_FREE_MODELS = [

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Alert, AppState } from 'react-native';
+import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import {
   stopRecording,
@@ -18,7 +18,9 @@ import {
   stopRecordingHealthCheck,
 } from '../services/lectureSessionMonitor';
 import { showToast } from '../components/Toast';
+import { stripFileUri } from '../services/fileUri';
 import { validateRecordingWithBackoff } from '../services/recordingValidation';
+import { useAppStateTransition } from './useAppStateTransition';
 
 export interface LectureReturnSheetData {
   appName: string;
@@ -62,7 +64,6 @@ async function stopHealthAndHideOverlay(): Promise<void> {
 }
 
 export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecoveryParams) {
-  const appStateRef = useRef(AppState.currentState);
   const handledReturnLogRef = useRef<number | null>(null);
   const lastRecoveryAttemptRef = useRef(0);
 
@@ -123,7 +124,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
             recordingPath = stoppedPath;
             if (recordingPath.includes('/data/')) {
               const fileName = recordingPath.split('/').pop() || `backup_rec_${Date.now()}.m4a`;
-              copyFileToPublicBackup(recordingPath.replace('file://', ''), fileName).catch(
+              copyFileToPublicBackup(stripFileUri(recordingPath), fileName).catch(
                 () => {},
               );
             }
@@ -200,17 +201,16 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
     [onRecovered],
   );
 
+  useAppStateTransition({
+    onForeground: () => {
+      checkForReturnedSession(true);
+      recoverPendingTranscriptions();
+    },
+  });
+
   useEffect(() => {
     checkForReturnedSession(false);
     recoverPendingTranscriptions(true);
-    const sub = AppState.addEventListener('change', (nextState) => {
-      if (appStateRef.current.match(/inactive|background/) && nextState === 'active') {
-        checkForReturnedSession(true);
-        recoverPendingTranscriptions();
-      }
-      appStateRef.current = nextState;
-    });
-    return () => sub.remove();
   }, [checkForReturnedSession, recoverPendingTranscriptions]);
 
   return { recoverPendingTranscriptions, checkForReturnedSession };

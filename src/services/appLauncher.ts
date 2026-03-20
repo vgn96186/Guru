@@ -78,6 +78,46 @@ export interface LaunchMedicalAppOptions {
   localWhisperPath?: string;
 }
 
+function alertRecordingStartFailed(): void {
+  Alert.alert('Recording Failed', 'Could not start background recording. Please try again.');
+}
+
+async function cleanupAbortedLaunch(
+  logId: number | undefined,
+  statusMessage: string,
+  transcriptionMessage: string,
+  stopRecordingWarnPrefix: string,
+  finalizeWarnPrefix: string,
+  overlayWarnPrefix: string,
+): Promise<void> {
+  stopRecordingHealthCheck();
+
+  let finalRecordingPath: string | null = null;
+  try {
+    finalRecordingPath = await nativeStopRecording();
+  } catch (stopErr) {
+    console.warn(stopRecordingWarnPrefix, stopErr);
+  }
+
+  try {
+    if (typeof logId === 'number') {
+      if (finalRecordingPath) {
+        await updateSessionRecordingPath(logId, finalRecordingPath);
+      }
+      await finishExternalAppSession(logId, 0, statusMessage);
+      await updateSessionTranscriptionStatus(logId, 'no_audio', transcriptionMessage);
+    }
+  } catch (sessionErr) {
+    console.warn(finalizeWarnPrefix, sessionErr);
+  }
+
+  try {
+    await hideOverlay();
+  } catch (overlayStopErr) {
+    console.warn(overlayWarnPrefix, overlayStopErr);
+  }
+}
+
 export async function launchMedicalApp(
   appKey: SupportedMedicalApp,
   faceTracking = false,
@@ -143,10 +183,7 @@ async function _launchMedicalAppInner(
       try {
         recordingPath = await startRecording('');
         if (!recordingPath) {
-          Alert.alert(
-            'Recording Failed',
-            'Could not start background recording. Please try again.',
-          );
+          alertRecordingStartFailed();
           return false;
         }
         const groqKey = options?.groqKey?.trim();
@@ -167,7 +204,7 @@ async function _launchMedicalAppInner(
         logId = await startExternalAppSession(app.name, recordingPath);
       } catch (e) {
         console.warn('[AppLauncher] Recording start failed:', e);
-        Alert.alert('Recording Failed', 'Could not start background recording. Please try again.');
+        alertRecordingStartFailed();
         return false;
       }
 
@@ -193,34 +230,14 @@ async function _launchMedicalAppInner(
     } catch (err: any) {
       console.error('[AppLauncher] Launch sequence failed:', err);
       Alert.alert('Launch Error', `Failed to open ${app.name}: ${err?.message || 'Unknown error'}`);
-
-      stopRecordingHealthCheck();
-      let finalRecordingPath: string | null = null;
-      try {
-        finalRecordingPath = await nativeStopRecording();
-      } catch (stopErr) {
-        console.warn('[AppLauncher] Failed to stop recording after launch error:', stopErr);
-      }
-      try {
-        if (typeof logId === 'number') {
-          if (finalRecordingPath) {
-            await updateSessionRecordingPath(logId, finalRecordingPath);
-          }
-          await finishExternalAppSession(logId, 0, 'Launch failed before lecture app opened');
-          await updateSessionTranscriptionStatus(
-            logId,
-            'no_audio',
-            err?.message || 'Launch failed before lecture app opened',
-          );
-        }
-      } catch (sessionErr) {
-        console.warn('[AppLauncher] Failed to finalize aborted session:', sessionErr);
-      }
-      try {
-        await hideOverlay();
-      } catch (overlayStopErr) {
-        console.warn('[AppLauncher] Failed to hide overlay after launch error:', overlayStopErr);
-      }
+      await cleanupAbortedLaunch(
+        logId,
+        'Launch failed before lecture app opened',
+        err?.message || 'Launch failed before lecture app opened',
+        '[AppLauncher] Failed to stop recording after launch error:',
+        '[AppLauncher] Failed to finalize aborted session:',
+        '[AppLauncher] Failed to hide overlay after launch error:',
+      );
       return false;
     }
   }
@@ -261,7 +278,7 @@ async function launchMockLectureAudio(
     options?.onMicUsed?.();
     const recordingPath = await startRecording('');
     if (!recordingPath) {
-      Alert.alert('Recording Failed', 'Could not start background recording. Please try again.');
+      alertRecordingStartFailed();
       return false;
     }
 
@@ -299,33 +316,14 @@ async function launchMockLectureAudio(
       'Mock Lecture Launch Error',
       `Failed to open mock lecture audio: ${err?.message || 'Unknown error'}`,
     );
-    stopRecordingHealthCheck();
-    let finalRecordingPath: string | null = null;
-    try {
-      finalRecordingPath = await nativeStopRecording();
-    } catch (stopErr) {
-      console.warn('[AppLauncher] Failed to stop recording after mock launch error:', stopErr);
-    }
-    try {
-      if (typeof logId === 'number') {
-        if (finalRecordingPath) {
-          await updateSessionRecordingPath(logId, finalRecordingPath);
-        }
-        await finishExternalAppSession(logId, 0, 'Mock lecture launch failed');
-        await updateSessionTranscriptionStatus(
-          logId,
-          'no_audio',
-          err?.message || 'Mock lecture launch failed',
-        );
-      }
-    } catch (sessionErr) {
-      console.warn('[AppLauncher] Failed to finalize mock session:', sessionErr);
-    }
-    try {
-      await hideOverlay();
-    } catch (overlayStopErr) {
-      console.warn('[AppLauncher] Failed to hide overlay after mock launch error:', overlayStopErr);
-    }
+    await cleanupAbortedLaunch(
+      logId,
+      'Mock lecture launch failed',
+      err?.message || 'Mock lecture launch failed',
+      '[AppLauncher] Failed to stop recording after mock launch error:',
+      '[AppLauncher] Failed to finalize mock session:',
+      '[AppLauncher] Failed to hide overlay after mock launch error:',
+    );
     return false;
   }
 }

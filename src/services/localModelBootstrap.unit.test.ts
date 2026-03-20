@@ -11,6 +11,10 @@ jest.mock('expo-file-system/legacy', () => ({
   deleteAsync: jest.fn(),
   moveAsync: jest.fn(),
   createDownloadResumable: jest.fn(),
+  readAsStringAsync: jest.fn(),
+  EncodingType: {
+    Base64: 'base64',
+  },
 }));
 
 jest.mock('../db/repositories', () => ({
@@ -38,10 +42,62 @@ jest.mock('../components/Toast', () => ({
   showToast: jest.fn(),
 }));
 
+// Mock crypto/subtle so SHA-256 validation can deterministically pass in unit tests.
+if (!(global as any).crypto) {
+  (global as any).crypto = require('crypto');
+}
+const LLm_SHA =
+  '8bcb19d3e363f7d1ab27f364032436fd702e735a6f479d6bb7b1cf066e76b443';
+const WHISPER_SHA =
+  '1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69';
+
+function getBufferSourceByteLength(data: BufferSource): number {
+  if (data instanceof ArrayBuffer) {
+    return data.byteLength;
+  }
+  if (ArrayBuffer.isView(data)) {
+    return data.byteLength;
+  }
+  return 0;
+}
+
+try {
+  Object.defineProperty(global.crypto, 'subtle', {
+    value: {
+      digest: jest.fn(async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
+        const byteLength = getBufferSourceByteLength(data);
+        const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
+        const typedArray = new Uint8Array(hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
+        return typedArray.buffer;
+      }),
+    },
+    configurable: true,
+  });
+} catch {
+  // If subtle already exists and can't be overwritten, just spy on digest.
+  jest
+    .spyOn(global.crypto.subtle, 'digest')
+    .mockImplementation(async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
+      const byteLength = getBufferSourceByteLength(data);
+      const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
+      const typedArray = new Uint8Array(
+        hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
+      );
+      return typedArray.buffer;
+    });
+}
+
 describe('localModelBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRefreshProfile.mockClear();
+
+    // Provide deterministic base64 content so digest() can select the expected hash.
+    (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(async (filePath: string) => {
+      if (String(filePath).includes('medgemma-4b-it-q4_k_m.gguf')) return 'AQ=='; // 1 byte
+      if (String(filePath).includes('ggml-large-v3-turbo.bin')) return 'AgM='; // 2 bytes sentinel
+      return 'AA==';
+    });
   });
 
   it('should skip if both models are already configured', async () => {

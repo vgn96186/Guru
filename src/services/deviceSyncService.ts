@@ -19,11 +19,16 @@ let mqttModule: any = null;
 let mqttUnavailable = false;
 const CLOCK_SKEW_TOLERANCE_MS = 5 * 60 * 1000;
 const MAX_RECENT_MESSAGE_IDS = 300;
+const SYNC_CONNECTION_LOST_MESSAGE = 'Device sync connection lost';
 const seenMessageIds = new Map<string, number>();
 const subscribers = new Map<string, (msg: SyncMessage) => void>();
 let nextSubscriberId = 0;
 const outgoingQueue: SyncMessage[] = [];
 let isConnected = false;
+
+function notifySyncConnectionLost(): void {
+  showToast(SYNC_CONNECTION_LOST_MESSAGE, 'warning');
+}
 
 function markAndCheckReplay(msgId: string, ts: number): boolean {
   const now = Date.now();
@@ -243,13 +248,13 @@ async function ensureConnected(code: string): Promise<void> {
     nextClient.on('error', (err: any) => {
       isConnected = false;
       console.error('[DeviceSync] MQTT error:', err?.message ?? err);
-      showToast('Device sync connection lost', 'warning');
+      notifySyncConnectionLost();
     });
 
     nextClient.on('offline', () => {
       isConnected = false;
       console.warn('[DeviceSync] MQTT went offline');
-      showToast('Device sync connection lost', 'warning');
+      notifySyncConnectionLost();
     });
 
     nextClient.on('close', () => {
@@ -298,7 +303,7 @@ export function connectToRoom(code: string, onMessage: (msg: SyncMessage) => voi
 
   ensureConnected(cleanCode).catch((err) => {
     console.warn('[DeviceSync] Failed to connect:', err);
-    showToast('Device sync connection lost', 'warning');
+    notifySyncConnectionLost();
   });
 
   return () => {

@@ -8,7 +8,6 @@ import {
   BackHandler,
   Alert,
   Animated,
-  AppState,
   ScrollView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
@@ -42,6 +41,7 @@ import { XP_REWARDS, STREAK_MIN_MINUTES } from '../constants/gamification';
 import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { useIdleTimer } from '../hooks/useIdleTimer';
 import { useGuruPresence } from '../hooks/useGuruPresence';
+import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 
@@ -161,21 +161,13 @@ export default function SessionScreen() {
     return () => handler.remove();
   }, [finishSession]);
 
-  const appState = useRef(AppState.currentState);
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (
-        appState.current.match(/active/) &&
-        nextAppState.match(/inactive|background/) &&
-        store.sessionState === 'studying' &&
-        profile?.strictModeEnabled
-      ) {
+  useAppStateTransition({
+    onBackground: () => {
+      if (store.sessionState === 'studying' && profile?.strictModeEnabled) {
         sendImmediateNag('COME BACK! 😡', "Your session is still running. Don't break the flow!");
       }
-      appState.current = nextAppState;
-    });
-    return () => subscription.remove();
-  }, [store.sessionState, profile?.strictModeEnabled]);
+    },
+  });
 
   useEffect(() => {
     isPausedRef.current = store.isPaused;

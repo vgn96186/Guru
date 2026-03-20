@@ -3,7 +3,7 @@ import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
 import { getApiKeys } from './config';
 import { parseStructuredJson } from './jsonRepair';
-import { attemptLocalLLM, attemptCloudLLM } from './llmRouting';
+import { attemptLocalLLM, attemptCloudLLM, attemptCloudLLMStream } from './llmRouting';
 import { isTransientNetworkError } from '../offlineQueueErrors';
 import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
 import type { UserProfile } from '../../types';
@@ -103,6 +103,58 @@ export async function generateTextWithRouting(
   if (queueOnFailure && lastError && isTransientNetworkError(lastError) && __DEV__) {
     console.warn(
       '[AI] Skipping offline queue for text generation because the original side effect cannot be replayed safely.',
+    );
+  }
+
+  throw lastError || new Error('All AI attempts failed');
+}
+
+/**
+ * Like {@link generateTextWithRouting}, but streams cloud tokens through `onDelta`.
+ * Local LLM emits one chunk (full text) when complete — no native streaming.
+ */
+export async function generateTextWithRoutingStream(
+  messages: Message[],
+  options: { chosenModel?: string } | undefined,
+  onDelta: (delta: string) => void,
+  queueOnFailure = true,
+): Promise<{ text: string; modelUsed: string }> {
+  const profile = await profileRepository.getProfile();
+
+  if (options?.chosenModel === 'local' && profile.localModelPath && !isLocalLlmUsable(profile)) {
+    throw new Error(
+      getLocalLlmRamWarning() ??
+        'On-device text AI is disabled on this device to avoid low-memory crashes.',
+    );
+  }
+  if (options?.chosenModel === 'local' && isLocalLlmUsable(profile)) {
+    const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
+    onDelta(text);
+    return { text, modelUsed };
+  }
+
+  const { attempts, orKey, groqKey } = getBackendAttemptOrder(profile);
+
+  let lastError: Error | null = null;
+  for (const backend of attempts) {
+    try {
+      if (backend === 'local') {
+        const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
+        onDelta(text);
+        return { text, modelUsed };
+      }
+      return await attemptCloudLLMStream(messages, orKey, groqKey, options?.chosenModel, onDelta);
+    } catch (err) {
+      if (__DEV__)
+        console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);
+      lastError = err as Error;
+      continue;
+    }
+  }
+
+  if (queueOnFailure && lastError && isTransientNetworkError(lastError) && __DEV__) {
+    console.warn(
+      '[AI] Skipping offline queue for streaming text generation because the original side effect cannot be replayed safely.',
     );
   }
 

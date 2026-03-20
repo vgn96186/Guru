@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
-  AppState,
   Vibration,
   Animated,
   Alert,
@@ -18,6 +17,7 @@ import type { RootStackParamList } from '../navigation/types';
 import { dailyLogRepository } from '../db/repositories';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { theme } from '../constants/theme';
 
 const MAX_OPENS_BEFORE_SHAME = 3;
@@ -28,7 +28,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function DoomscrollInterceptor() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<RootStackParamList, 'DoomscrollInterceptor'>>();
-  const appStateRef = useRef(AppState.currentState);
   const [doomscrollAttempts, setDoomscrollAttempts] = useState(0);
   const [isBlocking, setIsBlocking] = useState(false);
   const [blockAppName, setBlockAppName] = useState('');
@@ -70,19 +69,11 @@ export default function DoomscrollInterceptor() {
     });
   }).current;
 
-  // Monitor app state changes
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      const prevAppState = appStateRef.current;
-      appStateRef.current = nextAppState;
-
-      if (nextAppState === 'active' && prevAppState.match(/inactive|background/)) {
-        checkForDoomscrollAttempt();
-      }
-    });
-
-    return () => subscription.remove();
-  }, [checkForDoomscrollAttempt]);
+  useAppStateTransition({
+    onForeground: () => {
+      checkForDoomscrollAttempt();
+    },
+  });
 
   function startDelayTimer() {
     let remaining = DELAY_SECONDS;

@@ -95,7 +95,11 @@ export default React.memo(function ReviewCalendar() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.navBtn}>
+        <TouchableOpacity
+          onPress={() => changeMonth(-1)}
+          style={styles.navBtn}
+          hitSlop={theme.hitSlop}
+        >
           <Ionicons name="chevron-back" size={20} color={theme.colors.textMuted} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -106,7 +110,11 @@ export default React.memo(function ReviewCalendar() {
             {totalReviews} review{totalReviews !== 1 ? 's' : ''} scheduled
           </Text>
         </View>
-        <TouchableOpacity onPress={() => changeMonth(1)} style={styles.navBtn}>
+        <TouchableOpacity
+          onPress={() => changeMonth(1)}
+          style={styles.navBtn}
+          hitSlop={theme.hitSlop}
+        >
           <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
         </TouchableOpacity>
       </View>

@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   },
 
   breatheTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 8,
@@ -344,7 +344,12 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  breatheText: { color: '#fff', fontSize: 20, fontWeight: '700', textAlign: 'center' },
+  breatheText: {
+    color: theme.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   skipBtn: {
     marginTop: 40,
     paddingHorizontal: 20,
@@ -365,7 +370,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   winTopic: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 24,
@@ -388,12 +393,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   clueBox: {
-    backgroundColor: '#13131A',
+    backgroundColor: theme.colors.surfaceAlt,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#252535',
+    borderColor: theme.colors.cardHover,
   },
   newClue: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
   clueLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
@@ -402,14 +407,19 @@ const styles = StyleSheet.create({
   solutionBox: {
     marginTop: 8,
     padding: 16,
-    backgroundColor: '#1A2A1A',
+    backgroundColor: theme.colors.successSurface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#2D4A2D',
+    borderColor: theme.colors.success + '44',
   },
   solutionLabel: { color: theme.colors.success, fontSize: 11, fontWeight: '800', marginBottom: 4 },
-  solutionValue: { color: '#fff', fontSize: 22, fontWeight: '900', marginBottom: 12 },
-  divider: { height: 1, backgroundColor: '#2D4A2D', marginVertical: 12 },
+  solutionValue: {
+    color: theme.colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 12,
+  },
+  divider: { height: 1, backgroundColor: theme.colors.success + '44', marginVertical: 12 },
 
   doneBtn: {
     backgroundColor: theme.colors.primary,
@@ -419,12 +429,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     ...theme.shadows.glow(theme.colors.primary),
   },
-  doneBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  doneBtnText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
   giveUpBtn: { padding: 16, alignItems: 'center' },
   giveUpText: { color: theme.colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
 
   pivotTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 32,
     fontWeight: '900',
     marginBottom: 12,
@@ -461,13 +471,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  sprintBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  sprintBtnText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
   closeBtn: { padding: 16 },
   closeBtnText: { color: theme.colors.textMuted, fontSize: 16, fontWeight: '600' },
 
   sitUpEmoji: { fontSize: 64, marginBottom: 20 },
   sitUpTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 12,
@@ -489,7 +499,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  sitUpBtnText: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  sitUpBtnText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
   orText: { color: theme.colors.textMuted, fontSize: 14, marginVertical: 12 },
   bedBtn: {
     backgroundColor: theme.colors.surface,

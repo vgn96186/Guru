@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import type { TodayTask } from '../../services/studyPlanner';
+import { theme } from '../../constants/theme';
 
 interface Props {
   todayTasks: TodayTask[];
@@ -66,7 +67,7 @@ export default React.memo(function DailyAgendaSection({
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 16 },
   sectionTitle: {
-    color: '#9E9E9E',
+    color: theme.colors.textMuted,
     fontWeight: '700',
     fontSize: 13,
     marginBottom: 12,
@@ -75,21 +76,26 @@ const styles = StyleSheet.create({
   },
   taskRow: { flexDirection: 'row', marginBottom: 10, alignItems: 'center' },
   timeBox: { width: 50, alignItems: 'flex-end', marginRight: 12 },
-  timeText: { color: '#666', fontSize: 12, fontWeight: '700' },
+  timeText: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '700' },
   taskCard: {
     flex: 1,
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     padding: 12,
     borderRadius: 10,
     borderLeftWidth: 3,
-    borderLeftColor: '#6C63FF',
+    borderLeftColor: theme.colors.primary,
   },
-  taskReview: { borderLeftColor: '#4CAF50' },
-  taskDeep: { borderLeftColor: '#F44336' },
-  taskTitle: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  taskSub: { color: '#9E9E9E', fontSize: 10, marginTop: 2, textTransform: 'uppercase' },
+  taskReview: { borderLeftColor: theme.colors.success },
+  taskDeep: { borderLeftColor: theme.colors.error },
+  taskTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  taskSub: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+    textTransform: 'uppercase',
+  },
   emptyStateCard: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     padding: 24,
     marginHorizontal: 16,
@@ -98,24 +104,24 @@ const styles = StyleSheet.create({
   },
   emptyEmoji: { fontSize: 40, marginBottom: 12 },
   emptyTitle: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '700',
     fontSize: 18,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySub: {
-    color: '#9E9E9E',
+    color: theme.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 16,
   },
   emptyBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: theme.colors.primary,
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
-  emptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  emptyBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
 });

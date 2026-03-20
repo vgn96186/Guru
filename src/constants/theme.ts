@@ -79,6 +79,7 @@ export const theme = {
   },
 
   typography: {
+    h0: { fontSize: 28, fontWeight: '900' as const },
     h1: { fontSize: 26, fontWeight: '900' as const },
     h2: { fontSize: 22, fontWeight: '800' as const },
     h3: { fontSize: 18, fontWeight: '700' as const },
@@ -86,6 +87,7 @@ export const theme = {
     body: { fontSize: 15, fontWeight: '400' as const },
     bodySmall: { fontSize: 14, fontWeight: '400' as const },
     caption: { fontSize: 12, fontWeight: '400' as const },
+    captionSmall: { fontSize: 11, fontWeight: '400' as const },
     label: { fontSize: 13, fontWeight: '600' as const },
     button: { fontSize: 16, fontWeight: '700' as const },
   },
@@ -122,6 +124,9 @@ export const theme = {
       elevation: 8,
     }),
   },
+  /** Minimum touch target size (Android Material: 48dp, Apple HIG: 44pt) */
+  hitSlop: { top: 10, bottom: 10, left: 10, right: 10 },
+  minTouchSize: 44,
 } as const;
 
 export type ThemeColors = typeof theme.colors;

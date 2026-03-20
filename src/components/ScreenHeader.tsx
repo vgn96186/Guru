@@ -20,10 +20,11 @@ export default function ScreenHeader({ title, subtitle }: ScreenHeaderProps) {
           <TouchableOpacity
             onPress={() => navigation.goBack()}
             style={styles.backBtn}
+            hitSlop={theme.hitSlop}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="arrow-back" size={20} color={theme.colors.textPrimary} />
+            <Ionicons name="chevron-back" size={22} color={theme.colors.textPrimary} />
           </TouchableOpacity>
         ) : (
           <View style={styles.backSpacer} />
@@ -46,9 +47,9 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,

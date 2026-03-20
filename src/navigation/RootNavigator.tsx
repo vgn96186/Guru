@@ -28,7 +28,7 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
       <Stack.Screen
         name="Lockdown"
         component={LockdownScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
       />
       <Stack.Screen
         name="DoomscrollGuide"
@@ -58,17 +58,17 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
       <Stack.Screen
         name="PunishmentMode"
         component={PunishmentMode}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
       />
       <Stack.Screen
         name="BedLock"
         component={BedLockScreen}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
       />
       <Stack.Screen
         name="DoomscrollInterceptor"
         component={DoomscrollInterceptor}
-        options={{ gestureEnabled: false, presentation: 'fullScreenModal' }}
+        options={{ gestureEnabled: false, presentation: 'fullScreenModal', animation: 'none' }}
       />
       <Stack.Screen
         name="LocalModel"

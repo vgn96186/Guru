@@ -288,7 +288,11 @@ export default function ReviewScreen() {
               return (
                 <TouchableOpacity
                   key={chip.type}
-                  style={[styles.chip, isActive && styles.chipActive, loading && styles.chipDisabled]}
+                  style={[
+                    styles.chip,
+                    isActive && styles.chipActive,
+                    loading && styles.chipDisabled,
+                  ]}
                   onPress={() => {
                     if (loading) return;
                     setSelectedContentType(chip.type === selectedContentType ? null : chip.type);
@@ -421,7 +425,9 @@ function renderBackContent(content: AIContent | null) {
         ))}
         <Text style={styles.hook}>✓ {q.options[q.correctIndex]}</Text>
         {q.explanation ? (
-          <Text style={[styles.point, { color: '#9E9E9E', marginTop: 8 }]}>{q.explanation}</Text>
+          <Text style={[styles.point, { color: theme.colors.textSecondary, marginTop: 8 }]}>
+            {q.explanation}
+          </Text>
         ) : null}
       </View>
     );
@@ -431,7 +437,7 @@ function renderBackContent(content: AIContent | null) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: theme.colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: {
     flexDirection: 'row',
@@ -439,26 +445,41 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
-  progress: { color: '#666', fontWeight: '700' },
+  progress: { color: theme.colors.textMuted, fontWeight: '700' },
   nemesisBadge: {
-    backgroundColor: '#F4433622',
+    backgroundColor: theme.colors.errorTintSoft,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#F44336',
+    borderColor: theme.colors.error,
   },
-  nemesisBadgeText: { color: '#F44336', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
-  close: { color: '#fff', fontSize: 20 },
+  nemesisBadgeText: {
+    color: theme.colors.error,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  close: { color: theme.colors.textPrimary, fontSize: 20 },
   emoji: { fontSize: 60, marginBottom: 20 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  sub: { color: '#888', fontSize: 16, marginBottom: 30, textAlign: 'center' },
-  btn: { backgroundColor: '#333', paddingHorizontal: 30, paddingVertical: 12, borderRadius: 10 },
-  btnText: { color: '#fff', fontWeight: '700' },
+  title: { color: theme.colors.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  sub: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 30, textAlign: 'center' },
+  btn: {
+    backgroundColor: theme.colors.borderLight,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  btnText: { color: theme.colors.textPrimary, fontWeight: '700' },
 
   // Progress bar
-  progressBarBg: { height: 3, backgroundColor: '#222', marginHorizontal: 16, borderRadius: 2 },
-  progressBarFill: { height: 3, backgroundColor: '#6C63FF', borderRadius: 2 },
+  progressBarBg: {
+    height: 3,
+    backgroundColor: theme.colors.border,
+    marginHorizontal: 16,
+    borderRadius: 2,
+  },
+  progressBarFill: { height: 3, backgroundColor: theme.colors.primary, borderRadius: 2 },
 
   // Content type chips
   chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
@@ -468,32 +489,38 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 20,
     borderWidth: 1.5,
-    borderColor: '#333',
-    backgroundColor: '#1A1A24',
+    borderColor: theme.colors.borderLight,
+    backgroundColor: theme.colors.surface,
   },
-  chipActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
+  chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
   chipDisabled: { opacity: 0.4 },
-  chipText: { color: '#666', fontSize: 11, fontWeight: '700' },
-  chipTextActive: { color: '#6C63FF' },
-  autoBadge: { color: '#6C63FF', fontSize: 8, fontWeight: '900', marginTop: 2, letterSpacing: 0.5 },
+  chipText: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700' },
+  chipTextActive: { color: theme.colors.primary },
+  autoBadge: {
+    color: theme.colors.primary,
+    fontSize: 8,
+    fontWeight: '900',
+    marginTop: 2,
+    letterSpacing: 0.5,
+  },
 
   // Card container with pan
   cardContainer: { flex: 1, margin: 20 },
   cardWrap: { flex: 1 },
 
   card: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: theme.colors.borderLight,
     backfaceVisibility: 'hidden',
   },
   cardBack: {
-    backgroundColor: '#15151E',
-    borderColor: '#6C63FF',
+    backgroundColor: theme.colors.panelAlt,
+    borderColor: theme.colors.primary,
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
     padding: 0,
@@ -520,26 +547,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  swipeHintText: { color: '#fff', fontSize: 11, fontWeight: '700', opacity: 0.5 },
+  swipeHintText: { color: theme.colors.textPrimary, fontSize: 11, fontWeight: '700', opacity: 0.5 },
 
-  label: { color: '#555', fontSize: 12, fontWeight: '900', letterSpacing: 1, marginBottom: 20 },
-  topic: { color: '#fff', fontSize: 28, fontWeight: '900', textAlign: 'center', marginBottom: 10 },
-  subject: { color: '#6C63FF', fontSize: 16, fontWeight: '600' },
-  tapHint: { color: '#444', marginTop: 40, fontSize: 12 },
-  point: { color: '#ddd', fontSize: 16, marginBottom: 12, lineHeight: 22 },
-  hook: { color: '#FF9800', fontSize: 14, marginTop: 12, fontStyle: 'italic' },
+  label: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 20,
+  },
+  topic: {
+    color: theme.colors.textPrimary,
+    fontSize: 28,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  subject: { color: theme.colors.primary, fontSize: 16, fontWeight: '600' },
+  tapHint: { color: theme.colors.textMuted, marginTop: 40, fontSize: 12 },
+  point: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 12, lineHeight: 22 },
+  hook: { color: theme.colors.warning, fontSize: 14, marginTop: 12, fontStyle: 'italic' },
   mnemonicText: {
-    color: '#6C63FF',
+    color: theme.colors.primary,
     fontSize: 20,
     fontWeight: '800',
     marginBottom: 16,
     lineHeight: 28,
   },
-  quizQ: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 16, lineHeight: 24 },
-  error: { color: '#F44336' },
+  quizQ: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 16,
+    lineHeight: 24,
+  },
+  error: { color: theme.colors.error },
   controls: { padding: 20, height: 120 },
-  flipBtn: { backgroundColor: '#6C63FF', padding: 16, borderRadius: 12, alignItems: 'center' },
-  flipText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  flipBtn: {
+    backgroundColor: theme.colors.primary,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  flipText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
   ratings: { flexDirection: 'row', gap: 10 },
   rateBtn: {
     flex: 1,
@@ -547,8 +597,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
-    backgroundColor: '#1A1A24',
+    backgroundColor: theme.colors.surface,
   },
   rateLabel: { fontWeight: '800', fontSize: 14, marginBottom: 4 },
-  rateDays: { color: '#666', fontSize: 11 },
+  rateDays: { color: theme.colors.textMuted, fontSize: 11 },
 });

@@ -1,65 +1,65 @@
 import { dbEvents, notifyDbUpdate, DB_EVENT_KEYS } from './databaseEvents';
 
 describe('databaseEvents', () => {
-  it('emits a LECTURE_SAVED event', (done) => {
+  it('emits a LECTURE_SAVED event', async () => {
     const testPayload = { id: 'test-id' };
-    dbEvents.once(DB_EVENT_KEYS.LECTURE_SAVED, (payload) => {
-      expect(payload).toEqual(testPayload);
-      done();
+    const received = new Promise((resolve) => {
+      dbEvents.once(DB_EVENT_KEYS.LECTURE_SAVED, resolve);
     });
     notifyDbUpdate(DB_EVENT_KEYS.LECTURE_SAVED, testPayload);
+    await expect(received).resolves.toEqual(testPayload);
   });
 
-  it('emits a TRANSCRIPT_RECOVERED event', (done) => {
+  it('emits a TRANSCRIPT_RECOVERED event', async () => {
     const testPayload = { transcript: 'recovered content' };
-    dbEvents.once(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, (payload) => {
-      expect(payload).toEqual(testPayload);
-      done();
+    const received = new Promise((resolve) => {
+      dbEvents.once(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, resolve);
     });
     notifyDbUpdate(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED, testPayload);
+    await expect(received).resolves.toEqual(testPayload);
   });
 
-  it('emits a RECORDING_RECOVERED event', (done) => {
+  it('emits a RECORDING_RECOVERED event', async () => {
     const testPayload = { recordingPath: 'path/to/recording' };
-    dbEvents.once(DB_EVENT_KEYS.RECORDING_RECOVERED, (payload) => {
-      expect(payload).toEqual(testPayload);
-      done();
+    const received = new Promise((resolve) => {
+      dbEvents.once(DB_EVENT_KEYS.RECORDING_RECOVERED, resolve);
     });
     notifyDbUpdate(DB_EVENT_KEYS.RECORDING_RECOVERED, testPayload);
+    await expect(received).resolves.toEqual(testPayload);
   });
 
-  it('emits a PROGRESS_UPDATED event', (done) => {
+  it('emits a PROGRESS_UPDATED event', async () => {
     const testPayload = { topicId: 'topic123' };
-    dbEvents.once(DB_EVENT_KEYS.PROGRESS_UPDATED, (payload) => {
-      expect(payload).toEqual(testPayload);
-      done();
+    const received = new Promise((resolve) => {
+      dbEvents.once(DB_EVENT_KEYS.PROGRESS_UPDATED, resolve);
     });
     notifyDbUpdate(DB_EVENT_KEYS.PROGRESS_UPDATED, testPayload);
+    await expect(received).resolves.toEqual(testPayload);
   });
 
-  it('emits a PROFILE_UPDATED event', (done) => {
+  it('emits a PROFILE_UPDATED event', async () => {
     const testPayload = { profileId: 'profile123' };
-    dbEvents.once(DB_EVENT_KEYS.PROFILE_UPDATED, (payload) => {
-      expect(payload).toEqual(testPayload);
-      done();
+    const received = new Promise((resolve) => {
+      dbEvents.once(DB_EVENT_KEYS.PROFILE_UPDATED, resolve);
     });
     notifyDbUpdate(DB_EVENT_KEYS.PROFILE_UPDATED, testPayload);
+    await expect(received).resolves.toEqual(testPayload);
   });
 
-  it('handles events without payloads', (done) => {
-    dbEvents.once('ANY_EVENT', (payload) => {
-      expect(payload).toBeUndefined();
-      done();
+  it('handles events without payloads', async () => {
+    const received = new Promise((resolve) => {
+      dbEvents.once('ANY_EVENT', resolve);
     });
     notifyDbUpdate('ANY_EVENT');
+    await expect(received).resolves.toBeUndefined();
   });
 
-  it('handles events not in DB_EVENT_KEYS', (done) => {
+  it('handles events not in DB_EVENT_KEYS', async () => {
     const testPayload = { data: 'some-data' };
-    dbEvents.once('CUSTOM_EVENT', (payload) => {
-      expect(payload).toEqual(testPayload);
-      done();
+    const received = new Promise((resolve) => {
+      dbEvents.once('CUSTOM_EVENT', resolve);
     });
     notifyDbUpdate('CUSTOM_EVENT', testPayload);
+    await expect(received).resolves.toEqual(testPayload);
   });
 });

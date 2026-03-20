@@ -116,6 +116,7 @@ jest.mock('react-native', () => {
     Dimensions: {
       get: () => ({ width: 375, height: 812 }),
     },
+    useWindowDimensions: () => ({ width: 375, height: 812, scale: 2, fontScale: 1 }),
     Easing: {
       linear: (t) => t,
       /** @param { (t: number) => number } fn */

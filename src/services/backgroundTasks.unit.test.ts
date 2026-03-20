@@ -1,4 +1,4 @@
-let capturedTaskCallback: Function;
+let capturedTaskCallback: (...args: unknown[]) => unknown;
 
 jest.mock('expo-task-manager', () => ({
   defineTask: jest.fn((name, cb) => {
@@ -55,7 +55,10 @@ describe('backgroundTasks', () => {
     it('should register task if not already registered', async () => {
       (TaskManager.isTaskRegisteredAsync as jest.Mock).mockResolvedValue(false);
       await registerBackgroundFetch();
-      expect(BackgroundFetch.registerTaskAsync).toHaveBeenCalledWith(PREFETCH_TASK, expect.any(Object));
+      expect(BackgroundFetch.registerTaskAsync).toHaveBeenCalledWith(
+        PREFETCH_TASK,
+        expect.any(Object),
+      );
     });
 
     it('should not register task if already registered', async () => {
@@ -84,8 +87,16 @@ describe('backgroundTasks', () => {
       const now = Date.now();
       const mockTopics = [
         { name: 'Topic 1', inicetPriority: 10, progress: { status: 'unseen' } },
-        { name: 'Topic 2', inicetPriority: 20, progress: { status: 'seen', fsrsDue: new Date(now - 1000).toISOString() } },
-        { name: 'Topic 3', inicetPriority: 5, progress: { status: 'seen', fsrsDue: new Date(now + 100000).toISOString() } },
+        {
+          name: 'Topic 2',
+          inicetPriority: 20,
+          progress: { status: 'seen', fsrsDue: new Date(now - 1000).toISOString() },
+        },
+        {
+          name: 'Topic 3',
+          inicetPriority: 5,
+          progress: { status: 'seen', fsrsDue: new Date(now + 100000).toISOString() },
+        },
       ];
 
       (getAllTopicsWithProgress as jest.Mock).mockResolvedValue(mockTopics);

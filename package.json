@@ -19,12 +19,12 @@
     "test:unit": "jest --config jest.unit.config.js",
     "verify": "npm run typecheck && npm run lint && npm run test:unit",
     "repo-map": "node scripts/generate-repo-map.js",
-    "detox:build:android:phone:debug": "npx detox build -c android.phone.debug",
-    "detox:test:android:phone:debug": "npx detox test -c android.phone.debug --headless",
-    "detox:build:android:emu:debug": "npx detox build -c android.emu.debug",
-    "detox:test:android:emu:debug": "npx detox test -c android.emu.debug --headless",
-    "detox:build:android:att:release": "npx detox build -c android.att.release",
-    "detox:test:android:att:release": "npx detox test -c android.att.release"
+    "detox:build:android:phone:debug": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox build -c android.phone.debug",
+    "detox:test:android:phone:debug": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox test -c android.phone.debug",
+    "detox:build:android:emu:debug": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox build -c android.emu.debug",
+    "detox:test:android:emu:debug": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox test -c android.emu.debug",
+    "detox:build:android:emu:release": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox build -c android.emu.release",
+    "detox:test:android:emu:release": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox test -c android.emu.release"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

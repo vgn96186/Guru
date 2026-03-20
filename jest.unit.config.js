@@ -1,9 +1,10 @@
+/* eslint-env node */
 /** @type {import('@jest/types').Config.InitialOptions} */
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/*.unit.test.ts'],
+  testMatch: ['**/*.unit.test.ts', '**/*.unit.test.tsx'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   globals: {
     __DEV__: true,
@@ -14,7 +15,7 @@ module.exports = {
   testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { module: 'commonjs' } }],
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: { module: 'commonjs', jsx: 'react' }, isolatedModules: true }],
     '^.+\\.(js|jsx)$': 'babel-jest',
     'node_modules/.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },

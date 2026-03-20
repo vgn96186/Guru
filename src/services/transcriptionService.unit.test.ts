@@ -111,6 +111,8 @@ describe('transcriptionService', () => {
         transcriptionProvider: 'auto',
         useLocalWhisper: false,
         localWhisperPath: undefined,
+        huggingFaceToken: '',
+        groqKey: '',
       }),
     ).rejects.toThrow('No transcription engine available');
   });

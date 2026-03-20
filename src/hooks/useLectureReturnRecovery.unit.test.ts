@@ -85,6 +85,7 @@ describe('useLectureReturnRecovery', () => {
       appStateHandler = handler;
       return { remove: jest.fn() };
     });
+    getIncompleteExternalSessionMock.mockResolvedValue(null);
     retryFailedTranscriptionsMock.mockResolvedValue(0);
     retryPendingNoteEnhancementsMock.mockResolvedValue(0);
     hideOverlayMock.mockResolvedValue(undefined);
@@ -215,5 +216,253 @@ describe('useLectureReturnRecovery', () => {
     });
 
     expect(getIncompleteExternalSessionMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows correct toast message for only lectures or only notes', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    getIncompleteExternalSessionMock.mockResolvedValue(null);
+
+    // Only lectures
+    retryFailedTranscriptionsMock.mockResolvedValueOnce(1);
+    retryPendingNoteEnhancementsMock.mockResolvedValueOnce(0);
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+    await act(async () => {
+      await hookApi.recoverPendingTranscriptions(true);
+    });
+    expect(showToastMock).toHaveBeenCalledWith(
+      '1 lecture finished processing. Check your notes.',
+      'success',
+      undefined,
+      4000,
+    );
+
+    // Multiple lectures
+    retryFailedTranscriptionsMock.mockResolvedValueOnce(2);
+    retryPendingNoteEnhancementsMock.mockResolvedValueOnce(0);
+    await act(async () => {
+      await hookApi.recoverPendingTranscriptions(true);
+    });
+    expect(showToastMock).toHaveBeenCalledWith(
+      '2 lectures finished processing. Check your notes.',
+      'success',
+      undefined,
+      4000,
+    );
+
+    // Only notes
+    retryFailedTranscriptionsMock.mockResolvedValueOnce(0);
+    retryPendingNoteEnhancementsMock.mockResolvedValueOnce(1);
+    await act(async () => {
+      await hookApi.recoverPendingTranscriptions(true);
+    });
+    expect(showToastMock).toHaveBeenCalledWith(
+      '1 note finished processing. Check your notes.',
+      'success',
+      undefined,
+      4000,
+    );
+
+    // Multiple notes
+    retryFailedTranscriptionsMock.mockResolvedValueOnce(0);
+    retryPendingNoteEnhancementsMock.mockResolvedValueOnce(3);
+    await act(async () => {
+      await hookApi.recoverPendingTranscriptions(true);
+    });
+    expect(showToastMock).toHaveBeenCalledWith(
+      '3 notes finished processing. Check your notes.',
+      'success',
+      undefined,
+      4000,
+    );
+  });
+
+  it('handles errors in recoverPendingTranscriptions gracefully', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    retryFailedTranscriptionsMock.mockRejectedValue(new Error('Network error'));
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+    await act(async () => {
+      await hookApi.recoverPendingTranscriptions(true);
+    });
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      '[Home] Failed to recover pending transcriptions:',
+      expect.any(Error),
+    );
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('finishes session silently on cold launch (showPrompt=false)', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    getIncompleteExternalSessionMock.mockResolvedValue({
+      id: 88,
+      appName: 'StaleApp',
+      launchedAt: 1699999000000,
+      recordingPath: 'some/path',
+    });
+
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    expect(finishExternalAppSessionMock).toHaveBeenCalledWith(
+      88,
+      expect.any(Number),
+      'Stale session cleaned on cold launch',
+    );
+    expect(onRecovered).not.toHaveBeenCalled();
+  });
+
+  it('handles stopRecording timeout/error and uses fallback path', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+    
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    getIncompleteExternalSessionMock.mockResolvedValue({
+      id: 99,
+      appName: 'TestApp',
+      launchedAt: 1699999000000,
+      recordingPath: 'db/path',
+    });
+    // Simulate timeout by never resolving, or rejecting
+    stopRecordingMock.mockRejectedValue(new Error('Native error'));
+
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    // Should still proceed with db path if available
+    expect(onRecovered).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recordingPath: 'db/path',
+      }),
+    );
+  });
+
+  it('copies file to public backup if in /data/ directory', async () => {
+    const dataPath = 'file:///data/user/0/com.app/files/rec.m4a';
+
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    getIncompleteExternalSessionMock.mockResolvedValue({
+      id: 101,
+      appName: 'DataApp',
+      launchedAt: 1699999000000,
+      recordingPath: dataPath,
+    });
+    stopRecordingMock.mockResolvedValue(dataPath);
+
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    expect(copyFileToPublicBackupMock).toHaveBeenCalledWith(
+      '/data/user/0/com.app/files/rec.m4a',
+      expect.any(String),
+    );
+  });
+
+  it('falls back to wall-clock duration if audio duration detection fails', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000); // T=0
+    
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    getIncompleteExternalSessionMock.mockResolvedValue({
+      id: 102,
+      appName: 'DurationApp',
+      launchedAt: 1700000000000 - 600000, // 10 minutes ago
+      recordingPath: 'path/to/audio',
+    });
+    createAsyncMock.mockRejectedValue(new Error('Audio error'));
+
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    expect(finishExternalAppSessionMock).toHaveBeenCalledWith(102, 10);
+    expect(onRecovered).toHaveBeenCalledWith(
+      expect.objectContaining({
+        durationMinutes: 10,
+      }),
+    );
+  });
+
+  it('shows warning toast if recording validation fails and file is tiny/missing', async () => {
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    getIncompleteExternalSessionMock.mockResolvedValue({
+      id: 103,
+      appName: 'ValidationApp',
+      launchedAt: Date.now() - 60000,
+      recordingPath: 'missing/file',
+    });
+    validateRecordingWithBackoffMock.mockResolvedValue({ validated: false, attemptsUsed: 3 });
+    validateRecordingFileMock.mockResolvedValue({ exists: false, size: 0 });
+
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    expect(showToastMock).toHaveBeenCalledWith(
+      "Recording file isn't ready yet — it may appear when you reopen the app.",
+      'warning',
+    );
+    expect(updateSessionPipelineTelemetryMock).toHaveBeenCalledWith(103, {
+      errorStage: 'validation',
+    });
+  });
+
+  it('handles general errors in checkForReturnedSession', async () => {
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    getIncompleteExternalSessionMock.mockRejectedValue(new Error('DB failure'));
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    expect(showToastMock).toHaveBeenCalledWith(
+      "Couldn't process your lecture recording. Try opening the app again.",
+      'error',
+    );
+    expect(consoleErrorSpy).toHaveBeenCalled();
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('avoids re-processing the same session log', async () => {
+    getIncompleteExternalSessionMock.mockResolvedValue({
+      id: 200,
+      appName: 'SameApp',
+      launchedAt: Date.now() - 60000,
+    });
+
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    // checkForReturnedSession(false) was called on mount.
+    // Call it again manually.
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    // finishExternalAppSession should only have been called once (on mount)
+    expect(finishExternalAppSessionMock).toHaveBeenCalledTimes(1);
   });
 });

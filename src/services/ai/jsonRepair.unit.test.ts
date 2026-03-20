@@ -122,5 +122,12 @@ describe('jsonRepair', () => {
       const result = await parseStructuredJson(raw, ArraySchema);
       expect(result).toEqual(['a', 'b', 'c']);
     });
+
+    it('throws error when input size exceeds MAX_INPUT_SIZE', async () => {
+      const largeRaw = '{"name":"' + 'a'.repeat(100_001) + '","count":1,"items":[]}';
+      await expect(parseStructuredJson(largeRaw, SimpleSchema)).rejects.toThrow(
+        /Input too large/i,
+      );
+    });
   });
 });

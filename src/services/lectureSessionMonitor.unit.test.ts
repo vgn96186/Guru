@@ -35,13 +35,6 @@ jest.mock(
   { virtual: true },
 );
 
-jest.mock('react-native', () => ({
-  AppState: {
-    addEventListener: jest.fn(),
-  },
-  Platform: { OS: 'ios' },
-  NativeModules: {},
-}));
 
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: '/mock/dir/',

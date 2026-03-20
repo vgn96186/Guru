@@ -78,7 +78,7 @@ describe('Lecture Mode Flow', () => {
     // Scroll back up to find the end button
     await waitFor(element(by.id('lecture-end-btn')))
       .toBeVisible()
-      .whileElement(by.type('android.widget.ScrollView'))
+      .whileElement(by.type('com.facebook.react.views.scroll.ReactScrollView'))
       .scroll(300, 'up');
 
     await element(by.id('lecture-end-btn')).tap();

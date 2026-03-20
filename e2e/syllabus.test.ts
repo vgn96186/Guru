@@ -83,7 +83,7 @@ describe('Syllabus Browsing', () => {
     // Scroll down to find more subjects
     await waitFor(element(by.text('Pharmacology')))
       .toBeVisible()
-      .whileElement(by.type('android.widget.ScrollView'))
+      .whileElement(by.type('com.facebook.react.views.scroll.ReactScrollView'))
       .scroll(300, 'down');
   });
 });

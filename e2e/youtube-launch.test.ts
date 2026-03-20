@@ -27,7 +27,7 @@ describe('YouTube launch flow', () => {
     // Wait for navigation to Tabs/Home
     await waitFor(element(by.text('TOOLS & LIBRARY')))
       .toBeVisible()
-      .whileElement(by.type('android.widget.ScrollView'))
+      .whileElement(by.type('com.facebook.react.views.scroll.ReactScrollView'))
       .scroll(300, 'down');
   });
 
@@ -39,7 +39,7 @@ describe('YouTube launch flow', () => {
   it('should show YouTube button in external tools', async () => {
     await waitFor(element(by.id('external-app-youtube')))
       .toBeVisible()
-      .whileElement(by.type('android.widget.ScrollView'))
+      .whileElement(by.type('com.facebook.react.views.scroll.ReactScrollView'))
       .scroll(100, 'down');
 
     await expect(element(by.id('external-app-youtube'))).toBeVisible();

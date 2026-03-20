@@ -83,4 +83,16 @@ describe('dailyAgendaRepository', () => {
       '2026-03-14',
     ]);
   });
+
+  it('logs a plan event', async () => {
+    (getDb().runAsync as jest.Mock).mockResolvedValue(undefined);
+    const mockPayload = { foo: 'bar' };
+
+    await dailyAgendaRepository.logPlanEvent('2026-03-14', 'test_event', mockPayload);
+
+    expect(mockDb.runAsync).toHaveBeenCalledWith(
+      'INSERT INTO plan_events (date, event_type, payload_json, created_at) VALUES (?, ?, ?, ?)',
+      ['2026-03-14', 'test_event', JSON.stringify(mockPayload), expect.any(Number)],
+    );
+  });
 });

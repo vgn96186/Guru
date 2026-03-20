@@ -27,7 +27,7 @@ describe('Guru App', () => {
     // Scroll down to find TOOLS & LIBRARY
     await waitFor(element(by.id('tools-library-header')))
       .toBeVisible()
-      .whileElement(by.type('android.widget.ScrollView'))
+      .whileElement(by.type('com.facebook.react.views.scroll.ReactScrollView'))
       .scroll(300, 'down');
 
     await expect(element(by.id('tools-library-header'))).toBeVisible();

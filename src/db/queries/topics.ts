@@ -1,5 +1,5 @@
 import { getDb, runInTransaction, todayStr } from '../database';
-import type { Subject, TopicProgress, TopicWithProgress } from '../../types';
+import type { Subject, TopicConnection, TopicProgress, TopicWithProgress } from '../../types';
 import { getInitialCard, reviewCardFromConfidence } from '../../services/fsrsService';
 import type { Card } from 'ts-fsrs';
 import type { SQLiteDatabase } from 'expo-sqlite';
@@ -32,6 +32,11 @@ type TopicRow = {
   fsrs_last_review: string | null;
   wrong_count: number;
   is_nemesis: number;
+  mastery_level: number;
+  btr_stage: number;
+  dbmci_stage: number;
+  marrow_attempted_count: number;
+  marrow_correct_count: number;
   subject_name: string;
   short_code: string;
   color_hex: string;
@@ -258,6 +263,7 @@ const TOPIC_SELECT = `SELECT
   p.user_notes,
   p.fsrs_due, p.fsrs_stability, p.fsrs_difficulty, p.fsrs_elapsed_days, p.fsrs_scheduled_days, p.fsrs_reps, p.fsrs_lapses, p.fsrs_state, p.fsrs_last_review,
   p.wrong_count, p.is_nemesis,
+  p.mastery_level, p.btr_stage, p.dbmci_stage, p.marrow_attempted_count, p.marrow_correct_count,
   s.name as subject_name, s.short_code, s.color_hex`;
 
 export async function getTopicsBySubject(subjectId: number | string): Promise<TopicWithProgress[]> {
@@ -638,8 +644,36 @@ function mapTopicRow(r: any): TopicWithProgress {
       fsrsLastReview: r.fsrs_last_review ?? null,
       wrongCount: r.wrong_count ?? 0,
       isNemesis: (r.is_nemesis ?? 0) === 1,
+      masteryLevel: r.mastery_level ?? 0,
+      btrStage: r.btr_stage ?? 0,
+      dbmciStage: r.dbmci_stage ?? 0,
+      marrowAttemptedCount: r.marrow_attempted_count ?? 0,
+      marrowCorrectCount: r.marrow_correct_count ?? 0,
     },
   };
+}
+
+export async function getTopicConnections(): Promise<TopicConnection[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    from_topic_id: number;
+    to_topic_id: number;
+    relation_type: string;
+    label: string | null;
+  }>(
+    `SELECT id, from_topic_id, to_topic_id, relation_type, label
+     FROM topic_connections
+     ORDER BY from_topic_id ASC, to_topic_id ASC, relation_type ASC, id ASC`,
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    fromTopicId: row.from_topic_id,
+    toTopicId: row.to_topic_id,
+    relationType: row.relation_type,
+    label: row.label,
+  }));
 }
 
 export const getNemesisTopics = async (): Promise<TopicWithProgress[]> => {

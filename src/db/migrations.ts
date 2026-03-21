@@ -350,7 +350,65 @@ export const MIGRATIONS: Migration[] = [
     sql: `CREATE INDEX IF NOT EXISTS idx_topic_suggestions_status ON topic_suggestions(status, subject_id, last_detected_at DESC)`,
     description: 'Index pending topic suggestions for syllabus review',
   },
+  {
+    version: 87,
+    sql: `ALTER TABLE topic_progress ADD COLUMN mastery_level INTEGER NOT NULL DEFAULT 0`,
+    description: 'Persist topic mastery level',
+  },
+  {
+    version: 88,
+    sql: `ALTER TABLE topic_progress ADD COLUMN btr_stage INTEGER NOT NULL DEFAULT 0`,
+    description: 'Persist BTR stage for topic source tracking',
+  },
+  {
+    version: 89,
+    sql: `ALTER TABLE topic_progress ADD COLUMN dbmci_stage INTEGER NOT NULL DEFAULT 0`,
+    description: 'Persist DBMCI stage for topic source tracking',
+  },
+  {
+    version: 90,
+    sql: `ALTER TABLE topic_progress ADD COLUMN marrow_attempted_count INTEGER NOT NULL DEFAULT 0`,
+    description: 'Persist Marrow attempt count for source tracking',
+  },
+  {
+    version: 91,
+    sql: `ALTER TABLE topic_progress ADD COLUMN marrow_correct_count INTEGER NOT NULL DEFAULT 0`,
+    description: 'Persist Marrow correct count for source tracking',
+  },
+  {
+    version: 92,
+    sql: `ALTER TABLE daily_log ADD COLUMN energy_score INTEGER`,
+    description: 'Store optional daily energy score',
+  },
+  {
+    version: 93,
+    sql: `ALTER TABLE user_profile ADD COLUMN home_chat_enabled INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add home chat toggle to user_profile',
+  },
+  {
+    version: 94,
+    sql: `CREATE TABLE IF NOT EXISTS topic_connections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  to_topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  relation_type TEXT NOT NULL DEFAULT 'related',
+  label TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  UNIQUE(from_topic_id, to_topic_id, relation_type)
+)`,
+    description: 'Add optional cross-topic connection links',
+  },
+  {
+    version: 95,
+    sql: `CREATE INDEX IF NOT EXISTS idx_topic_connections_from ON topic_connections(from_topic_id)`,
+    description: 'Index topic connections by source topic',
+  },
+  {
+    version: 96,
+    sql: `CREATE INDEX IF NOT EXISTS idx_topic_connections_to ON topic_connections(to_topic_id)`,
+    description: 'Index topic connections by target topic',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 86;
+export const LATEST_VERSION = 96;

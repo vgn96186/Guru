@@ -71,6 +71,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     backup_directory_uri: string | null;
     pomodoro_enabled: number;
     pomodoro_interval_minutes: number;
+    home_chat_enabled: number;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -118,6 +119,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       backupDirectoryUri: null,
       pomodoroEnabled: true,
       pomodoroIntervalMinutes: 20,
+      homeChatEnabled: false,
     };
   }
 
@@ -189,6 +191,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     backupDirectoryUri: r.backup_directory_uri ?? null,
     pomodoroEnabled: (r.pomodoro_enabled ?? 1) === 1,
     pomodoroIntervalMinutes: r.pomodoro_interval_minutes ?? 20,
+    homeChatEnabled: (r.home_chat_enabled ?? 0) === 1,
   };
 }
 
@@ -235,6 +238,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     backupDirectoryUri: 'backup_directory_uri',
     pomodoroEnabled: 'pomodoro_enabled',
     pomodoroIntervalMinutes: 'pomodoro_interval_minutes',
+    homeChatEnabled: 'home_chat_enabled',
   };
 
   const setClauses: string[] = [];
@@ -415,6 +419,7 @@ export async function getDailyLog(date?: string): Promise<DailyLog | null> {
     total_minutes: number;
     xp_earned: number;
     session_count: number;
+    energy_score: number | null;
   }>('SELECT * FROM daily_log WHERE date = ?', [d]);
   if (!r) return null;
   return {
@@ -424,6 +429,7 @@ export async function getDailyLog(date?: string): Promise<DailyLog | null> {
     totalMinutes: r.total_minutes,
     xpEarned: r.xp_earned,
     sessionCount: r.session_count,
+    energyScore: r.energy_score ?? null,
   };
 }
 
@@ -455,6 +461,7 @@ export async function getActivityHistory(days = 90): Promise<DailyLog[]> {
     total_minutes: number;
     xp_earned: number;
     session_count: number;
+    energy_score: number | null;
   }>(`SELECT * FROM daily_log ORDER BY date DESC LIMIT ?`, [days]);
   return rows.map((r) => ({
     date: r.date,
@@ -463,6 +470,7 @@ export async function getActivityHistory(days = 90): Promise<DailyLog[]> {
     totalMinutes: r.total_minutes,
     xpEarned: r.xp_earned,
     sessionCount: r.session_count,
+    energyScore: r.energy_score ?? null,
   }));
 }
 
@@ -532,7 +540,12 @@ export async function resetStudyProgress(): Promise<void> {
            fsrs_state = 0,
            fsrs_last_review = NULL,
            wrong_count = 0,
-           is_nemesis = 0`,
+           is_nemesis = 0,
+           mastery_level = 0,
+           btr_stage = 0,
+           dbmci_stage = 0,
+           marrow_attempted_count = 0,
+           marrow_correct_count = 0`,
       );
       await tx.runAsync(
         `UPDATE user_profile SET total_xp = 0, current_level = 1, streak_current = 0, streak_best = 0, last_active_date = NULL WHERE id = 1`,

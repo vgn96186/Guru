@@ -7,7 +7,7 @@ import type {
   StudyResourceMode,
   HarassmentTone,
   GuruFrequency,
-  DailyLog,
+  DailyLog as CoreDailyLog,
 } from '../schemas';
 export type {
   ContentType,
@@ -17,8 +17,11 @@ export type {
   StudyResourceMode,
   HarassmentTone,
   GuruFrequency,
-  DailyLog,
 };
+
+export interface DailyLog extends CoreDailyLog {
+  energyScore?: number | null;
+}
 
 export interface Subject {
   id: number;
@@ -63,6 +66,11 @@ export interface TopicProgress {
   fsrsLastReview: string | null;
   wrongCount: number;
   isNemesis: boolean;
+  masteryLevel?: number;
+  btrStage?: number;
+  dbmciStage?: number;
+  marrowAttemptedCount?: number;
+  marrowCorrectCount?: number;
 }
 
 export interface TopicWithProgress extends Topic {
@@ -71,6 +79,56 @@ export interface TopicWithProgress extends Topic {
   subjectCode: string;
   subjectColor: string;
   score?: number;
+}
+
+export interface TopicConnection {
+  id: number;
+  fromTopicId: number;
+  toTopicId: number;
+  relationType: string;
+  label: string | null;
+}
+
+export interface TreeBadge {
+  label: string;
+  tone: 'neutral' | 'success' | 'warning' | 'accent';
+}
+
+export interface TreeNode {
+  topicId: number;
+  subjectId: number;
+  parentTopicId: number | null;
+  name: string;
+  depth: number;
+  estimatedMinutes: number;
+  inicetPriority: number;
+  progress: TopicProgress;
+  badges: {
+    overlay: TreeBadge | null;
+    source: TreeBadge | null;
+  };
+  children: TreeNode[];
+}
+
+export interface TreeSubjectBranch {
+  subjectId: number;
+  subjectName: string;
+  subjectCode: string;
+  subjectColor: string;
+  roots: TreeNode[];
+}
+
+export interface TreeConnectionView {
+  id: number;
+  fromTopicId: number;
+  toTopicId: number;
+  relationType: string;
+  label: string | null;
+}
+
+export interface TreeViewModel {
+  subjects: TreeSubjectBranch[];
+  connections: TreeConnectionView[];
 }
 
 export interface StudySession {
@@ -144,6 +202,7 @@ export interface UserProfile {
   backupDirectoryUri?: string | null;
   pomodoroEnabled?: boolean;
   pomodoroIntervalMinutes?: number;
+  homeChatEnabled?: boolean;
 }
 
 // AI Content shapes

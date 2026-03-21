@@ -45,6 +45,11 @@ CREATE TABLE IF NOT EXISTS topic_progress (
   , fsrs_lapses INTEGER DEFAULT 0
   , fsrs_state INTEGER DEFAULT 0
   , fsrs_last_review TEXT
+  , mastery_level INTEGER NOT NULL DEFAULT 0
+  , btr_stage INTEGER NOT NULL DEFAULT 0
+  , dbmci_stage INTEGER NOT NULL DEFAULT 0
+  , marrow_attempted_count INTEGER NOT NULL DEFAULT 0
+  , marrow_correct_count INTEGER NOT NULL DEFAULT 0
 
 )`;
 
@@ -101,7 +106,8 @@ CREATE TABLE IF NOT EXISTS daily_log (
   mood TEXT,
   total_minutes INTEGER NOT NULL DEFAULT 0,
   xp_earned INTEGER NOT NULL DEFAULT 0,
-  session_count INTEGER NOT NULL DEFAULT 0
+  session_count INTEGER NOT NULL DEFAULT 0,
+  energy_score INTEGER
 )`;
 
 export const CREATE_AI_CACHE = `
@@ -165,6 +171,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , backup_directory_uri TEXT
   , pomodoro_enabled INTEGER NOT NULL DEFAULT 1
   , pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20
+  , home_chat_enabled INTEGER NOT NULL DEFAULT 0
 )`;
 
 export const CREATE_BRAIN_DUMPS = `
@@ -249,12 +256,25 @@ CREATE TABLE IF NOT EXISTS topic_suggestions (
   UNIQUE(subject_id, normalized_name)
 )`;
 
+export const CREATE_TOPIC_CONNECTIONS = `
+CREATE TABLE IF NOT EXISTS topic_connections (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  to_topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  relation_type TEXT NOT NULL DEFAULT 'related',
+  label TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
+  UNIQUE(from_topic_id, to_topic_id, relation_type)
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
   `CREATE INDEX IF NOT EXISTS idx_tp_status_fsrs_due ON topic_progress(status, fsrs_due, confidence)`,
   // AI cache content fetches (topic detail screen)
   `CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
+  `CREATE INDEX IF NOT EXISTS idx_topic_connections_from ON topic_connections(from_topic_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_topic_connections_to ON topic_connections(to_topic_id)`,
   // Lecture notes chronological listing
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created ON lecture_notes(created_at DESC)`,
   // Lecture notes by subject for stats
@@ -299,5 +319,6 @@ export const ALL_SCHEMAS = [
   CREATE_DAILY_AGENDA,
   CREATE_PLAN_EVENTS,
   CREATE_TOPIC_SUGGESTIONS,
+  CREATE_TOPIC_CONNECTIONS,
   CREATE_LECTURE_LEARNED_TOPICS,
 ];

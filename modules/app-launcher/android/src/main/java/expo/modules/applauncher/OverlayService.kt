@@ -426,8 +426,8 @@ class OverlayService : Service(), LifecycleOwner {
         private val headerRow = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dpToPx(18, context), dpToPx(0, context), dpToPx(20, context), dpToPx(0, context))
-            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, dpToPx(52, context))
+            setPadding(dpToPx(20, context), dpToPx(12, context), dpToPx(20, context), dpToPx(12, context))
+            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         }
 
         private val recDot = View(context).apply {
@@ -435,25 +435,25 @@ class OverlayService : Service(), LifecycleOwner {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
                 setColor(Color.parseColor("#FF5252"))
             }
-            layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(8, context), dpToPx(8, context)).apply {
+            layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(10, context), dpToPx(10, context)).apply {
                 marginEnd = dpToPx(10, context)
             }
         }
 
         private val timerText = android.widget.TextView(context).apply {
             text = "00:00"
-            textSize = 15f
+            textSize = 18f
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD))
             letterSpacing = 0.02f
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = dpToPx(12, context)
+                marginEnd = dpToPx(14, context)
             }
         }
 
         private val headerText = android.widget.TextView(context).apply {
             text = appLabel.uppercase()
-            textSize = 11f
+            textSize = 13f
             setTextColor(Color.parseColor("#A0A3B1"))
             setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
             letterSpacing = 0.05f
@@ -464,7 +464,7 @@ class OverlayService : Service(), LifecycleOwner {
 
         private val statusText = android.widget.TextView(context).apply {
             text = "Recording"
-            textSize = 12f
+            textSize = 14f
             setTextColor(Color.parseColor("#A0A3B1"))
             gravity = Gravity.CENTER
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
@@ -476,7 +476,6 @@ class OverlayService : Service(), LifecycleOwner {
         private val actionsRow = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
-            weightSum = 2f
             visibility = View.GONE
             setPadding(dpToPx(16, context), dpToPx(0, context), dpToPx(16, context), dpToPx(16, context))
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
@@ -484,14 +483,14 @@ class OverlayService : Service(), LifecycleOwner {
 
         private val pauseBtn = android.widget.TextView(context).apply {
             text = "PAUSE"
-            textSize = 12f
+            textSize = 13f
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(0, dpToPx(12, context), 0, dpToPx(12, context))
+            setPadding(dpToPx(16, context), dpToPx(12, context), dpToPx(16, context), dpToPx(12, context))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.parseColor("#1AFFFFFF"))
-                cornerRadius = dpToPx(20, context).toFloat()
+                cornerRadius = dpToPx(24, context).toFloat()
             }
             setOnClickListener {
                 isRecordingPaused = !isRecordingPaused
@@ -506,14 +505,14 @@ class OverlayService : Service(), LifecycleOwner {
 
         private val finishBtn = android.widget.TextView(context).apply {
             text = "FINISH"
-            textSize = 12f
+            textSize = 13f
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(0, dpToPx(12, context), 0, dpToPx(12, context))
+            setPadding(dpToPx(16, context), dpToPx(12, context), dpToPx(16, context), dpToPx(12, context))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.parseColor("#E53935")) 
-                cornerRadius = dpToPx(20, context).toFloat()
+                cornerRadius = dpToPx(24, context).toFloat()
             }
             setOnClickListener {
                 vibrateLight(context)
@@ -524,14 +523,14 @@ class OverlayService : Service(), LifecycleOwner {
 
         private val quizBtn = android.widget.TextView(context).apply {
             text = "Take Break & Quiz"
-            textSize = 12f
+            textSize = 14f
             setTextColor(Color.WHITE)
             setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(0, dpToPx(12, context), 0, dpToPx(12, context))
+            setPadding(dpToPx(20, context), dpToPx(12, context), dpToPx(20, context), dpToPx(12, context))
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.parseColor("#FF9800"))
-                cornerRadius = dpToPx(20, context).toFloat()
+                cornerRadius = dpToPx(24, context).toFloat()
             }
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
                 leftMargin = dpToPx(16, context)
@@ -554,7 +553,9 @@ class OverlayService : Service(), LifecycleOwner {
             clipChildren = false
             clipToPadding = false
 
-            bubbleView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            // Do not use MATCH_PARENT for bubbleView in FrameLayout for Floating Windows
+            // We will precisely measure it in onMeasure
+            bubbleView.layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
             addView(bubbleView)
 
             headerRow.addView(recDot)
@@ -582,6 +583,26 @@ class OverlayService : Service(), LifecycleOwner {
             scaleY = 0.8f
             alpha = 0f
             animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(500).setInterpolator(OvershootInterpolator(1.2f)).start()
+        }
+
+        override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+            // Measure the main container to determine our true exact size
+            mainContainer.measure(
+                MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.AT_MOST),
+                MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec), MeasureSpec.AT_MOST)
+            )
+            
+            val w = mainContainer.measuredWidth
+            val h = mainContainer.measuredHeight
+            
+            // Force the bubbleView background to precisely match the mainContainer's size
+            bubbleView.measure(
+                MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY)
+            )
+            
+            // Set our overall size to strictly wrap to the mainContainer
+            setMeasuredDimension(w, h)
         }
 
         fun setDragListener(listener: OnTouchListener) {
@@ -644,7 +665,8 @@ class OverlayService : Service(), LifecycleOwner {
                 actionsRow.visibility = View.GONE
                 quizBtn.visibility = View.GONE
             }
-            // Layout changes automatically trigger parent resize, bubbleView matches parent.
+            // Request layout to smoothly animate window bounds
+            requestLayout()
         }
 
         fun destroy() {

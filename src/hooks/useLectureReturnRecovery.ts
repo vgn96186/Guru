@@ -129,10 +129,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
         // This ensures the native service isn't left running and gives us a chance
         // to recover the path if it was missing from the DB due to a race.
         try {
-          const stoppedPath = await Promise.race<string | null>([
-            stopRecording(),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
-          ]);
+          const stoppedPath = await stopRecording();
           if (stoppedPath) {
             recordingPath = stoppedPath;
             if (recordingPath.includes('/data/')) {

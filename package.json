@@ -8,9 +8,9 @@
     "start:fresh": "npm run generate:bundled-env && NODE_ENV=development expo start --clear",
     "android": "npm run generate:bundled-env && NODE_ENV=development expo run:android",
     "android:dev": "bash ./scripts/android-dev.sh",
-    "android:apk:device": "npm run generate:bundled-env && cd android && PATH=\"/opt/homebrew/bin:$PATH\" NODE_BINARY=\"/opt/homebrew/bin/node\" ./gradlew assembleDebug --console=plain --no-daemon -PreactNativeArchitectures=arm64-v8a",
-    "android:apk:release:device": "npm run generate:bundled-env && cd android && PATH=\"/opt/homebrew/bin:$PATH\" NODE_BINARY=\"/opt/homebrew/bin/node\" ./gradlew assembleRelease --console=plain --no-daemon -PreactNativeArchitectures=arm64-v8a",
-    "android:apk:emu": "npm run generate:bundled-env && cd android && PATH=\"/opt/homebrew/bin:$PATH\" NODE_BINARY=\"/opt/homebrew/bin/node\" ./gradlew assembleDebug --console=plain --no-daemon -PreactNativeArchitectures=x86_64",
+    "android:apk:device": "npm run generate:bundled-env && cd android && NODE_BINARY=\"${NODE_BINARY:-$(command -v node)}\" ./gradlew assembleDebug --console=plain --no-daemon -PreactNativeArchitectures=arm64-v8a",
+    "android:apk:release:device": "npm run generate:bundled-env && cd android && NODE_BINARY=\"${NODE_BINARY:-$(command -v node)}\" ./gradlew assembleRelease --console=plain --no-daemon -PreactNativeArchitectures=arm64-v8a",
+    "android:apk:emu": "npm run generate:bundled-env && cd android && NODE_BINARY=\"${NODE_BINARY:-$(command -v node)}\" ./gradlew assembleDebug --console=plain --no-daemon -PreactNativeArchitectures=x86_64",
     "ios": "npm run generate:bundled-env && NODE_ENV=development expo run:ios",
     "web": "npm run generate:bundled-env && NODE_ENV=development expo start --web",
     "prepare": "node ./node_modules/husky/bin.js && find .husky -type f | xargs sed -i 's|/data/data/com.termux/files/usr/glibc/bin/sh|/data/data/com.termux/files/usr/bin/sh|g' 2>/dev/null; true",
@@ -20,9 +20,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run test:unit",
-    "test:unit": "jest --config jest.unit.config.js",
-    "test:unit:coverage": "jest --config jest.unit.config.js --coverage",
-    "test:unit:coverage:logic": "jest --config jest.unit.logic.config.js --coverage",
+    "test:unit": "jest --runInBand --config jest.unit.config.js",
+    "test:unit:coverage": "jest --runInBand --config jest.unit.config.js --coverage",
+    "test:unit:coverage:logic": "jest --runInBand --config jest.unit.logic.config.js --coverage",
     "verify": "npm run typecheck && npm run lint && npm run test:unit",
     "verify:coverage": "npm run typecheck && npm run lint && npm run test:unit:coverage",
     "verify:ci": "npm run lint && npm run test:unit && npm run test:unit:coverage:logic",
@@ -119,6 +119,9 @@
     "*.{json,md,yml,yaml}": [
       "node ./node_modules/prettier/bin/prettier.cjs --write"
     ]
+  },
+  "engines": {
+    "node": "20.20.1"
   },
   "private": true
 }

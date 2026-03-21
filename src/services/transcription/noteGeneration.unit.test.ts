@@ -1,4 +1,8 @@
-import { generateADHDNote, buildQuickLectureNote, shouldReplaceLectureNote } from './noteGeneration';
+import {
+  generateADHDNote,
+  buildQuickLectureNote,
+  shouldReplaceLectureNote,
+} from './noteGeneration';
 import { generateTextWithRouting } from '../aiService';
 import type { LectureAnalysis } from './analysis';
 
@@ -11,7 +15,7 @@ describe('Note Generation Service', () => {
     subject: 'Anatomy',
     topics: ['Upper Limb'],
     keyConcepts: ['Brachial Plexus'],
-    highYieldPoints: ['Erb\'s Palsy'],
+    highYieldPoints: ["Erb's Palsy"],
     lectureSummary: 'A lecture on upper limb anatomy.',
     estimatedConfidence: 3,
     transcript: 'Long transcript content...',
@@ -39,6 +43,22 @@ describe('Note Generation Service', () => {
       expect(note).toContain('🎯 **Subject**: Anatomy');
       expect(note).toContain('💡 **Key Concepts**');
     });
+
+    it('keeps tail context for long transcripts so later lecture points are not dropped', async () => {
+      (generateTextWithRouting as jest.Mock).mockResolvedValue({
+        text: 'Elite ADHD Note Content',
+      });
+      const longAnalysis: LectureAnalysis = {
+        ...mockAnalysis,
+        transcript: `INTRO_MARKER ${'a'.repeat(14000)} TAIL_MARKER important end content`,
+      };
+
+      await generateADHDNote(longAnalysis);
+
+      const messages = (generateTextWithRouting as jest.Mock).mock.calls[0][0];
+      expect(messages[1].content).toContain('INTRO_MARKER');
+      expect(messages[1].content).toContain('TAIL_MARKER');
+    });
   });
 
   describe('buildQuickLectureNote', () => {
@@ -48,7 +68,7 @@ describe('Note Generation Service', () => {
       expect(note).toContain('📌 **Topics**: Upper Limb');
       expect(note).toContain('💡 **Key Concepts**');
       expect(note).toContain('• Brachial Plexus');
-      expect(note).toContain('🚀 **Erb\'s Palsy**');
+      expect(note).toContain("🚀 **Erb's Palsy**");
     });
   });
 
@@ -75,13 +95,13 @@ Long detail content...
     });
 
     it('should return false if candidate is same or worse', () => {
-        const current = 'Same note content';
-        const candidate = 'Same note content';
-        expect(shouldReplaceLectureNote(current, candidate)).toBe(false);
+      const current = 'Same note content';
+      const candidate = 'Same note content';
+      expect(shouldReplaceLectureNote(current, candidate)).toBe(false);
     });
 
     it('should return true if current is empty', () => {
-        expect(shouldReplaceLectureNote('', 'New note')).toBe(true);
+      expect(shouldReplaceLectureNote('', 'New note')).toBe(true);
     });
   });
 });

@@ -1,7 +1,10 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "skipLibCheck": true
   },
   "include": ["App.tsx", "index.ts", "src/**/*", "modules/**/*"],
   "exclude": [

@@ -24,17 +24,12 @@ import AgendaItem from '../components/home/AgendaItem';
 import TodayPlanCard from '../components/home/TodayPlanCard';
 import StartButton from '../components/StartButton';
 import LoadingOrb from '../components/LoadingOrb';
-import LectureReturnSheet from '../components/LectureReturnSheet';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
 import { getDb } from '../db/database';
 import { getSubjectById } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
-import {
-  useLectureReturnRecovery,
-  type LectureReturnSheetData,
-} from '../hooks/useLectureReturnRecovery';
 import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { isLocalLlmUsable } from '../services/deviceMemory';
@@ -59,7 +54,6 @@ export default function HomeScreen() {
     reload: reloadHomeDashboard,
   } = useHomeDashboardData();
 
-  const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
   const [mood, setMood] = useState<Mood>('good');
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [sessionResumeValid, setSessionResumeValid] = useState(false);
@@ -67,8 +61,6 @@ export default function HomeScreen() {
 
   // Added from UI-UX audit branch
   const [criticalExpanded, setCriticalExpanded] = useState(false);
-
-  useLectureReturnRecovery({ onRecovered: setReturnSheet });
 
   useFocusEffect(
     useCallback(() => {
@@ -152,7 +144,7 @@ export default function HomeScreen() {
   const heroCta = (() => {
     if (sessionResumeValid) {
       return {
-        label: 'CONTINUE SESSION',
+        label: 'RESUME FOCUS',
         sublabel: 'Pick up where you left off',
         onPress: () => navigation.navigate('Session', { mood, resume: true }),
       };
@@ -160,7 +152,7 @@ export default function HomeScreen() {
     if (todayTasks.length > 0) {
       const next = todayTasks[0];
       return {
-        label: 'START NEXT TASK',
+        label: 'DO NEXT TASK',
         sublabel: next.topic.name,
         onPress: () =>
           navigation.navigate('Session', {
@@ -171,8 +163,8 @@ export default function HomeScreen() {
       };
     }
     return {
-      label: 'START',
-      sublabel: 'Quiz · stop anytime',
+      label: 'START FOCUS SPRINT',
+      sublabel: 'Quick guided session',
       onPress: () => navigation.navigate('Session', { mood, mode: 'warmup' }),
     };
   })();
@@ -491,19 +483,6 @@ export default function HomeScreen() {
           )}
         </ResponsiveContainer>
       </ScrollView>
-
-      {returnSheet && (
-        <LectureReturnSheet
-          visible
-          appName={returnSheet.appName}
-          durationMinutes={returnSheet.durationMinutes}
-          recordingPath={returnSheet.recordingPath}
-          logId={returnSheet.logId}
-          groqKey={profile.groqApiKey || BUNDLED_GROQ_KEY}
-          onDone={() => setReturnSheet(null)}
-          onStudyNow={() => setReturnSheet(null)}
-        />
-      )}
     </SafeAreaView>
   );
 }

@@ -20,7 +20,11 @@ interface BuildSessionOptions {
   mode?: SessionMode;
 }
 
-function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
+function scoreTopicForSession(
+  topic: TopicWithProgress,
+  mood: Mood,
+  recentParentIds?: Set<number>,
+): number {
   let score = 0;
 
   // Base: INICET priority (1-10 scale)
@@ -48,6 +52,13 @@ function scoreTopicForSession(topic: TopicWithProgress, mood: Mood): number {
   if (topic.progress.lastStudiedAt) {
     const hoursSince = (Date.now() - topic.progress.lastStudiedAt) / 3600000;
     if (hoursSince < 12) score -= 20;
+  }
+
+  // Sibling/parent recency penalty: if any topic sharing the same parent was
+  // recently studied, penalize this topic to avoid clustering siblings
+  // (e.g. studying all 8 Brachial Plexus sub-topics in one session)
+  if (topic.parentTopicId && recentParentIds?.has(topic.parentTopicId)) {
+    score -= 15;
   }
 
   // Mood adjustments
@@ -210,9 +221,22 @@ export async function buildSession(
     );
   }
 
+  // Build set of parent IDs for topics studied in the last 24 hours
+  // to penalize sibling clustering (e.g. all Brachial Plexus sub-topics)
+  const recentParentIds = new Set<number>();
+  for (const t of topicPool) {
+    if (
+      t.parentTopicId &&
+      t.progress.lastStudiedAt &&
+      Date.now() - t.progress.lastStudiedAt < MS_PER_DAY
+    ) {
+      recentParentIds.add(t.parentTopicId);
+    }
+  }
+
   // Score and rank all topics
   const scored = topicPool
-    .map((t) => ({ ...t, score: scoreTopicForSession(t, mood) }))
+    .map((t) => ({ ...t, score: scoreTopicForSession(t, mood, recentParentIds) }))
     .sort((a, b) => b.score - a.score);
 
   // Take top 15 as candidates

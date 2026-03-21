@@ -64,9 +64,7 @@ export function shouldReplaceLectureNote(currentNote: string, candidateNote: str
 }
 
 export async function generateADHDNote(analysis: LectureAnalysis): Promise<string> {
-  const transcriptExcerpt = analysis.transcript?.trim()
-    ? analysis.transcript.trim().slice(0, 12000)
-    : '';
+  const transcriptExcerpt = buildTranscriptExcerpt(analysis.transcript);
   const input = `Subject: ${analysis.subject}
 Topics: ${analysis.topics.join(', ')}
 Key concepts:
@@ -88,6 +86,26 @@ ${transcriptExcerpt || '(No transcript available)'}`;
     console.warn('[NoteGen] ADHD note generation failed, using fallback.');
     return buildQuickLectureNote(analysis);
   }
+}
+
+function buildTranscriptExcerpt(transcript: string | undefined, maxChars = 12000): string {
+  const trimmed = transcript?.trim() ?? '';
+  if (!trimmed) return '';
+  if (trimmed.length <= maxChars) return trimmed;
+
+  const headSize = 4500;
+  const middleSize = 3000;
+  const tailSize = 4500;
+  const middleStart = Math.max(0, Math.floor((trimmed.length - middleSize) / 2));
+  const middleEnd = Math.min(trimmed.length, middleStart + middleSize);
+
+  return [
+    trimmed.slice(0, headSize).trim(),
+    trimmed.slice(middleStart, middleEnd).trim(),
+    trimmed.slice(-tailSize).trim(),
+  ]
+    .filter(Boolean)
+    .join('\n\n[...]\n\n');
 }
 
 export function buildQuickLectureNote(analysis: LectureAnalysis): string {

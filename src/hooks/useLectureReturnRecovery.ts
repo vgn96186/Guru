@@ -4,6 +4,9 @@ import { Audio } from 'expo-av';
 import {
   stopRecording,
   hideOverlay,
+  consumeLectureReturnRequest,
+  isOverlayActive,
+  isRecordingActive,
   validateRecordingFile,
   copyFileToPublicBackup,
 } from '../../modules/app-launcher';
@@ -106,6 +109,16 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
         const session = await getIncompleteExternalSession();
         if (!session || handledReturnLogRef.current === session.id) return;
 
+        const [returnRequested, recordingActive, overlayActive] = await Promise.all([
+          consumeLectureReturnRequest().catch(() => false),
+          isRecordingActive().catch(() => false),
+          isOverlayActive().catch(() => false),
+        ]);
+
+        if (!returnRequested && (recordingActive || overlayActive)) {
+          return;
+        }
+
         const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
         const logId = session.id!;
         handledReturnLogRef.current = logId;
@@ -124,9 +137,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
             recordingPath = stoppedPath;
             if (recordingPath.includes('/data/')) {
               const fileName = recordingPath.split('/').pop() || `backup_rec_${Date.now()}.m4a`;
-              copyFileToPublicBackup(stripFileUri(recordingPath), fileName).catch(
-                () => {},
-              );
+              copyFileToPublicBackup(stripFileUri(recordingPath), fileName).catch(() => {});
             }
           }
         } catch (err) {

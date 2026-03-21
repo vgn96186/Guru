@@ -157,7 +157,11 @@ export default function StatsScreen() {
       >
         <ResponsiveContainer>
           <View style={styles.header}>
-            <ScreenHeader title="Exam Readiness" subtitle="Focus on how far you've come." />
+            <ScreenHeader
+              title="Exam Readiness"
+              subtitle="Focus on how far you've come."
+              onBackPress={() => navigation.navigate('MenuHome')}
+            />
           </View>
 
           {stats.totalSessions === 0 ? (

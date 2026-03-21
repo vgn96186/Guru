@@ -44,8 +44,8 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     }
     return embedding;
   } catch (err) {
-    if (__DEV__) console.error('[Embedding] Error:', err);
-    throw err;
+    if (__DEV__) console.warn('[Embedding] Error:', err);
+    return null;
   }
 }
 

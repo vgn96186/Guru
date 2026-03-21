@@ -22,7 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
-import { transcribeAudio } from '../services/transcriptionService';
+import { transcribeAudio, isMeaningfulLectureAnalysis } from '../services/transcriptionService';
 import { moveFileToRecovery } from '../services/transcriptStorage';
 import { enqueueRequest } from '../services/offlineQueue';
 
@@ -672,17 +672,7 @@ export default function LectureModeScreen() {
       lastError?: string;
     } = {},
   ) {
-    const hasTranscript = !!analysis.transcript?.trim();
-    const hasMeaningfulSummary =
-      !!analysis.lectureSummary &&
-      ![
-        'No audio recorded (empty file)',
-        'No speech detected (silent audio)',
-        'No speech detected',
-        'Lecture content recorded',
-        'No medical content detected',
-      ].includes(analysis.lectureSummary);
-    if (!hasTranscript || !hasMeaningfulSummary) {
+    if (!isMeaningfulLectureAnalysis(analysis)) {
       throw new Error('No usable lecture content was detected in this recording.');
     }
 

@@ -24,6 +24,7 @@ import { theme } from '../constants/theme';
 import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
 import { type LecturePipelineStage } from '../services/lectureSessionMonitor';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
+import SubjectSelectionCard from './SubjectSelectionCard';
 
 interface Props {
   visible: boolean;
@@ -59,6 +60,9 @@ export default function LectureReturnSheet(props: Props) {
     showExpl,
     score,
     canTranscribe,
+    subjectSelectionRequired,
+    selectedSubjectName,
+    setSelectedSubjectName,
     runTranscription,
     handleCancelTranscription,
     handleMarkStudied,
@@ -112,7 +116,8 @@ export default function LectureReturnSheet(props: Props) {
     SPM: '#388E3C',
     'Community Medicine': '#388E3C',
   };
-  const subjectColor = SUBJECT_COLORS[analysis?.subject ?? ''] ?? theme.colors.primary;
+  const subjectColor =
+    SUBJECT_COLORS[selectedSubjectName ?? analysis?.subject ?? ''] ?? theme.colors.primary;
   const isProcessingPhase = phase === 'intro' || phase === 'transcribing' || activeStage !== null;
   const showCompactCard = !isExpanded;
 
@@ -269,11 +274,19 @@ export default function LectureReturnSheet(props: Props) {
                       ]}
                     >
                       <Text style={[styles.subjectChipText, { color: subjectColor }]}>
-                        {analysis.subject}
+                        {selectedSubjectName ?? analysis.subject}
                       </Text>
                     </View>
                     <Text style={styles.summaryText}>{analysis.lectureSummary}</Text>
                   </View>
+                )}
+
+                {subjectSelectionRequired && (
+                  <SubjectSelectionCard
+                    detectedSubjectName={analysis.subject}
+                    selectedSubjectName={selectedSubjectName}
+                    onSelectSubject={setSelectedSubjectName}
+                  />
                 )}
 
                 {analysis.topics.length > 0 && (
@@ -323,7 +336,8 @@ export default function LectureReturnSheet(props: Props) {
                     <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
                     <View style={styles.confidenceSelector}>
                       {([1, 2, 3] as const).map((level) => {
-                        const isSelected = (userConfidence ?? analysis.estimatedConfidence) === level;
+                        const isSelected =
+                          (userConfidence ?? analysis.estimatedConfidence) === level;
                         const colors = {
                           1: theme.colors.error,
                           2: theme.colors.warning,
@@ -356,8 +370,8 @@ export default function LectureReturnSheet(props: Props) {
                     </View>
                     {userConfidence && userConfidence !== analysis.estimatedConfidence && (
                       <Text style={styles.confidenceOverrideNote}>
-                        AI detected "{CONFIDENCE_LABELS[analysis.estimatedConfidence as 1 | 2 | 3]}" —
-                        you're overriding to your selection
+                        AI detected "{CONFIDENCE_LABELS[analysis.estimatedConfidence as 1 | 2 | 3]}"
+                        — you're overriding to your selection
                       </Text>
                     )}
                   </View>
@@ -509,7 +523,7 @@ export default function LectureReturnSheet(props: Props) {
                   <TouchableOpacity
                     style={styles.primaryBtn}
                     onPress={handleMarkAndQuiz}
-                    disabled={isSaving}
+                    disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
                     activeOpacity={0.85}
                     accessibilityRole="button"
                     accessibilityLabel={
@@ -531,7 +545,7 @@ export default function LectureReturnSheet(props: Props) {
                   <TouchableOpacity
                     style={styles.outlineBtn}
                     onPress={() => handleMarkStudied()}
-                    disabled={isSaving}
+                    disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
                     activeOpacity={0.85}
                     accessibilityRole="button"
                     accessibilityLabel={`Just mark as studied, ${analysis.topics.length * 8} XP`}
@@ -548,7 +562,7 @@ export default function LectureReturnSheet(props: Props) {
                 <TouchableOpacity
                   style={styles.primaryBtn}
                   onPress={handleSaveAndClose}
-                  disabled={isSaving}
+                  disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
                   activeOpacity={0.85}
                 >
                   <Text style={styles.primaryBtnText}>Save & Done</Text>

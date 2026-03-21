@@ -1,14 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
 import {
   clearLocalModelDownload,
   getLocalModelDownloadSnapshot,
+  isDownloadMinimized,
+  setDownloadMinimized,
   subscribeToLocalModelDownload,
+  subscribeToMinimized,
   type LocalModelDownloadSnapshot,
 } from '../services/localModelDownloadState';
+import { isDownloadPaused, pauseDownload, resumeDownload } from '../services/localModelBootstrap';
 
 function formatBytes(bytes?: number): string | null {
   if (!bytes || bytes <= 0) return null;
@@ -23,7 +27,9 @@ function getStageLabel(snapshot: LocalModelDownloadSnapshot): string {
   if (snapshot.stage === 'verifying') return 'Verifying model integrity';
   if (snapshot.stage === 'complete') return 'Installed and ready offline';
   if (snapshot.stage === 'error') return 'Install paused';
-  return snapshot.type === 'whisper' ? 'Installing offline transcription' : 'Installing offline study AI';
+  return snapshot.type === 'whisper'
+    ? 'Installing offline transcription'
+    : 'Installing offline study AI';
 }
 
 export function InstallModelProgressOverlay() {
@@ -34,6 +40,8 @@ export function InstallModelProgressOverlay() {
   const [mountedSnapshot, setMountedSnapshot] = useState<LocalModelDownloadSnapshot | null>(
     getLocalModelDownloadSnapshot(),
   );
+  const [minimized, setMinimized] = useState(isDownloadMinimized());
+  const [paused, setPaused] = useState(isDownloadPaused());
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(18)).current;
   const shimmer = useRef(new Animated.Value(0)).current;
@@ -53,6 +61,8 @@ export function InstallModelProgressOverlay() {
     });
   }, []);
 
+  useEffect(() => subscribeToMinimized(setMinimized), []);
+
   useEffect(() => {
     if (!snapshot && mountedSnapshot) {
       Animated.parallel([
@@ -68,7 +78,10 @@ export function InstallModelProgressOverlay() {
           easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
-      ]).start(() => setMountedSnapshot(null));
+      ]).start(() => {
+        setMountedSnapshot(null);
+        setDownloadMinimized(false);
+      });
       return;
     }
 
@@ -139,10 +152,43 @@ export function InstallModelProgressOverlay() {
 
   const downloadedText = formatBytes(mountedSnapshot.downloadedBytes);
   const totalText = formatBytes(mountedSnapshot.totalBytes);
+  const isActive =
+    mountedSnapshot.stage === 'downloading' ||
+    mountedSnapshot.stage === 'preparing' ||
+    (mountedSnapshot.stage === 'error' && mountedSnapshot.message === 'Download paused');
+
+  // Minimized: small floating pill
+  if (minimized && isActive) {
+    return (
+      <Animated.View
+        style={[
+          styles.miniContainer,
+          {
+            top: insets.top + 12,
+            opacity,
+            transform: [{ translateY }],
+          },
+        ]}
+      >
+        <Pressable
+          style={[styles.miniPill, { borderColor: `${accentColor}55` }]}
+          onPress={() => setDownloadMinimized(false)}
+        >
+          <View style={[styles.miniDot, { backgroundColor: accentColor }]} />
+          <Text style={styles.miniText}>{Math.round(mountedSnapshot.progress)}%</Text>
+          <View style={styles.miniBarTrack}>
+            <View
+              style={[styles.miniBarFill, { width: progressWidth, backgroundColor: accentColor }]}
+            />
+          </View>
+        </Pressable>
+      </Animated.View>
+    );
+  }
 
   return (
     <Animated.View
-      pointerEvents="none"
+      pointerEvents={isActive ? 'box-none' : 'none'}
       style={[
         styles.container,
         {
@@ -154,13 +200,46 @@ export function InstallModelProgressOverlay() {
     >
       <View style={styles.card}>
         <View style={styles.row}>
-          <View style={[styles.pill, { backgroundColor: `${accentColor}22`, borderColor: `${accentColor}55` }]}>
+          <View
+            style={[
+              styles.pill,
+              { backgroundColor: `${accentColor}22`, borderColor: `${accentColor}55` },
+            ]}
+          >
             <View style={[styles.pillDot, { backgroundColor: accentColor }]} />
             <Text style={styles.pillText}>
               {mountedSnapshot.type === 'whisper' ? 'Offline Speech' : 'Offline Study AI'}
             </Text>
           </View>
-          <Text style={styles.percent}>{Math.round(mountedSnapshot.progress)}%</Text>
+          <View style={styles.rowRight}>
+            <Text style={styles.percent}>{Math.round(mountedSnapshot.progress)}%</Text>
+            {isActive ? (
+              <>
+                <Pressable
+                  style={styles.actionBtn}
+                  onPress={() => {
+                    if (paused) {
+                      resumeDownload();
+                      setPaused(false);
+                    } else {
+                      pauseDownload();
+                      setPaused(true);
+                    }
+                  }}
+                  hitSlop={12}
+                >
+                  <Text style={styles.actionBtnText}>{paused ? '▶' : '⏸'}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.minimizeBtn}
+                  onPress={() => setDownloadMinimized(true)}
+                  hitSlop={12}
+                >
+                  <Text style={styles.minimizeBtnText}>—</Text>
+                </Pressable>
+              </>
+            ) : null}
+          </View>
         </View>
 
         <Text style={styles.title}>{getStageLabel(mountedSnapshot)}</Text>
@@ -169,7 +248,9 @@ export function InstallModelProgressOverlay() {
         </Text>
 
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: progressWidth, backgroundColor: accentColor }]}>
+          <View
+            style={[styles.progressFill, { width: progressWidth, backgroundColor: accentColor }]}
+          >
             {mountedSnapshot.stage === 'downloading' ? (
               <Animated.View
                 style={[
@@ -219,6 +300,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 10,
   },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -243,6 +329,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.4,
+  },
+  actionBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionBtnText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+  },
+  minimizeBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  minimizeBtnText: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: -2,
   },
   title: {
     color: theme.colors.textPrimary,
@@ -278,5 +390,47 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
+  },
+  // Minimized pill styles
+  miniContainer: {
+    position: 'absolute',
+    right: 14,
+    zIndex: 9998,
+  },
+  miniPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(18, 20, 30, 0.92)',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  miniDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+  miniText: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  miniBarTrack: {
+    width: 40,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  miniBarFill: {
+    height: '100%',
+    borderRadius: 999,
   },
 });

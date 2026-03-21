@@ -10,6 +10,7 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Modal,
   ScrollView,
@@ -27,6 +28,7 @@ import {
   getLectureHistory,
   searchLectureNotes,
   deleteLectureNote,
+  updateLectureTranscriptNote,
   updateLectureTranscriptSummary,
   getLectureNoteById,
   type LectureHistoryItem,
@@ -37,7 +39,17 @@ import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { Audio } from 'expo-av';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { buildLectureDisplayTitle } from '../services/lectureIdentity';
+import { buildLectureDisplayTitle, resolveLectureSubjectLabel } from '../services/lectureIdentity';
+import {
+  copyLectureTranscript,
+  filterLectureHistoryItems,
+  lectureNeedsAiNote,
+  lectureNeedsReview,
+  regenerateLectureNoteFromTranscript,
+  removeLectureRecording,
+  transcribeLectureRecordingToNote,
+  type LectureManagerFilter,
+} from '../services/lectureManager';
 import ScreenHeader from '../components/ScreenHeader';
 
 const SUBJECT_COLORS: Record<string, string> = {
@@ -61,6 +73,7 @@ const SUBJECT_COLORS: Record<string, string> = {
   'Forensic Medicine': '#455A64',
   SPM: '#CDDC39',
   Unknown: '#9E9E9E',
+  General: '#9E9E9E',
 };
 
 /** Extract the first meaningful line from a note (skip markdown headers) */
@@ -76,10 +89,14 @@ function extractFirstLine(note: string): string {
   return lines[0] ?? 'Lecture note';
 }
 
-function getLectureTitle(item: Pick<LectureHistoryItem, 'subjectName' | 'topics'>): string {
+function getLectureTitle(
+  item: Pick<LectureHistoryItem, 'subjectName' | 'topics' | 'note' | 'summary'>,
+): string {
   return buildLectureDisplayTitle({
     subjectName: item.subjectName,
     topics: item.topics,
+    note: item.note,
+    summary: item.summary,
   });
 }
 
@@ -133,6 +150,7 @@ function AudioPlayer({ uri }: { uri: string }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [barWidth, setBarWidth] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -168,6 +186,17 @@ function AudioPlayer({ uri }: { uri: string }) {
     }
   };
 
+  const seekTo = async (targetMs: number) => {
+    if (!sound) return;
+    const clamped = Math.max(0, Math.min(duration, targetMs));
+    await sound.setPositionAsync(clamped);
+    setPosition(clamped);
+  };
+
+  const jumpBy = async (deltaMs: number) => {
+    await seekTo(position + deltaMs);
+  };
+
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -180,20 +209,34 @@ function AudioPlayer({ uri }: { uri: string }) {
       <TouchableOpacity onPress={handlePlayPause} style={audioStyles.playBtn}>
         <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
       </TouchableOpacity>
+      <TouchableOpacity onPress={() => void jumpBy(-10000)} style={audioStyles.jumpBtn}>
+        <Text style={audioStyles.jumpBtnText}>-10s</Text>
+      </TouchableOpacity>
       <View style={audioStyles.progressWrap}>
-        <View style={audioStyles.progressBar}>
+        <Pressable
+          style={audioStyles.progressBar}
+          onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
+          onPress={(event) => {
+            if (!duration || barWidth <= 0) return;
+            const next = (event.nativeEvent.locationX / barWidth) * duration;
+            void seekTo(next);
+          }}
+        >
           <View
             style={[
               audioStyles.progressFill,
               { width: `${duration > 0 ? (position / duration) * 100 : 0}%` },
             ]}
           />
-        </View>
+        </Pressable>
         <View style={audioStyles.timeRow}>
           <Text style={audioStyles.timeText}>{formatTime(position)}</Text>
           <Text style={audioStyles.timeText}>{formatTime(duration)}</Text>
         </View>
       </View>
+      <TouchableOpacity onPress={() => void jumpBy(10000)} style={audioStyles.jumpBtn}>
+        <Text style={audioStyles.jumpBtnText}>+10s</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -218,6 +261,13 @@ const audioStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  jumpBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: '#23233A',
+  },
+  jumpBtnText: { color: '#D4D4F7', fontSize: 11, fontWeight: '700' },
   progressWrap: { flex: 1, gap: 4 },
   progressBar: { height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#6C63FF' },
@@ -236,6 +286,8 @@ export default function TranscriptHistoryScreen() {
   const [showRenameEditor, setShowRenameEditor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'subject' | 'confidence'>('date');
+  const [managerFilter, setManagerFilter] = useState<LectureManagerFilter>('all');
+  const [isManagerBusy, setIsManagerBusy] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const loadNotes = useCallback(async () => {
@@ -253,6 +305,14 @@ export default function TranscriptHistoryScreen() {
     }
     return notes; // default: date DESC from DB
   }, [notes, sortBy]);
+
+  const visibleNotes = useMemo(
+    () => filterLectureHistoryItems(searchQuery ? notes : sortedNotes, managerFilter),
+    [managerFilter, notes, searchQuery, sortedNotes],
+  );
+  const selectedNeedsAiNote = selectedNote ? lectureNeedsAiNote(selectedNote) : false;
+  const isFilterActive = managerFilter !== 'all';
+  const selectedHasRecordingOnly = !!(selectedNote?.recordingPath && !selectedNote?.transcript);
 
   useEffect(() => {
     const onLectureSaved = () => void loadNotes();
@@ -306,6 +366,7 @@ export default function TranscriptHistoryScreen() {
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     setSearchQuery('');
+    setManagerFilter('all');
     await loadNotes();
     setRefreshing(false);
   }, [loadNotes]);
@@ -388,6 +449,82 @@ export default function TranscriptHistoryScreen() {
     await loadNotes();
   };
 
+  const handleCopyTranscript = async () => {
+    if (!selectedNote) return;
+    const copied = await copyLectureTranscript(selectedNote.transcript);
+    if (!copied) {
+      Alert.alert('No transcript', 'There is no transcript text available to copy.');
+      return;
+    }
+    Haptics.selectionAsync();
+    Alert.alert('Copied', 'Transcript copied to clipboard.');
+  };
+
+  const handleGenerateAiOutput = async () => {
+    if (!selectedNote) return;
+    setIsManagerBusy(true);
+    try {
+      const updated = selectedHasRecordingOnly
+        ? await transcribeLectureRecordingToNote(selectedNote.id)
+        : await regenerateLectureNoteFromTranscript(selectedNote.id);
+      setSelectedNote(updated);
+      await loadNotes();
+      Alert.alert(
+        'Done',
+        selectedHasRecordingOnly
+          ? 'Recording transcribed and AI note generated.'
+          : 'AI note regenerated from the saved transcript.',
+      );
+    } catch (err) {
+      Alert.alert('Could not generate note', err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsManagerBusy(false);
+    }
+  };
+
+  const handleRemoveRecording = async () => {
+    if (!selectedNote?.recordingPath) return;
+    Alert.alert('Delete recording?', 'This removes the saved audio file for this lecture.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete recording',
+        style: 'destructive',
+        onPress: async () => {
+          setIsManagerBusy(true);
+          try {
+            await removeLectureRecording(selectedNote.id, selectedNote.recordingPath);
+            const updated = { ...selectedNote, recordingPath: null };
+            setSelectedNote(updated);
+            await loadNotes();
+          } finally {
+            setIsManagerBusy(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleClearAiNote = async () => {
+    if (!selectedNote) return;
+    Alert.alert('Clear AI note?', 'This keeps the transcript but removes the generated note.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear note',
+        style: 'destructive',
+        onPress: async () => {
+          setIsManagerBusy(true);
+          try {
+            await updateLectureTranscriptNote(selectedNote.id, '');
+            setSelectedNote({ ...selectedNote, note: '' });
+            await loadNotes();
+          } finally {
+            setIsManagerBusy(false);
+          }
+        },
+      },
+    ]);
+  };
+
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -408,6 +545,7 @@ export default function TranscriptHistoryScreen() {
 
   const renderNote = ({ item }: { item: LectureHistoryItem }) => {
     const isSelected = selectedIds.includes(item.id);
+    const subjectLabel = resolveLectureSubjectLabel(item);
     return (
       <TouchableOpacity
         style={[styles.noteCard, isSelected && styles.noteCardSelected]}
@@ -437,10 +575,10 @@ export default function TranscriptHistoryScreen() {
           <View
             style={[
               styles.subjectChip,
-              { backgroundColor: SUBJECT_COLORS[item.subjectName ?? 'Unknown'] ?? '#9E9E9E' },
+              { backgroundColor: SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E' },
             ]}
           >
-            <Text style={styles.subjectText}>{item.subjectName ?? 'Unknown'}</Text>
+            <Text style={styles.subjectText}>{subjectLabel}</Text>
           </View>
           <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
         </View>
@@ -453,6 +591,16 @@ export default function TranscriptHistoryScreen() {
         <Text style={styles.summaryPreviewText} numberOfLines={2}>
           {item.summary || extractFirstLine(item.note)}
         </Text>
+        <View style={styles.statusRow}>
+          {item.recordingPath ? <Text style={styles.statusBadge}>Recording</Text> : null}
+          {item.transcript ? <Text style={styles.statusBadge}>Transcript</Text> : null}
+          {lectureNeedsAiNote(item) ? (
+            <Text style={styles.statusBadgeWarn}>Needs AI Note</Text>
+          ) : null}
+          {lectureNeedsReview(item) ? (
+            <Text style={styles.statusBadgeWarn}>Needs Review</Text>
+          ) : null}
+        </View>
 
         <View style={styles.noteFooter}>
           {item.topics.length > 0 && (
@@ -501,6 +649,7 @@ export default function TranscriptHistoryScreen() {
       <ScreenHeader
         title="Transcript History"
         subtitle="Search, review, and manage captured lectures."
+        onBackPress={() => navigation.navigate('NotesHub')}
       />
       {isSelectionMode && (
         <View style={styles.selectionModeBanner}>
@@ -548,24 +697,28 @@ export default function TranscriptHistoryScreen() {
           </View>
         ) : (
           <Text style={styles.statsText}>
-            {notes.length} lecture{notes.length !== 1 ? 's' : ''} recorded
+            {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''} shown
           </Text>
         )}
       </View>
 
       {/* Empty state */}
-      {notes.length === 0 && !searchQuery && (
+      {visibleNotes.length === 0 && !searchQuery && (
         <View style={styles.emptyState}>
           <Ionicons name="document-text-outline" size={64} color={theme.colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Transcripts Yet</Text>
+          <Text style={styles.emptyTitle}>
+            {isFilterActive ? 'No Lectures Match This Filter' : 'No Transcripts Yet'}
+          </Text>
           <Text style={styles.emptySubtitle}>
-            Use a lecture app and your sessions will be transcribed and saved here for revision
+            {isFilterActive
+              ? 'Try another filter or clear filters to see the full lecture list.'
+              : 'Use a lecture app and your sessions will be transcribed and saved here for revision'}
           </Text>
         </View>
       )}
 
       {/* No results */}
-      {notes.length === 0 && searchQuery && (
+      {visibleNotes.length === 0 && searchQuery && (
         <View style={styles.emptyState}>
           <Ionicons name="search-outline" size={48} color={theme.colors.textMuted} />
           <Text style={styles.emptyTitle}>No Results</Text>
@@ -591,9 +744,39 @@ export default function TranscriptHistoryScreen() {
         </View>
       )}
 
+      {notes.length > 0 && (
+        <View style={styles.filterBar}>
+          {(
+            [
+              ['all', 'All'],
+              ['recording', 'Has Recording'],
+              ['transcript', 'Has Transcript'],
+              ['needs_ai', 'Needs AI'],
+              ['needs_review', 'Needs Review'],
+            ] as const
+          ).map(([value, label]) => (
+            <TouchableOpacity
+              key={value}
+              style={[styles.filterChip, managerFilter === value && styles.filterChipActive]}
+              onPress={() => setManagerFilter(value)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  managerFilter === value && styles.filterChipTextActive,
+                ]}
+              >
+                {label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Notes list */}
       <FlatList
-        data={searchQuery ? notes : sortedNotes}
+        data={visibleNotes}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderNote}
         contentContainerStyle={styles.listContent}
@@ -617,7 +800,7 @@ export default function TranscriptHistoryScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={1}>
-                {selectedNote?.subjectName ?? 'Lecture'} Transcript
+                {selectedNote ? resolveLectureSubjectLabel(selectedNote) : 'Lecture'} Transcript
               </Text>
               <View style={styles.modalHeaderActions}>
                 <TouchableOpacity
@@ -726,6 +909,63 @@ export default function TranscriptHistoryScreen() {
               {/* Audio Player */}
               {selectedNote?.recordingPath && <AudioPlayer uri={selectedNote.recordingPath} />}
 
+              <View style={styles.managerActionGrid}>
+                <TouchableOpacity
+                  style={[
+                    styles.managerActionBtn,
+                    isManagerBusy && styles.managerActionBtnDisabled,
+                  ]}
+                  onPress={handleGenerateAiOutput}
+                  disabled={isManagerBusy}
+                >
+                  <Ionicons name="sparkles-outline" size={18} color={theme.colors.primaryLight} />
+                  <Text style={styles.managerActionText}>
+                    {selectedHasRecordingOnly
+                      ? 'Transcribe Audio'
+                      : selectedNeedsAiNote
+                        ? 'Generate AI Note'
+                        : 'Regenerate AI Note'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.managerActionBtn,
+                    isManagerBusy && styles.managerActionBtnDisabled,
+                  ]}
+                  onPress={handleCopyTranscript}
+                  disabled={isManagerBusy}
+                >
+                  <Ionicons name="copy-outline" size={18} color={theme.colors.textPrimary} />
+                  <Text style={styles.managerActionText}>Copy Transcript</Text>
+                </TouchableOpacity>
+                {selectedNote?.recordingPath ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.managerActionBtn,
+                      isManagerBusy && styles.managerActionBtnDisabled,
+                    ]}
+                    onPress={handleRemoveRecording}
+                    disabled={isManagerBusy}
+                  >
+                    <Ionicons name="trash-outline" size={18} color={theme.colors.warning} />
+                    <Text style={styles.managerActionText}>Delete Recording</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {selectedNote?.note?.trim() ? (
+                  <TouchableOpacity
+                    style={[
+                      styles.managerActionBtn,
+                      isManagerBusy && styles.managerActionBtnDisabled,
+                    ]}
+                    onPress={handleClearAiNote}
+                    disabled={isManagerBusy}
+                  >
+                    <Ionicons name="document-text-outline" size={18} color={theme.colors.error} />
+                    <Text style={styles.managerActionText}>Clear AI Note</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
               {/* ADHD-formatted study note */}
               {selectedNote?.note && (
                 <View style={styles.modalSection}>
@@ -807,6 +1047,27 @@ const styles = StyleSheet.create({
   },
   sortBtnText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
   sortBtnTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  filterBar: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#2E314B',
+    backgroundColor: '#181A27',
+  },
+  filterChipActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '22',
+  },
+  filterChipText: { color: '#B5B8CF', fontSize: 12, fontWeight: '600' },
+  filterChipTextActive: { color: theme.colors.primaryLight, fontWeight: '700' },
 
   noteCard: {
     backgroundColor: '#1E1E1E',
@@ -841,6 +1102,27 @@ const styles = StyleSheet.create({
   appBadge: { color: '#666', fontSize: 11, marginBottom: 6 },
   summaryText: { color: '#ddd', fontSize: 14, lineHeight: 20, marginBottom: 10 },
   summaryPreviewText: { color: '#8f8fa8', fontSize: 12, lineHeight: 18, marginBottom: 10 },
+  statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
+  statusBadge: {
+    backgroundColor: '#263145',
+    color: '#C7D4F5',
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  statusBadgeWarn: {
+    backgroundColor: '#453118',
+    color: '#FFD18A',
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
   noteFooter: {},
   topicsRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
   topicPill: {
@@ -954,6 +1236,33 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 1,
+  },
+  managerActionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  managerActionBtn: {
+    minWidth: '46%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#35384D',
+    backgroundColor: '#1D1F2C',
+  },
+  managerActionBtnDisabled: {
+    opacity: 0.55,
+  },
+  managerActionText: {
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   studyNoteCard: {
     backgroundColor: theme.colors.panel,

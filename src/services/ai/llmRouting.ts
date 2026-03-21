@@ -2,7 +2,7 @@ import { AppState } from 'react-native';
 import { initLlama, LlamaContext } from 'llama.rn';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
-import { OPENROUTER_FREE_MODELS, GROQ_MODELS } from './config';
+import { OPENROUTER_FREE_MODELS, GROQ_MODELS, GEMINI_MODELS } from './config';
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 
@@ -49,16 +49,14 @@ async function getLlamaContext(modelPath: string): Promise<LlamaContext> {
       llamaContext = null;
     }
     // Performance defaults tuned for quantized GGUF on mid-range Android.
-    const ctx = await initLlama(
-      {
-        model: modelPath,
-        n_context: 2048,
-        n_batch: 384,
-        k_type: 2,
-        v_type: 2,
-        use_mlock: false,
-      } as any,
-    );
+    const ctx = await initLlama({
+      model: modelPath,
+      n_context: 2048,
+      n_batch: 384,
+      k_type: 2,
+      v_type: 2,
+      use_mlock: false,
+    } as any);
     llamaContext = ctx;
     currentLlamaPath = modelPath;
     return ctx;
@@ -171,6 +169,84 @@ async function callOpenRouter(messages: Message[], orKey: string, model: string)
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (!text || !text.trim()) throw new Error(`Empty response from OpenRouter model ${model}`);
+  return text;
+}
+
+async function callGemini(messages: Message[], geminiKey: string, model: string): Promise<string> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${geminiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1200,
+      }),
+    },
+  );
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Gemini rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Gemini error ${res.status} (${model}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from Gemini model ${model}`);
+  return text;
+}
+
+/** Gemini chat with SSE streaming. */
+async function streamGeminiChat(
+  messages: Message[],
+  geminiKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${geminiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1200,
+        stream: true,
+      }),
+    },
+  );
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Gemini rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Gemini error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    const text = await callGemini(messages, geminiKey, model);
+    onDelta(text);
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from Gemini model ${model}`);
   return text;
 }
 
@@ -310,6 +386,7 @@ export async function attemptCloudLLMStream(
   groqKey: string | undefined,
   chosenModel: string | undefined,
   onDelta: (delta: string) => void,
+  geminiKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -345,6 +422,20 @@ export async function attemptCloudLLMStream(
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
         if (__DEV__) console.warn(`[AI] Groq stream ${model} failed:`, (err as Error).message);
+        continue;
+      }
+    }
+  }
+
+  if (geminiKey) {
+    for (const model of GEMINI_MODELS) {
+      try {
+        const text = await streamGeminiChat(messages, geminiKey, model, onDelta);
+        return { text, modelUsed: `gemini/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        if (__DEV__) console.warn(`[AI] Gemini stream ${model} failed:`, (err as Error).message);
         continue;
       }
     }
@@ -430,6 +521,7 @@ export async function attemptCloudLLM(
   textMode: boolean,
   groqKey?: string | undefined,
   chosenModel?: string,
+  geminiKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -477,7 +569,22 @@ export async function attemptCloudLLM(
     }
   }
 
-  // 2. Try OpenRouter free models
+  // 2. Try Gemini — free tier, 1500 req/day
+  if (geminiKey) {
+    for (const model of GEMINI_MODELS) {
+      try {
+        const text = await callGemini(messages, geminiKey, model);
+        return { text, modelUsed: `gemini/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        if (__DEV__) console.warn(`[AI] Gemini ${model} failed:`, (err as Error).message);
+        continue;
+      }
+    }
+  }
+
+  // 3. Try OpenRouter free models
   if (orKey) {
     const openRouterCandidates = Array.from(
       new Set([

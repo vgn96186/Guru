@@ -62,6 +62,9 @@ class RecordingService : Service() {
         const val BIT_RATE    = 128_000
 
         private const val TAG = "RecordingService"
+        @JvmStatic
+        @Volatile
+        var isServiceRunning = false
 
         /**
          * Static holder for the MediaProjection token.
@@ -77,6 +80,7 @@ class RecordingService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_START -> {
+                isServiceRunning = true
                 val path = intent.getStringExtra(EXTRA_OUTPUT_PATH)
                     ?: return START_NOT_STICKY
                 val mode = intent.getStringExtra(EXTRA_MODE) ?: "mic"
@@ -120,6 +124,7 @@ class RecordingService : Service() {
             ACTION_STOP -> {
                 stopAllRecording()
                 stopForeground(STOP_FOREGROUND_REMOVE)
+                isServiceRunning = false
                 stopSelf()
             }
         }
@@ -379,6 +384,7 @@ class RecordingService : Service() {
             java.io.File(path).writeText("RECORDING_FAILED")
             Log.w(TAG, "Wrote failure marker to $path")
         } catch (_: Exception) {}
+        isServiceRunning = false
         stopSelf()
     }
 
@@ -436,6 +442,7 @@ class RecordingService : Service() {
     }
 
     override fun onDestroy() {
+        isServiceRunning = false
         stopAllRecording()
         super.onDestroy()
     }

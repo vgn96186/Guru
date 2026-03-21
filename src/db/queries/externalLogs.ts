@@ -230,6 +230,26 @@ export async function getIncompleteExternalSession(): Promise<ExternalAppLog | n
   };
 }
 
+export async function getTodaysExternalStudyMinutes(): Promise<number> {
+  const db = getDb();
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  try {
+    const row = await db.getFirstAsync<{ total_minutes: number | null }>(
+      `SELECT COALESCE(SUM(duration_minutes), 0) AS total_minutes
+       FROM external_app_logs
+       WHERE returned_at IS NOT NULL
+         AND returned_at >= ?`,
+      [startOfDay.getTime()],
+    );
+    return row?.total_minutes ?? 0;
+  } catch (err) {
+    if (__DEV__) console.warn('[externalLogs] Failed to read today external study minutes:', err);
+    return 0;
+  }
+}
+
 /**
  * Get sessions where audio was recorded but transcription failed or never ran.
  * Used for retry-on-launch recovery.

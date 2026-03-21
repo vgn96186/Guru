@@ -50,7 +50,9 @@ export type SyllabusStackParamList = {
 };
 
 export type ChatStackParamList = {
-  GuruChat: { topicName?: string; initialQuestion?: string } | undefined;
+  GuruChat:
+    | { topicName?: string; initialQuestion?: string; autoFocusComposer?: boolean }
+    | undefined;
 };
 
 export type MenuStackParamList = {

@@ -93,6 +93,18 @@ export async function validateRecordingFile(
   return GuruAppLauncher.validateRecordingFile(path);
 }
 
+export async function isRecordingActive(): Promise<boolean> {
+  return GuruAppLauncher.isRecordingActive();
+}
+
+export async function isOverlayActive(): Promise<boolean> {
+  return GuruAppLauncher.isOverlayActive();
+}
+
+export async function consumeLectureReturnRequest(): Promise<boolean> {
+  return GuruAppLauncher.consumeLectureReturnRequest();
+}
+
 /**
  * Converts an M4A/AAC file to 16 kHz mono 16-bit PCM WAV format.
  * Required because `whisper.rn` only accepts WAV input.

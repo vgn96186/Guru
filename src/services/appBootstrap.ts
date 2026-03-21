@@ -14,6 +14,11 @@ import { processQueue } from './offlineQueue';
 import { enforceLocalLlmRamGuard } from './deviceMemory';
 import { stripFileUri } from './fileUri';
 import { cleanupStaleCheckpointDirs } from './lecture/transcription';
+import {
+  autoRepairLegacyNotes,
+  scanAndRecoverOrphanedRecordings,
+  scanAndRecoverOrphanedTranscripts,
+} from './lectureSessionMonitor';
 import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
 import { showToast } from '../components/Toast';
 
@@ -95,6 +100,15 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
 
     bootstrapLocalModels().catch((e: unknown) =>
       console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
+    );
+    scanAndRecoverOrphanedRecordings().catch((e: unknown) =>
+      console.warn('[AppBootstrap] Orphaned recording recovery failed:', e),
+    );
+    scanAndRecoverOrphanedTranscripts().catch((e: unknown) =>
+      console.warn('[AppBootstrap] Orphaned transcript recovery failed:', e),
+    );
+    autoRepairLegacyNotes().catch((e: unknown) =>
+      console.warn('[AppBootstrap] Legacy lecture repair failed:', e),
     );
     cleanupStaleCheckpointDirs().catch((e: unknown) =>
       console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),

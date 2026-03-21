@@ -21,9 +21,11 @@ import { MS_PER_DAY } from '../constants/time';
 import { getDb } from '../db/database';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
 import { buildLectureDisplayTitle } from '../services/lectureIdentity';
+import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
+import SubjectSelectionCard from '../components/SubjectSelectionCard';
 
 type Nav = NativeStackNavigationProp<MenuStackParamList, 'NotesHub'>;
 
@@ -44,10 +46,14 @@ function extractPreview(text: string): string {
   return text.replace(/#+\s*/g, '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
 }
 
-function getLectureTitle(lecture: Pick<LectureHistoryItem, 'subjectName' | 'topics'>): string {
+function getLectureTitle(
+  lecture: Pick<LectureHistoryItem, 'subjectName' | 'topics' | 'note' | 'summary'>,
+): string {
   return buildLectureDisplayTitle({
     subjectName: lecture.subjectName,
     topics: lecture.topics,
+    note: lecture.note,
+    summary: lecture.summary,
   });
 }
 
@@ -65,6 +71,7 @@ function formatDate(timestamp: number): string {
 import {
   transcribeAudio,
   generateADHDNote,
+  isMeaningfulLectureAnalysis,
   type LectureAnalysis,
 } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
@@ -85,6 +92,8 @@ export default function NotesHubScreen() {
   const [uploadResult, setUploadResult] = useState<LectureAnalysis | null>(null);
   const [uploadConfidence, setUploadConfidence] = useState<1 | 2 | 3 | null>(null);
   const [isSavingUpload, setIsSavingUpload] = useState(false);
+  const [uploadSubjectRequired, setUploadSubjectRequired] = useState(false);
+  const [selectedUploadSubjectName, setSelectedUploadSubjectName] = useState<string | null>(null);
   const [pendingSessions, setPendingSessions] = useState<ExternalAppLog[]>([]);
   const [isRetrying, setIsRetrying] = useState<number | null>(null);
   const [activePlaybackId, setActivePlaybackId] = useState<number | null>(null);
@@ -151,26 +160,29 @@ export default function NotesHubScreen() {
   };
 
   const handleAudioUpload = async () => {
-    const res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+    let res: DocumentPicker.DocumentPickerResult;
+    try {
+      res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+    } catch (error: any) {
+      showErrorAlert('Error', error);
+      return;
+    }
     if (res.canceled || !res.assets[0]) return;
     setIsTranscribingUpload(true);
     try {
       const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
-      const hasTranscript = !!analysis.transcript?.trim();
-      const hasMeaningfulSummary =
-        !!analysis.lectureSummary &&
-        ![
-          'No audio recorded (empty file)',
-          'No speech detected (silent audio)',
-          'No speech detected',
-          'Lecture content recorded',
-          'No medical content detected',
-        ].includes(analysis.lectureSummary);
-      if (!hasTranscript || !hasMeaningfulSummary) {
+      if (!isMeaningfulLectureAnalysis(analysis)) {
         throw new Error('No usable lecture content was detected in this recording.');
       }
       setUploadResult(analysis);
       setUploadConfidence(analysis.estimatedConfidence as 1 | 2 | 3);
+      const resolution = await resolveLectureSubjectRequirement(analysis.subject);
+      setUploadSubjectRequired(resolution.requiresSelection);
+      setSelectedUploadSubjectName(
+        resolution.requiresSelection
+          ? null
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+      );
     } catch (e: any) {
       showErrorAlert('Error', e);
     } finally {
@@ -180,15 +192,24 @@ export default function NotesHubScreen() {
 
   const handleSaveUpload = async () => {
     if (!uploadResult) return;
+    if (uploadSubjectRequired && !selectedUploadSubjectName) {
+      showErrorAlert('Subject required', 'Choose the lecture subject before saving this upload.');
+      return;
+    }
     setIsSavingUpload(true);
     try {
       const finalConfidence = uploadConfidence ?? (uploadResult.estimatedConfidence as 1 | 2 | 3);
-      const analysisToSave = { ...uploadResult, estimatedConfidence: finalConfidence };
+      const subjectName = selectedUploadSubjectName ?? uploadResult.subject;
+      const analysisToSave = {
+        ...uploadResult,
+        subject: subjectName,
+        estimatedConfidence: finalConfidence,
+      };
       const note = await generateADHDNote(analysisToSave);
-      const sub = await getSubjectByName(analysisToSave.subject);
+      const sub = await getSubjectByName(subjectName);
       await saveLectureTranscript({
         subjectId: sub?.id ?? null,
-        subjectName: analysisToSave.subject,
+        subjectName: subjectName,
         note,
         transcript: analysisToSave.transcript,
         summary: analysisToSave.lectureSummary,
@@ -200,6 +221,8 @@ export default function NotesHubScreen() {
       refreshProfile();
       setUploadResult(null);
       setUploadConfidence(null);
+      setUploadSubjectRequired(false);
+      setSelectedUploadSubjectName(null);
       loadData();
     } catch (e: any) {
       showErrorAlert('Error', e);
@@ -409,7 +432,7 @@ export default function NotesHubScreen() {
               onPress={() =>
                 tabsNavigation?.navigate('ChatTab', {
                   screen: 'GuruChat',
-                  params: { topicName: 'General Medicine' },
+                  params: { topicName: 'General Medicine', autoFocusComposer: true },
                 })
               }
               activeOpacity={0.85}
@@ -576,7 +599,15 @@ export default function NotesHubScreen() {
 
             {uploadResult && uploadResult.topics.length > 0 ? (
               <>
-                <SubjectChip subject={uploadResult.subject} />
+                {uploadSubjectRequired ? (
+                  <SubjectSelectionCard
+                    detectedSubjectName={uploadResult.subject}
+                    selectedSubjectName={selectedUploadSubjectName}
+                    onSelectSubject={setSelectedUploadSubjectName}
+                  />
+                ) : (
+                  <SubjectChip subject={selectedUploadSubjectName ?? uploadResult.subject} />
+                )}
                 <Text style={styles.modalSummary} numberOfLines={4}>
                   {uploadResult.lectureSummary}
                 </Text>
@@ -600,7 +631,11 @@ export default function NotesHubScreen() {
             <TouchableOpacity
               style={[styles.modalSaveBtn, isSavingUpload && { opacity: 0.6 }]}
               onPress={handleSaveUpload}
-              disabled={isSavingUpload || !uploadResult?.topics.length}
+              disabled={
+                isSavingUpload ||
+                !uploadResult?.topics.length ||
+                (uploadSubjectRequired && !selectedUploadSubjectName)
+              }
               activeOpacity={0.8}
             >
               {isSavingUpload ? (
@@ -614,6 +649,8 @@ export default function NotesHubScreen() {
               onPress={() => {
                 setUploadResult(null);
                 setUploadConfidence(null);
+                setUploadSubjectRequired(false);
+                setSelectedUploadSubjectName(null);
               }}
             >
               <Text style={styles.modalDismissText}>Discard</Text>

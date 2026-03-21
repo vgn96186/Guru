@@ -122,6 +122,8 @@ export default function NotesSearchScreen() {
     return buildLectureDisplayTitle({
       subjectName: lecture.subjectName,
       topics: lecture.topics,
+      note: lecture.note,
+      summary: lecture.summary,
     });
   }
 

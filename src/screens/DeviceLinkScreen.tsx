@@ -55,6 +55,7 @@ export default function DeviceLinkScreen() {
           <ScreenHeader
             title="Device Linking"
             subtitle="Keep your phone and lecture device tied to the same study session."
+            onBackPress={() => navigation.navigate('MenuHome')}
           />
           <Text style={styles.emoji}>📡</Text>
           <Text style={styles.sub}>

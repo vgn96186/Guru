@@ -12,15 +12,23 @@ export const DEFAULT_NEET_DATE =
   (process.env.EXPO_PUBLIC_DEFAULT_NEET_DATE ?? '2026-08-30').trim() || '2026-08-30';
 
 // Bundled defaults generated from `.env` by `scripts/generate-bundled-env.js`.
-export { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from './bundledEnv';
+export {
+  BUNDLED_GROQ_KEY,
+  BUNDLED_HF_TOKEN,
+  BUNDLED_OPENROUTER_KEY,
+  BUNDLED_GEMINI_KEY,
+} from './bundledEnv';
+
+/** Gemini models — tried in order. Free tier: 1500 req/day. */
+export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
 
 /** OpenRouter free models — tried in order when Groq unavailable. */
 export const OPENROUTER_FREE_MODELS = [
+  'openai/gpt-oss-120b:free',
   'meta-llama/llama-3.3-70b-instruct:free',
-  'qwen/qwen-2.5-72b-instruct:free',
-  'deepseek/deepseek-chat-v3-0324:free',
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
+  'google/gemma-3-27b-it:free',
+  'mistralai/mistral-small-3.1-24b-instruct:free',
+  'qwen/qwen3-coder:free',
 ] as const;
 
 /** Groq cloud models — order: best quality first, then fallbacks. */

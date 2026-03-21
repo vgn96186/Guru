@@ -3,6 +3,7 @@ import { Alert, InteractionManager } from 'react-native';
 import { dailyLogRepository } from '../db/repositories';
 import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics } from '../db/queries/topics';
 import { getCompletedSessionCount } from '../db/queries/sessions';
+import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
 import type { TopicWithProgress } from '../types';
 
@@ -27,8 +28,11 @@ export function useHomeDashboardData() {
       setDueTopics(due);
       setTodayTasks(await getTodaysAgendaWithTimes());
       setCompletedSessions(await getCompletedSessionCount());
-      const log = await dailyLogRepository.getDailyLog();
-      setTodayMinutes(log?.totalMinutes ?? 0);
+      const [log, externalMinutes] = await Promise.all([
+        dailyLogRepository.getDailyLog(),
+        getTodaysExternalStudyMinutes(),
+      ]);
+      setTodayMinutes((log?.totalMinutes ?? 0) + externalMinutes);
     } catch (err: any) {
       console.error('[Home] Failed to load initial data:', err);
       const message = err?.message ?? 'Unable to load home data. Please try again.';

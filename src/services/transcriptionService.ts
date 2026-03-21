@@ -14,7 +14,11 @@ import {
   runTranscriptionProviders,
   type TranscriptionProvider,
 } from './transcription/providerFallback';
-import { analyzeTranscript, type LectureAnalysis } from './transcription/analysis';
+import {
+  analyzeTranscript,
+  isMeaningfulLectureAnalysis,
+  type LectureAnalysis,
+} from './transcription/analysis';
 import {
   generateADHDNote,
   buildQuickLectureNote,
@@ -31,6 +35,7 @@ export {
   buildQuickLectureNote,
   shouldReplaceLectureNote,
   analyzeTranscript,
+  isMeaningfulLectureAnalysis,
   markTopicsFromLecture,
 };
 
@@ -84,7 +89,7 @@ export async function transcribeAudio(opts: {
       huggingface: hasHuggingFace,
       local: hasLocalWhisper,
     },
-    isUsableResult: (value) => value.trim().length > 0,
+    isUsableResult: (value) => typeof value === 'string' && value.trim().length > 0,
     fallbackOnError: true,
     onProviderStart: (provider) => {
       if (provider === 'groq') {

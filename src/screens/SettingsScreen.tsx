@@ -42,6 +42,11 @@ import {
 } from '../services/notificationService';
 import { getDb, runInTransaction } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
+import {
+  testGroqConnection,
+  testHuggingFaceConnection,
+  testOpenRouterConnection,
+} from '../services/ai/providerHealth';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
 import { BUNDLED_HF_TOKEN, DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
@@ -325,6 +330,14 @@ export default function SettingsScreen() {
   const [fetchDatesMsg, setFetchDatesMsg] = useState('');
   const [testingGroqKey, setTestingGroqKey] = useState(false);
   const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [testingOpenRouterKey, setTestingOpenRouterKey] = useState(false);
+  const [openRouterKeyTestResult, setOpenRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
+    null,
+  );
+  const [testingHuggingFaceToken, setTestingHuggingFaceToken] = useState(false);
+  const [huggingFaceTokenTestResult, setHuggingFaceTokenTestResult] = useState<
+    'ok' | 'fail' | null
+  >(null);
 
   useEffect(() => {
     if (isFocused) {
@@ -340,22 +353,35 @@ export default function SettingsScreen() {
     }
     setTestingGroqKey(true);
     setGroqKeyTestResult(null);
-    try {
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-        body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
-          messages: [{ role: 'user', content: 'Reply with one word: ok' }],
-          max_tokens: 5,
-        }),
-      });
-      setGroqKeyTestResult(res.ok ? 'ok' : 'fail');
-    } catch {
-      setGroqKeyTestResult('fail');
-    } finally {
-      setTestingGroqKey(false);
+    const res = await testGroqConnection(key);
+    setGroqKeyTestResult(res.ok ? 'ok' : 'fail');
+    setTestingGroqKey(false);
+  }
+
+  async function testOpenRouterKey() {
+    const key = orKey.trim() || profile?.openrouterKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter an OpenRouter API key first.');
+      return;
     }
+    setTestingOpenRouterKey(true);
+    setOpenRouterKeyTestResult(null);
+    const res = await testOpenRouterConnection(key);
+    setOpenRouterKeyTestResult(res.ok ? 'ok' : 'fail');
+    setTestingOpenRouterKey(false);
+  }
+
+  async function testHuggingFaceKey() {
+    const token = huggingFaceToken.trim() || profile?.huggingFaceToken || '';
+    if (!token) {
+      Alert.alert('No token', 'Enter a Hugging Face token first.');
+      return;
+    }
+    setTestingHuggingFaceToken(true);
+    setHuggingFaceTokenTestResult(null);
+    const res = await testHuggingFaceConnection(token, huggingFaceModel.trim());
+    setHuggingFaceTokenTestResult(res.ok ? 'ok' : 'fail');
+    setTestingHuggingFaceToken(false);
   }
 
   async function handleAutoFetchDates() {
@@ -525,7 +551,11 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
-        <ScreenHeader title="Settings" subtitle="Control sync, backups, AI, and study behavior." />
+        <ScreenHeader
+          title="Settings"
+          subtitle="Control sync, backups, AI, and study behavior."
+          onBackPress={() => navigation.navigate('MenuHome')}
+        />
 
         <SectionToggle id="ai_config" title="🤖 AI Configuration">
           <Label text="Groq API Key (console.groq.com)" />
@@ -582,6 +612,30 @@ export default function SettingsScreen() {
             Optional. Guru falls back to free OpenRouter models (Llama 3.3, Qwen 2.5, etc.) when
             Groq is unavailable. Get a free key at openrouter.ai
           </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testOpenRouterKey}
+            disabled={testingOpenRouterKey}
+            activeOpacity={0.8}
+          >
+            {testingOpenRouterKey ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  openRouterKeyTestResult === 'ok' && { color: theme.colors.success },
+                  openRouterKeyTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {openRouterKeyTestResult === 'ok'
+                  ? '✅ OpenRouter key works!'
+                  : openRouterKeyTestResult === 'fail'
+                    ? '❌ Key invalid or unreachable'
+                    : 'Test OpenRouter Connection'}
+              </Text>
+            )}
+          </TouchableOpacity>
 
           <Label text="Hugging Face token — optional transcription provider" />
           <TextInput
@@ -597,6 +651,30 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>
             Used only for speech-to-text. Create a token at huggingface.co/settings/tokens.
           </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testHuggingFaceKey}
+            disabled={testingHuggingFaceToken}
+            activeOpacity={0.8}
+          >
+            {testingHuggingFaceToken ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  huggingFaceTokenTestResult === 'ok' && { color: theme.colors.success },
+                  huggingFaceTokenTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {huggingFaceTokenTestResult === 'ok'
+                  ? '✅ Hugging Face token works!'
+                  : huggingFaceTokenTestResult === 'fail'
+                    ? '❌ Token invalid or unreachable'
+                    : 'Test Hugging Face Token'}
+              </Text>
+            )}
+          </TouchableOpacity>
 
           <Label text="Hugging Face transcription model" />
           <TextInput

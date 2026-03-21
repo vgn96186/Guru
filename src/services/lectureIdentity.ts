@@ -1,10 +1,22 @@
 interface LectureIdentityInput {
   subjectName?: string | null;
   topics?: string[] | null;
+  note?: string | null;
+  summary?: string | null;
 }
 
 const UNKNOWN_SUBJECT_LABEL = 'General';
 const UNKNOWN_TOPIC_LABEL = 'general';
+const GENERIC_SUBJECT_LABELS = new Set(['general', 'unknown', 'lecture']);
+const GENERIC_TITLE_LINES = new Set([
+  'subject',
+  'topics',
+  'key concepts',
+  'high-yield facts',
+  'clinical links',
+  'integrated summary',
+  'check yourself',
+]);
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
@@ -47,11 +59,96 @@ export function getLectureTopicLabels(topics?: string[] | null): string[] {
   return uniqueTopics(topics ?? []);
 }
 
-export function buildLectureDisplayTitle(input: LectureIdentityInput, maxTopics = 3): string {
-  const subjectLabel = getLectureSubjectLabel(input.subjectName);
-  const topicLabels = getLectureTopicLabels(input.topics);
+function normalizeNoteLine(line: string): string {
+  return normalizeWhitespace(line.replace(/\*\*/g, '').replace(/^[^\p{L}\p{N}#]+/gu, ''));
+}
 
-  if (topicLabels.length === 0) return subjectLabel;
+function extractStructuredLineValue(note: string | null | undefined, label: RegExp): string | null {
+  if (!note?.trim()) return null;
+
+  const lines = note.split('\n');
+  for (const rawLine of lines) {
+    const line = normalizeNoteLine(rawLine);
+    const match = line.match(label);
+    if (!match?.[1]) continue;
+    const value = normalizeWhitespace(match[1]);
+    if (value) return value;
+  }
+  return null;
+}
+
+function extractSubjectFromNote(note: string | null | undefined): string | null {
+  return extractStructuredLineValue(note, /^subject\s*:\s*(.+)$/i);
+}
+
+function extractTopicsFromNote(note: string | null | undefined): string[] {
+  const value = extractStructuredLineValue(note, /^topics?\s*:\s*(.+)$/i);
+  if (!value) return [];
+
+  return uniqueTopics(
+    value
+      .split(/[;,|]/)
+      .flatMap((chunk) => chunk.split(/\s+·\s+/))
+      .map((topic) => normalizeWhitespace(topic)),
+  );
+}
+
+function extractHeadlineFromNote(note: string | null | undefined): string | null {
+  if (!note?.trim()) return null;
+
+  const lines = note
+    .split('\n')
+    .map((line) => normalizeNoteLine(line.replace(/^#+\s*/, '')))
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (/^(subject|topics?)\s*:/i.test(line)) continue;
+    if (GENERIC_TITLE_LINES.has(lower)) continue;
+    if (line.length < 8) continue;
+    return line;
+  }
+
+  return null;
+}
+
+function isGenericSubjectLabel(label: string): boolean {
+  return GENERIC_SUBJECT_LABELS.has(label.toLowerCase());
+}
+
+export function resolveLectureSubjectLabel(input: LectureIdentityInput): string {
+  const cleanSubject = getLectureSubjectLabel(input.subjectName);
+  if (!isGenericSubjectLabel(cleanSubject)) {
+    return cleanSubject;
+  }
+
+  const noteSubject = extractSubjectFromNote(input.note);
+  if (noteSubject) {
+    const resolved = getLectureSubjectLabel(noteSubject);
+    if (!isGenericSubjectLabel(resolved)) return resolved;
+  }
+
+  return cleanSubject;
+}
+
+export function resolveLectureTopicLabels(input: LectureIdentityInput): string[] {
+  const directTopics = getLectureTopicLabels(input.topics);
+  if (directTopics.length > 0) return directTopics;
+  return extractTopicsFromNote(input.note);
+}
+
+export function buildLectureDisplayTitle(input: LectureIdentityInput, maxTopics = 3): string {
+  const subjectLabel = resolveLectureSubjectLabel(input);
+  const topicLabels = resolveLectureTopicLabels(input);
+
+  if (topicLabels.length === 0) {
+    if (!isGenericSubjectLabel(subjectLabel)) return subjectLabel;
+    return (
+      extractHeadlineFromNote(input.note) ||
+      normalizeWhitespace(input.summary ?? '') ||
+      subjectLabel
+    );
+  }
 
   const visibleTopics = topicLabels.slice(0, maxTopics);
   const hiddenCount = topicLabels.length - visibleTopics.length;

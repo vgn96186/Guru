@@ -46,10 +46,8 @@ jest.mock('../components/Toast', () => ({
 if (!(global as any).crypto) {
   (global as any).crypto = require('crypto');
 }
-const LLm_SHA =
-  '8bcb19d3e363f7d1ab27f364032436fd702e735a6f479d6bb7b1cf066e76b443';
-const WHISPER_SHA =
-  '1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69';
+const LLm_SHA = '8bcb19d3e363f7d1ab27f364032436fd702e735a6f479d6bb7b1cf066e76b443';
+const WHISPER_SHA = '1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69';
 
 function getBufferSourceByteLength(data: BufferSource): number {
   if (data instanceof ArrayBuffer) {
@@ -80,9 +78,7 @@ try {
     .mockImplementation(async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
       const byteLength = getBufferSourceByteLength(data);
       const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
-      const typedArray = new Uint8Array(
-        hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
-      );
+      const typedArray = new Uint8Array(hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
       return typedArray.buffer;
     });
 }
@@ -113,31 +109,33 @@ describe('localModelBootstrap', () => {
   });
 
   it('should show warning if LLM is not allowed and LLM is missing, even if Whisper is present', async () => {
-    // To trigger warning, we need to bypass the early return
-    // (!needsLlm && !needsWhisper) must be false
-    // needsLlm = llmAllowed && !profile.localModelPath
-    // needsWhisper = !profile.localWhisperPath
-    
-    // If llmAllowed is false, needsLlm is false.
-    // So needsWhisper MUST be true to avoid early return.
-    
     (profileRepository.getProfile as jest.Mock).mockResolvedValue({
       localModelPath: '',
-      localWhisperPath: '', // Make it missing so we don't return early
+      localWhisperPath: 'path/to/whisper',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(false);
     (getLocalLlmRamWarning as jest.Mock).mockReturnValue('Low RAM warning');
 
-    // Mock Whisper download to avoid it failing the test
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: false });
     const mockDownload = {
-      downloadAsync: jest.fn().mockResolvedValue({ status: 500 }), // Fail it so it doesn't try to move files
+      downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
     };
     (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
+    (FileSystem.getInfoAsync as jest.Mock)
+      .mockResolvedValueOnce({ exists: false })
+      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 });
 
     await bootstrapLocalModels();
 
     expect(showToast).toHaveBeenCalledWith('Low RAM warning', 'warning');
+    expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
+      expect.stringContaining('medgemma'),
+      expect.stringContaining('medgemma-4b-it-q4_k_m.gguf.partial'),
+      {},
+      expect.any(Function),
+    );
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: false }),
+    );
   });
 
   it('should download Whisper if missing', async () => {
@@ -147,7 +145,7 @@ describe('localModelBootstrap', () => {
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
     (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: false });
-    
+
     const mockDownload = {
       downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
     };
@@ -162,10 +160,10 @@ describe('localModelBootstrap', () => {
       expect.stringContaining('whisper'),
       expect.stringContaining('ggml-large-v3-turbo.bin.partial'),
       {},
-      expect.any(Function)
+      expect.any(Function),
     );
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ localWhisperPath: expect.any(String), useLocalWhisper: true })
+      expect.objectContaining({ localWhisperPath: expect.any(String), useLocalWhisper: true }),
     );
   });
 
@@ -175,7 +173,7 @@ describe('localModelBootstrap', () => {
       localWhisperPath: 'path/to/whisper',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
-    
+
     const mockDownload = {
       downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
     };
@@ -190,10 +188,10 @@ describe('localModelBootstrap', () => {
       expect.stringContaining('medgemma'),
       expect.stringContaining('medgemma-4b-it-q4_k_m.gguf.partial'),
       {},
-      expect.any(Function)
+      expect.any(Function),
     );
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true })
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
     );
   });
 
@@ -209,7 +207,25 @@ describe('localModelBootstrap', () => {
 
     expect(FileSystem.createDownloadResumable).not.toHaveBeenCalled();
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
-      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true })
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
+    );
+  });
+
+  it('should not delete a valid existing model just because checksum verification is unavailable', async () => {
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+      localModelPath: '',
+      localWhisperPath: 'path/to/whisper',
+    });
+    (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
+    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: true, size: 2_500_000_000 });
+    (FileSystem.readAsStringAsync as jest.Mock).mockRejectedValue(new Error('too large'));
+
+    await bootstrapLocalModels();
+
+    expect(FileSystem.deleteAsync).not.toHaveBeenCalled();
+    expect(FileSystem.createDownloadResumable).not.toHaveBeenCalled();
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
     );
   });
 
@@ -219,7 +235,7 @@ describe('localModelBootstrap', () => {
       localWhisperPath: 'path/to/whisper',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
-    
+
     (FileSystem.getInfoAsync as jest.Mock)
       .mockResolvedValueOnce({ exists: true, size: 1000 }) // Initial check (too small)
       .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // Post-download check

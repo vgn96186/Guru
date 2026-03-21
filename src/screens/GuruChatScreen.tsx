@@ -728,6 +728,7 @@ export default function GuruChatScreen() {
               placeholder="Ask a medical question..."
               placeholderTextColor={theme.colors.textMuted}
               value={input}
+              autoFocus={!!route.params?.autoFocusComposer}
               onChangeText={setInput}
               onSubmitEditing={() => handleSend()}
               returnKeyType="send"

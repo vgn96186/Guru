@@ -5,6 +5,12 @@ const mockGetContext = jest.fn();
 const mockBatchTranscribe = jest.fn();
 const mockWhisperSingleShotTranscribe = jest.fn();
 
+class MockBatchTranscriber {
+  transcribe(...args: unknown[]) {
+    return mockBatchTranscribe(...args);
+  }
+}
+
 jest.mock('expo-file-system/legacy', () => ({
   __esModule: true,
   getInfoAsync: (...args: unknown[]) => mockGetInfoAsync(...args),
@@ -23,9 +29,7 @@ jest.mock('../offlineTranscription/whisperModelManager', () => ({
 }));
 
 jest.mock('../offlineTranscription/batchTranscriber', () => ({
-  BatchTranscriber: jest.fn().mockImplementation(() => ({
-    transcribe: (...args: unknown[]) => mockBatchTranscribe(...args),
-  })),
+  BatchTranscriber: MockBatchTranscriber,
 }));
 
 import {
@@ -137,10 +141,7 @@ describe('transcription engines (Groq / HF)', () => {
       .mockResolvedValueOnce({ exists: true, size: 10 * 1024 })
       .mockResolvedValueOnce({ exists: true, size: 30 * 1024 * 1024 });
     mockBatchTranscribe.mockResolvedValueOnce({
-      segments: [
-        { text: 'segment one' },
-        { text: 'segment two' },
-      ],
+      segments: [{ text: 'segment one' }, { text: 'segment two' }],
       vadSkippedSeconds: 0,
       processingTimeSeconds: 2,
     });
@@ -151,5 +152,26 @@ describe('transcription engines (Groq / HF)', () => {
     expect(mockLoadModelFromFilePath).toHaveBeenCalledWith('/models/local.bin');
     expect(mockBatchTranscribe).toHaveBeenCalledWith('file:///tmp/large.wav');
     expect(mockWhisperSingleShotTranscribe).not.toHaveBeenCalled();
+  });
+
+  it('transcribeRawWithLocalWhisper returns empty string for classic silent-audio hallucinations', async () => {
+    mockWhisperSingleShotTranscribe.mockReturnValueOnce({
+      promise: Promise.resolve({ result: 'thank you. thank you. thank you.' }),
+    });
+
+    const text = await transcribeRawWithLocalWhisper('/tmp/silent.wav', '/models/local.bin');
+
+    expect(text).toBe('');
+  });
+
+  it('transcribeRawWithLocalWhisper uses unlimited maxLen for single-shot inference', async () => {
+    await transcribeRawWithLocalWhisper('/tmp/short.wav', '/models/local.bin');
+
+    expect(mockWhisperSingleShotTranscribe).toHaveBeenCalledWith(
+      'file:///tmp/short.wav',
+      expect.objectContaining({
+        maxLen: 0,
+      }),
+    );
   });
 });

@@ -18,13 +18,6 @@ const PRIMARY_DESTINATIONS: Array<{
   tint: string;
 }> = [
   {
-    route: 'StudyPlan',
-    title: 'Study Plan',
-    subtitle: 'Buckets, agenda, and your next best moves.',
-    icon: 'calendar-outline',
-    tint: '#6C63FF',
-  },
-  {
     route: 'Stats',
     title: 'Stats',
     subtitle: 'Progress, streaks, and weekly momentum.',
@@ -74,7 +67,7 @@ export default function MenuScreen() {
               <Ionicons name="calendar" size={24} color="#6C63FF" />
             </View>
             <View style={styles.planBannerText}>
-              <Text style={styles.planBannerTitle}>Plan</Text>
+              <Text style={styles.planBannerTitle}>Study Plan</Text>
               <Text style={styles.planBannerSubtitle}>
                 Daily agenda, buckets, and next best moves
               </Text>

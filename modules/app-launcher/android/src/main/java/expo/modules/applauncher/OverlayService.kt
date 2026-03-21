@@ -104,10 +104,19 @@ class OverlayService : Service(), LifecycleOwner {
         const val CHANNEL_ID = "guru_overlay_channel"
         const val NOTIF_ID = 9002
         const val ABSENT_NOTIF_ID = 9003
+        const val PREFS_NAME = "guru_overlay_prefs"
+        const val PREF_RETURN_REQUESTED = "lecture_return_requested"
+        @JvmStatic
+        @Volatile
+        var isServiceRunning = false
+        @JvmStatic
+        @Volatile
+        var isOverlayVisible = false
     }
 
     override fun onCreate() {
         super.onCreate()
+        isServiceRunning = true
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
@@ -116,6 +125,7 @@ class OverlayService : Service(), LifecycleOwner {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isServiceRunning = true
         when (intent?.action) {
             ACTION_SHOW -> {
                 appName = intent.getStringExtra(EXTRA_APP_NAME) ?: "Lecture"
@@ -149,6 +159,7 @@ class OverlayService : Service(), LifecycleOwner {
                 hideOverlay()
                 stopTimer()
                 stopForeground(STOP_FOREGROUND_REMOVE)
+                isServiceRunning = false
                 stopSelf()
             }
         }
@@ -350,6 +361,7 @@ class OverlayService : Service(), LifecycleOwner {
         }
         overlayView!!.setDragListener(DragTouchListener(this, params, windowManager!!))
         windowManager!!.addView(overlayView, params)
+        isOverlayVisible = true
     }
 
     private fun hideOverlay() {
@@ -357,6 +369,7 @@ class OverlayService : Service(), LifecycleOwner {
             try { windowManager?.removeView(it) } catch (_: Exception) {}
         }
         overlayView = null
+        isOverlayVisible = false
     }
 
     private fun startTimer() {
@@ -374,6 +387,7 @@ class OverlayService : Service(), LifecycleOwner {
         ).toInt()
 
     override fun onDestroy() {
+        isServiceRunning = false
         stopCamera()
         hideOverlay()
         overlayView?.destroy() // Clean up the animation handler
@@ -504,6 +518,10 @@ class OverlayService : Service(), LifecycleOwner {
             }
             setOnClickListener {
                 vibrateLight(context)
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(PREF_RETURN_REQUESTED, true)
+                    .apply()
                 onReturnClick()
             }
         }

@@ -22,6 +22,16 @@ export type LectureAnalysis = {
   embedding?: number[] | null;
 };
 
+const NON_MEANINGFUL_SUMMARIES = new Set([
+  'No audio recorded (empty file)',
+  'No speech detected (silent audio)',
+  'No speech detected',
+  'Lecture content recorded',
+  'No medical content detected',
+  'Lecture content recorded. Review transcript for details.',
+]);
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+
 const MEDICAL_EXTRACT_PROMPT = `You are a medical scribe. Extract key clinical facts, subject, and topics from the following transcript segment.`;
 const META_SUMMARIZE_PROMPT = `Combine the following medical transcript segment analyses into a single coherent lecture analysis.`;
 
@@ -43,7 +53,7 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
   const segmentAnalyses: LectureAnalysis[] = [];
 
   for (let i = 0; i < segments.length; i++) {
-    if (__DEV__) console.log(`[Analysis] Analyzing segment ${i + 1}/${segments.length}`);
+    if (isDev) console.log(`[Analysis] Analyzing segment ${i + 1}/${segments.length}`);
     try {
       const analysis = await runSingleAnalysisPass(segments[i]);
       segmentAnalyses.push(analysis);
@@ -59,7 +69,7 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
       topics: [],
       keyConcepts: [],
       highYieldPoints: [],
-      lectureSummary: 'Lecture content recorded (analysis failed)',
+      lectureSummary: 'Lecture content recorded. Review transcript for details.',
       estimatedConfidence: 1,
     };
   }
@@ -69,6 +79,19 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
   }
 
   return metaSummarize(segmentAnalyses);
+}
+
+export function isMeaningfulLectureAnalysis(analysis: Partial<LectureAnalysis> | null | undefined) {
+  if (!analysis?.transcript?.trim()) {
+    return false;
+  }
+
+  if ((analysis.topics?.length ?? 0) > 0) return true;
+  if ((analysis.keyConcepts?.length ?? 0) > 0) return true;
+  if ((analysis.highYieldPoints?.length ?? 0) > 0) return true;
+
+  const summary = analysis.lectureSummary?.trim();
+  return !!summary && !NON_MEANINGFUL_SUMMARIES.has(summary);
 }
 
 async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
@@ -97,7 +120,7 @@ Segment ${i + 1}:
 
   const extractPrompt = `${META_SUMMARIZE_PROMPT}\n\nHere are the segment summaries:\n"""\n${aggregatedInput}\n"""`;
 
-  if (__DEV__) console.log('[Analysis] Running final meta-summarization pass...');
+  if (isDev) console.log('[Analysis] Running final meta-summarization pass...');
   try {
     const { parsed, modelUsed } = await generateJSONWithRouting(
       [{ role: 'user', content: extractPrompt }],

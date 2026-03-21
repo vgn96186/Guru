@@ -1,6 +1,11 @@
 export type LocalModelDownloadType = 'llm' | 'whisper';
 export type LocalModelDownloadSource = 'bootstrap' | 'manual';
-export type LocalModelDownloadStage = 'preparing' | 'downloading' | 'verifying' | 'complete' | 'error';
+export type LocalModelDownloadStage =
+  | 'preparing'
+  | 'downloading'
+  | 'verifying'
+  | 'complete'
+  | 'error';
 
 export interface LocalModelDownloadSnapshot {
   visible: boolean;
@@ -28,9 +33,7 @@ export function getLocalModelDownloadSnapshot(): LocalModelDownloadSnapshot | nu
   return snapshot;
 }
 
-export function subscribeToLocalModelDownload(
-  listener: Listener,
-): () => void {
+export function subscribeToLocalModelDownload(listener: Listener): () => void {
   listeners.add(listener);
   listener(snapshot);
   return () => {
@@ -38,12 +41,31 @@ export function subscribeToLocalModelDownload(
   };
 }
 
-export function updateLocalModelDownload(
-  nextSnapshot: LocalModelDownloadSnapshot,
-): void {
+export function updateLocalModelDownload(nextSnapshot: LocalModelDownloadSnapshot): void {
   emit(nextSnapshot);
 }
 
 export function clearLocalModelDownload(): void {
   emit(null);
+}
+
+// Minimized state — persists across snapshots so the overlay stays collapsed
+let minimized = false;
+const minimizedListeners = new Set<(m: boolean) => void>();
+
+export function isDownloadMinimized(): boolean {
+  return minimized;
+}
+
+export function setDownloadMinimized(value: boolean): void {
+  minimized = value;
+  minimizedListeners.forEach((l) => l(minimized));
+}
+
+export function subscribeToMinimized(listener: (m: boolean) => void): () => void {
+  minimizedListeners.add(listener);
+  listener(minimized);
+  return () => {
+    minimizedListeners.delete(listener);
+  };
 }

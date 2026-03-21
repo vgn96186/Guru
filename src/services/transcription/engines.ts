@@ -214,13 +214,14 @@ export async function transcribeRawWithLocalWhisper(
         nThreads: 4,
       });
       const { segments } = await batch.transcribe(whisperInputUri);
-      return sanitizeTranscript(
+      const transcript = sanitizeTranscript(
         segments
           .map((segment) => segment.text.trim())
           .filter(Boolean)
           .join(' ')
           .trim(),
       );
+      return isLikelyHallucination(transcript) ? '' : transcript;
     }
 
     const whisperContext = whisperModelManager.getContext();
@@ -228,7 +229,7 @@ export async function transcribeRawWithLocalWhisper(
       language: 'en',
       maxThreads: 4,
       maxContext: 0,
-      maxLen: 64,
+      maxLen: 0,
       tokenTimestamps: false,
       beamSize: 1,
       bestOf: 1,
@@ -237,7 +238,8 @@ export async function transcribeRawWithLocalWhisper(
     });
 
     const { result } = await promise;
-    return sanitizeTranscript(result?.trim() ?? '');
+    const transcript = sanitizeTranscript(result?.trim() ?? '');
+    return isLikelyHallucination(transcript) ? '' : transcript;
   } finally {
     release();
     if (whisperInputUri !== fileUri) {

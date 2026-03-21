@@ -20,6 +20,7 @@ interface ScreenHeaderProps {
   titleStyle?: StyleProp<TextStyle>;
   subtitleStyle?: StyleProp<TextStyle>;
   titleNumberOfLines?: number;
+  onBackPress?: () => void;
 }
 
 export default function ScreenHeader({
@@ -30,6 +31,7 @@ export default function ScreenHeader({
   titleStyle,
   subtitleStyle,
   titleNumberOfLines,
+  onBackPress,
 }: ScreenHeaderProps) {
   const navigation = useNavigation();
   const canGoBack = navigation.canGoBack();
@@ -39,7 +41,13 @@ export default function ScreenHeader({
       <View style={styles.row}>
         {canGoBack ? (
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              if (onBackPress) {
+                onBackPress();
+                return;
+              }
+              navigation.goBack();
+            }}
             style={styles.backBtn}
             hitSlop={theme.hitSlop}
             accessibilityRole="button"

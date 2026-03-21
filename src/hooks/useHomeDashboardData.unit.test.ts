@@ -4,6 +4,7 @@ import { useHomeDashboardData } from './useHomeDashboardData';
 import { dailyLogRepository } from '../db/repositories';
 import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics } from '../db/queries/topics';
 import { getCompletedSessionCount } from '../db/queries/sessions';
+import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
 import { getTodaysAgendaWithTimes } from '../services/studyPlanner';
 
 // Mock the dependencies
@@ -36,6 +37,10 @@ jest.mock('../db/queries/sessions', () => ({
   getCompletedSessionCount: jest.fn(),
 }));
 
+jest.mock('../db/queries/externalLogs', () => ({
+  getTodaysExternalStudyMinutes: jest.fn(),
+}));
+
 jest.mock('../services/studyPlanner', () => ({
   getTodaysAgendaWithTimes: jest.fn(),
 }));
@@ -46,19 +51,21 @@ describe('useHomeDashboardData', () => {
   const mockTodayTasks = [{ id: '3', title: 'Task 1', startTime: '10:00' }];
   const mockCompletedSessions = 5;
   const mockDailyLog = { totalMinutes: 120 };
+  const mockExternalMinutes = 35;
   let consoleSpy: jest.SpyInstance;
 
   beforeEach(() => {
     jest.clearAllMocks();
     consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     (markNemesisTopics as jest.Mock).mockResolvedValue(undefined);
     (getWeakestTopics as jest.Mock).mockResolvedValue(mockWeakTopics);
     (getTopicsDueForReview as jest.Mock).mockResolvedValue(mockDueTopics);
     (getTodaysAgendaWithTimes as jest.Mock).mockResolvedValue(mockTodayTasks);
     (getCompletedSessionCount as jest.Mock).mockResolvedValue(mockCompletedSessions);
     (dailyLogRepository.getDailyLog as jest.Mock).mockResolvedValue(mockDailyLog);
-    
+    (getTodaysExternalStudyMinutes as jest.Mock).mockResolvedValue(mockExternalMinutes);
+
     (InteractionManager.runAfterInteractions as jest.Mock).mockImplementation((cb) => {
       // Don't call cb automatically here to control it in tests if needed,
       // but for most tests we want it to run.
@@ -85,7 +92,7 @@ describe('useHomeDashboardData', () => {
     expect(result.current.dueTopics).toEqual(mockDueTopics);
     expect(result.current.todayTasks).toEqual(mockTodayTasks);
     expect(result.current.completedSessions).toBe(mockCompletedSessions);
-    expect(result.current.todayMinutes).toBe(mockDailyLog.totalMinutes);
+    expect(result.current.todayMinutes).toBe(mockDailyLog.totalMinutes + mockExternalMinutes);
     expect(result.current.loadError).toBeNull();
   });
 
@@ -95,7 +102,7 @@ describe('useHomeDashboardData', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     (getWeakestTopics as jest.Mock).mockResolvedValue([]);
-    
+
     await act(async () => {
       await result.current.reload();
     });
@@ -122,7 +129,7 @@ describe('useHomeDashboardData', () => {
       await result.current.reload({ silent: true });
     });
 
-    expect(result.current.loadError).not.toBeNull(); 
+    expect(result.current.loadError).not.toBeNull();
     expect(result.current.weakTopics).toEqual(mockWeakTopics);
   });
 

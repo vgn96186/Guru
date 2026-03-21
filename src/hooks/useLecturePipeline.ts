@@ -19,6 +19,7 @@ import {
   updateSessionNoteEnhancementStatus,
 } from '../db/queries/externalLogs';
 import { useAppStore } from '../store/useAppStore';
+import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
 
 export interface QuizQuestion {
   question: string;
@@ -61,6 +62,8 @@ export function useLecturePipeline({
 
   // User override for confidence level
   const [userConfidence, setUserConfidence] = useState<1 | 2 | 3 | null>(null);
+  const [subjectSelectionRequired, setSubjectSelectionRequired] = useState(false);
+  const [selectedSubjectName, setSelectedSubjectName] = useState<string | null>(null);
 
   // Quiz state
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
@@ -113,6 +116,33 @@ Summary: ${result.lectureSummary}`;
     setActiveStage(progress.stage);
     setStageMessage(progress.message);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncSubjectRequirement() {
+      if (!analysis) {
+        setSubjectSelectionRequired(false);
+        setSelectedSubjectName(null);
+        return;
+      }
+
+      const resolution = await resolveLectureSubjectRequirement(analysis.subject);
+      if (cancelled) return;
+
+      setSubjectSelectionRequired(resolution.requiresSelection);
+      setSelectedSubjectName(
+        resolution.requiresSelection
+          ? null
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+      );
+    }
+
+    void syncSubjectRequirement();
+    return () => {
+      cancelled = true;
+    };
+  }, [analysis]);
 
   const runTranscription = useCallback(async () => {
     const runId = ++transcriptionRunIdRef.current;
@@ -179,16 +209,25 @@ Summary: ${result.lectureSummary}`;
 
   const saveSessionQuickly = useCallback(async (): Promise<boolean> => {
     if (!analysis) return false;
+    if (subjectSelectionRequired && !selectedSubjectName) {
+      Alert.alert('Subject required', 'Choose the lecture subject before saving this lecture.');
+      return false;
+    }
 
     try {
       setIsSaving(true);
       setActiveStage('saving');
       setStageMessage('Building your note...');
       const finalConfidence = userConfidence ?? analysis.estimatedConfidence;
-      const analysisToSave =
+      const analysisWithConfidence =
         finalConfidence === analysis.estimatedConfidence
           ? analysis
           : { ...analysis, estimatedConfidence: finalConfidence };
+      const resolvedSubjectName = selectedSubjectName ?? analysisWithConfidence.subject;
+      const analysisToSave =
+        resolvedSubjectName === analysisWithConfidence.subject
+          ? analysisWithConfidence
+          : { ...analysisWithConfidence, subject: resolvedSubjectName };
 
       let noteToSave: string;
       try {
@@ -229,6 +268,8 @@ Summary: ${result.lectureSummary}`;
     analysis,
     recordingPath,
     userConfidence,
+    subjectSelectionRequired,
+    selectedSubjectName,
     appName,
     durationMinutes,
     logId,
@@ -404,6 +445,9 @@ Summary: ${result.lectureSummary}`;
     showExpl,
     score,
     canTranscribe,
+    subjectSelectionRequired,
+    selectedSubjectName,
+    setSelectedSubjectName,
     runTranscription,
     handleCancelTranscription,
     handleMarkStudied,

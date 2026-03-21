@@ -17,6 +17,7 @@ import type { MenuStackParamList } from '../navigation/types';
 import {
   analyzeTranscript,
   generateADHDNote,
+  isMeaningfulLectureAnalysis,
   type LectureAnalysis,
 } from '../services/transcriptionService';
 import { getSubjectByName } from '../db/queries/topics';
@@ -24,11 +25,13 @@ import { saveLectureTranscript } from '../db/queries/aiCache';
 import { markTopicsFromLecture } from '../services/transcription/matching';
 import { getDb } from '../db/database';
 import { showToast } from '../components/Toast';
+import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
 import { theme } from '../constants/theme';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import ScreenHeader from '../components/ScreenHeader';
+import SubjectSelectionCard from '../components/SubjectSelectionCard';
 
 export default function ManualNoteCreationScreen(
   _props: NativeStackScreenProps<MenuStackParamList, 'ManualNoteCreation'>,
@@ -39,6 +42,8 @@ export default function ManualNoteCreationScreen(
   const [result, setResult] = useState<{ analysis: LectureAnalysis; note: string } | null>(null);
   const [confidence, setConfidence] = useState<1 | 2 | 3 | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [subjectSelectionRequired, setSubjectSelectionRequired] = useState(false);
+  const [selectedSubjectName, setSelectedSubjectName] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     const text = transcript.trim();
@@ -49,11 +54,21 @@ export default function ManualNoteCreationScreen(
     setIsProcessing(true);
     try {
       const analysis = await analyzeTranscript(text);
-      // Attach raw transcript so generateADHDNote has content to work with
       const analysisWithTranscript = { ...analysis, transcript: text };
+      if (!isMeaningfulLectureAnalysis(analysisWithTranscript)) {
+        throw new Error('No usable lecture content was detected in this transcript.');
+      }
+      // Attach raw transcript so generateADHDNote has content to work with
       const note = await generateADHDNote(analysisWithTranscript);
+      const resolution = await resolveLectureSubjectRequirement(analysis.subject);
       setResult({ analysis: analysisWithTranscript, note });
       setConfidence(analysis.estimatedConfidence as 1 | 2 | 3);
+      setSubjectSelectionRequired(resolution.requiresSelection);
+      setSelectedSubjectName(
+        resolution.requiresSelection
+          ? null
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+      );
     } catch (e: unknown) {
       Alert.alert('Error', e instanceof Error ? e.message : String(e));
     } finally {
@@ -63,30 +78,45 @@ export default function ManualNoteCreationScreen(
 
   const handleSave = async () => {
     if (!result) return;
+    if (subjectSelectionRequired && !selectedSubjectName) {
+      Alert.alert('Subject required', 'Choose the lecture subject before saving this note.');
+      return;
+    }
     setIsSaving(true);
     try {
       const finalConfidence = confidence ?? (result.analysis.estimatedConfidence as 1 | 2 | 3);
-      const sub = await getSubjectByName(result.analysis.subject);
+      const subjectName = selectedSubjectName ?? result.analysis.subject;
+      const analysisToSave = {
+        ...result.analysis,
+        subject: subjectName,
+        estimatedConfidence: finalConfidence,
+      };
+      const noteToSave =
+        analysisToSave.subject === result.analysis.subject &&
+        analysisToSave.estimatedConfidence === result.analysis.estimatedConfidence
+          ? result.note
+          : await generateADHDNote(analysisToSave);
+      const sub = await getSubjectByName(subjectName);
       await saveLectureTranscript({
         subjectId: sub?.id ?? null,
-        subjectName: result.analysis.subject,
-        note: result.note,
+        subjectName: subjectName,
+        note: noteToSave,
         transcript: transcript.trim(),
-        summary: result.analysis.lectureSummary,
-        topics: result.analysis.topics,
+        summary: analysisToSave.lectureSummary,
+        topics: analysisToSave.topics,
         appName: 'Manual Paste',
         confidence: finalConfidence,
         embedding: undefined,
       });
       // Mark topics as studied (+ create new topics if unmatched)
-      if (result.analysis.topics?.length) {
+      if (analysisToSave.topics?.length) {
         try {
           await markTopicsFromLecture(
             getDb(),
-            result.analysis.topics,
+            analysisToSave.topics,
             finalConfidence,
-            result.analysis.subject,
-            result.analysis.lectureSummary,
+            subjectName,
+            analysisToSave.lectureSummary,
           );
         } catch (e) {
           console.warn('[ManualNote] markTopicsFromLecture failed:', e);
@@ -114,7 +144,15 @@ export default function ManualNoteCreationScreen(
           <Text style={styles.title}>Review Notes</Text>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
-          <SubjectChip subject={analysis.subject} />
+          {subjectSelectionRequired ? (
+            <SubjectSelectionCard
+              detectedSubjectName={analysis.subject}
+              selectedSubjectName={selectedSubjectName}
+              onSelectSubject={setSelectedSubjectName}
+            />
+          ) : (
+            <SubjectChip subject={selectedSubjectName ?? analysis.subject} />
+          )}
 
           {analysis.topics.length > 0 && (
             <>
@@ -139,7 +177,7 @@ export default function ManualNoteCreationScreen(
           <TouchableOpacity
             style={[styles.saveBtn, isSaving && { opacity: 0.6 }]}
             onPress={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
             activeOpacity={0.8}
           >
             {isSaving ? (
@@ -161,6 +199,7 @@ export default function ManualNoteCreationScreen(
         <ScreenHeader
           title="Paste Transcript"
           subtitle="Turn copied lecture text into structured notes without leaving the app flow."
+          onBackPress={() => navigation.navigate('NotesHub' as never)}
         />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
@@ -193,7 +232,7 @@ export default function ManualNoteCreationScreen(
           <Text style={styles.processingText}>Analyzing transcript and building notes...</Text>
         )}
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('NotesHub' as never)}
           style={styles.cancelInlineBtn}
           disabled={isProcessing}
         >

@@ -339,6 +339,77 @@ export async function updateLectureTranscriptSummary(
   await db.runAsync('UPDATE lecture_notes SET summary = ? WHERE id = ?', [summary, noteId]);
 }
 
+export async function updateLectureAnalysisMetadata(
+  noteId: number,
+  data: {
+    subjectId?: number | null;
+    summary?: string | null;
+    topics?: string[];
+    confidence?: number;
+  },
+): Promise<void> {
+  const db = getDb();
+  await db.runAsync(
+    `UPDATE lecture_notes
+     SET subject_id = COALESCE(?, subject_id),
+         summary = ?,
+         topics_json = ?,
+         confidence = COALESCE(?, confidence)
+     WHERE id = ?`,
+    [
+      data.subjectId ?? null,
+      data.summary ?? null,
+      data.topics ? JSON.stringify(data.topics) : null,
+      data.confidence ?? null,
+      noteId,
+    ],
+  );
+}
+
+export async function updateLectureTranscriptArtifacts(
+  noteId: number,
+  data: {
+    note: string;
+    transcript: string | null;
+    subjectId?: number | null;
+    summary?: string | null;
+    topics?: string[];
+    confidence?: number;
+  },
+): Promise<void> {
+  const db = getDb();
+  await db.runAsync(
+    `UPDATE lecture_notes
+     SET note = ?,
+         transcript = ?,
+         subject_id = COALESCE(?, subject_id),
+         summary = ?,
+         topics_json = ?,
+         confidence = COALESCE(?, confidence)
+     WHERE id = ?`,
+    [
+      data.note,
+      data.transcript,
+      data.subjectId ?? null,
+      data.summary ?? null,
+      data.topics ? JSON.stringify(data.topics) : null,
+      data.confidence ?? null,
+      noteId,
+    ],
+  );
+}
+
+export async function updateLectureRecordingPath(
+  noteId: number,
+  recordingPath: string | null,
+): Promise<void> {
+  const db = getDb();
+  await db.runAsync('UPDATE lecture_notes SET recording_path = ? WHERE id = ?', [
+    recordingPath,
+    noteId,
+  ]);
+}
+
 export interface LectureHistoryItem {
   id: number;
   subjectId: number | null;

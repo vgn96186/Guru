@@ -476,6 +476,24 @@ class AppLauncherModule : Module() {
             return@AsyncFunction mapOf("exists" to exists, "size" to size)
         }
 
+        AsyncFunction("isRecordingActive") { ->
+            return@AsyncFunction RecordingService.isServiceRunning
+        }
+
+        AsyncFunction("isOverlayActive") { ->
+            return@AsyncFunction OverlayService.isServiceRunning && OverlayService.isOverlayVisible
+        }
+
+        AsyncFunction("consumeLectureReturnRequest") { ->
+            val context = appContext.reactContext ?: return@AsyncFunction false
+            val prefs = context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE)
+            val requested = prefs.getBoolean(OverlayService.PREF_RETURN_REQUESTED, false)
+            if (requested) {
+                prefs.edit().putBoolean(OverlayService.PREF_RETURN_REQUESTED, false).apply()
+            }
+            return@AsyncFunction requested
+        }
+
         /**
          * Converts an M4A/AAC audio file to 16kHz mono 16-bit PCM WAV.
          * Required because whisper.rn only accepts WAV input.

@@ -3,6 +3,7 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -44,16 +45,31 @@ import MenuScreen from '../screens/MenuScreen';
 import GlobalTopicSearchScreen from '../screens/GlobalTopicSearchScreen';
 import DeviceLinkScreen from '../screens/DeviceLinkScreen';
 import ManualNoteCreationScreen from '../screens/ManualNoteCreationScreen';
+import LectureReturnSheet from '../components/LectureReturnSheet';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
 import * as DocumentPicker from 'expo-document-picker';
-import { transcribeAudio, generateADHDNote } from '../services/transcriptionService';
+import {
+  transcribeAudio,
+  generateADHDNote,
+  isMeaningfulLectureAnalysis,
+  type LectureAnalysis,
+} from '../services/transcriptionService';
+import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getDb } from '../db/database';
+import {
+  useLectureReturnRecovery,
+  type LectureReturnSheetData,
+} from '../hooks/useLectureReturnRecovery';
+import ConfidenceSelector from '../components/ConfidenceSelector';
+import TopicPillRow from '../components/TopicPillRow';
+import SubjectChip from '../components/SubjectChip';
+import SubjectSelectionCard from '../components/SubjectSelectionCard';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -130,6 +146,7 @@ export default function TabNavigator() {
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const bottomInset = Math.max(insets.bottom, 8);
   const [dueCount, setDueCount] = useState(0);
+  const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
 
   const refreshDueCount = useCallback(() => {
     getDb()
@@ -186,48 +203,95 @@ export default function TabNavigator() {
   }
 
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+  const [uploadReview, setUploadReview] = useState<LectureAnalysis | null>(null);
+  const [uploadConfidence, setUploadConfidence] = useState<1 | 2 | 3 | null>(null);
+  const [uploadSubjectRequired, setUploadSubjectRequired] = useState(false);
+  const [selectedUploadSubjectName, setSelectedUploadSubjectName] = useState<string | null>(null);
+  const [isSavingUpload, setIsSavingUpload] = useState(false);
+
+  useLectureReturnRecovery({
+    onRecovered: setReturnSheet,
+  });
 
   const handleAudioUpload = async () => {
     setIsActionHubOpen(false);
-    const res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+    let res: DocumentPicker.DocumentPickerResult;
+    try {
+      res = await DocumentPicker.getDocumentAsync({ type: ['audio/*'] });
+    } catch (error: any) {
+      Alert.alert('Error', error?.message ?? 'Could not open the audio picker.');
+      return;
+    }
     if (res.canceled || !res.assets[0]) return;
     setIsTranscribingUpload(true);
     try {
       const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
-      const hasTranscript = !!analysis.transcript?.trim();
-      const hasMeaningfulSummary =
-        !!analysis.lectureSummary &&
-        ![
-          'No audio recorded (empty file)',
-          'No speech detected (silent audio)',
-          'No speech detected',
-          'Lecture content recorded',
-          'No medical content detected',
-        ].includes(analysis.lectureSummary);
-      if (!hasTranscript || !hasMeaningfulSummary) {
+      if (!isMeaningfulLectureAnalysis(analysis)) {
         throw new Error('No usable lecture content was detected in this recording.');
       }
-      const note = await generateADHDNote(analysis);
-      const sub = await getSubjectByName(analysis.subject);
-      await saveLectureTranscript({
-        subjectId: sub?.id ?? null,
-        subjectName: analysis.subject,
-        note,
-        transcript: analysis.transcript,
-        summary: analysis.lectureSummary,
-        topics: analysis.topics,
-        appName: 'Upload',
-        confidence: analysis.estimatedConfidence,
-        embedding: analysis.embedding,
-      });
-      refreshProfile();
-      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
+      const resolution = await resolveLectureSubjectRequirement(analysis.subject);
+      setUploadReview(analysis);
+      setUploadConfidence(analysis.estimatedConfidence as 1 | 2 | 3);
+      setUploadSubjectRequired(resolution.requiresSelection);
+      setSelectedUploadSubjectName(
+        resolution.requiresSelection
+          ? null
+          : (resolution.matchedSubject?.name ?? resolution.normalizedSubjectName),
+      );
     } catch (e: any) {
       Alert.alert('Error', e.message);
     } finally {
       setIsTranscribingUpload(false);
     }
   };
+
+  const handleSaveUploadedAudio = useCallback(async () => {
+    if (!uploadReview) return;
+    if (uploadSubjectRequired && !selectedUploadSubjectName) {
+      Alert.alert('Subject required', 'Choose the lecture subject before saving this upload.');
+      return;
+    }
+
+    setIsSavingUpload(true);
+    try {
+      const subjectName = selectedUploadSubjectName ?? uploadReview.subject;
+      const finalConfidence = uploadConfidence ?? (uploadReview.estimatedConfidence as 1 | 2 | 3);
+      const analysisToSave = {
+        ...uploadReview,
+        subject: subjectName,
+        estimatedConfidence: finalConfidence,
+      };
+      const note = await generateADHDNote(analysisToSave);
+      const sub = await getSubjectByName(subjectName);
+      await saveLectureTranscript({
+        subjectId: sub?.id ?? null,
+        subjectName: subjectName,
+        note,
+        transcript: analysisToSave.transcript,
+        summary: analysisToSave.lectureSummary,
+        topics: analysisToSave.topics,
+        appName: 'Upload',
+        confidence: finalConfidence,
+        embedding: analysisToSave.embedding,
+      });
+      refreshProfile();
+      setUploadReview(null);
+      setUploadConfidence(null);
+      setUploadSubjectRequired(false);
+      setSelectedUploadSubjectName(null);
+      Alert.alert('Success', 'Audio transcribed and added to notes vault.');
+    } catch (e: any) {
+      Alert.alert('Error', e.message);
+    } finally {
+      setIsSavingUpload(false);
+    }
+  }, [
+    refreshProfile,
+    selectedUploadSubjectName,
+    uploadConfidence,
+    uploadReview,
+    uploadSubjectRequired,
+  ]);
 
   function openRoute(tab: keyof TabParamList, screen?: string, params?: object) {
     setIsActionHubOpen(false);
@@ -495,6 +559,99 @@ export default function TabNavigator() {
           </ScrollView>
         </Animated.View>
       </View>
+
+      {returnSheet ? (
+        <LectureReturnSheet
+          visible
+          appName={returnSheet.appName}
+          durationMinutes={returnSheet.durationMinutes}
+          recordingPath={returnSheet.recordingPath}
+          logId={returnSheet.logId}
+          groqKey={groqKey}
+          onDone={() => setReturnSheet(null)}
+        />
+      ) : null}
+
+      <Modal
+        visible={!!uploadReview}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setUploadReview(null);
+          setUploadConfidence(null);
+          setUploadSubjectRequired(false);
+          setSelectedUploadSubjectName(null);
+        }}
+      >
+        <View style={styles.uploadModalOverlay}>
+          <View style={styles.uploadModalSheet}>
+            <Text style={styles.uploadModalTitle}>Lecture Transcribed</Text>
+            {uploadReview ? (
+              <>
+                {uploadSubjectRequired ? (
+                  <SubjectSelectionCard
+                    detectedSubjectName={uploadReview.subject}
+                    selectedSubjectName={selectedUploadSubjectName}
+                    onSelectSubject={setSelectedUploadSubjectName}
+                  />
+                ) : (
+                  <SubjectChip subject={selectedUploadSubjectName ?? uploadReview.subject} />
+                )}
+                <Text style={styles.uploadModalSummary} numberOfLines={4}>
+                  {uploadReview.lectureSummary}
+                </Text>
+                {uploadReview.topics.length > 0 ? (
+                  <>
+                    <Text style={styles.uploadModalLabel}>TOPICS DETECTED</Text>
+                    <TopicPillRow topics={uploadReview.topics} />
+                    <Text style={styles.uploadModalLabel}>YOUR CONFIDENCE LEVEL</Text>
+                    <ConfidenceSelector
+                      value={uploadConfidence ?? (uploadReview.estimatedConfidence as 1 | 2 | 3)}
+                      onChange={setUploadConfidence}
+                    />
+                  </>
+                ) : null}
+              </>
+            ) : null}
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.uploadSaveBtn,
+                pressed && styles.actionPressed,
+                (isSavingUpload ||
+                  !uploadReview?.topics.length ||
+                  (uploadSubjectRequired && !selectedUploadSubjectName)) &&
+                  styles.uploadSaveBtnDisabled,
+              ]}
+              onPress={handleSaveUploadedAudio}
+              disabled={
+                isSavingUpload ||
+                !uploadReview?.topics.length ||
+                (uploadSubjectRequired && !selectedUploadSubjectName)
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Save uploaded audio"
+            >
+              <Text style={styles.uploadSaveBtnText}>
+                {isSavingUpload ? 'Saving...' : 'Save to Notes Vault'}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.uploadDismissBtn, pressed && styles.actionPressed]}
+              onPress={() => {
+                setUploadReview(null);
+                setUploadConfidence(null);
+                setUploadSubjectRequired(false);
+                setSelectedUploadSubjectName(null);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Discard uploaded audio result"
+            >
+              <Text style={styles.uploadDismissBtnText}>Discard</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -534,6 +691,61 @@ const styles = StyleSheet.create({
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(6, 8, 14, 0.72)',
+  },
+  uploadModalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: theme.colors.overlay,
+    padding: 16,
+  },
+  uploadModalSheet: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 20,
+    padding: 20,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  uploadModalTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  uploadModalSummary: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  uploadModalLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  uploadSaveBtn: {
+    backgroundColor: theme.colors.primary,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadSaveBtnDisabled: {
+    opacity: 0.5,
+  },
+  uploadSaveBtnText: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  uploadDismissBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  uploadDismissBtnText: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   sheet: {
     backgroundColor: theme.colors.surface,

@@ -6,6 +6,7 @@ import {
   generateADHDNote,
   buildQuickLectureNote,
   shouldReplaceLectureNote,
+  isMeaningfulLectureAnalysis,
   transcribeAudio,
   type LectureAnalysis,
 } from './transcriptionService';
@@ -323,10 +324,7 @@ export async function autoRepairLegacyNotes(): Promise<number> {
     try {
       if (__DEV__) console.log(`[Repair] Repairing note ${note.id}...`);
       const analysis = await analyzeTranscript(transcriptText);
-      if (
-        analysis.subject === 'Unknown' &&
-        analysis.lectureSummary === 'Lecture content recorded'
-      ) {
+      if (!isMeaningfulLectureAnalysis({ ...analysis, transcript: transcriptText })) {
         continue; // Failed to get better results
       }
 

@@ -98,17 +98,31 @@ export default function TodayPlanCard() {
     );
   }
 
-  const nextTask = todayPlan.blocks.find((b) => b.type !== 'break');
+  const studyBlocks = todayPlan.blocks.filter((b) => b.type !== 'break');
+  const nextTask = studyBlocks[0];
+  const remainingBlocks = studyBlocks.length;
+  const totalMinutes = studyBlocks.reduce((sum, b) => sum + b.durationMinutes, 0);
+  const typeLabel =
+    nextTask?.type === 'review' ? 'REVIEW' : nextTask?.type === 'test' ? 'TEST' : 'STUDY';
+  const typeColor =
+    nextTask?.type === 'review'
+      ? theme.colors.warning
+      : nextTask?.type === 'test'
+        ? '#E05252'
+        : theme.colors.primary;
 
   return (
     <View style={[styles.container, styles.activeContainer]}>
       <View style={styles.activeHeader}>
         <View style={styles.headerRow}>
           <Ionicons name="compass" size={18} color={theme.colors.primary} />
-          <Text style={[styles.label, { color: theme.colors.primary }]}>TODAY BY GURU</Text>
+          <Text style={[styles.label, { color: theme.colors.primary }]}>UP NEXT</Text>
         </View>
-        <View style={styles.activeBadge}>
-          <Text style={styles.activeBadgeText}>ACTIVE</Text>
+        <View style={styles.metaRow}>
+          <View style={[styles.typeBadge, { backgroundColor: `${typeColor}22` }]}>
+            <Text style={[styles.typeBadgeText, { color: typeColor }]}>{typeLabel}</Text>
+          </View>
+          {nextTask && <Text style={styles.durationText}>{nextTask.durationMinutes}m</Text>}
         </View>
       </View>
 
@@ -119,18 +133,45 @@ export default function TodayPlanCard() {
         </View>
       )}
 
-      <Text style={styles.guruNote}>"{todayPlan.guruNote}"</Text>
+      {nextTask && (
+        <TouchableOpacity
+          style={[styles.startBtn, { backgroundColor: typeColor }]}
+          onPress={() =>
+            navigation.navigate('Session', {
+              mood: 'focused',
+              focusTopicIds: nextTask.topicIds.length > 0 ? nextTask.topicIds : undefined,
+              preferredActionType:
+                nextTask.type === 'review'
+                  ? 'review'
+                  : nextTask.type === 'test'
+                    ? 'deep_dive'
+                    : 'study',
+              forcedMinutes: nextTask.durationMinutes,
+            })
+          }
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${nextTask.title}`}
+        >
+          <Ionicons name="play" size={16} color="#fff" />
+          <Text style={styles.startBtnText}>START NOW</Text>
+        </TouchableOpacity>
+      )}
 
-      <TouchableOpacity
-        style={styles.viewFullBtn}
-        onPress={navigateToFullSchedule}
-        activeOpacity={0.7}
-        accessibilityRole="button"
-        accessibilityLabel="View full schedule"
-      >
-        <Text style={styles.viewFullText}>View full schedule</Text>
-        <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} />
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={styles.viewFullBtn}
+          onPress={navigateToFullSchedule}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel="View full schedule"
+        >
+          <Text style={styles.viewFullText}>
+            {remainingBlocks} block{remainingBlocks !== 1 ? 's' : ''} · {totalMinutes}m total
+          </Text>
+          <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -184,17 +225,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing.md,
   },
-  activeBadge: {
-    backgroundColor: theme.colors.primaryTintSoft,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  typeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
   },
-  activeBadgeText: {
-    color: theme.colors.primary,
+  typeBadgeText: {
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 0.5,
+  },
+  durationText: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
   },
   taskBlock: {
     marginBottom: theme.spacing.md,
@@ -208,23 +257,32 @@ const styles = StyleSheet.create({
   taskWhy: {
     color: theme.colors.textSecondary,
     fontSize: 13,
-    fontStyle: 'italic',
     lineHeight: 19,
   },
-  guruNote: {
-    color: theme.colors.primaryLight,
-    fontSize: 13,
-    fontWeight: '500',
-    lineHeight: 19,
+  startBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderRadius: theme.borderRadius.sm,
+    paddingVertical: 13,
     marginBottom: theme.spacing.md,
+  },
+  startBtnText: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 13,
+    letterSpacing: 0.8,
+  },
+  footer: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    paddingTop: theme.spacing.md,
   },
   viewFullBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: theme.spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
     gap: 4,
   },
   viewFullText: {

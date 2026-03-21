@@ -133,4 +133,26 @@ describe('transcriptionService', () => {
     expect(result).not.toHaveProperty('embedding');
     expect(generateEmbeddingMock).toHaveBeenCalledTimes(1);
   });
+
+  it('returns no-speech analysis when local Whisper yields an empty transcript', async () => {
+    transcribeRawWithLocalWhisperMock.mockResolvedValue('');
+    const { transcribeAudio } = await import('./transcriptionService');
+
+    const result = await transcribeAudio({
+      audioFilePath: '/tmp/lecture.wav',
+      transcriptionProvider: 'local',
+      useLocalWhisper: true,
+      localWhisperPath: '/models/whisper.bin',
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        subject: 'Unknown',
+        transcript: '',
+        lectureSummary: 'No speech detected in recording (silent or very short audio)',
+      }),
+    );
+    expect(analyzeTranscriptMock).not.toHaveBeenCalled();
+    expect(generateEmbeddingMock).not.toHaveBeenCalled();
+  });
 });

@@ -355,6 +355,11 @@ RULES:
 - types: 'study', 'review', 'test', 'break'.
 - topicIds MUST be an array of numbers representing the actual IDs provided above. If no specific topic, leave empty.
 - Prioritize dueTopics first, then weakTopics, then new high-yield topics if time permits.
+- Every non-break block should target 1-3 REAL topics from dueTopics or weakTopics whenever possible.
+- Do not use vague titles like "Morning Review Power Hour" or "Study Block". Titles must name the real topic or subject.
+- Each "why" must mention the exact topic name and the reason it was chosen: due for review, weak, or recently neglected.
+- Make the plan feel concrete and urgent, not motivational fluff.
+- guruNote must be short, specific, and reference at least one real topic name.
 - Total durationMinutes (including breaks) should be approx ${availableMinutes}.`;
 }
 

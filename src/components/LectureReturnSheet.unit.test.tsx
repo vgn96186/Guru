@@ -1,7 +1,21 @@
 import React from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { render } from '@testing-library/react-native';
 import LectureReturnSheet from './LectureReturnSheet';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
+
+jest.mock('./SubjectSelectionCard', () => ({
+  __esModule: true,
+  default: ({ onSelectSubject }: { onSelectSubject: (subject: string) => void }) => (
+    <View>
+      <Text>Subject required</Text>
+      <Text>Choose the lecture subject before saving so topics get filed correctly.</Text>
+      <TouchableOpacity onPress={() => onSelectSubject('Physiology')}>
+        <Text>Physiology</Text>
+      </TouchableOpacity>
+    </View>
+  ),
+}));
 
 jest.mock('../hooks/useLecturePipeline', () => ({
   useLecturePipeline: jest.fn(),
@@ -31,6 +45,9 @@ function basePipelineReturn() {
     showExpl: false,
     score: 0,
     canTranscribe: false,
+    subjectSelectionRequired: false,
+    selectedSubjectName: null,
+    setSelectedSubjectName: jest.fn(),
     runTranscription: jest.fn(),
     handleCancelTranscription: jest.fn(),
     handleMarkStudied: jest.fn(),
@@ -68,5 +85,29 @@ describe('LectureReturnSheet', () => {
     const { getByText } = render(<LectureReturnSheet {...baseProps} />);
     expect(getByText('LECTURE PROCESSING')).toBeTruthy();
     expect(getByText(/Marrow/)).toBeTruthy();
+  });
+
+  it('shows a subject-required prompt in results when the detected subject is unusable', async () => {
+    mockUseLecturePipeline.mockReturnValue({
+      ...basePipelineReturn(),
+      phase: 'results',
+      isExpanded: true,
+      analysis: {
+        subject: 'Unknown',
+        topics: ['Cardiac cycle'],
+        lectureSummary: 'Lecture summary',
+        keyConcepts: [],
+        highYieldPoints: [],
+        estimatedConfidence: 2,
+      },
+      subjectSelectionRequired: true,
+    } as any);
+
+    const { findByText, getByText } = render(<LectureReturnSheet {...baseProps} />);
+
+    expect(await findByText('Subject required')).toBeTruthy();
+    expect(
+      getByText('Choose the lecture subject before saving so topics get filed correctly.'),
+    ).toBeTruthy();
   });
 });

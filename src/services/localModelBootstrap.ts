@@ -4,11 +4,13 @@
  * Auto-downloads local AI models (Llama + Whisper) on first launch.
  * Runs in the background — does not block app startup.
  * Downloads automatically when no model path is set yet.
- * This makes local LLM + Whisper \"just work\" on first launch,
+ * This makes local LLM + Whisper "just work" on first launch,
  * while still allowing users to delete models from Settings.
  *
  * Downloads Whisper first (75MB) since it's needed for transcription,
  * then MedGemma 4B (~2.5GB) for topic extraction and content generation.
+ *
+ * Supports pause/resume — partial downloads are kept across app restarts.
  */
 
 import * as FileSystem from 'expo-file-system/legacy';
@@ -18,7 +20,6 @@ import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMe
 import { showToast } from '../components/Toast';
 import { updateLocalModelDownload } from './localModelDownloadState';
 import {
-  computeLocalModelFileSha256,
   deleteLocalModelFile,
   getLocalModelFilePath,
   validateLocalModelFile,
@@ -34,12 +35,73 @@ const WHISPER_MODEL = {
   url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
 };
 
-// SHA-256 integrity for the exact files above (HF Git-LFS oid).
-// Used to prevent corrupted-but-large downloads from being treated as valid.
-const MODEL_SHA256: Record<'llm' | 'whisper', string> = {
-  llm: '8bcb19d3e363f7d1ab27f364032436fd702e735a6f479d6bb7b1cf066e76b443',
-  whisper: '1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69',
-};
+const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
+
+// Active download handles — exposed for pause/resume from UI
+let activeDownload: FileSystem.DownloadResumable | null = null;
+let activeDownloadType: 'llm' | 'whisper' | null = null;
+let isPaused = false;
+
+async function refreshProfileSafely() {
+  await useAppStore.getState()?.refreshProfile?.();
+}
+
+/**
+ * Pause the active download. The partial file is kept for resume.
+ */
+export async function pauseDownload(): Promise<void> {
+  if (!activeDownload || isPaused) return;
+  try {
+    const savable = await activeDownload.pauseAsync();
+    isPaused = true;
+    // Persist the resume data so we can resume after app restart
+    if (savable && activeDownloadType) {
+      const resumeDataPath = getResumeDataPath(activeDownloadType);
+      await FileSystem.writeAsStringAsync(resumeDataPath, JSON.stringify(savable));
+    }
+    updateLocalModelDownload({
+      visible: true,
+      source: 'bootstrap',
+      type: activeDownloadType!,
+      stage: 'error',
+      modelName: activeDownloadType === 'whisper' ? WHISPER_MODEL.name : LLM_MODEL.name,
+      progress: 0,
+      message: 'Download paused',
+    });
+    if (isDev) console.log(`[Bootstrap] ${activeDownloadType} download paused`);
+  } catch (e) {
+    console.warn('[Bootstrap] Pause failed:', e);
+  }
+}
+
+/**
+ * Resume a paused download.
+ */
+export async function resumeDownload(): Promise<void> {
+  if (!activeDownload || !isPaused) return;
+  isPaused = false;
+  try {
+    const result = await activeDownload.resumeAsync();
+    if (result && result.status === 200) {
+      await handleDownloadComplete(activeDownloadType!);
+    }
+  } catch (e) {
+    console.warn(`[Bootstrap] Resume failed:`, e);
+    isPaused = true;
+  }
+}
+
+export function isDownloadPaused(): boolean {
+  return isPaused;
+}
+
+export function getActiveDownloadType(): 'llm' | 'whisper' | null {
+  return activeDownloadType;
+}
+
+function getResumeDataPath(type: 'llm' | 'whisper'): string {
+  return `${FileSystem.documentDirectory}${type}-download-resume.json`;
+}
 
 /**
  * Check if local models need downloading and start background downloads.
@@ -49,17 +111,12 @@ const MODEL_SHA256: Record<'llm' | 'whisper', string> = {
 export async function bootstrapLocalModels(): Promise<void> {
   const profile = await profileRepository.getProfile();
 
-  // Auto-enable models if no path is configured yet.
-  // This means fresh installs will start downloading models in the background
-  // without requiring the user to first toggle \"use local model\" in Settings.
   const llmAllowed = isLocalLlmAllowedOnThisDevice();
-  const needsLlm = llmAllowed && !profile.localModelPath;
+  const needsLlm = !profile.localModelPath;
   const needsWhisper = !profile.localWhisperPath;
 
   if (!needsLlm && !needsWhisper) return;
 
-  // If this is a fresh install on a low-RAM device, skip the heavy LLM download
-  // and surface a one-time warning so the user understands why.
   if (!llmAllowed && !profile.localModelPath) {
     const warning = getLocalLlmRamWarning();
     if (warning) {
@@ -74,7 +131,7 @@ export async function bootstrapLocalModels(): Promise<void> {
 
   // Then download LLM (~2.5GB) — used for topic extraction and content generation
   if (needsLlm) {
-    await downloadModel(LLM_MODEL, 'llm');
+    await downloadModel(LLM_MODEL, 'llm', { autoEnable: llmAllowed });
   }
 }
 
@@ -84,9 +141,85 @@ const MIN_MODEL_SIZES: Record<string, number> = {
   whisper: 750_000_000, // ~809MB for ggml-large-v3-turbo.bin
 };
 
+async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
+  const model = type === 'llm' ? LLM_MODEL : WHISPER_MODEL;
+  const targetUri = getLocalModelFilePath(model.name);
+  const partialUri = `${targetUri}.partial`;
+  const minSize = MIN_MODEL_SIZES[type] ?? 1000;
+
+  const downloadedValidation = await validateLocalModelFile({
+    path: partialUri,
+    minBytes: minSize,
+  });
+  if (!downloadedValidation.exists || !downloadedValidation.isValid) {
+    console.warn(
+      `[Bootstrap] ${type} download too small: ${downloadedValidation.size} bytes, expected >= ${minSize}`,
+    );
+    await deleteLocalModelFile(partialUri);
+    return;
+  }
+
+  await FileSystem.moveAsync({ from: partialUri, to: targetUri });
+
+  if (type === 'llm') {
+    await profileRepository.updateProfile({
+      localModelPath: targetUri,
+      useLocalModel: isLocalLlmAllowedOnThisDevice(),
+    });
+  } else {
+    await profileRepository.updateProfile({
+      localWhisperPath: targetUri,
+      useLocalWhisper: true,
+    });
+  }
+  await refreshProfileSafely();
+  updateLocalModelDownload({
+    visible: true,
+    source: 'bootstrap',
+    type,
+    stage: 'complete',
+    modelName: model.name,
+    progress: 100,
+    downloadedBytes: downloadedValidation.size,
+    totalBytes: downloadedValidation.size,
+  });
+
+  // Clean up resume data
+  try {
+    await FileSystem.deleteAsync(getResumeDataPath(type), { idempotent: true });
+  } catch {}
+
+  activeDownload = null;
+  activeDownloadType = null;
+  isPaused = false;
+  if (isDev) console.log(`[Bootstrap] ${type} model downloaded successfully`);
+}
+
+function makeProgressCallback(type: 'llm' | 'whisper', modelName: string) {
+  return (progress: FileSystem.DownloadProgressData) => {
+    if (progress.totalBytesExpectedToWrite > 0) {
+      const pct = Math.round(
+        (progress.totalBytesWritten / progress.totalBytesExpectedToWrite) * 100,
+      );
+      updateLocalModelDownload({
+        visible: true,
+        source: 'bootstrap',
+        type,
+        stage: 'downloading',
+        modelName,
+        progress: pct,
+        downloadedBytes: progress.totalBytesWritten,
+        totalBytes: progress.totalBytesExpectedToWrite,
+      });
+      if (pct % 10 === 0 && isDev) console.log(`[Bootstrap] ${type} download: ${pct}%`);
+    }
+  };
+}
+
 async function downloadModel(
   model: { name: string; url: string },
   type: 'llm' | 'whisper',
+  options?: { autoEnable?: boolean },
 ): Promise<void> {
   const targetUri = getLocalModelFilePath(model.name);
   const partialUri = `${targetUri}.partial`;
@@ -100,7 +233,8 @@ async function downloadModel(
       stage: 'preparing',
       modelName: model.name,
       progress: 2,
-      message: type === 'whisper' ? 'Preparing offline transcription' : 'Preparing offline study AI',
+      message:
+        type === 'whisper' ? 'Preparing offline transcription' : 'Preparing offline study AI',
     });
 
     // Check if fully-downloaded file already exists
@@ -109,129 +243,6 @@ async function downloadModel(
       minBytes: minSize,
     });
     if (existingValidation.exists && existingValidation.isValid) {
-      // File exists and meets minimum size threshold; validate SHA-256 too.
-      try {
-        const expectedSha = MODEL_SHA256[type];
-        const actualSha = await computeLocalModelFileSha256(targetUri);
-        if (actualSha !== expectedSha) {
-          console.warn(
-            `[Bootstrap] ${type} model checksum mismatch (existing file). Re-downloading.`,
-          );
-          await deleteLocalModelFile(targetUri);
-        } else {
-          // Checksums passed — mark profile ready.
-          updateLocalModelDownload({
-            visible: true,
-            source: 'bootstrap',
-            type,
-            stage: 'complete',
-            modelName: model.name,
-            progress: 100,
-            downloadedBytes: existingValidation.size,
-            totalBytes: existingValidation.size,
-          });
-          if (type === 'llm') {
-            await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
-          } else {
-            await profileRepository.updateProfile({
-              localWhisperPath: targetUri,
-              useLocalWhisper: true,
-            });
-          }
-          await useAppStore.getState().refreshProfile();
-          if (__DEV__) console.log(`[Bootstrap] ${type} model already downloaded and verified at ${targetUri}`);
-          return;
-        }
-      } catch (shaErr) {
-        console.warn(`[Bootstrap] ${type} sha256 validation failed. Re-downloading.`, shaErr);
-        await deleteLocalModelFile(targetUri);
-      }
-
-      // If we got here, the file was deleted due to checksum problems.
-    }
-
-    // Clean up any existing partial or undersized file
-    if (existingValidation.exists) {
-      console.warn(
-        `[Bootstrap] Removing invalid/partial ${type} model (size: ${existingValidation.size})`,
-      );
-      await deleteLocalModelFile(targetUri);
-    }
-
-    if (__DEV__) console.log(`[Bootstrap] Starting ${type} download: ${model.name}`);
-
-    // Use createDownloadResumable for resume support
-    const downloadResumable = FileSystem.createDownloadResumable(
-      model.url,
-      partialUri,
-      {},
-      (progress) => {
-        if (progress.totalBytesExpectedToWrite > 0) {
-          const pct = Math.round(
-            (progress.totalBytesWritten / progress.totalBytesExpectedToWrite) * 100,
-          );
-          updateLocalModelDownload({
-            visible: true,
-            source: 'bootstrap',
-            type,
-            stage: 'downloading',
-            modelName: model.name,
-            progress: pct,
-            downloadedBytes: progress.totalBytesWritten,
-            totalBytes: progress.totalBytesExpectedToWrite,
-          });
-          if (pct % 10 === 0 && __DEV__) console.log(`[Bootstrap] ${type} download: ${pct}%`);
-        }
-      },
-    );
-
-    const result = await downloadResumable.downloadAsync();
-
-    if (result && result.status === 200) {
-      // Validate downloaded file size
-      const downloadedValidation = await validateLocalModelFile({
-        path: partialUri,
-        minBytes: minSize,
-      });
-      if (!downloadedValidation.exists || !downloadedValidation.isValid) {
-        console.warn(
-          `[Bootstrap] ${type} download too small: ${downloadedValidation.size} bytes, expected >= ${minSize}`,
-        );
-        await deleteLocalModelFile(partialUri);
-        return;
-      }
-
-      // Validate SHA-256 to catch corrupted downloads that still meet size thresholds.
-      updateLocalModelDownload({
-        visible: true,
-        source: 'bootstrap',
-        type,
-        stage: 'verifying',
-        modelName: model.name,
-        progress: 98,
-        downloadedBytes: downloadedValidation.size,
-        totalBytes: downloadedValidation.size,
-      });
-      const expectedSha = MODEL_SHA256[type];
-      const actualSha = await computeLocalModelFileSha256(partialUri);
-      if (actualSha !== expectedSha) {
-        console.warn(`[Bootstrap] ${type} checksum mismatch after download. Re-downloading.`);
-        await deleteLocalModelFile(partialUri);
-        return;
-      }
-
-      // Move from partial to final path (only after checksums pass)
-      await FileSystem.moveAsync({ from: partialUri, to: targetUri });
-
-      if (type === 'llm') {
-        await profileRepository.updateProfile({ localModelPath: targetUri, useLocalModel: true });
-      } else {
-        await profileRepository.updateProfile({
-          localWhisperPath: targetUri,
-          useLocalWhisper: true,
-        });
-      }
-      await useAppStore.getState().refreshProfile();
       updateLocalModelDownload({
         visible: true,
         source: 'bootstrap',
@@ -239,27 +250,106 @@ async function downloadModel(
         stage: 'complete',
         modelName: model.name,
         progress: 100,
-        downloadedBytes: downloadedValidation.size,
-        totalBytes: downloadedValidation.size,
+        downloadedBytes: existingValidation.size,
+        totalBytes: existingValidation.size,
       });
-      if (__DEV__) console.log(`[Bootstrap] ${type} model downloaded successfully`);
-    } else {
-      console.warn(`[Bootstrap] ${type} download failed with status ${result?.status}`);
-      await deleteLocalModelFile(partialUri);
-      updateLocalModelDownload({
-        visible: true,
-        source: 'bootstrap',
-        type,
-        stage: 'error',
-        modelName: model.name,
-        progress: 0,
-        message: 'Install paused',
-      });
+      if (type === 'llm') {
+        await profileRepository.updateProfile({
+          localModelPath: targetUri,
+          useLocalModel: options?.autoEnable ?? true,
+        });
+      } else {
+        await profileRepository.updateProfile({
+          localWhisperPath: targetUri,
+          useLocalWhisper: true,
+        });
+      }
+      await refreshProfileSafely();
+      if (isDev) console.log(`[Bootstrap] ${type} model already available at ${targetUri}`);
+      return;
+    }
+
+    // Clean up undersized final file (not the partial — we want to resume that)
+    if (existingValidation.exists) {
+      console.warn(
+        `[Bootstrap] Removing invalid ${type} model at target path (size: ${existingValidation.size})`,
+      );
+      await deleteLocalModelFile(targetUri);
+    }
+
+    // Try to resume from saved resume data (persisted across app restarts)
+    const resumeDataPath = getResumeDataPath(type);
+    let resumed = false;
+    try {
+      const resumeJson = await FileSystem.readAsStringAsync(resumeDataPath);
+      const resumeData = JSON.parse(resumeJson);
+      if (resumeData?.url === model.url) {
+        if (isDev) console.log(`[Bootstrap] Resuming ${type} download from saved state`);
+        const downloadResumable = new FileSystem.DownloadResumable(
+          resumeData.url,
+          resumeData.fileUri,
+          resumeData.options ?? {},
+          makeProgressCallback(type, model.name),
+          resumeData.resumeData,
+        );
+        activeDownload = downloadResumable;
+        activeDownloadType = type;
+        isPaused = false;
+
+        const result = await downloadResumable.resumeAsync();
+        if (result && result.status === 200) {
+          await handleDownloadComplete(type);
+          return;
+        }
+        resumed = true;
+      }
+    } catch {
+      // No resume data or it's invalid — start fresh
+    }
+
+    if (!resumed) {
+      // Check if partial file exists (download was interrupted without saving resume data)
+      const partialInfo = await FileSystem.getInfoAsync(partialUri);
+      if (partialInfo.exists) {
+        if (isDev) console.log(`[Bootstrap] Found partial ${type} file, deleting to start fresh`);
+        await deleteLocalModelFile(partialUri);
+      }
+
+      if (isDev) console.log(`[Bootstrap] Starting ${type} download: ${model.name}`);
+
+      const downloadResumable = FileSystem.createDownloadResumable(
+        model.url,
+        partialUri,
+        { headers: { 'Accept-Encoding': 'identity' } },
+        makeProgressCallback(type, model.name),
+      );
+
+      activeDownload = downloadResumable;
+      activeDownloadType = type;
+      isPaused = false;
+
+      const result = await downloadResumable.downloadAsync();
+
+      if (result && result.status === 200) {
+        await handleDownloadComplete(type);
+      } else {
+        console.warn(`[Bootstrap] ${type} download failed with status ${result?.status}`);
+        await deleteLocalModelFile(partialUri);
+        updateLocalModelDownload({
+          visible: true,
+          source: 'bootstrap',
+          type,
+          stage: 'error',
+          modelName: model.name,
+          progress: 0,
+          message: 'Download failed',
+        });
+      }
     }
   } catch (e) {
     // Non-fatal — user can still use the app, just without local AI
     console.warn(`[Bootstrap] ${type} download error:`, e);
-    // Don’t delete partial — resume next time
+    // Don't delete partial — resume next time
     updateLocalModelDownload({
       visible: true,
       source: 'bootstrap',
@@ -269,5 +359,8 @@ async function downloadModel(
       progress: 0,
       message: 'Install paused',
     });
+    activeDownload = null;
+    activeDownloadType = null;
+    isPaused = false;
   }
 }

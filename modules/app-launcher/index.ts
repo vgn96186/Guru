@@ -219,3 +219,11 @@ export async function listPublicBackups(): Promise<string[]> {
 export async function getPublicBackupDir(): Promise<string> {
   return GuruAppLauncher.getPublicBackupDir();
 }
+
+export async function listPublicRecordings(): Promise<string[]> {
+  return GuruAppLauncher.listPublicRecordings();
+}
+
+export async function getPublicRecordingsDir(): Promise<string> {
+  return GuruAppLauncher.getPublicRecordingsDir();
+}

@@ -180,6 +180,19 @@ class AppLauncherModule : Module() {
             return@AsyncFunction getPublicGuruBackupDir().absolutePath
         }
 
+        AsyncFunction("listPublicRecordings") { ->
+            return@AsyncFunction try {
+                getPublicGuruDir().list()?.toList() ?: emptyList<String>()
+            } catch (e: Exception) {
+                Log.e(TAG, "listPublicRecordings failed", e)
+                emptyList<String>()
+            }
+        }
+
+        AsyncFunction("getPublicRecordingsDir") { ->
+            return@AsyncFunction getPublicGuruDir().absolutePath
+        }
+
         // ── Activity result handler for MediaProjection ────────────
         OnActivityResult { _, payload ->
             if (payload.requestCode == MEDIA_PROJECTION_RC) {

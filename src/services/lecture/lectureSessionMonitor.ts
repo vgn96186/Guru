@@ -247,15 +247,12 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
     const db = (await import('../../db/database')).getDb();
     const FileSystem = await import('expo-file-system/legacy');
     const { Platform } = await import('react-native');
+    const { listPublicRecordings, getPublicRecordingsDir } =
+      await import('../../../modules/app-launcher');
 
     if (Platform.OS !== 'android') return 0;
 
-    const PUBLIC_REC_DIR = FileSystem.documentDirectory + 'recordings/';
-    const dirInfo = await FileSystem.getInfoAsync(PUBLIC_REC_DIR);
-    if (!dirInfo.exists) return 0;
-
-    const files = await FileSystem.readDirectoryAsync(PUBLIC_REC_DIR);
-    if (files.length === 0) return 0;
+    const INTERNAL_REC_DIR = FileSystem.documentDirectory + 'recordings/';
 
     // Get all referenced recordings
     const rows = await db.getAllAsync<{ recording_path: string }>(
@@ -269,34 +266,55 @@ export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
     );
 
     let recovered = 0;
-    for (const fileName of files) {
-      if (!fileName.endsWith('.m4a') && !fileName.endsWith('.wav')) continue;
-      if (referencedFiles.has(fileName)) continue;
 
-      // Orphan audio found!
-      const fileUri = PUBLIC_REC_DIR + fileName;
-      if (__DEV__) console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
+    async function processOrphanFiles(files: string[], dirUri: string) {
+      if (!files || files.length === 0) return;
+      for (const fileName of files) {
+        if (!fileName.endsWith('.m4a') && !fileName.endsWith('.wav')) continue;
+        if (referencedFiles.has(fileName)) continue;
 
-      // Create a dummy log entry
-      const logResult = await db.runAsync(
-        'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
-        ['Recovered Audio', Date.now(), fileUri, 'pending'],
-      );
+        // Orphan audio found!
+        const fileUri = (dirUri.endsWith('/') ? dirUri : dirUri + '/') + fileName;
+        if (__DEV__) console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
 
-      const logId = logResult.lastInsertRowId;
+        // Create a dummy log entry
+        const logResult = await db.runAsync(
+          'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
+          ['Recovered Audio', Date.now(), fileUri, 'pending'],
+        );
 
-      // Trigger transcription pipeline
-      void runFullTranscriptionPipeline({
-        recordingPath: fileUri,
-        appName: 'Recovered Audio',
-        durationMinutes: 0,
-        logId: logId as number,
-      }).catch((err) => {
-        console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
-      });
+        const logId = logResult.lastInsertRowId;
 
-      referencedFiles.add(fileName);
-      recovered++;
+        // Trigger transcription pipeline
+        void runFullTranscriptionPipeline({
+          recordingPath: fileUri,
+          appName: 'Recovered Audio',
+          durationMinutes: 0,
+          logId: logId as number,
+        }).catch((err) => {
+          console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
+        });
+
+        referencedFiles.add(fileName);
+        recovered++;
+      }
+    }
+
+    // 1. Scan internal old recordings
+    const internalDirInfo = await FileSystem.getInfoAsync(INTERNAL_REC_DIR);
+    if (internalDirInfo.exists) {
+      const internalFiles = await FileSystem.readDirectoryAsync(INTERNAL_REC_DIR);
+      await processOrphanFiles(internalFiles, INTERNAL_REC_DIR);
+    }
+
+    // 2. Scan native public recordings (Documents/Guru/Recordings)
+    try {
+      const publicFiles = await listPublicRecordings();
+      const publicDirPath = await getPublicRecordingsDir();
+      const publicDirUri = 'file://' + publicDirPath;
+      await processOrphanFiles(publicFiles, publicDirUri);
+    } catch (err) {
+      console.warn('[Recovery] Failed to scan native public recordings:', err);
     }
 
     if (recovered > 0) {
@@ -363,9 +381,10 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
     const db = (await import('../../db/database')).getDb();
     const FileSystem = await import('expo-file-system/legacy');
     const { Platform } = await import('react-native');
+    const { listPublicBackups, getPublicBackupDir } = await import('../../../modules/app-launcher');
 
     const TRANSCRIPT_DIR = FileSystem.documentDirectory + 'transcripts/';
-    const PUBLIC_BACKUP_DIR = FileSystem.documentDirectory + 'backups/Transcripts/';
+    const INTERNAL_BACKUP_DIR = FileSystem.documentDirectory + 'backups/Transcripts/';
 
     // Get all referenced transcripts
     const rows = await db.getAllAsync<{ transcript: string }>(
@@ -381,28 +400,28 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
     let recovered = 0;
     let recoveryStarted = false;
 
-    async function scanDir(dir: string) {
-      const dirInfo = await FileSystem.getInfoAsync(dir);
-      if (!dirInfo.exists) return;
-
-      const files = await FileSystem.readDirectoryAsync(dir);
+    async function processOrphanFiles(files: string[], dirUri: string) {
+      if (!files || files.length === 0) return;
       for (const fileName of files) {
         if (!fileName.endsWith('.txt')) continue;
+        // Don't recover "-cache.txt" or "-legacy.txt"
+        if (fileName.includes('cache') || fileName.includes('legacy')) continue;
         if (referencedFiles.has(fileName)) continue;
 
-        // Orphan found — show inline ghost in Notes Hub
         if (!recoveryStarted) {
           recoveryStarted = true;
           useAppStore.getState().setRecoveringBackground(true);
         }
 
-        const fileUri = dir + fileName;
+        const fileUri = (dirUri.endsWith('/') ? dirUri : dirUri + '/') + fileName;
         const content = await FileSystem.readAsStringAsync(fileUri);
 
         if (!content.trim()) continue;
 
         if (__DEV__)
-          console.log(`[Recovery] Found orphaned transcript in ${dir}: ${fileName}. Recovering...`);
+          console.log(
+            `[Recovery] Found orphaned transcript in ${dirUri}: ${fileName}. Recovering...`,
+          );
 
         const analysis = await analyzeTranscript(content);
         const quickNote = buildQuickLectureNote(analysis);
@@ -422,8 +441,27 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
       }
     }
 
-    await scanDir(TRANSCRIPT_DIR);
-    await scanDir(PUBLIC_BACKUP_DIR);
+    // 1. Scan internal directories
+    async function scanInternalDir(dir: string) {
+      const dirInfo = await FileSystem.getInfoAsync(dir);
+      if (!dirInfo.exists) return;
+      const files = await FileSystem.readDirectoryAsync(dir);
+      await processOrphanFiles(files, dir);
+    }
+    await scanInternalDir(TRANSCRIPT_DIR);
+    await scanInternalDir(INTERNAL_BACKUP_DIR);
+
+    // 2. Scan native public backups
+    if (Platform.OS === 'android') {
+      try {
+        const publicFiles = await listPublicBackups();
+        const publicDirPath = await getPublicBackupDir();
+        const publicDirUri = 'file://' + publicDirPath;
+        await processOrphanFiles(publicFiles, publicDirUri);
+      } catch (err) {
+        console.warn('[Recovery] Failed to scan native public backups:', err);
+      }
+    }
 
     if (recovered > 0) {
       notifyDbUpdate(DB_EVENT_KEYS.TRANSCRIPT_RECOVERED);

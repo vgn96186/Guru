@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList } from '../navigation/types';
+import type { SettingsModalParamList } from '../navigation/types';
 import { theme } from '../constants/theme';
 import { useAppStore } from '../store/useAppStore';
 import { profileRepository } from '../db/repositories';
@@ -20,7 +20,7 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
 
 export default function DeviceLinkScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<SettingsModalParamList>>();
   const profile = useAppStore((s) => s.profile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [code, setCode] = useState(profile?.syncCode || '');

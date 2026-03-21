@@ -1,9 +1,15 @@
 import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar, StyleSheet, Text, View } from 'react-native';
+import type { TreeStackParamList } from '../navigation/types';
 import { theme } from '../constants/theme';
 
 export default function KnowledgeTreeScreen() {
+  const navigation =
+    useNavigation<NativeStackNavigationProp<TreeStackParamList, 'KnowledgeTree'>>();
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
@@ -13,6 +19,14 @@ export default function KnowledgeTreeScreen() {
         <Text style={styles.body}>
           The syllabus map will live here while the new shell settles in.
         </Text>
+        <TouchableOpacity
+          style={styles.cta}
+          onPress={() => navigation.navigate('Syllabus')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Syllabus"
+        >
+          <Text style={styles.ctaText}>Open Syllabus</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -49,5 +63,17 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.md,
     textAlign: 'center',
     maxWidth: 320,
+  },
+  cta: {
+    marginTop: theme.spacing.xl,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+  },
+  ctaText: {
+    color: theme.colors.textInverse,
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

@@ -52,8 +52,7 @@ export default function MenuScreen() {
             <Text style={styles.kicker}>MENU</Text>
             <Text style={styles.title}>Everything important in one place.</Text>
             <Text style={styles.subtitle}>
-              Use this hub for planning, notes, and deeper configuration. Fast actions live in the
-              center Action Hub.
+              Use this hub for planning, notes, and deeper configuration.
             </Text>
           </View>
 

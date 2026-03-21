@@ -21,7 +21,7 @@ import {
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { MenuStackParamList, RootStackParamList } from '../navigation/types';
+import type { RootStackParamList, SettingsModalParamList } from '../navigation/types';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -240,7 +240,7 @@ export default function SettingsScreen() {
   const navigation =
     useNavigation<
       CompositeNavigationProp<
-        NativeStackNavigationProp<MenuStackParamList, 'Settings'>,
+        NativeStackNavigationProp<SettingsModalParamList, 'Settings'>,
         NativeStackNavigationProp<RootStackParamList>
       >
     >();

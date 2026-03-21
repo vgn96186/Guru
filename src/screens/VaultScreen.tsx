@@ -1,9 +1,14 @@
 import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, StatusBar } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar, StyleSheet, Text, View } from 'react-native';
+import type { VaultStackParamList } from '../navigation/types';
 import { theme } from '../constants/theme';
 
 export default function VaultScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<VaultStackParamList, 'VaultHome'>>();
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
@@ -13,6 +18,14 @@ export default function VaultScreen() {
         <Text style={styles.body}>
           Lecture notes, transcripts, and saved artifacts will surface here.
         </Text>
+        <TouchableOpacity
+          style={styles.cta}
+          onPress={() => navigation.navigate('NotesHub')}
+          accessibilityRole="button"
+          accessibilityLabel="Open Notes Hub"
+        >
+          <Text style={styles.ctaText}>Open Notes Hub</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -49,5 +62,17 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing.md,
     textAlign: 'center',
     maxWidth: 320,
+  },
+  cta: {
+    marginTop: theme.spacing.xl,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+  },
+  ctaText: {
+    color: theme.colors.textInverse,
+    fontSize: 16,
+    fontWeight: '800',
   },
 });

@@ -1,5 +1,0 @@
-# Bolt's Journal
-
-## 2023-11-20 - [Redundant Aggregate Queries and SQLite Main Thread Constraints]
-**Learning:** Found an architectural pattern in `SyllabusScreen.tsx` where identical full-table aggregations were happening multiple times sequentially: `getSubjectCoverage()` mapped totals and seen counts by `subject_id`, and immediately after, a custom query in the component repeated the exact same `LEFT JOIN topics t / topic_progress p` structure grouping by `subject_id` to fetch more detailed metrics (due, high_yield, unseen). Because SQLite in Expo runs synchronously on the main thread, these duplicate heavy aggregations cause unnecessary UI blocking.
-**Action:** Always combine identical aggregation contexts. If `GROUP BY` is being executed on identical table scopes in quick succession, merge the `SUM(CASE WHEN...)` and `COUNT()` statements into a single composite query. This drastically reduces JS-bridge overhead and DB parsing execution time.

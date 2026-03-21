@@ -1,0 +1,287 @@
+File: src/services/lectureSessionMonitor.ts
+Line number: 74
+Current pattern: for (const session of pending) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/lectureSessionMonitor.ts
+Line number: 92
+Current pattern: for (const session of pending) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/lectureSessionMonitor.ts
+Line number: 226
+Current pattern: for (const fileName of files) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/services/lectureSessionMonitor.ts
+Line number: 275
+Current pattern: for (const note of legacy) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/services/lectureSessionMonitor.ts
+Line number: 344
+Current pattern: for (const fileName of files) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/services/jsonBackupService.ts
+Line number: 135
+Current pattern: for (const table of JSON_BACKUP_TABLES) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/services/jsonBackupService.ts
+Line number: 261
+Current pattern: for (const table of JSON_BACKUP_DELETE_ORDER) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/services/jsonBackupService.ts
+Line number: 280
+Current pattern: for (const table of JSON_BACKUP_RESTORE_ORDER) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/services/jsonBackupService.ts
+Line number: 286
+Current pattern: for (const rawRow of rows) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/services/recordingValidation.ts
+Line number: 37
+Current pattern: for (let attempt = 0; attempt < policy.attempts; attempt += 1) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/notificationService.ts
+Line number: 39
+Current pattern: for (const notif of scheduled) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: safe (Independent notification operations)
+
+File: src/services/notificationService.ts
+Line number: 252
+Current pattern: for (let i = 0; i < messages.length; i++) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: safe (Independent notification operations)
+
+File: src/services/notificationService.ts
+Line number: 280
+Current pattern: for (let i = 0; i < messages.length; i++) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: safe (Independent notification operations)
+
+File: src/services/notificationService.ts
+Line number: 428
+Current pattern: for (const msg of aiMessages) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: safe (Independent notification operations)
+
+File: src/services/lecture/transcription.ts
+Line number: 57
+Current pattern: for (let i = 0; i < nativeChunks.length; i++) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/services/lecture/transcription.ts
+Line number: 100
+Current pattern: for (const chunk of nativeChunks) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/services/examDateSyncService.ts
+Line number: 250
+Current pattern: for (const url of config.urls) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: safe (Independent network operations, maybe need concurrency limit)
+
+File: src/services/offlineQueue.ts
+Line number: 244
+Current pattern: for (const item of items) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/ai/llmRouting.ts
+Line number: 254
+Current pattern: for (const model of GROQ_MODELS) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (LLM / API operations rate limiting)
+
+File: src/services/ai/llmRouting.ts
+Line number: 277
+Current pattern: for (const model of openRouterCandidates) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (LLM / API operations rate limiting)
+
+File: src/services/ai/generate.ts
+Line number: 36
+Current pattern: for (const backend of attempts) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/ai/generate.ts
+Line number: 94
+Current pattern: for (const backend of attempts) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/offlineTranscription/whisperModelManager.ts
+Line number: 502
+Current pattern: for (const [size, info] of Object.entries(MODEL_REGISTRY)) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/offlineTranscription/audioRecorder.ts
+Line number: 616
+Current pattern: for (const file of this.tempFilesToClean) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/services/offlineTranscription/batchTranscriber.ts
+Line number: 134
+Current pattern: for (let i = 0; i < chunks.length; i++) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/services/offlineTranscription/batchTranscriber.ts
+Line number: 365
+Current pattern: for (const chunk of chunks) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/services/appLauncher.ts
+Line number: 93
+Current pattern: for (const pkg of YOUTUBE_PREFERRED_PACKAGES) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/transcription/analysis.ts
+Line number: 45
+Current pattern: for (let i = 0; i < segments.length; i++) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/transcription/matching.ts
+Line number: 26
+Current pattern: for (const topicName of topics) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/transcription/matching.ts
+Line number: 44
+Current pattern: for (const matchId of semanticMatches) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/services/transcription/matching.ts
+Line number: 62
+Current pattern: for (const p of parents) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/db/queries/progress.ts
+Line number: 549
+Current pattern: for (const row of overdue) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 60
+Current pattern: for (const sql of ALL_SCHEMAS) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 69
+Current pattern: for (const sql of staleIndexes) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 77
+Current pattern: for (const sql of DB_INDEXES) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 119
+Current pattern: for (const m of MIGRATIONS) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 157
+Current pattern: for (const sql of integrityRepairs) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 223
+Current pattern: for (const row of rows) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 249
+Current pattern: for (const s of SUBJECTS_SEED) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 262
+Current pattern: for (const [subjectId, name, priority, minutes] of TOPICS_SEED) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 275
+Current pattern: for (const [subjectId, name, priority, minutes, parentName] of TOPICS_SEED) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/db/database.ts
+Line number: 303
+Current pattern: for (const [subjectId, name, priority, minutes] of VAULT_TOPICS_SEED) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/screens/TranscriptHistoryScreen.tsx
+Line number: 272
+Current pattern: for (const id of idsToDelete) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (File operations)
+
+File: src/screens/DailyChallengeScreen.tsx
+Line number: 79
+Current pattern: for (let i = 0; i < combined.length; i++) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: safe (Independent network operations, maybe need concurrency limit)
+
+File: src/screens/DailyChallengeScreen.tsx
+Line number: 149
+Current pattern: for (const topicId of finalCorrect) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/screens/DailyChallengeScreen.tsx
+Line number: 152
+Current pattern: for (const topicId of finalWrong) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review
+
+File: src/screens/LectureModeScreen.tsx
+Line number: 687
+Current pattern: for (const topicId of matchedTopicIds) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)
+
+File: src/screens/NotesSearchScreen.tsx
+Line number: 168
+Current pattern: for (const key of keysToDelete) {
+Proposed optimization: Use Promise.all / Promise.allSettled
+Risk level: needs review (SQLite queries are often unsafe for concurrent map execution)

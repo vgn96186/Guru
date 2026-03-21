@@ -48,6 +48,10 @@ start_debug*.log
 .zencoder/
 .zenflow/
 .agents/
+.cursor/
+.jules/
+.learnings/
+.claude/
 
 # Build artifacts
 modules/*/android/build/
@@ -60,9 +64,18 @@ android/.gradle/
 *.xapk
 *.apk
 
-# UI dumps
+# Debug dumps
+dump.xml
 window_dump.xml
-.claude/
+logcat_dump.txt
+*.patch
+
+# Detox test artifacts
+artifacts/
+
+# Standalone design prototypes
+Floating Overlay Widget Design/
+Floating Overlay Widget Design.zip
 
 # IDE / editor (do not commit)
 .idea/

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Message } from './aiService';
 import { registerProcessor, markCompleted } from './offlineQueue';
-import { runFullTranscriptionPipeline } from './lectureSessionMonitor';
+import { runFullTranscriptionPipeline } from './lecture/lectureSessionMonitor';
 import { profileRepository } from '../db/repositories';
 import { BUNDLED_GROQ_KEY } from '../config/appConfig';
 

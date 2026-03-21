@@ -19,7 +19,7 @@ import {
   retryFailedTranscriptions,
   retryPendingNoteEnhancements,
   stopRecordingHealthCheck,
-} from '../services/lectureSessionMonitor';
+} from '../services/lecture/lectureSessionMonitor';
 import { showToast } from '../components/Toast';
 import { stripFileUri } from '../services/fileUri';
 import { validateRecordingWithBackoff } from '../services/recordingValidation';

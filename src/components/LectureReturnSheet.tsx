@@ -22,7 +22,7 @@ import {
 } from 'react-native';
 import { theme } from '../constants/theme';
 import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
-import { type LecturePipelineStage } from '../services/lectureSessionMonitor';
+import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
 import SubjectSelectionCard from './SubjectSelectionCard';
 

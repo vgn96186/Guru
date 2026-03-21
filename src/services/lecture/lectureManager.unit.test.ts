@@ -22,7 +22,7 @@ const mockSaveTranscriptToFile = jest.fn();
 const mockDeleteAsync = jest.fn();
 const mockClipboardSetString = jest.fn();
 
-jest.mock('../db/queries/aiCache', () => ({
+jest.mock('../../db/queries/aiCache', () => ({
   getLectureNoteById: (...args: unknown[]) => mockGetLectureNoteById(...args),
   updateLectureTranscriptNote: (...args: unknown[]) => mockUpdateLectureTranscriptNote(...args),
   updateLectureAnalysisMetadata: (...args: unknown[]) => mockUpdateLectureAnalysisMetadata(...args),
@@ -31,17 +31,17 @@ jest.mock('../db/queries/aiCache', () => ({
   updateLectureRecordingPath: (...args: unknown[]) => mockUpdateLectureRecordingPath(...args),
 }));
 
-jest.mock('../db/queries/topics', () => ({
+jest.mock('../../db/queries/topics', () => ({
   getSubjectByName: (...args: unknown[]) => mockGetSubjectByName(...args),
 }));
 
-jest.mock('./transcriptionService', () => ({
+jest.mock('../transcriptionService', () => ({
   analyzeTranscript: (...args: unknown[]) => mockAnalyzeTranscript(...args),
   generateADHDNote: (...args: unknown[]) => mockGenerateADHDNote(...args),
   transcribeAudio: (...args: unknown[]) => mockTranscribeAudio(...args),
 }));
 
-jest.mock('./transcriptStorage', () => ({
+jest.mock('../transcriptStorage', () => ({
   getTranscriptText: (...args: unknown[]) => mockGetTranscriptText(...args),
   saveTranscriptToFile: (...args: unknown[]) => mockSaveTranscriptToFile(...args),
 }));

@@ -10,7 +10,10 @@ import {
   updateSessionRecordingPath,
   updateSessionTranscriptionStatus,
 } from '../db/queries/externalLogs';
-import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lectureSessionMonitor';
+import {
+  startRecordingHealthCheck,
+  stopRecordingHealthCheck,
+} from './lecture/lectureSessionMonitor';
 import { useAppStore } from '../store/useAppStore';
 import {
   MOCK_EXTERNAL_LECTURE_AUDIO_ENABLED,

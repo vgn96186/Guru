@@ -2,7 +2,7 @@ import { resolveLectureSubjectRequirement } from './lectureSubjectRequirement';
 
 const mockGetSubjectByName = jest.fn();
 
-jest.mock('../db/queries/topics', () => ({
+jest.mock('../../db/queries/topics', () => ({
   getSubjectByName: (...args: unknown[]) => mockGetSubjectByName(...args),
 }));
 

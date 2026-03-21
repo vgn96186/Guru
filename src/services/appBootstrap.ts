@@ -18,7 +18,7 @@ import {
   autoRepairLegacyNotes,
   scanAndRecoverOrphanedRecordings,
   scanAndRecoverOrphanedTranscripts,
-} from './lectureSessionMonitor';
+} from './lecture/lectureSessionMonitor';
 import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
 import { showToast } from '../components/Toast';
 

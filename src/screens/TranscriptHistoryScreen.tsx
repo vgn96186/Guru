@@ -39,7 +39,10 @@ import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import { Audio } from 'expo-av';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { buildLectureDisplayTitle, resolveLectureSubjectLabel } from '../services/lectureIdentity';
+import {
+  buildLectureDisplayTitle,
+  resolveLectureSubjectLabel,
+} from '../services/lecture/lectureIdentity';
 import {
   copyLectureTranscript,
   filterLectureHistoryItems,
@@ -49,7 +52,7 @@ import {
   removeLectureRecording,
   transcribeLectureRecordingToNote,
   type LectureManagerFilter,
-} from '../services/lectureManager';
+} from '../services/lecture/lectureManager';
 import ScreenHeader from '../components/ScreenHeader';
 
 const SUBJECT_COLORS: Record<string, string> = {

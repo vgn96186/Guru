@@ -23,7 +23,7 @@ import {
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
-import { buildLectureDisplayTitle } from '../services/lectureIdentity';
+import { buildLectureDisplayTitle } from '../services/lecture/lectureIdentity';
 
 interface TopicNoteResult {
   type: 'topic';

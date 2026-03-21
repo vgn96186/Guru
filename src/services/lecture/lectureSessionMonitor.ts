@@ -9,27 +9,27 @@ import {
   isMeaningfulLectureAnalysis,
   transcribeAudio,
   type LectureAnalysis,
-} from './transcriptionService';
+} from '../transcriptionService';
 import {
   updateLectureTranscriptNote,
   getLectureNoteById,
   getLegacyLectureNotes,
-} from '../db/queries/aiCache';
+} from '../../db/queries/aiCache';
 import {
   updateSessionTranscriptionStatus,
   updateSessionNoteEnhancementStatus,
   getFailedOrPendingTranscriptions,
   getSessionsNeedingNoteEnhancement,
   updateSessionPipelineTelemetry,
-} from '../db/queries/externalLogs';
-import { startRecordingHealthCheck, stopRecordingHealthCheck } from './lecture/health';
-import { getRecordingInfo } from './lecture/transcription';
-import { saveLecturePersistence } from './lecture/persistence';
-import { notifyTranscriptionFailure, notifyTranscriptionRecovered } from './notificationService';
-import { getTranscriptText, backupNoteToPublic } from './transcriptStorage';
-import { generateEmbedding } from './ai/embeddingService';
-import { profileRepository } from '../db/repositories';
-import { notifyDbUpdate, DB_EVENT_KEYS } from './databaseEvents';
+} from '../../db/queries/externalLogs';
+import { startRecordingHealthCheck, stopRecordingHealthCheck } from './health';
+import { getRecordingInfo } from './transcription';
+import { saveLecturePersistence } from './persistence';
+import { notifyTranscriptionFailure, notifyTranscriptionRecovered } from '../notificationService';
+import { getTranscriptText, backupNoteToPublic } from '../transcriptStorage';
+import { generateEmbedding } from '../ai/embeddingService';
+import { profileRepository } from '../../db/repositories';
+import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
 
 export type LecturePipelineStage = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export interface LecturePipelineProgress {
@@ -244,7 +244,7 @@ async function enhanceNoteInBackground(noteId: number, logId: number, analysis: 
  */
 export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
   try {
-    const db = (await import('../db/database')).getDb();
+    const db = (await import('../../db/database')).getDb();
     const FileSystem = await import('expo-file-system/legacy');
     const { Platform } = await import('react-native');
 
@@ -333,7 +333,7 @@ export async function autoRepairLegacyNotes(): Promise<number> {
       await updateLectureTranscriptNote(note.id, newNote);
 
       // 2. Update metadata in the DB if possible
-      const db = (await import('../db/database')).getDb();
+      const db = (await import('../../db/database')).getDb();
       await db.runAsync(
         'UPDATE lecture_notes SET summary = ?, topics_json = ?, confidence = ?, subject_id = (SELECT id FROM subjects WHERE name = ? LIMIT 1) WHERE id = ?',
         [
@@ -358,9 +358,9 @@ export async function autoRepairLegacyNotes(): Promise<number> {
  * NOT referenced in the database and creates lecture notes for them.
  */
 export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
-  const { useAppStore } = await import('../store/useAppStore');
+  const { useAppStore } = await import('../../store/useAppStore');
   try {
-    const db = (await import('../db/database')).getDb();
+    const db = (await import('../../db/database')).getDb();
     const FileSystem = await import('expo-file-system/legacy');
     const { Platform } = await import('react-native');
 
@@ -407,7 +407,7 @@ export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
         const analysis = await analyzeTranscript(content);
         const quickNote = buildQuickLectureNote(analysis);
 
-        const { saveLecturePersistence } = await import('./lecture/persistence');
+        const { saveLecturePersistence } = await import('./persistence');
         await saveLecturePersistence({
           analysis: { ...analysis, transcript: content },
           appName: 'Recovered Folder',

@@ -25,7 +25,7 @@ import { saveLectureTranscript } from '../db/queries/aiCache';
 import { markTopicsFromLecture } from '../services/transcription/matching';
 import { getDb } from '../db/database';
 import { showToast } from '../components/Toast';
-import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
+import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
 import { theme } from '../constants/theme';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';

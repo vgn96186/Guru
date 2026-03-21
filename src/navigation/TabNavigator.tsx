@@ -58,7 +58,7 @@ import {
   isMeaningfulLectureAnalysis,
   type LectureAnalysis,
 } from '../services/transcriptionService';
-import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
+import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
 import { getSubjectByName } from '../db/queries/topics';
 import { saveLectureTranscript } from '../db/queries/aiCache';
 import { getDb } from '../db/database';

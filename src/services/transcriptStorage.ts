@@ -2,7 +2,7 @@ import * as FileSystemLegacy from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { profileRepository } from '../db/repositories';
 import { generateSecureRandomString } from './cryptoUtils';
-import { buildLectureArtifactFileName } from './lectureIdentity';
+import { buildLectureArtifactFileName } from './lecture/lectureIdentity';
 import { isFileUri, stripFileUri, toFileUri } from './fileUri';
 import { copyFileToPublicBackup } from '../../modules/app-launcher';
 

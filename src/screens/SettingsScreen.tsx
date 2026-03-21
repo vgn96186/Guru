@@ -1192,7 +1192,8 @@ export default function SettingsScreen() {
               runMaintenanceTask(
                 'retry',
                 async () => {
-                  const { retryFailedTasks } = await import('../services/lectureSessionMonitor');
+                  const { retryFailedTasks } =
+                    await import('../services/lecture/lectureSessionMonitor');
                   const activeProfile = await getUserProfile();
                   return retryFailedTasks(activeProfile?.groqApiKey || undefined);
                 },
@@ -1219,7 +1220,7 @@ export default function SettingsScreen() {
                 'legacy',
                 async () => {
                   const { autoRepairLegacyNotes } =
-                    await import('../services/lectureSessionMonitor');
+                    await import('../services/lecture/lectureSessionMonitor');
                   return autoRepairLegacyNotes();
                 },
                 {
@@ -1245,7 +1246,7 @@ export default function SettingsScreen() {
                 'transcripts',
                 async () => {
                   const { scanAndRecoverOrphanedTranscripts } =
-                    await import('../services/lectureSessionMonitor');
+                    await import('../services/lecture/lectureSessionMonitor');
                   return scanAndRecoverOrphanedTranscripts();
                 },
                 {
@@ -1271,7 +1272,7 @@ export default function SettingsScreen() {
                 'recordings',
                 async () => {
                   const { scanAndRecoverOrphanedRecordings } =
-                    await import('../services/lectureSessionMonitor');
+                    await import('../services/lecture/lectureSessionMonitor');
                   return scanAndRecoverOrphanedRecordings();
                 },
                 {

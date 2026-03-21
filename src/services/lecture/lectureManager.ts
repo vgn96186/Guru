@@ -7,11 +7,11 @@ import {
   updateLectureTranscriptArtifacts,
   updateLectureTranscriptNote,
   type LectureHistoryItem,
-} from '../db/queries/aiCache';
-import { getSubjectByName } from '../db/queries/topics';
-import { analyzeTranscript, generateADHDNote, transcribeAudio } from './transcriptionService';
-import { getTranscriptText, saveTranscriptToFile } from './transcriptStorage';
-import { toFileUri } from './fileUri';
+} from '../../db/queries/aiCache';
+import { getSubjectByName } from '../../db/queries/topics';
+import { analyzeTranscript, generateADHDNote, transcribeAudio } from '../transcriptionService';
+import { getTranscriptText, saveTranscriptToFile } from '../transcriptStorage';
+import { toFileUri } from '../fileUri';
 
 export type LectureManagerFilter = 'all' | 'recording' | 'transcript' | 'needs_ai' | 'needs_review';
 

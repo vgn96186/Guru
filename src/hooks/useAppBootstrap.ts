@@ -5,7 +5,7 @@ import { syncExamDatesFromInternet } from '../services/examDateSyncService';
 import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
 import { navigationRef } from '../navigation/navigationRef';
 import { dailyLogRepository, profileRepository } from '../db/repositories';
-import { retryFailedTasks } from '../services/lectureSessionMonitor';
+import { retryFailedTasks } from '../services/lecture/lectureSessionMonitor';
 import { invalidatePlanCache } from '../services/studyPlanner';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
 import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';

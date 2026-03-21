@@ -10,7 +10,7 @@ import {
   transcribeLectureWithRecovery,
   type LecturePipelineProgress,
   type LecturePipelineStage,
-} from '../services/lectureSessionMonitor';
+} from '../services/lecture/lectureSessionMonitor';
 import { catalyzeTranscript } from '../services/aiService';
 import { BUNDLED_HF_TOKEN } from '../config/appConfig';
 import { profileRepository } from '../db/repositories';
@@ -19,7 +19,7 @@ import {
   updateSessionNoteEnhancementStatus,
 } from '../db/queries/externalLogs';
 import { useAppStore } from '../store/useAppStore';
-import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
+import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
 
 export interface QuizQuestion {
   question: string;

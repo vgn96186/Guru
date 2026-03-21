@@ -20,8 +20,8 @@ import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
 import { getDb } from '../db/database';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
-import { buildLectureDisplayTitle } from '../services/lectureIdentity';
-import { resolveLectureSubjectRequirement } from '../services/lectureSubjectRequirement';
+import { buildLectureDisplayTitle } from '../services/lecture/lectureIdentity';
+import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
@@ -80,7 +80,7 @@ import { getFailedOrPendingTranscriptions, type ExternalAppLog } from '../db/que
 import * as DocumentPicker from 'expo-document-picker';
 import { useAppStore } from '../store/useAppStore';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
-import { runFullTranscriptionPipeline } from '../services/lectureSessionMonitor';
+import { runFullTranscriptionPipeline } from '../services/lecture/lectureSessionMonitor';
 import { Audio } from 'expo-av';
 
 export default function NotesHubScreen() {

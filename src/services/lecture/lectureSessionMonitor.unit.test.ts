@@ -1,6 +1,6 @@
 import { describe, it, expect, jest, afterEach, beforeEach } from '@jest/globals';
 
-jest.mock('../components/Toast', () => ({
+jest.mock('../../components/Toast', () => ({
   showToast: jest.fn(),
 }));
 
@@ -35,18 +35,17 @@ jest.mock(
   { virtual: true },
 );
 
-
 jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: '/mock/dir/',
   getInfoAsync: jest.fn(),
   readDirectoryAsync: jest.fn(),
 }));
 
-jest.mock('../db/database', () => ({
+jest.mock('../../db/database', () => ({
   getDb: jest.fn(),
 }));
 
-jest.mock('../db/repositories', () => ({
+jest.mock('../../db/repositories', () => ({
   profileRepository: {
     getProfile: jest.fn(() => Promise.resolve({ useLocalWhisper: false })),
   },
@@ -56,7 +55,7 @@ jest.mock('../db/repositories', () => ({
 }));
 
 // We'll mock the transcribeAudio to avoid full pipeline
-jest.mock('./transcriptionService', () => ({
+jest.mock('../transcriptionService', () => ({
   analyzeTranscript: jest.fn(),
   generateADHDNote: jest.fn(),
   buildQuickLectureNote: jest.fn(),
@@ -67,7 +66,7 @@ jest.mock('./transcriptionService', () => ({
 }));
 
 // Mock db queries
-jest.mock('../db/queries/externalLogs', () => ({
+jest.mock('../../db/queries/externalLogs', () => ({
   getFailedOrPendingTranscriptions: jest.fn(),
   updateSessionTranscriptionStatus: jest.fn(),
   updateSessionNoteEnhancementStatus: jest.fn(),
@@ -75,28 +74,28 @@ jest.mock('../db/queries/externalLogs', () => ({
   updateSessionPipelineTelemetry: jest.fn(),
 }));
 
-jest.mock('./notificationService', () => ({
+jest.mock('../notificationService', () => ({
   notifyTranscriptionFailure: jest.fn(),
   notifyTranscriptionRecovered: jest.fn(),
 }));
 
-jest.mock('./lecture/persistence', () => ({
+jest.mock('./persistence', () => ({
   saveLecturePersistence: jest.fn(),
 }));
 
-jest.mock('../db/queries/aiCache', () => ({
+jest.mock('../../db/queries/aiCache', () => ({
   updateLectureTranscriptNote: jest.fn(),
   getLectureNoteById: jest.fn(),
   getLegacyLectureNotes: jest.fn(),
 }));
 
-jest.mock('./transcriptStorage', () => ({
+jest.mock('../transcriptStorage', () => ({
   getTranscriptText: jest.fn(),
   backupNoteToPublic: jest.fn(),
 }));
 
 // We'll mock generateEmbedding to avoid API calls
-jest.mock('./ai/embeddingService', () => ({
+jest.mock('../ai/embeddingService', () => ({
   generateEmbedding: jest.fn(),
 }));
 
@@ -108,10 +107,10 @@ describe('retryFailedTranscriptions', () => {
   beforeEach(async () => {
     jest.resetModules();
 
-    externalLogsMock = require('../db/queries/externalLogs');
-    transcriptionServiceMock = require('./transcriptionService');
-    const persistenceMock = require('./lecture/persistence');
-    const aiCacheMock = require('../db/queries/aiCache');
+    externalLogsMock = require('../../db/queries/externalLogs');
+    transcriptionServiceMock = require('../transcriptionService');
+    const persistenceMock = require('./persistence');
+    const aiCacheMock = require('../../db/queries/aiCache');
 
     persistenceMock.saveLecturePersistence.mockResolvedValue(999);
     transcriptionServiceMock.generateADHDNote.mockResolvedValue('');
@@ -227,8 +226,8 @@ describe('saveLectureAnalysisQuick', () => {
 
   beforeEach(async () => {
     jest.resetModules();
-    transcriptionServiceMock = require('./transcriptionService');
-    persistenceMock = require('./lecture/persistence');
+    transcriptionServiceMock = require('../transcriptionService');
+    persistenceMock = require('./persistence');
     transcriptionServiceMock.generateADHDNote.mockResolvedValue('');
     lectureSessionMonitor = require('./lectureSessionMonitor');
   });
@@ -279,11 +278,11 @@ describe('runFullTranscriptionPipeline note enhancement safety', () => {
 
   beforeEach(async () => {
     jest.resetModules();
-    transcriptionServiceMock = require('./transcriptionService');
-    persistenceMock = require('./lecture/persistence');
-    aiCacheMock = require('../db/queries/aiCache');
-    transcriptStorageMock = require('./transcriptStorage');
-    externalLogsMock = require('../db/queries/externalLogs');
+    transcriptionServiceMock = require('../transcriptionService');
+    persistenceMock = require('./persistence');
+    aiCacheMock = require('../../db/queries/aiCache');
+    transcriptStorageMock = require('../transcriptStorage');
+    externalLogsMock = require('../../db/queries/externalLogs');
     lectureSessionMonitor = require('./lectureSessionMonitor');
   });
 

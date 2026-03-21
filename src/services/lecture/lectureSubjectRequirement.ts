@@ -1,5 +1,5 @@
-import { getSubjectByName } from '../db/queries/topics';
-import type { Subject } from '../types';
+import { getSubjectByName } from '../../db/queries/topics';
+import type { Subject } from '../../types';
 
 const GENERIC_SUBJECT_NAMES = new Set(['unknown', 'general']);
 

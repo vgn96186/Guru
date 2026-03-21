@@ -7,7 +7,7 @@ jest.mock('./offlineQueue', () => ({
   markCompleted: (...args: any[]) => mockMarkCompleted(...args),
 }));
 
-jest.mock('./lectureSessionMonitor', () => ({
+jest.mock('./lecture/lectureSessionMonitor', () => ({
   runFullTranscriptionPipeline: (...args: any[]) => mockRunFullTranscriptionPipeline(...args),
 }));
 

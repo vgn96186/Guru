@@ -55,7 +55,7 @@ jest.mock('../db/queries/externalLogs', () => ({
   updateSessionPipelineTelemetry: mockUpdateSessionPipelineTelemetry,
 }));
 
-jest.mock('../services/lectureSessionMonitor', () => ({
+jest.mock('../services/lecture/lectureSessionMonitor', () => ({
   retryFailedTranscriptions: mockRetryFailedTranscriptions,
   retryPendingNoteEnhancements: mockRetryPendingNoteEnhancements,
   stopRecordingHealthCheck: mockStopRecordingHealthCheck,

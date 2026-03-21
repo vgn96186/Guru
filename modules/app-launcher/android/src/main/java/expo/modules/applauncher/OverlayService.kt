@@ -359,7 +359,9 @@ class OverlayService : Service(), LifecycleOwner {
             } catch (_: Exception) { dpToPx(24) }
             y = statusBarHeight + dpToPx(16)
         }
-        overlayView!!.setDragListener(DragTouchListener(this, params, windowManager!!))
+        overlayView!!.setDragListener(DragTouchListener(this, params, windowManager!!, overlayView!!) {
+            overlayView?.toggleExpanded()
+        })
         windowManager!!.addView(overlayView, params)
         isOverlayVisible = true
     }
@@ -410,87 +412,100 @@ class OverlayService : Service(), LifecycleOwner {
         val onReturnClick: () -> Unit
     ) : android.widget.FrameLayout(context) {
 
-        private val bubbleView = CompanionBubbleView(context, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes) {
-            toggleExpanded()
-        }
+        private val bubbleView = CompanionBubbleView(context, faceTracking, pomodoroEnabled, pomodoroIntervalMinutes)
 
         private var isExpanded = false
         private var isRecordingPaused = false
         private var isPomodoroMode = false
 
+        private fun dpToPx(dp: Int, ctx: Context) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), ctx.resources.displayMetrics).toInt()
+
         private val mainContainer = android.widget.LinearLayout(context).apply {
             orientation = android.widget.LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
             layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.parseColor("#121214")) // Very dark premium black
+                cornerRadius = dpToPx(32, context).toFloat()
+            }
         }
 
-        private val headerRow = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dpToPx(20, context), dpToPx(12, context), dpToPx(20, context), dpToPx(12, context))
-            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+        private val contentWrapper = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            layoutParams = android.widget.LinearLayout.LayoutParams(
+                dpToPx(72, context), // sleek consistent pill width
+                LayoutParams.WRAP_CONTENT
+            )
+            setPadding(0, dpToPx(24, context), 0, dpToPx(24, context))
         }
 
         private val recDot = View(context).apply {
             background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(Color.parseColor("#FF5252"))
+                setColor(Color.parseColor("#FF453A"))
             }
-            layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(10, context), dpToPx(10, context)).apply {
-                marginEnd = dpToPx(10, context)
+            layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(12, context), dpToPx(12, context)).apply {
+                bottomMargin = dpToPx(14, context)
             }
         }
 
         private val timerText = android.widget.TextView(context).apply {
             text = "00:00"
-            textSize = 18f
+            textSize = 15f
             setTextColor(Color.WHITE)
-            setTypeface(android.graphics.Typeface.create(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD))
-            letterSpacing = 0.02f
+            setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
+            letterSpacing = 0.05f
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
-                marginEnd = dpToPx(14, context)
+                bottomMargin = dpToPx(6, context)
             }
         }
 
         private val headerText = android.widget.TextView(context).apply {
-            text = appLabel.uppercase()
-            textSize = 13f
-            setTextColor(Color.parseColor("#A0A3B1"))
-            setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-            letterSpacing = 0.05f
+            text = appLabel.take(7).uppercase()
+            textSize = 9f
+            setTextColor(Color.parseColor("#8E8E93"))
+            setTypeface(android.graphics.Typeface.create("sans-serif-bold", android.graphics.Typeface.BOLD))
+            letterSpacing = 0.1f
             maxLines = 1
             ellipsize = android.text.TextUtils.TruncateAt.END
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
         }
 
         private val statusText = android.widget.TextView(context).apply {
-            text = "Recording"
-            textSize = 14f
-            setTextColor(Color.parseColor("#A0A3B1"))
+            text = "RECORDING"
+            textSize = 9f
+            setTextColor(Color.parseColor("#34C759"))
+            setTypeface(android.graphics.Typeface.create("sans-serif-bold", android.graphics.Typeface.BOLD))
+            letterSpacing = 0.1f
             gravity = Gravity.CENTER
-            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
-                bottomMargin = dpToPx(12, context)
+            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dpToPx(16, context)
             }
             visibility = View.GONE
         }
 
-        private val actionsRow = android.widget.LinearLayout(context).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER
+        private val actionsCol = android.widget.LinearLayout(context).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
             visibility = View.GONE
-            setPadding(dpToPx(16, context), dpToPx(0, context), dpToPx(16, context), dpToPx(16, context))
-            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                topMargin = dpToPx(16, context)
+            }
         }
 
         private val pauseBtn = android.widget.TextView(context).apply {
-            text = "PAUSE"
-            textSize = 13f
+            text = "II"
+            textSize = 14f
             setTextColor(Color.WHITE)
-            setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            setTypeface(android.graphics.Typeface.create("sans-serif-black", android.graphics.Typeface.BOLD))
             gravity = Gravity.CENTER
-            setPadding(dpToPx(16, context), dpToPx(12, context), dpToPx(16, context), dpToPx(12, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#1AFFFFFF"))
-                cornerRadius = dpToPx(24, context).toFloat()
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(Color.parseColor("#2C2C2E"))
+            }
+            layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(44, context), dpToPx(44, context)).apply {
+                bottomMargin = dpToPx(12, context)
             }
             setOnClickListener {
                 isRecordingPaused = !isRecordingPaused
@@ -504,16 +519,15 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         private val finishBtn = android.widget.TextView(context).apply {
-            text = "FINISH"
-            textSize = 13f
+            text = "■"
+            textSize = 16f
             setTextColor(Color.WHITE)
-            setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
             gravity = Gravity.CENTER
-            setPadding(dpToPx(16, context), dpToPx(12, context), dpToPx(16, context), dpToPx(12, context))
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#E53935")) 
-                cornerRadius = dpToPx(24, context).toFloat()
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(Color.parseColor("#FF453A"))
             }
+            layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(44, context), dpToPx(44, context))
             setOnClickListener {
                 vibrateLight(context)
                 context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().putBoolean(PREF_RETURN_REQUESTED, true).apply()
@@ -521,61 +535,41 @@ class OverlayService : Service(), LifecycleOwner {
             }
         }
 
-        private val quizBtn = android.widget.TextView(context).apply {
-            text = "Take Break & Quiz"
-            textSize = 14f
-            setTextColor(Color.WHITE)
-            setTypeface(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-            gravity = Gravity.CENTER
-            setPadding(dpToPx(20, context), dpToPx(12, context), dpToPx(20, context), dpToPx(12, context))
-            background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#FF9800"))
-                cornerRadius = dpToPx(24, context).toFloat()
-            }
-            layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
-                leftMargin = dpToPx(16, context)
-                rightMargin = dpToPx(16, context)
-                bottomMargin = dpToPx(16, context)
-            }
-            visibility = View.GONE
-            setOnClickListener { v ->
-                vibrateLight(context)
-                isPomodoroMode = false
-                toggleExpanded()
-                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("guru-study://pomodoro"))
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                context.startActivity(intent)
-            }
-        }
-
         init {
-            elevation = 30f
             clipChildren = false
             clipToPadding = false
 
-            // Do not use MATCH_PARENT for bubbleView in FrameLayout for Floating Windows
-            // We will precisely measure it in onMeasure
-            bubbleView.layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            bubbleView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
             addView(bubbleView)
 
-            headerRow.addView(recDot)
-            headerRow.addView(timerText)
-            headerRow.addView(headerText)
+            contentWrapper.addView(recDot)
+            contentWrapper.addView(timerText)
+            contentWrapper.addView(headerText)
+            contentWrapper.addView(statusText)
 
-            actionsRow.addView(pauseBtn, android.widget.LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = dpToPx(8, context) })
-            actionsRow.addView(finishBtn, android.widget.LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f).apply { marginStart = dpToPx(8, context) })
+            actionsCol.addView(pauseBtn)
+            actionsCol.addView(finishBtn)
+            contentWrapper.addView(actionsCol)
 
-            mainContainer.addView(headerRow)
-            mainContainer.addView(statusText)
-            mainContainer.addView(actionsRow)
-            mainContainer.addView(quizBtn)
-
-            addView(mainContainer)
+            mainContainer.addView(contentWrapper)
+            
+            // Apply margins to the main container so it centers natively, securing padding-free space for the glow!
+            val mainLp = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
+            mainLp.gravity = Gravity.CENTER
+            val margin = dpToPx(24, context)
+            mainLp.setMargins(margin, margin, margin, margin)
+            addView(mainContainer, mainLp)
 
             bubbleView.onPomodoroSuggest = {
                 if (!isExpanded) {
                     isPomodoroMode = true
                     toggleExpanded()
+                }
+            }
+            
+            bubbleView.onBreathe = { breathe ->
+                if (!isRecordingPaused) {
+                    recDot.alpha = 0.4f + (0.6f * breathe)
                 }
             }
 
@@ -586,86 +580,65 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-            // Measure the main container to determine our true exact size
             mainContainer.measure(
                 MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.AT_MOST),
                 MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec), MeasureSpec.AT_MOST)
             )
             
-            val w = mainContainer.measuredWidth
-            val h = mainContainer.measuredHeight
+            val padding = dpToPx(24, context)
+            val w = mainContainer.measuredWidth + (padding * 2)
+            val h = mainContainer.measuredHeight + (padding * 2)
             
-            // Force the bubbleView background to precisely match the mainContainer's size
             bubbleView.measure(
                 MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY)
             )
             
-            // Set our overall size to strictly wrap to the mainContainer
             setMeasuredDimension(w, h)
         }
 
         fun setDragListener(listener: OnTouchListener) {
             bubbleView.setOnTouchListener(listener)
-            headerRow.setOnTouchListener(listener)
+            mainContainer.setOnTouchListener(listener)
+            contentWrapper.setOnTouchListener(listener)
         }
-
-        private fun dpToPx(dp: Int, ctx: Context) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp.toFloat(), ctx.resources.displayMetrics).toInt()
 
         fun updateTime(secs: Int) {
             bubbleView.updateTime(secs)
             val mins = secs / 60
             val s = secs % 60
             timerText.text = "${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}"
-            
-            if (!isRecordingPaused) {
-                recDot.alpha = if (secs % 2 == 0) 1f else 0.4f
-            }
         }
 
         fun updateFocusState(state: FocusState) { bubbleView.updateFocusState(state) }
 
         fun setPaused(paused: Boolean) {
             isRecordingPaused = paused
-            pauseBtn.text = if (paused) "RESUME" else "PAUSE"
-            statusText.text = if (paused) "Paused" else "Recording"
+            pauseBtn.text = if (paused) "▶" else "II"
+            statusText.text = if (paused) "PAUSED" else "RECORDING"
+            statusText.setTextColor(if (paused) Color.parseColor("#8E8E93") else Color.parseColor("#34C759"))
             recDot.background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(if (paused) Color.parseColor("#A0A3B1") else Color.parseColor("#FF5252"))
+                setColor(if (paused) Color.parseColor("#8E8E93") else Color.parseColor("#FF453A"))
             }
             recDot.alpha = 1f
         }
 
-        private fun toggleExpanded() {
+        fun toggleExpanded() {
             isExpanded = !isExpanded
             vibrateLight(context)
 
             if (isExpanded) {
                 statusText.visibility = View.VISIBLE
-                if (isPomodoroMode) {
-                    quizBtn.visibility = View.VISIBLE
-                    actionsRow.visibility = View.GONE
-                    statusText.text = "Time for a break?"
-                } else {
-                    quizBtn.visibility = View.GONE
-                    actionsRow.visibility = View.VISIBLE
-                    statusText.text = if (isRecordingPaused) "Paused" else "Recording"
-                }
-
+                actionsCol.visibility = View.VISIBLE
                 statusText.alpha = 0f
-                actionsRow.alpha = 0f
-                quizBtn.alpha = 0f
+                actionsCol.alpha = 0f
                 statusText.animate().alpha(1f).setDuration(200).start()
-                actionsRow.animate().alpha(1f).setDuration(200).start()
-                quizBtn.animate().alpha(1f).setDuration(200).start()
-                
+                actionsCol.animate().alpha(1f).setDuration(200).start()
             } else {
-                isPomodoroMode = false
                 statusText.visibility = View.GONE
-                actionsRow.visibility = View.GONE
-                quizBtn.visibility = View.GONE
+                actionsCol.visibility = View.GONE
             }
-            // Request layout to smoothly animate window bounds
             requestLayout()
         }
 
@@ -689,11 +662,11 @@ class OverlayService : Service(), LifecycleOwner {
         context: Context,
         private val faceTracking: Boolean,
         private val pomodoroEnabled: Boolean,
-        private val pomodoroIntervalMinutes: Int,
-        val onTap: () -> Unit
+        private val pomodoroIntervalMinutes: Int
     ) : View(context) {
 
         var onPomodoroSuggest: (() -> Unit)? = null
+        var onBreathe: ((Float) -> Unit)? = null
         private val density = context.resources.displayMetrics.density
         private fun dpToPx(dp: Float) = dp * density
 
@@ -706,12 +679,13 @@ class OverlayService : Service(), LifecycleOwner {
         private var lastMilestone = 0
         private var milestoneFlashUntil = 0L
 
-        private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
         private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeCap = Paint.Cap.ROUND }
 
         private val animationRunnable = object : Runnable {
             override fun run() {
                 breathePhase += 0.044f
+                val cb = (sin(breathePhase.toDouble()).toFloat() + 1f) / 2f
+                onBreathe?.invoke(cb)
                 if (stateTransitionProgress < 1f) stateTransitionProgress = (stateTransitionProgress + 0.06f).coerceAtMost(1f)
                 invalidate()
                 handler.postDelayed(this, 32)
@@ -748,11 +722,11 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         private fun getStateColor(s: FocusState): Int = when (s) {
-            FocusState.FOCUSED    -> Color.parseColor("#4CAF50")
-            FocusState.DISTRACTED -> Color.parseColor("#FF9800")
-            FocusState.DROWSY     -> Color.parseColor("#FFC107")
-            FocusState.ABSENT     -> Color.parseColor("#FF5252")
-            FocusState.NEUTRAL    -> Color.parseColor("#8A7CFF")
+            FocusState.FOCUSED    -> Color.parseColor("#34C759") // iOS green
+            FocusState.DISTRACTED -> Color.parseColor("#FF9500") // iOS orange
+            FocusState.DROWSY     -> Color.parseColor("#FFCC00") // iOS yellow
+            FocusState.ABSENT     -> Color.parseColor("#FF3B30") // iOS red
+            FocusState.NEUTRAL    -> Color.parseColor("#8A7CFF") // Deep purple
         }
 
         private fun interpolateColor(f: Int, t: Int, p: Float): Int {
@@ -766,7 +740,9 @@ class OverlayService : Service(), LifecycleOwner {
             super.onDraw(canvas)
             val w = width.toFloat()
             val h = height.toFloat()
-            val cornerR = Math.min(w, h) / 2f
+            
+            val padding = dpToPx(24f)
+            val cornerR = dpToPx(32f) 
             
             val breathe = (sin(breathePhase.toDouble()).toFloat() + 1f) / 2f
             val ringAlpha = 0.5f + 0.5f * breathe
@@ -780,22 +756,21 @@ class OverlayService : Service(), LifecycleOwner {
                 finalColor = interpolateColor(color, Color.parseColor("#D500F9"), breathe)
             }
 
-            bgPaint.color = Color.parseColor("#151515")
-            val rect = RectF(0f, 0f, w, h)
-            canvas.drawRoundRect(rect, cornerR, cornerR, bgPaint)
-
+            // The mainContainer handles the inner capsule background now. We only draw the glowing bounding box.
             ringPaint.color = finalColor
-            val sw = dpToPx(1.5f)
+            
+            // 1. Sharp bright outline directly hugging the container
+            val sw = dpToPx(2f)
             ringPaint.strokeWidth = sw
             ringPaint.alpha = (ringAlpha * 255).toInt()
-            val strokeRect = RectF(sw/2, sw/2, w - sw/2, h - sw/2)
-            canvas.drawRoundRect(strokeRect, cornerR - sw/2, cornerR - sw/2, ringPaint)
+            val strokeRect = RectF(padding, padding, w - padding, h - padding)
+            canvas.drawRoundRect(strokeRect, cornerR, cornerR, ringPaint)
             
-            val glowW = dpToPx(6f)
+            // 2. Beautiful expansive soft glow outside the outline
+            val glowW = dpToPx(20f)
             ringPaint.strokeWidth = glowW
-            ringPaint.alpha = (ringAlpha * 0.2f * 255).toInt()
-            val glowRect = RectF(glowW/2, glowW/2, w - glowW/2, h - glowW/2)
-            canvas.drawRoundRect(glowRect, cornerR - glowW/2, cornerR - glowW/2, ringPaint)
+            ringPaint.alpha = (ringAlpha * 0.35f * 255).toInt()
+            canvas.drawRoundRect(strokeRect, cornerR, cornerR, ringPaint)
         }
 
         private fun vibrateMilestone() {
@@ -819,7 +794,14 @@ class OverlayService : Service(), LifecycleOwner {
         }
     }
 
-    class DragTouchListener(private val context: Context, private val params: WindowManager.LayoutParams, private val wm: WindowManager) : View.OnTouchListener {
+    class DragTouchListener(
+        private val context: Context, 
+        private val params: WindowManager.LayoutParams, 
+        private val wm: WindowManager, 
+        private val rootWindowView: View, 
+        val onTap: () -> Unit
+    ) : View.OnTouchListener {
+        
         private var initialX = 0; private var initialY = 0; private var initialTouchX = 0f; private var initialTouchY = 0f; private var isTap = true; private var isDragging = false
         private val prefs: SharedPreferences = context.getSharedPreferences("guru_overlay_prefs", Context.MODE_PRIVATE)
         private val screenWidth: Int; private val screenHeight: Int
@@ -841,23 +823,23 @@ class OverlayService : Service(), LifecycleOwner {
             prefs.edit().putInt("overlay_x", params.x).putInt("overlay_y", params.y).apply()
         }
 
-        private fun snapToEdge(v: View) {
-            val bw = v.width.takeIf { it > 0 } ?: 130
-            val cx = params.x + bw / 2
-            val tx = if (cx < screenWidth / 2) dpToPx(16) else screenWidth - bw - dpToPx(16)
-            val ty = params.y.coerceIn(dpToPx(16), screenHeight - v.height - dpToPx(64))
+        private fun snapToEdge() {
+            val fw = rootWindowView.width.takeIf { it > 0 } ?: 130
+            val cx = params.x + fw / 2
+            val tx = if (cx < screenWidth / 2) dpToPx(8) else screenWidth - fw - dpToPx(8)
+            val ty = params.y.coerceIn(dpToPx(16), screenHeight - fw - dpToPx(64))
             
             val sx = params.x
             val sy = params.y
             
             ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 250
-                interpolator = OvershootInterpolator(0.8f)
+                duration = 300
+                interpolator = OvershootInterpolator(0.9f)
                 addUpdateListener { animator ->
                     val p = animator.animatedValue as Float
                     params.x = (sx + (tx - sx) * p).toInt()
                     params.y = (sy + (ty - sy) * p).toInt()
-                    try { wm.updateViewLayout(v.parent as View, params) } catch (e: Exception) {}
+                    try { wm.updateViewLayout(rootWindowView, params) } catch (e: Exception) {}
                 }
                 addListener(object : android.animation.Animator.AnimatorListener {
                     override fun onAnimationEnd(a: android.animation.Animator) { savePosition() }
@@ -885,32 +867,32 @@ class OverlayService : Service(), LifecycleOwner {
                     initialX = params.x; initialY = params.y
                     initialTouchX = event.rawX; initialTouchY = event.rawY
                     isTap = true; isDragging = false
-                    v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start()
+                    rootWindowView.animate().scaleX(0.96f).scaleY(0.96f).setDuration(120).start()
                     return true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - initialTouchX
                     val dy = event.rawY - initialTouchY
-                    if (abs(dx) > 10 || abs(dy) > 10) {
+                    if (abs(dx) > 12 || abs(dy) > 12) {
                         if (!isDragging) {
                             isDragging = true
                             vibrateLight()
-                            v.animate().scaleX(1f).scaleY(1f).setDuration(50).start()
+                            rootWindowView.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
                         }
                         isTap = false
                         params.x = initialX + dx.toInt()
                         params.y = initialY + dy.toInt()
-                        try { wm.updateViewLayout(v.parent as View, params) } catch (e: Exception) {}
+                        try { wm.updateViewLayout(rootWindowView, params) } catch (e: Exception) {}
                     }
                     return true
                 }
                 MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    rootWindowView.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
                     if (isTap) {
-                        (v as? CompanionBubbleView)?.onTap?.invoke()
+                        onTap()
                         v.performClick()
                     } else {
-                        snapToEdge(v)
+                        snapToEdge()
                         vibrateLight()
                     }
                     isDragging = false

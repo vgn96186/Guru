@@ -28,6 +28,7 @@ jest.mock(
 );
 
 jest.mock('../hooks/useResponsive', () => ({
+  __esModule: true,
   useResponsive: () => ({
     s: (value: number) => value,
     f: (value: number) => value,
@@ -36,52 +37,55 @@ jest.mock('../hooks/useResponsive', () => ({
     isLandscape: true,
     maxContentWidth: 980,
   }),
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => {
+  ResponsiveContainer: ({ children, style }: { children: React.ReactNode; style?: unknown }) => {
     const { View } = require('react-native');
-    return <View>{children}</View>;
+    return <View style={style}>{children}</View>;
   },
 }));
 
-jest.mock('../components/LoadingOrb', () => () => null);
+jest.mock('../components/LoadingOrb', () => ({
+  __esModule: true,
+  default: () => null,
+}));
 jest.mock('../components/tree/MasteryLegend', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
-  return function MasteryLegendMock() {
-    return (
-      <View>
-        <Text>Mastery</Text>
-      </View>
-    );
+  return {
+    __esModule: true,
+    default: function MasteryLegendMock() {
+      return React.createElement(View, null, React.createElement(Text, null, 'Mastery'));
+    },
   };
 });
 jest.mock('../components/tree/SourceOverlayToggle', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
-  return function SourceOverlayToggleMock() {
-    return (
-      <View>
-        <Text>BTR</Text>
-        <Text>DBMCI</Text>
-        <Text>Marrow</Text>
-      </View>
-    );
+  return {
+    __esModule: true,
+    default: function SourceOverlayToggleMock() {
+      return React.createElement(
+        View,
+        null,
+        React.createElement(Text, null, 'BTR'),
+        React.createElement(Text, null, 'DBMCI'),
+        React.createElement(Text, null, 'Marrow'),
+      );
+    },
   };
 });
 jest.mock('../components/tree/DigitalTreeCanvas', () => {
   const React = require('react');
   const { Text, View } = require('react-native');
-
-  return function DigitalTreeCanvasMock({
-    branch,
-  }: {
-    branch: { subjectName: string };
-  }) {
-    return (
-      <View>
-        <Text>{branch.subjectName}</Text>
-        <Text>Mock atlas canvas</Text>
-      </View>
-    );
+  return {
+    __esModule: true,
+    default: function DigitalTreeCanvasMock({ branch }: { branch: { subjectName: string } }) {
+      return React.createElement(
+        View,
+        null,
+        React.createElement(Text, null, branch.subjectName),
+        React.createElement(Text, null, 'Mock atlas canvas'),
+      );
+    },
   };
 });
 

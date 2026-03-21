@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Guru Home Mockup</title>
+  <style>
+    :root {
+      --bg-0: #040406;
+      --bg-1: #0a0b11;
+      --panel: rgba(18, 20, 30, 0.7);
+      --panel-strong: rgba(20, 22, 34, 0.92);
+      --panel-line: rgba(255, 255, 255, 0.08);
+      --text-0: #fbfbff;
+      --text-1: #babed0;
+      --text-2: #7f8598;
+      --accent: #5a4cff;
+      --accent-2: #6c8cff;
+      --accent-soft: rgba(90, 76, 255, 0.22);
+      --success: #59d3b4;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      font-family: "SF Pro Display", "Segoe UI", Inter, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background:
+        radial-gradient(circle at 50% 36%, rgba(108, 140, 255, 0.16), transparent 26%),
+        radial-gradient(circle at 50% 54%, rgba(90, 76, 255, 0.18), transparent 34%),
+        linear-gradient(180deg, #090a11 0%, #050508 44%, #020204 100%);
+      color: var(--text-0);
+      overflow: hidden;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .stage {
+      position: relative;
+      width: min(100%, 430px);
+      height: min(900px, 100vh - 24px);
+      border-radius: 38px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(113, 99, 255, 0.1), transparent 25%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%),
+        linear-gradient(180deg, #070811 0%, #05050b 58%, #030307 100%);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 24px 80px rgba(0, 0, 0, 0.65);
+      isolation: isolate;
+    }
+
+    .stage::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 50% 44%, rgba(99, 86, 255, 0.18), transparent 18%),
+        radial-gradient(circle at 50% 50%, rgba(90, 76, 255, 0.12), transparent 28%);
+      filter: blur(30px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .screen {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: max(env(safe-area-inset-top), 18px) 20px max(env(safe-area-inset-bottom), 18px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 12px;
+      z-index: 2;
+    }
+
+    .countdown-wrap {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .countdown-label {
+      font-size: 12px;
+      line-height: 1;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text-2);
+      margin-bottom: 10px;
+    }
+
+    .countdown-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .countdown-card {
+      position: relative;
+      overflow: hidden;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012)),
+        rgba(255, 255, 255, 0.018);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .countdown-card::before {
+      content: "";
+      position: absolute;
+      inset: -20% auto -20% -10%;
+      width: 110px;
+      background: radial-gradient(circle, rgba(108, 140, 255, 0.2), transparent 72%);
+      filter: blur(10px);
+      opacity: 0.45;
+      pointer-events: none;
+      animation: examGlow 4.2s ease-in-out infinite;
+    }
+
+    .countdown-card.neet::before {
+      background: radial-gradient(circle, rgba(89, 211, 180, 0.18), transparent 72%);
+      animation-delay: -1.8s;
+    }
+
+    .countdown-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .countdown-card-name {
+      font-size: 12px;
+      line-height: 1;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-1);
+    }
+
+    .countdown-card-badge {
+      min-width: 46px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 650;
+      letter-spacing: 0.06em;
+      color: #dfe4ff;
+      background: rgba(90, 76, 255, 0.16);
+      border: 1px solid rgba(108, 140, 255, 0.22);
+      box-shadow: 0 0 0 0 rgba(108, 140, 255, 0.32);
+      animation: badgePulse 3.8s ease-in-out infinite;
+    }
+
+    .countdown-card.neet .countdown-card-badge {
+      color: #dffff7;
+      background: rgba(89, 211, 180, 0.12);
+      border-color: rgba(89, 211, 180, 0.22);
+      box-shadow: 0 0 0 0 rgba(89, 211, 180, 0.24);
+      animation-delay: -1.2s;
+    }
+
+    .countdown-main {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .countdown-days {
+      font-size: 34px;
+      line-height: 0.9;
+      font-weight: 760;
+      letter-spacing: -0.06em;
+    }
+
+    .countdown-meta {
+      color: var(--text-1);
+      font-size: 13px;
+      line-height: 1.15;
+      max-width: 120px;
+    }
+
+    .countdown-bar {
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .countdown-bar > span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 18px rgba(108, 140, 255, 0.4);
+    }
+
+    .countdown-card.neet .countdown-bar > span {
+      background: linear-gradient(90deg, #4fd3b5, #67d7ff);
+      box-shadow: 0 0 18px rgba(89, 211, 180, 0.32);
+    }
+
+    .avatar-button {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-1);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .avatar-core {
+      position: relative;
+      width: 16px;
+      height: 16px;
+      border-radius: 999px;
+      border: 1.6px solid currentColor;
+    }
+
+    .avatar-core::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -8px;
+      width: 18px;
+      height: 8px;
+      border: 1.6px solid currentColor;
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      padding: 18px 0 160px;
+      text-align: center;
+    }
+
+    .hero-copy {
+      color: var(--text-2);
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .start-wrap {
+      position: relative;
+      width: 244px;
+      height: 244px;
+      display: grid;
+      place-items: center;
+    }
+
+    .start-wrap::before,
+    .start-wrap::after {
+      content: "";
+      position: absolute;
+      inset: -18px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(90, 76, 255, 0.18), transparent 68%);
+      animation: halo 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    .start-wrap::after {
+      inset: -34px;
+      opacity: 0.45;
+      filter: blur(10px);
+      animation-delay: -1.3s;
+    }
+
+    .start-button {
+      position: relative;
+      width: 210px;
+      height: 210px;
+      border: none;
+      border-radius: 999px;
+      color: white;
+      background:
+        radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.2), transparent 28%),
+        linear-gradient(180deg, #7066ff 0%, #5c4cff 50%, #4539d6 100%);
+      box-shadow:
+        0 18px 48px rgba(61, 47, 210, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -16px 24px rgba(23, 17, 89, 0.32);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      animation: breathe 6s ease-in-out infinite;
+    }
+
+    .start-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      color: rgba(255, 255, 255, 0.66);
+      margin-left: 0.24em;
+    }
+
+    .start-label {
+      font-size: 38px;
+      line-height: 0.95;
+      font-weight: 760;
+      letter-spacing: -0.05em;
+    }
+
+    .start-sub {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.74);
+    }
+
+    .lecture-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-width: 218px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(108, 140, 255, 0.38);
+      background: rgba(20, 22, 34, 0.34);
+      color: var(--text-0);
+      backdrop-filter: blur(18px);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 14px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .lecture-icon {
+      width: 18px;
+      height: 18px;
+      display: inline-grid;
+      place-items: center;
+      position: relative;
+    }
+
+    .lecture-icon::before,
+    .lecture-icon::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      border: 1.6px solid rgba(126, 150, 255, 0.78);
+    }
+
+    .lecture-icon::before {
+      width: 6px;
+      height: 12px;
+      top: 0;
+      left: 5px;
+      border-radius: 6px;
+      background: rgba(126, 150, 255, 0.14);
+    }
+
+    .lecture-icon::after {
+      width: 12px;
+      height: 6px;
+      bottom: 0;
+      left: 2px;
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .dock {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 3;
+    }
+
+    .floating-card {
+      border-radius: 22px;
+      border: 1px solid var(--panel-line);
+      background: linear-gradient(180deg, rgba(24, 26, 38, 0.94), rgba(14, 15, 22, 0.88));
+      backdrop-filter: blur(18px);
+      box-shadow:
+        var(--shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .path-card {
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .path-meta {
+      min-width: 0;
+    }
+
+    .path-label {
+      color: var(--text-2);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .path-title {
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: -0.03em;
+      margin-bottom: 4px;
+    }
+
+    .path-sub {
+      color: var(--text-1);
+      font-size: 13px;
+    }
+
+    .path-chevron {
+      color: var(--text-2);
+      font-size: 18px;
+      flex: 0 0 auto;
+    }
+
+    .tools-shell {
+      overflow: hidden;
+      transition:
+        max-height 0.48s var(--ease),
+        background 0.4s var(--ease),
+        border-color 0.4s var(--ease);
+      max-height: 72px;
+    }
+
+    .tools-shell.open {
+      max-height: 320px;
+      background: linear-gradient(180deg, rgba(24, 26, 38, 0.98), rgba(10, 11, 17, 0.96));
+    }
+
+    .tools-toggle {
+      width: 100%;
+      appearance: none;
+      background: transparent;
+      border: 0;
+      color: inherit;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .tools-left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .tools-label {
+      font-size: 16px;
+      font-weight: 640;
+      letter-spacing: -0.03em;
+    }
+
+    .tools-hint {
+      color: var(--text-2);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .tools-chevron {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: transform 0.42s var(--ease);
+    }
+
+    .tools-shell.open .tools-chevron {
+      transform: rotate(180deg);
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 0 16px 16px;
+    }
+
+    .tool-card {
+      min-height: 96px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+        rgba(255, 255, 255, 0.02);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-1);
+      text-align: center;
+      padding: 10px 8px;
+    }
+
+    .tool-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: radial-gradient(circle at 30% 25%, rgba(108, 140, 255, 0.18), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(108, 140, 255, 0.18);
+      position: relative;
+    }
+
+    .tool-label {
+      font-size: 12px;
+      line-height: 1.15;
+      max-width: 70px;
+    }
+
+    .icon-map::before,
+    .icon-map::after,
+    .icon-audio::before,
+    .icon-audio::after,
+    .icon-mcq::before,
+    .icon-mcq::after,
+    .icon-clue::before,
+    .icon-clue::after,
+    .icon-random::before,
+    .icon-random::after,
+    .icon-note::before,
+    .icon-note::after {
+      content: "";
+      position: absolute;
+    }
+
+    .icon-map::before {
+      inset: 10px 18px 10px 10px;
+      border-left: 2px solid rgba(255, 255, 255, 0.7);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.7);
+      transform: skewX(-12deg);
+    }
+
+    .icon-map::after {
+      width: 6px;
+      height: 6px;
+      right: 8px;
+      top: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.75);
+      box-shadow: -10px 10px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .icon-audio::before {
+      width: 10px;
+      height: 18px;
+      left: 14px;
+      top: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.72);
+      border-bottom: 0;
+      border-radius: 8px 8px 6px 6px;
+    }
+
+    .icon-audio::after {
+      left: 11px;
+      bottom: 10px;
+      width: 16px;
+      height: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.72);
+      border-top: 0;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .icon-mcq::before {
+      inset: 9px;
+      border-radius: 10px;
+      border: 2px solid rgba(255, 255, 255, 0.7);
+    }
+
+    .icon-mcq::after {
+      left: 13px;
+      top: 14px;
+      width: 14px;
+      height: 8px;
+      border-left: 2px solid rgba(255, 255, 255, 0.72);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.72);
+      transform: rotate(-45deg);
+    }
+
+    .icon-clue::before {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.74);
+      left: 10px;
+      top: 9px;
+    }
+
+    .icon-clue::after {
+      width: 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.74);
+      right: 8px;
+      bottom: 11px;
+      transform: rotate(45deg);
+      transform-origin: center;
+    }
+
+    .icon-random::before {
+      inset: 10px 10px auto 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.72);
+      transform: rotate(25deg);
+      top: 18px;
+    }
+
+    .icon-random::after {
+      inset: auto 11px 14px 11px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.72);
+      transform: rotate(-25deg);
+    }
+
+    .icon-note::before {
+      inset: 9px 11px 9px 11px;
+      border-radius: 8px;
+      border: 2px solid rgba(255, 255, 255, 0.72);
+    }
+
+    .icon-note::after {
+      left: 15px;
+      top: 15px;
+      width: 10px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: 0 5px 0 rgba(255, 255, 255, 0.55), 0 10px 0 rgba(255, 255, 255, 0.4);
+    }
+
+    .focus-dim {
+      transition: opacity 0.4s var(--ease), transform 0.5s var(--ease);
+    }
+
+    .tools-shell.open ~ .focus-dim-bridge,
+    .stage.tools-open .hero .focus-dim {
+      opacity: 0.42;
+      transform: scale(0.985);
+    }
+
+    @media (min-width: 700px) and (orientation: portrait) {
+      body {
+        padding: 32px;
+      }
+
+      .stage {
+        width: min(100%, 780px);
+        height: min(calc(100vh - 40px), 1180px);
+        border-radius: 46px;
+      }
+
+      .screen {
+        padding: max(env(safe-area-inset-top), 28px) 28px max(env(safe-area-inset-bottom), 28px);
+      }
+
+      .topbar {
+        padding-top: 22px;
+      }
+
+      .countdown-days {
+        font-size: 46px;
+      }
+
+      .countdown-meta {
+        font-size: 15px;
+        max-width: 150px;
+      }
+
+      .countdown-stack {
+        gap: 12px;
+      }
+
+      .countdown-card {
+        padding: 14px 16px;
+      }
+
+      .hero {
+        gap: 24px;
+        padding: 24px 18px 220px;
+      }
+
+      .hero-copy {
+        font-size: 14px;
+      }
+
+      .start-wrap {
+        width: 320px;
+        height: 320px;
+      }
+
+      .start-button {
+        width: 272px;
+        height: 272px;
+      }
+
+      .start-kicker {
+        font-size: 13px;
+      }
+
+      .start-label {
+        font-size: 54px;
+      }
+
+      .start-sub {
+        font-size: 16px;
+      }
+
+      .lecture-button {
+        min-width: 270px;
+        padding: 16px 26px;
+        font-size: 16px;
+      }
+
+      .dock {
+        left: 28px;
+        right: 28px;
+        bottom: 28px;
+        display: grid;
+        grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+        gap: 14px;
+        align-items: end;
+      }
+
+      .path-card {
+        min-height: 110px;
+        padding: 20px;
+      }
+
+      .path-title {
+        font-size: 21px;
+      }
+
+      .path-sub {
+        font-size: 14px;
+        max-width: 240px;
+      }
+
+      .tools-shell {
+        max-height: 110px;
+      }
+
+      .tools-shell.open {
+        max-height: 420px;
+      }
+
+      .tools-toggle {
+        padding: 20px;
+      }
+
+      .tools-grid {
+        gap: 14px;
+        padding: 0 18px 18px;
+      }
+
+      .tool-card {
+        min-height: 118px;
+      }
+
+      .tool-icon {
+        width: 46px;
+        height: 46px;
+      }
+
+      .tool-label {
+        max-width: 82px;
+        font-size: 13px;
+      }
+    }
+
+    @media (min-width: 1024px) and (orientation: landscape) {
+      body {
+        padding: 28px;
+      }
+
+      .stage {
+        width: min(100%, 1180px);
+        height: min(calc(100vh - 36px), 860px);
+        border-radius: 42px;
+      }
+
+      .screen {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+        grid-template-rows: auto 1fr;
+        column-gap: 28px;
+        row-gap: 0;
+        padding: max(env(safe-area-inset-top), 22px) 28px max(env(safe-area-inset-bottom), 28px);
+      }
+
+      .topbar {
+        grid-column: 1 / -1;
+        align-items: center;
+        padding-top: 10px;
+      }
+
+      .countdown-days {
+        font-size: 48px;
+      }
+
+      .countdown-meta {
+        font-size: 15px;
+        max-width: 150px;
+      }
+
+      .countdown-wrap {
+        max-width: 520px;
+      }
+
+      .countdown-stack {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .avatar-button {
+        width: 48px;
+        height: 48px;
+      }
+
+      .hero {
+        justify-content: center;
+        align-items: flex-start;
+        text-align: left;
+        gap: 22px;
+        padding: 18px 12px 0 12px;
+      }
+
+      .hero-copy {
+        font-size: 14px;
+      }
+
+      .start-wrap {
+        width: 330px;
+        height: 330px;
+        align-self: flex-start;
+      }
+
+      .start-button {
+        width: 280px;
+        height: 280px;
+      }
+
+      .start-label {
+        font-size: 58px;
+      }
+
+      .start-sub {
+        font-size: 17px;
+      }
+
+      .lecture-button {
+        min-width: 276px;
+        padding: 16px 26px;
+        font-size: 16px;
+        align-self: flex-start;
+      }
+
+      .dock {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        height: 100%;
+        justify-content: center;
+        gap: 16px;
+        padding: 8px 0 0;
+      }
+
+      .path-card {
+        min-height: 128px;
+        padding: 22px 24px;
+      }
+
+      .path-title {
+        font-size: 24px;
+      }
+
+      .path-sub {
+        max-width: 280px;
+        font-size: 14px;
+      }
+
+      .tools-shell {
+        max-height: 108px;
+      }
+
+      .tools-shell.open {
+        max-height: 620px;
+      }
+
+      .tools-toggle {
+        padding: 20px 22px;
+      }
+
+      .tools-grid {
+        gap: 14px;
+        padding: 0 20px 20px;
+      }
+
+      .tool-card {
+        min-height: 128px;
+      }
+
+      .tool-icon {
+        width: 48px;
+        height: 48px;
+      }
+
+      .tool-label {
+        max-width: 86px;
+        font-size: 13px;
+      }
+
+      .stage.tools-open .hero .focus-dim {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow:
+          0 18px 48px rgba(61, 47, 210, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.22),
+          inset 0 -16px 24px rgba(23, 17, 89, 0.32);
+      }
+      50% {
+        transform: scale(1.028);
+        box-shadow:
+          0 22px 62px rgba(61, 47, 210, 0.62),
+          0 0 32px rgba(108, 140, 255, 0.24),
+          inset 0 1px 0 rgba(255, 255, 255, 0.28),
+          inset 0 -16px 24px rgba(23, 17, 89, 0.32);
+      }
+    }
+
+    @keyframes halo {
+      0%, 100% { transform: scale(0.96); opacity: 0.36; }
+      50% { transform: scale(1.04); opacity: 0.6; }
+    }
+
+    @keyframes badgePulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(108, 140, 255, 0.18);
+      }
+      50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 0 8px rgba(108, 140, 255, 0);
+      }
+    }
+
+    @keyframes examGlow {
+      0%, 100% {
+        opacity: 0.26;
+        transform: translateX(0);
+      }
+      50% {
+        opacity: 0.5;
+        transform: translateX(8px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage">
+    <section class="screen">
+      <header class="topbar">
+        <div class="countdown-wrap">
+          <div class="countdown-label">Exam Countdown</div>
+          <div class="countdown-stack">
+            <article class="countdown-card inicet">
+              <div class="countdown-card-header">
+                <div class="countdown-card-name">INICET</div>
+                <div class="countdown-card-badge">Soon</div>
+              </div>
+              <div class="countdown-main">
+                <div class="countdown-days">142</div>
+                <div class="countdown-meta">days until<br />exam</div>
+              </div>
+              <div class="countdown-bar"><span style="width: 62%"></span></div>
+            </article>
+            <article class="countdown-card neet">
+              <div class="countdown-card-header">
+                <div class="countdown-card-name">NEET-PG</div>
+                <div class="countdown-card-badge">Track</div>
+              </div>
+              <div class="countdown-main">
+                <div class="countdown-days">168</div>
+                <div class="countdown-meta">days until<br />exam</div>
+              </div>
+              <div class="countdown-bar"><span style="width: 55%"></span></div>
+            </article>
+          </div>
+        </div>
+        <button class="avatar-button" aria-label="Guru profile">
+          <span class="avatar-core"></span>
+        </button>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy focus-dim">Warm start mode</div>
+        <div class="start-wrap focus-dim">
+          <button class="start-button" aria-label="Start">
+            <div class="start-kicker">Ready</div>
+            <div class="start-label">Start</div>
+            <div class="start-sub">one step is enough</div>
+          </button>
+        </div>
+        <button class="lecture-button focus-dim">
+          <span class="lecture-icon" aria-hidden="true"></span>
+          <span>Lecture Capture</span>
+        </button>
+      </section>
+
+      <div class="dock">
+        <section class="floating-card path-card">
+          <div class="path-meta">
+            <div class="path-label">Today's Path</div>
+            <div class="path-title">3 topics left</div>
+            <div class="path-sub">Biochemistry, CVS, Pharmacology recall</div>
+          </div>
+          <div class="path-chevron">›</div>
+        </section>
+
+        <section class="floating-card tools-shell" id="toolsShell">
+          <button class="tools-toggle" id="toolsToggle" aria-expanded="false" aria-controls="toolsGrid">
+            <div class="tools-left">
+              <div class="tools-label">Tools</div>
+              <div class="tools-hint">Quick access on hard days</div>
+            </div>
+            <div class="tools-chevron">⌃</div>
+          </button>
+          <div class="tools-grid" id="toolsGrid">
+            <div class="tool-card">
+              <div class="tool-icon icon-map"></div>
+              <div class="tool-label">Mind maps</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon icon-audio"></div>
+              <div class="tool-label">Audio transcription</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon icon-mcq"></div>
+              <div class="tool-label">MCQs</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon icon-clue"></div>
+              <div class="tool-label">Find from clues</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon icon-random"></div>
+              <div class="tool-label">Random topic</div>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon icon-note"></div>
+              <div class="tool-label">Note from transcript</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const toolsShell = document.getElementById("toolsShell");
+    const toolsToggle = document.getElementById("toolsToggle");
+    const landscapeTabletQuery = window.matchMedia("(min-width: 1024px) and (orientation: landscape)");
+
+    function setToolsState(open) {
+      toolsShell.classList.toggle("open", open);
+      stage.classList.toggle("tools-open", open);
+      toolsToggle.setAttribute("aria-expanded", String(open));
+    }
+
+    function syncResponsiveState() {
+      if (landscapeTabletQuery.matches) {
+        setToolsState(true);
+      }
+    }
+
+    toolsToggle.addEventListener("click", () => {
+      const open = !toolsShell.classList.contains("open");
+      setToolsState(open);
+    });
+
+    landscapeTabletQuery.addEventListener("change", syncResponsiveState);
+    syncResponsiveState();
+  </script>
+</body>
+</html>

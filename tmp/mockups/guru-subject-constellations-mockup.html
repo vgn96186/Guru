@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guru Subject Atlas Mockup</title>
+  <style>
+    :root {
+      --bg-0: #05070d;
+      --bg-1: #09111f;
+      --panel: rgba(10, 14, 24, 0.86);
+      --panel-strong: rgba(16, 21, 35, 0.94);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --text: #e8edf8;
+      --muted: #9ba7bf;
+      --soft: #60708d;
+      --pre: #8b5cf6;
+      --para: #48b8ff;
+      --clinical: #19c37d;
+      --specialty: #f5a524;
+      --alert: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, "SF Pro Display", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 18% 78%, rgba(139, 92, 246, 0.16), transparent 25%),
+        radial-gradient(circle at 82% 20%, rgba(25, 195, 125, 0.13), transparent 28%),
+        radial-gradient(circle at 50% 50%, rgba(72, 184, 255, 0.08), transparent 32%),
+        linear-gradient(180deg, var(--bg-0), var(--bg-1));
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    .header {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: rgba(7, 10, 17, 0.74);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .brand-mark {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(72, 184, 255, 0.8);
+      box-shadow:
+        0 0 0 5px rgba(72, 184, 255, 0.08),
+        0 0 20px rgba(72, 184, 255, 0.35);
+      position: relative;
+    }
+
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: rgba(72, 184, 255, 0.95);
+      box-shadow: 0 0 14px rgba(72, 184, 255, 0.5);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .search,
+    .pill {
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      font-size: 13px;
+    }
+
+    .search {
+      width: 250px;
+    }
+
+    .search input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .search input::placeholder { color: var(--soft); }
+
+    .pill.active {
+      color: #a9caff;
+      border-color: rgba(72, 184, 255, 0.26);
+      background: rgba(72, 184, 255, 0.08);
+    }
+
+    .workspace {
+      display: flex;
+      height: calc(100vh - 72px);
+    }
+
+    .atlas {
+      position: relative;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .atlas-topnote {
+      position: absolute;
+      top: 20px;
+      left: 22px;
+      z-index: 4;
+      background: rgba(10, 14, 24, 0.76);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      backdrop-filter: blur(16px);
+      max-width: 330px;
+    }
+
+    .atlas-topnote strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text);
+    }
+
+    .atlas-topnote p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .network-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .network-line {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.06);
+      stroke-width: 1.8;
+    }
+
+    .network-line.family-pre { stroke: rgba(139, 92, 246, 0.18); }
+    .network-line.family-para { stroke: rgba(72, 184, 255, 0.18); }
+    .network-line.family-clinical { stroke: rgba(25, 195, 125, 0.18); }
+    .network-line.family-specialty { stroke: rgba(245, 165, 36, 0.16); }
+
+    .cluster {
+      --hue: var(--para);
+      --progress: 180deg;
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 116px;
+      height: 116px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      z-index: 2;
+    }
+
+    .cluster-frame {
+      width: 116px;
+      height: 116px;
+      position: relative;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+    }
+
+    .cluster-frame::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background:
+        conic-gradient(from -90deg, var(--hue) 0deg var(--progress), rgba(255,255,255,0.06) var(--progress) 360deg);
+      -webkit-mask: radial-gradient(circle, transparent 58px, #000 59px);
+      mask: radial-gradient(circle, transparent 58px, #000 59px);
+      opacity: 0.9;
+      filter: drop-shadow(0 0 10px color-mix(in srgb, var(--hue) 35%, transparent));
+    }
+
+    .cluster-frame::after {
+      content: "";
+      position: absolute;
+      inset: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.025), rgba(255,255,255,0.01) 60%, transparent 100%);
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.32);
+    }
+
+    .cluster svg {
+      position: absolute;
+      inset: 18px;
+      width: 80px;
+      height: 80px;
+      z-index: 1;
+    }
+
+    .cluster .mesh-line {
+      stroke: color-mix(in srgb, var(--hue) 68%, #e8f0ff 32%);
+      stroke-opacity: 0.42;
+      stroke-width: 1.2;
+    }
+
+    .cluster .mesh-node {
+      fill: #f8fbff;
+      filter: drop-shadow(0 0 7px color-mix(in srgb, var(--hue) 58%, white 42%));
+    }
+
+    .cluster .mesh-node.soft {
+      fill: color-mix(in srgb, var(--hue) 72%, white 28%);
+    }
+
+    .cluster-label {
+      padding: 8px 11px;
+      border-radius: 12px;
+      background: rgba(8, 11, 19, 0.86);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      min-width: 100px;
+    }
+
+    .cluster-label strong {
+      display: block;
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+
+    .cluster-label span {
+      display: block;
+      margin-top: 4px;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .cluster.dim {
+      opacity: 0.88;
+    }
+
+    .cluster:hover .cluster-label,
+    .cluster.active .cluster-label {
+      border-color: var(--border-strong);
+    }
+
+    .cluster.active .cluster-frame::before {
+      filter:
+        drop-shadow(0 0 12px color-mix(in srgb, var(--hue) 55%, transparent))
+        drop-shadow(0 0 24px color-mix(in srgb, var(--hue) 25%, transparent));
+    }
+
+    .cluster.family-pre { --hue: var(--pre); }
+    .cluster.family-para { --hue: var(--para); }
+    .cluster.family-clinical { --hue: var(--clinical); }
+    .cluster.family-specialty { --hue: var(--specialty); }
+
+    .side {
+      width: 330px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      backdrop-filter: blur(20px);
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.25);
+      display: flex;
+      flex-direction: column;
+      z-index: 3;
+    }
+
+    .side-head {
+      padding: 24px 22px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .side-head h2 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .side-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .side-scroll {
+      padding: 22px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.025);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .card h3 {
+      margin: 0 0 12px;
+      font-size: 11px;
+      color: var(--soft);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .legend-row,
+    .family-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 9px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .legend-row:first-of-type,
+    .family-row:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex: none;
+    }
+
+    .family-name {
+      display: flex;
+      align-items: center;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .mini-ring {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      position: relative;
+      background: conic-gradient(var(--h) 0deg 220deg, rgba(255,255,255,0.08) 220deg 360deg);
+      -webkit-mask: radial-gradient(circle, transparent 12px, #000 13px);
+      mask: radial-gradient(circle, transparent 12px, #000 13px);
+    }
+
+    .tip {
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, rgba(72, 184, 255, 0.12), rgba(72, 184, 255, 0.02));
+      border: 1px solid rgba(72, 184, 255, 0.12);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .tip strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      Knowledge Atlas
+    </div>
+    <div class="controls">
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search subject constellation...">
+      </div>
+      <div class="pill active">Subject View</div>
+      <div class="pill">Family Overlay</div>
+      <div class="pill">Progress Rings</div>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <main class="atlas">
+      <div class="atlas-topnote">
+        <strong>Default Atlas</strong>
+        <p>Only subject constellations are visible at this zoom. Tap a subject to enter its topic network. Fixed positions help build a long-term spatial memory of the syllabus.</p>
+      </div>
+
+      <svg class="network-layer" viewBox="0 0 1400 900" preserveAspectRatio="none">
+        <path class="network-line family-pre" d="M 230 620 C 330 500, 430 420, 520 330" />
+        <path class="network-line family-para" d="M 530 250 C 650 220, 760 235, 900 290" />
+        <path class="network-line family-clinical" d="M 630 395 C 760 420, 860 430, 980 420" />
+        <path class="network-line family-specialty" d="M 860 590 C 970 560, 1080 500, 1170 430" />
+        <path class="network-line" d="M 520 330 C 590 350, 620 370, 630 395" />
+        <path class="network-line" d="M 630 395 C 690 500, 760 560, 860 590" />
+      </svg>
+
+      <div class="cluster family-pre active" style="left: 18%; top: 67%; --progress: 238deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80" aria-hidden="true">
+            <line class="mesh-line" x1="18" y1="48" x2="34" y2="22" />
+            <line class="mesh-line" x1="34" y1="22" x2="58" y2="32" />
+            <line class="mesh-line" x1="18" y1="48" x2="52" y2="56" />
+            <line class="mesh-line" x1="52" y1="56" x2="58" y2="32" />
+            <circle class="mesh-node soft" cx="18" cy="48" r="3.1" />
+            <circle class="mesh-node" cx="34" cy="22" r="3.4" />
+            <circle class="mesh-node soft" cx="58" cy="32" r="3.2" />
+            <circle class="mesh-node" cx="52" cy="56" r="3.6" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Anatomy</strong>
+          <span>Pre-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-pre dim" style="left: 26%; top: 54%; --progress: 188deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="16" y1="44" x2="40" y2="18" />
+            <line class="mesh-line" x1="40" y1="18" x2="62" y2="30" />
+            <line class="mesh-line" x1="40" y1="18" x2="50" y2="56" />
+            <line class="mesh-line" x1="16" y1="44" x2="50" y2="56" />
+            <circle class="mesh-node" cx="16" cy="44" r="3.2" />
+            <circle class="mesh-node soft" cx="40" cy="18" r="3.2" />
+            <circle class="mesh-node" cx="62" cy="30" r="3.1" />
+            <circle class="mesh-node soft" cx="50" cy="56" r="3.4" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Physiology</strong>
+          <span>Pre-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-pre dim" style="left: 37%; top: 39%; --progress: 144deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="20" y1="28" x2="42" y2="18" />
+            <line class="mesh-line" x1="42" y1="18" x2="60" y2="36" />
+            <line class="mesh-line" x1="20" y1="28" x2="34" y2="56" />
+            <line class="mesh-line" x1="34" y1="56" x2="60" y2="36" />
+            <circle class="mesh-node" cx="20" cy="28" r="3.1" />
+            <circle class="mesh-node soft" cx="42" cy="18" r="3.4" />
+            <circle class="mesh-node" cx="60" cy="36" r="3.2" />
+            <circle class="mesh-node soft" cx="34" cy="56" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Biochemistry</strong>
+          <span>Pre-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-para dim" style="left: 48%; top: 28%; --progress: 214deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="16" y1="34" x2="38" y2="18" />
+            <line class="mesh-line" x1="38" y1="18" x2="58" y2="28" />
+            <line class="mesh-line" x1="38" y1="18" x2="56" y2="54" />
+            <line class="mesh-line" x1="16" y1="34" x2="28" y2="58" />
+            <line class="mesh-line" x1="28" y1="58" x2="56" y2="54" />
+            <circle class="mesh-node soft" cx="16" cy="34" r="3.1" />
+            <circle class="mesh-node" cx="38" cy="18" r="3.4" />
+            <circle class="mesh-node soft" cx="58" cy="28" r="3.1" />
+            <circle class="mesh-node" cx="28" cy="58" r="3.2" />
+            <circle class="mesh-node soft" cx="56" cy="54" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Pharmacology</strong>
+          <span>Para-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-para active" style="left: 58%; top: 25%; --progress: 266deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="42" x2="32" y2="20" />
+            <line class="mesh-line" x1="32" y1="20" x2="60" y2="24" />
+            <line class="mesh-line" x1="18" y1="42" x2="48" y2="60" />
+            <line class="mesh-line" x1="48" y1="60" x2="60" y2="24" />
+            <circle class="mesh-node" cx="18" cy="42" r="3.1" />
+            <circle class="mesh-node soft" cx="32" cy="20" r="3.4" />
+            <circle class="mesh-node" cx="60" cy="24" r="3.1" />
+            <circle class="mesh-node soft" cx="48" cy="60" r="3.5" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Pathology</strong>
+          <span>Para-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-para dim" style="left: 71%; top: 30%; --progress: 172deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="20" y1="28" x2="44" y2="18" />
+            <line class="mesh-line" x1="44" y1="18" x2="62" y2="38" />
+            <line class="mesh-line" x1="20" y1="28" x2="30" y2="58" />
+            <line class="mesh-line" x1="30" y1="58" x2="62" y2="38" />
+            <circle class="mesh-node soft" cx="20" cy="28" r="3.1" />
+            <circle class="mesh-node" cx="44" cy="18" r="3.4" />
+            <circle class="mesh-node soft" cx="62" cy="38" r="3.2" />
+            <circle class="mesh-node" cx="30" cy="58" r="3.2" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Microbiology</strong>
+          <span>Para-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-para dim" style="left: 83%; top: 38%; --progress: 118deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="24" x2="38" y2="18" />
+            <line class="mesh-line" x1="38" y1="18" x2="60" y2="34" />
+            <line class="mesh-line" x1="60" y1="34" x2="46" y2="58" />
+            <line class="mesh-line" x1="18" y1="24" x2="46" y2="58" />
+            <circle class="mesh-node" cx="18" cy="24" r="3.1" />
+            <circle class="mesh-node soft" cx="38" cy="18" r="3.3" />
+            <circle class="mesh-node" cx="60" cy="34" r="3.2" />
+            <circle class="mesh-node soft" cx="46" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>PSM</strong>
+          <span>Para-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-para dim" style="left: 76%; top: 56%; --progress: 132deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="42" x2="36" y2="20" />
+            <line class="mesh-line" x1="36" y1="20" x2="58" y2="30" />
+            <line class="mesh-line" x1="18" y1="42" x2="44" y2="60" />
+            <line class="mesh-line" x1="44" y1="60" x2="58" y2="30" />
+            <circle class="mesh-node soft" cx="18" cy="42" r="3.1" />
+            <circle class="mesh-node" cx="36" cy="20" r="3.2" />
+            <circle class="mesh-node soft" cx="58" cy="30" r="3.1" />
+            <circle class="mesh-node" cx="44" cy="60" r="3.4" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Forensic</strong>
+          <span>Para-Clinical</span>
+        </div>
+      </div>
+
+      <div class="cluster family-clinical active" style="left: 56%; top: 44%; --progress: 286deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="16" y1="40" x2="30" y2="18" />
+            <line class="mesh-line" x1="30" y1="18" x2="60" y2="26" />
+            <line class="mesh-line" x1="16" y1="40" x2="50" y2="60" />
+            <line class="mesh-line" x1="50" y1="60" x2="60" y2="26" />
+            <line class="mesh-line" x1="30" y1="18" x2="50" y2="60" />
+            <circle class="mesh-node" cx="16" cy="40" r="3.2" />
+            <circle class="mesh-node soft" cx="30" cy="18" r="3.4" />
+            <circle class="mesh-node" cx="60" cy="26" r="3.3" />
+            <circle class="mesh-node soft" cx="50" cy="60" r="3.6" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Medicine</strong>
+          <span>Clinical Core</span>
+        </div>
+      </div>
+
+      <div class="cluster family-clinical dim" style="left: 67%; top: 48%; --progress: 214deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="40" x2="30" y2="20" />
+            <line class="mesh-line" x1="30" y1="20" x2="58" y2="28" />
+            <line class="mesh-line" x1="18" y1="40" x2="48" y2="60" />
+            <line class="mesh-line" x1="48" y1="60" x2="58" y2="28" />
+            <circle class="mesh-node soft" cx="18" cy="40" r="3.1" />
+            <circle class="mesh-node" cx="30" cy="20" r="3.4" />
+            <circle class="mesh-node soft" cx="58" cy="28" r="3.1" />
+            <circle class="mesh-node" cx="48" cy="60" r="3.4" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Pediatrics</strong>
+          <span>Clinical Core</span>
+        </div>
+      </div>
+
+      <div class="cluster family-clinical dim" style="left: 79%; top: 46%; --progress: 194deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="20" y1="22" x2="42" y2="18" />
+            <line class="mesh-line" x1="42" y1="18" x2="60" y2="36" />
+            <line class="mesh-line" x1="20" y1="22" x2="32" y2="58" />
+            <line class="mesh-line" x1="32" y1="58" x2="60" y2="36" />
+            <circle class="mesh-node" cx="20" cy="22" r="3.1" />
+            <circle class="mesh-node soft" cx="42" cy="18" r="3.4" />
+            <circle class="mesh-node" cx="60" cy="36" r="3.1" />
+            <circle class="mesh-node soft" cx="32" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>OBGYN</strong>
+          <span>Clinical Core</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 64%; top: 67%; --progress: 170deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="34" x2="38" y2="18" />
+            <line class="mesh-line" x1="38" y1="18" x2="58" y2="30" />
+            <line class="mesh-line" x1="18" y1="34" x2="28" y2="58" />
+            <line class="mesh-line" x1="28" y1="58" x2="58" y2="30" />
+            <circle class="mesh-node" cx="18" cy="34" r="3.1" />
+            <circle class="mesh-node soft" cx="38" cy="18" r="3.4" />
+            <circle class="mesh-node" cx="58" cy="30" r="3.1" />
+            <circle class="mesh-node soft" cx="28" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Surgery</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 74%; top: 69%; --progress: 126deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="42" x2="34" y2="20" />
+            <line class="mesh-line" x1="34" y1="20" x2="60" y2="28" />
+            <line class="mesh-line" x1="18" y1="42" x2="48" y2="58" />
+            <line class="mesh-line" x1="48" y1="58" x2="60" y2="28" />
+            <circle class="mesh-node soft" cx="18" cy="42" r="3.1" />
+            <circle class="mesh-node" cx="34" cy="20" r="3.4" />
+            <circle class="mesh-node soft" cx="60" cy="28" r="3.1" />
+            <circle class="mesh-node" cx="48" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Orthopedics</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 84%; top: 66%; --progress: 108deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="16" y1="38" x2="36" y2="18" />
+            <line class="mesh-line" x1="36" y1="18" x2="58" y2="38" />
+            <line class="mesh-line" x1="16" y1="38" x2="44" y2="58" />
+            <line class="mesh-line" x1="44" y1="58" x2="58" y2="38" />
+            <circle class="mesh-node" cx="16" cy="38" r="3.1" />
+            <circle class="mesh-node soft" cx="36" cy="18" r="3.4" />
+            <circle class="mesh-node" cx="58" cy="38" r="3.2" />
+            <circle class="mesh-node soft" cx="44" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Radiology</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 51%; top: 73%; --progress: 94deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="24" x2="44" y2="18" />
+            <line class="mesh-line" x1="44" y1="18" x2="60" y2="38" />
+            <line class="mesh-line" x1="18" y1="24" x2="30" y2="58" />
+            <line class="mesh-line" x1="30" y1="58" x2="60" y2="38" />
+            <circle class="mesh-node soft" cx="18" cy="24" r="3.1" />
+            <circle class="mesh-node" cx="44" cy="18" r="3.3" />
+            <circle class="mesh-node soft" cx="60" cy="38" r="3.1" />
+            <circle class="mesh-node" cx="30" cy="58" r="3.2" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Anesthesia</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 40%; top: 74%; --progress: 120deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="40" x2="38" y2="18" />
+            <line class="mesh-line" x1="38" y1="18" x2="60" y2="26" />
+            <line class="mesh-line" x1="18" y1="40" x2="52" y2="60" />
+            <line class="mesh-line" x1="52" y1="60" x2="60" y2="26" />
+            <circle class="mesh-node" cx="18" cy="40" r="3.1" />
+            <circle class="mesh-node soft" cx="38" cy="18" r="3.3" />
+            <circle class="mesh-node" cx="60" cy="26" r="3.1" />
+            <circle class="mesh-node soft" cx="52" cy="60" r="3.4" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>ENT</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 30%; top: 76%; --progress: 112deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="34" x2="40" y2="18" />
+            <line class="mesh-line" x1="40" y1="18" x2="60" y2="32" />
+            <line class="mesh-line" x1="18" y1="34" x2="30" y2="58" />
+            <line class="mesh-line" x1="30" y1="58" x2="60" y2="32" />
+            <circle class="mesh-node soft" cx="18" cy="34" r="3.1" />
+            <circle class="mesh-node" cx="40" cy="18" r="3.4" />
+            <circle class="mesh-node soft" cx="60" cy="32" r="3.2" />
+            <circle class="mesh-node" cx="30" cy="58" r="3.2" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Ophthalmology</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 20%; top: 79%; --progress: 152deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="30" x2="38" y2="18" />
+            <line class="mesh-line" x1="38" y1="18" x2="60" y2="40" />
+            <line class="mesh-line" x1="18" y1="30" x2="28" y2="58" />
+            <line class="mesh-line" x1="28" y1="58" x2="60" y2="40" />
+            <circle class="mesh-node" cx="18" cy="30" r="3.1" />
+            <circle class="mesh-node soft" cx="38" cy="18" r="3.3" />
+            <circle class="mesh-node" cx="60" cy="40" r="3.2" />
+            <circle class="mesh-node soft" cx="28" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Dermatology</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+
+      <div class="cluster family-specialty dim" style="left: 12%; top: 58%; --progress: 134deg;">
+        <div class="cluster-frame">
+          <svg viewBox="0 0 80 80">
+            <line class="mesh-line" x1="18" y1="40" x2="36" y2="20" />
+            <line class="mesh-line" x1="36" y1="20" x2="58" y2="28" />
+            <line class="mesh-line" x1="18" y1="40" x2="48" y2="58" />
+            <line class="mesh-line" x1="48" y1="58" x2="58" y2="28" />
+            <circle class="mesh-node soft" cx="18" cy="40" r="3.1" />
+            <circle class="mesh-node" cx="36" cy="20" r="3.3" />
+            <circle class="mesh-node soft" cx="58" cy="28" r="3.1" />
+            <circle class="mesh-node" cx="48" cy="58" r="3.3" />
+          </svg>
+        </div>
+        <div class="cluster-label">
+          <strong>Psychiatry</strong>
+          <span>Specialty</span>
+        </div>
+      </div>
+    </main>
+
+    <aside class="side">
+      <div class="side-head">
+        <h2>Subject Atlas</h2>
+        <p>The top level stays intentionally quiet. Each subject is a fixed constellation with a ring arc showing aggregate progress. Tap a subject to enter its topic network.</p>
+      </div>
+
+      <div class="side-scroll">
+        <div class="card">
+          <h3>How To Read</h3>
+          <div class="legend-row">
+            <div class="family-name"><span class="swatch" style="background: var(--pre)"></span>Family Hue</div>
+            <span>Stable subject grouping</span>
+          </div>
+          <div class="legend-row">
+            <div class="family-name"><span class="swatch" style="background: #d9e8ff"></span>Mesh Nodes</div>
+            <span>Subject constellation</span>
+          </div>
+          <div class="legend-row">
+            <div class="family-name"><span class="swatch" style="background: var(--alert)"></span>Debt / Alerts</div>
+            <span>Hidden until zoom</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Family Hues</h3>
+          <div class="family-row">
+            <div class="family-name"><span class="swatch" style="background: var(--pre)"></span>Pre-Clinical</div>
+            <div class="mini-ring" style="--h: var(--pre)"></div>
+          </div>
+          <div class="family-row">
+            <div class="family-name"><span class="swatch" style="background: var(--para)"></span>Para-Clinical</div>
+            <div class="mini-ring" style="--h: var(--para)"></div>
+          </div>
+          <div class="family-row">
+            <div class="family-name"><span class="swatch" style="background: var(--clinical)"></span>Clinical Core</div>
+            <div class="mini-ring" style="--h: var(--clinical)"></div>
+          </div>
+          <div class="family-row">
+            <div class="family-name"><span class="swatch" style="background: var(--specialty)"></span>Specialties</div>
+            <div class="mini-ring" style="--h: var(--specialty)"></div>
+          </div>
+        </div>
+
+        <div class="tip">
+          <strong>Next Zoom</strong>
+          Entering a subject reveals its topic hubs. Entering a topic reveals microtopics and the deeper synapse map. The top level never becomes a wall of dots.
+        </div>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<h2>Mega Knowledge Tree</h2>
+<p class="subtitle">A living syllabus map: whole exam view by default, zoom into branches for atomic topics, and optionally reveal overlap links when you want deeper connections.</p>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">Default View: Whole Exam Tree</div>
+    <div class="mockup-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="label">Exam in 112 days</div>
+        <div class="label">Zoom 18%</div>
+      </div>
+
+      <div style="display:flex;justify-content:center;margin-bottom:14px">
+        <div style="padding:10px 18px;border-radius:999px;background:#1b1e2e;color:#f3f5ff;border:1px solid #3c4568;font-weight:700">
+          NEET / INICET Mastery Tree
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="placeholder" style="height:92px;background:#12291a;border-color:#2f6f48;color:#dff7e6">Medicine<br>Lvl mix 3.8</div>
+        <div class="placeholder" style="height:92px;background:#2a2210;border-color:#826b2a;color:#fff0b8">Surgery<br>Lvl mix 2.1</div>
+        <div class="placeholder" style="height:92px;background:#1f1830;border-color:#5f4fb5;color:#ece7ff">OBGYN<br>Lvl mix 4.0</div>
+        <div class="placeholder" style="height:92px;background:#161f2f;border-color:#4064a5;color:#deecff">Pathology<br>Lvl mix 5.2</div>
+        <div class="placeholder" style="height:92px;background:#2f1717;border-color:#965050;color:#ffdede">Pharmacology<br>Lvl mix 2.9</div>
+        <div class="placeholder" style="height:92px;background:#17242b;border-color:#3f7e8f;color:#def8ff">PSM<br>Lvl mix 1.7</div>
+      </div>
+
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="padding:6px 10px;border-radius:999px;background:#1b1b22;color:#aeb5c4">0-1 Unseen</div>
+        <div style="padding:6px 10px;border-radius:999px;background:#2a2210;color:#fff0b8">2-3 BTR</div>
+        <div style="padding:6px 10px;border-radius:999px;background:#1f1830;color:#ece7ff">4-5 Content done</div>
+        <div style="padding:6px 10px;border-radius:999px;background:#161f2f;color:#deecff">6-8 Performance</div>
+        <div style="padding:6px 10px;border-radius:999px;background:#12291a;color:#dff7e6">9-10 Retained</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Zoomed Branch: Subject -> Topic -> Atomic Twigs</div>
+    <div class="mockup-body">
+      <div class="label" style="margin-bottom:10px">Medicine -> Cardiology</div>
+      <div style="display:grid;grid-template-columns:1fr;gap:8px">
+        <div class="placeholder" style="height:46px;background:#2a2210;border-color:#826b2a;color:#fff0b8">ACS overview - Level 3</div>
+        <div class="placeholder" style="height:46px;background:#1f1830;border-color:#5f4fb5;color:#ece7ff">STEMI algorithm - Level 5</div>
+        <div class="placeholder" style="height:46px;background:#161f2f;border-color:#4064a5;color:#deecff">Shock classification MCQs - Level 7</div>
+        <div class="placeholder" style="height:46px;background:#12291a;border-color:#2f6f48;color:#dff7e6">ECG localizations - Level 9</div>
+      </div>
+      <div style="margin-top:10px" class="placeholder">Pinned today path: 2 easiest rescue twigs + 1 stretch twig</div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Connections Mode: Overlap Graph</div>
+    <div class="mockup-body">
+      <div class="label" style="margin-bottom:10px">Show overlapping concepts</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="placeholder" style="height:54px">Shock</div>
+        <div class="placeholder" style="height:54px">Fluid resuscitation</div>
+        <div class="placeholder" style="height:54px">Sepsis</div>
+        <div class="placeholder" style="height:54px">Trauma</div>
+      </div>
+      <div style="margin:12px 0" class="placeholder">Connection lines appear only in this mode</div>
+      <div class="pros-cons">
+        <div class="pros">
+          <h4>Good</h4>
+          <ul>
+            <li>Shows why topics repeat across apps</li>
+            <li>Helps mind mapping and clue-based MCQs</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Guardrail</h4>
+          <ul>
+            <li>Keep hidden by default so the main tree stays calm</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="yes-this-direction" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>This feels like the right long-term visualization</h3>
+      <p>Use the tree as the main progression surface, with optional overlap mode.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="too-complex" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>This is too complex</h3>
+      <p>Keep the idea, but simplify it into a flatter subject map.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="love-map-need-different-shape" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>I love the map idea but want a different visual shape</h3>
+      <p>The principle is right, but the presentation should change.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guru - Neural Hubs Mockup</title>
+    <style>
+        :root {
+            --bg-deep: #05060a;
+            --bg-layer: rgba(10, 12, 18, 0.84);
+            --bg-card: rgba(17, 20, 28, 0.92);
+            --border-subtle: rgba(255, 255, 255, 0.07);
+            --border-strong: rgba(255, 255, 255, 0.16);
+            --text-main: #e7ebf4;
+            --text-soft: #9aa3b6;
+            --text-muted: #556079;
+            --mast-0: #23293a;
+            --mast-3: #6574ff;
+            --mast-5: #00a8ff;
+            --mast-7: #11c58c;
+            --mast-10: #f4ab32;
+            --synapse-faint: rgba(255, 255, 255, 0.06);
+            --synapse-strong: rgba(101, 116, 255, 0.42);
+            --alert-red: #ef4444;
+            --alert-orange: #f97316;
+            --src-btr: #8b5cf6;
+            --src-dbmci: #3b82f6;
+            --src-marrow: #ec4899;
+            font-family: "SF Pro Display", "Segoe UI", Inter, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            min-height: 100vh;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 28% 42%, rgba(101, 116, 255, 0.08), transparent 22%),
+                radial-gradient(circle at 72% 28%, rgba(17, 197, 140, 0.05), transparent 20%),
+                linear-gradient(180deg, #06070c 0%, #080a11 100%);
+            overflow: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+            background-size: 44px 44px;
+            pointer-events: none;
+        }
+
+        .header {
+            position: relative;
+            z-index: 5;
+            height: 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            background: rgba(6, 8, 12, 0.76);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            letter-spacing: 0.12em;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .brand-node {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #aab2ff 0%, var(--mast-3) 45%, #28336a 100%);
+            box-shadow: 0 0 16px rgba(101, 116, 255, 0.5);
+            position: relative;
+        }
+
+        .brand-node::after {
+            content: "";
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            width: 18px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(101, 116, 255, 0.5), transparent);
+            transform: translateY(-50%);
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-pill,
+        .control-btn {
+            height: 38px;
+            border-radius: 999px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(255, 255, 255, 0.035);
+            display: flex;
+            align-items: center;
+            color: var(--text-soft);
+        }
+
+        .search-pill {
+            width: 260px;
+            padding: 0 14px;
+            gap: 8px;
+        }
+
+        .search-pill input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        .search-pill input::placeholder { color: var(--text-muted); }
+
+        .control-btn {
+            padding: 0 14px;
+            gap: 8px;
+            font-size: 13px;
+            cursor: default;
+        }
+
+        .control-btn.active {
+            background: rgba(101, 116, 255, 0.12);
+            border-color: rgba(101, 116, 255, 0.3);
+            color: #a9b0ff;
+        }
+
+        .workspace {
+            display: flex;
+            height: calc(100vh - 68px);
+        }
+
+        .atlas-view {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .zoom-badge {
+            position: absolute;
+            top: 22px;
+            left: 24px;
+            z-index: 4;
+            background: rgba(12, 14, 22, 0.82);
+            border: 1px solid var(--border-subtle);
+            border-radius: 999px;
+            color: var(--text-soft);
+            font-size: 12px;
+            padding: 8px 12px;
+            backdrop-filter: blur(12px);
+        }
+
+        .atlas-note {
+            position: absolute;
+            top: 22px;
+            right: 18px;
+            z-index: 4;
+            width: 250px;
+            background: rgba(12, 14, 22, 0.78);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            color: var(--text-soft);
+            font-size: 12px;
+            line-height: 1.4;
+            padding: 14px 16px;
+            backdrop-filter: blur(14px);
+        }
+
+        .atlas-note strong {
+            color: var(--text-main);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .synapse-layer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .synapse-faint {
+            fill: none;
+            stroke: var(--synapse-faint);
+            stroke-width: 2;
+        }
+
+        .synapse-major {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 3;
+        }
+
+        .synapse-active {
+            fill: none;
+            stroke: var(--synapse-strong);
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px rgba(101, 116, 255, 0.4));
+        }
+
+        .synapse-selected {
+            fill: none;
+            stroke: rgba(17, 197, 140, 0.55);
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 6px rgba(17, 197, 140, 0.34));
+        }
+
+        .node-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+        }
+
+        .node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .node-shell {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.35);
+        }
+
+        .subject-hub .node-shell {
+            width: 92px;
+            height: 92px;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.16), var(--mast-5) 22%, #10263a 70%);
+            box-shadow:
+                0 0 0 8px rgba(255, 255, 255, 0.02),
+                0 0 36px rgba(14, 165, 255, 0.18),
+                inset 0 0 26px rgba(0, 0, 0, 0.42);
+        }
+
+        .subject-hub.dim .node-shell {
+            opacity: 0.52;
+            transform: scale(0.92);
+            box-shadow:
+                0 0 0 6px rgba(255, 255, 255, 0.015),
+                0 0 26px rgba(255, 255, 255, 0.05),
+                inset 0 0 22px rgba(0, 0, 0, 0.42);
+        }
+
+        .subject-hub .node-label {
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-main);
+        }
+
+        .subject-hub.dim .node-label { color: var(--text-muted); }
+
+        .subject-hub .node-sub {
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+
+        .topic-hub .node-shell {
+            width: 56px;
+            height: 56px;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.18), var(--mast-3) 28%, #1c254f 76%);
+            box-shadow: 0 0 20px rgba(101, 116, 255, 0.18);
+        }
+
+        .topic-hub.medium-5 .node-shell {
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.18), var(--mast-5) 28%, #0b3343 76%);
+            box-shadow: 0 0 20px rgba(0, 168, 255, 0.16);
+        }
+
+        .topic-hub.medium-7 .node-shell {
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.2), var(--mast-7) 30%, #0b3e31 78%);
+            box-shadow: 0 0 24px rgba(17, 197, 140, 0.18);
+        }
+
+        .topic-hub .node-label {
+            padding: 7px 11px;
+            border-radius: 999px;
+            background: rgba(10, 12, 18, 0.86);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-soft);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .topic-hub.selected .node-label,
+        .micro-node.selected .node-label {
+            border-color: var(--border-strong);
+            color: var(--text-main);
+        }
+
+        .micro-node {
+            gap: 8px;
+        }
+
+        .micro-node .node-shell {
+            width: 22px;
+            height: 22px;
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.12), var(--mast-3) 28%, #212948 82%);
+            box-shadow: 0 0 12px rgba(101, 116, 255, 0.16);
+        }
+
+        .micro-node.m-5 .node-shell {
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.12), var(--mast-5) 30%, #0d3042 82%);
+            box-shadow: 0 0 12px rgba(0, 168, 255, 0.16);
+        }
+
+        .micro-node.m-7 .node-shell {
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.14), var(--mast-7) 32%, #0b4131 84%);
+            box-shadow: 0 0 14px rgba(17, 197, 140, 0.2);
+        }
+
+        .micro-node.m-10 .node-shell {
+            background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.16), var(--mast-10) 34%, #4a3111 84%);
+            box-shadow: 0 0 14px rgba(244, 171, 50, 0.2);
+        }
+
+        .micro-node .node-label {
+            padding: 6px 9px;
+            border-radius: 10px;
+            background: rgba(9, 11, 17, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            font-size: 11px;
+            color: var(--text-soft);
+            white-space: nowrap;
+        }
+
+        .micro-node.faint {
+            opacity: 0.72;
+        }
+
+        .marker-stack {
+            position: absolute;
+            top: -4px;
+            right: -6px;
+            display: flex;
+            gap: 3px;
+        }
+
+        .marker {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.65);
+        }
+
+        .marker.urgent {
+            background: var(--alert-red);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+            animation: pulse 1.8s infinite;
+        }
+
+        .marker.debt {
+            background: var(--alert-orange);
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.42);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .edge-fade {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(90deg, rgba(5, 6, 10, 0.9) 0%, rgba(5, 6, 10, 0) 12%, rgba(5, 6, 10, 0) 88%, rgba(5, 6, 10, 0.95) 100%),
+                linear-gradient(180deg, rgba(5, 6, 10, 0.8) 0%, rgba(5, 6, 10, 0) 12%, rgba(5, 6, 10, 0) 88%, rgba(5, 6, 10, 0.88) 100%);
+            z-index: 3;
+        }
+
+        .side-panel {
+            width: 392px;
+            background: var(--bg-layer);
+            border-left: 1px solid var(--border-subtle);
+            backdrop-filter: blur(22px);
+            box-shadow: -12px 0 42px rgba(0, 0, 0, 0.42);
+            display: flex;
+            flex-direction: column;
+            z-index: 4;
+        }
+
+        .panel-header {
+            padding: 24px 24px 20px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-path {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            gap: 12px;
+        }
+
+        .path-pill {
+            color: var(--mast-7);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 5px 9px;
+            background: rgba(17, 197, 140, 0.1);
+            border-radius: 999px;
+        }
+
+        .panel-header h2 {
+            font-size: 24px;
+            line-height: 1.2;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .panel-header p {
+            font-size: 13px;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+
+        .panel-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .status-card,
+        .info-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .status-card h3,
+        .info-card h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .status-value {
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .status-value span {
+            font-size: 13px;
+            color: var(--text-soft);
+            font-weight: 500;
+        }
+
+        .status-foot {
+            margin-top: 6px;
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+
+        .warning {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.12), rgba(249, 115, 22, 0.02));
+            border: 1px solid rgba(249, 115, 22, 0.16);
+        }
+
+        .warning h4 {
+            font-size: 13px;
+            color: #ffedd5;
+            margin-bottom: 4px;
+        }
+
+        .warning p {
+            font-size: 12px;
+            color: var(--text-soft);
+            line-height: 1.5;
+        }
+
+        .source-grid,
+        .signal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .row strong {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .row span {
+            font-size: 12px;
+            color: var(--text-soft);
+        }
+
+        .row.btr strong { color: var(--src-btr); }
+        .row.dbmci strong { color: var(--src-dbmci); }
+        .row.marrow strong { color: var(--src-marrow); }
+
+        .tag {
+            font-size: 10px;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 999px;
+            padding: 4px 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .signal-list .row strong { color: var(--text-main); }
+
+        .main-action {
+            width: 100%;
+            height: 50px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #f8fafc, #d8e0f1);
+            color: #07090f;
+            font-size: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .secondary-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .secondary-actions button {
+            height: 42px;
+            border-radius: 12px;
+            border: 1px solid var(--border-subtle);
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-soft);
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="brand">
+            <div class="brand-node"></div>
+            Knowledge Atlas
+        </div>
+        <div class="controls">
+            <div class="search-pill">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search neural pathways...">
+            </div>
+            <div class="control-btn active">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Active Synapses
+            </div>
+            <div class="control-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                Overlays
+            </div>
+            <div class="control-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Legend
+            </div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <main class="atlas-view">
+            <div class="zoom-badge">Zoom 24% · Full Atlas View</div>
+            <div class="atlas-note">
+                <strong>Atlas State</strong>
+                Selective microtopics are visible at this zoom. Only the strongest hub-to-hub synapses are drawn by default.
+            </div>
+
+            <svg class="synapse-layer" viewBox="0 0 980 720" preserveAspectRatio="none">
+                <!-- Subject hub spine -->
+                <path class="synapse-faint" d="M 118 390 C 230 250, 390 185, 520 208" />
+                <path class="synapse-faint" d="M 118 390 C 268 452, 430 520, 580 548" />
+                <path class="synapse-faint" d="M 520 208 C 664 178, 788 232, 876 330" />
+                <path class="synapse-faint" d="M 580 548 C 714 565, 828 512, 882 420" />
+
+                <!-- Major subject to topic synapses -->
+                <path class="synapse-major" d="M 164 390 C 244 350, 282 300, 336 276" />
+                <path class="synapse-major" d="M 164 390 C 268 390, 332 378, 390 364" />
+                <path class="synapse-major" d="M 164 390 C 258 430, 316 458, 376 488" />
+                <path class="synapse-major" d="M 164 390 C 246 470, 286 530, 330 580" />
+
+                <!-- Cross-subject active links -->
+                <path class="synapse-active" d="M 390 364 C 490 330, 610 326, 726 344" />
+                <path class="synapse-active" d="M 390 364 C 470 434, 598 472, 716 468" />
+
+                <!-- Topic to microtopic active branch -->
+                <path class="synapse-selected" d="M 390 364 C 446 332, 500 306, 548 286" />
+                <path class="synapse-selected" d="M 390 364 C 470 364, 520 364, 572 364" />
+                <path class="synapse-selected" d="M 390 364 C 456 402, 512 426, 564 446" />
+                <path class="synapse-selected" d="M 390 364 C 434 456, 484 520, 530 560" />
+
+                <!-- Other faint satellites -->
+                <path class="synapse-faint" d="M 336 276 C 378 234, 422 210, 472 190" />
+                <path class="synapse-faint" d="M 336 276 C 406 278, 446 250, 492 226" />
+                <path class="synapse-faint" d="M 376 488 C 452 484, 520 498, 586 512" />
+            </svg>
+
+            <div class="node-layer">
+                <!-- Subject hubs -->
+                <div class="node subject-hub" style="left: 120px; top: 390px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Medicine</div>
+                    <div class="node-sub">32 topic hubs</div>
+                </div>
+
+                <div class="node subject-hub dim" style="left: 520px; top: 208px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Surgery</div>
+                    <div class="node-sub">19 topic hubs</div>
+                </div>
+
+                <div class="node subject-hub dim" style="left: 582px; top: 550px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Pediatrics</div>
+                    <div class="node-sub">14 topic hubs</div>
+                </div>
+
+                <div class="node subject-hub dim" style="left: 872px; top: 334px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">OBGYN</div>
+                    <div class="node-sub">16 topic hubs</div>
+                </div>
+
+                <div class="node subject-hub dim" style="left: 882px; top: 430px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">PSM</div>
+                    <div class="node-sub">11 topic hubs</div>
+                </div>
+
+                <!-- Topic hubs branching from Medicine -->
+                <div class="node topic-hub medium-5" style="left: 336px; top: 276px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Neurology</div>
+                </div>
+
+                <div class="node topic-hub medium-7 selected" style="left: 390px; top: 364px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Cardiology</div>
+                </div>
+
+                <div class="node topic-hub medium-5" style="left: 376px; top: 488px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Pulmonology</div>
+                </div>
+
+                <div class="node topic-hub" style="left: 330px; top: 580px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Gastroenterology</div>
+                </div>
+
+                <!-- Selected topic satellites -->
+                <div class="node micro-node m-5 faint" style="left: 548px; top: 286px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">HF Pathophysiology</div>
+                </div>
+
+                <div class="node micro-node m-7 selected" style="left: 572px; top: 364px;">
+                    <div class="node-shell">
+                        <div class="marker-stack">
+                            <div class="marker debt"></div>
+                        </div>
+                    </div>
+                    <div class="node-label">Acute Decompensated HF</div>
+                </div>
+
+                <div class="node micro-node m-3" style="left: 564px; top: 446px;">
+                    <div class="node-shell">
+                        <div class="marker-stack">
+                            <div class="marker urgent"></div>
+                        </div>
+                    </div>
+                    <div class="node-label">Arrhythmias in HF</div>
+                </div>
+
+                <div class="node micro-node m-10 faint" style="left: 530px; top: 560px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Diuretic Strategy</div>
+                </div>
+
+                <!-- Other selective satellites -->
+                <div class="node micro-node m-3 faint" style="left: 472px; top: 190px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Status Epilepticus</div>
+                </div>
+
+                <div class="node micro-node m-0 faint" style="left: 492px; top: 226px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Stroke Syndromes</div>
+                </div>
+
+                <div class="node micro-node m-5 faint" style="left: 586px; top: 512px;">
+                    <div class="node-shell"></div>
+                    <div class="node-label">Pulmonary Edema</div>
+                </div>
+
+                <div class="edge-fade"></div>
+            </div>
+        </main>
+
+        <aside class="side-panel">
+            <div class="panel-header">
+                <div class="panel-path">
+                    <span class="path-pill">Medicine / Cardiology</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </div>
+                <h2>Acute Decompensated Heart Failure</h2>
+                <p>Microtopic selected. Nearby related satellites are illuminated to preserve context while the full atlas remains visible.</p>
+            </div>
+
+            <div class="panel-scroll">
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h3>Mastery</h3>
+                        <div class="status-value" style="color: var(--mast-7);">7 <span>/10</span></div>
+                        <div class="status-foot">Proficient, needs retention support</div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Connected Signals</h3>
+                        <div class="status-value">4 <span>live links</span></div>
+                        <div class="status-foot">Cardiology + Pulmonology overlap</div>
+                    </div>
+                </div>
+
+                <div class="warning">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--alert-orange); flex: none;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div>
+                        <h4>Revision Debt Rising</h4>
+                        <p>Last reinforced 4 days ago. Weak retention markers are appearing around adjacent heart-failure pathways.</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Source Alignment</h3>
+                    <div class="source-grid">
+                        <div class="row btr">
+                            <strong>BTR</strong>
+                            <span>Completed</span>
+                            <span class="tag">Level 1</span>
+                        </div>
+                        <div class="row dbmci">
+                            <strong>DBMCI</strong>
+                            <span>Notes Read</span>
+                            <span class="tag">Partial</span>
+                        </div>
+                        <div class="row marrow">
+                            <strong>Marrow</strong>
+                            <span>QBank Pending</span>
+                            <span class="tag">Untouched</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Signal Markers</h3>
+                    <div class="signal-list">
+                        <div class="row">
+                            <strong>Urgency</strong>
+                            <span>Moderate due to exam weighting</span>
+                        </div>
+                        <div class="row">
+                            <strong>Revision Debt</strong>
+                            <span>High on this microtopic</span>
+                        </div>
+                        <div class="row">
+                            <strong>Weak Retention</strong>
+                            <span>Detected in ADHF + pulmonary edema pair</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3>Next Recommended Action</h3>
+                    <button class="main-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                        Start Spaced Repetition
+                    </button>
+                    <div class="secondary-actions">
+                        <button>MCQs</button>
+                        <button>Notes</button>
+                        <button>Mind Map</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</body>
+</html>

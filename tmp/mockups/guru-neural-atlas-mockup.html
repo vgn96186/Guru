@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Guru - Neural Atlas Mockup</title>
+    <style>
+        /* --- CSS Variables & Design System --- */
+        :root {
+            /* Core Palette */
+            --bg-deep: #050508;
+            --bg-panel: rgba(13, 13, 18, 0.85);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-active: rgba(255, 255, 255, 0.15);
+            
+            /* Typography */
+            --text-primary: #E5E7EB;
+            --text-secondary: #9CA3AF;
+            --text-muted: #4B5563;
+            
+            /* Mastery Colors (Neural Nodes) */
+            --node-0: #1F2937;  /* Dormant */
+            --node-3: #6366F1;  /* Indigo - Firing */
+            --node-5: #0EA5E9;  /* Sky - Active */
+            --node-7: #10B981;  /* Emerald - Strong */
+            --node-10: #F59E0B; /* Amber - Mastered */
+            
+            /* Atlas Synapses */
+            --synapse-base: rgba(255, 255, 255, 0.05);
+            --synapse-active: rgba(99, 102, 241, 0.4);
+            
+            /* Indicators */
+            --alert-red: #EF4444;
+            --alert-orange: #F97316;
+            
+            /* Sources */
+            --src-btr: #8B5CF6;
+            --src-dbmci: #3B82F6;
+            --src-marrow: #EC4899;
+            
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Subtle neural grid background */
+            background-image: 
+                radial-gradient(circle at center, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+        }
+
+        /* --- Top Bar --- */
+        .header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            background: rgba(5, 5, 8, 0.8);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-subtle);
+            z-index: 100;
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .logo-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--node-3);
+            box-shadow: 0 0 12px var(--node-3);
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .search {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 260px;
+        }
+        .search input {
+            background: none; border: none; color: var(--text-primary);
+            width: 100%; outline: none; font-size: 14px;
+        }
+        .search input::placeholder { color: var(--text-muted); }
+
+        .tool-btn {
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            padding: 8px 16px;
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            display: flex; align-items: center; gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tool-btn:hover { background: rgba(255,255,255,0.05); }
+        .tool-btn.active {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: #818CF8;
+        }
+
+        /* --- Main Layout --- */
+        .workspace {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - 64px);
+            position: relative;
+        }
+
+        /* --- Neural Atlas Canvas --- */
+        .atlas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        /* Cluster Regions */
+        .cluster-region {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px dashed rgba(255, 255, 255, 0.03);
+            background: radial-gradient(circle, rgba(255,255,255,0.01) 0%, transparent 70%);
+            display: flex; align-items: center; justify-content: center;
+            pointer-events: none;
+        }
+        .cluster-label {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* SVG Synapses Layer */
+        .synapse-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .synapse {
+            fill: none;
+            stroke: var(--synapse-base);
+            stroke-width: 1.5;
+            stroke-dasharray: 4 4;
+        }
+        .synapse.active {
+            stroke: var(--synapse-active);
+            stroke-dasharray: none;
+            filter: drop-shadow(0 0 4px rgba(99,102,241,0.5));
+            animation: flow 2s linear infinite;
+        }
+
+        @keyframes flow {
+            to { stroke-dashoffset: -20; }
+        }
+
+        /* Neural Nodes */
+        .node-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10;
+        }
+
+        .neuron {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .neuron:hover { transform: translate(-50%, -50%) scale(1.1); z-index: 20; }
+
+        .soma {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            background: var(--node-0);
+            border: 2px solid rgba(0,0,0,0.5);
+            position: relative;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.5);
+        }
+
+        /* Soma Mastery States */
+        .neuron[data-m="3"] .soma { background: var(--node-3); box-shadow: 0 0 12px rgba(99,102,241,0.3); }
+        .neuron[data-m="5"] .soma { background: var(--node-5); box-shadow: 0 0 12px rgba(14,165,233,0.3); }
+        .neuron[data-m="7"] .soma { background: var(--node-7); box-shadow: 0 0 12px rgba(16,185,129,0.3); }
+        .neuron[data-m="10"] .soma { background: var(--node-10); box-shadow: 0 0 16px rgba(245,158,11,0.4); }
+
+        /* Selected State */
+        .neuron.selected .soma {
+            border: 2px solid #FFF;
+            box-shadow: 0 0 24px var(--node-7); /* Assumes mastery 7 for mockup */
+        }
+
+        /* Neuron Label Box */
+        .neuron-label {
+            background: rgba(13, 13, 18, 0.9);
+            border: 1px solid var(--border-subtle);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+        .neuron.selected .neuron-label {
+            color: var(--text-primary);
+            border-color: var(--border-active);
+            background: rgba(20, 20, 28, 0.95);
+        }
+
+        /* Mini Indicators on Neuron */
+        .n-markers {
+            position: absolute;
+            top: -4px; right: -4px;
+            display: flex; gap: 2px;
+        }
+        .n-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            border: 1px solid #000;
+        }
+        .n-debt { background: var(--alert-orange); }
+        .n-urgent { background: var(--alert-red); animation: pulse 1.5s infinite; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* --- Right Info Panel --- */
+        .side-panel {
+            width: 400px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border-subtle);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            box-shadow: -10px 0 40px rgba(0,0,0,0.6);
+        }
+
+        .panel-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .panel-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .cluster-tag {
+            font-size: 11px;
+            color: var(--node-7);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-close {
+            background: none; border: none; color: var(--text-muted); cursor: pointer;
+        }
+
+        .panel-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .panel-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Status Blocks */
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .status-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .s-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+        .s-value { font-size: 24px; color: var(--text-primary); display: flex; align-items: baseline; gap: 4px;}
+        .s-sub { font-size: 13px; color: var(--text-secondary); }
+
+        /* Warning Banner */
+        .warning-banner {
+            background: linear-gradient(to right, rgba(249, 115, 22, 0.1), transparent);
+            border-left: 3px solid var(--alert-orange);
+            padding: 12px 16px;
+            border-radius: 0 8px 8px 0;
+            display: flex; gap: 12px;
+            align-items: center;
+        }
+        .warning-text h4 { font-size: 13px; color: #FFEDD5; margin-bottom: 2px; }
+        .warning-text p { font-size: 12px; color: var(--text-secondary); }
+
+        /* Source Alignment */
+        .source-matrix {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .source-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .src-btr { color: var(--src-btr); }
+        .src-dbmci { color: var(--src-dbmci); }
+        .src-marrow { color: var(--text-muted); }
+
+        .src-tag { 
+            font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.05); 
+        }
+
+        /* Action Area */
+        .action-area { margin-top: auto; padding-top: 16px; }
+        
+        .main-action {
+            width: 100%;
+            background: var(--text-primary);
+            color: var(--bg-deep);
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            margin-bottom: 12px;
+            transition: transform 0.2s;
+        }
+        .main-action:hover { transform: scale(0.98); }
+
+        .secondary-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .sec-btn {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-secondary);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .sec-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo-area">
+            <div class="logo-dot"></div>
+            Neural Atlas
+        </div>
+        <div class="toolbar">
+            <div class="search">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Locate topic or cluster...">
+            </div>
+            <button class="tool-btn active">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                Synapses
+            </button>
+            <button class="tool-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+                Source View
+            </button>
+        </div>
+    </header>
+
+    <div class="workspace">
+        
+        <main class="atlas-container">
+            
+            <!-- Background Cluster Regions -->
+            <div class="cluster-region" style="width: 400px; height: 400px; top: 10%; left: 10%;">
+                <div class="cluster-label">Endocrinology</div>
+            </div>
+            <div class="cluster-region" style="width: 500px; height: 500px; top: 30%; left: 40%;">
+                <div class="cluster-label" style="color: rgba(16, 185, 129, 0.5);">Cardiology</div>
+            </div>
+
+            <!-- Synapse Connections (SVG) -->
+            <svg class="synapse-layer">
+                <!-- Inactive generic connections -->
+                <path class="synapse" d="M 200 200 Q 300 250 450 350" />
+                <path class="synapse" d="M 250 150 Q 400 100 500 250" />
+                <path class="synapse" d="M 500 250 Q 600 300 650 450" />
+                
+                <!-- Active connections to selected node (ADHF -> Pathophys, Arrhythmias) -->
+                <path class="synapse active" d="M 450 350 Q 550 400 650 450" />
+                <path class="synapse active" d="M 450 350 Q 500 250 500 250" />
+            </svg>
+
+            <!-- Neural Nodes -->
+            <div class="node-layer">
+                
+                <!-- Endo Cluster Nodes -->
+                <div class="neuron" data-m="10" style="top: 200px; left: 200px;">
+                    <div class="soma"></div>
+                    <div class="neuron-label">Diabetes Type 2</div>
+                </div>
+                <div class="neuron" data-m="3" style="top: 150px; left: 250px;">
+                    <div class="soma"></div>
+                    <div class="neuron-label">DKA Management</div>
+                </div>
+
+                <!-- Cardio Cluster Nodes -->
+                <div class="neuron" data-m="5" style="top: 250px; left: 500px;">
+                    <div class="soma"></div>
+                    <div class="neuron-label">Pathophysiology of HF</div>
+                </div>
+
+                <!-- Selected Node -->
+                <div class="neuron selected" data-m="7" style="top: 350px; left: 450px;">
+                    <div class="soma">
+                        <div class="n-markers"><div class="n-dot n-debt"></div></div>
+                    </div>
+                    <div class="neuron-label">Acute Decompensated HF</div>
+                </div>
+
+                <div class="neuron" data-m="3" style="top: 450px; left: 650px;">
+                    <div class="soma">
+                        <div class="n-markers"><div class="n-dot n-urgent"></div></div>
+                    </div>
+                    <div class="neuron-label">Arrhythmias in HF</div>
+                </div>
+                
+                <div class="neuron" data-m="0" style="top: 550px; left: 400px;">
+                    <div class="soma"></div>
+                    <div class="neuron-label">Valvular Heart Disease</div>
+                </div>
+
+            </div>
+        </main>
+
+        <aside class="side-panel">
+            <div class="panel-header">
+                <div class="panel-meta">
+                    <span class="cluster-tag">Cardiology Cluster</span>
+                    <button class="btn-close">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
+                <h2 class="panel-title">Acute Decompensated Heart Failure</h2>
+            </div>
+
+            <div class="panel-scroll">
+                
+                <div class="status-grid">
+                    <div class="status-card">
+                        <div class="s-label">Signal Strength</div>
+                        <div class="s-value" style="color: var(--node-7);">7 <span class="s-sub">/10</span></div>
+                        <div class="s-sub" style="margin-top: 4px;">Proficient</div>
+                    </div>
+                    <div class="status-card">
+                        <div class="s-label">Synapses</div>
+                        <div class="s-value">4</div>
+                        <div class="s-sub" style="margin-top: 4px;">Connected topics</div>
+                    </div>
+                </div>
+
+                <div class="warning-banner">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--alert-orange);"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <div class="warning-text">
+                        <h4>Retention Decay Detected</h4>
+                        <p>Signal strength dropping. Review required to maintain pathways.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="s-label">Source Alignment</div>
+                    <div class="source-matrix">
+                        <div class="source-row src-btr">
+                            <span>BTR Alignment</span>
+                            <span class="src-tag">Completed</span>
+                        </div>
+                        <div class="source-row src-dbmci">
+                            <span>DBMCI Notes</span>
+                            <span class="src-tag">Partial</span>
+                        </div>
+                        <div class="source-row src-marrow">
+                            <span>Marrow QBank</span>
+                            <span class="src-tag">Untouched</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-area">
+                    <button class="main-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        Fire Spaced Repetition
+                    </button>
+                    <div class="secondary-actions">
+                        <button class="sec-btn">Drill MCQs</button>
+                        <button class="sec-btn">View Notes</button>
+                        <button class="sec-btn">Extract Core</button>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+    </div>
+
+</body>
+</html>

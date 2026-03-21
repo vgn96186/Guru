@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useNavigation, type NavigationProp } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { HomeStackParamList, TabParamList } from '../../navigation/types';
+import type { HomeStackParamList } from '../../navigation/types';
 import { theme } from '../../constants/theme';
 import { useAppStore } from '../../store/useAppStore';
 import { generateDailyAgendaWithRouting } from '../../services/ai';
@@ -67,9 +67,7 @@ export default function TodayPlanCard() {
   };
 
   const navigateToFullSchedule = () => {
-    navigation
-      .getParent<NavigationProp<TabParamList>>()
-      ?.navigate('MenuTab', { screen: 'StudyPlan' });
+    navigation.navigate('StudyPlan');
   };
 
   if (!todayPlan) {

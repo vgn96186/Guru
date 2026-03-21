@@ -169,7 +169,7 @@ export default function NotesSearchScreen() {
 
     const subject = getSubjectById(item.subject_id);
     if (subject) {
-      tabsNavigation?.navigate('SyllabusTab', {
+      tabsNavigation?.navigate('TreeTab', {
         screen: 'TopicDetail',
         params: {
           subjectId: subject.id,

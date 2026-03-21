@@ -25,13 +25,6 @@ const PRIMARY_DESTINATIONS: Array<{
     tint: '#6C63FF',
   },
   {
-    route: 'Stats',
-    title: 'Stats',
-    subtitle: 'Progress, streaks, and weekly momentum.',
-    icon: 'bar-chart-outline',
-    tint: '#FF9800',
-  },
-  {
     route: 'NotesHub',
     title: 'Notes Vault',
     subtitle: 'Lecture transcripts, topic notes, and search.',
@@ -59,8 +52,8 @@ export default function MenuScreen() {
             <Text style={styles.kicker}>MENU</Text>
             <Text style={styles.title}>Everything important in one place.</Text>
             <Text style={styles.subtitle}>
-              Use this hub for planning, stats, notes, and deeper configuration. Fast actions live
-              in the center Action Hub.
+              Use this hub for planning, notes, and deeper configuration. Fast actions live in the
+              center Action Hub.
             </Text>
           </View>
 

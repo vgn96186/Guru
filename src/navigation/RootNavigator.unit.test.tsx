@@ -2,13 +2,18 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import RootNavigator from './RootNavigator';
 
+const stackScreens: Array<{ name: string }> = [];
+
 // Mock navigation
 jest.mock('@react-navigation/native-stack', () => {
   const React = require('react');
   return {
     createNativeStackNavigator: jest.fn(() => ({
       Navigator: ({ children }: any) => React.createElement('Navigator', {}, children),
-      Screen: ({ name }: any) => React.createElement('Screen', { name }),
+      Screen: ({ name }: any) => {
+        stackScreens.push({ name });
+        return React.createElement('Screen', { name });
+      },
     })),
   };
 });
@@ -27,10 +32,27 @@ jest.mock('../screens/PunishmentMode', () => () => null);
 jest.mock('../screens/DoomscrollInterceptor', () => () => null);
 jest.mock('../screens/LocalModelScreen', () => () => null);
 jest.mock('../screens/PomodoroQuizScreen', () => () => null);
+jest.mock('../screens/GuruChatScreen', () => () => null);
+jest.mock('../screens/SettingsScreen', () => () => null);
 
 describe('RootNavigator', () => {
+  beforeEach(() => {
+    stackScreens.length = 0;
+  });
+
   it('renders without crashing', () => {
     const { toJSON } = render(<RootNavigator initialRoute="CheckIn" />);
     expect(toJSON()).toBeDefined();
+  });
+
+  it('includes the new modal routes', () => {
+    render(<RootNavigator initialRoute="CheckIn" />);
+
+    expect(stackScreens).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'GuruChatModal' }),
+        expect.objectContaining({ name: 'SettingsModal' }),
+      ]),
+    );
   });
 });

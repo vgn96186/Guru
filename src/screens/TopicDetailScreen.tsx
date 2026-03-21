@@ -21,7 +21,7 @@ import {
   type RouteProp,
 } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { SyllabusStackParamList, TabParamList } from '../navigation/types';
+import type { TabParamList, TreeStackParamList } from '../navigation/types';
 import { getTopicsBySubject, updateTopicNotes, updateTopicProgress } from '../db/queries/topics';
 import { clearTopicCache } from '../db/queries/aiCache';
 import { fetchWikipediaImage } from '../services/imageService';
@@ -44,8 +44,8 @@ function TopicImage({ topicName }: { topicName: string }) {
   return <Image source={{ uri: imageUrl }} style={styles.topicImage} resizeMode="contain" />;
 }
 
-type Route = RouteProp<SyllabusStackParamList, 'TopicDetail'>;
-type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
+type Route = RouteProp<TreeStackParamList, 'TopicDetail'>;
+type Nav = NativeStackNavigationProp<TreeStackParamList, 'TopicDetail'>;
 
 const STATUS_COLORS: Record<TopicStatus, string> = {
   unseen: theme.colors.unseen,

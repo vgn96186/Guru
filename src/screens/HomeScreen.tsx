@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList, TabParamList } from '../navigation/types';
+import type { HomeStackParamList, RootStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { useSessionStore } from '../store/useSessionStore';
 // HeroCard removed — exam countdown consolidated into header row
@@ -47,6 +47,7 @@ export default function HomeScreen() {
   const isTabletLandscape = width >= 900 && width > height;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const rootNavigation = tabsNavigation?.getParent<NavigationProp<RootStackParamList>>();
   const { profile, levelInfo, setTodayPlan } = useAppStore();
 
   const {
@@ -353,7 +354,7 @@ export default function HomeScreen() {
                 {todayTasks.length === 0 ? (
                   <TouchableOpacity
                     style={styles.emptySectionTouchable}
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                    onPress={() => navigation.navigate('StudyPlan')}
                     activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel="Open Study Plan"
@@ -386,7 +387,7 @@ export default function HomeScreen() {
                     ))}
                     {todayTasks.length > 2 && (
                       <TouchableOpacity
-                        onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                        onPress={() => navigation.navigate('StudyPlan')}
                         activeOpacity={0.7}
                         accessibilityRole="button"
                         accessibilityLabel="See full study plan"
@@ -405,14 +406,14 @@ export default function HomeScreen() {
                     title="Study Plan"
                     icon="calendar-outline"
                     accent={theme.colors.primary}
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                    onPress={() => navigation.navigate('StudyPlan')}
                     accessibilityLabel="Open Study Plan"
                   />
                   <ShortcutTile
                     title="Notes Vault"
                     icon="library-outline"
                     accent={theme.colors.success}
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesHub' })}
+                    onPress={() => tabsNavigation?.navigate('VaultTab', { screen: 'NotesHub' })}
                     accessibilityLabel="Open Notes Vault"
                   />
                   <ShortcutTile
@@ -426,7 +427,11 @@ export default function HomeScreen() {
                     title="Guru Chat"
                     icon="chatbubbles-outline"
                     accent={theme.colors.info}
-                    onPress={() => tabsNavigation?.navigate('ChatTab', { screen: 'GuruChat' })}
+                    onPress={() =>
+                      rootNavigation?.navigate('GuruChatModal', {
+                        screen: 'GuruChat',
+                      })
+                    }
                     accessibilityLabel="Open Guru Chat"
                   />
                 </View>

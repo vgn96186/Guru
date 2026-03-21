@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { MenuStackParamList, TabParamList } from '../navigation/types';
+import type { MenuStackParamList, RootStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
@@ -79,6 +79,7 @@ import { Audio } from 'expo-av';
 export default function NotesHubScreen() {
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
+  const rootNavigation = tabsNavigation?.getParent<NavigationProp<RootStackParamList>>();
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const isRecoveringBackground = useAppStore((s) => s.isRecoveringBackground);
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
@@ -407,7 +408,7 @@ export default function NotesHubScreen() {
             <TouchableOpacity
               style={styles.actionCard}
               onPress={() =>
-                tabsNavigation?.navigate('ChatTab', {
+                rootNavigation?.navigate('GuruChatModal', {
                   screen: 'GuruChat',
                   params: { topicName: 'General Medicine' },
                 })

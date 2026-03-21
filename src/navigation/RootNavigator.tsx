@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import type { RootStackParamList } from './types';
+import type { RootStackParamList, ChatStackParamList, SettingsModalParamList } from './types';
 import CheckInScreen from '../screens/CheckInScreen';
 import TabNavigator from './TabNavigator';
 import LockdownScreen from '../screens/LockdownScreen';
@@ -14,8 +14,30 @@ import PunishmentMode from '../screens/PunishmentMode';
 import DoomscrollInterceptor from '../screens/DoomscrollInterceptor';
 import LocalModelScreen from '../screens/LocalModelScreen';
 import PomodoroQuizScreen from '../screens/PomodoroQuizScreen';
+import GuruChatScreen from '../screens/GuruChatScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import DeviceLinkScreen from '../screens/DeviceLinkScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const GuruChatStack = createNativeStackNavigator<ChatStackParamList>();
+const SettingsStack = createNativeStackNavigator<SettingsModalParamList>();
+
+function GuruChatModalNav() {
+  return (
+    <GuruChatStack.Navigator initialRouteName="GuruChat" screenOptions={{ headerShown: false }}>
+      <GuruChatStack.Screen name="GuruChat" component={GuruChatScreen} />
+    </GuruChatStack.Navigator>
+  );
+}
+
+function SettingsModalNav() {
+  return (
+    <SettingsStack.Navigator initialRouteName="Settings" screenOptions={{ headerShown: false }}>
+      <SettingsStack.Screen name="Settings" component={SettingsScreen} />
+      <SettingsStack.Screen name="DeviceLink" component={DeviceLinkScreen} />
+    </SettingsStack.Navigator>
+  );
+}
 
 export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' | 'CheckIn' }) {
   return (
@@ -25,6 +47,16 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
     >
       <Stack.Screen name="CheckIn" component={CheckInScreen} />
       <Stack.Screen name="Tabs" component={TabNavigator} />
+      <Stack.Screen
+        name="GuruChatModal"
+        component={GuruChatModalNav}
+        options={{ presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="SettingsModal"
+        component={SettingsModalNav}
+        options={{ presentation: 'modal' }}
+      />
       <Stack.Screen
         name="Lockdown"
         component={LockdownScreen}

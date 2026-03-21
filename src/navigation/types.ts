@@ -1,22 +1,6 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { Mood, SessionMode } from '../types';
 
-export type RootStackParamList = {
-  PunishmentMode: undefined;
-  BedLock: undefined;
-  DoomscrollInterceptor: undefined;
-  BreakEnforcer: { durationSeconds: number };
-  DoomscrollGuide: undefined;
-  Lockdown: { duration: number };
-  CheckIn: undefined;
-  Tabs: NavigatorScreenParams<TabParamList> | undefined;
-  BrainDumpReview: undefined;
-  SleepMode: undefined;
-  WakeUp: undefined;
-  LocalModel: undefined;
-  PomodoroQuiz: undefined;
-};
-
 export type HomeStackParamList = {
   Home: undefined;
   Session: {
@@ -34,9 +18,21 @@ export type HomeStackParamList = {
   BossBattle: undefined;
   Inertia: undefined;
   ManualLog: { appId?: string };
+  StudyPlan: undefined;
   DailyChallenge: undefined;
   FlaggedReview: undefined;
   GlobalTopicSearch: undefined;
+};
+
+export type TreeStackParamList = {
+  KnowledgeTree: undefined;
+  Syllabus: undefined;
+  TopicDetail: {
+    subjectId: number;
+    subjectName: string;
+    initialTopicId?: number;
+    initialSearchQuery?: string;
+  };
 };
 
 export type SyllabusStackParamList = {
@@ -49,26 +45,50 @@ export type SyllabusStackParamList = {
   };
 };
 
-export type ChatStackParamList = {
-  GuruChat: { topicName?: string; initialQuestion?: string } | undefined;
-};
-
-export type MenuStackParamList = {
-  MenuHome: undefined;
-  StudyPlan: undefined;
-  Stats: undefined;
-  Settings: undefined;
-  DeviceLink: undefined;
+export type VaultStackParamList = {
+  VaultHome: undefined;
   NotesHub: undefined;
   NotesSearch: undefined;
   ManualNoteCreation: undefined;
   TranscriptHistory: { noteId?: number } | undefined;
+  StudyPlan: undefined;
+  Settings: undefined;
+  DeviceLink: undefined;
+  MenuHome: undefined;
+};
+
+export type MenuStackParamList = VaultStackParamList;
+
+export type ChatStackParamList = {
+  GuruChat: { topicName?: string; initialQuestion?: string } | undefined;
+};
+
+export type SettingsModalParamList = {
+  Settings: undefined;
+  DeviceLink: undefined;
 };
 
 export type TabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
-  SyllabusTab: NavigatorScreenParams<SyllabusStackParamList> | undefined;
-  ActionHubTab: undefined;
-  ChatTab: NavigatorScreenParams<ChatStackParamList> | undefined;
-  MenuTab: NavigatorScreenParams<MenuStackParamList> | undefined;
+  TreeTab: NavigatorScreenParams<TreeStackParamList> | undefined;
+  VaultTab: NavigatorScreenParams<VaultStackParamList> | undefined;
+  StatsTab: undefined;
+};
+
+export type RootStackParamList = {
+  PunishmentMode: undefined;
+  BedLock: undefined;
+  DoomscrollInterceptor: undefined;
+  BreakEnforcer: { durationSeconds: number };
+  DoomscrollGuide: undefined;
+  Lockdown: { duration: number };
+  CheckIn: undefined;
+  Tabs: NavigatorScreenParams<TabParamList> | undefined;
+  BrainDumpReview: undefined;
+  SleepMode: undefined;
+  WakeUp: undefined;
+  LocalModel: undefined;
+  PomodoroQuiz: undefined;
+  GuruChatModal: NavigatorScreenParams<ChatStackParamList> | undefined;
+  SettingsModal: NavigatorScreenParams<SettingsModalParamList> | undefined;
 };

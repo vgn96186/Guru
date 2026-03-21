@@ -8,6 +8,17 @@ const linking: LinkingOptions<RootStackParamList> = {
       CheckIn: 'check-in',
       BrainDumpReview: 'brain-dump-review',
       PomodoroQuiz: 'pomodoro',
+      GuruChatModal: {
+        screens: {
+          GuruChat: 'guru-chat',
+        },
+      },
+      SettingsModal: {
+        screens: {
+          Settings: 'settings',
+          DeviceLink: 'settings/device-link',
+        },
+      },
       Tabs: {
         screens: {
           HomeTab: {
@@ -20,33 +31,33 @@ const linking: LinkingOptions<RootStackParamList> = {
               BossBattle: 'boss-battle',
               Inertia: 'inertia',
               ManualLog: 'manual-log',
+              StudyPlan: 'study-plan',
               DailyChallenge: 'daily-challenge',
               FlaggedReview: 'flagged-review',
+              GlobalTopicSearch: 'global-topic-search',
             },
           },
-          SyllabusTab: {
+          TreeTab: {
             screens: {
-              Syllabus: 'syllabus',
-              TopicDetail: 'topic-detail',
+              KnowledgeTree: 'tree',
+              Syllabus: 'tree/syllabus',
+              TopicDetail: 'tree/topic-detail',
             },
           },
-          ActionHubTab: 'action',
-          ChatTab: {
+          VaultTab: {
             screens: {
-              GuruChat: 'guru-chat',
+              VaultHome: 'vault',
+              MenuHome: 'vault/menu',
+              NotesHub: 'vault/notes',
+              NotesSearch: 'vault/notes-search',
+              ManualNoteCreation: 'vault/manual-note',
+              TranscriptHistory: 'vault/lecture-history',
+              StudyPlan: 'vault/study-plan',
+              Settings: 'vault/settings',
+              DeviceLink: 'vault/device-link',
             },
           },
-          MenuTab: {
-            screens: {
-              MenuHome: 'menu',
-              StudyPlan: 'menu/study-plan',
-              Stats: 'menu/stats',
-              Settings: 'menu/settings',
-              NotesHub: 'menu/notes',
-              NotesSearch: 'menu/notes-search',
-              TranscriptHistory: 'menu/lecture-history',
-            },
-          },
+          StatsTab: 'stats',
         },
       },
     },

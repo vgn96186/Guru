@@ -31,6 +31,12 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
 import * as Haptics from 'expo-haptics';
+import {
+  getGeneratedStudyImagesForContext,
+  type GeneratedStudyImageRecord,
+  type GeneratedStudyImageStyle,
+} from '../db/queries/generatedStudyImages';
+import { generateStudyImage } from '../services/studyImageService';
 
 function TopicImage({ topicName }: { topicName: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
@@ -86,6 +92,8 @@ export default function TopicDetailScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<TopicFilter>('all');
   const [milestoneText, setMilestoneText] = useState('');
+  const [noteImages, setNoteImages] = useState<Record<number, GeneratedStudyImageRecord[]>>({});
+  const [imageJobKey, setImageJobKey] = useState<string | null>(null);
   const today = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
@@ -116,6 +124,7 @@ export default function TopicDetailScreen() {
 
     setExpandedId(topic.id);
     setNoteText(topic.progress.userNotes);
+    void loadTopicImages(topic.id);
   }, [allTopics, initialTopicId, isFocused]);
 
   useEffect(() => {
@@ -217,7 +226,17 @@ export default function TopicDetailScreen() {
       } else {
         setExpandedId(t.id);
         setNoteText(t.progress.userNotes);
+        void loadTopicImages(t.id);
       }
+    }
+  }
+
+  async function loadTopicImages(topicId: number) {
+    try {
+      const images = await getGeneratedStudyImagesForContext('topic_note', `topic:${topicId}`);
+      setNoteImages((prev) => ({ ...prev, [topicId]: images }));
+    } catch {
+      // Ignore attachment lookup failures in the note editor.
     }
   }
 
@@ -229,6 +248,37 @@ export default function TopicDetailScreen() {
       ),
     );
     setExpandedId(null);
+  }
+
+  async function handleGenerateNoteImage(
+    topic: TopicWithProgress,
+    style: GeneratedStudyImageStyle,
+  ) {
+    const jobKey = `${topic.id}:${style}`;
+    if (imageJobKey) return;
+
+    setImageJobKey(jobKey);
+    try {
+      const image = await generateStudyImage({
+        contextType: 'topic_note',
+        contextKey: `topic:${topic.id}`,
+        topicId: topic.id,
+        topicName: topic.name,
+        sourceText: noteText.trim() || `High-yield ${style} for ${topic.name}`,
+        style,
+      });
+      setNoteImages((prev) => ({
+        ...prev,
+        [topic.id]: [image, ...(prev[topic.id] ?? [])],
+      }));
+    } catch (error) {
+      Alert.alert(
+        'Image generation failed',
+        error instanceof Error ? error.message : String(error),
+      );
+    } finally {
+      setImageJobKey(null);
+    }
   }
 
   async function markTopicMastered(topic: TopicWithProgress) {
@@ -697,6 +747,48 @@ export default function TopicDetailScreen() {
                       multiline
                       autoFocus
                     />
+                    <View style={styles.imageActionRow}>
+                      {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
+                        const isGenerating = imageJobKey === `${item.id}:${style}`;
+                        return (
+                          <TouchableOpacity
+                            key={`${item.id}-${style}`}
+                            style={[
+                              styles.imageActionBtn,
+                              isGenerating && styles.imageActionBtnBusy,
+                            ]}
+                            onPress={() => handleGenerateNoteImage(item, style)}
+                            disabled={!!imageJobKey}
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                              style === 'illustration'
+                                ? 'Generate note illustration'
+                                : 'Generate note chart'
+                            }
+                          >
+                            <Text style={styles.imageActionBtnText}>
+                              {isGenerating
+                                ? 'Generating...'
+                                : style === 'illustration'
+                                  ? 'Illustration'
+                                  : 'Chart'}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                    {(noteImages[item.id] ?? []).length > 0 ? (
+                      <View style={styles.noteImagesWrap}>
+                        {(noteImages[item.id] ?? []).map((image) => (
+                          <Image
+                            key={`topic-note-image-${image.id}`}
+                            source={{ uri: image.localUri }}
+                            style={styles.noteGeneratedImage}
+                            resizeMode="cover"
+                          />
+                        ))}
+                      </View>
+                    ) : null}
                     <View style={styles.notesActions}>
                       <TouchableOpacity
                         style={styles.notesSave}
@@ -919,6 +1011,36 @@ const styles = StyleSheet.create({
     borderColor: '#2A2A38',
     textAlignVertical: 'top',
     marginBottom: 10,
+  },
+  imageActionRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
+  imageActionBtn: {
+    flex: 1,
+    backgroundColor: '#171722',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+  },
+  imageActionBtnBusy: {
+    opacity: 0.7,
+  },
+  imageActionBtnText: {
+    color: '#6C63FF',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  noteImagesWrap: {
+    gap: 8,
+    marginBottom: 10,
+  },
+  noteGeneratedImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    backgroundColor: '#1A1A24',
+    borderWidth: 1,
+    borderColor: '#2A2A38',
   },
   notesActions: { flexDirection: 'row', gap: 8 },
   notesSave: {

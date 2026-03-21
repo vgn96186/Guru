@@ -91,7 +91,12 @@ export function startRecordingHealthCheck(
 async function runTranscriptionEvidenceCheck(
   recordingPath: string,
   appName: string,
-  opts: { groqKey?: string; huggingFaceToken?: string; huggingFaceModel?: string; localWhisperPath?: string },
+  opts: {
+    groqKey?: string;
+    huggingFaceToken?: string;
+    huggingFaceModel?: string;
+    localWhisperPath?: string;
+  },
 ): Promise<void> {
   try {
     const { result: transcript } = await runTranscriptionProviders<string>({
@@ -99,6 +104,7 @@ async function runTranscriptionEvidenceCheck(
       availability: {
         groq: !!opts.groqKey,
         huggingface: !!opts.huggingFaceToken,
+        cloudflare: false,
         local: !!opts.localWhisperPath,
       },
       isUsableResult: (value) => value.trim().length > 0,

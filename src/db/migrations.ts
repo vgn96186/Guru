@@ -350,7 +350,67 @@ export const MIGRATIONS: Migration[] = [
     sql: `CREATE INDEX IF NOT EXISTS idx_topic_suggestions_status ON topic_suggestions(status, subject_id, last_detected_at DESC)`,
     description: 'Index pending topic suggestions for syllabus review',
   },
+  // ── Cloudflare Workers AI ─────────────────────────────────────────────────────
+  {
+    version: 87,
+    sql: `ALTER TABLE user_profile ADD COLUMN cloudflare_account_id TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Cloudflare Workers AI account ID to user_profile',
+  },
+  {
+    version: 88,
+    sql: `ALTER TABLE user_profile ADD COLUMN cloudflare_api_token TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Cloudflare Workers AI API token to user_profile',
+  },
+  {
+    version: 89,
+    sql: `UPDATE user_profile
+          SET transcription_provider = CASE
+            WHEN transcription_provider NOT IN ('auto','groq','huggingface','cloudflare','local') OR transcription_provider IS NULL OR transcription_provider = ''
+            THEN 'auto'
+            ELSE transcription_provider
+          END`,
+    description: 'Normalize transcription provider values to include cloudflare option',
+  },
+  {
+    version: 90,
+    sql: `ALTER TABLE user_profile ADD COLUMN gemini_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Gemini API key to user_profile',
+  },
+  {
+    version: 91,
+    sql: `CREATE TABLE IF NOT EXISTS generated_study_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  context_type TEXT NOT NULL
+    CHECK(context_type IN ('chat','topic_note','lecture_note')),
+  context_key TEXT NOT NULL,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  topic_name TEXT NOT NULL,
+  lecture_note_id INTEGER REFERENCES lecture_notes(id) ON DELETE CASCADE,
+  style TEXT NOT NULL
+    CHECK(style IN ('illustration','chart')),
+  prompt TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  model_used TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/png',
+  local_uri TEXT NOT NULL,
+  remote_url TEXT,
+  width INTEGER,
+  height INTEGER,
+  created_at INTEGER NOT NULL
+)`,
+    description: 'Add generated_study_images table for note/chat attachments',
+  },
+  {
+    version: 92,
+    sql: `CREATE INDEX IF NOT EXISTS idx_generated_study_images_context ON generated_study_images(context_type, context_key, created_at DESC)`,
+    description: 'Index generated study images by context',
+  },
+  {
+    version: 93,
+    sql: `CREATE INDEX IF NOT EXISTS idx_generated_study_images_topic ON generated_study_images(topic_name, context_type, created_at DESC)`,
+    description: 'Index generated study images by topic',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 86;
+export const LATEST_VERSION = 93;

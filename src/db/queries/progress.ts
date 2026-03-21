@@ -62,6 +62,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     local_whisper_path: string | null;
     quick_start_streak: number;
     groq_api_key: string;
+    gemini_key: string;
     huggingface_token: string;
     huggingface_transcription_model: string;
     transcription_provider: UserProfile['transcriptionProvider'] | null;
@@ -88,6 +89,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       openrouterApiKey: '',
       openrouterKey: '',
       groqApiKey: '',
+      geminiKey: '',
       huggingFaceToken: '',
       huggingFaceTranscriptionModel: 'openai/whisper-large-v3',
       transcriptionProvider: 'auto',
@@ -135,6 +137,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     openrouterApiKey: r.openrouter_api_key,
     openrouterKey: r.openrouter_key ?? '',
     groqApiKey: r.groq_api_key ?? '',
+    geminiKey: r.gemini_key ?? '',
     huggingFaceToken: r.huggingface_token ?? '',
     huggingFaceTranscriptionModel: r.huggingface_transcription_model ?? 'openai/whisper-large-v3',
     transcriptionProvider:
@@ -227,6 +230,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     localWhisperPath: 'local_whisper_path',
     quickStartStreak: 'quick_start_streak',
     groqApiKey: 'groq_api_key',
+    geminiKey: 'gemini_key',
     huggingFaceToken: 'huggingface_token',
     huggingFaceTranscriptionModel: 'huggingface_transcription_model',
     transcriptionProvider: 'transcription_provider',
@@ -235,6 +239,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     backupDirectoryUri: 'backup_directory_uri',
     pomodoroEnabled: 'pomodoro_enabled',
     pomodoroIntervalMinutes: 'pomodoro_interval_minutes',
+    cloudflareAccountId: 'cloudflare_account_id',
+    cloudflareApiToken: 'cloudflare_api_token',
   };
 
   const setClauses: string[] = [];

@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
 import type { Message } from './types';
-import { generateJSONWithRouting, generateTextWithRouting, generateTextWithRoutingStream } from './generate';
+import {
+  generateJSONWithRouting,
+  generateTextWithRouting,
+  generateTextWithRoutingStream,
+} from './generate';
 import {
   searchLatestMedicalSources,
   renderSourcesForPrompt,
@@ -35,6 +39,7 @@ export async function chatWithGuru(
   topicName: string,
   history: Array<{ role: 'user' | 'guru'; text: string }>,
   chosenModel?: string,
+  studyContext?: string,
 ): Promise<{ reply: string }> {
   const historyStr = history
     .slice(-4)
@@ -48,8 +53,11 @@ Rules:
 4. Max 3 sentences per response. Be warm and conversational.
 5. Wrap key clinical terms in **bold**.
 6. If the student says "just tell me" or "explain it", give a brief 2-sentence summary then ask a follow-up.
-7. Never output JSON.`;
-  const userPrompt = `Topic: ${topicName}${historyStr ? `\n\nConversation so far:\n${historyStr}` : ''}\n\nStudent: ${question}`;
+7. Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.
+8. Never output JSON.`;
+  const userPrompt = `Topic: ${topicName}${
+    studyContext ? `\n\nStudy context:\n${studyContext}` : ''
+  }${historyStr ? `\n\nConversation so far:\n${historyStr}` : ''}\n\nStudent: ${question}`;
   const { text } = await generateTextWithRouting(
     [
       { role: 'system', content: systemPrompt },

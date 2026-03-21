@@ -155,16 +155,19 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , local_whisper_path TEXT
   , quick_start_streak INTEGER NOT NULL DEFAULT 0
   , groq_api_key TEXT NOT NULL DEFAULT ''
+  , gemini_key TEXT NOT NULL DEFAULT ''
   , huggingface_token TEXT NOT NULL DEFAULT ''
   , huggingface_transcription_model TEXT NOT NULL DEFAULT 'openai/whisper-large-v3'
   , transcription_provider TEXT NOT NULL DEFAULT 'auto'
-    CHECK(transcription_provider IN ('auto','groq','huggingface','local'))
+    CHECK(transcription_provider IN ('auto','groq','huggingface','cloudflare','local'))
   , study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'
     CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
   , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'
   , backup_directory_uri TEXT
   , pomodoro_enabled INTEGER NOT NULL DEFAULT 1
   , pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20
+  , cloudflare_account_id TEXT NOT NULL DEFAULT ''
+  , cloudflare_api_token TEXT NOT NULL DEFAULT ''
 )`;
 
 export const CREATE_BRAIN_DUMPS = `
@@ -199,6 +202,28 @@ CREATE TABLE IF NOT EXISTS chat_history (
   role TEXT NOT NULL,
   message TEXT NOT NULL,
   timestamp INTEGER NOT NULL
+)`;
+
+export const CREATE_GENERATED_STUDY_IMAGES = `
+CREATE TABLE IF NOT EXISTS generated_study_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  context_type TEXT NOT NULL
+    CHECK(context_type IN ('chat','topic_note','lecture_note')),
+  context_key TEXT NOT NULL,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  topic_name TEXT NOT NULL,
+  lecture_note_id INTEGER REFERENCES lecture_notes(id) ON DELETE CASCADE,
+  style TEXT NOT NULL
+    CHECK(style IN ('illustration','chart')),
+  prompt TEXT NOT NULL,
+  provider TEXT NOT NULL,
+  model_used TEXT NOT NULL,
+  mime_type TEXT NOT NULL DEFAULT 'image/png',
+  local_uri TEXT NOT NULL,
+  remote_url TEXT,
+  width INTEGER,
+  height INTEGER,
+  created_at INTEGER NOT NULL
 )`;
 
 export const CREATE_OFFLINE_AI_QUEUE = `
@@ -281,6 +306,8 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_lecture_learned_topics_topic ON lecture_learned_topics(topic_id)`,
   // Recording cleanup index (find old recordings)
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created_at ON lecture_notes(created_at)`,
+  `CREATE INDEX IF NOT EXISTS idx_generated_study_images_context ON generated_study_images(context_type, context_key, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_generated_study_images_topic ON generated_study_images(topic_name, context_type, created_at DESC)`,
 ];
 
 export const ALL_SCHEMAS = [
@@ -296,6 +323,7 @@ export const ALL_SCHEMAS = [
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
   CREATE_CHAT_HISTORY,
+  CREATE_GENERATED_STUDY_IMAGES,
   CREATE_DAILY_AGENDA,
   CREATE_PLAN_EVENTS,
   CREATE_TOPIC_SUGGESTIONS,

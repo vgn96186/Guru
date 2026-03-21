@@ -20,10 +20,7 @@ function parseEnvFile(envText) {
 }
 
 function escapeForSingleQuotes(str) {
-  return String(str)
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'")
-    .replace(/\r?\n/g, '\\n');
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r?\n/g, '\\n');
 }
 
 function main() {
@@ -42,6 +39,9 @@ function main() {
   const bundledGroq = (env.EXPO_PUBLIC_BUNDLED_GROQ_KEY ?? '').trim();
   const bundledHf = (env.EXPO_PUBLIC_BUNDLED_HF_TOKEN ?? '').trim();
   const bundledOpenrouter = (env.EXPO_PUBLIC_BUNDLED_OPENROUTER_KEY ?? '').trim();
+  const bundledGemini = (env.EXPO_PUBLIC_BUNDLED_GEMINI_KEY ?? '').trim();
+  const bundledCloudflareAccountId = (env.EXPO_PUBLIC_BUNDLED_CF_ACCOUNT_ID ?? '').trim();
+  const bundledCloudflareApiToken = (env.EXPO_PUBLIC_BUNDLED_CF_API_TOKEN ?? '').trim();
 
   const content = `/**
  * Auto-generated from .env by scripts/generate-bundled-env.js
@@ -50,6 +50,9 @@ function main() {
 export const BUNDLED_GROQ_KEY = '${escapeForSingleQuotes(bundledGroq)}';
 export const BUNDLED_HF_TOKEN = '${escapeForSingleQuotes(bundledHf)}';
 export const BUNDLED_OPENROUTER_KEY = '${escapeForSingleQuotes(bundledOpenrouter)}';
+export const BUNDLED_GEMINI_KEY = '${escapeForSingleQuotes(bundledGemini)}';
+export const BUNDLED_CF_ACCOUNT_ID = '${escapeForSingleQuotes(bundledCloudflareAccountId)}';
+export const BUNDLED_CF_API_TOKEN = '${escapeForSingleQuotes(bundledCloudflareApiToken)}';
 `;
 
   fs.writeFileSync(outPath, content, 'utf8');
@@ -60,4 +63,3 @@ export const BUNDLED_OPENROUTER_KEY = '${escapeForSingleQuotes(bundledOpenrouter
 }
 
 main();
-

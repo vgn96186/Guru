@@ -51,3 +51,6 @@ export { generateWakeUpMessage, generateBreakEndMessages } from './notifications
 
 // Catalyze
 export { catalyzeTranscript } from './catalyze';
+
+// Image generation
+export { generateImage, isImageGenerationAvailable } from './imageGeneration';

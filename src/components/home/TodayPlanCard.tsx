@@ -138,7 +138,7 @@ export default function TodayPlanCard() {
           style={[styles.startBtn, { backgroundColor: typeColor }]}
           onPress={() =>
             navigation.navigate('Session', {
-              mood: 'focused',
+              mood: 'good',
               focusTopicIds: nextTask.topicIds.length > 0 ? nextTask.topicIds : undefined,
               preferredActionType:
                 nextTask.type === 'review'

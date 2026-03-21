@@ -27,7 +27,11 @@ import { buildSession } from '../services/sessionPlanner';
 import { fetchContent, prefetchTopicContent } from '../services/aiService';
 import { sendImmediateNag } from '../services/notificationService';
 import { createSession, endSession } from '../db/queries/sessions';
-import { updateTopicProgress, incrementWrongCount } from '../db/queries/topics';
+import {
+  updateTopicProgress,
+  incrementWrongCount,
+  markTopicNeedsAttention,
+} from '../db/queries/topics';
 import { flagTopicForReview, setContentFlagged } from '../db/queries/aiCache';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
@@ -78,6 +82,7 @@ export default function SessionScreen() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeElapsedSeconds, setActiveElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const agendaRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const xpAnim = useRef(new Animated.Value(0)).current;
   const [showXp, setShowXp] = useState(0);
   const [sessionXpTotal, setSessionXpTotal] = useState(0);
@@ -128,6 +133,10 @@ export default function SessionScreen() {
 
   const finishSession = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (agendaRevealTimeoutRef.current) {
+      clearTimeout(agendaRevealTimeoutRef.current);
+      agendaRevealTimeoutRef.current = null;
+    }
     const s = useSessionStore.getState();
     if (!s.sessionId) {
       navigation.goBack();
@@ -175,7 +184,7 @@ export default function SessionScreen() {
 
   const startPlanning = useCallback(async () => {
     setAiError(null);
-    store.setSessionState('planning');
+    useSessionStore.getState().setSessionState('planning');
     try {
       const isWarmup = forcedMode === 'warmup';
       const isMcqBlock = forcedMode === 'mcq_block';
@@ -201,14 +210,21 @@ export default function SessionScreen() {
         mood,
         agenda.mode,
       );
-      store.setSessionId(sessionId);
-      store.setAgenda(agenda);
+      const sessionState = useSessionStore.getState();
+      sessionState.setSessionId(sessionId);
+      sessionState.setAgenda(agenda);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       if (isWarmup || isMcqBlock) {
-        store.setSessionState('studying');
+        sessionState.setSessionState('studying');
       } else {
-        store.setSessionState('agenda_reveal');
-        setTimeout(() => store.setSessionState('studying'), 3000);
+        sessionState.setSessionState('agenda_reveal');
+        if (agendaRevealTimeoutRef.current) {
+          clearTimeout(agendaRevealTimeoutRef.current);
+        }
+        agendaRevealTimeoutRef.current = setTimeout(() => {
+          useSessionStore.getState().setSessionState('studying');
+          agendaRevealTimeoutRef.current = null;
+        }, 3000);
       }
     } catch (e: any) {
       setAiError(e?.message ?? 'Could not plan session');
@@ -222,7 +238,6 @@ export default function SessionScreen() {
     focusTopicId,
     focusTopicIds,
     preferredActionType,
-    store,
   ]);
 
   useEffect(() => {
@@ -257,6 +272,10 @@ export default function SessionScreen() {
     }, 1000);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (agendaRevealTimeoutRef.current) {
+        clearTimeout(agendaRevealTimeoutRef.current);
+        agendaRevealTimeoutRef.current = null;
+      }
     };
   }, [resume, startPlanning]);
 
@@ -779,7 +798,13 @@ export default function SessionScreen() {
               onSkip={handleContentDone}
               onQuizAnswered={(c) => {
                 triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
-                if (!c && item?.topic.id) void incrementWrongCount(item.topic.id);
+                if (!c && item?.topic.id) {
+                  void Promise.allSettled([
+                    incrementWrongCount(item.topic.id),
+                    markTopicNeedsAttention(item.topic.id),
+                    setContentFlagged(item.topic.id, 'quiz', true),
+                  ]);
+                }
               }}
               onQuizComplete={(correct, total) => {
                 if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });

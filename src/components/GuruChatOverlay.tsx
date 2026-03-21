@@ -28,10 +28,11 @@ interface ChatMessage {
 interface Props {
   visible: boolean;
   topicName: string;
+  contextText?: string;
   onClose: () => void;
 }
 
-export default function GuruChatOverlay({ visible, topicName, onClose }: Props) {
+export default function GuruChatOverlay({ visible, topicName, contextText, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -146,7 +147,7 @@ export default function GuruChatOverlay({ visible, topicName, onClose }: Props) 
     abortControllerRef.current = new AbortController();
 
     try {
-      const { reply } = await chatWithGuru(q, topicName, next.slice(-10));
+      const { reply } = await chatWithGuru(q, topicName, next.slice(-10), undefined, contextText);
 
       if (isMountedRef.current) {
         setMessages((prev) => [...prev, { role: 'guru', text: reply }]);

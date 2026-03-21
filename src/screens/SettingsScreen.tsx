@@ -301,7 +301,7 @@ export default function SettingsScreen() {
   const [huggingFaceToken, setHuggingFaceToken] = useState('');
   const [huggingFaceModel, setHuggingFaceModel] = useState(DEFAULT_HF_TRANSCRIPTION_MODEL);
   const [transcriptionProvider, setTranscriptionProvider] = useState<
-    'auto' | 'groq' | 'huggingface' | 'local'
+    'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'local'
   >('auto');
   const [name, setName] = useState('');
   const [inicetDate, setInicetDate] = useState('2026-05-01');

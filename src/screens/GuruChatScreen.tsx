@@ -37,6 +37,12 @@ import { getDb } from '../db/database';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { theme } from '../constants/theme';
 import { MarkdownRender } from '../components/MarkdownRender';
+import {
+  listGeneratedStudyImagesForTopic,
+  type GeneratedStudyImageRecord,
+  type GeneratedStudyImageStyle,
+} from '../db/queries/generatedStudyImages';
+import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
 type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
@@ -46,6 +52,7 @@ type ChatMessage = {
   role: 'user' | 'guru';
   text: string;
   sources?: MedicalGroundingSource[];
+  images?: GeneratedStudyImageRecord[];
   modelUsed?: string;
   searchQuery?: string;
   timestamp: number;
@@ -127,11 +134,10 @@ function formatTime(ts: number) {
 }
 
 function TypingDots() {
-  const dots = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-  ];
+  const dotA = useRef(new Animated.Value(0)).current;
+  const dotB = useRef(new Animated.Value(0)).current;
+  const dotC = useRef(new Animated.Value(0)).current;
+  const dots = useMemo(() => [dotA, dotB, dotC], [dotA, dotB, dotC]);
 
   useEffect(() => {
     const anims = dots.map((dot, index) =>
@@ -207,28 +213,43 @@ export default function GuruChatScreen() {
   const [bannerVisible, setBannerVisible] = useState(true);
   const [chosenModel, setChosenModel] = useState<string>('auto');
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [imageJobKey, setImageJobKey] = useState<string | null>(null);
   const localLlmWarning = getLocalLlmRamWarning();
 
   useEffect(() => {
-    if (topicName && topicName !== 'General Medicine') {
-      void getChatHistory(topicName, 20)
-        .then((history) => {
-          if (history.length > 0) {
-            setMessages(
-              history.map((entry) => ({
-                id: `hist-${entry.id}`,
-                role: entry.role,
-                text: entry.message,
-                timestamp: entry.timestamp,
-              })),
-            );
-            setBannerVisible(false);
-          }
-        })
-        .catch(() => {
-          // Ignore DB failures and keep the chat usable.
-        });
-    }
+    void Promise.all([
+      topicName && topicName !== 'General Medicine'
+        ? getChatHistory(topicName, 20)
+        : Promise.resolve([]),
+      listGeneratedStudyImagesForTopic('chat', topicName).catch(() => []),
+    ])
+      .then(([history, images]) => {
+        if (history.length === 0) return;
+
+        const imagesByKey = new Map<string, GeneratedStudyImageRecord[]>();
+        for (const image of images) {
+          const existing = imagesByKey.get(image.contextKey) ?? [];
+          existing.push(image);
+          imagesByKey.set(image.contextKey, existing);
+        }
+
+        setMessages(
+          history.map((entry) => ({
+            id: `hist-${entry.id}`,
+            role: entry.role,
+            text: entry.message,
+            timestamp: entry.timestamp,
+            images:
+              entry.role === 'guru'
+                ? (imagesByKey.get(buildChatImageContextKey(topicName, entry.timestamp)) ?? [])
+                : [],
+          })),
+        );
+        setBannerVisible(false);
+      })
+      .catch(() => {
+        // Ignore DB failures and keep the chat usable.
+      });
   }, [topicName]);
 
   const availableModels = useMemo(() => {
@@ -305,10 +326,44 @@ export default function GuruChatScreen() {
     }
   }
 
-  async function copyMessage(text: string) {
+  const copyMessage = useCallback(async (text: string) => {
     Clipboard.setString(text);
     Alert.alert('Copied', 'Message copied to clipboard.');
-  }
+  }, []);
+
+  const handleGenerateMessageImage = useCallback(
+    async (message: ChatMessage, style: GeneratedStudyImageStyle) => {
+      const jobKey = `${message.id}:${style}`;
+      if (imageJobKey || message.role !== 'guru') return;
+
+      setImageJobKey(jobKey);
+      try {
+        const image = await generateStudyImage({
+          contextType: 'chat',
+          contextKey: buildChatImageContextKey(topicName, message.timestamp),
+          topicName,
+          sourceText: message.text,
+          style,
+        });
+
+        setMessages((current) =>
+          current.map((entry) =>
+            entry.id === message.id
+              ? { ...entry, images: [image, ...(entry.images ?? [])] }
+              : entry,
+          ),
+        );
+      } catch (error) {
+        Alert.alert(
+          'Image generation failed',
+          error instanceof Error ? error.message : String(error),
+        );
+      } finally {
+        setImageJobKey(null);
+      }
+    },
+    [imageJobKey, topicName],
+  );
 
   async function handleSend(questionOverride?: string) {
     const question = (questionOverride ?? input).trim();
@@ -491,6 +546,52 @@ export default function GuruChatScreen() {
                 : ''}
             </Text>
 
+            {message.role === 'guru' ? (
+              <View style={styles.imageActionsRow}>
+                {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
+                  const isGenerating = imageJobKey === `${message.id}:${style}`;
+                  return (
+                    <Pressable
+                      key={`${message.id}-${style}`}
+                      style={({ pressed }) => [
+                        styles.imageActionChip,
+                        pressed && styles.pressed,
+                        isGenerating && styles.imageActionChipBusy,
+                      ]}
+                      onPress={() => handleGenerateMessageImage(message, style)}
+                      disabled={!!imageJobKey}
+                    >
+                      <Ionicons
+                        name={style === 'illustration' ? 'image-outline' : 'git-network-outline'}
+                        size={13}
+                        color={theme.colors.primary}
+                      />
+                      <Text style={styles.imageActionText}>
+                        {isGenerating
+                          ? 'Generating...'
+                          : style === 'illustration'
+                            ? 'Illustration'
+                            : 'Chart'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {message.role === 'guru' && message.images && message.images.length > 0 ? (
+              <View style={styles.generatedImagesWrap}>
+                {message.images.map((image) => (
+                  <Image
+                    key={`${message.id}-image-${image.id}`}
+                    source={{ uri: image.localUri }}
+                    style={styles.generatedImage}
+                    resizeMode="cover"
+                  />
+                ))}
+              </View>
+            ) : null}
+
             {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
               <View style={styles.sourcesWrap}>
                 <View style={styles.sourcesHeader}>
@@ -528,7 +629,7 @@ export default function GuruChatScreen() {
         </View>
       );
     },
-    [copyMessage],
+    [copyMessage, handleGenerateMessageImage, imageJobKey],
   );
 
   return (
@@ -995,6 +1096,45 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 14,
     lineHeight: 22,
+  },
+  imageActionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  imageActionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  imageActionChipBusy: {
+    opacity: 0.7,
+  },
+  imageActionText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  generatedImagesWrap: {
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  generatedImage: {
+    width: 220,
+    height: 220,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   userBubbleText: {
     color: theme.colors.textPrimary,

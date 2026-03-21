@@ -63,6 +63,8 @@ interface Props {
   onQuizComplete?: (correct: number, total: number) => void;
 }
 
+type ContextUpdater = (context: string | undefined) => void;
+
 export default React.memo(function ContentCardWithBoundary(props: Props) {
   return (
     <ErrorBoundary>
@@ -71,9 +73,121 @@ export default React.memo(function ContentCardWithBoundary(props: Props) {
   );
 });
 
+function compactLines(lines: string[], limit = 3): string {
+  return lines
+    .map((line) => line.replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+    .slice(0, limit)
+    .join('\n');
+}
+
+function buildGuruContext(content: AIContent): string | undefined {
+  switch (content.type) {
+    case 'keypoints':
+      return compactLines([
+        'Card type: Key points',
+        `Points:\n${content.points
+          .slice(0, 4)
+          .map((point, index) => `${index + 1}. ${point}`)
+          .join('\n')}`,
+        `Memory hook: ${content.memoryHook}`,
+      ]);
+    case 'quiz':
+      return compactLines([
+        'Card type: Quiz',
+        `Total questions: ${content.questions.length}`,
+        'Use the current study step for the active question, options, and explanation state.',
+      ]);
+    case 'story':
+      return compactLines([
+        'Card type: Story',
+        `Story: ${content.story}`,
+        `Highlights: ${content.keyConceptHighlights.join(' | ')}`,
+      ]);
+    case 'mnemonic':
+      return compactLines(
+        [
+          'Card type: Mnemonic',
+          `Mnemonic: ${content.mnemonic}`,
+          `Expansion: ${content.expansion.join(' | ')}`,
+          `Tip: ${content.tip}`,
+        ],
+        4,
+      );
+    case 'teach_back':
+      return compactLines(
+        [
+          'Card type: Teach-back',
+          `Prompt: ${content.prompt}`,
+          `Key points to mention: ${content.keyPointsToMention.join(' | ')}`,
+          `Guru reaction target: ${content.guruReaction}`,
+        ],
+        4,
+      );
+    case 'error_hunt':
+      return compactLines(
+        [
+          'Card type: Error hunt',
+          `Paragraph: ${content.paragraph}`,
+          ...content.errors
+            .slice(0, 2)
+            .map(
+              (error, index) =>
+                `Error ${index + 1}: wrong "${error.wrong}", correct "${error.correct}". ${error.explanation}`,
+            ),
+        ],
+        4,
+      );
+    case 'detective':
+      return compactLines(
+        [
+          'Card type: Detective',
+          `Clues: ${content.clues.join(' | ')}`,
+          `Answer: ${content.answer}`,
+          `Explanation: ${content.explanation}`,
+        ],
+        4,
+      );
+    case 'manual':
+      return 'Card type: Manual review';
+    case 'socratic':
+      return compactLines(
+        [
+          'Card type: Socratic',
+          ...content.questions
+            .slice(0, 3)
+            .map(
+              (question, index) =>
+                `Q${index + 1}: ${question.question}\nAnswer: ${question.answer}\nWhy it matters: ${question.whyItMatters}`,
+            ),
+        ],
+        4,
+      );
+    default:
+      return undefined;
+  }
+}
+
 function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizComplete }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const [flagged, setFlagged] = useState(false);
+  const [liveGuruContext, setLiveGuruContext] = useState<string | undefined>(undefined);
+  const hasMountedRef = React.useRef(false);
+  const baseGuruContext = useMemo(() => buildGuruContext(content), [content]);
+  const guruContext = useMemo(() => {
+    if (baseGuruContext && liveGuruContext) {
+      return `${baseGuruContext}\n\nCurrent study step:\n${liveGuruContext}`;
+    }
+    return liveGuruContext ?? baseGuruContext;
+  }, [baseGuruContext, liveGuruContext]);
+
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    setLiveGuruContext(undefined);
+  }, [content]);
 
   useEffect(() => {
     if (!topicId && flagged) {
@@ -115,7 +229,14 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
   const card = useMemo(() => {
     switch (content.type) {
       case 'keypoints':
-        return <KeyPointsCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <KeyPointsCard
+            content={content}
+            onDone={onDone}
+            onSkip={onSkip}
+            onContextChange={setLiveGuruContext}
+          />
+        );
       case 'quiz':
         return (
           <QuizCard
@@ -124,22 +245,58 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
             onSkip={onSkip}
             onQuizAnswered={handleQuizAnswered}
             onQuizComplete={onQuizComplete}
+            onContextChange={setLiveGuruContext}
           />
         );
       case 'story':
         return <StoryCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'mnemonic':
-        return <MnemonicCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <MnemonicCard
+            content={content}
+            onDone={onDone}
+            onSkip={onSkip}
+            onContextChange={setLiveGuruContext}
+          />
+        );
       case 'teach_back':
-        return <TeachBackCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <TeachBackCard
+            content={content}
+            onDone={onDone}
+            onSkip={onSkip}
+            onContextChange={setLiveGuruContext}
+          />
+        );
       case 'error_hunt':
-        return <ErrorHuntCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <ErrorHuntCard
+            content={content}
+            onDone={onDone}
+            onSkip={onSkip}
+            onContextChange={setLiveGuruContext}
+          />
+        );
       case 'detective':
-        return <DetectiveCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <DetectiveCard
+            content={content}
+            onDone={onDone}
+            onSkip={onSkip}
+            onContextChange={setLiveGuruContext}
+          />
+        );
       case 'manual':
         return <ManualReviewCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'socratic':
-        return <SocraticCard content={content} onDone={onDone} onSkip={onSkip} />;
+        return (
+          <SocraticCard
+            content={content}
+            onDone={onDone}
+            onSkip={onSkip}
+            onContextChange={setLiveGuruContext}
+          />
+        );
       default:
         return null;
     }
@@ -175,6 +332,7 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
       <GuruChatOverlay
         visible={chatOpen}
         topicName={content.topicName}
+        contextText={guruContext}
         onClose={() => setChatOpen(false)}
       />
     </View>
@@ -213,11 +371,23 @@ function KeyPointsCard({
   content,
   onDone,
   onSkip,
-}: { content: KeyPointsContent } & Omit<Props, 'content'>) {
+  onContextChange,
+}: { content: KeyPointsContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [revealIndex, setRevealIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
 
   const isFullyRevealed = revealIndex >= content.points.length;
+
+  useEffect(() => {
+    const revealedPoints = content.points.slice(0, revealIndex + 1);
+    onContextChange?.(
+      compactLines([
+        `Card type: Key points`,
+        `Currently visible points: ${revealedPoints.join(' | ')}`,
+        isFullyRevealed ? `Memory hook visible: ${content.memoryHook}` : '',
+      ]),
+    );
+  }, [content, revealIndex, isFullyRevealed, onContextChange]);
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
@@ -277,7 +447,8 @@ function QuizCard({
   onSkip,
   onQuizAnswered,
   onQuizComplete,
-}: { content: QuizContent } & Omit<Props, 'content'>) {
+  onContextChange,
+}: { content: QuizContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [showExpl, setShowExpl] = useState(false);
@@ -285,6 +456,24 @@ function QuizCard({
 
   const q = content.questions[currentQ];
   if (!q) return null;
+
+  useEffect(() => {
+    const selectedOption = selected !== null ? q.options[selected] : undefined;
+    onContextChange?.(
+      compactLines(
+        [
+          `Card type: Quiz`,
+          `Current question ${currentQ + 1} of ${content.questions.length}: ${q.question}`,
+          `Options: ${q.options.join(' | ')}`,
+          selectedOption
+            ? `Student selected: ${selectedOption}`
+            : 'Student has not selected an option yet.',
+          showExpl ? `Explanation shown: ${q.explanation}` : 'Explanation is not shown yet.',
+        ],
+        5,
+      ),
+    );
+  }, [content.questions.length, currentQ, onContextChange, q, selected, showExpl]);
 
   const scoreRef = React.useRef(score);
   scoreRef.current = score;
@@ -433,9 +622,26 @@ function MnemonicCard({
   content,
   onDone,
   onSkip,
-}: { content: MnemonicContent } & Omit<Props, 'content'>) {
+  onContextChange,
+}: { content: MnemonicContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [revealStep, setRevealStep] = useState(0);
   const [showRating, setShowRating] = useState(false);
+
+  useEffect(() => {
+    onContextChange?.(
+      compactLines(
+        [
+          'Card type: Mnemonic',
+          `Mnemonic visible: ${content.mnemonic}`,
+          revealStep >= 1
+            ? `Expansion visible: ${content.expansion.join(' | ')}`
+            : 'Expansion is hidden.',
+          revealStep >= 2 ? `Tip visible: ${content.tip}` : 'Tip is hidden.',
+        ],
+        4,
+      ),
+    );
+  }, [content, onContextChange, revealStep]);
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
@@ -494,7 +700,8 @@ function TeachBackCard({
   content,
   onDone,
   onSkip,
-}: { content: TeachBackContent } & Omit<Props, 'content'>) {
+  onContextChange,
+}: { content: TeachBackContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [answer, setAnswer] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -503,6 +710,24 @@ function TeachBackCard({
     score: number;
     missed: string[];
   } | null>(null);
+
+  useEffect(() => {
+    onContextChange?.(
+      compactLines(
+        [
+          'Card type: Teach-back',
+          `Prompt: ${content.prompt}`,
+          answer.trim()
+            ? `Student draft answer: ${answer.trim()}`
+            : 'Student has not drafted an answer yet.',
+          submitted
+            ? `Guru review visible: ${guruFeedback?.feedback ?? content.guruReaction}`
+            : 'Guru review is not shown yet.',
+        ],
+        4,
+      ),
+    );
+  }, [answer, content, guruFeedback, onContextChange, submitted]);
 
   async function handleValidate() {
     if (!answer.trim()) return;
@@ -604,8 +829,25 @@ function ErrorHuntCard({
   content,
   onDone,
   onSkip,
-}: { content: ErrorHuntContent } & Omit<Props, 'content'>) {
+  onContextChange,
+}: { content: ErrorHuntContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    onContextChange?.(
+      compactLines(
+        [
+          'Card type: Error hunt',
+          'Task: Find the factual errors in the paragraph.',
+          `Paragraph: ${content.paragraph}`,
+          revealed
+            ? `Revealed corrections: ${content.errors.map((error) => `${error.wrong} -> ${error.correct}`).join(' | ')}`
+            : 'Corrections are not revealed yet.',
+        ],
+        4,
+      ),
+    );
+  }, [content, onContextChange, revealed]);
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🔍 ERROR HUNT</Text>
@@ -654,9 +896,24 @@ function DetectiveCard({
   content,
   onDone,
   onSkip,
-}: { content: DetectiveContent } & Omit<Props, 'content'>) {
+  onContextChange,
+}: { content: DetectiveContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
   const [revealedClues, setRevealedClues] = useState(1);
   const [solved, setSolved] = useState(false);
+
+  useEffect(() => {
+    onContextChange?.(
+      compactLines(
+        [
+          'Card type: Detective',
+          `Visible clues: ${content.clues.slice(0, revealedClues).join(' | ')}`,
+          solved ? `Answer revealed: ${content.answer}` : 'Answer is not revealed yet.',
+          solved ? `Explanation visible: ${content.explanation}` : '',
+        ],
+        4,
+      ),
+    );
+  }, [content, onContextChange, revealedClues, solved]);
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🕵️ CLINICAL DETECTIVE</Text>
@@ -767,10 +1024,12 @@ function SocraticCard({
   content,
   onDone,
   onSkip,
+  onContextChange,
 }: {
   content: SocraticContent;
   onDone: (confidence: number) => void;
   onSkip: () => void;
+  onContextChange?: ContextUpdater;
 }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -794,6 +1053,20 @@ function SocraticCard({
   if (!question) {
     return null;
   }
+
+  useEffect(() => {
+    onContextChange?.(
+      compactLines(
+        [
+          'Card type: Socratic',
+          `Current question ${index + 1} of ${content.questions.length}: ${question.question}`,
+          revealed ? `Answer shown: ${question.answer}` : 'Answer is not shown yet.',
+          revealed ? `Why it matters: ${question.whyItMatters}` : '',
+        ],
+        4,
+      ),
+    );
+  }, [content.questions.length, index, onContextChange, question, revealed]);
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 40 }}>

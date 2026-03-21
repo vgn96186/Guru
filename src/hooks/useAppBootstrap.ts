@@ -8,6 +8,7 @@ import { dailyLogRepository, profileRepository } from '../db/repositories';
 import { retryFailedTasks } from '../services/lectureSessionMonitor';
 import { invalidatePlanCache } from '../services/studyPlanner';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
+import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';
 import { useAppStateTransition } from './useAppStateTransition';
 
 /**
@@ -67,6 +68,10 @@ export function useAppBootstrap(): void {
         });
         await refreshProfile();
       }
+
+      await maybePromptOverlayPermissionOnStartup().catch((e) =>
+        console.warn('[Overlay] Startup permission prompt failed:', e),
+      );
 
       // 3. Sync and Maintenance
       syncExamDatesFromInternet()

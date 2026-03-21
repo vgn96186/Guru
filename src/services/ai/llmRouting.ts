@@ -2,7 +2,7 @@ import { AppState } from 'react-native';
 import { initLlama, LlamaContext } from 'llama.rn';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
-import { OPENROUTER_FREE_MODELS, GROQ_MODELS, GEMINI_MODELS } from './config';
+import { OPENROUTER_FREE_MODELS, GROQ_MODELS, GEMINI_MODELS, CLOUDFLARE_MODELS } from './config';
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 
@@ -250,6 +250,91 @@ async function streamGeminiChat(
   return text;
 }
 
+/** Cloudflare Workers AI — OpenAI-compatible endpoint. */
+async function callCloudflare(
+  messages: Message[],
+  accountId: string,
+  apiToken: string,
+  model: string,
+): Promise<string> {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiToken}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1200,
+      }),
+    },
+  );
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Cloudflare rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Cloudflare error ${res.status} (${model}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from Cloudflare model ${model}`);
+  return text;
+}
+
+/** Cloudflare Workers AI chat with SSE streaming. */
+async function streamCloudflareChat(
+  messages: Message[],
+  accountId: string,
+  apiToken: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiToken}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 1200,
+        stream: true,
+      }),
+    },
+  );
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Cloudflare rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Cloudflare error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    const text = await callCloudflare(messages, accountId, apiToken, model);
+    onDelta(text);
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from Cloudflare model ${model}`);
+  return text;
+}
+
 async function callGroq(
   messages: Message[],
   groqKey: string,
@@ -387,6 +472,8 @@ export async function attemptCloudLLMStream(
   chosenModel: string | undefined,
   onDelta: (delta: string) => void,
   geminiKey?: string | undefined,
+  cfAccountId?: string | undefined,
+  cfApiToken?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -436,6 +523,22 @@ export async function attemptCloudLLMStream(
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
         if (__DEV__) console.warn(`[AI] Gemini stream ${model} failed:`, (err as Error).message);
+        continue;
+      }
+    }
+  }
+
+  // 3. Try Cloudflare Workers AI
+  if (cfAccountId && cfApiToken) {
+    for (const model of CLOUDFLARE_MODELS) {
+      try {
+        const text = await streamCloudflareChat(messages, cfAccountId, cfApiToken, model, onDelta);
+        return { text, modelUsed: `cf/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        if (__DEV__)
+          console.warn(`[AI] Cloudflare stream ${model} failed:`, (err as Error).message);
         continue;
       }
     }
@@ -522,6 +625,8 @@ export async function attemptCloudLLM(
   groqKey?: string | undefined,
   chosenModel?: string,
   geminiKey?: string | undefined,
+  cfAccountId?: string | undefined,
+  cfApiToken?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -584,7 +689,22 @@ export async function attemptCloudLLM(
     }
   }
 
-  // 3. Try OpenRouter free models
+  // 3. Try Cloudflare Workers AI — 10K neurons/day free
+  if (cfAccountId && cfApiToken) {
+    for (const model of CLOUDFLARE_MODELS) {
+      try {
+        const text = await callCloudflare(messages, cfAccountId, cfApiToken, model);
+        return { text, modelUsed: `cf/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        if (__DEV__) console.warn(`[AI] Cloudflare ${model} failed:`, (err as Error).message);
+        continue;
+      }
+    }
+  }
+
+  // 4. Try OpenRouter free models
   if (orKey) {
     const openRouterCandidates = Array.from(
       new Set([

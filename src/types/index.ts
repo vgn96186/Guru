@@ -119,9 +119,10 @@ export interface UserProfile {
   openrouterApiKey: string; // Legacy API key field (kept for backward compatibility)
   openrouterKey: string; // Actual OpenRouter key for free model fallbacks
   groqApiKey: string; // Groq API key for fast cloud inference fallback
+  geminiKey?: string;
   huggingFaceToken?: string;
   huggingFaceTranscriptionModel?: string;
-  transcriptionProvider?: 'auto' | 'groq' | 'huggingface' | 'local';
+  transcriptionProvider?: 'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'local';
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
   bodyDoublingEnabled: boolean;
@@ -144,6 +145,8 @@ export interface UserProfile {
   backupDirectoryUri?: string | null;
   pomodoroEnabled?: boolean;
   pomodoroIntervalMinutes?: number;
+  cloudflareAccountId?: string;
+  cloudflareApiToken?: string;
 }
 
 // AI Content shapes

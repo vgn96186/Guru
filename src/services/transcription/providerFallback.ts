@@ -6,6 +6,7 @@ export type RunnableTranscriptionProvider = Exclude<TranscriptionProvider, 'auto
 interface ProviderAvailability {
   groq: boolean;
   huggingface: boolean;
+  cloudflare: boolean;
   local: boolean;
 }
 
@@ -25,17 +26,20 @@ export function buildTranscriptionProviderOrder(
 ): RunnableTranscriptionProvider[] {
   const orderedProviders: RunnableTranscriptionProvider[] =
     preferredProvider === 'groq'
-      ? ['groq', 'huggingface', 'local']
-      : preferredProvider === 'huggingface'
-        ? ['huggingface', 'groq', 'local']
-        : preferredProvider === 'local'
-          ? ['local', 'groq', 'huggingface']
-          : ['groq', 'huggingface', 'local'];
+      ? ['groq', 'cloudflare', 'huggingface', 'local']
+      : preferredProvider === 'cloudflare'
+        ? ['cloudflare', 'groq', 'huggingface', 'local']
+        : preferredProvider === 'huggingface'
+          ? ['huggingface', 'groq', 'cloudflare', 'local']
+          : preferredProvider === 'local'
+            ? ['local', 'groq', 'cloudflare', 'huggingface']
+            : ['groq', 'cloudflare', 'huggingface', 'local'];
 
   return orderedProviders.filter((provider, index) => {
     if (
       (provider === 'groq' && !availability.groq) ||
       (provider === 'huggingface' && !availability.huggingface) ||
+      (provider === 'cloudflare' && !availability.cloudflare) ||
       (provider === 'local' && !availability.local)
     ) {
       return false;

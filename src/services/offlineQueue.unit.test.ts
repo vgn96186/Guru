@@ -20,6 +20,7 @@ import {
   processQueue,
 } from './offlineQueue';
 import { getDb, nowTs } from '../db/database';
+import { AppState } from 'react-native';
 
 describe('offlineQueue', () => {
   let mockDb: any;
@@ -47,10 +48,11 @@ describe('offlineQueue', () => {
 
     it('sorts keys in payload for canonical storage', async () => {
       await enqueueRequest('generate_json', { b: 2, a: 1 });
-      expect(mockDb.runAsync).toHaveBeenCalledWith(
-        expect.anything(),
-        ['generate_json', '{"a":1,"b":2}', 1000000],
-      );
+      expect(mockDb.runAsync).toHaveBeenCalledWith(expect.anything(), [
+        'generate_json',
+        '{"a":1,"b":2}',
+        1000000,
+      ]);
     });
 
     it('does not enqueue if queue is full', async () => {
@@ -201,10 +203,87 @@ describe('offlineQueue', () => {
         ['api down', 2],
       );
     });
-    
+
     it('prevents concurrent processing', async () => {
-        // Since we can't easily test the 'isProcessing' flag without controlling timing,
-        // we'll rely on characterizing the serial nature.
+      // Since we can't easily test the 'isProcessing' flag without controlling timing,
+      // we'll rely on characterizing the serial nature.
+    });
+
+    it('skips immediate foreground re-processing right after a manual run', async () => {
+      jest.useFakeTimers();
+      jest.resetModules();
+
+      const addEventListener = jest.fn().mockReturnValue({ remove: jest.fn() });
+      const isolatedDb = {
+        runAsync: jest.fn().mockResolvedValue({ changes: 1, lastInsertRowId: 1 }),
+        getFirstAsync: jest.fn().mockResolvedValue(null),
+        getAllAsync: jest.fn().mockResolvedValue([]),
+      };
+
+      jest.doMock('react-native', () => ({
+        AppState: {
+          addEventListener,
+        },
+      }));
+      jest.doMock('../db/database', () => ({
+        getDb: jest.fn(() => isolatedDb),
+        nowTs: jest.fn(() => 1000000),
+      }));
+
+      const isolatedModule = await import('./offlineQueue');
+
+      await isolatedModule.processQueue();
+      expect(isolatedDb.getAllAsync).toHaveBeenCalledTimes(1);
+
+      const activeListener = addEventListener.mock.calls.find(
+        ([eventName]: [string]) => eventName === 'change',
+      )?.[1];
+
+      expect(activeListener).toBeDefined();
+
+      activeListener('active');
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+
+      expect(isolatedDb.getAllAsync).toHaveBeenCalledTimes(1);
+      jest.useRealTimers();
+    });
+
+    it('does not process from foreground listener before the initial explicit queue run', async () => {
+      jest.useFakeTimers();
+      jest.resetModules();
+
+      const addEventListener = jest.fn().mockReturnValue({ remove: jest.fn() });
+      const isolatedDb = {
+        runAsync: jest.fn().mockResolvedValue({ changes: 1, lastInsertRowId: 1 }),
+        getFirstAsync: jest.fn().mockResolvedValue(null),
+        getAllAsync: jest.fn().mockResolvedValue([]),
+      };
+
+      jest.doMock('react-native', () => ({
+        AppState: {
+          addEventListener,
+        },
+      }));
+      jest.doMock('../db/database', () => ({
+        getDb: jest.fn(() => isolatedDb),
+        nowTs: jest.fn(() => 1000000),
+      }));
+
+      await import('./offlineQueue');
+
+      const activeListener = addEventListener.mock.calls.find(
+        ([eventName]: [string]) => eventName === 'change',
+      )?.[1];
+
+      expect(activeListener).toBeDefined();
+
+      activeListener('active');
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+
+      expect(isolatedDb.getAllAsync).not.toHaveBeenCalled();
+      jest.useRealTimers();
     });
   });
 

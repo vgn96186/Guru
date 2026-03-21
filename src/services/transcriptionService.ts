@@ -8,6 +8,7 @@ import { toFileUri } from './fileUri';
 import {
   transcribeRawWithGroq,
   transcribeRawWithHuggingFace,
+  transcribeRawWithCloudflare,
   transcribeRawWithLocalWhisper,
 } from './transcription/engines';
 import {
@@ -82,11 +83,14 @@ export async function transcribeAudio(opts: {
   const hasGroq = !!groqKey?.trim();
   const hasHuggingFace = !!huggingFaceToken?.trim();
   const hasLocalWhisper = !!(useLocalWhisper && localWhisperPath);
+  const { cfAccountId, cfApiToken } = getApiKeys(profile);
+  const hasCloudflare = !!(cfAccountId && cfApiToken);
   const { result, lastError } = await runTranscriptionProviders<string>({
     preferredProvider: transcriptionProvider,
     availability: {
       groq: hasGroq,
       huggingface: hasHuggingFace,
+      cloudflare: hasCloudflare,
       local: hasLocalWhisper,
     },
     isUsableResult: (value) => typeof value === 'string' && value.trim().length > 0,
@@ -94,6 +98,8 @@ export async function transcribeAudio(opts: {
     onProviderStart: (provider) => {
       if (provider === 'groq') {
         onProgress?.({ stage: 'transcribing', message: 'Transcribing with Groq Whisper' });
+      } else if (provider === 'cloudflare') {
+        onProgress?.({ stage: 'transcribing', message: 'Transcribing with Cloudflare Whisper' });
       } else if (provider === 'huggingface') {
         onProgress?.({ stage: 'transcribing', message: 'Transcribing with Hugging Face' });
       } else {
@@ -105,6 +111,8 @@ export async function transcribeAudio(opts: {
         if (__DEV__) {
           console.warn(`[Transcription] Groq failed after ${maxRetries} retries:`, err);
         }
+      } else if (provider === 'cloudflare') {
+        if (__DEV__) console.warn('[Transcription] Cloudflare failed:', err);
       } else if (provider === 'huggingface') {
         if (__DEV__) console.warn('[Transcription] Hugging Face failed:', err);
       } else {
@@ -137,6 +145,10 @@ export async function transcribeAudio(opts: {
         }
         return '';
       },
+      cloudflare: async () => {
+        if (!cfAccountId || !cfApiToken) return '';
+        return transcribeRawWithCloudflare(audioFilePath, cfAccountId, cfApiToken);
+      },
       huggingface: async () => {
         if (!huggingFaceToken?.trim()) return '';
         return transcribeRawWithHuggingFace(audioFilePath, huggingFaceToken, huggingFaceModel);
@@ -153,9 +165,9 @@ export async function transcribeAudio(opts: {
   }
 
   if (!transcript) {
-    if (!hasGroq && !hasHuggingFace && !hasLocalWhisper) {
+    if (!hasGroq && !hasHuggingFace && !hasCloudflare && !hasLocalWhisper) {
       throw new Error(
-        'No transcription engine available. Configure Groq or Hugging Face, or enable local Whisper in Settings.',
+        'No transcription engine available. Configure Groq, Cloudflare, or Hugging Face, or enable local Whisper in Settings.',
       );
     }
     if (lastError) {

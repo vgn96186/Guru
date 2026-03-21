@@ -35,6 +35,8 @@ const MAX_ATTEMPTS = 5;
 const MAX_QUEUE_SIZE = 100; // Prevent storage exhaustion
 const DEDUPE_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
 const RETRY_BASE_DELAY = 1000; // 1 second base delay for retries
+const FOREGROUND_PROCESS_DELAY_MS = 1000;
+const FOREGROUND_PROCESS_COOLDOWN_MS = 5000;
 
 /** Canonical JSON string (sorted keys) so dedupe and storage always match. */
 function canonicalPayloadString(payload: Record<string, unknown>): string {
@@ -220,6 +222,9 @@ export function registerProcessor(
 }
 
 let isProcessing = false;
+let lastProcessStartedAt = 0;
+let scheduledForegroundProcess: ReturnType<typeof setTimeout> | null = null;
+let hasCompletedInitialProcess = false;
 
 /**
  * Process all pending queued requests using registered processors.
@@ -233,6 +238,7 @@ export async function processQueue(): Promise<void> {
   }
 
   isProcessing = true;
+  lastProcessStartedAt = Date.now();
   try {
     const items = await getPendingRequests();
     if (items.length === 0) {
@@ -284,18 +290,28 @@ export async function processQueue(): Promise<void> {
     await pruneCompletedItems();
   } finally {
     isProcessing = false;
+    hasCompletedInitialProcess = true;
   }
 }
 
 // Auto-process queue when app returns to foreground
 const appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
   if (state === 'active') {
-    // Add a small delay to ensure network is ready
-    setTimeout(() => {
+    if (scheduledForegroundProcess) {
+      clearTimeout(scheduledForegroundProcess);
+    }
+
+    // Add a small delay to ensure network is ready, but suppress redundant
+    // re-processing immediately after an explicit bootstrap/manual queue run.
+    scheduledForegroundProcess = setTimeout(() => {
+      scheduledForegroundProcess = null;
+      if (!hasCompletedInitialProcess) return;
+      if (isProcessing) return;
+      if (Date.now() - lastProcessStartedAt < FOREGROUND_PROCESS_COOLDOWN_MS) return;
       processQueue().catch((error) => {
         console.error('[OfflineQueue] background processQueue failed:', error);
       });
-    }, 1000);
+    }, FOREGROUND_PROCESS_DELAY_MS);
   }
 });
 

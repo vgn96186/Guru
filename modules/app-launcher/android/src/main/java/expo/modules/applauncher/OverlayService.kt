@@ -389,8 +389,8 @@ class OverlayService : Service(), LifecycleOwner {
     override fun onDestroy() {
         isServiceRunning = false
         stopCamera()
+        overlayView?.destroy() // Clean up the animation handler before clearing the reference
         hideOverlay()
-        overlayView?.destroy() // Clean up the animation handler
         stopTimer()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         super.onDestroy()

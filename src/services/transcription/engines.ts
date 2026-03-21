@@ -179,6 +179,56 @@ export async function transcribeRawWithHuggingFace(
   return transcript;
 }
 
+/** Cloud fallback: Cloudflare Workers AI Whisper transcription */
+export async function transcribeRawWithCloudflare(
+  audioFilePath: string,
+  accountId: string,
+  apiToken: string,
+): Promise<string> {
+  if (!accountId?.trim() || !apiToken?.trim()) {
+    throw new Error('Cloudflare account ID or API token missing. Add them in Settings.');
+  }
+
+  const fileUri = toFileUri(audioFilePath);
+  const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  if (!fileInfo?.exists || fileInfo.size === 0) {
+    throw new Error(`Audio file is missing or empty: ${audioFilePath}`);
+  }
+
+  // Read audio as base64 for Cloudflare's JSON endpoint
+  const audioBase64 = await FileSystem.readAsStringAsync(fileUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/openai/whisper-large-v3-turbo`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiToken}`,
+      },
+      body: JSON.stringify({
+        audio: audioBase64,
+        language: 'en',
+        vad_filter: true,
+        condition_on_previous_text: false,
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Cloudflare transcription error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const rawText = String(data?.result?.text ?? '').trim();
+  const transcript = sanitizeTranscript(rawText);
+  if (isLikelyHallucination(transcript)) return '';
+  return transcript;
+}
+
 /** Engine 2: Local Whisper.rn */
 export async function transcribeRawWithLocalWhisper(
   audioFilePath: string,

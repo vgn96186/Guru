@@ -14,10 +14,12 @@ function getBackendAttemptOrder(profile: UserProfile): {
   orKey: string | undefined;
   groqKey: string | undefined;
   geminiKey: string | undefined;
+  cfAccountId: string | undefined;
+  cfApiToken: string | undefined;
 } {
-  const { orKey, groqKey, geminiKey } = getApiKeys(profile);
+  const { orKey, groqKey, geminiKey, cfAccountId, cfApiToken } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
-  const hasCloud = !!orKey || !!groqKey || !!geminiKey;
+  const hasCloud = !!orKey || !!groqKey || !!geminiKey || (!!cfAccountId && !!cfApiToken);
 
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
@@ -28,7 +30,7 @@ function getBackendAttemptOrder(profile: UserProfile): {
       'No AI backend available. Download a local model or add an API key in Settings.',
     );
 
-  return { attempts, orKey, groqKey, geminiKey };
+  return { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken };
 }
 
 export async function generateJSONWithRouting<T>(
@@ -38,7 +40,8 @@ export async function generateJSONWithRouting<T>(
   queueOnFailure = true,
 ): Promise<{ parsed: T; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
-  const { attempts, orKey, groqKey, geminiKey } = getBackendAttemptOrder(profile);
+  const { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken } =
+    getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -46,7 +49,16 @@ export async function generateJSONWithRouting<T>(
       const { text, modelUsed } =
         backend === 'local'
           ? await attemptLocalLLM(messages, profile.localModelPath!, false)
-          : await attemptCloudLLM(messages, orKey, false, groqKey, undefined, geminiKey);
+          : await attemptCloudLLM(
+              messages,
+              orKey,
+              false,
+              groqKey,
+              undefined,
+              geminiKey,
+              cfAccountId,
+              cfApiToken,
+            );
       const parsed = await parseStructuredJson(text, schema);
       return { parsed, modelUsed };
     } catch (err) {
@@ -84,7 +96,8 @@ export async function generateTextWithRouting(
     return await attemptLocalLLM(messages, profile.localModelPath!, true);
   }
 
-  const { attempts, orKey, groqKey, geminiKey } = getBackendAttemptOrder(profile);
+  const { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken } =
+    getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -92,7 +105,16 @@ export async function generateTextWithRouting(
       const { text, modelUsed } =
         backend === 'local'
           ? await attemptLocalLLM(messages, profile.localModelPath!, true)
-          : await attemptCloudLLM(messages, orKey, true, groqKey, options?.chosenModel, geminiKey);
+          : await attemptCloudLLM(
+              messages,
+              orKey,
+              true,
+              groqKey,
+              options?.chosenModel,
+              geminiKey,
+              cfAccountId,
+              cfApiToken,
+            );
       return { text, modelUsed };
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} inference failed:`, (err as Error).message);
@@ -134,7 +156,8 @@ export async function generateTextWithRoutingStream(
     return { text, modelUsed };
   }
 
-  const { attempts, orKey, groqKey, geminiKey } = getBackendAttemptOrder(profile);
+  const { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken } =
+    getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -151,6 +174,8 @@ export async function generateTextWithRoutingStream(
         options?.chosenModel,
         onDelta,
         geminiKey,
+        cfAccountId,
+        cfApiToken,
       );
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);

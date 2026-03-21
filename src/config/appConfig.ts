@@ -17,10 +17,30 @@ export {
   BUNDLED_HF_TOKEN,
   BUNDLED_OPENROUTER_KEY,
   BUNDLED_GEMINI_KEY,
+  BUNDLED_CF_ACCOUNT_ID,
+  BUNDLED_CF_API_TOKEN,
 } from './bundledEnv';
 
 /** Gemini models — tried in order. Free tier: 1500 req/day. */
 export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+
+/** Cloudflare Workers AI models — tried in order. Free: 10K neurons/day. */
+export const CLOUDFLARE_MODELS = [
+  '@cf/meta/llama-3.1-8b-instruct',
+  '@cf/meta/llama-3.2-3b-instruct',
+] as const;
+
+/** Cloudflare Workers AI image generation model. */
+export const CLOUDFLARE_IMAGE_MODELS = [
+  '@cf/black-forest-labs/flux-2-dev',
+  '@cf/black-forest-labs/flux-1-schnell',
+] as const;
+
+/** Default Cloudflare Workers AI image generation model. */
+export const CLOUDFLARE_IMAGE_MODEL = CLOUDFLARE_IMAGE_MODELS[0];
+
+/** Google image generation models — tried in order. */
+export const GEMINI_IMAGE_MODELS = ['gemini-3-pro-image-preview'] as const;
 
 /** OpenRouter free models — tried in order when Groq unavailable. */
 export const OPENROUTER_FREE_MODELS = [

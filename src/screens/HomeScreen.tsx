@@ -57,6 +57,7 @@ export default function HomeScreen() {
   const [pendingStart, setPendingStart] = useState(false);
   const [sessionResumeValid, setSessionResumeValid] = useState(false);
   const [isMoodHydrated, setIsMoodHydrated] = useState(false);
+  const [isSessionStateReady, setIsSessionStateReady] = useState(false);
   const inicetPulse = useRef(new Animated.Value(0)).current;
   const neetPulse = useRef(new Animated.Value(0)).current;
 
@@ -65,6 +66,7 @@ export default function HomeScreen() {
   const refreshLaunchpadState = useCallback(() => {
     let cancelled = false;
     setIsMoodHydrated(false);
+    setIsSessionStateReady(false);
 
     dailyLogRepository
       .getDailyLog()
@@ -93,13 +95,18 @@ export default function HomeScreen() {
       getDb()
         .getFirstAsync<{ id: number }>('SELECT id FROM sessions WHERE id = ?', [sessionId])
         .then((row) => {
-          if (!cancelled) setSessionResumeValid(!!row);
+          if (cancelled) return;
+          setSessionResumeValid(!!row);
+          setIsSessionStateReady(true);
         })
         .catch(() => {
-          if (!cancelled) setSessionResumeValid(false);
+          if (cancelled) return;
+          setSessionResumeValid(false);
+          setIsSessionStateReady(true);
         });
     } else {
       setSessionResumeValid(false);
+      setIsSessionStateReady(true);
     }
 
     return () => {
@@ -112,14 +119,14 @@ export default function HomeScreen() {
   useFocusEffect(useCallback(() => refreshLaunchpadState(), [refreshLaunchpadState]));
 
   useEffect(() => {
-    if (!pendingStart || !isMoodHydrated) return;
+    if (!pendingStart || !isMoodHydrated || !isSessionStateReady) return;
 
     setPendingStart(false);
     navigation.navigate(
       'Session',
       sessionResumeValid ? { mood, resume: true } : { mood, mode: 'warmup' },
     );
-  }, [isMoodHydrated, mood, navigation, pendingStart, sessionResumeValid]);
+  }, [isMoodHydrated, isSessionStateReady, mood, navigation, pendingStart, sessionResumeValid]);
 
   useEffect(() => {
     if (!profile?.syncCode) return;
@@ -190,7 +197,7 @@ export default function HomeScreen() {
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate);
   const openStart = () => {
-    if (!isMoodHydrated) {
+    if (!isMoodHydrated || !isSessionStateReady) {
       setPendingStart(true);
       return;
     }

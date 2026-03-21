@@ -243,6 +243,36 @@ describe('HomeScreen', () => {
     });
   });
 
+  it('queues Start until session resume validation finishes', async () => {
+    sessionStoreState.sessionId = 77;
+    sessionStoreState.sessionState = 'active';
+
+    let resolveSessionCheck: ((value: { id: 77 }) => void) | null = null;
+    mockGetFirstAsync.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSessionCheck = resolve;
+      }),
+    );
+
+    const { getByText } = render(<HomeScreen />);
+
+    fireEvent.press(getByText('Start'));
+    expect(mockHomeNavigate).not.toHaveBeenCalled();
+
+    if (!resolveSessionCheck) {
+      throw new Error('Expected session validator to be assigned');
+    }
+    const resolveSession = resolveSessionCheck as (value: { id: 77 }) => void;
+    resolveSession({ id: 77 });
+
+    await waitFor(() => {
+      expect(mockHomeNavigate).toHaveBeenCalledWith('Session', {
+        mood: 'good',
+        resume: true,
+      });
+    });
+  });
+
   it('clears stale today plan data when no agenda exists for the day', async () => {
     render(<HomeScreen />);
 

@@ -3,6 +3,8 @@ import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../constants/theme';
 
+const TILE_MIN_HEIGHT = 92;
+
 export interface ToolItem {
   key: string;
   label: string;
@@ -20,6 +22,13 @@ interface Props {
 export default function HomeToolsSection({ expanded, isTablet, onToggle, tools }: Props) {
   const animation = useRef(new Animated.Value(expanded ? 1 : 0)).current;
   const [renderBody, setRenderBody] = useState(expanded);
+  const columns = isTablet ? 3 : 2;
+  const rows = Math.ceil(tools.length / columns);
+  const expandedHeight =
+    rows * TILE_MIN_HEIGHT +
+    Math.max(0, rows - 1) * theme.spacing.md +
+    theme.spacing.md * 2 +
+    StyleSheet.hairlineWidth;
 
   useEffect(() => {
     if (expanded) {
@@ -43,7 +52,7 @@ export default function HomeToolsSection({ expanded, isTablet, onToggle, tools }
 
   const bodyHeight = animation.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, isTablet ? 240 : 320],
+    outputRange: [0, expandedHeight],
   });
 
   return (
@@ -146,7 +155,7 @@ const styles = StyleSheet.create({
   },
   tile: {
     width: '47%',
-    minHeight: 92,
+    minHeight: TILE_MIN_HEIGHT,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,

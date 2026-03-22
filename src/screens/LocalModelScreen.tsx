@@ -91,6 +91,10 @@ export default function LocalModelScreen() {
   const [progressWhisper, setProgressWhisper] = useState(0);
   const [taskWhisper, setTaskWhisper] = useState<FileSystem.DownloadResumable | null>(null);
 
+  // Track which model files already exist on disk (even if profile path is null)
+  const [existingLlmFiles, setExistingLlmFiles] = useState<Set<string>>(new Set());
+  const [existingWhisperFiles, setExistingWhisperFiles] = useState<Set<string>>(new Set());
+
   const localModelPath = profile?.localModelPath;
   const useLocalModel = profile?.useLocalModel ?? false;
   const isLlmDownloaded = !!localModelPath;
@@ -99,6 +103,43 @@ export default function LocalModelScreen() {
   const useLocalWhisper = profile?.useLocalWhisper ?? false;
   const isWhisperDownloaded = !!localWhisperPath;
 
+  // On mount: scan filesystem for already-downloaded model files
+  // This catches models downloaded by bootstrap or previous sessions
+  useEffect(() => {
+    async function scanForExistingFiles() {
+      const llmFound = new Set<string>();
+      const whisperFound = new Set<string>();
+
+      for (const model of RECOMMENDED_MODELS) {
+        const path = getLocalModelFilePath(model.name);
+        const info = await validateLocalModelFile({ path });
+        if (info.exists) {
+          llmFound.add(model.id);
+          // If profile path is null but file exists, auto-register it
+          if (!localModelPath) {
+            setLocalModelPath(path);
+          }
+        }
+      }
+
+      for (const model of WHISPER_MODELS) {
+        const path = getLocalModelFilePath(model.name);
+        const info = await validateLocalModelFile({ path });
+        if (info.exists) {
+          whisperFound.add(model.id);
+          if (!localWhisperPath) {
+            setLocalWhisperPath(path);
+          }
+        }
+      }
+
+      setExistingLlmFiles(llmFound);
+      setExistingWhisperFiles(whisperFound);
+    }
+    scanForExistingFiles();
+  }, [localModelPath, localWhisperPath]);
+
+  // Validate that stored paths still point to real files
   useEffect(() => {
     if (localModelPath) {
       validateLocalModelFile({ path: localModelPath }).then((info) => {
@@ -137,6 +178,7 @@ export default function LocalModelScreen() {
         else setLocalWhisperPath(targetUri);
         if (isLlm) setDownloadingLlm(false);
         else setDownloadingWhisper(false);
+        Alert.alert('Already Downloaded', `${model.name} is already on your device.`);
         return;
       }
 
@@ -151,8 +193,13 @@ export default function LocalModelScreen() {
       const res = await task.downloadAsync();
 
       if (res && res.status === 200) {
-        if (isLlm) setLocalModelPath(res.uri);
-        else setLocalWhisperPath(res.uri);
+        if (isLlm) {
+          setLocalModelPath(res.uri);
+          setExistingLlmFiles((prev) => new Set([...prev, model.id]));
+        } else {
+          setLocalWhisperPath(res.uri);
+          setExistingWhisperFiles((prev) => new Set([...prev, model.id]));
+        }
         Alert.alert('Success', `${model.name} downloaded successfully!`);
       } else {
         throw new Error('Download failed');
@@ -290,13 +337,23 @@ export default function LocalModelScreen() {
               <View key={model.id} style={[styles.card, { marginBottom: 16 }]}>
                 <Text style={styles.modelName}>{model.name}</Text>
                 <Text style={styles.modelDesc}>{model.desc}</Text>
-                <TouchableOpacity
-                  style={styles.downloadBtn}
-                  onPress={() => handleDownload(model, 'llm')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.downloadBtnText}>⬇️ Download</Text>
-                </TouchableOpacity>
+                {existingLlmFiles.has(model.id) ? (
+                  <TouchableOpacity
+                    style={[styles.downloadBtn, { backgroundColor: '#2196F3' }]}
+                    onPress={() => handleDownload(model, 'llm')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.downloadBtnText}>✅ On Device — Use This</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.downloadBtn}
+                    onPress={() => handleDownload(model, 'llm')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.downloadBtnText}>⬇️ Download</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))
           )}
@@ -353,13 +410,23 @@ export default function LocalModelScreen() {
               <View key={model.id} style={[styles.card, { marginBottom: 16 }]}>
                 <Text style={styles.modelName}>{model.name}</Text>
                 <Text style={styles.modelDesc}>{model.desc}</Text>
-                <TouchableOpacity
-                  style={styles.downloadBtn}
-                  onPress={() => handleDownload(model, 'whisper')}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.downloadBtnText}>⬇️ Download</Text>
-                </TouchableOpacity>
+                {existingWhisperFiles.has(model.id) ? (
+                  <TouchableOpacity
+                    style={[styles.downloadBtn, { backgroundColor: '#2196F3' }]}
+                    onPress={() => handleDownload(model, 'whisper')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.downloadBtnText}>✅ On Device — Use This</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.downloadBtn}
+                    onPress={() => handleDownload(model, 'whisper')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.downloadBtnText}>⬇️ Download</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             ))
           )}

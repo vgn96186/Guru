@@ -18,9 +18,104 @@ import { theme } from '../constants/theme';
 import { MS_PER_DAY } from '../constants/time';
 import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
-import { getTopicsDueForReview } from '../db/queries/topics';
+import { getTopicsDueForReview, getAllTopicsWithProgress } from '../db/queries/topics';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
+import { DBMCI_SUBJECT_ORDER, DBMCI_WORKLOAD_OVERRIDES } from '../services/studyPlannerBuckets';
+import { SUBJECTS_SEED } from '../constants/syllabus';
+
+const SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
+const DBMCI_TOTAL_DAYS = 137;
+
+function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
+  // Count total topics per subject (for sizing context)
+  const subjectTopicCount = new Map<string, number>();
+  for (const t of allTopics) {
+    subjectTopicCount.set(t.subjectCode, (subjectTopicCount.get(t.subjectCode) ?? 0) + 1);
+  }
+
+  return (
+    <View style={dbmciStyles.card}>
+      <Text style={dbmciStyles.title}>📋 DBMCI One — Study Sequence</Text>
+      <Text style={dbmciStyles.subtitle}>
+        Follow this order · {DBMCI_TOTAL_DAYS} lecture days · Topics auto-tracked from recordings
+      </Text>
+      {DBMCI_SUBJECT_ORDER.map((code, idx) => {
+        const subject = SUBJECT_MAP.get(code);
+        if (!subject) return null;
+        const multiplier = DBMCI_WORKLOAD_OVERRIDES[code] ?? 1;
+        const days = Math.round(multiplier * (DBMCI_TOTAL_DAYS / DBMCI_SUBJECT_ORDER.length));
+        const topicCount = subjectTopicCount.get(code) ?? 0;
+
+        return (
+          <View key={code} style={dbmciStyles.row}>
+            <Text style={[dbmciStyles.idx, { color: subject.colorHex }]}>{idx + 1}</Text>
+            <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
+            <View style={dbmciStyles.rowContent}>
+              <Text style={dbmciStyles.subjectName}>{subject.name}</Text>
+              <Text style={dbmciStyles.topicCount}>{topicCount} topics</Text>
+            </View>
+            <View style={dbmciStyles.meta}>
+              <Text style={dbmciStyles.days}>{days}d</Text>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function BTRProgressCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
+  const subjectProgress = new Map<string, { total: number; seen: number }>();
+  for (const t of allTopics) {
+    const entry = subjectProgress.get(t.subjectCode) ?? { total: 0, seen: 0 };
+    entry.total++;
+    if (t.progress.status !== 'unseen') entry.seen++;
+    subjectProgress.set(t.subjectCode, entry);
+  }
+
+  // Sort by displayOrder
+  const subjects = [...SUBJECTS_SEED].sort((a, b) => a.displayOrder - b.displayOrder);
+  const totalSeen = allTopics.filter((t) => t.progress.status !== 'unseen').length;
+  const overallPct = allTopics.length > 0 ? Math.round((totalSeen / allTopics.length) * 100) : 0;
+
+  return (
+    <View style={dbmciStyles.card}>
+      <Text style={dbmciStyles.title}>📊 BTR — Subject Progress</Text>
+      <Text style={dbmciStyles.subtitle}>
+        {totalSeen}/{allTopics.length} topics covered · {overallPct}% overall
+      </Text>
+      {subjects.map((subject) => {
+        const progress = subjectProgress.get(subject.shortCode) ?? { total: 0, seen: 0 };
+        if (progress.total === 0) return null;
+        const pct = Math.round((progress.seen / progress.total) * 100);
+
+        return (
+          <View key={subject.shortCode} style={dbmciStyles.row}>
+            <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
+            <View style={dbmciStyles.rowContent}>
+              <Text style={dbmciStyles.subjectName}>{subject.name}</Text>
+              <View style={dbmciStyles.barBg}>
+                <View
+                  style={[
+                    dbmciStyles.barFill,
+                    { width: `${pct}%`, backgroundColor: subject.colorHex },
+                  ]}
+                />
+              </View>
+            </View>
+            <View style={dbmciStyles.meta}>
+              <Text style={dbmciStyles.pct}>{pct}%</Text>
+              <Text style={dbmciStyles.topicCount}>
+                {progress.seen}/{progress.total}
+              </Text>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 type Nav = NativeStackNavigationProp<MenuStackParamList>;
 
@@ -33,7 +128,7 @@ const PLAN_MODES: Array<{ key: PlanMode; label: string }> = [
 const RESOURCE_MODES: Array<{ key: StudyResourceMode; label: string }> = [
   { key: 'standard', label: 'Standard' },
   { key: 'btr', label: 'BTR' },
-  { key: 'dbmci_live', label: 'DBMCI Live' },
+  { key: 'dbmci_live', label: 'DBMCI One' },
   { key: 'hybrid', label: 'Hybrid' },
 ];
 
@@ -45,6 +140,7 @@ export default function StudyPlanScreen() {
   const [completedTodayIds, setCompletedTodayIds] = useState<Set<number>>(new Set());
   const [completedWeekIds, setCompletedWeekIds] = useState<Set<number>>(new Set());
   const [missedTopics, setMissedTopics] = useState<TopicWithProgress[]>([]);
+  const [allTopics, setAllTopics] = useState<TopicWithProgress[]>([]);
   const { profile, setStudyResourceMode } = useAppStore();
   const resourceMode = profile?.studyResourceMode ?? 'hybrid';
 
@@ -61,10 +157,14 @@ export default function StudyPlanScreen() {
     const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     const startOfWeek = startOfToday - mondayOffset * MS_PER_DAY;
     const todayStr = now.toISOString().slice(0, 10);
-    const [{ plan: p, summary: s }, overdueRaw] = await Promise.all([
+    const [{ plan: p, summary: s }, overdueRaw, fetchedAllTopics] = await Promise.all([
       generateStudyPlan({ mode: planMode, resourceMode }),
       getTopicsDueForReview(1000),
+      resourceMode === 'dbmci_live' || resourceMode === 'btr'
+        ? getAllTopicsWithProgress()
+        : Promise.resolve([]),
     ]);
+    if (resourceMode === 'dbmci_live' || resourceMode === 'btr') setAllTopics(fetchedAllTopics);
     const overdue = overdueRaw.filter((topic) => {
       const dueDate = topic.progress.fsrsDue?.slice(0, 10);
       if (!dueDate || dueDate >= todayStr) return false;
@@ -316,6 +416,13 @@ export default function StudyPlanScreen() {
               </Text>
             </View>
           </View>
+
+          {resourceMode === 'dbmci_live' && allTopics.length > 0 && (
+            <DBMCISyllabusCard allTopics={allTopics} />
+          )}
+          {resourceMode === 'btr' && allTopics.length > 0 && (
+            <BTRProgressCard allTopics={allTopics} />
+          )}
 
           <Text style={styles.sectionTitle}>Today</Text>
           {todayPlan && todayPlan.items.length > 0 ? (
@@ -632,4 +739,84 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF5044',
   },
   restText: { color: '#4CAF50', fontWeight: '600' },
+});
+
+const dbmciStyles = StyleSheet.create({
+  card: {
+    backgroundColor: '#171722',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#2A2A38',
+    padding: 16,
+    marginBottom: 20,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  subtitle: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+    marginBottom: 2,
+  },
+  idx: {
+    fontSize: 11,
+    fontWeight: '900',
+    width: 20,
+    textAlign: 'center',
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  rowContent: {
+    flex: 1,
+  },
+  subjectName: {
+    color: '#E0E0E0',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  topicCount: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  meta: {
+    alignItems: 'flex-end',
+    marginLeft: 8,
+  },
+  days: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  barBg: {
+    height: 3,
+    backgroundColor: '#2A2A38',
+    borderRadius: 2,
+    marginTop: 3,
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: 3,
+    borderRadius: 2,
+  },
+  pct: {
+    color: '#6C63FF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
 });

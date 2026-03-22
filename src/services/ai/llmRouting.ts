@@ -410,6 +410,7 @@ async function callDeepSeek(
   model: string,
   jsonMode = true,
 ): Promise<string> {
+  if (__DEV__) console.log(`[AI] callDeepSeek attempt: model=${model} json=${jsonMode}`);
   const clonedMessages = [...messages];
   if (jsonMode) {
     const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
@@ -449,17 +450,20 @@ async function callDeepSeek(
   });
 
   if (res.status === 429) {
+    if (__DEV__) console.warn(`[AI] DeepSeek 429: ${model}`);
     throw new RateLimitError(`DeepSeek rate limit on ${model}`);
   }
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
+    if (__DEV__) console.error(`[AI] DeepSeek ${res.status} (${model}):`, err);
     throw new Error(`DeepSeek error ${res.status} (${model}): ${err}`);
   }
 
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (!text || !text.trim()) throw new Error(`Empty response from DeepSeek model ${model}`);
+  if (__DEV__) console.log(`[AI] DeepSeek success: ${model} (${text.length} chars)`);
   return text;
 }
 
@@ -504,12 +508,14 @@ async function streamDeepSeekChat(
   return text;
 }
 
+/** MuleRouter (MuleAI) — OpenAI-compatible endpoint. */
 async function callMuleRouter(
   messages: Message[],
   mulerouterKey: string,
   model: string,
   jsonMode = true,
 ): Promise<string> {
+  if (__DEV__) console.log(`[AI] callMuleRouter attempt: model=${model} json=${jsonMode}`);
   const clonedMessages = [...messages];
   if (jsonMode) {
     const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
@@ -539,6 +545,7 @@ async function callMuleRouter(
     body.response_format = { type: 'json_object' };
   }
 
+  // Verifying canonical MuleRouter path (vendors/openai/v1) works better than the v1 alias.
   const res = await fetch('https://api.mulerouter.ai/vendors/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -549,17 +556,20 @@ async function callMuleRouter(
   });
 
   if (res.status === 429) {
+    if (__DEV__) console.warn(`[AI] MuleRouter 429: ${model}`);
     throw new RateLimitError(`MuleRouter rate limit on ${model}`);
   }
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
+    if (__DEV__) console.error(`[AI] MuleRouter ${res.status} (${model}):`, err);
     throw new Error(`MuleRouter error ${res.status} (${model}): ${err}`);
   }
 
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (!text || !text.trim()) throw new Error(`Empty response from MuleRouter model ${model}`);
+  if (__DEV__) console.log(`[AI] MuleRouter success: ${model} (${text.length} chars)`);
   return text;
 }
 
@@ -873,6 +883,28 @@ export async function attemptCloudLLM(
   let lastCloudError: Error | null = null;
 
   // 1. Explicit UI Selections
+  if (preferredMulerouterModel && mulerouterKey) {
+    try {
+      const text = textMode
+        ? await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel, false)
+        : await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel);
+      return { text, modelUsed: `mulerouter/${preferredMulerouterModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredDeepseekModel && deepseekKey) {
+    try {
+      const text = textMode
+        ? await callDeepSeek(messages, deepseekKey, preferredDeepseekModel, false)
+        : await callDeepSeek(messages, deepseekKey, preferredDeepseekModel);
+      return { text, modelUsed: `deepseek/${preferredDeepseekModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   if (preferredOpenRouterModel && orKey) {
     try {
       const text = await callOpenRouter(messages, orKey, preferredOpenRouterModel);
@@ -906,17 +938,6 @@ export async function attemptCloudLLM(
     try {
       const text = await callCloudflare(messages, cfAccountId, cfApiToken, preferredCfModel);
       return { text, modelUsed: `cf/${preferredCfModel}` };
-    } catch (err) {
-      lastCloudError = err as Error;
-    }
-  }
-
-  if (preferredMulerouterModel && mulerouterKey) {
-    try {
-      const text = textMode
-        ? await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel, false)
-        : await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel);
-      return { text, modelUsed: `mulerouter/${preferredMulerouterModel}` };
     } catch (err) {
       lastCloudError = err as Error;
     }

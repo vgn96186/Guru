@@ -38,73 +38,30 @@ export async function generateJSONWithRouting<T>(
   const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
     getBackendAttemptOrder(profile);
 
-  // 1. High Performance Native Path: Gemini SDK Structured JSON
-  if (geminiKey && (profile.preferGeminiStructuredJson ?? true)) {
-    try {
-      return await geminiGenerateStructuredJsonSdk(messages, schema, geminiKey, taskComplexity);
-    } catch (err) {
-      if (__DEV__) console.warn('[AI] Gemini native structured JSON failed, falling back:', err);
-      // Fall through to traditional text fallback loop if not a rate limit
-      if (err instanceof RateLimitError) throw err;
-    }
-  }
-
   let lastError: Error | null = null;
   for (const backend of attempts) {
     try {
-      if (backend === 'cloud' && geminiKey && profile.preferGeminiStructuredJson !== false) {
-        try {
-          const structured = await geminiGenerateStructuredJsonSdk(
-            messages,
-            schema,
-            geminiKey,
-            taskComplexity,
-          );
-          if (__DEV__) {
-            console.log(
-              `[AI] structured JSON native_gemini_ok model=${structured.modelUsed} complexity=${taskComplexity}`,
-            );
-          }
-          return structured;
-        } catch (err) {
-          if (err instanceof RateLimitError) {
-            if (__DEV__) {
-              console.warn('[AI] Gemini structured JSON rate limited; falling back to text backends');
-            }
-            lastError = err as Error;
-          } else {
-            if (__DEV__) {
-              console.warn(
-                '[AI] Gemini structured JSON failed, fallback_text_repair:',
-                (err as Error).message,
-              );
-            }
-          }
-        }
+      if (backend === 'local') {
+        const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, false);
+        const parsed = await parseStructuredJson(text, schema);
+        return { parsed, modelUsed };
       }
 
-      const { text, modelUsed } =
-        backend === 'local'
-          ? await attemptLocalLLM(messages, profile.localModelPath!, false)
-          : await attemptCloudLLM(
-              messages,
-              orKey,
-              false,
-              groqKey,
-              undefined,
-              geminiKey,
-              geminiFallbackKey,
-              cfAccountId,
-              cfApiToken,
-              deepseekKey,
-              mulerouterKey,
-            );
+      // 2. Cloud Path (Routing includes Qwen -> DeepSeek -> Groq -> Gemini)
+      const { text, modelUsed } = await attemptCloudLLM(
+        messages,
+        orKey,
+        false,
+        groqKey,
+        undefined,
+        geminiKey,
+        geminiFallbackKey,
+        cfAccountId,
+        cfApiToken,
+        deepseekKey,
+        mulerouterKey,
+      );
       const parsed = await parseStructuredJson(text, schema);
-      if (__DEV__) {
-        console.log(
-          `[AI] structured_json_parse path=fallback_text_repair model=${modelUsed} (Zod parse after text)`,
-        );
-      }
       return { parsed, modelUsed };
     } catch (err) {
       if (__DEV__)

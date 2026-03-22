@@ -89,6 +89,8 @@ export default function SessionScreen() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const isPausedRef = useRef(store.isPaused);
+  const hasInitializedRef = useRef(false);
+  const startPlanningRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
   useEffect(() => {
     storeRef.current = store;
@@ -240,7 +242,18 @@ export default function SessionScreen() {
     preferredActionType,
   ]);
 
+  // Keep ref in sync so the init effect always sees the latest version
   useEffect(() => {
+    startPlanningRef.current = startPlanning;
+  }, [startPlanning]);
+
+  useEffect(() => {
+    // Guard: only run once per mount to prevent session restart loops.
+    // Without this, profile changes (from refreshProfile) would cause
+    // startPlanning's reference to change, re-triggering this effect.
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     const hasResumableSession =
       Boolean(storeRef.current.sessionId) &&
       Boolean(storeRef.current.agenda) &&
@@ -260,7 +273,7 @@ export default function SessionScreen() {
       }
     } else {
       storeRef.current.resetSession();
-      startPlanning();
+      startPlanningRef.current?.();
     }
 
     timerRef.current = setInterval(() => {
@@ -277,7 +290,7 @@ export default function SessionScreen() {
         agendaRevealTimeoutRef.current = null;
       }
     };
-  }, [resume, startPlanning]);
+  }, [resume]);
 
   useEffect(() => {
     if (!store.isOnBreak) return;
@@ -460,7 +473,7 @@ export default function SessionScreen() {
             style={styles.retryBtn}
             onPress={() => {
               setAiError(null);
-              if (!store.agenda) startPlanning();
+              if (!store.agenda) startPlanningRef.current?.();
               else store.setCurrentContent(null);
             }}
           >

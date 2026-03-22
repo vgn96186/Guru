@@ -59,11 +59,11 @@ describe('generateJSONWithRouting', () => {
     jest.mocked(attemptLocalLLM).mockReset();
   });
 
-  it('returns native Gemini structured result when SDK succeeds', async () => {
+  it('uses cloud routing loop when no local model', async () => {
     const parsed = { a: 1 };
-    jest.mocked(geminiGenerateStructuredJsonSdk).mockResolvedValue({
-      parsed,
-      modelUsed: 'gemini/gemini-2.0-flash',
+    jest.mocked(attemptCloudLLM).mockResolvedValue({
+      text: '{"a":1}',
+      modelUsed: 'mulerouter/qwen3.5-plus',
     });
 
     const schema = z.object({ a: z.number() });
@@ -75,13 +75,13 @@ describe('generateJSONWithRouting', () => {
     );
 
     expect(out.parsed).toEqual(parsed);
-    expect(out.modelUsed).toContain('gemini');
-    expect(geminiGenerateStructuredJsonSdk).toHaveBeenCalled();
-    expect(attemptCloudLLM).not.toHaveBeenCalled();
+    expect(out.modelUsed).toBe('mulerouter/qwen3.5-plus');
+    expect(attemptCloudLLM).toHaveBeenCalled();
+    // We no longer call the specialized Gemini SDK at the top level
+    expect(geminiGenerateStructuredJsonSdk).not.toHaveBeenCalled();
   });
 
-  it('falls back to cloud text + parse when Gemini structured fails', async () => {
-    jest.mocked(geminiGenerateStructuredJsonSdk).mockRejectedValue(new Error('schema mismatch'));
+  it('falls back correctly in the cloud loop', async () => {
     jest.mocked(attemptCloudLLM).mockResolvedValue({
       text: '{"a":42}',
       modelUsed: 'groq/llama',
@@ -97,56 +97,6 @@ describe('generateJSONWithRouting', () => {
 
     expect(out.parsed).toEqual({ a: 42 });
     expect(out.modelUsed).toBe('groq/llama');
-    expect(attemptCloudLLM).toHaveBeenCalled();
-  });
-
-  it('skips structured Gemini when preferGeminiStructuredJson is false', async () => {
-    jest.mocked(profileRepository.getProfile).mockResolvedValue({
-      ...minimalProfile,
-      preferGeminiStructuredJson: false,
-    });
-    jest.mocked(attemptCloudLLM).mockResolvedValue({
-      text: '{"a":99}',
-      modelUsed: 'groq/fast',
-    });
-
-    const schema = z.object({ a: z.number() });
-    const out = await generateJSONWithRouting(
-      [{ role: 'user', content: 'x' }],
-      schema,
-      'low',
-      false,
-    );
-
-    expect(out.parsed).toEqual({ a: 99 });
-    expect(geminiGenerateStructuredJsonSdk).not.toHaveBeenCalled();
-    expect(attemptCloudLLM).toHaveBeenCalled();
-  });
-
-  it('skips structured Gemini when no gemini key', async () => {
-    jest.mocked(getApiKeys).mockReturnValue({
-      orKey: 'openrouter',
-      groqKey: undefined,
-      geminiKey: undefined,
-      cfAccountId: undefined,
-      cfApiToken: undefined,
-      geminiFallbackKey: undefined,
-      deepseekKey: undefined,
-      mulerouterKey: undefined,
-    });
-    jest.mocked(profileRepository.getProfile).mockResolvedValue({
-      ...minimalProfile,
-      geminiKey: '',
-    });
-    jest.mocked(attemptCloudLLM).mockResolvedValue({
-      text: '{"x":true}',
-      modelUsed: 'openrouter/x',
-    });
-
-    const schema = z.object({ x: z.boolean() });
-    await generateJSONWithRouting([{ role: 'user', content: 'y' }], schema, 'low', false);
-
-    expect(geminiGenerateStructuredJsonSdk).not.toHaveBeenCalled();
     expect(attemptCloudLLM).toHaveBeenCalled();
   });
 });

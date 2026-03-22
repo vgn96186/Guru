@@ -47,6 +47,10 @@ async function loadAiService(opts?: {
     getCachedContent: jest.fn(),
     setCachedContent: jest.fn(),
   }));
+  jest.doMock('../config/appConfig', () => {
+    const actual = jest.requireActual('../config/appConfig') as Record<string, unknown>;
+    return { ...actual, BUNDLED_GEMINI_KEY: '' };
+  });
   jest.doMock('./deviceMemory', () => ({
     isLocalLlmUsable: jest.fn(() => localUsable),
     getLocalLlmRamWarning: jest.fn(() => 'Local model unavailable'),
@@ -61,25 +65,32 @@ describe('aiService routing policy', () => {
     jest.restoreAllMocks();
   });
 
-  it('uses Groq first when Groq is available', async () => {
+  it('uses OpenRouter after Groq models fail when both keys are available', async () => {
     const { aiService } = await loadAiService();
     const fetchMock = jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (...args: unknown[]) => {
       const url = String(args[0] ?? '');
-      expect(url).toContain('api.groq.com');
+      if (url.includes('api.groq.com')) {
+        return {
+          ok: false,
+          status: 500,
+          text: async () => 'groq down',
+        } as any;
+      }
+      expect(url).toContain('openrouter.ai');
       return {
         ok: true,
-        json: async () => ({ choices: [{ message: { content: 'groq-success' } }] }),
+        json: async () => ({ choices: [{ message: { content: 'or-success' } }] }),
       } as any;
     });
 
     const result = await aiService.generateTextWithRouting([{ role: 'user', content: 'hello' }]);
 
-    expect(result.text).toBe('groq-success');
-    expect(result.modelUsed.startsWith('groq/')).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.text).toBe('or-success');
+    expect(result.modelUsed.startsWith('openai/gpt-oss-120b:free')).toBe(true);
+    expect(fetchMock).toHaveBeenCalled();
   });
 
-  it('falls back to OpenRouter after Groq failures', async () => {
+  it('uses Groq before OpenRouter when both keys are available', async () => {
     const { aiService } = await loadAiService();
     let groqCalls = 0;
     let openRouterCalls = 0;
@@ -88,16 +99,16 @@ describe('aiService routing policy', () => {
       if (url.includes('api.groq.com')) {
         groqCalls += 1;
         return {
-          ok: false,
-          status: 500,
-          text: async () => 'groq down',
+          ok: true,
+          json: async () => ({ choices: [{ message: { content: 'groq-success' } }] }),
         } as any;
       }
       if (url.includes('openrouter.ai')) {
         openRouterCalls += 1;
         return {
-          ok: true,
-          json: async () => ({ choices: [{ message: { content: 'openrouter-success' } }] }),
+          ok: false,
+          status: 500,
+          text: async () => 'or down',
         } as any;
       }
       throw new Error(`Unexpected URL: ${url}`);
@@ -105,9 +116,9 @@ describe('aiService routing policy', () => {
 
     const result = await aiService.generateTextWithRouting([{ role: 'user', content: 'hello' }]);
 
-    expect(result.text).toBe('openrouter-success');
-    expect(groqCalls).toBeGreaterThanOrEqual(2);
-    expect(openRouterCalls).toBe(1);
+    expect(result.text).toBe('groq-success');
+    expect(groqCalls).toBeGreaterThanOrEqual(1);
+    expect(openRouterCalls).toBe(0);
     expect(fetchMock).toHaveBeenCalled();
   });
 
@@ -130,7 +141,7 @@ describe('aiService routing policy', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
-  it('keeps Groq-first ordering even when an OpenRouter model is selected', async () => {
+  it('prioritizes explicitly requested OpenRouter model', async () => {
     const { aiService } = await loadAiService();
     const callOrder: string[] = [];
     jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (...args: unknown[]) => {
@@ -154,11 +165,11 @@ describe('aiService routing policy', () => {
 
     const result = await aiService.generateTextWithRouting(
       [{ role: 'user', content: 'hello' }],
-      { chosenModel: 'meta-llama/llama-3.3-70b-instruct:free' },
+      { chosenModel: 'openai/gpt-oss-120b:free' },
     );
 
-    expect(result.text).toBe('groq-selected');
-    expect(callOrder[0]).toBe('groq');
+    expect(result.text).toBe('or-selected');
+    expect(callOrder[0]).toBe('openrouter');
   });
 
   it('uses local directly when local model is explicitly selected', async () => {
@@ -185,16 +196,16 @@ describe('aiService routing policy', () => {
     const callOrder: string[] = [];
     jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (...args: unknown[]) => {
       const url = String(args[0] ?? '');
-      if (url.includes('api.groq.com')) {
-        callOrder.push('groq');
+      if (url.includes('openrouter.ai')) {
+        callOrder.push('openrouter');
         return {
           ok: false,
           status: 500,
-          text: async () => 'groq down',
+          text: async () => 'or down',
         } as any;
       }
-      if (url.includes('openrouter.ai')) {
-        callOrder.push('openrouter');
+      if (url.includes('api.groq.com')) {
+        callOrder.push('groq');
         return {
           ok: true,
           json: async () => ({ choices: [{ message: { content: '{"ok":true}' } }] }),
@@ -211,8 +222,6 @@ describe('aiService routing policy', () => {
     );
 
     expect(result.parsed.ok).toBe(true);
-    // Groq models are tried first (may retry across multiple models), then OpenRouter
-    expect(callOrder).toContain('openrouter');
-    expect(callOrder.filter(c => c === 'groq').length).toBeGreaterThanOrEqual(1);
+    expect(callOrder).toContain('groq');
   });
 });

@@ -25,6 +25,7 @@ jest.mock('expo-av', () => ({
 jest.mock('./notificationService', () => ({
   requestNotificationPermissions: jest.fn(),
   refreshAccountabilityNotifications: jest.fn(() => Promise.resolve()),
+  refreshAccountabilityNotificationsSafely: jest.fn(() => Promise.resolve()),
 }));
 
 jest.mock('./appLauncher/permissions', () => ({
@@ -36,7 +37,9 @@ describe('appPermissions', () => {
     jest.clearAllMocks();
     Platform.OS = 'ios';
     // Ensure mocks return promises
-    (NotificationService.refreshAccountabilityNotifications as jest.Mock).mockReturnValue(Promise.resolve());
+    (NotificationService.refreshAccountabilityNotificationsSafely as jest.Mock).mockResolvedValue(
+      undefined,
+    );
     (NotificationService.requestNotificationPermissions as jest.Mock).mockResolvedValue(false);
     (AppLauncherPermissions.requestRecordingPermissions as jest.Mock).mockResolvedValue(false);
   });
@@ -48,7 +51,7 @@ describe('appPermissions', () => {
       const result = await requestNotifications();
       
       expect(result).toBe(true);
-      expect(NotificationService.refreshAccountabilityNotifications).toHaveBeenCalled();
+      expect(NotificationService.refreshAccountabilityNotificationsSafely).toHaveBeenCalled();
       expect(NotificationService.requestNotificationPermissions).not.toHaveBeenCalled();
     });
 
@@ -60,7 +63,7 @@ describe('appPermissions', () => {
       
       expect(result).toBe(true);
       expect(NotificationService.requestNotificationPermissions).toHaveBeenCalled();
-      expect(NotificationService.refreshAccountabilityNotifications).toHaveBeenCalled();
+      expect(NotificationService.refreshAccountabilityNotificationsSafely).toHaveBeenCalled();
     });
 
     it('returns false if request fails', async () => {
@@ -70,7 +73,7 @@ describe('appPermissions', () => {
       const result = await requestNotifications();
       
       expect(result).toBe(false);
-      expect(NotificationService.refreshAccountabilityNotifications).not.toHaveBeenCalled();
+      expect(NotificationService.refreshAccountabilityNotificationsSafely).not.toHaveBeenCalled();
     });
 
     it('falls through to request if getPermissionsAsync throws', async () => {

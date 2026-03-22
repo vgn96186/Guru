@@ -28,13 +28,19 @@ yarn-error.*
 expo*.log
 serve.log
 start_debug*.log
+metro.log
 
 # macOS
 .DS_Store
 *.pem
 
-# local env files (keep .env and .env.example committed)
-.env*.local
+# local env files (do NOT commit .env)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 
 # typescript
 *.tsbuildinfo

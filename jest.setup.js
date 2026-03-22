@@ -1,5 +1,21 @@
 /* global jest, require, module, __DEV__, console, global, beforeEach */
 
+const nodeCrypto = require('crypto');
+// Always use Node's Web Crypto so `subtle.importKey` / `deriveKey` work (some tests replace `subtle` — see localModelBootstrap.unit.test).
+Object.defineProperty(globalThis, 'crypto', {
+  value: nodeCrypto.webcrypto,
+  configurable: true,
+});
+
+/** Mutable total RAM for `deviceMemory` tests (`expo-device` mock below). */
+global.__EXPO_DEVICE_TOTAL_MEMORY__ = null;
+
+jest.mock('expo-device', () => ({
+  get totalMemory() {
+    return global.__EXPO_DEVICE_TOTAL_MEMORY__;
+  },
+}));
+
 /** Expo: avoid loading native Constants / Expo.fx when tests import expo-haptics (e.g. via Toast). */
 jest.mock('expo-constants', () => ({
   __esModule: true,
@@ -71,6 +87,8 @@ jest.mock('react-native', () => {
   const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children);
   const TouchableOpacity = ({ children, ...props }) =>
     React.createElement('TouchableOpacity', props, children);
+  const Pressable = ({ children, ...props }) =>
+    React.createElement('Pressable', props, children);
   const TextInput = (props) => React.createElement('TextInput', props);
   const ActivityIndicator = (props) => React.createElement('ActivityIndicator', props);
   const Switch = (props) => React.createElement('Switch', props);
@@ -90,6 +108,7 @@ jest.mock('react-native', () => {
     Text,
     ScrollView,
     TouchableOpacity,
+    Pressable,
     TextInput,
     ActivityIndicator,
     Switch,

@@ -44,7 +44,7 @@ async function loadAppLauncher({
     updateSessionTranscriptionStatus: updateSessionTranscriptionStatusMock,
   }));
 
-  jest.doMock('./lectureSessionMonitor', () => ({
+  jest.doMock('./lecture/lectureSessionMonitor', () => ({
     startRecordingHealthCheck: startRecordingHealthCheckMock,
     stopRecordingHealthCheck: stopRecordingHealthCheckMock,
   }));

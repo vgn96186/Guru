@@ -89,6 +89,7 @@ export default function SessionScreen() {
   const [aiError, setAiError] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const isPausedRef = useRef(store.isPaused);
+  const isManuallyPausedRef = useRef(false);
   const hasInitializedRef = useRef(false);
   const startPlanningRef = useRef<(() => Promise<void>) | undefined>(undefined);
 
@@ -123,7 +124,9 @@ export default function SessionScreen() {
       }
     },
     onActive: () => {
-      if (store.isPaused) store.setPaused(false);
+      if (store.isPaused && !isManuallyPausedRef.current) {
+        store.setPaused(false);
+      }
     },
     disabled: store.sessionState !== 'studying' || store.isOnBreak,
   });
@@ -134,31 +137,37 @@ export default function SessionScreen() {
   }, [activeElapsedSeconds]);
 
   const finishSession = useCallback(async () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (agendaRevealTimeoutRef.current) {
-      clearTimeout(agendaRevealTimeoutRef.current);
-      agendaRevealTimeoutRef.current = null;
+    try {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (agendaRevealTimeoutRef.current) {
+        clearTimeout(agendaRevealTimeoutRef.current);
+        agendaRevealTimeoutRef.current = null;
+      }
+      const s = useSessionStore.getState();
+      if (!s.sessionId) {
+        navigation.goBack();
+        return;
+      }
+      const durationMin = Math.round(activeElapsedRef.current / 60);
+      const completedTopics = (s.agenda?.items ?? [])
+        .filter((i: AgendaItem) => s.completedTopicIds.includes(i.topic.id))
+        .map((i: AgendaItem) => i.topic);
+      const dailyLog = await dailyLogRepository.getDailyLog();
+      const isFirstToday = (dailyLog?.sessionCount ?? 0) === 0;
+      const xpResult = await calculateAndAwardSessionXp(completedTopics, s.quizResults, isFirstToday);
+      await endSession(s.sessionId, s.completedTopicIds, xpResult.total, durationMin);
+      await profileRepository.updateStreak(durationMin >= STREAK_MIN_MINUTES);
+      setSessionXpTotal(xpResult.total);
+      refreshProfile().catch((err) =>
+        console.error('[Session] Post-session profile refresh failed:', err),
+      );
+      invalidatePlanCache();
+      s.setSessionState('session_done');
+    } catch (e: any) {
+      console.error('[Session] finishSession error:', e);
+      Alert.alert('Session Error', 'Could not save session progress properly: ' + e.message);
+      navigation.navigate('Home');
     }
-    const s = useSessionStore.getState();
-    if (!s.sessionId) {
-      navigation.goBack();
-      return;
-    }
-    const durationMin = Math.round(activeElapsedRef.current / 60);
-    const completedTopics = (s.agenda?.items ?? [])
-      .filter((i: AgendaItem) => s.completedTopicIds.includes(i.topic.id))
-      .map((i: AgendaItem) => i.topic);
-    const dailyLog = await dailyLogRepository.getDailyLog();
-    const isFirstToday = (dailyLog?.sessionCount ?? 0) === 0;
-    const xpResult = await calculateAndAwardSessionXp(completedTopics, s.quizResults, isFirstToday);
-    await endSession(s.sessionId, s.completedTopicIds, xpResult.total, durationMin);
-    await profileRepository.updateStreak(durationMin >= STREAK_MIN_MINUTES);
-    setSessionXpTotal(xpResult.total);
-    refreshProfile().catch((err) =>
-      console.error('[Session] Post-session profile refresh failed:', err),
-    );
-    invalidatePlanCache();
-    s.setSessionState('session_done');
   }, [navigation, refreshProfile]);
 
   useEffect(() => {
@@ -563,7 +572,11 @@ export default function SessionScreen() {
           }}
           onDone={() => {
             store.resetSession();
-            navigation.popToTop();
+            try {
+              navigation.popToTop();
+            } catch {
+              navigation.navigate('Home');
+            }
           }}
         />
       );
@@ -573,7 +586,13 @@ export default function SessionScreen() {
         completedCount={store.completedTopicIds.length}
         elapsedSeconds={elapsedSeconds}
         xpTotal={sessionXpTotal}
-        onClose={() => navigation.popToTop()}
+        onClose={() => {
+          try {
+            navigation.popToTop();
+          } catch {
+            navigation.navigate('Home');
+          }
+        }}
       />
     );
   }
@@ -656,6 +675,11 @@ export default function SessionScreen() {
               <Text style={styles.topicProgress}>
                 Topic {topicNum}/{totalTopics}
               </Text>
+              {store.currentContent?.modelUsed && (
+                <Text style={[styles.topicProgress, { marginLeft: 6, opacity: 0.6 }]}>
+                  🤖 {store.currentContent.modelUsed.replace('local-', '')}
+                </Text>
+              )}
             </View>
             <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
               {item.topic.name}
@@ -671,6 +695,7 @@ export default function SessionScreen() {
                 onPress={() => {
                   const next = !store.isPaused;
                   isPausedRef.current = next;
+                  isManuallyPausedRef.current = next;
                   store.setPaused(next);
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                 }}
@@ -848,7 +873,10 @@ export default function SessionScreen() {
             <Text style={styles.pausedSubText}>Are you still studying, Doctor?</Text>
             <TouchableOpacity
               style={styles.resumeOverlayBtn}
-              onPress={() => store.setPaused(false)}
+              onPress={() => {
+                isManuallyPausedRef.current = false;
+                store.setPaused(false);
+              }}
             >
               <Text style={styles.resumeOverlayBtnText}>Resume Session</Text>
             </TouchableOpacity>

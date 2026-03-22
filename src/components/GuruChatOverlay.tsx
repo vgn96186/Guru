@@ -17,6 +17,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { chatWithGuru } from '../services/aiService';
+import { useAppStore } from '../store/useAppStore';
+import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
 import { theme } from '../constants/theme';
 import { MarkdownRender } from './MarkdownRender';
 
@@ -28,11 +30,20 @@ interface ChatMessage {
 interface Props {
   visible: boolean;
   topicName: string;
+  /** Optional syllabus leaf topic id for disambiguation in the prompt. */
+  syllabusTopicId?: number;
   contextText?: string;
   onClose: () => void;
 }
 
-export default function GuruChatOverlay({ visible, topicName, contextText, onClose }: Props) {
+export default function GuruChatOverlay({
+  visible,
+  topicName,
+  syllabusTopicId,
+  contextText,
+  onClose,
+}: Props) {
+  const profile = useAppStore((s) => s.profile);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -147,7 +158,11 @@ export default function GuruChatOverlay({ visible, topicName, contextText, onClo
     abortControllerRef.current = new AbortController();
 
     try {
-      const { reply } = await chatWithGuru(q, topicName, next.slice(-10), undefined, contextText);
+      const dbStudy = await buildBoundedGuruChatStudyContext(profile);
+      const topicMeta =
+        syllabusTopicId != null ? `Syllabus topic id: ${syllabusTopicId}` : undefined;
+      const merged = [topicMeta, dbStudy, contextText].filter(Boolean).join('\n\n');
+      const { reply } = await chatWithGuru(q, topicName, next.slice(-10), undefined, merged || undefined);
 
       if (isMountedRef.current) {
         setMessages((prev) => [...prev, { role: 'guru', text: reply }]);

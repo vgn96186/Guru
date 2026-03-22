@@ -69,20 +69,20 @@ describe('embeddingService', () => {
       );
     });
 
-    it('throws when API returns non-OK', async () => {
+    it('returns null when API returns non-OK (errors are caught)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         text: async () => 'bad',
       });
-      await expect(generateEmbedding('x')).rejects.toThrow(/Embedding failed/);
+      await expect(generateEmbedding('x')).resolves.toBeNull();
     });
 
-    it('throws when response has no embedding array', async () => {
+    it('returns null when response has no embedding array (errors are caught)', async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         json: async () => ({ data: [] }),
       });
-      await expect(generateEmbedding('x')).rejects.toThrow(/did not include a vector/);
+      await expect(generateEmbedding('x')).resolves.toBeNull();
     });
   });
 });

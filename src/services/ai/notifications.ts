@@ -23,7 +23,10 @@ Return JSON: { "title": "...", "body": "..." }`;
         { role: 'system', content: systemPrompt },
         { role: 'user', content: 'Wake up call.' },
       ],
-      z.object({ title: z.string(), body: z.string() }),
+      z.object({
+        title: z.string().describe('Short notification title'),
+        body: z.string().describe('Body text; concise'),
+      }),
       'low',
     );
     return parsed;

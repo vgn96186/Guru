@@ -12,17 +12,59 @@ export const DEFAULT_NEET_DATE =
   (process.env.EXPO_PUBLIC_DEFAULT_NEET_DATE ?? '2026-08-30').trim() || '2026-08-30';
 
 // Bundled defaults generated from `.env` by `scripts/generate-bundled-env.js`.
-export {
-  BUNDLED_GROQ_KEY,
-  BUNDLED_HF_TOKEN,
-  BUNDLED_OPENROUTER_KEY,
-  BUNDLED_GEMINI_KEY,
-  BUNDLED_CF_ACCOUNT_ID,
-  BUNDLED_CF_API_TOKEN,
-} from './bundledEnv';
+import * as env from './bundledEnv'; // Import the env object
 
-/** Gemini models — tried in order. Free tier: 1500 req/day. */
-export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'] as const;
+export const BUNDLED_GROQ_KEY = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY || env.BUNDLED_GROQ_KEY
+  : env.BUNDLED_GROQ_KEY;
+export const BUNDLED_HF_TOKEN = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN || env.BUNDLED_HF_TOKEN
+  : env.BUNDLED_HF_TOKEN;
+export const BUNDLED_OPENROUTER_KEY = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_OPENROUTER_KEY || env.BUNDLED_OPENROUTER_KEY
+  : env.BUNDLED_OPENROUTER_KEY;
+export const BUNDLED_GEMINI_KEY = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_KEY || env.BUNDLED_GEMINI_KEY
+  : env.BUNDLED_GEMINI_KEY;
+export const BUNDLED_GEMINI_FALLBACK_KEY = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_FALLBACK_KEY || env.BUNDLED_GEMINI_FALLBACK_KEY
+  : env.BUNDLED_GEMINI_FALLBACK_KEY;
+export const BUNDLED_CF_ACCOUNT_ID = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_CF_ACCOUNT_ID || env.BUNDLED_CF_ACCOUNT_ID
+  : env.BUNDLED_CF_ACCOUNT_ID;
+export const BUNDLED_CF_API_TOKEN = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_CF_API_TOKEN || env.BUNDLED_CF_API_TOKEN
+  : env.BUNDLED_CF_API_TOKEN;
+export const BUNDLED_DEEPSEEK_KEY = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_DEEPSEEK_KEY || env.BUNDLED_DEEPSEEK_KEY
+  : env.BUNDLED_DEEPSEEK_KEY;
+export const BUNDLED_MULEROUTER_KEY = typeof process !== 'undefined'
+  ? process.env.EXPO_PUBLIC_BUNDLED_MULEROUTER_KEY || env.BUNDLED_MULEROUTER_KEY
+  : env.BUNDLED_MULEROUTER_KEY;
+
+/** DeepSeek cloud models — explicitly testing deepseek-chat or v3. */
+export const DEEPSEEK_MODELS = [
+  'deepseek-chat',
+  'deepseek-reasoner'
+] as const;
+
+/**
+ * Gemini text chat / streaming — fallback order.
+ * Prefer stable **2.5 / 2.0 Flash** first (better free-tier behavior and fewer surprises than preview).
+ * **Preview** last so it only runs if listed models fail (saves quota for experimental IDs).
+ */
+export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3-flash-preview'] as const;
+
+/**
+ * Native JSON + `responseJsonSchema` — stable IDs only (no preview) so quizzes/plans/catalyst
+ * don’t burn preview quota and get more consistent schema fills. Tunable independently of chat.
+ */
+export const GEMINI_STRUCTURED_JSON_MODELS = {
+  /** Faster / cheaper structured calls (keypoints, small JSON). */
+  low: 'gemini-2.0-flash',
+  /** Heavier structured output (daily agenda, catalyst, long JSON). */
+  high: 'gemini-2.5-flash',
+} as const;
 
 /** Cloudflare Workers AI models — tried in order. Free: 10K neurons/day. */
 export const CLOUDFLARE_MODELS = [
@@ -39,23 +81,77 @@ export const CLOUDFLARE_IMAGE_MODELS = [
 /** Default Cloudflare Workers AI image generation model. */
 export const CLOUDFLARE_IMAGE_MODEL = CLOUDFLARE_IMAGE_MODELS[0];
 
-/** Google image generation models — tried in order. */
-export const GEMINI_IMAGE_MODELS = ['gemini-3-pro-image-preview'] as const;
+/**
+ * Google native image models (Interactions API `model` field), 2026 Gemini API.
+ * **Auto** tries these in order: Flash / preview models before Pro (typical free AI Studio keys).
+ * @see https://ai.google.dev/gemini-api/docs/image-generation
+ */
+export const GEMINI_IMAGE_MODELS = [
+  'gemini-2.5-flash-image',
+  'gemini-3.1-flash-image-preview',
+  'gemini-3-pro-image-preview',
+] as const;
 
-/** OpenRouter free models — tried in order when Groq unavailable. */
+/** OpenRouter free image models — tried in order when Cloudflare & Gemini are unavailable or rate limited. */
+export const OPENROUTER_IMAGE_MODELS = [
+  'bytedance-seed/seedream-4.5',
+  'black-forest-labs/flux.2-max',
+  'sourceful/riverflow-v2-pro',
+] as const;
+
+/** Short labels for Settings chips (billing is account-specific; Flash lines usually work on free quota). */
+export const GEMINI_IMAGE_MODEL_LABELS: Record<(typeof GEMINI_IMAGE_MODELS)[number], string> = {
+  'gemini-2.5-flash-image': '2.5 Flash Image (usually free quota)',
+  'gemini-3.1-flash-image-preview': '3.1 Flash Image preview',
+  'gemini-3-pro-image-preview': '3 Pro Image (often paid / higher tier)',
+};
+
+/** Persisted in `user_profile.image_generation_model`. `auto` = Gemini chain, then Cloudflare. */
+export const DEFAULT_IMAGE_GENERATION_MODEL = 'auto' as const;
+
+export const IMAGE_GENERATION_MODEL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  {
+    value: DEFAULT_IMAGE_GENERATION_MODEL,
+    label: 'Auto (Gemini: Flash first → Pro → then Cloudflare)',
+  },
+  ...GEMINI_IMAGE_MODELS.map((m) => ({
+    value: m,
+    label: `Google — ${GEMINI_IMAGE_MODEL_LABELS[m]}`,
+  })),
+  ...CLOUDFLARE_IMAGE_MODELS.map((m) => ({
+    value: m,
+    label: `Cloudflare — ${m.replace('@cf/black-forest-labs/', '')}`,
+  })),
+];
+
+export function normalizeImageGenerationModel(raw: string | undefined | null): string {
+  const v = (raw ?? '').trim();
+  if (!v || v === DEFAULT_IMAGE_GENERATION_MODEL) return DEFAULT_IMAGE_GENERATION_MODEL;
+  const allowed = new Set<string>([
+    DEFAULT_IMAGE_GENERATION_MODEL,
+    ...GEMINI_IMAGE_MODELS,
+    ...CLOUDFLARE_IMAGE_MODELS,
+    ...OPENROUTER_IMAGE_MODELS,
+  ]);
+  return allowed.has(v) ? v : DEFAULT_IMAGE_GENERATION_MODEL;
+}
+
 export const OPENROUTER_FREE_MODELS = [
-  'openai/gpt-oss-120b:free',
+  'deepseek/deepseek-v3.2',
+  'stepfun/step-3.5-flash:free',
+  'nvidia/nemotron-4-340b-instruct:free',
   'meta-llama/llama-3.3-70b-instruct:free',
   'google/gemma-3-27b-it:free',
-  'mistralai/mistral-small-3.1-24b-instruct:free',
-  'qwen/qwen3-coder:free',
 ] as const;
 
 /** Groq cloud models — order: best quality first, then fallbacks. */
 export const GROQ_MODELS = [
-  'openai/gpt-oss-120b',
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
+] as const;
+
+export const MULEROUTER_MODELS = [
+  'qwen3.5-plus',
 ] as const;
 
 /** Default Hugging Face speech-to-text model. */

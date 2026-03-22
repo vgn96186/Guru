@@ -30,7 +30,12 @@ export async function validateLocalModelFile(
   options: LocalModelFileValidationOptions,
 ): Promise<LocalModelFileValidationResult> {
   const info = await FileSystem.getInfoAsync(options.path);
-  const size = info.exists ? info.size ?? 0 : 0;
+  let size = info.exists ? info.size ?? 0 : 0;
+
+  // Fix for Android 32-bit integer overflow on files > 2GB (Expo FileSystem bug)
+  if (size < 0) {
+    size += 4294967296; // 2^32
+  }
 
   if (!info.exists) {
     return { exists: false, size: 0, isValid: false };

@@ -125,6 +125,17 @@ Respond with medical teaching guidance grounded in the sources above.`;
   }
 }
 
+export type GuruChatMemoryContext = {
+  /** Rolling summary of earlier turns in this thread (SQLite). */
+  sessionSummary?: string;
+  /** Optional facts the student saved in Settings (exam goals, weak subjects, etc.). */
+  profileNotes?: string;
+  /** Bounded FSRS/review + exam countdown line from DB (see `buildBoundedGuruChatStudyContext`). */
+  studyContext?: string;
+  /** Syllabus `topics.id` when navigation provided it (disambiguation / grounding). */
+  syllabusTopicId?: number;
+};
+
 /** Grounded Guru chat with SSE-style token deltas for cloud routes (local emits once at end). */
 export async function chatWithGuruGroundedStreaming(
   question: string,
@@ -132,6 +143,7 @@ export async function chatWithGuruGroundedStreaming(
   history: Array<{ role: 'user' | 'guru'; text: string }>,
   chosenModel: string | undefined,
   onReplyDelta: (delta: string) => void,
+  memoryContext?: GuruChatMemoryContext,
 ): Promise<import('./types').GroundedGuruResponse> {
   const trimmedQuestion = question.replace(/\s+/g, ' ').trim();
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
@@ -147,6 +159,18 @@ export async function chatWithGuruGroundedStreaming(
       ? renderSourcesForPrompt(sources)
       : 'No live web sources were retrieved for this query.';
 
+  const profileBlock =
+    memoryContext?.profileNotes?.trim() &&
+    `What you already know about this student (they saved this in Settings — use lightly, do not contradict SOURCES):\n${memoryContext.profileNotes.trim()}\n`;
+
+  const sessionBlock =
+    memoryContext?.sessionSummary?.trim() &&
+    `Earlier thread summary (compressed — may omit details):\n${memoryContext.sessionSummary.trim()}\n`;
+
+  const studyBlock =
+    memoryContext?.studyContext?.trim() &&
+    `Study snapshot from their progress DB (samples only — use lightly, prioritize SOURCES):\n${memoryContext.studyContext.trim()}\n`;
+
   const systemPrompt = `You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers — never lecture.
 Rules:
 1) Ask ONE focused clinical question per response. No information dumps.
@@ -157,8 +181,13 @@ Rules:
 6) If the student says "just tell me" or "explain it", give a 2-sentence summary grounded in sources, then follow up with a question.
 7) Do not use citations inline — keep it natural, not academic.`;
 
-  const userPrompt = `Topic context: ${topicName || 'General Medicine'}
-${historyStr ? `Recent conversation:\n${historyStr}\n` : ''}
+  const topicLabel =
+    (topicName || 'General Medicine') +
+    (memoryContext?.syllabusTopicId != null
+      ? ` (syllabus topic id ${memoryContext.syllabusTopicId})`
+      : '');
+  const userPrompt = `Topic context: ${topicLabel}
+${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}${historyStr ? `Recent conversation:\n${historyStr}\n` : ''}
 Student question: ${trimmedQuestion}
 
 SOURCES:

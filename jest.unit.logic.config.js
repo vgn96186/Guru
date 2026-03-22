@@ -17,6 +17,8 @@ const LOGIC_GLOBS = [
   'src/constants/**/*.{ts,tsx}',
   'modules/**/*.{ts,tsx}',
   '!src/**/*.unit.test.{ts,tsx}',
+  '!src/**/*.db.test.ts',
+  '!src/db/testing/**',
   '!src/**/*.d.ts',
   '!modules/**/*.unit.test.{ts,tsx}',
 ];

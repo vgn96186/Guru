@@ -10,7 +10,11 @@ import type {
   HarassmentTone,
 } from '../../types';
 import { LEVELS } from '../../constants/gamification';
-import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../../config/appConfig';
+import {
+  DEFAULT_INICET_DATE,
+  DEFAULT_NEET_DATE,
+  DEFAULT_IMAGE_GENERATION_MODEL,
+} from '../../config/appConfig';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../../services/databaseEvents';
 import { showToast } from '../../components/Toast';
 
@@ -72,6 +76,12 @@ export async function getUserProfile(): Promise<UserProfile> {
     backup_directory_uri: string | null;
     pomodoro_enabled: number;
     pomodoro_interval_minutes: number;
+    cloudflare_account_id: string;
+    cloudflare_api_token: string;
+    guru_chat_default_model: string;
+    guru_memory_notes: string;
+    image_generation_model: string;
+    prefer_gemini_structured_json: number | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -120,6 +130,12 @@ export async function getUserProfile(): Promise<UserProfile> {
       backupDirectoryUri: null,
       pomodoroEnabled: true,
       pomodoroIntervalMinutes: 20,
+      cloudflareAccountId: '',
+      cloudflareApiToken: '',
+      guruChatDefaultModel: 'auto',
+      imageGenerationModel: DEFAULT_IMAGE_GENERATION_MODEL,
+      guruMemoryNotes: '',
+      preferGeminiStructuredJson: true,
     };
   }
 
@@ -140,12 +156,19 @@ export async function getUserProfile(): Promise<UserProfile> {
     geminiKey: r.gemini_key ?? '',
     huggingFaceToken: r.huggingface_token ?? '',
     huggingFaceTranscriptionModel: r.huggingface_transcription_model ?? 'openai/whisper-large-v3',
-    transcriptionProvider:
-      r.transcription_provider === 'groq' ||
-      r.transcription_provider === 'huggingface' ||
-      r.transcription_provider === 'local'
-        ? r.transcription_provider
-        : 'auto',
+    transcriptionProvider: (() => {
+      const tp = r.transcription_provider;
+      if (
+        tp === 'auto' ||
+        tp === 'groq' ||
+        tp === 'huggingface' ||
+        tp === 'cloudflare' ||
+        tp === 'local'
+      ) {
+        return tp;
+      }
+      return 'auto';
+    })(),
     notificationsEnabled: r.notifications_enabled === 1,
     lastActiveDate: r.last_active_date,
     syncCode: r.sync_code,
@@ -192,6 +215,12 @@ export async function getUserProfile(): Promise<UserProfile> {
     backupDirectoryUri: r.backup_directory_uri ?? null,
     pomodoroEnabled: (r.pomodoro_enabled ?? 1) === 1,
     pomodoroIntervalMinutes: r.pomodoro_interval_minutes ?? 20,
+    cloudflareAccountId: r.cloudflare_account_id ?? '',
+    cloudflareApiToken: r.cloudflare_api_token ?? '',
+    guruChatDefaultModel: r.guru_chat_default_model ?? 'auto',
+    imageGenerationModel: r.image_generation_model ?? DEFAULT_IMAGE_GENERATION_MODEL,
+    guruMemoryNotes: r.guru_memory_notes ?? '',
+    preferGeminiStructuredJson: (r.prefer_gemini_structured_json ?? 1) === 1,
   };
 }
 
@@ -241,6 +270,10 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     pomodoroIntervalMinutes: 'pomodoro_interval_minutes',
     cloudflareAccountId: 'cloudflare_account_id',
     cloudflareApiToken: 'cloudflare_api_token',
+    guruChatDefaultModel: 'guru_chat_default_model',
+    imageGenerationModel: 'image_generation_model',
+    guruMemoryNotes: 'guru_memory_notes',
+    preferGeminiStructuredJson: 'prefer_gemini_structured_json',
   };
 
   const setClauses: string[] = [];

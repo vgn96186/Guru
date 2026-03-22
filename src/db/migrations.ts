@@ -410,7 +410,52 @@ export const MIGRATIONS: Migration[] = [
     sql: `CREATE INDEX IF NOT EXISTS idx_generated_study_images_topic ON generated_study_images(topic_name, context_type, created_at DESC)`,
     description: 'Index generated study images by topic',
   },
+  {
+    version: 94,
+    sql: `ALTER TABLE user_profile ADD COLUMN guru_chat_default_model TEXT NOT NULL DEFAULT 'auto'`,
+    description: 'Default Guru Chat model id (auto, local, groq/..., openrouter id, gemini/..., cf/...)',
+  },
+  {
+    version: 95,
+    sql: `ALTER TABLE user_profile ADD COLUMN guru_memory_notes TEXT NOT NULL DEFAULT ''`,
+    description: 'Guru Chat persistent memory notes (profile)',
+  },
+  {
+    version: 96,
+    sql: `CREATE TABLE IF NOT EXISTS guru_chat_session_memory (
+  topic_name TEXT PRIMARY KEY,
+  summary_text TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL,
+  messages_at_last_summary INTEGER NOT NULL DEFAULT 0
+)`,
+    description: 'Per-topic rolling session summary for Guru Chat',
+  },
+  {
+    version: 97,
+    sql: `ALTER TABLE user_profile ADD COLUMN image_generation_model TEXT NOT NULL DEFAULT 'auto'`,
+    description: 'Study image generation model preference (auto, Gemini id, or @cf/...)',
+  },
+  {
+    version: 98,
+    sql: `ALTER TABLE chat_history ADD COLUMN sources_json TEXT`,
+    description: 'Add sources_json to chat_history to persist grounding sources',
+  },
+  {
+    version: 99,
+    sql: `ALTER TABLE chat_history ADD COLUMN model_used TEXT`,
+    description: 'Add model_used to chat_history to display the model used for each message',
+  },
+  {
+    version: 100,
+    sql: `ALTER TABLE user_profile ADD COLUMN exam_type TEXT NOT NULL DEFAULT 'INICET'`,
+    description: 'Persist INICET vs NEET exam selection',
+  },
+  {
+    version: 101,
+    sql: `ALTER TABLE user_profile ADD COLUMN prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1`,
+    description: 'Prefer Gemini native JSON + schema for structured AI (generateJSONWithRouting)',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 93;
+export const LATEST_VERSION = 101;

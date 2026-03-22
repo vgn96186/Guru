@@ -1,0 +1,79 @@
+import {
+  coerceGuruChatDefaultModel,
+  formatGuruChatModelChipLabel,
+  guruChatPickerNameForCfModel,
+  guruChatPickerNameForGeminiModel,
+  guruChatPickerNameForGroqModel,
+  guruChatPickerNameForOpenRouterSlug,
+} from './guruChatModelPreference';
+
+describe('guruChatModelPreference', () => {
+  describe('coerceGuruChatDefaultModel', () => {
+    it('returns auto for empty, whitespace, or auto', () => {
+      expect(coerceGuruChatDefaultModel(undefined, ['auto', 'groq/x'])).toBe('auto');
+      expect(coerceGuruChatDefaultModel('', ['groq/x'])).toBe('auto');
+      expect(coerceGuruChatDefaultModel('   ', ['groq/x'])).toBe('auto');
+      expect(coerceGuruChatDefaultModel('auto', ['auto', 'local'])).toBe('auto');
+    });
+
+    it('returns saved when it is in the allow list', () => {
+      const ids = ['auto', 'local', 'groq/llama-3.3-70b-versatile', 'openai/gpt-oss-120b:free'];
+      expect(coerceGuruChatDefaultModel('local', ids)).toBe('local');
+      expect(coerceGuruChatDefaultModel('groq/llama-3.3-70b-versatile', ids)).toBe(
+        'groq/llama-3.3-70b-versatile',
+      );
+      expect(coerceGuruChatDefaultModel('openai/gpt-oss-120b:free', ids)).toBe(
+        'openai/gpt-oss-120b:free',
+      );
+    });
+
+    it('returns auto when saved is not available', () => {
+      expect(coerceGuruChatDefaultModel('groq/missing', ['auto'])).toBe('auto');
+      expect(coerceGuruChatDefaultModel('local', ['auto', 'groq/x'])).toBe('auto');
+    });
+  });
+
+  describe('formatGuruChatModelChipLabel', () => {
+    it('formats known id shapes', () => {
+      expect(formatGuruChatModelChipLabel('auto')).toBe('Auto');
+      expect(formatGuruChatModelChipLabel('local')).toBe('On-device');
+      expect(formatGuruChatModelChipLabel('groq/llama-3.3-70b-versatile')).toContain('llama');
+      expect(formatGuruChatModelChipLabel('gemini/gemini-2.0-flash')).toContain('gemini');
+      expect(formatGuruChatModelChipLabel('cf/@cf/meta/llama-3.1-8b-instruct')).toBeTruthy();
+    });
+
+    it('truncates long OpenRouter-style ids', () => {
+      const long = 'org/very-long-model-name-that-exceeds:free';
+      const out = formatGuruChatModelChipLabel(long);
+      expect(out.length).toBeLessThanOrEqual(23);
+    });
+  });
+
+  describe('guruChatPickerNameForGroqModel', () => {
+    it('uses slash path or hyphen split', () => {
+      expect(guruChatPickerNameForGroqModel('meta/llama-3.3-70b')).toContain('LLAMA');
+      expect(guruChatPickerNameForGroqModel('llama-3.3-70b-versatile')).toContain('LLAMA');
+    });
+  });
+
+  describe('guruChatPickerNameForOpenRouterSlug', () => {
+    it('extracts middle segment or falls back to slug', () => {
+      expect(guruChatPickerNameForOpenRouterSlug('google/gemini-2.0-flash:free')).toBe('GEMINI-2.0-FLASH');
+      expect(guruChatPickerNameForOpenRouterSlug('nonslug')).toBe('NONSLUG');
+    });
+  });
+
+  describe('guruChatPickerNameForGeminiModel', () => {
+    it('uppercases', () => {
+      expect(guruChatPickerNameForGeminiModel('gemini-2.0-flash')).toBe('GEMINI-2.0-FLASH');
+    });
+  });
+
+  describe('guruChatPickerNameForCfModel', () => {
+    it('uses last path segment', () => {
+      expect(guruChatPickerNameForCfModel('@cf/meta/llama-3.1-8b-instruct')).toBe(
+        'LLAMA-3.1-8B-INSTRUCT',
+      );
+    });
+  });
+});

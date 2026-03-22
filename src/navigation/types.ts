@@ -51,7 +51,13 @@ export type SyllabusStackParamList = {
 
 export type ChatStackParamList = {
   GuruChat:
-    | { topicName?: string; initialQuestion?: string; autoFocusComposer?: boolean }
+    | {
+        topicName?: string;
+        /** Syllabus leaf topic id when opened from Topic detail / content flows */
+        topicId?: number;
+        initialQuestion?: string;
+        autoFocusComposer?: boolean;
+      }
     | undefined;
 };
 

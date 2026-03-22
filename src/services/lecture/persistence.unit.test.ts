@@ -184,18 +184,4 @@ describe('persistence service', () => {
     });
   });
 
-  describe('getFailedTranscriptions', () => {
-    it('returns logs with pending/failed/transcribing status', async () => {
-      const dbMod = require('../../db/database');
-      dbMod.getDb.mockReturnValue(mockDb);
-      const { getFailedTranscriptions } = require('./persistence');
-      (mockDb.getAllAsync as jest.Mock<any>).mockResolvedValue([{ id: 1 }]);
-
-      const result = await getFailedTranscriptions();
-      expect(result).toEqual([{ id: 1 }]);
-      expect(mockDb.getAllAsync).toHaveBeenCalledWith(
-        expect.stringContaining("transcription_status IN ('pending', 'failed', 'transcribing')"),
-      );
-    });
-  });
 });

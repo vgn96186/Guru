@@ -1,4 +1,14 @@
 /* global module */
+/**
+ * Genymotion / attached devices: npm scripts run `scripts/detox-with-connected-device.sh`,
+ * which sets DETOX_ADB_NAME from `adb devices` (prefers Genymotion when multiple devices).
+ * Override: DETOX_ADB_NAME=... npx detox test -c android.genymotion
+ *
+ * Debug + Metro: `android.genymotion.dev` uses `android.debug` (port 8081 reverse).
+ *   1) Terminal A: `npm start` (Expo / Metro)
+ *   2) `npm run detox:build:android:genymotion:dev` once
+ *   3) Terminal B: `npm run detox:test:critical:genymotion:dev`
+ */
 /** @type {Detox.DetoxConfig} */
 module.exports = {
   testRunner: {
@@ -38,6 +48,14 @@ module.exports = {
         avdName: 'Medium_Phone_API_36.0',
       },
     },
+    /** Local Genymotion (or any ADB-attached Android). */
+    genymotion: {
+      type: 'android.attached',
+      device: {
+        adbName: process.env.DETOX_ADB_NAME || '.*',
+      },
+      systemUI: 'genymotion',
+    },
   },
   configurations: {
     // Primary test config — release build, no Metro/dev-client needed.
@@ -52,6 +70,15 @@ module.exports = {
     // For debugging tests with Metro & dev-client (manual use only).
     'android.emu.dev': {
       device: 'tablet',
+      app: 'android.debug',
+    },
+    // Genymotion: same APK as emu.debug; uses attached device from `adb devices`.
+    'android.genymotion': {
+      device: 'genymotion',
+      app: 'android.release',
+    },
+    'android.genymotion.dev': {
+      device: 'genymotion',
       app: 'android.debug',
     },
   },

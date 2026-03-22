@@ -42,10 +42,7 @@ jest.mock('../components/Toast', () => ({
   showToast: jest.fn(),
 }));
 
-// Mock crypto/subtle so SHA-256 validation can deterministically pass in unit tests.
-if (!(global as any).crypto) {
-  (global as any).crypto = require('crypto');
-}
+// Spy only on `digest` so PBKDF2/AES-GCM (`importKey`, `deriveKey`, etc.) keep working for other suites.
 const LLm_SHA = '8bcb19d3e363f7d1ab27f364032436fd702e735a6f479d6bb7b1cf066e76b443';
 const WHISPER_SHA = '1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69';
 
@@ -59,34 +56,19 @@ function getBufferSourceByteLength(data: BufferSource): number {
   return 0;
 }
 
-try {
-  Object.defineProperty(global.crypto, 'subtle', {
-    value: {
-      digest: jest.fn(async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
-        const byteLength = getBufferSourceByteLength(data);
-        const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
-        const typedArray = new Uint8Array(hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
-        return typedArray.buffer;
-      }),
-    },
-    configurable: true,
-  });
-} catch {
-  // If subtle already exists and can't be overwritten, just spy on digest.
-  jest
-    .spyOn(global.crypto.subtle, 'digest')
-    .mockImplementation(async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
-      const byteLength = getBufferSourceByteLength(data);
-      const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
-      const typedArray = new Uint8Array(hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
-      return typedArray.buffer;
-    });
-}
-
 describe('localModelBootstrap', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRefreshProfile.mockClear();
+
+    jest.spyOn(globalThis.crypto.subtle, 'digest').mockImplementation(
+      async (_algorithm: AlgorithmIdentifier, data: BufferSource) => {
+        const byteLength = getBufferSourceByteLength(data);
+        const hex = byteLength === 1 ? LLm_SHA : WHISPER_SHA;
+        const typedArray = new Uint8Array(hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
+        return typedArray.buffer;
+      },
+    );
 
     // Provide deterministic base64 content so digest() can select the expected hash.
     (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(async (filePath: string) => {
@@ -121,8 +103,9 @@ describe('localModelBootstrap', () => {
     };
     (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
     (FileSystem.getInfoAsync as jest.Mock)
-      .mockResolvedValueOnce({ exists: false })
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 });
+      .mockResolvedValueOnce({ exists: false }) // target path: no complete file yet
+      .mockResolvedValueOnce({ exists: false }) // partial before download
+      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // validate partial after download
 
     await bootstrapLocalModels();
 
@@ -130,7 +113,7 @@ describe('localModelBootstrap', () => {
     expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
       expect.stringContaining('medgemma'),
       expect.stringContaining('medgemma-4b-it-q4_k_m.gguf.partial'),
-      {},
+      { headers: { 'Accept-Encoding': 'identity' } },
       expect.any(Function),
     );
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
@@ -144,22 +127,22 @@ describe('localModelBootstrap', () => {
       localWhisperPath: '',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: false });
 
     const mockDownload = {
       downloadAsync: jest.fn().mockResolvedValue({ status: 200 }),
     };
     (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
     (FileSystem.getInfoAsync as jest.Mock)
-      .mockResolvedValueOnce({ exists: false }) // first check
-      .mockResolvedValueOnce({ exists: true, size: 800_000_000 }); // after download check
+      .mockResolvedValueOnce({ exists: false }) // target path
+      .mockResolvedValueOnce({ exists: false }) // partial before download
+      .mockResolvedValueOnce({ exists: true, size: 800_000_000 }); // validate partial after download
 
     await bootstrapLocalModels();
 
     expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
       expect.stringContaining('whisper'),
       expect.stringContaining('ggml-large-v3-turbo.bin.partial'),
-      {},
+      { headers: { 'Accept-Encoding': 'identity' } },
       expect.any(Function),
     );
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(
@@ -179,15 +162,16 @@ describe('localModelBootstrap', () => {
     };
     (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
     (FileSystem.getInfoAsync as jest.Mock)
-      .mockResolvedValueOnce({ exists: false }) // LLM check
-      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // LLM download check
+      .mockResolvedValueOnce({ exists: false }) // target path
+      .mockResolvedValueOnce({ exists: false }) // partial before download
+      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // validate partial after download
 
     await bootstrapLocalModels();
 
     expect(FileSystem.createDownloadResumable).toHaveBeenCalledWith(
       expect.stringContaining('medgemma'),
       expect.stringContaining('medgemma-4b-it-q4_k_m.gguf.partial'),
-      {},
+      { headers: { 'Accept-Encoding': 'identity' } },
       expect.any(Function),
     );
     expect(profileRepository.updateProfile).toHaveBeenCalledWith(

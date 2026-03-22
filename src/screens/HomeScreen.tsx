@@ -17,7 +17,6 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { useSessionStore } from '../store/useSessionStore';
-// HeroCard removed — exam countdown consolidated into header row
 import QuickStatsCard from '../components/home/QuickStatsCard';
 import ShortcutTile from '../components/home/ShortcutTile';
 import AgendaItem from '../components/home/AgendaItem';
@@ -36,6 +35,60 @@ import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood, UserProfile } from '../types';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
+
+/** Inline header countdown: pulse highlight on day digits (always on). */
+function ExamCountdownChips({ daysToInicet, daysToNeetPg }: { daysToInicet: number; daysToNeetPg: number }) {
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 2000,
+          useNativeDriver: false,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [pulseAnim]);
+
+  const pulseDigitColor = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [theme.colors.textPrimary, theme.colors.warning],
+  });
+
+  return (
+    <View
+      style={styles.examCountRow}
+      testID="inicet-countdown"
+      accessibilityRole="text"
+      accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
+    >
+      <View style={styles.examChipInner}>
+        <Text style={styles.examChip}>INICET </Text>
+        <Animated.Text style={[styles.examChipDays, { color: pulseDigitColor }]}>
+          {daysToInicet}
+        </Animated.Text>
+        <Text style={styles.examChip}>d</Text>
+      </View>
+      <Text style={styles.examDivider}>·</Text>
+      <View style={styles.examChipInner}>
+        <Text style={styles.examChip}>NEET </Text>
+        <Animated.Text style={[styles.examChipDays, { color: pulseDigitColor }]}>
+          {daysToNeetPg}
+        </Animated.Text>
+        <Text style={styles.examChip}>d</Text>
+      </View>
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const { width, height } = useWindowDimensions();
@@ -85,12 +138,31 @@ export default function HomeScreen() {
       .then((log) => setMood((log?.mood as Mood) ?? 'good'))
       .catch((err) => console.warn('[Home] Failed to load daily log:', err));
 
-    // Load daily agenda on mount
+    // Load daily agenda on mount and validate topic IDs
     const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
     dailyAgendaRepository
       .getDailyAgenda(date)
-      .then((plan) => {
-        if (plan) setTodayPlan(plan);
+      .then(async (plan) => {
+        if (!plan) return;
+        // Validate: check that topicIds in blocks actually exist in the DB
+        const allIds = plan.blocks.flatMap((b) => b.topicIds ?? []).filter((id) => id > 0);
+        if (allIds.length > 0) {
+          const db = getDb();
+          const placeholders = allIds.map(() => '?').join(',');
+          const rows = await db.getAllAsync<{ id: number }>(
+            `SELECT id FROM topics WHERE id IN (${placeholders})`,
+            allIds,
+          );
+          const validIds = new Set(rows.map((r) => r.id));
+          const invalidCount = allIds.filter((id) => !validIds.has(id)).length;
+          if (invalidCount > 0) {
+            // Stale plan with hallucinated IDs — discard it
+            if (__DEV__) console.warn(`[Home] Discarding stale plan: ${invalidCount} invalid topic IDs`);
+            await dailyAgendaRepository.deleteDailyAgenda(date);
+            return;
+          }
+        }
+        setTodayPlan(plan);
       })
       .catch((err) => console.warn('[Home] Failed to load daily agenda:', err));
   }, [setTodayPlan]);
@@ -207,11 +279,7 @@ export default function HomeScreen() {
               <Text style={styles.greetingText}>
                 {greeting}, {firstName}
               </Text>
-              <View style={styles.examCountRow}>
-                <Text style={styles.examChip}>INICET {daysToInicet}d</Text>
-                <Text style={styles.examDivider}>·</Text>
-                <Text style={styles.examChip}>NEET {daysToNeetPg}d</Text>
-              </View>
+              <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} />
             </View>
             <AiStatusDot profile={profile} />
           </View>
@@ -289,6 +357,7 @@ export default function HomeScreen() {
                 {criticalItems.map((item) => (
                   <TouchableOpacity
                     key={item.key}
+                    testID={item.key === 'inertia' ? 'task-paralysis-btn' : undefined}
                     style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
                     onPress={item.onPress}
                     activeOpacity={0.8}
@@ -572,12 +641,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 4,
     gap: 6,
+    flexWrap: 'wrap',
+  },
+  examChipInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   examChip: {
     color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.4,
+  },
+  examChipDays: {
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.2,
   },
   examDivider: {
     color: theme.colors.border,

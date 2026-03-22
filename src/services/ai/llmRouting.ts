@@ -2,9 +2,10 @@ import { AppState } from 'react-native';
 import { initLlama, LlamaContext } from 'llama.rn';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
-import { OPENROUTER_FREE_MODELS, GROQ_MODELS, GEMINI_MODELS, CLOUDFLARE_MODELS } from './config';
+import { OPENROUTER_FREE_MODELS, GROQ_MODELS, GEMINI_MODELS, CLOUDFLARE_MODELS, DEEPSEEK_MODELS, MULEROUTER_MODELS } from './config';
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
+import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 
 let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
@@ -169,84 +170,6 @@ async function callOpenRouter(messages: Message[], orKey: string, model: string)
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
   if (!text || !text.trim()) throw new Error(`Empty response from OpenRouter model ${model}`);
-  return text;
-}
-
-async function callGemini(messages: Message[], geminiKey: string, model: string): Promise<string> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${geminiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 1200,
-      }),
-    },
-  );
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Gemini rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Gemini error ${res.status} (${model}): ${err}`);
-  }
-
-  const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from Gemini model ${model}`);
-  return text;
-}
-
-/** Gemini chat with SSE streaming. */
-async function streamGeminiChat(
-  messages: Message[],
-  geminiKey: string,
-  model: string,
-  onDelta: (delta: string) => void,
-): Promise<string> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${geminiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.7,
-        max_tokens: 1200,
-        stream: true,
-      }),
-    },
-  );
-
-  if (res.status === 429) {
-    throw new RateLimitError(`Gemini rate limit on ${model}`);
-  }
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`Gemini error ${res.status} (${model}): ${err}`);
-  }
-
-  if (!res.body) {
-    const text = await callGemini(messages, geminiKey, model);
-    onDelta(text);
-    return text;
-  }
-
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  if (!text.trim()) throw new Error(`Empty response from Gemini model ${model}`);
   return text;
 }
 
@@ -481,6 +404,206 @@ async function streamOpenRouterChat(
   return text;
 }
 
+async function callDeepSeek(
+  messages: Message[],
+  deepseekKey: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: clonedMessages,
+    temperature: 0.7,
+    max_tokens: 2000,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${deepseekKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`DeepSeek rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`DeepSeek error ${res.status} (${model}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from DeepSeek model ${model}`);
+  return text;
+}
+
+async function streamDeepSeekChat(
+  messages: Message[],
+  deepseekKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${deepseekKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: true,
+    }),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`DeepSeek rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`DeepSeek error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    const text = await callDeepSeek(messages, deepseekKey, model, false);
+    onDelta(text);
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from DeepSeek model ${model}`);
+  return text;
+}
+
+async function callMuleRouter(
+  messages: Message[],
+  mulerouterKey: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: clonedMessages,
+    temperature: 0.7,
+    max_tokens: 2000,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  const res = await fetch('https://api.mulerouter.ai/vendors/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${mulerouterKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`MuleRouter rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`MuleRouter error ${res.status} (${model}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from MuleRouter model ${model}`);
+  return text;
+}
+
+async function streamMuleRouterChat(
+  messages: Message[],
+  mulerouterKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch('https://api.mulerouter.ai/vendors/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${mulerouterKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: true,
+    }),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`MuleRouter rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`MuleRouter error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    const text = await callMuleRouter(messages, mulerouterKey, model, false);
+    onDelta(text);
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from MuleRouter model ${model}`);
+  return text;
+}
+
 /**
  * Same routing policy as attemptCloudLLM, but streams assistant tokens via onDelta.
  * (JSON / structured output is not streamed — use {@link attemptCloudLLM} instead.)
@@ -492,18 +615,33 @@ export async function attemptCloudLLMStream(
   chosenModel: string | undefined,
   onDelta: (delta: string) => void,
   geminiKey?: string | undefined,
+  geminiFallbackKey?: string | undefined,
   cfAccountId?: string | undefined,
   cfApiToken?: string | undefined,
+  deepseekKey?: string | undefined,
+  mulerouterKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
-  const preferredGroqModel = chosenModel?.startsWith('groq/')
-    ? chosenModel.replace('groq/', '')
-    : undefined;
+  const preferredGroqModel = chosenModel?.startsWith('groq/') ? chosenModel.replace('groq/', '') : undefined;
+  const preferredGeminiModel = chosenModel?.startsWith('gemini/') ? chosenModel.replace('gemini/', '') : undefined;
+  const preferredCfModel = chosenModel?.startsWith('cf/') ? chosenModel.replace('cf/', '') : undefined;
+  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/') ? chosenModel.replace('deepseek/', '') : undefined;
+  const preferredMulerouterModel = chosenModel?.startsWith('mulerouter/') ? chosenModel.replace('mulerouter/', '') : undefined;
   const preferredOpenRouterModel =
-    chosenModel && !chosenModel.startsWith('groq/') && chosenModel !== 'local'
+    chosenModel && !preferredGroqModel && !preferredGeminiModel && !preferredCfModel && !preferredDeepseekModel && !preferredMulerouterModel && chosenModel !== 'local' && chosenModel !== 'auto'
       ? chosenModel
       : undefined;
 
   let lastCloudError: Error | null = null;
+
+  // 1. Explicit UI Selections
+  if (preferredOpenRouterModel && orKey) {
+    try {
+      const text = await streamOpenRouterChat(messages, orKey, preferredOpenRouterModel, onDelta);
+      return { text, modelUsed: preferredOpenRouterModel };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
 
   if (preferredGroqModel && groqKey) {
     try {
@@ -511,11 +649,62 @@ export async function attemptCloudLLMStream(
       return { text, modelUsed: `groq/${preferredGroqModel}` };
     } catch (err) {
       lastCloudError = err as Error;
-      if (__DEV__)
-        console.warn(
-          `[AI] Groq preferred model stream ${preferredGroqModel} failed:`,
-          lastCloudError.message,
-        );
+    }
+  }
+
+  if (preferredGeminiModel && geminiKey) {
+    try {
+      const text = await geminiGenerateContentStreamSdk(messages, geminiKey, preferredGeminiModel, onDelta);
+      return { text, modelUsed: `gemini/${preferredGeminiModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredCfModel && cfAccountId && cfApiToken) {
+    try {
+      const text = await streamCloudflareChat(messages, cfAccountId, cfApiToken, preferredCfModel, onDelta);
+      return { text, modelUsed: `cf/${preferredCfModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredMulerouterModel && mulerouterKey) {
+    try {
+      const text = await streamMuleRouterChat(messages, mulerouterKey, preferredMulerouterModel, onDelta);
+      return { text, modelUsed: `mulerouter/${preferredMulerouterModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  // 2. Default Routing
+  if (mulerouterKey) {
+    for (const model of MULEROUTER_MODELS) {
+      if (preferredMulerouterModel && model === preferredMulerouterModel) continue;
+      try {
+        const text = await streamMuleRouterChat(messages, mulerouterKey, model, onDelta);
+        return { text, modelUsed: `mulerouter/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (deepseekKey) {
+    for (const model of DEEPSEEK_MODELS) {
+      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
+      try {
+        const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
+        return { text, modelUsed: `deepseek/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
     }
   }
 
@@ -528,7 +717,6 @@ export async function attemptCloudLLMStream(
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
-        if (__DEV__) console.warn(`[AI] Groq stream ${model} failed:`, (err as Error).message);
         continue;
       }
     }
@@ -536,47 +724,68 @@ export async function attemptCloudLLMStream(
 
   if (geminiKey) {
     for (const model of GEMINI_MODELS) {
+      if (preferredGeminiModel && model === preferredGeminiModel) continue;
       try {
-        const text = await streamGeminiChat(messages, geminiKey, model, onDelta);
+        const text = await geminiGenerateContentStreamSdk(messages, geminiKey, model, onDelta);
         return { text, modelUsed: `gemini/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
-        if (__DEV__) console.warn(`[AI] Gemini stream ${model} failed:`, (err as Error).message);
         continue;
       }
     }
   }
 
-  // 3. Try Cloudflare Workers AI
-  if (cfAccountId && cfApiToken) {
-    for (const model of CLOUDFLARE_MODELS) {
+  if (geminiFallbackKey) {
+    for (const model of GEMINI_MODELS) {
+      if (preferredGeminiModel && model === preferredGeminiModel) continue;
       try {
-        const text = await streamCloudflareChat(messages, cfAccountId, cfApiToken, model, onDelta);
-        return { text, modelUsed: `cf/${model}` };
+        const text = await geminiGenerateContentStreamSdk(messages, geminiFallbackKey, model, onDelta);
+        return { text, modelUsed: `gemini/${model} (fallback_key)` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
-        if (__DEV__)
-          console.warn(`[AI] Cloudflare stream ${model} failed:`, (err as Error).message);
+        continue;
+      }
+    }
+  }
+
+  if (groqKey) {
+    for (const model of GROQ_MODELS) {
+      if (preferredGroqModel && model === preferredGroqModel) continue;
+      try {
+        const text = await streamGroqChat(messages, groqKey, model, onDelta);
+        return { text, modelUsed: `groq/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
         continue;
       }
     }
   }
 
   if (orKey) {
-    const openRouterCandidates = Array.from(
-      new Set([
-        ...(preferredOpenRouterModel ? [preferredOpenRouterModel] : []),
-        ...OPENROUTER_FREE_MODELS,
-      ]),
-    );
-    for (const model of openRouterCandidates) {
+    for (const model of OPENROUTER_FREE_MODELS) {
+      if (preferredOpenRouterModel && model === preferredOpenRouterModel) continue;
       try {
         const text = await streamOpenRouterChat(messages, orKey, model, onDelta);
         return { text, modelUsed: model };
       } catch (err) {
         lastCloudError = err as Error;
+        continue;
+      }
+    }
+  }
+
+  if (cfAccountId && cfApiToken) {
+    for (const model of CLOUDFLARE_MODELS) {
+      if (preferredCfModel && model === preferredCfModel) continue;
+      try {
+        const text = await streamCloudflareChat(messages, cfAccountId, cfApiToken, model, onDelta);
+        return { text, modelUsed: `cf/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
         continue;
       }
     }
@@ -645,20 +854,34 @@ export async function attemptCloudLLM(
   groqKey?: string | undefined,
   chosenModel?: string,
   geminiKey?: string | undefined,
+  geminiFallbackKey?: string | undefined,
   cfAccountId?: string | undefined,
   cfApiToken?: string | undefined,
+  deepseekKey?: string | undefined,
+  mulerouterKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
-  const preferredGroqModel = chosenModel?.startsWith('groq/')
-    ? chosenModel.replace('groq/', '')
-    : undefined;
+  const preferredGroqModel = chosenModel?.startsWith('groq/') ? chosenModel.replace('groq/', '') : undefined;
+  const preferredGeminiModel = chosenModel?.startsWith('gemini/') ? chosenModel.replace('gemini/', '') : undefined;
+  const preferredCfModel = chosenModel?.startsWith('cf/') ? chosenModel.replace('cf/', '') : undefined;
+  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/') ? chosenModel.replace('deepseek/', '') : undefined;
+  const preferredMulerouterModel = chosenModel?.startsWith('mulerouter/') ? chosenModel.replace('mulerouter/', '') : undefined;
   const preferredOpenRouterModel =
-    chosenModel && !chosenModel.startsWith('groq/') && chosenModel !== 'local'
+    chosenModel && !preferredGroqModel && !preferredGeminiModel && !preferredCfModel && !preferredDeepseekModel && !preferredMulerouterModel && chosenModel !== 'local' && chosenModel !== 'auto'
       ? chosenModel
       : undefined;
 
   let lastCloudError: Error | null = null;
 
-  // If a specific Groq model is requested, try it first while preserving Groq-first policy.
+  // 1. Explicit UI Selections
+  if (preferredOpenRouterModel && orKey) {
+    try {
+      const text = await callOpenRouter(messages, orKey, preferredOpenRouterModel);
+      return { text, modelUsed: preferredOpenRouterModel };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   if (preferredGroqModel && groqKey) {
     try {
       const text = textMode
@@ -667,15 +890,71 @@ export async function attemptCloudLLM(
       return { text, modelUsed: `groq/${preferredGroqModel}` };
     } catch (err) {
       lastCloudError = err as Error;
-      if (__DEV__)
-        console.warn(
-          `[AI] Groq preferred model ${preferredGroqModel} failed:`,
-          lastCloudError.message,
-        );
     }
   }
 
-  // 1. Try Groq first — fastest inference, generous free tier
+  if (preferredGeminiModel && geminiKey) {
+    try {
+      const text = await geminiGenerateContentSdk(messages, geminiKey, preferredGeminiModel);
+      return { text, modelUsed: `gemini/${preferredGeminiModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredCfModel && cfAccountId && cfApiToken) {
+    try {
+      const text = await callCloudflare(messages, cfAccountId, cfApiToken, preferredCfModel);
+      return { text, modelUsed: `cf/${preferredCfModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredMulerouterModel && mulerouterKey) {
+    try {
+      const text = textMode
+        ? await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel, false)
+        : await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel);
+      return { text, modelUsed: `mulerouter/${preferredMulerouterModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  // 2. Default Routing
+  if (mulerouterKey) {
+    for (const model of MULEROUTER_MODELS) {
+      if (preferredMulerouterModel && model === preferredMulerouterModel) continue;
+      try {
+        const text = textMode
+          ? await callMuleRouter(messages, mulerouterKey, model, false)
+          : await callMuleRouter(messages, mulerouterKey, model);
+        return { text, modelUsed: `mulerouter/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (deepseekKey) {
+    for (const model of DEEPSEEK_MODELS) {
+      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
+      try {
+        const text = textMode
+          ? await callDeepSeek(messages, deepseekKey, model, false)
+          : await callDeepSeek(messages, deepseekKey, model);
+        return { text, modelUsed: `deepseek/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
   if (groqKey) {
     for (const model of GROQ_MODELS) {
       if (preferredGroqModel && model === preferredGroqModel) continue;
@@ -687,57 +966,61 @@ export async function attemptCloudLLM(
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
-        // Non-rate-limit error on first model — try next Groq model
-        if (__DEV__) console.warn(`[AI] Groq ${model} failed:`, (err as Error).message);
         continue;
       }
     }
   }
 
-  // 2. Try Gemini — free tier, 1500 req/day
   if (geminiKey) {
     for (const model of GEMINI_MODELS) {
+      if (preferredGeminiModel && model === preferredGeminiModel) continue;
       try {
-        const text = await callGemini(messages, geminiKey, model);
+        const text = await geminiGenerateContentSdk(messages, geminiKey, model);
         return { text, modelUsed: `gemini/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
-        if (__DEV__) console.warn(`[AI] Gemini ${model} failed:`, (err as Error).message);
         continue;
       }
     }
   }
 
-  // 3. Try Cloudflare Workers AI — 10K neurons/day free
+  if (geminiFallbackKey) {
+    for (const model of GEMINI_MODELS) {
+      if (preferredGeminiModel && model === preferredGeminiModel) continue;
+      try {
+        const text = await geminiGenerateContentSdk(messages, geminiFallbackKey, model);
+        return { text, modelUsed: `gemini/${model} (fallback_key)` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (orKey) {
+    for (const model of OPENROUTER_FREE_MODELS) {
+      if (preferredOpenRouterModel && model === preferredOpenRouterModel) continue;
+      try {
+        const text = await callOpenRouter(messages, orKey, model);
+        return { text, modelUsed: model };
+      } catch (err) {
+        lastCloudError = err as Error;
+        continue;
+      }
+    }
+  }
+
   if (cfAccountId && cfApiToken) {
     for (const model of CLOUDFLARE_MODELS) {
+      if (preferredCfModel && model === preferredCfModel) continue;
       try {
         const text = await callCloudflare(messages, cfAccountId, cfApiToken, model);
         return { text, modelUsed: `cf/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
-        if (__DEV__) console.warn(`[AI] Cloudflare ${model} failed:`, (err as Error).message);
-        continue;
-      }
-    }
-  }
-
-  // 4. Try OpenRouter free models
-  if (orKey) {
-    const openRouterCandidates = Array.from(
-      new Set([
-        ...(preferredOpenRouterModel ? [preferredOpenRouterModel] : []),
-        ...OPENROUTER_FREE_MODELS,
-      ]),
-    );
-    for (const model of openRouterCandidates) {
-      try {
-        const text = await callOpenRouter(messages, orKey, model);
-        return { text, modelUsed: model };
-      } catch (err) {
-        lastCloudError = err as Error;
         continue;
       }
     }

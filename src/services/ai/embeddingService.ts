@@ -4,6 +4,9 @@ import { getApiKeys } from './config';
 /**
  * EmbeddingService — Generates semantic vectors for text.
  * Default: OpenAI text-embedding-3-small via OpenRouter.
+ *
+ * Gemini `embedContent` is intentionally not mixed in here: stored vectors are not
+ * dimension-compatible without a one-time re-embed migration (see product plan / Phase 5).
  */
 let _embeddingFailCount = 0;
 const EMBEDDING_FAIL_THRESHOLD = 2;

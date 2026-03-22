@@ -3,8 +3,6 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 import { theme } from '../../constants/theme';
 
 interface HeroCardProps {
-  greeting: string;
-  firstName: string;
   daysToInicet: number;
   daysToNeetPg: number;
 }
@@ -37,7 +35,11 @@ export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: Hero
   });
 
   return (
-    <View style={styles.card} accessibilityRole="summary">
+    <View
+      style={styles.card}
+      accessibilityRole="summary"
+      accessibilityLabel={`Exam countdown: INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
+    >
       <Text style={styles.label}>EXAM COUNTDOWN</Text>
       <View style={styles.row}>
         <View style={styles.examBlock}>

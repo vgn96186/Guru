@@ -4,7 +4,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/*.unit.test.ts', '**/*.unit.test.tsx'],
+  testMatch: ['**/*.unit.test.ts', '**/*.unit.test.tsx', '**/*.db.test.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'json'],
   globals: {
     __DEV__: true,
@@ -18,7 +18,9 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.unit.test.{ts,tsx}',
+    '!src/**/*.db.test.ts',
     '!src/**/__tests__/**',
+    '!src/db/testing/**',
     '!src/**/*.d.ts',
   ],
   coveragePathIgnorePatterns: ['/node_modules/', '/e2e/'],

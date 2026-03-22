@@ -40,6 +40,14 @@ describe('Home Screen', () => {
   });
 
   it('should show Task Paralysis button', async () => {
+    // Scroll to CRITICAL NOW
+    await waitFor(element(by.text('CRITICAL NOW')))
+      .toBeVisible()
+      .whileElement(by.id('home-scroll'))
+      .scroll(200, 'down');
+
+    // Expand CRITICAL NOW first
+    await element(by.text('CRITICAL NOW')).tap();
     await expect(element(by.id('task-paralysis-btn'))).toBeVisible();
   });
 
@@ -49,35 +57,36 @@ describe('Home Screen', () => {
       .whileElement(by.id('home-scroll'))
       .scroll(300, 'down');
 
-    await expect(element(by.text('TOOLS & LIBRARY'))).toBeVisible();
+    await expect(element(by.text('TOOLS & ADVANCED'))).toBeVisible();
   });
 
   it('should expand Tools & Library on tap', async () => {
     await element(by.id('tools-library-header')).tap();
 
     // Tools section expands — verify collapsed chevron changes to ▲
-    await waitFor(element(by.text('▲')))
+    // Wait for the animated chevron to settle (or check the links inside)
+    await waitFor(element(by.text('Nightstand Mode')))
       .toBeVisible()
-      .withTimeout(10000);
+      .withTimeout(5000);
   });
 
-  it('should show CHALLENGES section', async () => {
+  it('should show QUICK ACCESS section', async () => {
     // Collapse tools first
     await element(by.id('tools-library-header')).tap();
 
-    await waitFor(element(by.id('challenges-header')))
+    await waitFor(element(by.text('QUICK ACCESS')))
       .toBeVisible()
       .whileElement(by.id('home-scroll'))
-      .scroll(200, 'down');
+      .scroll(200, 'up'); // It's above tools usually
 
-    await expect(element(by.text('CHALLENGES'))).toBeVisible();
+    await expect(element(by.text('QUICK ACCESS'))).toBeVisible();
   });
 
-  it('should expand Challenges on tap', async () => {
-    await element(by.id('challenges-header')).tap();
+  it('should open Study Plan via Quick Access', async () => {
+    await element(by.text('Study Plan')).tap();
 
-    await waitFor(element(by.text('BOSS BATTLES')))
+    await waitFor(element(by.id('plan-screen')))
       .toBeVisible()
-      .withTimeout(15000);
+      .withTimeout(10000);
   });
 });

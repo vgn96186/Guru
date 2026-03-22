@@ -332,6 +332,7 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
       <GuruChatOverlay
         visible={chatOpen}
         topicName={content.topicName}
+        syllabusTopicId={topicId ?? undefined}
         contextText={guruContext}
         onClose={() => setChatOpen(false)}
       />

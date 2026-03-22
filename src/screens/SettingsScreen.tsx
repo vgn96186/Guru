@@ -46,10 +46,20 @@ import {
   testGroqConnection,
   testHuggingFaceConnection,
   testOpenRouterConnection,
+  testGeminiConnection,
+  testCloudflareConnection,
 } from '../services/ai/providerHealth';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
-import { BUNDLED_HF_TOKEN, DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
+import {
+  BUNDLED_HF_TOKEN,
+  DEFAULT_HF_TRANSCRIPTION_MODEL,
+  DEFAULT_IMAGE_GENERATION_MODEL,
+  IMAGE_GENERATION_MODEL_OPTIONS,
+} from '../config/appConfig';
+import { formatGuruChatModelChipLabel } from '../services/ai/guruChatModelPreference';
+import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
+import { isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import ScreenHeader from '../components/ScreenHeader';
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
@@ -338,6 +348,25 @@ export default function SettingsScreen() {
   const [huggingFaceTokenTestResult, setHuggingFaceTokenTestResult] = useState<
     'ok' | 'fail' | null
   >(null);
+  const [geminiKey, setGeminiKey] = useState('');
+  const [cfAccountId, setCfAccountId] = useState('');
+  const [cfApiToken, setCfApiToken] = useState('');
+  const [testingGeminiKey, setTestingGeminiKey] = useState(false);
+  const [geminiKeyTestResult, setGeminiKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [testingCloudflare, setTestingCloudflare] = useState(false);
+  const [cloudflareTestResult, setCloudflareTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
+  const [imageGenerationModel, setImageGenerationModel] = useState<string>(DEFAULT_IMAGE_GENERATION_MODEL);
+  const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
+  const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
+
+  const liveGuruChatModels = useLiveGuruChatModels(profile ?? null, {
+    groqApiKey: groqKey,
+    openrouterKey: orKey,
+    geminiKey: geminiKey,
+    cloudflareAccountId: cfAccountId,
+    cloudflareApiToken: cfApiToken,
+  });
 
   useEffect(() => {
     if (isFocused) {
@@ -382,6 +411,36 @@ export default function SettingsScreen() {
     const res = await testHuggingFaceConnection(token, huggingFaceModel.trim());
     setHuggingFaceTokenTestResult(res.ok ? 'ok' : 'fail');
     setTestingHuggingFaceToken(false);
+  }
+
+  async function testGeminiKey() {
+    const key = geminiKey.trim() || profile?.geminiKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter a Google AI (Gemini) API key first.');
+      return;
+    }
+    setTestingGeminiKey(true);
+    setGeminiKeyTestResult(null);
+    const res = await testGeminiConnection(key);
+    setGeminiKeyTestResult(res.ok ? 'ok' : 'fail');
+    setTestingGeminiKey(false);
+  }
+
+  async function testCloudflareKeys() {
+    const aid = cfAccountId.trim() || profile?.cloudflareAccountId || '';
+    const tok = cfApiToken.trim() || profile?.cloudflareApiToken || '';
+    if (!aid || !tok) {
+      Alert.alert(
+        'Missing credentials',
+        'Enter your Cloudflare Account ID and API token (Workers AI permissions).',
+      );
+      return;
+    }
+    setTestingCloudflare(true);
+    setCloudflareTestResult(null);
+    const res = await testCloudflareConnection(aid, tok);
+    setCloudflareTestResult(res.ok ? 'ok' : 'fail');
+    setTestingCloudflare(false);
   }
 
   async function handleAutoFetchDates() {
@@ -437,6 +496,13 @@ export default function SettingsScreen() {
     if (profile) {
       setGroqKey(profile.groqApiKey ?? '');
       setOrKey(profile.openrouterKey ?? '');
+      setGeminiKey(profile.geminiKey ?? '');
+      setCfAccountId(profile.cloudflareAccountId ?? '');
+      setCfApiToken(profile.cloudflareApiToken ?? '');
+      setGuruChatDefaultModel(profile.guruChatDefaultModel ?? 'auto');
+      setImageGenerationModel(profile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL);
+      setGuruMemoryNotes(profile.guruMemoryNotes ?? '');
+      setPreferGeminiStructuredJson(profile.preferGeminiStructuredJson !== false);
       setHuggingFaceToken(profile.huggingFaceToken ?? BUNDLED_HF_TOKEN);
       setHuggingFaceModel(profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
@@ -465,6 +531,13 @@ export default function SettingsScreen() {
       updateUserProfile({
         groqApiKey: groqKey.trim(),
         openrouterKey: orKey.trim(),
+        geminiKey: geminiKey.trim(),
+        cloudflareAccountId: cfAccountId.trim(),
+        cloudflareApiToken: cfApiToken.trim(),
+        guruChatDefaultModel: guruChatDefaultModel.trim() || 'auto',
+        imageGenerationModel: imageGenerationModel.trim() || DEFAULT_IMAGE_GENERATION_MODEL,
+        guruMemoryNotes: guruMemoryNotes.trim(),
+        preferGeminiStructuredJson,
         huggingFaceToken: huggingFaceToken.trim(),
         huggingFaceTranscriptionModel: huggingFaceModel.trim() || DEFAULT_HF_TRANSCRIPTION_MODEL,
         transcriptionProvider,
@@ -558,6 +631,73 @@ export default function SettingsScreen() {
         />
 
         <SectionToggle id="ai_config" title="🤖 AI Configuration">
+          <Label text="Guru Chat — default model" />
+          <Text style={styles.hint}>
+            Saved default when you open Guru Chat (you can still change per session). Pick Auto,
+            on-device, or a specific model under each provider below.
+          </Text>
+          <Label text="Guru remembers (optional)" />
+          <Text style={styles.hint}>
+            Short notes Guru uses in every chat: target exam, weak subjects, or how you like to
+            learn. Session-specific memory is built automatically from your messages.
+          </Text>
+          <TextInput
+            style={[styles.input, styles.guruMemoryInput]}
+            placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
+            placeholderTextColor={theme.colors.textMuted}
+            value={guruMemoryNotes}
+            onChangeText={setGuruMemoryNotes}
+            multiline
+            textAlignVertical="top"
+            autoCapitalize="sentences"
+          />
+          <View style={styles.liveModelsRefreshRow}>
+            <TouchableOpacity
+              style={[styles.testBtn, { marginBottom: 0, flexShrink: 1 }]}
+              onPress={liveGuruChatModels.refresh}
+              disabled={liveGuruChatModels.loading}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.testBtnText}>
+                {liveGuruChatModels.loading ? 'Loading live models…' : 'Refresh live model lists'}
+              </Text>
+            </TouchableOpacity>
+            {liveGuruChatModels.loading && (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            )}
+          </View>
+          <View style={styles.modelChipRow}>
+            <TouchableOpacity
+              style={[styles.freqBtn, guruChatDefaultModel === 'auto' && styles.freqBtnActive]}
+              onPress={() => setGuruChatDefaultModel('auto')}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[styles.freqText, guruChatDefaultModel === 'auto' && styles.freqTextActive]}
+              >
+                {formatGuruChatModelChipLabel('auto')}
+              </Text>
+            </TouchableOpacity>
+            {profile?.useLocalModel &&
+              profile?.localModelPath &&
+              isLocalLlmAllowedOnThisDevice() && (
+                <TouchableOpacity
+                  style={[styles.freqBtn, guruChatDefaultModel === 'local' && styles.freqBtnActive]}
+                  onPress={() => setGuruChatDefaultModel('local')}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.freqText,
+                      guruChatDefaultModel === 'local' && styles.freqTextActive,
+                    ]}
+                  >
+                    {formatGuruChatModelChipLabel('local')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+          </View>
+
           <Label text="Groq API Key (console.groq.com)" />
           <TextInput
             style={styles.input}
@@ -596,6 +736,26 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
+          <Label text="Guru Chat: Groq model" />
+          <View style={styles.modelChipRow}>
+            {liveGuruChatModels.groq.map((m) => {
+              const id = `groq/${m}`;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
+                  onPress={() => setGuruChatDefaultModel(id)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.freqText, guruChatDefaultModel === id && styles.freqTextActive]}
+                  >
+                    {formatGuruChatModelChipLabel(id)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
           <Label text="OpenRouter API Key — optional fallback" />
           <TextInput
@@ -636,6 +796,198 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
+          <Label text="Guru Chat: OpenRouter (free) model" />
+          <View style={styles.modelChipRow}>
+            {liveGuruChatModels.openrouter.map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.freqBtn, guruChatDefaultModel === m && styles.freqBtnActive]}
+                onPress={() => setGuruChatDefaultModel(m)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.freqText, guruChatDefaultModel === m && styles.freqTextActive]}>
+                  {formatGuruChatModelChipLabel(m)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <Label text="Google AI (Gemini) API Key — optional" />
+          <TextInput
+            style={styles.input}
+            placeholder="AIza..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={geminiKey}
+            onChangeText={setGeminiKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Enables Gemini and Gemini image models in Guru Chat and routing. Create a key at
+            aistudio.google.com/apikey
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testGeminiKey}
+            disabled={testingGeminiKey}
+            activeOpacity={0.8}
+          >
+            {testingGeminiKey ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  geminiKeyTestResult === 'ok' && { color: theme.colors.success },
+                  geminiKeyTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {geminiKeyTestResult === 'ok'
+                  ? '✅ Gemini key works!'
+                  : geminiKeyTestResult === 'fail'
+                    ? '❌ Key invalid or unreachable'
+                    : 'Test Gemini Connection'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 8 }}>
+              <Text style={styles.switchLabel}>Structured JSON (Gemini)</Text>
+              <Text style={styles.hint}>
+                When on, structured AI outputs (quizzes, daily plan, lecture analysis) use Gemini
+                native JSON + schema first if your Gemini key is set. Turn off to force text-only
+                parsing (for debugging).
+              </Text>
+            </View>
+            <Switch
+              value={preferGeminiStructuredJson}
+              onValueChange={setPreferGeminiStructuredJson}
+              trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
+              thumbColor={theme.colors.textPrimary}
+            />
+          </View>
+          <Label text="Guru Chat: Gemini model" />
+          <View style={styles.modelChipRow}>
+            {liveGuruChatModels.gemini.map((m) => {
+              const id = `gemini/${m}`;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
+                  onPress={() => setGuruChatDefaultModel(id)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.freqText, guruChatDefaultModel === id && styles.freqTextActive]}
+                  >
+                    {formatGuruChatModelChipLabel(id)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Label text="Cloudflare Workers AI — Account ID" />
+          <TextInput
+            style={styles.input}
+            placeholder="32-char hex account id"
+            placeholderTextColor={theme.colors.textMuted}
+            value={cfAccountId}
+            onChangeText={setCfAccountId}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Label text="Cloudflare Workers AI — API Token" />
+          <TextInput
+            style={styles.input}
+            placeholder="API token with Workers AI read"
+            placeholderTextColor={theme.colors.textMuted}
+            value={cfApiToken}
+            onChangeText={setCfApiToken}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Used for Cloudflare chat models, image generation, and optional Whisper transcription.
+            Dashboard → Workers AI → copy Account ID; create an API token with Workers AI
+            permissions.
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testCloudflareKeys}
+            disabled={testingCloudflare}
+            activeOpacity={0.8}
+          >
+            {testingCloudflare ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  cloudflareTestResult === 'ok' && { color: theme.colors.success },
+                  cloudflareTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {cloudflareTestResult === 'ok'
+                  ? '✅ Cloudflare Workers AI works!'
+                  : cloudflareTestResult === 'fail'
+                    ? '❌ Invalid credentials or AI unavailable'
+                    : 'Test Cloudflare Workers AI'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <Label text="Guru Chat: Cloudflare Workers AI model" />
+          <View style={styles.modelChipRow}>
+            {liveGuruChatModels.cloudflare.map((m) => {
+              const id = `cf/${m}`;
+              return (
+                <TouchableOpacity
+                  key={id}
+                  style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
+                  onPress={() => setGuruChatDefaultModel(id)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.freqText, guruChatDefaultModel === id && styles.freqTextActive]}
+                  >
+                    {formatGuruChatModelChipLabel(id)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          <Label text="Study image generation — model" />
+          <Text style={styles.hint}>
+            Diagrams from Guru Chat and topic notes. On a free Google AI Studio key, pick{' '}
+            <Text style={{ fontWeight: '600' }}>2.5 Flash Image</Text> or{' '}
+            <Text style={{ fontWeight: '600' }}>3.1 Flash Image</Text> if Pro returns a billing error.
+            Auto tries those before Pro, then Cloudflare Flux.
+          </Text>
+          <View style={styles.modelChipRow}>
+            {IMAGE_GENERATION_MODEL_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[
+                  styles.freqBtn,
+                  imageGenerationModel === opt.value && styles.freqBtnActive,
+                ]}
+                onPress={() => setImageGenerationModel(opt.value)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.freqText,
+                    imageGenerationModel === opt.value && styles.freqTextActive,
+                  ]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <Label text="Hugging Face token — optional transcription provider" />
           <TextInput
@@ -698,6 +1050,7 @@ export default function SettingsScreen() {
                 ['auto', 'Auto'],
                 ['groq', 'Groq'],
                 ['huggingface', 'Hugging Face'],
+                ['cloudflare', 'Cloudflare'],
                 ['local', 'Local Whisper'],
               ] as const
             ).map(([provider, label]) => (
@@ -718,7 +1071,8 @@ export default function SettingsScreen() {
             ))}
           </View>
           <Text style={styles.hint}>
-            `Auto` tries Groq first, then Hugging Face, then Local Whisper if enabled.
+            `Auto` tries Groq first, then Cloudflare (if Account ID + token are set), Hugging Face,
+            then Local Whisper if enabled.
           </Text>
 
           <TouchableOpacity
@@ -1469,6 +1823,25 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
+  guruMemoryInput: {
+    minHeight: 88,
+    paddingTop: 12,
+  },
+  liveModelsRefreshRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  modelChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   freqBtn: {
     flex: 1,
     backgroundColor: theme.colors.background,

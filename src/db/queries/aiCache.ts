@@ -649,6 +649,8 @@ export interface ChatHistoryMessage {
   role: 'user' | 'guru';
   message: string;
   timestamp: number;
+  sourcesJson?: string;
+  modelUsed?: string;
 }
 
 export async function saveChatMessage(
@@ -656,12 +658,23 @@ export async function saveChatMessage(
   role: 'user' | 'guru',
   message: string,
   timestamp: number,
+  sourcesJson?: string,
+  modelUsed?: string,
 ): Promise<void> {
   const db = getDb();
   await db.runAsync(
-    'INSERT INTO chat_history (topic_name, role, message, timestamp) VALUES (?, ?, ?, ?)',
-    [topicName, role, message, timestamp],
+    'INSERT INTO chat_history (topic_name, role, message, timestamp, sources_json, model_used) VALUES (?, ?, ?, ?, ?, ?)',
+    [topicName, role, message, timestamp, sourcesJson ?? null, modelUsed ?? null],
   );
+}
+
+export async function getChatMessageCount(topicName: string): Promise<number> {
+  const db = getDb();
+  const r = await db.getFirstAsync<{ c: number }>(
+    'SELECT COUNT(*) as c FROM chat_history WHERE topic_name = ?',
+    [topicName],
+  );
+  return r?.c ?? 0;
 }
 
 export async function getChatHistory(topicName: string, limit = 20): Promise<ChatHistoryMessage[]> {
@@ -672,6 +685,8 @@ export async function getChatHistory(topicName: string, limit = 20): Promise<Cha
     role: string;
     message: string;
     timestamp: number;
+    sources_json: string | null;
+    model_used: string | null;
   }>('SELECT * FROM chat_history WHERE topic_name = ? ORDER BY timestamp ASC LIMIT ?', [
     topicName,
     limit,
@@ -682,10 +697,13 @@ export async function getChatHistory(topicName: string, limit = 20): Promise<Cha
     role: r.role as 'user' | 'guru',
     message: r.message,
     timestamp: r.timestamp,
+    sourcesJson: r.sources_json ?? undefined,
+    modelUsed: r.model_used ?? undefined,
   }));
 }
 
 export async function clearChatHistory(topicName: string): Promise<void> {
   const db = getDb();
   await db.runAsync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
+  await db.runAsync('DELETE FROM guru_chat_session_memory WHERE topic_name = ?', [topicName]);
 }

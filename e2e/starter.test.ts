@@ -24,10 +24,14 @@ describe('Guru App', () => {
   it('should navigate to home via Quick Start', async () => {
     await element(by.id('quick-start-btn')).tap();
 
-    // Scroll down to find TOOLS & LIBRARY
+    await waitFor(element(by.id('start-session-btn')))
+      .toBeVisible()
+      .withTimeout(15000);
+
+    // Scroll down to find TOOLS & ADVANCED
     await waitFor(element(by.id('tools-library-header')))
       .toBeVisible()
-      .whileElement(by.type('com.facebook.react.views.scroll.ReactScrollView'))
+      .whileElement(by.id('home-scroll'))
       .scroll(300, 'down');
 
     await expect(element(by.id('tools-library-header'))).toBeVisible();

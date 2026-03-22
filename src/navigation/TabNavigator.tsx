@@ -203,6 +203,7 @@ export default function TabNavigator() {
   }
 
   const [isTranscribingUpload, setIsTranscribingUpload] = useState(false);
+  const [uploadProgressMsg, setUploadProgressMsg] = useState<string>('');
   const [uploadReview, setUploadReview] = useState<LectureAnalysis | null>(null);
   const [uploadConfidence, setUploadConfidence] = useState<1 | 2 | 3 | null>(null);
   const [uploadSubjectRequired, setUploadSubjectRequired] = useState(false);
@@ -224,8 +225,12 @@ export default function TabNavigator() {
     }
     if (res.canceled || !res.assets[0]) return;
     setIsTranscribingUpload(true);
+    setUploadProgressMsg('Uploading...');
     try {
-      const analysis = await transcribeAudio({ audioFilePath: res.assets[0].uri });
+      const analysis = await transcribeAudio({
+        audioFilePath: res.assets[0].uri,
+        onProgress: (p) => setUploadProgressMsg(p.message),
+      });
       if (!isMeaningfulLectureAnalysis(analysis)) {
         throw new Error('No usable lecture content was detected in this recording.');
       }
@@ -242,6 +247,7 @@ export default function TabNavigator() {
       Alert.alert('Error', e.message);
     } finally {
       setIsTranscribingUpload(false);
+      setUploadProgressMsg('');
     }
   };
 
@@ -506,8 +512,8 @@ export default function TabNavigator() {
                   size={18}
                   color={theme.colors.textSecondary}
                 />
-                <Text style={styles.manualActionText}>
-                  {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
+                <Text style={styles.manualActionText} numberOfLines={1}>
+                  {isTranscribingUpload ? (uploadProgressMsg || 'Transcribing...') : 'Upload Audio'}
                 </Text>
               </Pressable>
 

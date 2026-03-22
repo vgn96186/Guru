@@ -1,4 +1,10 @@
-import { DEFAULT_HF_TRANSCRIPTION_MODEL, OPENROUTER_FREE_MODELS } from '../../config/appConfig';
+import {
+  DEFAULT_HF_TRANSCRIPTION_MODEL,
+  OPENROUTER_FREE_MODELS,
+  GEMINI_MODELS,
+  CLOUDFLARE_MODELS,
+} from '../../config/appConfig';
+import { testGeminiConnectionSdk } from './google/geminiHealth';
 
 export interface ProviderHealthResult {
   ok: boolean;
@@ -73,6 +79,78 @@ export async function testHuggingFaceConnection(
         Authorization: `Bearer ${token}`,
       },
     });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+/** Minimal chat probe — @google/genai first, then OpenAI-compatible REST (same as `llmRouting` fallback). */
+export async function testGeminiConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty key' };
+  }
+  const sdk = await testGeminiConnectionSdk(trimmed);
+  if (sdk.ok) {
+    return sdk;
+  }
+  try {
+    const res = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${trimmed}`,
+        },
+        body: JSON.stringify({
+          model: GEMINI_MODELS[0],
+          messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+          max_tokens: 8,
+        }),
+      },
+    );
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+/** Workers AI chat probe — requires account ID + API token with AI read permission. */
+export async function testCloudflareConnection(
+  accountId: string,
+  apiToken: string,
+): Promise<ProviderHealthResult> {
+  const aid = accountId.trim();
+  const tok = apiToken.trim();
+  if (!aid || !tok) {
+    return { ok: false, status: 0, message: 'Account ID and API token required' };
+  }
+  try {
+    const res = await fetch(
+      `https://api.cloudflare.com/client/v4/accounts/${aid}/ai/v1/chat/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tok}`,
+        },
+        body: JSON.stringify({
+          model: CLOUDFLARE_MODELS[0],
+          messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+          max_tokens: 8,
+        }),
+      },
+    );
     return toHealthResult(res);
   } catch (error) {
     return {

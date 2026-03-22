@@ -6,9 +6,28 @@ import { Ionicons } from '@expo/vector-icons';
 import type { HomeStackParamList, TabParamList } from '../../navigation/types';
 import { theme } from '../../constants/theme';
 import { useAppStore } from '../../store/useAppStore';
-import { generateDailyAgendaWithRouting } from '../../services/ai';
-import { dailyAgendaRepository, profileRepository } from '../../db/repositories';
+import { getTodaysAgendaWithTimes, type TodayTask } from '../../services/studyPlanner';
+import { dailyAgendaRepository } from '../../db/repositories';
+import type { DailyAgenda } from '../../services/ai';
 import { showToast } from '../Toast';
+
+/** Convert local planner tasks into the DailyAgenda shape for storage & display */
+function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
+  return {
+    blocks: tasks.map((task, i) => ({
+      id: `local-${i}`,
+      title: task.topic.name,
+      topicIds: [task.topic.id],
+      durationMinutes: task.duration,
+      startTime: task.timeLabel.split(' - ')[0],
+      type: (task.type === 'review' ? 'review' : task.type === 'deep_dive' ? 'test' : 'study') as 'study' | 'review' | 'test' | 'break',
+      why: `${task.topic.subjectName} — ${task.type === 'review' ? 'due for review' : task.type === 'deep_dive' ? 'weak, needs deep dive' : 'new topic to cover'}`,
+    })),
+    guruNote: tasks.length > 0
+      ? `${tasks.length} tasks lined up. Start with ${tasks[0].topic.name}.`
+      : 'Nothing urgent today — great time to explore new topics.',
+  };
+}
 
 export default function TodayPlanCard() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
@@ -19,48 +38,16 @@ export default function TodayPlanCard() {
     if (!profile) return;
     setIsGenerating(true);
     try {
-      const [dueTopics, weakTopics, recentTopics, coverage] = await Promise.all([
-        profileRepository.getReviewDueTopics(),
-        profileRepository.getWeakestTopics(5),
-        profileRepository.getRecentTopics(10),
-        profileRepository.getSubjectCoverage(),
-      ]);
-
-      const totalTopics = coverage.reduce((acc, s) => acc + s.total, 0);
-      const seenTopics = coverage.reduce((acc, s) => acc + s.seen, 0);
-      const coveragePercent = totalTopics > 0 ? Math.round((seenTopics / totalTopics) * 100) : 0;
-
-      const stats = {
-        streak: profile.streakCurrent,
-        daysToInicet: profileRepository.getDaysToExam(profile.inicetDate),
-        daysToNeetPg: profileRepository.getDaysToExam(profile.neetDate),
-        coveragePercent,
-        dueTopics: dueTopics.map((t) => ({
-          id: t.topicId,
-          name: t.topicName,
-          subject: t.subjectName,
-        })),
-        weakTopics: weakTopics.map((t) => ({
-          id: t.id,
-          name: t.name,
-          subject: t.subjectName ?? '',
-        })),
-        recentTopics,
-      };
-
-      const plan = await generateDailyAgendaWithRouting(
-        profile.displayName,
-        stats,
-        profile.dailyGoalMinutes || 120,
-      );
+      const tasks = await getTodaysAgendaWithTimes();
+      const plan = tasksToAgenda(tasks);
 
       const date = new Date().toLocaleDateString('en-CA');
-      await dailyAgendaRepository.saveDailyAgenda(date, plan);
+      await dailyAgendaRepository.saveDailyAgenda(date, plan, 'local');
       setTodayPlan(plan);
       showToast("Today's plan ready, Doctor.", 'success');
     } catch (e) {
       console.error('Plan generation failed:', e);
-      showToast('Guru is busy. Try again later.', 'error');
+      showToast('Could not generate plan.', 'error');
     } finally {
       setIsGenerating(false);
     }
@@ -139,7 +126,7 @@ export default function TodayPlanCard() {
           onPress={() =>
             navigation.navigate('Session', {
               mood: 'good',
-              focusTopicIds: nextTask.topicIds.length > 0 ? nextTask.topicIds : undefined,
+              focusTopicIds: nextTask.topicIds?.length > 0 ? nextTask.topicIds : undefined,
               preferredActionType:
                 nextTask.type === 'review'
                   ? 'review'

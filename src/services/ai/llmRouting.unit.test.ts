@@ -42,6 +42,13 @@ async function loadRoutingModule() {
     OPENROUTER_FREE_MODELS: ['or-a', 'or-b'],
   }));
 
+  jest.doMock('./google/geminiChat', () => ({
+    geminiGenerateContentSdk: jest.fn().mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
+    geminiGenerateContentStreamSdk: jest
+      .fn()
+      .mockRejectedValue(new Error('Gemini SDK disabled in llmRouting unit test')),
+  }));
+
   const module = await import('./llmRouting');
   return {
     module,
@@ -57,16 +64,13 @@ describe('llmRouting', () => {
     jest.restoreAllMocks();
   });
 
-  it('tries preferred Groq model first, then falls back to default Groq list', async () => {
+  it('uses explicitly requested Groq model even if OpenRouter key is present', async () => {
     const { module } = await loadRoutingModule();
     const calledModels: string[] = [];
 
     jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (_url: unknown, init: any) => {
       const body = JSON.parse(init.body);
       calledModels.push(body.model);
-      if (body.model === 'preferred-groq') {
-        return mockResponse({ ok: false, status: 500, text: async () => 'preferred failed' });
-      }
       return mockResponse({
         ok: true,
         json: async () => ({ choices: [{ message: { content: 'groq-success' } }] }),
@@ -82,44 +86,77 @@ describe('llmRouting', () => {
     );
 
     expect(result.text).toBe('groq-success');
-    expect(result.modelUsed).toBe('groq/groq-a');
-    expect(calledModels.slice(0, 2)).toEqual(['preferred-groq', 'groq-a']);
+    expect(result.modelUsed).toBe('groq/preferred-groq');
+    expect(calledModels).toEqual(['preferred-groq']);
   });
 
-  it('retries next Groq model on rate limit before OpenRouter fallback', async () => {
+  it('uses Groq before OpenRouter when both keys are present', async () => {
     const { module } = await loadRoutingModule();
     const callOrder: string[] = [];
 
     jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (url: unknown, init: any) => {
       const requestUrl = String(url);
       const body = JSON.parse(init.body);
-      if (requestUrl.includes('api.groq.com')) {
-        callOrder.push(`groq:${body.model}`);
-        if (body.model === 'groq-a') {
-          return mockResponse({ ok: false, status: 429, text: async () => 'rate limited' });
-        }
+      if (requestUrl.includes('openrouter.ai')) {
+        callOrder.push(`or:${body.model}`);
         return mockResponse({
           ok: true,
-          json: async () => ({ choices: [{ message: { content: 'groq-b-success' } }] }),
+          json: async () => ({ choices: [{ message: { content: 'or-success' } }] }),
         });
       }
-      callOrder.push(`or:${body.model}`);
-      return mockResponse({
-        ok: true,
-        json: async () => ({ choices: [{ message: { content: 'or-success' } }] }),
-      });
+      if (requestUrl.includes('api.groq.com')) {
+        callOrder.push(`groq:${body.model}`);
+        return mockResponse({
+          ok: true,
+          json: async () => ({ choices: [{ message: { content: 'groq-success' } }] }),
+        });
+      }
+      return mockResponse({ ok: false });
     });
 
     const result = await module.attemptCloudLLM(
       [{ role: 'user', content: 'hi' }],
       'or-key',
-      true,
+      false,
       'groq-key',
     );
 
-    expect(result.text).toBe('groq-b-success');
-    expect(result.modelUsed).toBe('groq/groq-b');
-    expect(callOrder).toEqual(['groq:groq-a', 'groq:groq-b']);
+    expect(result.text).toBe('groq-success');
+    expect(result.modelUsed).toBe('groq/groq-a');
+    expect(callOrder).toEqual(['groq:groq-a']);
+  });
+
+  it('falls back to OpenRouter when all Groq models fail', async () => {
+    const { module } = await loadRoutingModule();
+    const callOrder: string[] = [];
+
+    jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (url: unknown, init: any) => {
+      const requestUrl = String(url);
+      const body = JSON.parse(init.body);
+      if (requestUrl.includes('openrouter.ai')) {
+        callOrder.push(`or:${body.model}`);
+        return mockResponse({
+          ok: true,
+          json: async () => ({ choices: [{ message: { content: 'or-success' } }] }),
+        });
+      }
+      if (requestUrl.includes('api.groq.com')) {
+        callOrder.push(`groq:${body.model}`);
+        return mockResponse({ ok: false, status: 500 });
+      }
+      return mockResponse({ ok: false });
+    });
+
+    const result = await module.attemptCloudLLM(
+      [{ role: 'user', content: 'hi' }],
+      'or-key',
+      false,
+      'groq-key',
+    );
+
+    expect(result.text).toBe('or-success');
+    expect(result.modelUsed).toBe('or-a');
+    expect(callOrder).toEqual(['groq:groq-a', 'groq:groq-b', 'or:or-a']);
   });
 
   it('throws clear error when no cloud keys are available', async () => {
@@ -144,22 +181,22 @@ describe('llmRouting', () => {
     expect(updateProfileMock).toHaveBeenCalledWith({ localModelPath: null, useLocalModel: false });
   });
 
-  it('falls back to OpenRouter when all Groq models fail', async () => {
+  it('uses Groq first when both Groq and OpenRouter keys are present', async () => {
     const { module } = await loadRoutingModule();
     const callOrder: string[] = [];
 
     jest.spyOn(globalThis, 'fetch' as any).mockImplementation(async (url: unknown, init: any) => {
       const requestUrl = String(url);
       const body = JSON.parse(init.body);
-      if (requestUrl.includes('api.groq.com')) {
-        callOrder.push(`groq:${body.model}`);
-        return mockResponse({ ok: false, status: 500, text: async () => 'groq failed' });
-      }
       if (requestUrl.includes('openrouter.ai')) {
         callOrder.push(`or:${body.model}`);
+        return mockResponse({ ok: false, status: 500, text: async () => 'or failed' });
+      }
+      if (requestUrl.includes('api.groq.com')) {
+        callOrder.push(`groq:${body.model}`);
         return mockResponse({
           ok: true,
-          json: async () => ({ choices: [{ message: { content: 'or-success' } }] }),
+          json: async () => ({ choices: [{ message: { content: 'groq-success' } }] }),
         });
       }
       return mockResponse({ ok: false });
@@ -172,9 +209,9 @@ describe('llmRouting', () => {
       'groq-key',
     );
 
-    expect(result.text).toBe('or-success');
-    expect(result.modelUsed).toBe('or-a');
-    expect(callOrder).toEqual(['groq:groq-a', 'groq:groq-b', 'or:or-a']);
+    expect(result.text).toBe('groq-success');
+    expect(result.modelUsed).toBe('groq/groq-a');
+    expect(callOrder).toEqual(['groq:groq-a']);
   });
 
   it('tries next OpenRouter model on error', async () => {

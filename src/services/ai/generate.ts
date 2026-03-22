@@ -7,19 +7,14 @@ import { attemptLocalLLM, attemptCloudLLM, attemptCloudLLMStream } from './llmRo
 import { isTransientNetworkError } from '../offlineQueueErrors';
 import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
 import type { UserProfile } from '../../types';
+import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
+import { RateLimitError } from './schemas';
 
 /** Resolve backend attempt order from profile. Used by both JSON and text routing. */
-function getBackendAttemptOrder(profile: UserProfile): {
-  attempts: ('local' | 'cloud')[];
-  orKey: string | undefined;
-  groqKey: string | undefined;
-  geminiKey: string | undefined;
-  cfAccountId: string | undefined;
-  cfApiToken: string | undefined;
-} {
-  const { orKey, groqKey, geminiKey, cfAccountId, cfApiToken } = getApiKeys(profile);
+function getBackendAttemptOrder(profile: UserProfile): any {
+  const { orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
-  const hasCloud = !!orKey || !!groqKey || !!geminiKey || (!!cfAccountId && !!cfApiToken);
+  const hasCloud = !!orKey || !!groqKey || !!geminiKey || !!geminiFallbackKey || (!!cfAccountId && !!cfApiToken) || !!deepseekKey || !!mulerouterKey;
 
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
@@ -30,22 +25,64 @@ function getBackendAttemptOrder(profile: UserProfile): {
       'No AI backend available. Download a local model or add an API key in Settings.',
     );
 
-  return { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken };
+  return { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey };
 }
 
 export async function generateJSONWithRouting<T>(
   messages: Message[],
   schema: z.ZodType<T>,
-  _taskComplexity: 'low' | 'high' = 'low',
+  taskComplexity: 'low' | 'high' = 'low',
   queueOnFailure = true,
 ): Promise<{ parsed: T; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
-  const { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken } =
+  const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
     getBackendAttemptOrder(profile);
+
+  // 1. High Performance Native Path: Gemini SDK Structured JSON
+  if (geminiKey && (profile.preferGeminiStructuredJson ?? true)) {
+    try {
+      return await geminiGenerateStructuredJsonSdk(messages, schema, geminiKey, taskComplexity);
+    } catch (err) {
+      if (__DEV__) console.warn('[AI] Gemini native structured JSON failed, falling back:', err);
+      // Fall through to traditional text fallback loop if not a rate limit
+      if (err instanceof RateLimitError) throw err;
+    }
+  }
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
     try {
+      if (backend === 'cloud' && geminiKey && profile.preferGeminiStructuredJson !== false) {
+        try {
+          const structured = await geminiGenerateStructuredJsonSdk(
+            messages,
+            schema,
+            geminiKey,
+            taskComplexity,
+          );
+          if (__DEV__) {
+            console.log(
+              `[AI] structured JSON native_gemini_ok model=${structured.modelUsed} complexity=${taskComplexity}`,
+            );
+          }
+          return structured;
+        } catch (err) {
+          if (err instanceof RateLimitError) {
+            if (__DEV__) {
+              console.warn('[AI] Gemini structured JSON rate limited; falling back to text backends');
+            }
+            lastError = err as Error;
+          } else {
+            if (__DEV__) {
+              console.warn(
+                '[AI] Gemini structured JSON failed, fallback_text_repair:',
+                (err as Error).message,
+              );
+            }
+          }
+        }
+      }
+
       const { text, modelUsed } =
         backend === 'local'
           ? await attemptLocalLLM(messages, profile.localModelPath!, false)
@@ -56,11 +93,18 @@ export async function generateJSONWithRouting<T>(
               groqKey,
               undefined,
               geminiKey,
+              geminiFallbackKey,
               cfAccountId,
               cfApiToken,
+              deepseekKey,
+              mulerouterKey,
             );
       const parsed = await parseStructuredJson(text, schema);
-      if (__DEV__) console.log(`[AI] ✓ JSON via ${modelUsed}`);
+      if (__DEV__) {
+        console.log(
+          `[AI] structured_json_parse path=fallback_text_repair model=${modelUsed} (Zod parse after text)`,
+        );
+      }
       return { parsed, modelUsed };
     } catch (err) {
       if (__DEV__)
@@ -76,6 +120,9 @@ export async function generateJSONWithRouting<T>(
     );
   }
 
+  if (__DEV__) {
+    console.warn('[AI] structured_json_parse path=failed', lastError?.message ?? 'unknown');
+  }
   throw lastError || new Error('All AI attempts failed');
 }
 
@@ -97,7 +144,7 @@ export async function generateTextWithRouting(
     return await attemptLocalLLM(messages, profile.localModelPath!, true);
   }
 
-  const { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken } =
+  const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
     getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -113,8 +160,11 @@ export async function generateTextWithRouting(
               groqKey,
               options?.chosenModel,
               geminiKey,
+              geminiFallbackKey,
               cfAccountId,
               cfApiToken,
+              deepseekKey,
+              mulerouterKey,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       return { text, modelUsed };
@@ -158,7 +208,7 @@ export async function generateTextWithRoutingStream(
     return { text, modelUsed };
   }
 
-  const { attempts, orKey, groqKey, geminiKey, cfAccountId, cfApiToken } =
+  const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
     getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -176,8 +226,11 @@ export async function generateTextWithRoutingStream(
         options?.chosenModel,
         onDelta,
         geminiKey,
+        geminiFallbackKey,
         cfAccountId,
         cfApiToken,
+        deepseekKey,
+        mulerouterKey,
       );
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);

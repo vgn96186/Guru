@@ -7,6 +7,14 @@ jest.mock('../services/aiService', () => ({
   chatWithGuru: jest.fn(),
 }));
 
+jest.mock('../store/useAppStore', () => ({
+  useAppStore: (sel: (s: { profile: null }) => unknown) => sel({ profile: null }),
+}));
+
+jest.mock('../services/guruChatStudyContext', () => ({
+  buildBoundedGuruChatStudyContext: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('./MarkdownRender', () => ({
   MarkdownRender: ({ content }: { content: string }) => {
     const { Text } = require('react-native');
@@ -68,6 +76,31 @@ describe('GuruChatOverlay', () => {
         [{ role: 'user', text: 'Why is lead III elevated?' }],
         undefined,
         'Card on screen: STEMI quiz explanation and ECG changes.',
+      );
+    });
+  });
+
+  it('includes syllabus topic id in merged context when provided', async () => {
+    const { getByPlaceholderText, getByLabelText } = render(
+      <GuruChatOverlay
+        visible
+        topicName="Cardiology"
+        syllabusTopicId={42}
+        contextText="Screen context."
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.changeText(getByPlaceholderText('Ask a question...'), 'Hi');
+    fireEvent.press(getByLabelText('Send message'));
+
+    await waitFor(() => {
+      expect(chatWithGuruMock).toHaveBeenCalledWith(
+        'Hi',
+        'Cardiology',
+        [{ role: 'user', text: 'Hi' }],
+        undefined,
+        'Syllabus topic id: 42\n\nScreen context.',
       );
     });
   });

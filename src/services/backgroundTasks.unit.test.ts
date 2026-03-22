@@ -34,6 +34,7 @@ jest.mock('../db/repositories', () => ({
 
 jest.mock('./notificationService', () => ({
   refreshAccountabilityNotifications: jest.fn(),
+  refreshAccountabilityNotificationsSafely: jest.fn(() => Promise.resolve()),
 }));
 
 import * as BackgroundFetch from 'expo-background-fetch';
@@ -41,7 +42,7 @@ import * as TaskManager from 'expo-task-manager';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { prefetchTopicContent } from './aiService';
 import { profileRepository } from '../db/repositories';
-import { refreshAccountabilityNotifications } from './notificationService';
+import { refreshAccountabilityNotificationsSafely } from './notificationService';
 import { registerBackgroundFetch } from './backgroundTasks';
 
 describe('backgroundTasks', () => {
@@ -101,7 +102,7 @@ describe('backgroundTasks', () => {
 
       (getAllTopicsWithProgress as jest.Mock).mockResolvedValue(mockTopics);
       (prefetchTopicContent as jest.Mock).mockResolvedValue(undefined);
-      (refreshAccountabilityNotifications as jest.Mock).mockResolvedValue(undefined);
+      (refreshAccountabilityNotificationsSafely as jest.Mock).mockResolvedValue(undefined);
 
       const result = await capturedTaskCallback();
 

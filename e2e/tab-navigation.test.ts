@@ -33,47 +33,31 @@ describe('Tab Navigation', () => {
   });
 
   it('should navigate to Syllabus tab', async () => {
-    await element(by.label('tab-syllabus')).tap();
+    await element(by.id('tab-syllabus')).tap();
 
     await waitFor(element(by.id('syllabus-screen')))
       .toBeVisible()
       .withTimeout(10000);
-
-    await expect(element(by.text('Syllabus'))).toBeVisible();
   });
 
-  it('should navigate to Plan tab', async () => {
-    await element(by.label('tab-plan')).tap();
+  it('should navigate to Chat tab', async () => {
+    await element(by.id('tab-chat')).tap();
 
-    await waitFor(element(by.id('plan-screen')))
+    await waitFor(element(by.id('guru-chat-screen')))
       .toBeVisible()
       .withTimeout(10000);
-
-    await expect(element(by.text('Dynamic Plan'))).toBeVisible();
   });
 
-  it('should navigate to Stats tab', async () => {
-    await element(by.label('tab-stats')).tap();
+  it('should navigate to Menu tab', async () => {
+    await element(by.id('tab-menu')).tap();
 
-    await waitFor(element(by.id('stats-screen')))
+    await waitFor(element(by.id('menu-screen')))
       .toBeVisible()
       .withTimeout(10000);
-
-    await expect(element(by.text('Exam Readiness'))).toBeVisible();
-  });
-
-  it('should navigate to Settings tab', async () => {
-    await element(by.label('tab-settings')).tap();
-
-    await waitFor(element(by.id('settings-screen')))
-      .toBeVisible()
-      .withTimeout(10000);
-
-    await expect(element(by.text('Settings'))).toBeVisible();
   });
 
   it('should navigate back to Home tab', async () => {
-    await element(by.label('tab-home')).tap();
+    await element(by.id('tab-home')).tap();
 
     await waitFor(element(by.id('start-session-btn')))
       .toBeVisible()

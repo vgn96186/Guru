@@ -25,6 +25,18 @@ export function resetDbSingleton(): void {
 }
 
 /**
+ * Inject a database instance for Node-based integration tests (see `src/db/testing/`).
+ * Only available when `NODE_ENV === 'test'`.
+ */
+export function setDbForTests(db: SQLite.SQLiteDatabase | null): void {
+  if (process.env.NODE_ENV !== 'test') {
+    throw new Error('setDbForTests is only available in test runs');
+  }
+  _db = db;
+  _globalDb.__GURU_DB__ = db ?? undefined;
+}
+
+/**
  * Run multiple DB operations in a single transaction. On success commits; on throw rolls back.
  * Use for any multi-statement write that must be atomic.
  */
@@ -199,6 +211,11 @@ export async function initDatabase(forceSeed = false): Promise<void> {
        SET lecture_note_id = NULL
      WHERE lecture_note_id IS NOT NULL
        AND lecture_note_id NOT IN (SELECT id FROM lecture_notes)`,
+    `UPDATE generated_study_images SET topic_id = NULL WHERE topic_id IS NOT NULL AND topic_id NOT IN (SELECT id FROM topics)`,
+    `DELETE FROM generated_study_images WHERE lecture_note_id IS NOT NULL AND lecture_note_id NOT IN (SELECT id FROM lecture_notes)`,
+    `DELETE FROM lecture_learned_topics WHERE topic_id NOT IN (SELECT id FROM topics) OR lecture_note_id NOT IN (SELECT id FROM lecture_notes)`,
+    `UPDATE topic_suggestions SET approved_topic_id = NULL WHERE approved_topic_id IS NOT NULL AND approved_topic_id NOT IN (SELECT id FROM topics)`,
+    `DELETE FROM topic_suggestions WHERE subject_id NOT IN (SELECT id FROM subjects)`,
   ];
   for (const sql of integrityRepairs) {
     try {

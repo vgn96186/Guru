@@ -168,6 +168,20 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20
   , cloudflare_account_id TEXT NOT NULL DEFAULT ''
   , cloudflare_api_token TEXT NOT NULL DEFAULT ''
+  , guru_chat_default_model TEXT NOT NULL DEFAULT 'auto'
+  , guru_memory_notes TEXT NOT NULL DEFAULT ''
+  , image_generation_model TEXT NOT NULL DEFAULT 'auto'
+  , exam_type TEXT NOT NULL DEFAULT 'INICET'
+    CHECK(exam_type IN ('INICET','NEET'))
+  , prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1
+)`;
+
+export const CREATE_GURU_CHAT_SESSION_MEMORY = `
+CREATE TABLE IF NOT EXISTS guru_chat_session_memory (
+  topic_name TEXT PRIMARY KEY,
+  summary_text TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL,
+  messages_at_last_summary INTEGER NOT NULL DEFAULT 0
 )`;
 
 export const CREATE_BRAIN_DUMPS = `
@@ -201,7 +215,9 @@ CREATE TABLE IF NOT EXISTS chat_history (
   topic_name TEXT NOT NULL,
   role TEXT NOT NULL,
   message TEXT NOT NULL,
-  timestamp INTEGER NOT NULL
+  timestamp INTEGER NOT NULL,
+  sources_json TEXT,
+  model_used TEXT
 )`;
 
 export const CREATE_GENERATED_STUDY_IMAGES = `
@@ -323,6 +339,7 @@ export const ALL_SCHEMAS = [
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
   CREATE_CHAT_HISTORY,
+  CREATE_GURU_CHAT_SESSION_MEMORY,
   CREATE_GENERATED_STUDY_IMAGES,
   CREATE_DAILY_AGENDA,
   CREATE_PLAN_EVENTS,

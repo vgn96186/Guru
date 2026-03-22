@@ -52,7 +52,7 @@ describe('studyImageService', () => {
     });
 
     expect(prompt).toContain('Renin Angiotensin Aldosterone System');
-    expect(prompt.toLowerCase()).toContain('medical illustration');
+    expect(prompt.toLowerCase()).toContain('medical education illustration');
     expect(prompt).toContain('angiotensin II');
     expect(prompt.toLowerCase()).toContain('neet-pg');
   });
@@ -68,8 +68,10 @@ describe('studyImageService', () => {
     });
 
     expect(generateImageMock).toHaveBeenCalledWith(
-      expect.stringContaining('Create a clean NEET-PG study chart for Renal Physiology.'),
-      { steps: 6 },
+      expect.stringContaining(
+        'NEET-PG / INICET study diagram (chart style) for topic: Renal Physiology.',
+      ),
+      { steps: 28 },
     );
     expect(saveGeneratedStudyImageMock).toHaveBeenCalledWith(
       expect.objectContaining({

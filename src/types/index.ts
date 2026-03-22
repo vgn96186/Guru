@@ -147,6 +147,22 @@ export interface UserProfile {
   pomodoroIntervalMinutes?: number;
   cloudflareAccountId?: string;
   cloudflareApiToken?: string;
+  /** Guru Chat default model id: `auto`, `local`, `groq/...`, OpenRouter model id, `gemini/...`, `cf/...`. */
+  guruChatDefaultModel?: string;
+  /**
+   * Study image generation: `auto` (Gemini then Cloudflare), a Gemini image model id, or a
+   * `@cf/...` Workers AI image model id.
+   */
+  imageGenerationModel?: string;
+  /** Optional facts Guru should remember across chats (exam goals, weak areas, etc.). */
+  guruMemoryNotes?: string;
+  /**
+   * When true (default) and a Gemini API key is available, structured JSON tasks use Gemini
+   * native JSON + schema before falling back to text parsing.
+   */
+  preferGeminiStructuredJson?: boolean;
+  deepseekKey?: string;
+  mulerouterKey?: string;
 }
 
 // AI Content shapes
@@ -225,7 +241,7 @@ export interface SocraticContent {
   questions: SocraticQuestion[];
 }
 
-export type AIContent =
+export type AIContent = (
   | KeyPointsContent
   | QuizContent
   | StoryContent
@@ -234,7 +250,8 @@ export type AIContent =
   | ErrorHuntContent
   | DetectiveContent
   | ManualContent
-  | SocraticContent;
+  | SocraticContent
+) & { modelUsed?: string };
 
 export interface AccountabilityMessage {
   title: string;

@@ -1,6 +1,17 @@
+/** One segment of a user message (multimodal path; Gemini-first). */
+export type MessageContentPart =
+  | { type: 'text'; text: string }
+  | { type: 'inline_image'; mimeType: string; base64Data: string };
+
 export interface Message {
   role: 'system' | 'user' | 'assistant';
+  /** Plain text; used by all providers today. */
   content: string;
+  /**
+   * Optional multimodal parts for future flows (e.g. diagram + question).
+   * When present, transports that support it should prefer `parts`; others ignore and use `content` only.
+   */
+  parts?: MessageContentPart[];
 }
 
 export type GuruEventType =

@@ -214,6 +214,10 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 ## Testing
 
 - **Strategy:** `docs/TESTING_STRATEGY.md` — Jest **logic allowlist** (`jest.unit.logic.config.js`, `npm run test:unit:coverage:logic`) + **Detox** for UI/native (`e2e/`, `npm run detox:test:critical`).
+- **Genymotion Workflow (Metro + Debug):**
+  1. `npm start` (Metro bundler)
+  2. `npm run detox:build:android:genymotion:dev` (Build debug binaries)
+  3. `npm run detox:test:critical:genymotion:dev` (Run critical tests)
 - **CI-style check:** `npm run verify:ci` (lint, unit tests, logic coverage gate). Add `npm run typecheck` when the project is clean (`verify:strict` runs typecheck + same tests).
 
 ---

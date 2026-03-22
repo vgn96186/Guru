@@ -3,7 +3,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import { getDb } from '../db/database';
 import { shareBackupFileOrAlert } from './backupShare';
 
-const BACKUP_VERSION = 3;
+const BACKUP_VERSION = 4;
 const JSON_BACKUP_TABLES = [
   'user_profile',
   'topic_progress',
@@ -13,13 +13,30 @@ const JSON_BACKUP_TABLES = [
   'sessions',
   'external_app_logs',
   'brain_dumps',
+  'lecture_learned_topics',
+  'generated_study_images',
+  'topic_suggestions',
+  'chat_history',
+  'guru_chat_session_memory',
+  'daily_agenda',
+  'plan_events',
+  'offline_ai_queue',
 ] as const;
 
+/** Child tables before parents (FK-safe clears during restore). */
 const JSON_BACKUP_DELETE_ORDER: BackupTableName[] = [
   'external_app_logs',
   'ai_cache',
   'topic_progress',
   'sessions',
+  'lecture_learned_topics',
+  'generated_study_images',
+  'topic_suggestions',
+  'chat_history',
+  'guru_chat_session_memory',
+  'daily_agenda',
+  'plan_events',
+  'offline_ai_queue',
   'lecture_notes',
   'daily_log',
   'brain_dumps',
@@ -33,6 +50,14 @@ const JSON_BACKUP_RESTORE_ORDER: BackupTableName[] = [
   'ai_cache',
   'sessions',
   'external_app_logs',
+  'lecture_learned_topics',
+  'generated_study_images',
+  'topic_suggestions',
+  'chat_history',
+  'guru_chat_session_memory',
+  'daily_agenda',
+  'plan_events',
+  'offline_ai_queue',
   'brain_dumps',
   'user_profile',
 ];
@@ -132,6 +157,28 @@ export async function exportJsonBackup(): Promise<boolean> {
         .filter((ref): ref is TopicBackupRef => !!ref);
       nextRow.planned_topic_refs = plannedRefs;
       nextRow.completed_topic_refs = completedRefs;
+    }
+
+    if (table === 'generated_study_images' || table === 'lecture_learned_topics') {
+      const topicId = typeof nextRow.topic_id === 'number' ? nextRow.topic_id : null;
+      const topicRef = topicId ? topicRefsById.get(topicId) : null;
+      if (topicRef) {
+        nextRow.topic_ref = topicRef;
+      }
+    }
+
+    if (table === 'topic_suggestions') {
+      const subjectId = typeof nextRow.subject_id === 'number' ? nextRow.subject_id : null;
+      const subjectRef = subjectId ? subjectRefsById.get(subjectId) : null;
+      if (subjectRef) {
+        nextRow.subject_ref = subjectRef;
+      }
+      const approvedId =
+        typeof nextRow.approved_topic_id === 'number' ? nextRow.approved_topic_id : null;
+      const approvedRef = approvedId ? topicRefsById.get(approvedId) : null;
+      if (approvedRef) {
+        nextRow.approved_topic_ref = approvedRef;
+      }
     }
 
     return nextRow;
@@ -234,6 +281,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
     const row = { ...rawRow };
     delete row.topic_ref;
     delete row.subject_ref;
+    delete row.approved_topic_ref;
     delete row.planned_topic_refs;
     delete row.completed_topic_refs;
 
@@ -269,6 +317,31 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
             .map((r) => topicIdsByRefKey.get(createTopicRefKey(r as unknown as TopicBackupRef)))
             .filter((id) => !!id),
         );
+      }
+    }
+    if (table === 'generated_study_images' || table === 'lecture_learned_topics') {
+      const ref = rawRow.topic_ref as Record<string, unknown> | undefined;
+      if (ref && typeof ref.subjectShortCode === 'string' && typeof ref.topicName === 'string') {
+        const tid = topicIdsByRefKey.get(createTopicRefKey(ref as unknown as TopicBackupRef));
+        if (tid) row.topic_id = tid;
+        else return null;
+      }
+    }
+    if (table === 'topic_suggestions') {
+      const sref = rawRow.subject_ref as Record<string, unknown> | undefined;
+      if (sref && typeof sref.shortCode === 'string') {
+        const sid = subjectIdsByShortCode.get(String(sref.shortCode).toLowerCase());
+        if (sid) row.subject_id = sid;
+        else return null;
+      }
+      const aref = rawRow.approved_topic_ref as Record<string, unknown> | undefined;
+      if (
+        aref &&
+        typeof aref.subjectShortCode === 'string' &&
+        typeof aref.topicName === 'string'
+      ) {
+        const tid = topicIdsByRefKey.get(createTopicRefKey(aref as unknown as TopicBackupRef));
+        row.approved_topic_id = tid ?? null;
       }
     }
     return row;

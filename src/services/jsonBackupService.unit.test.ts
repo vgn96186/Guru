@@ -283,7 +283,7 @@ describe('jsonBackupService', () => {
       expect(filePath).toContain('file:///mock-cache/guru_backup_');
 
       const parsed = JSON.parse(jsonContent);
-      expect(parsed.version).toBe(3);
+      expect(parsed.version).toBe(4);
       expect(parsed.tables.user_profile.length).toBe(1);
       expect(parsed.tables.topic_progress.length).toBe(1);
       expect(parsed.tables.topic_progress[0].topic_ref).toEqual({

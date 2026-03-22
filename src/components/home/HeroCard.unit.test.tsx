@@ -5,8 +5,6 @@ import { Animated } from 'react-native';
 
 describe('HeroCard', () => {
   const defaultProps = {
-    greeting: 'Good Morning',
-    firstName: 'John',
     daysToInicet: 45,
     daysToNeetPg: 120,
   };

@@ -1,5 +1,15 @@
 // Config
-export { getApiKeys, OPENROUTER_FREE_MODELS, GROQ_MODELS } from './config';
+export {
+  getApiKeys,
+  OPENROUTER_FREE_MODELS,
+  GROQ_MODELS,
+  GEMINI_MODELS,
+  GEMINI_STRUCTURED_JSON_MODELS,
+  CLOUDFLARE_MODELS,
+} from './config';
+
+export { fetchAllLiveGuruChatModelIds } from './liveModelCatalog';
+export type { LiveGuruChatModelIds } from './liveModelCatalog';
 
 // Types
 export type {
@@ -44,7 +54,13 @@ export {
 } from './planning';
 
 // Chat
-export { chatWithGuru, chatWithGuruGrounded, chatWithGuruGroundedStreaming, askGuru } from './chat';
+export {
+  chatWithGuru,
+  chatWithGuruGrounded,
+  chatWithGuruGroundedStreaming,
+  askGuru,
+  type GuruChatMemoryContext,
+} from './chat';
 
 // Notifications
 export { generateWakeUpMessage, generateBreakEndMessages } from './notifications';

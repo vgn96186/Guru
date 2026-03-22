@@ -19,13 +19,14 @@ export async function fetchContent(
     { role: 'user', content: userPrompt },
   ];
 
-  const { parsed, modelUsed } = await generateJSONWithRouting<AIContent>(
+  const { parsed, modelUsed } = await generateJSONWithRouting(
     messages,
     AIContentSchema,
     'low',
   );
-  await setCachedContent(topic.id, contentType, parsed, modelUsed);
-  return parsed;
+  const contentWithMeta = { ...parsed, modelUsed } as AIContent;
+  await setCachedContent(topic.id, contentType, contentWithMeta, modelUsed);
+  return contentWithMeta;
 }
 
 export async function prefetchTopicContent(

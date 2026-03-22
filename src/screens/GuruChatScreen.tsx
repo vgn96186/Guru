@@ -16,6 +16,7 @@ import {
   View,
   type ListRenderItemInfo,
 } from 'react-native';
+import { ImageLightbox } from '../components/ImageLightbox';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -27,14 +28,21 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import {
   chatWithGuruGroundedStreaming,
   type MedicalGroundingSource,
-  GROQ_MODELS,
-  OPENROUTER_FREE_MODELS,
   getApiKeys,
 } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import { clearChatHistory, getChatHistory, saveChatMessage } from '../db/queries/aiCache';
+import { getSessionMemoryRow } from '../db/queries/guruChatMemory';
 import { getDb } from '../db/database';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
+import {
+  coerceGuruChatDefaultModel,
+  guruChatPickerNameForCfModel,
+  guruChatPickerNameForGeminiModel,
+  guruChatPickerNameForGroqModel,
+  guruChatPickerNameForOpenRouterSlug,
+} from '../services/ai/guruChatModelPreference';
+import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { theme } from '../constants/theme';
 import { MarkdownRender } from '../components/MarkdownRender';
 import {
@@ -43,6 +51,8 @@ import {
   type GeneratedStudyImageStyle,
 } from '../db/queries/generatedStudyImages';
 import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
+import { maybeSummarizeGuruSession } from '../services/guruChatSessionSummary';
+import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
 type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
@@ -61,12 +71,14 @@ type ChatMessage = {
 type ModelOption = {
   id: string;
   name: string;
-  group: 'Local' | 'Groq' | 'OpenRouter';
+  group: 'Local' | 'Groq' | 'OpenRouter' | 'Gemini' | 'Cloudflare';
 };
 
 type ChatItem =
   | { id: string; type: 'message'; message: ChatMessage }
   | { id: string; type: 'typing' };
+
+const CHAT_HISTORY_LIMIT = 100;
 
 function getStartersForTopic(topicName: string) {
   return [
@@ -189,10 +201,87 @@ function FormattedGuruMessage({ text }: { text: string }) {
   return <MarkdownRender content={text} />;
 }
 
+function MessageSources({
+  sources,
+  messageId,
+  setLightboxUri,
+  openSource,
+}: {
+  sources: MedicalGroundingSource[];
+  messageId: string;
+  setLightboxUri: (uri: string) => void;
+  openSource: (url: string) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!sources || sources.length === 0) return null;
+
+  return (
+    <View style={styles.sourcesWrap}>
+      <Pressable
+        style={styles.sourcesHeader}
+        onPress={() => setExpanded(!expanded)}
+        accessibilityRole="button"
+        accessibilityLabel={expanded ? 'Collapse sources' : 'Expand sources'}
+      >
+        <Ionicons name="documents-outline" size={13} color={theme.colors.primary} />
+        <Text style={styles.sourcesLabel}>Sources ({sources.length})</Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={14}
+          color={theme.colors.primary}
+          style={{ marginLeft: 'auto' }}
+        />
+      </Pressable>
+      {expanded &&
+        sources.map((source, index) => (
+          <View key={`${messageId}-${source.id}`} style={styles.sourceCard}>
+            <View style={styles.sourceNumBadge}>
+              <Text style={styles.sourceNum}>{index + 1}</Text>
+            </View>
+            {source.imageUrl ? (
+              <Pressable
+                onPress={() => setLightboxUri(source.imageUrl!)}
+                hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel="Enlarge source thumbnail"
+              >
+                <Image source={{ uri: source.imageUrl }} style={styles.sourceImage} />
+              </Pressable>
+            ) : null}
+            <Pressable
+              style={({ pressed }) => [styles.sourceBodyPress, pressed && styles.pressed]}
+              onPress={() => openSource(source.url)}
+              android_ripple={{ color: `${theme.colors.primary}22` }}
+            >
+              <Text style={styles.sourceTitle} numberOfLines={2}>
+                {source.title}
+              </Text>
+              <Text style={styles.sourceMeta}>
+                {source.source}
+                {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [pressed && styles.pressed]}
+              onPress={() => openSource(source.url)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Open source in browser"
+            >
+              <Ionicons name="open-outline" size={13} color={theme.colors.textMuted} />
+            </Pressable>
+          </View>
+        ))}
+    </View>
+  );
+}
+
 export default function GuruChatScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<ScreenRoute>();
   const topicName = route.params?.topicName ?? 'General Medicine';
+  const syllabusTopicId = route.params?.topicId;
   const { profile } = useAppStore();
   const flatListRef = useRef<FlatList<ChatItem>>(null);
 
@@ -214,13 +303,17 @@ export default function GuruChatScreen() {
   const [chosenModel, setChosenModel] = useState<string>('auto');
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+  const [sessionSummary, setSessionSummary] = useState('');
   const localLlmWarning = getLocalLlmRamWarning();
 
   useEffect(() => {
+    void getSessionMemoryRow(topicName).then((r) => setSessionSummary(r?.summaryText ?? ''));
+  }, [topicName]);
+
+  useEffect(() => {
     void Promise.all([
-      topicName && topicName !== 'General Medicine'
-        ? getChatHistory(topicName, 20)
-        : Promise.resolve([]),
+      getChatHistory(topicName, CHAT_HISTORY_LIMIT),
       listGeneratedStudyImagesForTopic('chat', topicName).catch(() => []),
     ])
       .then(([history, images]) => {
@@ -239,6 +332,8 @@ export default function GuruChatScreen() {
             role: entry.role,
             text: entry.message,
             timestamp: entry.timestamp,
+            sources: entry.sourcesJson ? JSON.parse(entry.sourcesJson) : undefined,
+            modelUsed: entry.modelUsed,
             images:
               entry.role === 'guru'
                 ? (imagesByKey.get(buildChatImageContextKey(topicName, entry.timestamp)) ?? [])
@@ -252,6 +347,9 @@ export default function GuruChatScreen() {
       });
   }, [topicName]);
 
+  const { groq: groqModelIds, openrouter: orModelIds, gemini: geminiModelIds, cloudflare: cfModelIds } =
+    useLiveGuruChatModels(profile);
+
   const availableModels = useMemo(() => {
     const { orKey, groqKey } = getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
@@ -261,32 +359,53 @@ export default function GuruChatScreen() {
     }
 
     if (groqKey) {
-      GROQ_MODELS.forEach((model) => {
-        const name = model.includes('/')
-          ? model.split('/').pop()!.replace(/-/g, ' ').toUpperCase()
-          : model.split('-').slice(0, 2).join(' ').toUpperCase();
-        list.push({ id: `groq/${model}`, name, group: 'Groq' });
+      groqModelIds.forEach((model) => {
+        list.push({
+          id: `groq/${model}`,
+          name: guruChatPickerNameForGroqModel(model),
+          group: 'Groq',
+        });
       });
     }
 
     if (orKey) {
-      OPENROUTER_FREE_MODELS.forEach((model) => {
+      orModelIds.forEach((model) => {
         list.push({
           id: model,
-          name: model.split('/')[1].split(':')[0].toUpperCase(),
+          name: guruChatPickerNameForOpenRouterSlug(model),
           group: 'OpenRouter',
         });
       });
     }
 
+    if (getApiKeys(profile).geminiKey) {
+      geminiModelIds.forEach((model) => {
+        list.push({
+          id: `gemini/${model}`,
+          name: guruChatPickerNameForGeminiModel(model),
+          group: 'Gemini',
+        });
+      });
+    }
+
+    if (getApiKeys(profile).cfAccountId && getApiKeys(profile).cfApiToken) {
+      cfModelIds.forEach((model) => {
+        list.push({
+          id: `cf/${model}`,
+          name: guruChatPickerNameForCfModel(model),
+          group: 'Cloudflare',
+        });
+      });
+    }
+
     return list;
-  }, [profile]);
+  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds]);
 
   useEffect(() => {
-    if (chosenModel === 'local' && !availableModels.some((model) => model.id === 'local')) {
-      setChosenModel('auto');
-    }
-  }, [availableModels, chosenModel]);
+    if (!profile) return;
+    const ids = availableModels.map((m) => m.id);
+    setChosenModel(coerceGuruChatDefaultModel(profile.guruChatDefaultModel, ids));
+  }, [profile?.guruChatDefaultModel, availableModels]);
 
   const currentModelName = useMemo(() => {
     const found = availableModels.find((model) => model.id === chosenModel);
@@ -394,6 +513,7 @@ export default function GuruChatScreen() {
     let sawFirstToken = false;
 
     try {
+      const studyContextLine = await buildBoundedGuruChatStudyContext(profile);
       const grounded = await chatWithGuruGroundedStreaming(
         question,
         topicName,
@@ -424,6 +544,12 @@ export default function GuruChatScreen() {
           });
           scrollToLatest(0);
         },
+        {
+          sessionSummary: sessionSummary.trim() || undefined,
+          profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
+          studyContext: studyContextLine,
+          syllabusTopicId,
+        },
       );
       setMessages((current) => {
         const idx = current.findIndex((m) => m.id === guruId);
@@ -453,9 +579,23 @@ export default function GuruChatScreen() {
         return next;
       });
       try {
-        await saveChatMessage(topicName, 'guru', grounded.reply, guruTs);
+        await saveChatMessage(
+          topicName,
+          'guru',
+          grounded.reply,
+          guruTs,
+          grounded.sources && grounded.sources.length > 0 ? JSON.stringify(grounded.sources) : undefined,
+          grounded.modelUsed,
+        );
       } catch {
         // Ignore persistence issues here too.
+      }
+      try {
+        await maybeSummarizeGuruSession(topicName);
+        const row = await getSessionMemoryRow(topicName);
+        setSessionSummary(row?.summaryText ?? '');
+      } catch {
+        /* session summary is optional */
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
@@ -483,6 +623,7 @@ export default function GuruChatScreen() {
           onPress: async () => {
             setMessages([]);
             setBannerVisible(true);
+            setSessionSummary('');
             try {
               await clearChatHistory(topicName);
             } catch {
@@ -494,6 +635,7 @@ export default function GuruChatScreen() {
     } else {
       setMessages([]);
       setBannerVisible(true);
+      setSessionSummary('');
     }
   }
 
@@ -582,58 +724,39 @@ export default function GuruChatScreen() {
             {message.role === 'guru' && message.images && message.images.length > 0 ? (
               <View style={styles.generatedImagesWrap}>
                 {message.images.map((image) => (
-                  <Image
+                  <Pressable
                     key={`${message.id}-image-${image.id}`}
-                    source={{ uri: image.localUri }}
-                    style={styles.generatedImage}
-                    resizeMode="cover"
-                  />
+                    onPress={() => setLightboxUri(image.localUri)}
+                    accessibilityRole="button"
+                    accessibilityLabel="View enlarged image"
+                  >
+                    <Image
+                      source={{ uri: image.localUri }}
+                      style={styles.generatedImage}
+                      resizeMode="cover"
+                    />
+                  </Pressable>
                 ))}
               </View>
             ) : null}
 
             {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
-              <View style={styles.sourcesWrap}>
-                <View style={styles.sourcesHeader}>
-                  <Ionicons name="documents-outline" size={13} color={theme.colors.primary} />
-                  <Text style={styles.sourcesLabel}>Sources ({message.sources.length})</Text>
-                </View>
-                {message.sources.map((source, index) => (
-                  <Pressable
-                    key={`${message.id}-${source.id}`}
-                    style={({ pressed }) => [styles.sourceCard, pressed && styles.pressed]}
-                    android_ripple={{ color: `${theme.colors.primary}22` }}
-                    onPress={() => openSource(source.url)}
-                  >
-                    <View style={styles.sourceNumBadge}>
-                      <Text style={styles.sourceNum}>{index + 1}</Text>
-                    </View>
-                    {source.imageUrl ? (
-                      <Image source={{ uri: source.imageUrl }} style={styles.sourceImage} />
-                    ) : null}
-                    <View style={styles.sourceBody}>
-                      <Text style={styles.sourceTitle} numberOfLines={2}>
-                        {source.title}
-                      </Text>
-                      <Text style={styles.sourceMeta}>
-                        {source.source}
-                        {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
-                      </Text>
-                    </View>
-                    <Ionicons name="open-outline" size={13} color={theme.colors.textMuted} />
-                  </Pressable>
-                ))}
-              </View>
+              <MessageSources
+                sources={message.sources}
+                messageId={message.id}
+                setLightboxUri={setLightboxUri}
+                openSource={openSource}
+              />
             ) : null}
           </View>
         </View>
       );
     },
-    [copyMessage, handleGenerateMessageImage, imageJobKey],
+    [copyMessage, handleGenerateMessageImage, imageJobKey, openSource],
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} testID="guru-chat-screen">
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -853,6 +976,11 @@ export default function GuruChatScreen() {
           </View>
         </ResponsiveContainer>
       </KeyboardAvoidingView>
+      <ImageLightbox
+        visible={!!lightboxUri}
+        uri={lightboxUri}
+        onClose={() => setLightboxUri(null)}
+      />
     </SafeAreaView>
   );
 }
@@ -1239,8 +1367,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     backgroundColor: theme.colors.surfaceAlt,
   },
-  sourceBody: {
+  sourceBodyPress: {
     flex: 1,
+    minWidth: 0,
   },
   sourceTitle: {
     color: theme.colors.textSecondary,

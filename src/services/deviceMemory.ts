@@ -4,6 +4,7 @@ import { profileRepository } from '../db/repositories';
 import type { UserProfile } from '../types';
 
 export const MIN_LOCAL_LLM_RAM_BYTES = 4 * 1024 * 1024 * 1024;
+export const MIN_BACKGROUND_TASK_RAM_BYTES = 3 * 1024 * 1024 * 1024;
 
 function formatRam(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
@@ -37,6 +38,12 @@ export function isLocalLlmUsable(
   return !!(profile?.useLocalModel && profile.localModelPath && isLocalLlmAllowedOnThisDevice());
 }
 
+/** Returns true if the device has enough RAM for heavy background tasks (orphan recovery, note repair). */
+export function isBackgroundRecoveryAllowed(): boolean {
+  const totalMemory = getTotalDeviceMemoryBytes();
+  return totalMemory === null || totalMemory >= MIN_BACKGROUND_TASK_RAM_BYTES;
+}
+
 export async function enforceLocalLlmRamGuard(notify = false): Promise<boolean> {
   const profile = await profileRepository.getProfile();
   if (!profile.useLocalModel || isLocalLlmAllowedOnThisDevice()) {
@@ -46,7 +53,8 @@ export async function enforceLocalLlmRamGuard(notify = false): Promise<boolean> 
   await profileRepository.updateProfile({ useLocalModel: false });
   if (notify) {
     showToast(
-      getLocalLlmRamWarning() ?? 'On-device text AI was disabled on this device to avoid low-memory crashes.',
+      getLocalLlmRamWarning() ??
+        'On-device text AI was disabled on this device to avoid low-memory crashes.',
       'warning',
     );
   }

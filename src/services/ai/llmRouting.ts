@@ -341,9 +341,29 @@ async function callGroq(
   model: string,
   jsonMode = true,
 ): Promise<string> {
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    // Groq requires the word "json" to be present in the prompt when using json_object format.
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+
   const body: Record<string, unknown> = {
     model,
-    messages,
+    messages: jsonMode ? clonedMessages : messages,
     temperature: 0.7,
     max_tokens: 2000,
   };

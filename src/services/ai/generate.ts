@@ -60,6 +60,7 @@ export async function generateJSONWithRouting<T>(
               cfApiToken,
             );
       const parsed = await parseStructuredJson(text, schema);
+      if (__DEV__) console.log(`[AI] ✓ JSON via ${modelUsed}`);
       return { parsed, modelUsed };
     } catch (err) {
       if (__DEV__)
@@ -115,6 +116,7 @@ export async function generateTextWithRouting(
               cfAccountId,
               cfApiToken,
             );
+      if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       return { text, modelUsed };
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} inference failed:`, (err as Error).message);

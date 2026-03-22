@@ -5,7 +5,13 @@ import { getApiKeys } from './config';
  * EmbeddingService — Generates semantic vectors for text.
  * Default: OpenAI text-embedding-3-small via OpenRouter.
  */
+let _embeddingFailCount = 0;
+const EMBEDDING_FAIL_THRESHOLD = 2;
+
 export async function generateEmbedding(text: string): Promise<number[] | null> {
+  // Circuit breaker: stop trying after repeated auth failures this session
+  if (_embeddingFailCount >= EMBEDDING_FAIL_THRESHOLD) return null;
+
   const normalized = text.trim();
   if (!normalized) return null;
 
@@ -13,8 +19,6 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   const { orKey } = getApiKeys(profile);
 
   if (!orKey) {
-    if (__DEV__)
-      console.warn('[Embedding] No OpenRouter key found. Skipping embedding generation.');
     return null;
   }
 
@@ -34,9 +38,16 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
 
     if (!response.ok) {
       const err = await response.text();
+      if (response.status === 401 || response.status === 403) {
+        _embeddingFailCount++;
+        if (_embeddingFailCount >= EMBEDDING_FAIL_THRESHOLD && __DEV__) {
+          console.warn('[Embedding] Auth failed repeatedly — disabling for this session.');
+        }
+      }
       throw new Error(`Embedding failed: ${err}`);
     }
 
+    _embeddingFailCount = 0; // Reset on success
     const data = await response.json();
     const embedding = data?.data?.[0]?.embedding;
     if (!Array.isArray(embedding) || embedding.length === 0) {
@@ -44,7 +55,8 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     }
     return embedding;
   } catch (err) {
-    if (__DEV__) console.warn('[Embedding] Error:', err);
+    if (__DEV__ && _embeddingFailCount < EMBEDDING_FAIL_THRESHOLD + 1)
+      console.warn('[Embedding] Error:', err);
     return null;
   }
 }

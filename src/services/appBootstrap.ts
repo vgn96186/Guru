@@ -98,21 +98,27 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       console.warn('[ConfidenceDecay] Error:', e);
     }
 
-    bootstrapLocalModels().catch((e: unknown) =>
-      console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
-    );
-    scanAndRecoverOrphanedRecordings().catch((e: unknown) =>
-      console.warn('[AppBootstrap] Orphaned recording recovery failed:', e),
-    );
-    scanAndRecoverOrphanedTranscripts().catch((e: unknown) =>
-      console.warn('[AppBootstrap] Orphaned transcript recovery failed:', e),
-    );
-    autoRepairLegacyNotes().catch((e: unknown) =>
-      console.warn('[AppBootstrap] Legacy lecture repair failed:', e),
-    );
-    cleanupStaleCheckpointDirs().catch((e: unknown) =>
-      console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
-    );
+    // Heavy background tasks: only on devices with >= 3 GB RAM
+    const { isBackgroundRecoveryAllowed } = await import('./deviceMemory');
+    if (isBackgroundRecoveryAllowed()) {
+      bootstrapLocalModels().catch((e: unknown) =>
+        console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
+      );
+      scanAndRecoverOrphanedRecordings().catch((e: unknown) =>
+        console.warn('[AppBootstrap] Orphaned recording recovery failed:', e),
+      );
+      scanAndRecoverOrphanedTranscripts().catch((e: unknown) =>
+        console.warn('[AppBootstrap] Orphaned transcript recovery failed:', e),
+      );
+      autoRepairLegacyNotes().catch((e: unknown) =>
+        console.warn('[AppBootstrap] Legacy lecture repair failed:', e),
+      );
+      cleanupStaleCheckpointDirs().catch((e: unknown) =>
+        console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
+      );
+    } else if (__DEV__) {
+      console.log('[AppBootstrap] Skipping heavy background tasks — low RAM device.');
+    }
 
     return { success: true };
   } catch (e) {

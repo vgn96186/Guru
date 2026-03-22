@@ -8,7 +8,11 @@ import { getPreferredStudyHours } from '../db/queries/sessions';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 import { MS_PER_DAY } from '../constants/time';
-import { buildPlanBuckets, buildTopicQueues } from './studyPlannerBuckets';
+import {
+  buildPlanBuckets,
+  buildTopicQueues,
+  DBMCI_WORKLOAD_OVERRIDES,
+} from './studyPlannerBuckets';
 
 export type PlanActionType = 'study' | 'review' | 'deep_dive';
 
@@ -99,16 +103,16 @@ const RESOURCE_PROFILES: Record<StudyResourceMode, ResourceProfile> = {
     subjectWeightSensitivity: 0.7,
   },
   dbmci_live: {
-    label: 'DBMCI Live',
+    label: 'DBMCI Live (Extracted)',
     workloadAssumption:
-      'Lecture-heavy plan with new learning blocked as multi-hour teaching sessions.',
-    reviewMinutes: 28,
-    newTopicMultiplier: 3.4,
-    deepDiveMultiplier: 2.5,
-    minNewTopicMinutes: 120,
-    minDeepDiveMinutes: 90,
-    newTopicDailyBudgetMultiplier: 1.85,
-    deepDiveDailyBudgetMultiplier: 1.05,
+      'Chronological lecture-heavy sequence explicitly tuned to 8-month DBMCI class durations (~2,144 content hours).',
+    reviewMinutes: 20,
+    newTopicMultiplier: 1.8,
+    deepDiveMultiplier: 1.4,
+    minNewTopicMinutes: 35,
+    minDeepDiveMinutes: 45,
+    newTopicDailyBudgetMultiplier: 1.65,
+    deepDiveDailyBudgetMultiplier: 0.9,
     subjectWeightSensitivity: 1,
   },
   hybrid: {
@@ -204,7 +208,13 @@ function getResourceProfile(mode: StudyResourceMode): ResourceProfile {
   return RESOURCE_PROFILES[mode] ?? RESOURCE_PROFILES.hybrid;
 }
 
-export function getDefaultSubjectLoadMultiplier(subjectCode: string): number {
+export function getDefaultSubjectLoadMultiplier(
+  subjectCode: string,
+  resourceMode?: StudyResourceMode,
+): number {
+  if (resourceMode === 'dbmci_live' && DBMCI_WORKLOAD_OVERRIDES[subjectCode]) {
+    return DBMCI_WORKLOAD_OVERRIDES[subjectCode];
+  }
   return SUBJECT_WORKLOAD_OVERRIDES[subjectCode] ?? 1;
 }
 
@@ -215,7 +225,8 @@ function getSubjectLoadFactor(
 ): number {
   const resourceProfile = getResourceProfile(resourceMode);
   const baseline =
-    customOverrides?.[topic.subjectCode] ?? getDefaultSubjectLoadMultiplier(topic.subjectCode);
+    customOverrides?.[topic.subjectCode] ??
+    getDefaultSubjectLoadMultiplier(topic.subjectCode, resourceMode);
   return 1 + (baseline - 1) * resourceProfile.subjectWeightSensitivity;
 }
 
@@ -251,7 +262,11 @@ function getActiveSubjectLoadHighlights(
   customOverrides?: Record<string, number>,
 ): string[] {
   const resourceProfile = getResourceProfile(resourceMode);
-  return Object.entries({ ...SUBJECT_WORKLOAD_OVERRIDES, ...(customOverrides ?? {}) })
+  const baseOverrides =
+    resourceMode === 'dbmci_live'
+      ? { ...SUBJECT_WORKLOAD_OVERRIDES, ...DBMCI_WORKLOAD_OVERRIDES }
+      : SUBJECT_WORKLOAD_OVERRIDES;
+  return Object.entries({ ...baseOverrides, ...(customOverrides ?? {}) })
     .map(([code, factor]) => ({
       code,
       applied: 1 + (factor - 1) * resourceProfile.subjectWeightSensitivity,
@@ -403,6 +418,7 @@ export async function generateStudyPlan(
     allTopics,
     due,
     mode,
+    resourceMode,
     subjectWeights,
   });
 

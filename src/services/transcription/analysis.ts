@@ -2,12 +2,12 @@ import { generateJSONWithRouting } from '../aiService';
 import { z } from 'zod';
 
 export const LectureAnalysisSchema = z.object({
-  subject: z.string(),
-  topics: z.array(z.string()),
-  key_concepts: z.array(z.string()),
-  high_yield_highlights: z.array(z.string()),
-  lecture_summary: z.string(),
-  estimated_confidence: z.number().min(1).max(3),
+  subject: z.string().nullable().catch('Unknown'),
+  topics: z.array(z.string()).catch([]),
+  key_concepts: z.array(z.string()).catch([]),
+  high_yield_highlights: z.array(z.string()).catch([]),
+  lecture_summary: z.string().nullable().catch('Lecture content recorded.'),
+  estimated_confidence: z.number().min(1).max(3).catch(1),
 });
 
 export type LectureAnalysis = {
@@ -152,11 +152,11 @@ Segment ${i + 1}:
 }
 
 interface ParsedAnalysis {
-  subject?: string;
+  subject?: string | null;
   topics?: string[];
   key_concepts?: string[];
   high_yield_highlights?: string[];
-  lecture_summary?: string;
+  lecture_summary?: string | null;
   estimated_confidence?: number;
 }
 

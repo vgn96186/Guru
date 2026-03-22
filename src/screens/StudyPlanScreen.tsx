@@ -1,5 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  StatusBar,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   generateStudyPlan,
@@ -19,6 +27,7 @@ import { MS_PER_DAY } from '../constants/time';
 import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTopicsDueForReview, getAllTopicsWithProgress } from '../db/queries/topics';
+import { getDb } from '../db/database';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
 import { DBMCI_SUBJECT_ORDER, DBMCI_WORKLOAD_OVERRIDES } from '../services/studyPlannerBuckets';
@@ -65,51 +74,72 @@ function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
   );
 }
 
-function BTRProgressCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
-  const subjectProgress = new Map<string, { total: number; seen: number }>();
+function BTRProgressCard({
+  allTopics,
+  onRefresh,
+}: {
+  allTopics: TopicWithProgress[];
+  onRefresh: () => void;
+}) {
+  // Binary: if ANY topic in a subject has been seen, the whole BTR subject is done
+  const subjectHasSeen = new Map<string, boolean>();
   for (const t of allTopics) {
-    const entry = subjectProgress.get(t.subjectCode) ?? { total: 0, seen: 0 };
-    entry.total++;
-    if (t.progress.status !== 'unseen') entry.seen++;
-    subjectProgress.set(t.subjectCode, entry);
+    if (t.progress.status !== 'unseen') {
+      subjectHasSeen.set(t.subjectCode, true);
+    } else if (!subjectHasSeen.has(t.subjectCode)) {
+      subjectHasSeen.set(t.subjectCode, false);
+    }
   }
 
-  // Sort by displayOrder
   const subjects = [...SUBJECTS_SEED].sort((a, b) => a.displayOrder - b.displayOrder);
-  const totalSeen = allTopics.filter((t) => t.progress.status !== 'unseen').length;
-  const overallPct = allTopics.length > 0 ? Math.round((totalSeen / allTopics.length) * 100) : 0;
+  const completedCount = [...subjectHasSeen.values()].filter(Boolean).length;
+
+  const handleMarkDone = async (subjectId: number) => {
+    try {
+      const db = getDb();
+      const now = Date.now();
+      await db.runAsync(
+        `UPDATE topic_progress SET status = 'seen', confidence = MAX(confidence, 2), last_studied_at = ?
+         WHERE topic_id IN (SELECT id FROM topics WHERE subject_id = ?) AND status = 'unseen'`,
+        [now, subjectId],
+      );
+      showToast('Subject marked as done', 'success');
+      onRefresh();
+    } catch (err) {
+      console.error('[BTR] Mark done failed:', err);
+      showToast('Failed to mark subject', 'error');
+    }
+  };
 
   return (
     <View style={dbmciStyles.card}>
       <Text style={dbmciStyles.title}>📊 BTR — Subject Progress</Text>
       <Text style={dbmciStyles.subtitle}>
-        {totalSeen}/{allTopics.length} topics covered · {overallPct}% overall
+        {completedCount}/{subjects.length} subjects completed
       </Text>
       {subjects.map((subject) => {
-        const progress = subjectProgress.get(subject.shortCode) ?? { total: 0, seen: 0 };
-        if (progress.total === 0) return null;
-        const pct = Math.round((progress.seen / progress.total) * 100);
+        const done = subjectHasSeen.get(subject.shortCode) ?? false;
 
         return (
           <View key={subject.shortCode} style={dbmciStyles.row}>
-            <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
+            <View
+              style={[dbmciStyles.dot, { backgroundColor: done ? subject.colorHex : '#2A2A38' }]}
+            />
             <View style={dbmciStyles.rowContent}>
-              <Text style={dbmciStyles.subjectName}>{subject.name}</Text>
-              <View style={dbmciStyles.barBg}>
-                <View
-                  style={[
-                    dbmciStyles.barFill,
-                    { width: `${pct}%`, backgroundColor: subject.colorHex },
-                  ]}
-                />
-              </View>
-            </View>
-            <View style={dbmciStyles.meta}>
-              <Text style={dbmciStyles.pct}>{pct}%</Text>
-              <Text style={dbmciStyles.topicCount}>
-                {progress.seen}/{progress.total}
+              <Text style={[dbmciStyles.subjectName, !done && { color: '#666' }]}>
+                {subject.name}
               </Text>
             </View>
+            {done ? (
+              <Text style={[dbmciStyles.pct, { color: '#4CAF50' }]}>✅ Done</Text>
+            ) : (
+              <TouchableOpacity
+                onPress={() => handleMarkDone(subject.id)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={dbmciStyles.markBtn}>Mark Done</Text>
+              </TouchableOpacity>
+            )}
           </View>
         );
       })}
@@ -421,7 +451,7 @@ export default function StudyPlanScreen() {
             <DBMCISyllabusCard allTopics={allTopics} />
           )}
           {resourceMode === 'btr' && allTopics.length > 0 && (
-            <BTRProgressCard allTopics={allTopics} />
+            <BTRProgressCard allTopics={allTopics} onRefresh={refreshPlan} />
           )}
 
           <Text style={styles.sectionTitle}>Today</Text>
@@ -818,5 +848,16 @@ const dbmciStyles = StyleSheet.create({
     color: '#6C63FF',
     fontSize: 11,
     fontWeight: '800',
+  },
+  markBtn: {
+    color: '#6C63FF',
+    fontSize: 11,
+    fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#6C63FF44',
+    overflow: 'hidden',
   },
 });

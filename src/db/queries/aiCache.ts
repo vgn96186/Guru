@@ -267,6 +267,17 @@ export async function clearTopicCache(topicId: number): Promise<void> {
   await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);
 }
 
+export async function clearSpecificContentCache(
+  topicId: number,
+  contentType: ContentType,
+): Promise<void> {
+  const db = getDb();
+  await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ? AND content_type = ?', [
+    topicId,
+    contentType,
+  ]);
+}
+
 export async function saveLectureNote(
   subjectId: number | null,
   note: string,

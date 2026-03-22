@@ -32,7 +32,11 @@ import {
   incrementWrongCount,
   markTopicNeedsAttention,
 } from '../db/queries/topics';
-import { flagTopicForReview, setContentFlagged } from '../db/queries/aiCache';
+import {
+  flagTopicForReview,
+  setContentFlagged,
+  clearSpecificContentCache,
+} from '../db/queries/aiCache';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
@@ -408,6 +412,16 @@ export default function SessionScreen() {
       ]).start();
       if (confidence === 1) triggerEvent('again_rated');
       else triggerEvent('card_done');
+
+      // Clear the cache for the content type that was just finished/rated
+      // so next time this topic is studied, the user gets a fresh generation.
+      const currentContentType = getCurrentContentType(s);
+      if (currentContentType) {
+        clearSpecificContentCache(item.topic.id, currentContentType).catch((err: any) =>
+          console.error('[Session] Cache clear failed:', err),
+        );
+      }
+
       handleContentDone();
     },
     [xpAnim, triggerEvent, handleContentDone],

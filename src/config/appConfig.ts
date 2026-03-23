@@ -179,10 +179,9 @@ export function normalizeImageGenerationModel(raw: string | undefined | null): s
 }
 
 export const OPENROUTER_FREE_MODELS = [
-  'openai/gpt-oss-120b',
-  'deepseek/deepseek-v3.2',
+  'nvidia/nemotron-3-super-120b-a12b:free',
   'stepfun/step-3.5-flash:free',
-  'nvidia/nemotron-4-340b-instruct:free',
+  'deepseek/deepseek-v3.2',
   'meta-llama/llama-3.3-70b-instruct:free',
   'google/gemma-3-27b-it:free',
 ] as const;

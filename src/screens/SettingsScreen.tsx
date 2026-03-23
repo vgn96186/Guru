@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -688,37 +690,42 @@ export default function SettingsScreen() {
               <ActivityIndicator size="small" color={theme.colors.primary} />
             )}
           </View>
-          <View style={styles.modelChipRow}>
-            <TouchableOpacity
-              style={[styles.freqBtn, guruChatDefaultModel === 'auto' && styles.freqBtnActive]}
-              onPress={() => setGuruChatDefaultModel('auto')}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[styles.freqText, guruChatDefaultModel === 'auto' && styles.freqTextActive]}
-              >
-                {formatGuruChatModelChipLabel('auto')}
-              </Text>
-            </TouchableOpacity>
-            {profile?.useLocalModel &&
-              profile?.localModelPath &&
-              isLocalLlmAllowedOnThisDevice() && (
-                <TouchableOpacity
-                  style={[styles.freqBtn, guruChatDefaultModel === 'local' && styles.freqBtnActive]}
-                  onPress={() => setGuruChatDefaultModel('local')}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.freqText,
-                      guruChatDefaultModel === 'local' && styles.freqTextActive,
-                    ]}
-                  >
-                    {formatGuruChatModelChipLabel('local')}
-                  </Text>
-                </TouchableOpacity>
-              )}
-          </View>
+          <ModelDropdown
+            label="Guru Chat — default model"
+            value={guruChatDefaultModel}
+            onSelect={setGuruChatDefaultModel}
+            options={[
+              { id: 'auto', label: formatGuruChatModelChipLabel('auto'), group: 'General' },
+              ...(profile?.useLocalModel && profile?.localModelPath && isLocalLlmAllowedOnThisDevice()
+                ? [{ id: 'local', label: formatGuruChatModelChipLabel('local'), group: 'General' }]
+                : []),
+              ...liveGuruChatModels.groq.map((m) => ({
+                id: `groq/${m}`,
+                label: formatGuruChatModelChipLabel(`groq/${m}`),
+                group: 'Groq',
+              })),
+              ...liveGuruChatModels.github.map((m) => ({
+                id: `github/${m}`,
+                label: formatGuruChatModelChipLabel(`github/${m}`),
+                group: 'GitHub Models',
+              })),
+              ...liveGuruChatModels.openrouter.map((m) => ({
+                id: m,
+                label: formatGuruChatModelChipLabel(m),
+                group: 'OpenRouter (free)',
+              })),
+              ...liveGuruChatModels.gemini.map((m) => ({
+                id: `gemini/${m}`,
+                label: formatGuruChatModelChipLabel(`gemini/${m}`),
+                group: 'Gemini',
+              })),
+              ...liveGuruChatModels.cloudflare.map((m) => ({
+                id: `cf/${m}`,
+                label: formatGuruChatModelChipLabel(`cf/${m}`),
+                group: 'Cloudflare',
+              })),
+            ]}
+          />
 
           <Label text="Groq API Key (console.groq.com)" />
           <TextInput
@@ -758,27 +765,6 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
-          <Label text="Guru Chat: Groq model" />
-          <View style={styles.modelChipRow}>
-            {liveGuruChatModels.groq.map((m) => {
-              const id = `groq/${m}`;
-              return (
-                <TouchableOpacity
-                  key={id}
-                  style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
-                  onPress={() => setGuruChatDefaultModel(id)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[styles.freqText, guruChatDefaultModel === id && styles.freqTextActive]}
-                  >
-                    {formatGuruChatModelChipLabel(id)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
           <Label text="GitHub Models (models.github.ai)" />
           <TextInput
             style={styles.input}
@@ -818,34 +804,6 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
-          {liveGuruChatModels.github.length > 0 ? (
-            <>
-              <Label text="Guru Chat: GitHub Models" />
-              <View style={styles.modelChipRow}>
-                {liveGuruChatModels.github.map((m) => {
-                  const id = `github/${m}`;
-                  return (
-                    <TouchableOpacity
-                      key={id}
-                      style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
-                      onPress={() => setGuruChatDefaultModel(id)}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.freqText,
-                          guruChatDefaultModel === id && styles.freqTextActive,
-                        ]}
-                      >
-                        {formatGuruChatModelChipLabel(id)}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            </>
-          ) : null}
-
           <Label text="OpenRouter API Key — optional fallback" />
           <TextInput
             style={styles.input}
@@ -885,24 +843,6 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
-          <Label text="Guru Chat: OpenRouter (free) model" />
-          <View style={styles.modelChipRow}>
-            {liveGuruChatModels.openrouter.map((m) => (
-              <TouchableOpacity
-                key={m}
-                style={[styles.freqBtn, guruChatDefaultModel === m && styles.freqBtnActive]}
-                onPress={() => setGuruChatDefaultModel(m)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[styles.freqText, guruChatDefaultModel === m && styles.freqTextActive]}
-                >
-                  {formatGuruChatModelChipLabel(m)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
           <Label text="Google AI (Gemini) API Key — optional" />
           <TextInput
             style={styles.input}
@@ -958,27 +898,6 @@ export default function SettingsScreen() {
               thumbColor={theme.colors.textPrimary}
             />
           </View>
-          <Label text="Guru Chat: Gemini model" />
-          <View style={styles.modelChipRow}>
-            {liveGuruChatModels.gemini.map((m) => {
-              const id = `gemini/${m}`;
-              return (
-                <TouchableOpacity
-                  key={id}
-                  style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
-                  onPress={() => setGuruChatDefaultModel(id)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[styles.freqText, guruChatDefaultModel === id && styles.freqTextActive]}
-                  >
-                    {formatGuruChatModelChipLabel(id)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
           <Label text="Cloudflare Workers AI — Account ID" />
           <TextInput
             style={styles.input}
@@ -1029,27 +948,6 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
-          <Label text="Guru Chat: Cloudflare Workers AI model" />
-          <View style={styles.modelChipRow}>
-            {liveGuruChatModels.cloudflare.map((m) => {
-              const id = `cf/${m}`;
-              return (
-                <TouchableOpacity
-                  key={id}
-                  style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
-                  onPress={() => setGuruChatDefaultModel(id)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[styles.freqText, guruChatDefaultModel === id && styles.freqTextActive]}
-                  >
-                    {formatGuruChatModelChipLabel(id)}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
           <Label text="Study image generation — model" />
           <Text style={styles.hint}>
             Diagrams from Guru Chat and topic notes. On a free Google AI Studio key, pick{' '}
@@ -1779,6 +1677,80 @@ function Label({ text }: { text: string }) {
   return <Text style={styles.label}>{text}</Text>;
 }
 
+/** Dropdown picker for model selection — replaces congested chip rows. */
+function ModelDropdown({
+  label,
+  value,
+  options,
+  onSelect,
+}: {
+  label: string;
+  value: string;
+  options: Array<{ id: string; label: string; group?: string }>;
+  onSelect: (id: string) => void;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const selectedLabel = options.find((o) => o.id === value)?.label ?? (value || 'Select...');
+
+  return (
+    <>
+      <Label text={label} />
+      <TouchableOpacity
+        style={styles.dropdownTrigger}
+        onPress={() => setOpen(true)}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.dropdownValue} numberOfLines={1}>
+          {selectedLabel}
+        </Text>
+        <Text style={styles.dropdownArrow}>▾</Text>
+      </TouchableOpacity>
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
+          <View style={styles.dropdownSheet}>
+            <Text style={styles.dropdownSheetTitle}>{label}</Text>
+            <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
+              {options.map((opt, idx) => {
+                const showGroup =
+                  opt.group && (idx === 0 || options[idx - 1]?.group !== opt.group);
+                return (
+                  <React.Fragment key={opt.id}>
+                    {showGroup && (
+                      <Text style={styles.dropdownGroupLabel}>{opt.group}</Text>
+                    )}
+                    <TouchableOpacity
+                      style={[
+                        styles.dropdownItem,
+                        value === opt.id && styles.dropdownItemActive,
+                      ]}
+                      onPress={() => {
+                        onSelect(opt.id);
+                        setOpen(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          value === opt.id && styles.dropdownItemTextActive,
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {opt.label}
+                      </Text>
+                      {value === opt.id && <Text style={styles.dropdownCheck}>✓</Text>}
+                    </TouchableOpacity>
+                  </React.Fragment>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.lg, paddingBottom: 60 },
@@ -2073,4 +2045,62 @@ const styles = StyleSheet.create({
   fixBtnText: { color: theme.colors.primary, fontSize: 12, fontWeight: '800' },
   diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
   diagBtnText: { color: theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
+  // Dropdown styles
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.background,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  dropdownValue: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600', flex: 1 },
+  dropdownArrow: { color: theme.colors.textMuted, fontSize: 16, marginLeft: 8 },
+  dropdownBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  dropdownSheet: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    paddingVertical: 12,
+    maxHeight: '80%',
+  },
+  dropdownSheetTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  dropdownGroupLabel: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 4,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dropdownItemActive: { backgroundColor: theme.colors.primaryTintSoft },
+  dropdownItemText: { color: theme.colors.textPrimary, fontSize: 14, flex: 1 },
+  dropdownItemTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  dropdownCheck: { color: theme.colors.primary, fontSize: 16, fontWeight: '700', marginLeft: 8 },
 });

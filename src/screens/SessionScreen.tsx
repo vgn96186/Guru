@@ -223,7 +223,11 @@ export default function SessionScreen() {
       );
 
       await endSession(s.sessionId, s.completedTopicIds, xpResult.total, durationMin);
-      await profileRepository.updateStreak(durationMin >= STREAK_MIN_MINUTES);
+      // Use cumulative daily total (not single-session) for streak threshold.
+      // Sprint/warmup sessions are 5-10 min each; requiring 20 min per session
+      // meant ADHD users doing short sessions could never build a streak.
+      const dailyTotalMinutes = (dailyLog?.totalMinutes ?? 0) + durationMin;
+      await profileRepository.updateStreak(dailyTotalMinutes >= STREAK_MIN_MINUTES);
 
       setSessionXpTotal(xpResult.total);
       refreshProfile().catch((err) =>

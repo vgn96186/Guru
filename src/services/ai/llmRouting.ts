@@ -920,13 +920,13 @@ export async function attemptCloudLLMStream(
     );
   }
 
-  // 2. Default Routing
-  if (deepseekKey) {
-    for (const model of DEEPSEEK_MODELS) {
-      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
+  // 2. Default Routing — Groq first (fastest, free OSS models), then fallbacks
+  if (groqKey) {
+    for (const model of GROQ_MODELS) {
+      if (preferredGroqModel && model === preferredGroqModel) continue;
       try {
-        const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
-        return { text, modelUsed: `deepseek/${model}` };
+        const text = await streamGroqChat(messages, groqKey, model, onDelta);
+        return { text, modelUsed: `groq/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -949,12 +949,12 @@ export async function attemptCloudLLMStream(
     }
   }
 
-  if (groqKey) {
-    for (const model of GROQ_MODELS) {
-      if (preferredGroqModel && model === preferredGroqModel) continue;
+  if (deepseekKey) {
+    for (const model of DEEPSEEK_MODELS) {
+      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
       try {
-        const text = await streamGroqChat(messages, groqKey, model, onDelta);
-        return { text, modelUsed: `groq/${model}` };
+        const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
+        return { text, modelUsed: `deepseek/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -1196,15 +1196,15 @@ export async function attemptCloudLLM(
     }
   }
 
-  // 2. Default Routing
-  if (deepseekKey) {
-    for (const model of DEEPSEEK_MODELS) {
-      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
+  // 2. Default Routing — Groq first (fastest, free OSS models), then fallbacks
+  if (groqKey) {
+    for (const model of GROQ_MODELS) {
+      if (preferredGroqModel && model === preferredGroqModel) continue;
       try {
         const text = textMode
-          ? await callDeepSeek(messages, deepseekKey, model, false)
-          : await callDeepSeek(messages, deepseekKey, model);
-        return { text, modelUsed: `deepseek/${model}` };
+          ? await callGroq(messages, groqKey, model, false)
+          : await callGroq(messages, groqKey, model);
+        return { text, modelUsed: `groq/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -1229,14 +1229,14 @@ export async function attemptCloudLLM(
     }
   }
 
-  if (groqKey) {
-    for (const model of GROQ_MODELS) {
-      if (preferredGroqModel && model === preferredGroqModel) continue;
+  if (deepseekKey) {
+    for (const model of DEEPSEEK_MODELS) {
+      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
       try {
         const text = textMode
-          ? await callGroq(messages, groqKey, model, false)
-          : await callGroq(messages, groqKey, model);
-        return { text, modelUsed: `groq/${model}` };
+          ? await callDeepSeek(messages, deepseekKey, model, false)
+          : await callDeepSeek(messages, deepseekKey, model);
+        return { text, modelUsed: `deepseek/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;

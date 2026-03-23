@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, InteractionManager } from 'react-native';
 import { dailyLogRepository } from '../db/repositories';
-import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics } from '../db/queries/topics';
+import {
+  getWeakestTopics,
+  getTopicsDueForReview,
+  markNemesisTopics,
+  getHighPriorityUnseenTopics,
+} from '../db/queries/topics';
 import { getCompletedSessionCount } from '../db/queries/sessions';
 import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
@@ -24,9 +29,19 @@ export function useHomeDashboardData() {
     try {
       await markNemesisTopics();
       const [weak, due] = await Promise.all([getWeakestTopics(3), getTopicsDueForReview(5)]);
-      setWeakTopics(weak);
+
+      // Fallback: if no weak topics yet (new user), show highest-priority unseen topics
+      if (weak.length === 0) {
+        const unseen = await getHighPriorityUnseenTopics(3);
+        setWeakTopics(unseen);
+      } else {
+        setWeakTopics(weak);
+      }
       setDueTopics(due);
-      setTodayTasks(await getTodaysAgendaWithTimes());
+
+      const tasks = await getTodaysAgendaWithTimes();
+      setTodayTasks(tasks);
+
       setCompletedSessions(await getCompletedSessionCount());
       const [log, externalMinutes] = await Promise.all([
         dailyLogRepository.getDailyLog(),

@@ -400,11 +400,15 @@ export default function HomeScreen() {
                         key={t.id}
                         time="Now"
                         title={t.name}
-                        type="deep_dive"
+                        type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
                         subjectName={t.subjectName}
-                        priority={10}
+                        priority={t.inicetPriority}
                         onPress={() =>
-                          navigation.navigate('Session', { mood, focusTopicId: t.id, mode: 'deep' })
+                          navigation.navigate('Session', {
+                            mood,
+                            focusTopicId: t.id,
+                            preferredActionType: t.progress.status === 'unseen' ? 'study' : 'deep_dive',
+                          })
                         }
                       />
                     ))

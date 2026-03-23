@@ -600,6 +600,23 @@ export async function getWeakestTopics(limit = 5): Promise<TopicWithProgress[]> 
   return rows.map(mapTopicRow);
 }
 
+/** Fallback for new users: highest INICET-priority topics that haven't been studied yet. */
+export async function getHighPriorityUnseenTopics(limit = 3): Promise<TopicWithProgress[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<TopicRow>(
+    `${TOPIC_SELECT}
+     FROM topics t
+     JOIN subjects s ON t.subject_id = s.id
+     LEFT JOIN topic_progress p ON t.id = p.topic_id
+     WHERE COALESCE(p.status, 'unseen') = 'unseen'
+       AND t.parent_topic_id IS NOT NULL
+     ORDER BY t.inicet_priority DESC, RANDOM()
+     LIMIT ?`,
+    [limit],
+  );
+  return rows.map(mapTopicRow);
+}
+
 function mapTopicRow(r: any): TopicWithProgress {
   const tid = r.id;
   const tname = r.name || 'Unnamed Topic';

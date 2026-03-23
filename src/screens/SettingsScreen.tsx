@@ -1910,7 +1910,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 8,
   },
-  frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
+  frequencyRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4, flexWrap: 'wrap', alignItems: 'center' },
   guruMemoryInput: {
     minHeight: 88,
     paddingTop: 12,
@@ -1931,10 +1931,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   freqBtn: {
-    flex: 1,
     backgroundColor: theme.colors.background,
     borderRadius: 10,
     paddingVertical: 10,
+    paddingHorizontal: 14,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -1943,7 +1943,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primaryTintSoft,
     borderColor: theme.colors.primary,
   },
-  freqText: { color: theme.colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  freqText: { color: theme.colors.textSecondary, fontSize: 12, fontWeight: '600' },
   freqTextActive: { color: theme.colors.primary, fontWeight: '700' },
   footer: {
     color: theme.colors.borderLight,

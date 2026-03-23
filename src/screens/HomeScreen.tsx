@@ -819,5 +819,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 6,
     textAlign: 'right',
+    textDecorationLine: 'underline',
   },
 });

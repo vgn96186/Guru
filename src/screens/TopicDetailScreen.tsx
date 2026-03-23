@@ -679,6 +679,7 @@ export default function TopicDetailScreen() {
                         accessibilityLabel={`Confidence: ${item.progress.confidence} of 5`}
                         accessibilityRole="text"
                       >
+                        <Text style={styles.confLabel}>{item.progress.confidence}/5</Text>
                         {[1, 2, 3, 4, 5].map((i) => (
                           <View
                             key={i}
@@ -983,7 +984,8 @@ const styles = StyleSheet.create({
   reviewText: { color: '#4CAF50', fontSize: 11, fontWeight: '600' },
   reviewTextOverdue: { color: '#F44336' },
   topicRight: { padding: 12, alignItems: 'flex-end' },
-  confRow: { flexDirection: 'row', gap: 2, marginBottom: 4 },
+  confRow: { flexDirection: 'row', gap: 3, marginBottom: 4, alignItems: 'center' },
+  confLabel: { color: theme.colors.textMuted, fontSize: 9, fontWeight: '700', marginRight: 2 },
   confDot: { width: 6, height: 6, borderRadius: 3 },
   statusLabel: { fontSize: 11, fontWeight: '600' },
   notePreview: { color: '#6C63FF', fontSize: 11, marginTop: 3, fontStyle: 'italic' },

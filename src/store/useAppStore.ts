@@ -57,6 +57,9 @@ interface AppState {
   setStudyResourceMode: (mode: StudyResourceMode) => Promise<void>;
 }
 
+/** Trailing-edge debounce timer for refreshProfile to collapse rapid successive calls. */
+let refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Shared profile fetcher used by both loadProfile (cold start) and refreshProfile (hot reload).
  * @param resetOnError — when true (loadProfile), nulls out profile on failure; when false (refreshProfile), preserves existing.
@@ -125,7 +128,16 @@ export const useAppStore = create<AppState>((set, get) => {
     },
 
     refreshProfile: async () => {
-      await fetchProfile(get, set, false);
+      // Trailing-edge debounce: collapse rapid successive calls (DB events, AppState, screens)
+      // into a single fetch after 300ms of silence.
+      if (refreshDebounceTimer) clearTimeout(refreshDebounceTimer);
+      return new Promise<void>((resolve) => {
+        refreshDebounceTimer = setTimeout(async () => {
+          refreshDebounceTimer = null;
+          await fetchProfile(get, set, false);
+          resolve();
+        }, 300);
+      });
     },
 
     setDailyAvailability: (mins: number) => {

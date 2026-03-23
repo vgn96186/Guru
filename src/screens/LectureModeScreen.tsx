@@ -1232,7 +1232,7 @@ const styles = StyleSheet.create({
   timer: {
     color: theme.colors.textPrimary,
     fontWeight: '900',
-    fontSize: 64,
+    fontSize: 52,
     fontVariant: ['tabular-nums'],
   },
   timerWarn: { color: theme.colors.error },

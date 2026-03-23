@@ -13,6 +13,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { SyllabusStackParamList } from '../navigation/types';
@@ -388,8 +389,8 @@ export default function SyllabusScreen() {
               <ActivityIndicator size="small" color={theme.colors.primary} />
             ) : (
               <>
-                <Text style={styles.syncBtnText}>🔄</Text>
-                <Text style={styles.syncBtnLabel}>Sync</Text>
+                <Ionicons name="sync-outline" size={20} color={theme.colors.primary} />
+                <Text style={styles.syncBtnLabel}>Sync Topics</Text>
               </>
             )}
           </TouchableOpacity>
@@ -623,8 +624,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 56,
   },
-  syncBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 18 },
-  syncBtnLabel: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 2 },
+  syncBtnLabel: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 4 },
   controls: { paddingHorizontal: theme.spacing.lg, paddingBottom: 8, gap: 10 },
   suggestionSection: {
     paddingHorizontal: theme.spacing.lg,

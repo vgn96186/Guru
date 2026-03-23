@@ -31,7 +31,7 @@
     "verify:coverage": "npm run typecheck && npm run lint && npm run test:unit:coverage",
     "verify:ci": "npm run lint && npm run test:unit && npm run test:unit:coverage:logic",
     "verify:strict": "npm run typecheck && npm run lint && npm run test:unit && npm run test:unit:coverage:logic",
-    "detox:test:critical": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} npx detox test -c android.emu.debug -- e2e/starter.test.ts e2e/home.test.ts e2e/tab-navigation.test.ts",
+    "detox:test:critical": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} npx detox test -c android.emu.debug -- e2e/critical-path.test.ts",
     "repo-map": "node scripts/generate-repo-map.js",
     "detox:build:android:phone:debug": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox build -c android.phone.debug",
     "detox:test:android:phone:debug": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox test -c android.phone.debug",
@@ -41,10 +41,10 @@
     "detox:test:android:emu:release": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-/Users/vishnugnair/Library/Android/sdk} npx detox test -c android.emu.release",
     "detox:build:android:genymotion": "npm run detox:build:android:emu:debug",
     "detox:test:android:genymotion": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} bash scripts/detox-with-connected-device.sh npx detox test -c android.genymotion",
-    "detox:test:critical:genymotion": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} bash scripts/detox-with-connected-device.sh npx detox test -c android.genymotion -- e2e/starter.test.ts e2e/home.test.ts e2e/tab-navigation.test.ts",
+    "detox:test:critical:genymotion": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} bash scripts/detox-with-connected-device.sh npx detox test -c android.genymotion -- e2e/critical-path.test.ts",
     "detox:build:android:genymotion:dev": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} npx detox build -c android.genymotion.dev",
     "detox:test:android:genymotion:dev": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} bash scripts/detox-with-connected-device.sh npx detox test -c android.genymotion.dev",
-    "detox:test:critical:genymotion:dev": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} bash scripts/detox-with-connected-device.sh npx detox test -c android.genymotion.dev -- e2e/starter.test.ts e2e/home.test.ts e2e/tab-navigation.test.ts"
+    "detox:test:critical:genymotion:dev": "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-$ANDROID_HOME} bash scripts/detox-with-connected-device.sh npx detox test -c android.genymotion.dev -- e2e/critical-path.test.ts"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

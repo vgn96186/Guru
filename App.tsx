@@ -7,11 +7,15 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import LoadingOrb from './src/components/LoadingOrb';
 import { InstallModelProgressOverlay } from './src/components/InstallModelProgressOverlay';
 import { ToastContainer } from './src/components/Toast';
+import DevConsole, { installDevConsoleInterceptors } from './src/components/DevConsole';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { navigationRef } from './src/navigation/navigationRef';
 import { useAppInitialization } from './src/hooks/useAppInitialization';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import linking from './src/navigation/linking';
+
+// Install console interceptors early so all logs are captured
+installDevConsoleInterceptors();
 
 export { navigationRef };
 
@@ -33,6 +37,7 @@ function AppContent({ initialRoute }: { initialRoute: 'Tabs' | 'CheckIn' }) {
       <RootNavigator initialRoute={initialRoute} />
       <InstallModelProgressOverlay />
       <ToastContainer />
+      <DevConsole />
     </NavigationContainer>
   );
 }

@@ -1103,6 +1103,15 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.diagBtn} onPress={() => Linking.openSettings()}>
             <Text style={styles.diagBtnText}>Open System Settings</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.diagBtn, { marginTop: 8 }]}
+            onPress={() => {
+              const { devConsole } = require('../components/DevConsole');
+              devConsole.show();
+            }}
+          >
+            <Text style={styles.diagBtnText}>Open Dev Console</Text>
+          </TouchableOpacity>
         </SectionToggle>
 
         <SectionToggle id="profile" title="👤 Profile">

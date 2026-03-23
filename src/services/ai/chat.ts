@@ -92,20 +92,18 @@ export async function chatWithGuruGrounded(
 Rules:
 1) Ask ONE focused clinical question per response. No information dumps.
 2) If the student answers, react in one sentence (affirm or correct briefly), then ask the next logical question.
-3) Ground questions in the SOURCES provided — stick to high-yield, exam-relevant facts only.
+3) Use your medical knowledge as the PRIMARY basis for answers. Sources below are supplementary references only — ignore irrelevant ones.
 4) Max 3 sentences per response. Be warm and conversational.
 5) Wrap key clinical terms in **bold**.
-6) If the student says "just tell me" or "explain it", give a 2-sentence summary grounded in sources, then follow up with a question.
-7) Do not use citations inline — keep it natural, not academic.`;
+6) If the student says "just tell me" or "explain it", give a 2-sentence summary then follow up with a question.
+7) Do not use citations inline — keep it natural, not academic.
+8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.`;
 
   const userPrompt = `Topic context: ${topicName || 'General Medicine'}
 ${historyStr ? `Recent conversation:\n${historyStr}\n` : ''}
 Student question: ${trimmedQuestion}
-
-SOURCES:
-${sourcesBlock}
-
-Respond with medical teaching guidance grounded in the sources above.`;
+${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
+Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
 
   const msgs: Message[] = [
     { role: 'system', content: systemPrompt },
@@ -161,7 +159,7 @@ export async function chatWithGuruGroundedStreaming(
 
   const profileBlock =
     memoryContext?.profileNotes?.trim() &&
-    `What you already know about this student (they saved this in Settings — use lightly, do not contradict SOURCES):\n${memoryContext.profileNotes.trim()}\n`;
+    `What you already know about this student (they saved this in Settings):\n${memoryContext.profileNotes.trim()}\n`;
 
   const sessionBlock =
     memoryContext?.sessionSummary?.trim() &&
@@ -169,17 +167,18 @@ export async function chatWithGuruGroundedStreaming(
 
   const studyBlock =
     memoryContext?.studyContext?.trim() &&
-    `Study snapshot from their progress DB (samples only — use lightly, prioritize SOURCES):\n${memoryContext.studyContext.trim()}\n`;
+    `Study snapshot from their progress DB (samples only):\n${memoryContext.studyContext.trim()}\n`;
 
   const systemPrompt = `You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers — never lecture.
 Rules:
 1) Ask ONE focused clinical question per response. No information dumps.
 2) If the student answers, react in one sentence (affirm or correct briefly), then ask the next logical question.
-3) Ground questions in the SOURCES provided — stick to high-yield, exam-relevant facts only.
+3) Use your medical knowledge as the PRIMARY basis for answers. Sources below are supplementary references only — ignore irrelevant ones.
 4) Max 3 sentences per response. Be warm and conversational.
 5) Wrap key clinical terms in **bold**.
-6) If the student says "just tell me" or "explain it", give a 2-sentence summary grounded in sources, then follow up with a question.
-7) Do not use citations inline — keep it natural, not academic.`;
+6) If the student says "just tell me" or "explain it", give a 2-sentence summary then follow up with a question.
+7) Do not use citations inline — keep it natural, not academic.
+8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.`;
 
   const topicLabel =
     (topicName || 'General Medicine') +
@@ -189,11 +188,8 @@ Rules:
   const userPrompt = `Topic context: ${topicLabel}
 ${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}${historyStr ? `Recent conversation:\n${historyStr}\n` : ''}
 Student question: ${trimmedQuestion}
-
-SOURCES:
-${sourcesBlock}
-
-Respond with medical teaching guidance grounded in the sources above.`;
+${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
+Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
 
   const msgs: Message[] = [
     { role: 'system', content: systemPrompt },

@@ -115,7 +115,7 @@ async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
        ORDER BY tp.confidence ASC, tp.last_studied_at ASC
        LIMIT 6`,
     );
-    if (rows.length < 3) return FALLBACK_STARTERS;
+    if (rows.length === 0) return FALLBACK_STARTERS;
     const icons = [
       'book-outline',
       'help-circle-outline',

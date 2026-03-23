@@ -254,9 +254,24 @@ export default function MockTestScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <FlatList
-          data={questions}
-          keyExtractor={(_, index) => `review-${index}`}
-          renderItem={renderReviewItem}
+          data={[...questions].sort((a, b) => {
+            const aIdx = questions.indexOf(a);
+            const bIdx = questions.indexOf(b);
+            const aAns = answers[aIdx];
+            const bAns = answers[bIdx];
+            const aCorrect = aAns === a.correctIndex;
+            const bCorrect = bAns === b.correctIndex;
+            const aSkipped = aAns === null || aAns === -1;
+            const bSkipped = bAns === null || bAns === -1;
+            // Wrong first, then skipped, then correct
+            if (!aCorrect && !aSkipped && (bCorrect || bSkipped)) return -1;
+            if (!bCorrect && !bSkipped && (aCorrect || aSkipped)) return 1;
+            if (aSkipped && bCorrect) return -1;
+            if (bSkipped && aCorrect) return 1;
+            return aIdx - bIdx;
+          })}
+          keyExtractor={(item) => `review-${questions.indexOf(item)}`}
+          renderItem={({ item }) => renderReviewItem({ item, index: questions.indexOf(item) })}
           contentContainerStyle={styles.resultsContent}
           initialNumToRender={8}
           windowSize={8}
@@ -290,7 +305,14 @@ export default function MockTestScreen() {
                 NEET Marking: +4 correct · -1 wrong · 0 skipped
               </Text>
 
-              {/* Question review */}
+              {elapsedSeconds > 0 && (
+                <Text style={styles.markingNote}>
+                  Total time: {Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s · Avg{' '}
+                  {Math.round(elapsedSeconds / Math.max(1, questions.length))}s per question
+                </Text>
+              )}
+
+              {/* Question review — wrong answers shown first */}
               <Text style={styles.reviewTitle}>Review</Text>
             </ResponsiveContainer>
           }

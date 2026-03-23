@@ -275,6 +275,9 @@ export default function ReviewScreen() {
             </View>
           )}
           <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Close review"
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             onPress={() => {
               Speech.stop();
               navigation.goBack();
@@ -391,9 +394,12 @@ export default function ReviewScreen() {
                   key={r.label}
                   style={[styles.rateBtn, { borderColor: r.color }]}
                   onPress={() => handleRate(r)}
+                  hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Rate ${r.label}, next review in ${r.days} days`}
                 >
                   <Text style={[styles.rateLabel, { color: r.color }]}>{r.label}</Text>
-                  <Text style={styles.rateDays}>{r.days}d</Text>
+                  <Text style={styles.rateDays}>in {r.days}d</Text>
                 </TouchableOpacity>
               ))}
             </View>

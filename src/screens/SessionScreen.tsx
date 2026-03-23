@@ -158,7 +158,7 @@ export default function SessionScreen() {
 
   const isStudying = sessionState === 'studying' && !isOnBreak && !isPaused;
 
-  const topicNames = useMemo(() => agenda?.items.map((i) => i.topic.name) ?? [], [agenda]);
+  const topicNames = useMemo(() => agenda?.items?.map((i) => i.topic.name) ?? [], [agenda]);
 
   const { currentMessage, presencePulse, toastOpacity, triggerEvent } = useGuruPresence({
     topicNames,

@@ -1,11 +1,11 @@
 import * as Notifications from 'expo-notifications';
-import { 
-  requestNotificationPermissions, 
-  scheduleStreakWarning, 
-  sendImmediateNag, 
+import {
+  requestNotificationPermissions,
+  scheduleStreakWarning,
+  sendImmediateNag,
   scheduleHarassment,
   refreshAccountabilityNotifications,
-  cancelAllNotifications
+  cancelAllNotifications,
 } from './notificationService';
 import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
@@ -19,6 +19,7 @@ import {
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   requestPermissionsAsync: jest.fn(),
+  getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
   scheduleNotificationAsync: jest.fn(),
   cancelScheduledNotificationAsync: jest.fn(),
   cancelAllScheduledNotificationsAsync: jest.fn(),
@@ -91,7 +92,7 @@ describe('notificationService', () => {
         expect.objectContaining({
           content: expect.objectContaining({ title: '🔥 Streak Alert!' }),
           trigger: expect.objectContaining({ hour: 21, minute: 0 }),
-        })
+        }),
       );
     });
   });
@@ -103,7 +104,7 @@ describe('notificationService', () => {
         expect.objectContaining({
           content: expect.objectContaining({ title: 'Title', body: 'Body' }),
           trigger: null,
-        })
+        }),
       );
     });
   });
@@ -131,7 +132,15 @@ describe('notificationService', () => {
     };
 
     beforeEach(() => {
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({ granted: true });
+      (Notifications.getAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue([]);
+      (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue('mock-id');
+      (Notifications.cancelAllScheduledNotificationsAsync as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+      (Notifications.setBadgeCountAsync as jest.Mock).mockResolvedValue(undefined);
       (profileRepository.getProfile as jest.Mock).mockResolvedValue(mockProfile);
+      (profileRepository.getDaysToExam as jest.Mock).mockReturnValue(90);
       (getSubjectBreakdown as jest.Mock).mockResolvedValue([]);
       (getNemesisTopics as jest.Mock).mockResolvedValue([]);
       (getWeakestTopics as jest.Mock).mockResolvedValue([]);
@@ -140,15 +149,16 @@ describe('notificationService', () => {
     });
 
     it('should skip if notifications are disabled', async () => {
-      (profileRepository.getProfile as jest.Mock).mockResolvedValue({ ...mockProfile, notificationsEnabled: false });
+      (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+        ...mockProfile,
+        notificationsEnabled: false,
+      });
       await refreshAccountabilityNotifications();
       expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
 
     it('should use AI generated messages', async () => {
-      const aiMessages = [
-        { title: 'AI Title', body: 'AI Body', scheduledFor: 'morning' }
-      ];
+      const aiMessages = [{ title: 'AI Title', body: 'AI Body', scheduledFor: 'morning' }];
       (generateAccountabilityMessages as jest.Mock).mockResolvedValue(aiMessages);
 
       await refreshAccountabilityNotifications();
@@ -157,7 +167,7 @@ describe('notificationService', () => {
         expect.objectContaining({
           content: expect.objectContaining({ title: 'AI Title' }),
           trigger: expect.objectContaining({ hour: 7, minute: 30 }),
-        })
+        }),
       );
     });
 
@@ -170,13 +180,16 @@ describe('notificationService', () => {
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(3);
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
         expect.objectContaining({
-          identifier: 'accountability_morning'
-        })
+          identifier: 'accountability_morning',
+        }),
       );
     });
 
     it('should handle guruFrequency: off', async () => {
-      (profileRepository.getProfile as jest.Mock).mockResolvedValue({ ...mockProfile, guruFrequency: 'off' });
+      (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+        ...mockProfile,
+        guruFrequency: 'off',
+      });
       await refreshAccountabilityNotifications();
 
       expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(1);
@@ -184,7 +197,7 @@ describe('notificationService', () => {
         expect.objectContaining({
           identifier: 'accountability_streak',
           trigger: expect.objectContaining({ hour: 21 }),
-        })
+        }),
       );
     });
   });

@@ -116,7 +116,8 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-const useSessionStoreMock: any = () => ({ ...sessionStoreState });
+const useSessionStoreMock: any = (selector: (state: any) => unknown) =>
+  selector({ ...sessionStoreState });
 useSessionStoreMock.getState = () => sessionStoreState;
 
 jest.mock('../store/useSessionStore', () => ({
@@ -199,6 +200,11 @@ jest.mock('../hooks/useGuruPresence', () => ({
   }),
 }));
 
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement('SafeAreaView', props, children),
+}));
+
 jest.mock('../hooks/useAppStateTransition', () => ({
   useAppStateTransition: jest.fn(),
 }));
@@ -266,6 +272,16 @@ describe('SessionScreen', () => {
     });
     getCurrentContentType.mockReturnValue('quiz');
     sessionStoreState.sessionState = 'studying';
+    sessionStoreState.agenda = {
+      items: [
+        {
+          topic: { id: 77, name: 'ACS', progress: { status: 'reviewed' } },
+          contentTypes: ['quiz'],
+        },
+      ],
+      mode: 'normal',
+      focusNote: '',
+    };
     sessionStoreState.currentContent = {
       type: 'quiz',
       topicName: 'ACS',

@@ -454,6 +454,8 @@ function QuizCard({
   const [selected, setSelected] = useState<number | null>(null);
   const [showExpl, setShowExpl] = useState(false);
   const [score, setScore] = useState(0);
+  const [deepExplanation, setDeepExplanation] = useState<string | null>(null);
+  const [isLoadingDeepExpl, setIsLoadingDeepExpl] = useState(false);
 
   const q = content.questions[currentQ];
   if (!q) return null;
@@ -483,6 +485,7 @@ function QuizCard({
     if (selected !== null) return;
     setSelected(idx);
     setShowExpl(true);
+    setDeepExplanation(null);
     const correct = idx === q.correctIndex;
     if (correct) {
       setScore((s) => {
@@ -494,11 +497,45 @@ function QuizCard({
     onQuizAnswered?.(correct);
   }
 
+  function handleIDontKnow() {
+    if (selected !== null) return;
+    // Reveal the correct answer, mark as incorrect
+    setSelected(-1); // -1 = "I don't know" (no option selected)
+    setShowExpl(true);
+    onQuizAnswered?.(false);
+    // Auto-fetch deeper explanation
+    fetchDeepExplanation();
+  }
+
+  async function fetchDeepExplanation() {
+    if (isLoadingDeepExpl || deepExplanation) return;
+    setIsLoadingDeepExpl(true);
+    try {
+      const context = [
+        `Topic: ${content.topicName}`,
+        `Question: ${q.question}`,
+        `Correct answer: ${q.options[q.correctIndex]}`,
+        `Original explanation: ${q.explanation}`,
+      ].join('\n');
+      const result = await askGuru(
+        `The student doesn't understand this question. Explain the underlying concept in a structured way:\n1. **What is the core concept?** (1-2 sentences)\n2. **Why is "${q.options[q.correctIndex]}" correct?** (explain the reasoning)\n3. **Key facts to remember** (bullet points)\n4. **Clinical/exam tip** (one practical takeaway)`,
+        context,
+      );
+      setDeepExplanation(result);
+    } catch {
+      setDeepExplanation('Could not generate explanation. Try the Guru chat button above for help.');
+    } finally {
+      setIsLoadingDeepExpl(false);
+    }
+  }
+
   function handleNext() {
     if (currentQ < content.questions.length - 1) {
       setCurrentQ((c) => c + 1);
       setSelected(null);
       setShowExpl(false);
+      setDeepExplanation(null);
+      setIsLoadingDeepExpl(false);
     } else {
       // Ref is updated synchronously in handleSelect on last correct; fallback to state.
       const finalScore = Math.max(scoreRef.current, score);
@@ -545,14 +582,58 @@ function QuizCard({
           );
         })}
       </View>
+      {/* "I don't know" button — shown before answering */}
+      {selected === null && (
+        <TouchableOpacity
+          style={s.iDontKnowBtn}
+          onPress={handleIDontKnow}
+          activeOpacity={0.8}
+        >
+          <Text style={s.iDontKnowText}>I don't know — Explain this</Text>
+        </TouchableOpacity>
+      )}
       {showExpl && (
         <View style={s.explBox}>
           <Text style={s.explLabel}>
-            {selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}
+            {selected === q.correctIndex
+              ? '✅ Correct!'
+              : selected === -1
+                ? '💡 Here is the answer:'
+                : '❌ Incorrect'}
           </Text>
-          <View>
+          {/* Show the correct answer prominently when user didn't know */}
+          {selected !== q.correctIndex && (
+            <View style={s.correctAnswerBox}>
+              <Text style={s.correctAnswerLabel}>Correct Answer</Text>
+              <Text style={s.correctAnswerText}>{q.options[q.correctIndex]}</Text>
+            </View>
+          )}
+          <View style={s.explSection}>
+            <Text style={s.explSectionTitle}>Explanation</Text>
             <MarkdownRender content={q.explanation} compact />
           </View>
+        </View>
+      )}
+      {/* Deep AI explanation */}
+      {showExpl && !deepExplanation && !isLoadingDeepExpl && (
+        <TouchableOpacity
+          style={s.explainDeeperBtn}
+          onPress={fetchDeepExplanation}
+          activeOpacity={0.8}
+        >
+          <Text style={s.explainDeeperText}>🧠 Explain the broader topic</Text>
+        </TouchableOpacity>
+      )}
+      {isLoadingDeepExpl && (
+        <View style={s.deepExplLoading}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={s.deepExplLoadingText}>Guru is explaining...</Text>
+        </View>
+      )}
+      {deepExplanation && (
+        <View style={[s.explBox, { borderLeftWidth: 3, borderLeftColor: theme.colors.primary }]}>
+          <Text style={s.explSectionTitle}>🧠 Deeper Explanation</Text>
+          <MarkdownRender content={deepExplanation} compact />
         </View>
       )}
       {showExpl && (
@@ -1269,6 +1350,54 @@ const s = StyleSheet.create({
   optionsContainer: { gap: 8, marginBottom: 12 },
   optionBtn: { borderRadius: 12, padding: 14, borderWidth: 2, minWidth: 0 },
   optionText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
+  iDontKnowBtn: {
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.warning,
+    paddingVertical: 14,
+    alignItems: 'center' as const,
+    marginBottom: 12,
+  },
+  iDontKnowText: { color: theme.colors.warning, fontWeight: '700' as const, fontSize: 15 },
+  correctAnswerBox: {
+    backgroundColor: '#1A2A1A',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+    padding: 10,
+    marginVertical: 8,
+  },
+  correctAnswerLabel: { color: '#4CAF50', fontSize: 11, fontWeight: '700' as const, marginBottom: 4 },
+  correctAnswerText: { color: '#E0E0E0', fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
+  explSection: { marginTop: 8 },
+  explSectionTitle: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '700' as const,
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    textTransform: 'uppercase' as const,
+  },
+  explainDeeperBtn: {
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center' as const,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  explainDeeperText: { color: theme.colors.primary, fontWeight: '700' as const, fontSize: 14 },
+  deepExplLoading: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: 16,
+    marginBottom: 12,
+    gap: 10,
+  },
+  deepExplLoadingText: { color: theme.colors.textSecondary, fontSize: 13, fontStyle: 'italic' as const },
   explBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 12 },
   explLabel: {
     color: theme.colors.textSecondary,

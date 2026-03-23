@@ -27,7 +27,10 @@ export function useHomeDashboardData() {
       setIsLoading(true);
     }
     try {
-      await markNemesisTopics();
+      // Skip expensive nemesis recalculation on silent (background) reloads
+      if (!options?.silent) {
+        await markNemesisTopics();
+      }
       const [weak, due] = await Promise.all([getWeakestTopics(3), getTopicsDueForReview(5)]);
 
       // Fallback: if no weak topics yet (new user), show highest-priority unseen topics

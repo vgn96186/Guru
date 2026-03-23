@@ -91,9 +91,10 @@ function getSessionMode(mood: Mood): SessionMode {
 }
 
 function getSessionLength(mood: Mood, preferred: number): number {
-  if (mood === 'distracted') return 10;
-  if (mood === 'stressed') return 20;
-  if (mood === 'tired') return 30;
+  // Use the mood-appropriate cap, but respect user preference when it's shorter
+  if (mood === 'distracted') return Math.min(preferred, 10);
+  if (mood === 'stressed') return Math.min(preferred, 20);
+  if (mood === 'tired') return Math.min(preferred, 30);
   return preferred;
 }
 

@@ -82,8 +82,8 @@ export default function CheckInScreen() {
     if (submitting) return;
     setSubmitting(true);
     try {
-      // Quick start with default mood and 30min availability
-      await dailyLogRepository.checkinToday('good');
+      // Quick start: use yesterday's mood if available, otherwise default to 'good'
+      await dailyLogRepository.checkinToday(yesterdayMood ?? 'good');
       setDailyAvailability(30);
       // Track consecutive Quick Start usage for auto-skip
       const currentStreak = profile?.quickStartStreak ?? 0;

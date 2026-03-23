@@ -1,0 +1,4 @@
+#!/bin/sh
+# Run unit tests before pushing — blocks push if any test fails.
+# Skip with: git push --no-verify
+npx jest --config jest.unit.config.js --ci --bail --forceExit

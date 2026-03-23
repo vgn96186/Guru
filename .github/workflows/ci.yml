@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, dev, 'feature/**', 'fix/**', 'claude/**']
+    branches: [main, dev, debug, 'feature/**', 'fix/**', 'claude/**']
   pull_request:
-    branches: [main]
+    branches: [main, debug]
 
 jobs:
   lint-and-typecheck:
@@ -49,6 +49,6 @@ jobs:
         run: npm ci
 
       - name: Run unit tests
-        run: npm run test:unit --if-present
+        run: npx jest --config jest.unit.config.js --ci --forceExit
         env:
           NODE_ENV: test

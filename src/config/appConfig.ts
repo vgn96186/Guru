@@ -14,46 +14,88 @@ export const DEFAULT_NEET_DATE =
 // Bundled defaults generated from `.env` by `scripts/generate-bundled-env.js`.
 import * as env from './bundledEnv'; // Import the env object
 
-export const BUNDLED_GROQ_KEY = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY || env.BUNDLED_GROQ_KEY
-  : env.BUNDLED_GROQ_KEY;
-export const BUNDLED_HF_TOKEN = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN || env.BUNDLED_HF_TOKEN
-  : env.BUNDLED_HF_TOKEN;
-export const BUNDLED_OPENROUTER_KEY = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_OPENROUTER_KEY || env.BUNDLED_OPENROUTER_KEY
-  : env.BUNDLED_OPENROUTER_KEY;
-export const BUNDLED_GEMINI_KEY = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_KEY || env.BUNDLED_GEMINI_KEY
-  : env.BUNDLED_GEMINI_KEY;
-export const BUNDLED_GEMINI_FALLBACK_KEY = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_FALLBACK_KEY || env.BUNDLED_GEMINI_FALLBACK_KEY
-  : env.BUNDLED_GEMINI_FALLBACK_KEY;
-export const BUNDLED_CF_ACCOUNT_ID = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_CF_ACCOUNT_ID || env.BUNDLED_CF_ACCOUNT_ID
-  : env.BUNDLED_CF_ACCOUNT_ID;
-export const BUNDLED_CF_API_TOKEN = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_CF_API_TOKEN || env.BUNDLED_CF_API_TOKEN
-  : env.BUNDLED_CF_API_TOKEN;
-export const BUNDLED_DEEPSEEK_KEY = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_DEEPSEEK_KEY || env.BUNDLED_DEEPSEEK_KEY
-  : env.BUNDLED_DEEPSEEK_KEY;
-export const BUNDLED_MULEROUTER_KEY = typeof process !== 'undefined'
-  ? process.env.EXPO_PUBLIC_BUNDLED_MULEROUTER_KEY || env.BUNDLED_MULEROUTER_KEY
-  : env.BUNDLED_MULEROUTER_KEY;
+export const BUNDLED_GROQ_KEY =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY || env.BUNDLED_GROQ_KEY
+    : env.BUNDLED_GROQ_KEY;
+export const BUNDLED_HF_TOKEN =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN || env.BUNDLED_HF_TOKEN
+    : env.BUNDLED_HF_TOKEN;
+export const BUNDLED_OPENROUTER_KEY =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_OPENROUTER_KEY || env.BUNDLED_OPENROUTER_KEY
+    : env.BUNDLED_OPENROUTER_KEY;
+export const BUNDLED_GEMINI_KEY =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_KEY || env.BUNDLED_GEMINI_KEY
+    : env.BUNDLED_GEMINI_KEY;
+export const BUNDLED_GEMINI_FALLBACK_KEY =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_FALLBACK_KEY || env.BUNDLED_GEMINI_FALLBACK_KEY
+    : env.BUNDLED_GEMINI_FALLBACK_KEY;
+export const BUNDLED_CF_ACCOUNT_ID =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_CF_ACCOUNT_ID || env.BUNDLED_CF_ACCOUNT_ID
+    : env.BUNDLED_CF_ACCOUNT_ID;
+export const BUNDLED_CF_API_TOKEN =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_CF_API_TOKEN || env.BUNDLED_CF_API_TOKEN
+    : env.BUNDLED_CF_API_TOKEN;
+export const BUNDLED_DEEPSEEK_KEY =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_DEEPSEEK_KEY || env.BUNDLED_DEEPSEEK_KEY
+    : env.BUNDLED_DEEPSEEK_KEY;
+export const BUNDLED_GITHUB_MODELS_PAT =
+  typeof process !== 'undefined'
+    ? process.env.EXPO_PUBLIC_BUNDLED_GITHUB_MODELS_PAT || env.BUNDLED_GITHUB_MODELS_PAT
+    : env.BUNDLED_GITHUB_MODELS_PAT;
+
+/**
+ * GitHub Models inference API (OpenAI-style chat). See REST: POST .../inference/chat/completions.
+ * @see https://docs.github.com/en/rest/models/inference
+ */
+export const GITHUB_MODELS_API_VERSION =
+  (process.env.EXPO_PUBLIC_GITHUB_MODELS_API_VERSION ?? '2022-11-28').trim() || '2022-11-28';
+
+/** Base host only (no path). Override if GitHub documents a new hostname. */
+export const GITHUB_MODELS_INFERENCE_ORIGIN =
+  (process.env.EXPO_PUBLIC_GITHUB_MODELS_INFERENCE_ORIGIN ?? 'https://models.github.ai').trim() ||
+  'https://models.github.ai';
+
+/** When set, requests use POST /orgs/{org}/inference/chat/completions instead of user-scoped URL. */
+export const GITHUB_MODELS_ORG = (process.env.EXPO_PUBLIC_GITHUB_MODELS_ORG ?? '').trim();
+
+export function getGitHubModelsChatCompletionsUrl(): string {
+  const origin = GITHUB_MODELS_INFERENCE_ORIGIN.replace(/\/$/, '');
+  const org = GITHUB_MODELS_ORG;
+  if (org) return `${origin}/orgs/${org}/inference/chat/completions`;
+  return `${origin}/inference/chat/completions`;
+}
+
+/**
+ * Model IDs for Guru Chat / routing ({publisher}/{model} as in GitHub Models playground).
+ * Adjust via env if catalog names change.
+ */
+export const GITHUB_MODELS_CHAT_MODELS = [
+  'openai/gpt-4.1',
+  'openai/gpt-4o-mini',
+  'meta/Llama-3.3-70B-Instruct',
+] as const;
 
 /** DeepSeek cloud models — explicitly testing deepseek-chat or v3. */
-export const DEEPSEEK_MODELS = [
-  'deepseek-chat',
-  'deepseek-reasoner'
-] as const;
+export const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'] as const;
 
 /**
  * Gemini text chat / streaming — fallback order.
  * Prefer stable **2.5 / 2.0 Flash** first (better free-tier behavior and fewer surprises than preview).
  * **Preview** last so it only runs if listed models fail (saves quota for experimental IDs).
  */
-export const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3-flash-preview'] as const;
+export const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-3-flash-preview',
+] as const;
 
 /**
  * Native JSON + `responseJsonSchema` — stable IDs only (no preview) so quizzes/plans/catalyst
@@ -145,14 +187,7 @@ export const OPENROUTER_FREE_MODELS = [
 ] as const;
 
 /** Groq cloud models — order: best quality first, then fallbacks. */
-export const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',
-  'llama-3.1-8b-instant',
-] as const;
-
-export const MULEROUTER_MODELS = [
-  'qwen3.5-plus',
-] as const;
+export const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const;
 
 /** Default Hugging Face speech-to-text model. */
 export const DEFAULT_HF_TRANSCRIPTION_MODEL =

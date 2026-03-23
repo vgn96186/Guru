@@ -484,7 +484,13 @@ function QuizCard({
     setSelected(idx);
     setShowExpl(true);
     const correct = idx === q.correctIndex;
-    if (correct) setScore((s) => s + 1);
+    if (correct) {
+      setScore((s) => {
+        const next = s + 1;
+        scoreRef.current = next;
+        return next;
+      });
+    }
     onQuizAnswered?.(correct);
   }
 
@@ -494,8 +500,8 @@ function QuizCard({
       setSelected(null);
       setShowExpl(false);
     } else {
-      // Use ref to get the latest score (setScore may not have flushed yet)
-      const finalScore = scoreRef.current;
+      // Ref is updated synchronously in handleSelect on last correct; fallback to state.
+      const finalScore = Math.max(scoreRef.current, score);
       onQuizComplete?.(finalScore, content.questions.length);
       const confidence = Math.round((finalScore / content.questions.length) * 4) + 1;
       onDone(Math.min(5, confidence));

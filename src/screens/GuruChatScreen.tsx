@@ -39,6 +39,7 @@ import {
   coerceGuruChatDefaultModel,
   guruChatPickerNameForCfModel,
   guruChatPickerNameForGeminiModel,
+  guruChatPickerNameForGithubModel,
   guruChatPickerNameForGroqModel,
   guruChatPickerNameForOpenRouterSlug,
 } from '../services/ai/guruChatModelPreference';
@@ -71,7 +72,7 @@ type ChatMessage = {
 type ModelOption = {
   id: string;
   name: string;
-  group: 'Local' | 'Groq' | 'OpenRouter' | 'Gemini' | 'Cloudflare';
+  group: 'Local' | 'Groq' | 'OpenRouter' | 'Gemini' | 'Cloudflare' | 'GitHub Models';
 };
 
 type ChatItem =
@@ -306,6 +307,8 @@ export default function GuruChatScreen() {
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const [sessionSummary, setSessionSummary] = useState('');
   const localLlmWarning = getLocalLlmRamWarning();
+  /** Tracks Settings `guruChatDefaultModel` so we only reset picker when that changes — not on every live model list refresh. */
+  const prevGuruChatDefaultRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     void getSessionMemoryRow(topicName).then((r) => setSessionSummary(r?.summaryText ?? ''));
@@ -347,8 +350,13 @@ export default function GuruChatScreen() {
       });
   }, [topicName]);
 
-  const { groq: groqModelIds, openrouter: orModelIds, gemini: geminiModelIds, cloudflare: cfModelIds } =
-    useLiveGuruChatModels(profile);
+  const {
+    groq: groqModelIds,
+    openrouter: orModelIds,
+    gemini: geminiModelIds,
+    cloudflare: cfModelIds,
+    github: githubModelIds,
+  } = useLiveGuruChatModels(profile);
 
   const availableModels = useMemo(() => {
     const { orKey, groqKey } = getApiKeys(profile ?? undefined);
@@ -398,14 +406,35 @@ export default function GuruChatScreen() {
       });
     }
 
+    if (getApiKeys(profile).githubModelsPat) {
+      githubModelIds.forEach((model) => {
+        list.push({
+          id: `github/${model}`,
+          name: guruChatPickerNameForGithubModel(model),
+          group: 'GitHub Models',
+        });
+      });
+    }
+
     return list;
-  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds]);
+  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds, githubModelIds]);
 
   useEffect(() => {
     if (!profile) return;
     const ids = availableModels.map((m) => m.id);
-    setChosenModel(coerceGuruChatDefaultModel(profile.guruChatDefaultModel, ids));
-  }, [profile?.guruChatDefaultModel, availableModels]);
+    const coerced = coerceGuruChatDefaultModel(profile.guruChatDefaultModel, ids);
+    const key = profile.guruChatDefaultModel ?? '';
+    const isFirstSync = prevGuruChatDefaultRef.current === undefined;
+    const settingsDefaultChanged = !isFirstSync && prevGuruChatDefaultRef.current !== key;
+    prevGuruChatDefaultRef.current = key;
+
+    setChosenModel((prev) => {
+      if (isFirstSync) return coerced;
+      if (!ids.includes(prev)) return coerced;
+      if (settingsDefaultChanged) return coerced;
+      return prev;
+    });
+  }, [profile, profile?.guruChatDefaultModel, availableModels]);
 
   const currentModelName = useMemo(() => {
     const found = availableModels.find((model) => model.id === chosenModel);
@@ -514,11 +543,26 @@ export default function GuruChatScreen() {
 
     try {
       const studyContextLine = await buildBoundedGuruChatStudyContext(profile);
+      const modelForApi = chosenModel === 'auto' ? undefined : chosenModel;
+      // #region agent log
+      fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
+        body: JSON.stringify({
+          sessionId: 'ca9385',
+          hypothesisId: 'H1',
+          location: 'GuruChatScreen.handleSend',
+          message: 'guru_chat_model_passed',
+          data: { chosenModel, modelForApi: modelForApi ?? 'undefined(auto)' },
+          timestamp: Date.now(),
+        }),
+      }).catch(() => {});
+      // #endregion
       const grounded = await chatWithGuruGroundedStreaming(
         question,
         topicName,
         nextHistory,
-        chosenModel === 'auto' ? undefined : chosenModel,
+        modelForApi,
         (delta) => {
           if (!sawFirstToken) {
             sawFirstToken = true;
@@ -584,7 +628,9 @@ export default function GuruChatScreen() {
           'guru',
           grounded.reply,
           guruTs,
-          grounded.sources && grounded.sources.length > 0 ? JSON.stringify(grounded.sources) : undefined,
+          grounded.sources && grounded.sources.length > 0
+            ? JSON.stringify(grounded.sources)
+            : undefined,
           grounded.modelUsed,
         );
       } catch {

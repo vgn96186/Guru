@@ -12,9 +12,25 @@ import { RateLimitError } from './schemas';
 
 /** Resolve backend attempt order from profile. Used by both JSON and text routing. */
 function getBackendAttemptOrder(profile: UserProfile): any {
-  const { orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } = getApiKeys(profile);
+  const {
+    orKey,
+    groqKey,
+    geminiKey,
+    geminiFallbackKey,
+    cfAccountId,
+    cfApiToken,
+    deepseekKey,
+    githubModelsPat,
+  } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
-  const hasCloud = !!orKey || !!groqKey || !!geminiKey || !!geminiFallbackKey || (!!cfAccountId && !!cfApiToken) || !!deepseekKey || !!mulerouterKey;
+  const hasCloud =
+    !!orKey ||
+    !!groqKey ||
+    !!geminiKey ||
+    !!geminiFallbackKey ||
+    (!!cfAccountId && !!cfApiToken) ||
+    !!deepseekKey ||
+    !!githubModelsPat;
 
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
@@ -25,7 +41,17 @@ function getBackendAttemptOrder(profile: UserProfile): any {
       'No AI backend available. Download a local model or add an API key in Settings.',
     );
 
-  return { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey };
+  return {
+    attempts,
+    orKey,
+    groqKey,
+    geminiKey,
+    geminiFallbackKey,
+    cfAccountId,
+    cfApiToken,
+    deepseekKey,
+    githubModelsPat,
+  };
 }
 
 export async function generateJSONWithRouting<T>(
@@ -33,10 +59,39 @@ export async function generateJSONWithRouting<T>(
   schema: z.ZodType<T>,
   taskComplexity: 'low' | 'high' = 'low',
   queueOnFailure = true,
+  forceProvider?: 'groq' | 'gemini',
 ): Promise<{ parsed: T; modelUsed: string }> {
   const profile = await profileRepository.getProfile();
-  const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
-    getBackendAttemptOrder(profile);
+  let {
+    attempts,
+    orKey,
+    groqKey,
+    geminiKey,
+    geminiFallbackKey,
+    cfAccountId,
+    cfApiToken,
+    deepseekKey,
+    githubModelsPat,
+  } = getBackendAttemptOrder(profile);
+
+  if (forceProvider === 'groq') {
+    attempts = ['cloud'];
+    orKey = undefined;
+    geminiKey = undefined;
+    geminiFallbackKey = undefined;
+    cfAccountId = undefined;
+    cfApiToken = undefined;
+    deepseekKey = undefined;
+    githubModelsPat = undefined;
+  } else if (forceProvider === 'gemini') {
+    attempts = ['cloud'];
+    orKey = undefined;
+    groqKey = undefined;
+    cfAccountId = undefined;
+    cfApiToken = undefined;
+    deepseekKey = undefined;
+    githubModelsPat = undefined;
+  }
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -47,7 +102,6 @@ export async function generateJSONWithRouting<T>(
         return { parsed, modelUsed };
       }
 
-      // 2. Cloud Path (Routing includes Qwen -> DeepSeek -> Groq -> Gemini)
       const { text, modelUsed } = await attemptCloudLLM(
         messages,
         orKey,
@@ -59,7 +113,7 @@ export async function generateJSONWithRouting<T>(
         cfAccountId,
         cfApiToken,
         deepseekKey,
-        mulerouterKey,
+        githubModelsPat,
       );
       const parsed = await parseStructuredJson(text, schema);
       return { parsed, modelUsed };
@@ -101,8 +155,17 @@ export async function generateTextWithRouting(
     return await attemptLocalLLM(messages, profile.localModelPath!, true);
   }
 
-  const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
-    getBackendAttemptOrder(profile);
+  const {
+    attempts,
+    orKey,
+    groqKey,
+    geminiKey,
+    geminiFallbackKey,
+    cfAccountId,
+    cfApiToken,
+    deepseekKey,
+    githubModelsPat,
+  } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -121,7 +184,7 @@ export async function generateTextWithRouting(
               cfAccountId,
               cfApiToken,
               deepseekKey,
-              mulerouterKey,
+              githubModelsPat,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       return { text, modelUsed };
@@ -165,8 +228,17 @@ export async function generateTextWithRoutingStream(
     return { text, modelUsed };
   }
 
-  const { attempts, orKey, groqKey, geminiKey, geminiFallbackKey, cfAccountId, cfApiToken, deepseekKey, mulerouterKey } =
-    getBackendAttemptOrder(profile);
+  const {
+    attempts,
+    orKey,
+    groqKey,
+    geminiKey,
+    geminiFallbackKey,
+    cfAccountId,
+    cfApiToken,
+    deepseekKey,
+    githubModelsPat,
+  } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -187,7 +259,7 @@ export async function generateTextWithRoutingStream(
         cfAccountId,
         cfApiToken,
         deepseekKey,
-        mulerouterKey,
+        githubModelsPat,
       );
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);

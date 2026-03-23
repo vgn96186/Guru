@@ -147,6 +147,18 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
   const partialUri = `${targetUri}.partial`;
   const minSize = MIN_MODEL_SIZES[type] ?? 1000;
 
+  updateLocalModelDownload({
+    visible: true,
+    source: 'bootstrap',
+    type,
+    stage: 'verifying',
+    modelName: model.name,
+    progress: 100,
+    downloadedBytes: undefined,
+    totalBytes: undefined,
+    message: type === 'whisper' ? 'Verifying offline transcription' : 'Verifying offline study AI',
+  });
+
   const downloadedValidation = await validateLocalModelFile({
     path: partialUri,
     minBytes: minSize,
@@ -156,10 +168,39 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
       `[Bootstrap] ${type} download too small: ${downloadedValidation.size} bytes, expected >= ${minSize}`,
     );
     await deleteLocalModelFile(partialUri);
+    updateLocalModelDownload({
+      visible: true,
+      source: 'bootstrap',
+      type,
+      stage: 'error',
+      modelName: model.name,
+      progress: 0,
+      message: 'File incomplete or corrupt — will retry on next launch',
+    });
+    activeDownload = null;
+    activeDownloadType = null;
+    isPaused = false;
     return;
   }
 
-  await FileSystem.moveAsync({ from: partialUri, to: targetUri });
+  try {
+    await FileSystem.moveAsync({ from: partialUri, to: targetUri });
+  } catch (moveErr) {
+    console.warn(`[Bootstrap] ${type} finalize (move) failed:`, moveErr);
+    updateLocalModelDownload({
+      visible: true,
+      source: 'bootstrap',
+      type,
+      stage: 'error',
+      modelName: model.name,
+      progress: 0,
+      message: 'Could not finalize download — try again',
+    });
+    activeDownload = null;
+    activeDownloadType = null;
+    isPaused = false;
+    return;
+  }
 
   if (type === 'llm') {
     await profileRepository.updateProfile({

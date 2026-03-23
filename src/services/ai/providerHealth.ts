@@ -3,6 +3,9 @@ import {
   OPENROUTER_FREE_MODELS,
   GEMINI_MODELS,
   CLOUDFLARE_MODELS,
+  GITHUB_MODELS_CHAT_MODELS,
+  GITHUB_MODELS_API_VERSION,
+  getGitHubModelsChatCompletionsUrl,
 } from '../../config/appConfig';
 import { testGeminiConnectionSdk } from './google/geminiHealth';
 
@@ -126,6 +129,37 @@ export async function testGeminiConnection(key: string): Promise<ProviderHealthR
 }
 
 /** Workers AI chat probe — requires account ID + API token with AI read permission. */
+/** Minimal chat probe — GitHub Models REST (OpenAI-style body). PAT needs `models: read`. */
+export async function testGitHubModelsConnection(pat: string): Promise<ProviderHealthResult> {
+  const trimmed = pat.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty token' };
+  }
+  try {
+    const res = await fetch(getGitHubModelsChatCompletionsUrl(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': GITHUB_MODELS_API_VERSION,
+        Authorization: `Bearer ${trimmed}`,
+      },
+      body: JSON.stringify({
+        model: GITHUB_MODELS_CHAT_MODELS[0],
+        messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+        max_tokens: 8,
+      }),
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
 export async function testCloudflareConnection(
   accountId: string,
   apiToken: string,

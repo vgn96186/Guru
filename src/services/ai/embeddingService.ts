@@ -1,4 +1,6 @@
+import * as SQLite from 'expo-sqlite';
 import { profileRepository } from '../../db/repositories';
+import { getDb } from '../../db/database';
 import { getApiKeys } from './config';
 
 /**
@@ -32,8 +34,8 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
           body: JSON.stringify({
             model: 'models/gemini-embedding-001',
             content: { parts: [{ text: normalized.slice(0, 10000) }] },
-            // Matryoshka learning supports scaling dimensions. 
-            // 768 is a good balance, or leave default (3072). 
+            // Matryoshka learning supports scaling dimensions.
+            // 768 is a good balance, or leave default (3072).
             // We'll use 768 as it's the most common stable dimension for this model series.
             outputDimensionality: 768,
           }),
@@ -89,12 +91,49 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     if (!Array.isArray(embedding) || embedding.length === 0) {
       throw new Error('Embedding response did not include a vector');
     }
-    if (__DEV__) console.log(`[Embedding] OpenRouter success: text-3-small (${embedding.length} dims)`);
+    if (__DEV__)
+      console.log(`[Embedding] OpenRouter success: text-3-small (${embedding.length} dims)`);
     return embedding;
   } catch (err) {
     if (__DEV__ && _embeddingFailCount < EMBEDDING_FAIL_THRESHOLD + 1)
       console.warn('[Embedding] Error:', err);
     return null;
+  }
+}
+
+let _embeddingSeedTask: Promise<void> | null = null;
+
+export function startMissingTopicEmbeddingSeed(): void {
+  if (_embeddingSeedTask) return;
+  const db = getDb();
+  _embeddingSeedTask = seedMissingTopicEmbeddings(db)
+    .catch((e) => {
+      if (__DEV__) console.warn('[DB] Embedding pre-seed failed:', e);
+    })
+    .finally(() => {
+      _embeddingSeedTask = null;
+    });
+}
+
+async function seedMissingTopicEmbeddings(db: SQLite.SQLiteDatabase) {
+  const rows = await db.getAllAsync<{ id: number; name: string }>(
+    'SELECT id, name FROM topics WHERE embedding IS NULL LIMIT 20',
+  );
+  if (rows.length === 0) return;
+
+  if (__DEV__) console.log(`[DB] Pre-seeding ${rows.length} topic embeddings...`);
+
+  for (const row of rows) {
+    try {
+      const vec = await generateEmbedding(row.name);
+      if (!vec) continue;
+      await db.runAsync('UPDATE topics SET embedding = ? WHERE id = ?', [
+        embeddingToBlob(vec),
+        row.id,
+      ]);
+    } catch (e) {
+      if (__DEV__) console.warn(`[DB] Failed to embed topic ${row.name}:`, e);
+    }
   }
 }
 

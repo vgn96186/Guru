@@ -1,6 +1,6 @@
 /**
  * Guru Chat default model id persisted in Settings (`user_profile.guru_chat_default_model`).
- * Ids match `GuruChatScreen` model picker: `auto`, `local`, `groq/...`, OpenRouter slug, `gemini/...`, `cf/...`.
+ * Ids match `GuruChatScreen` model picker: `auto`, `local`, `groq/...`, `github/{publisher}/{model}`, OpenRouter slug, `gemini/...`, `cf/...`.
  */
 
 export function coerceGuruChatDefaultModel(
@@ -30,6 +30,10 @@ export function formatGuruChatModelChipLabel(modelId: string): string {
     const tail = modelId.split('/').pop() ?? modelId;
     return tail.length > 24 ? `${tail.slice(0, 22)}…` : tail;
   }
+  if (modelId.startsWith('github/')) {
+    const rest = modelId.slice('github/'.length);
+    return rest.length > 26 ? `${rest.slice(0, 24)}…` : rest;
+  }
   if (modelId.includes('/')) {
     const parts = modelId.split('/');
     const rest = parts[1] ?? modelId;
@@ -56,4 +60,10 @@ export function guruChatPickerNameForGeminiModel(model: string): string {
 
 export function guruChatPickerNameForCfModel(model: string): string {
   return model.split('/').pop()!.toUpperCase();
+}
+
+/** `publisher/model` id after `github/` prefix (GitHub Models inference API). */
+export function guruChatPickerNameForGithubModel(modelId: string): string {
+  const m = modelId.includes('/') ? modelId : modelId;
+  return m.replace(/\//g, ' · ').toUpperCase();
 }

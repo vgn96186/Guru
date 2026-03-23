@@ -6,6 +6,7 @@
 import * as SplashScreen from 'expo-splash-screen';
 import * as FileSystem from 'expo-file-system/legacy';
 import { initDatabase, getDb, resetDbSingleton } from '../db/database';
+import { startMissingTopicEmbeddingSeed } from './ai/embeddingService';
 import { registerBackgroundFetch } from './backgroundTasks';
 import { bootstrapLocalModels } from './localModelBootstrap';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
@@ -43,9 +44,23 @@ async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
   const backups = await listPublicBackups();
   if (!backups.includes('guru_latest.db')) return false;
 
-  // Close current DB
-  db.closeSync();
+  // Close current DB gracefully to allow pending statements to finalize
+  if (typeof db.closeAsync === 'function') {
+    await db.closeAsync();
+  } else {
+    db.closeSync();
+  }
   resetDbSingleton();
+
+  // Drop AI cache files so restored main DB is the only source of truth (legacy backups embed ai_cache).
+  const aiCacheBase = stripFileUri(FileSystem.documentDirectory + 'SQLite/neet_ai_cache');
+  for (const ext of ['.db', '.db-wal', '.db-shm'] as const) {
+    try {
+      await FileSystem.deleteAsync(aiCacheBase + ext, { idempotent: true });
+    } catch {
+      /* ignore */
+    }
+  }
 
   // Copy backup over current DB
   const dbPath = FileSystem.documentDirectory + 'SQLite/neet_study.db';
@@ -101,6 +116,7 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
     // Heavy background tasks: only on devices with >= 3 GB RAM
     const { isBackgroundRecoveryAllowed } = await import('./deviceMemory');
     if (isBackgroundRecoveryAllowed()) {
+      startMissingTopicEmbeddingSeed(); // Non-blocking async queue
       bootstrapLocalModels().catch((e: unknown) =>
         console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
       );

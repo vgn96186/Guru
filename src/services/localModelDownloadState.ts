@@ -23,6 +23,13 @@ type Listener = (snapshot: LocalModelDownloadSnapshot | null) => void;
 
 let snapshot: LocalModelDownloadSnapshot | null = null;
 const listeners = new Set<Listener>();
+const STAGE_RANK: Record<LocalModelDownloadStage, number> = {
+  preparing: 1,
+  downloading: 2,
+  verifying: 3,
+  complete: 4,
+  error: 4,
+};
 
 function emit(nextSnapshot: LocalModelDownloadSnapshot | null): void {
   snapshot = nextSnapshot;
@@ -42,6 +49,31 @@ export function subscribeToLocalModelDownload(listener: Listener): () => void {
 }
 
 export function updateLocalModelDownload(nextSnapshot: LocalModelDownloadSnapshot): void {
+  if (snapshot && nextSnapshot) {
+    const isSameDownload =
+      snapshot.type === nextSnapshot.type &&
+      snapshot.source === nextSnapshot.source &&
+      snapshot.modelName === nextSnapshot.modelName;
+    if (isSameDownload) {
+      // Stale Expo progress callbacks can fire after we moved to verifying/complete.
+      if (
+        (snapshot.stage === 'verifying' ||
+          snapshot.stage === 'complete' ||
+          snapshot.stage === 'error') &&
+        nextSnapshot.stage === 'downloading'
+      ) {
+        return;
+      }
+      // After terminal states, ignore earlier pipeline stages (except fresh duplicates).
+      if (snapshot.stage === 'complete' || snapshot.stage === 'error') {
+        const currentRank = STAGE_RANK[snapshot.stage];
+        const nextRank = STAGE_RANK[nextSnapshot.stage];
+        if (nextRank < currentRank) {
+          return;
+        }
+      }
+    }
+  }
   emit(nextSnapshot);
 }
 

@@ -74,7 +74,13 @@ export async function generateAccountabilityMessages(stats: {
   const AccountMsgSchema = z.object({
     messages: z.array(z.object({ title: z.string(), body: z.string(), scheduledFor: z.string() })),
   });
-  const { parsed } = await generateJSONWithRouting(messages, AccountMsgSchema, 'high');
+  const { parsed } = await generateJSONWithRouting(
+    messages,
+    AccountMsgSchema,
+    'high',
+    true,
+    'groq',
+  );
   return parsed.messages;
 }
 

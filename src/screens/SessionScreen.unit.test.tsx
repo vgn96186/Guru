@@ -3,10 +3,10 @@ import { render, waitFor } from '@testing-library/react-native';
 import { incrementWrongCount, markTopicNeedsAttention } from '../db/queries/topics';
 import { setContentFlagged } from '../db/queries/aiCache';
 
-const navigateMock = jest.fn();
-const goBackMock = jest.fn();
-const buildSessionMock = jest.fn();
-const createSessionMock = jest.fn();
+const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
+const mockBuildSession = jest.fn();
+const mockCreateSession = jest.fn();
 
 jest.mock('react-native', () => {
   const React = require('react');
@@ -48,6 +48,13 @@ jest.mock('react-native', () => {
     },
   };
 });
+
+jest.mock('expo-haptics', () => ({
+  impactAsync: jest.fn(),
+  notificationAsync: jest.fn(),
+  NotificationFeedbackType: { Success: 'success' },
+  ImpactFeedbackStyle: { Medium: 'medium' },
+}));
 
 const sessionStoreState: any = {
   sessionId: null,
@@ -96,8 +103,8 @@ const sessionStoreState: any = {
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
-    navigate: navigateMock,
-    goBack: goBackMock,
+    navigate: mockNavigate,
+    goBack: mockGoBack,
     getParent: jest.fn(),
     canGoBack: () => true,
   }),
@@ -137,12 +144,13 @@ jest.mock('../store/useAppStore', () => ({
 }));
 
 jest.mock('../services/sessionPlanner', () => ({
-  buildSession: (...args: unknown[]) => buildSessionMock(...args),
+  buildSession: (...args: unknown[]) => mockBuildSession(...args),
 }));
 
 jest.mock('../db/queries/sessions', () => ({
-  createSession: (...args: unknown[]) => createSessionMock(...args),
+  createSession: (...args: unknown[]) => mockCreateSession(...args),
   endSession: jest.fn(),
+  isSessionAlreadyFinalized: jest.fn(async () => false),
 }));
 
 jest.mock('../services/aiService', () => ({
@@ -197,10 +205,10 @@ jest.mock('../hooks/useAppStateTransition', () => ({
 
 jest.mock('../components/LoadingOrb', () => 'LoadingOrb');
 let latestContentCardProps: unknown;
-const contentCardMock = jest.fn();
+const mockContentCard = jest.fn();
 jest.mock('./ContentCard', () => (props: unknown) => {
   latestContentCardProps = props;
-  contentCardMock();
+  mockContentCard();
   return null;
 });
 jest.mock(
@@ -223,26 +231,26 @@ describe('SessionScreen', () => {
     sessionStoreState.sessionId = null;
     sessionStoreState.sessionState = 'planning';
     sessionStoreState.agenda = null;
-    buildSessionMock.mockResolvedValue({
+    mockBuildSession.mockResolvedValue({
       items: [],
       mode: 'normal',
       focusNote: '',
     });
-    createSessionMock.mockResolvedValue(101);
+    mockCreateSession.mockResolvedValue(101);
     sessionStoreState.currentContent = { type: 'quiz' };
     latestContentCardProps = undefined;
   });
 
   it('starts planning only once on initial mount', async () => {
-    const SessionScreen = (await import('./SessionScreen')).default;
+    const SessionScreen = require('./SessionScreen').default;
 
     render(<SessionScreen />);
 
     await waitFor(() => {
-      expect(buildSessionMock).toHaveBeenCalledTimes(1);
+      expect(mockBuildSession).toHaveBeenCalledTimes(1);
     });
     expect(sessionStoreState.resetSession).toHaveBeenCalledTimes(1);
-    expect(createSessionMock).toHaveBeenCalledTimes(1);
+    expect(mockCreateSession).toHaveBeenCalledTimes(1);
   });
 
   it('marks wrong quiz answers as needing attention immediately', async () => {
@@ -264,11 +272,11 @@ describe('SessionScreen', () => {
       questions: [],
     };
 
-    const SessionScreen = (await import('./SessionScreen')).default;
+    const SessionScreen = require('./SessionScreen').default;
     render(<SessionScreen />);
 
     await waitFor(() => {
-      expect(contentCardMock).toHaveBeenCalled();
+      expect(mockContentCard).toHaveBeenCalled();
     });
 
     const latestProps = latestContentCardProps as {

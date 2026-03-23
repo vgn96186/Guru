@@ -36,8 +36,16 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
   const scale = useRef(new Animated.Value(0.8)).current;
   const opacity = useRef(new Animated.Value(0.4)).current;
 
+  // Use a ref to track the last message used for variation picking
+  const lastMessageRef = useRef(message);
+
   useEffect(() => {
-    setDisplayMessage(getRandomVariation(message));
+    // Only update if the message has actually changed
+    if (lastMessageRef.current !== message) {
+      setDisplayMessage(getRandomVariation(message));
+      lastMessageRef.current = message;
+    }
+
     const interval = setInterval(() => {
       setDisplayMessage(getRandomVariation(message));
     }, 3000);

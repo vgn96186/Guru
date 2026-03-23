@@ -47,6 +47,16 @@ export async function createSession(
   return result.lastInsertRowId;
 }
 
+/** True if this session row already has ended_at (avoid double endSession / daily_log inflation). */
+export async function isSessionAlreadyFinalized(sessionId: number): Promise<boolean> {
+  const db = getDb();
+  const r = await db.getFirstAsync<{ ended_at: number | null }>(
+    'SELECT ended_at FROM sessions WHERE id = ?',
+    [sessionId],
+  );
+  return r != null && r.ended_at != null;
+}
+
 export async function endSession(
   sessionId: number,
   completedTopics: number[],

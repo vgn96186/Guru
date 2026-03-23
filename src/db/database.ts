@@ -1,16 +1,30 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import { ALL_SCHEMAS, DB_INDEXES } from './schema';
+import {
+  ALL_SCHEMAS,
+  DB_INDEXES,
+  CREATE_AI_CACHE_ATTACHED,
+  CREATE_INDEX_AI_CACHE_ATTACHED,
+} from './schema';
 import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
-import { generateEmbedding, embeddingToBlob } from '../services/ai/embeddingService';
 import { MS_PER_DAY } from '../constants/time';
 
 let _db: SQLite.SQLiteDatabase | null = null;
+const _embeddingSeedTask: Promise<void> | null = null;
+/** True after `neet_ai_cache.db` is ATTACHed on the main connection and schema exists. */
+let _aiCacheAttachedReady = false;
 
-/** Typed access to the global DB slot (survives hot reloads in dev). */
-const _globalDb = global as unknown as { __GURU_DB__?: SQLite.SQLiteDatabase };
+/** Typed access to the global DB slot and init queue (survives hot reloads in dev). */
+const _globalDb = global as unknown as {
+  __GURU_DB__?: SQLite.SQLiteDatabase;
+  __GURU_DB_INIT_QUEUE__?: Promise<void>;
+};
+
+if (!_globalDb.__GURU_DB_INIT_QUEUE__) {
+  _globalDb.__GURU_DB_INIT_QUEUE__ = Promise.resolve();
+}
 
 export function getDb(): SQLite.SQLiteDatabase {
   const db = _db || _globalDb.__GURU_DB__;
@@ -18,10 +32,23 @@ export function getDb(): SQLite.SQLiteDatabase {
   return db;
 }
 
+/** Main DB SQL qualifier after ATTACH (JOIN ai_cache with topics / subjects). */
+export const SQL_AI_CACHE = 'guru_aicache.ai_cache';
+
+export function getAiCacheDb(): SQLite.SQLiteDatabase {
+  return getDb();
+}
+
+export function resetAiCacheDbSingleton(): void {
+  _aiCacheAttachedReady = false;
+}
+
 /** Clear the DB singleton (used before re-importing a backup). */
 export function resetDbSingleton(): void {
   _db = null;
   _globalDb.__GURU_DB__ = undefined;
+  _globalDb.__GURU_DB_INIT_QUEUE__ = Promise.resolve();
+  resetAiCacheDbSingleton();
 }
 
 /**
@@ -44,6 +71,16 @@ export async function runInTransaction<T>(
   fn: (db: SQLite.SQLiteDatabase) => Promise<T>,
 ): Promise<T> {
   const db = getDb();
+
+  if (typeof db.withExclusiveTransactionAsync === 'function') {
+    let result!: T;
+    await db.withExclusiveTransactionAsync(async () => {
+      result = await fn(db);
+    });
+    return result;
+  }
+
+  // Fallback for older test environments
   const inTx = await db.isInTransactionAsync();
   if (inTx) {
     return fn(db);
@@ -64,6 +101,13 @@ export async function runInTransaction<T>(
 }
 
 export async function initDatabase(forceSeed = false): Promise<void> {
+  const run = _globalDb.__GURU_DB_INIT_QUEUE__!.then(() => initDatabaseInternal(forceSeed));
+  // Keep queue alive even if one init fails; callers still receive original rejection via `run`.
+  _globalDb.__GURU_DB_INIT_QUEUE__ = run.catch(() => {});
+  return run;
+}
+
+async function initDatabaseInternal(forceSeed = false): Promise<void> {
   if (!_globalDb.__GURU_DB__ || forceSeed) {
     // ─── Database File Migration (Stale Filenames) ───────────────────────────
     const dbDir = FileSystem.documentDirectory + 'SQLite/';
@@ -87,9 +131,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
     _globalDb.__GURU_DB__ = _db;
-
-    // Migrate legacy public files to private storage on startup
-    // DEPRECATED: Handled by lectureSessionMonitor scanAndRecoverOrphanedTranscripts
   } else {
     _db = _globalDb.__GURU_DB__;
   }
@@ -147,9 +188,6 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 
   // Always seed vault topics (idempotent — INSERT OR IGNORE)
   await seedVaultTopics(db);
-  const topicCountAfterRes = await db.getFirstAsync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM topics',
-  );
 
   // Versioned migrations — only run pending ones; fresh installs skip entirely
   const versionRow = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
@@ -164,18 +202,11 @@ export async function initDatabase(forceSeed = false): Promise<void> {
         try {
           await db.execAsync(m.sql);
         } catch (err: any) {
-          // Some migrations can be safely skipped when re-applying on partially-migrated DBs.
           const msg = err?.message || '';
-
-          // If the column already exists, we can safely skip this migration step.
           if (msg.includes('duplicate column name')) {
             if (__DEV__)
               console.log(`[DB] Migration ${m.version} column already exists, skipping.`);
-          }
-          // v76: `daily_plan` → `daily_agenda` rename. If `daily_agenda` already exists,
-          // the rename fails with "already another table or index with this name" but the
-          // desired end-state is already present, so we treat it as applied.
-          else if (
+          } else if (
             m.version === 76 &&
             m.sql.includes('RENAME TO daily_agenda') &&
             msg.includes('already another table or index with this name')
@@ -202,10 +233,13 @@ export async function initDatabase(forceSeed = false): Promise<void> {
     }
   }
 
+  // AI Cache initialization
+  await ensureAiCacheAttachedToMain(db);
+
   // Repair legacy rows before enforcing foreign keys on the shared connection.
   const integrityRepairs = [
     `DELETE FROM topic_progress WHERE topic_id NOT IN (SELECT id FROM topics)`,
-    `DELETE FROM ai_cache WHERE topic_id NOT IN (SELECT id FROM topics)`,
+    `DELETE FROM ${SQL_AI_CACHE} WHERE topic_id NOT IN (SELECT id FROM topics)`,
     `UPDATE lecture_notes SET subject_id = NULL WHERE subject_id IS NOT NULL AND subject_id NOT IN (SELECT id FROM subjects)`,
     `UPDATE external_app_logs
        SET lecture_note_id = NULL
@@ -240,37 +274,34 @@ export async function initDatabase(forceSeed = false): Promise<void> {
 
   // Update streak on open
   await updateStreakOnOpen(db);
-
-  // Pre-seed missing topic embeddings in background
-  seedMissingTopicEmbeddings(db).catch((e) => {
-    if (__DEV__) console.warn('[DB] Embedding pre-seed failed:', e);
-  });
 }
 
-/**
- * Background task to fill in missing embeddings for syllabus topics.
- * Processes in small batches to avoid blocking.
- */
-async function seedMissingTopicEmbeddings(db: SQLite.SQLiteDatabase) {
-  const rows = await db.getAllAsync<{ id: number; name: string }>(
-    'SELECT id, name FROM topics WHERE embedding IS NULL LIMIT 20',
-  );
-  if (rows.length === 0) return;
+/** Strips file:// prefix for SQLite path compatibility. */
+function stripFileUri(uri: string): string {
+  return uri.replace(/^file:\/\//, '');
+}
 
-  if (__DEV__) console.log(`[DB] Pre-seeding ${rows.length} topic embeddings...`);
-
-  for (const row of rows) {
-    try {
-      const vec = await generateEmbedding(row.name);
-      if (!vec) continue;
-      await db.runAsync('UPDATE topics SET embedding = ? WHERE id = ?', [
-        embeddingToBlob(vec),
-        row.id,
-      ]);
-    } catch (e) {
-      if (__DEV__) console.warn(`[DB] Failed to embed topic ${row.name}:`, e);
-    }
+async function attachAiCacheDatabaseForJoins(mainDb: SQLite.SQLiteDatabase): Promise<void> {
+  const raw = FileSystem.documentDirectory ?? '';
+  const dir = raw.replace(/^file:\/\//, '');
+  const cachePath = `${dir}SQLite/neet_ai_cache.db`.replace(/'/g, "''");
+  try {
+    await mainDb.execAsync(`ATTACH DATABASE '${cachePath}' AS guru_aicache`);
+  } catch (err: unknown) {
+    const msg = String((err as Error)?.message ?? err).toLowerCase();
+    if (msg.includes('already attached') || msg.includes('already in use')) return;
+    console.warn('[DB] ATTACH guru_aicache failed:', err);
+    throw err;
   }
+}
+
+/** Attach `neet_ai_cache.db` on the main connection and create cache schema (single handle to that file). */
+async function ensureAiCacheAttachedToMain(mainDb: SQLite.SQLiteDatabase): Promise<void> {
+  if (_aiCacheAttachedReady) return;
+  await attachAiCacheDatabaseForJoins(mainDb);
+  await mainDb.execAsync(CREATE_AI_CACHE_ATTACHED);
+  await mainDb.execAsync(CREATE_INDEX_AI_CACHE_ATTACHED);
+  _aiCacheAttachedReady = true;
 }
 
 /**

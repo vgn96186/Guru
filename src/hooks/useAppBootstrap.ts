@@ -10,6 +10,7 @@ import { invalidatePlanCache } from '../services/studyPlanner';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
 import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';
 import { useAppStateTransition } from './useAppStateTransition';
+import { requestNotifications } from '../services/appPermissions';
 
 /**
  * Master initialization hook.
@@ -71,6 +72,10 @@ export function useAppBootstrap(): void {
 
       await maybePromptOverlayPermissionOnStartup().catch((e) =>
         console.warn('[Overlay] Startup permission prompt failed:', e),
+      );
+
+      await requestNotifications().catch((e) =>
+        console.warn('[Notifications] Startup permission request failed:', e),
       );
 
       // 3. Sync and Maintenance

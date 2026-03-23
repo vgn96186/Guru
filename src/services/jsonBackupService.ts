@@ -1,6 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
+import type { SQLiteDatabase } from 'expo-sqlite';
 import { getDb } from '../db/database';
+import { getAiCacheDb } from '../db/aiCacheDatabase';
 import { shareBackupFileOrAlert } from './backupShare';
 
 const BACKUP_VERSION = 4;
@@ -64,6 +66,10 @@ const JSON_BACKUP_RESTORE_ORDER: BackupTableName[] = [
 
 type BackupTableName = (typeof JSON_BACKUP_TABLES)[number];
 type BackupRow = Record<string, unknown>;
+
+function connectionForTable(table: BackupTableName, main: SQLiteDatabase): SQLiteDatabase {
+  return table === 'ai_cache' ? getAiCacheDb() : main;
+}
 type BackupTableData = Record<BackupTableName, BackupRow[]>;
 type SubjectBackupRef = { shortCode: string; name: string };
 type TopicBackupRef = { subjectShortCode: string; topicName: string };
@@ -186,7 +192,8 @@ export async function exportJsonBackup(): Promise<boolean> {
 
   const tables = {} as BackupTableData;
   for (const table of JSON_BACKUP_TABLES) {
-    const rows = await db.getAllAsync<BackupRow>(`SELECT * FROM ${table}`);
+    const conn = connectionForTable(table, db);
+    const rows = await conn.getAllAsync<BackupRow>(`SELECT * FROM ${table}`);
     tables[table] = rows.map((row) => serializeBackupRow(table, row));
   }
 
@@ -269,8 +276,9 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
 
   const getColumns = async (table: string): Promise<string[]> => {
     try {
-      const info = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
-      return info.map((c) => c.name);
+      const conn = table === 'ai_cache' ? getAiCacheDb() : db;
+      const info = await conn.getAllAsync<{ name: string }>(`PRAGMA table_info(${table})`);
+      return info.map((c: { name: string }) => c.name);
     } catch (err) {
       console.error(`[Backup] Failed to get columns for ${table}:`, err);
       return [];
@@ -335,11 +343,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
         else return null;
       }
       const aref = rawRow.approved_topic_ref as Record<string, unknown> | undefined;
-      if (
-        aref &&
-        typeof aref.subjectShortCode === 'string' &&
-        typeof aref.topicName === 'string'
-      ) {
+      if (aref && typeof aref.subjectShortCode === 'string' && typeof aref.topicName === 'string') {
         const tid = topicIdsByRefKey.get(createTopicRefKey(aref as unknown as TopicBackupRef));
         row.approved_topic_id = tid ?? null;
       }
@@ -354,7 +358,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
     for (const table of JSON_BACKUP_DELETE_ORDER) {
       if (table === 'user_profile') continue;
       if (!(table in tablesFromBackup)) continue;
-      await db.runAsync(`DELETE FROM ${table}`);
+      await connectionForTable(table, db).runAsync(`DELETE FROM ${table}`);
       restoredCounts[table] = 0;
     }
 
@@ -375,6 +379,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
       const rows = tablesFromBackup[table];
       if (!rows || rows.length === 0) continue;
       const tableCols = await getColumns(table);
+      const conn = connectionForTable(table, db);
 
       for (const rawRow of rows) {
         const sanitizedRow = sanitizeRow(table, rawRow);
@@ -382,7 +387,7 @@ export async function importJsonBackup(): Promise<{ ok: boolean; message: string
         const cols = Object.keys(sanitizedRow).filter((c) => tableCols.includes(c));
         const placeholders = cols.map(() => '?').join(', ');
         const values = cols.map((c) => toBindValue(sanitizedRow[c]));
-        await db.runAsync(
+        await conn.runAsync(
           `INSERT OR REPLACE INTO ${table} (${cols.join(', ')}) VALUES (${placeholders})`,
           values,
         );

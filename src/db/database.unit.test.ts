@@ -45,6 +45,7 @@ describe('database.ts', () => {
       await database.initDatabase();
 
       expect(SQLite.openDatabaseAsync).toHaveBeenCalledWith('neet_study.db');
+      expect(SQLite.openDatabaseAsync).toHaveBeenCalledTimes(1);
       expect(database.getDb()).toBeDefined();
     });
   });

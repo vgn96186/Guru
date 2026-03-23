@@ -8,6 +8,20 @@ describe('openaiSseStream', () => {
     expect(sawDone).toBe(false);
   });
 
+  it('consumeSseEventBlock extracts delta.reasoning when content is empty', () => {
+    const block = 'data: {"choices":[{"delta":{"reasoning":"think"}}]}\n';
+    const { texts, sawDone } = consumeSseEventBlock(block);
+    expect(texts).toEqual(['think']);
+    expect(sawDone).toBe(false);
+  });
+
+  it('consumeSseEventBlock extracts message.content when delta is empty', () => {
+    const block = 'data: {"choices":[{"message":{"content":"Done"}}]}\n';
+    const { texts, sawDone } = consumeSseEventBlock(block);
+    expect(texts).toEqual(['Done']);
+    expect(sawDone).toBe(false);
+  });
+
   it('consumeSseEventBlock marks [DONE]', () => {
     const { sawDone, texts } = consumeSseEventBlock('data: [DONE]\n');
     expect(sawDone).toBe(true);

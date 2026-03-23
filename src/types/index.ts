@@ -162,7 +162,8 @@ export interface UserProfile {
    */
   preferGeminiStructuredJson?: boolean;
   deepseekKey?: string;
-  mulerouterKey?: string;
+  /** GitHub Models API — fine-grained PAT with `models: read` (or classic PAT with models scope). */
+  githubModelsPat?: string;
 }
 
 // AI Content shapes

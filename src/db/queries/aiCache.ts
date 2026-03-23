@@ -1,4 +1,5 @@
-import { getDb, nowTs } from '../database';
+import { getDb, nowTs, SQL_AI_CACHE } from '../database';
+import { getAiCacheDb } from '../aiCacheDatabase';
 import type { AIContent, ContentType } from '../../types';
 import { embeddingToBlob } from '../../services/ai/embeddingService';
 import { saveTranscriptToFile } from '../../services/transcriptStorage';
@@ -7,14 +8,19 @@ export async function getCachedContent(
   topicId: number,
   contentType: ContentType,
 ): Promise<AIContent | null> {
-  const db = getDb();
-  const r = await db.getFirstAsync<{ content_json: string }>(
-    'SELECT content_json FROM ai_cache WHERE topic_id = ? AND content_type = ?',
+  const db = getAiCacheDb();
+  const r = await db.getFirstAsync<{ content_json: string; model_used: string | null }>(
+    `SELECT content_json, model_used FROM ${SQL_AI_CACHE} WHERE topic_id = ? AND content_type = ?`,
     [topicId, contentType],
   );
   if (!r) return null;
   try {
-    return JSON.parse(r.content_json) as AIContent;
+    const parsed = JSON.parse(r.content_json) as AIContent;
+    const fromColumn = (r.model_used ?? '').trim();
+    // model_used lives in a dedicated column; legacy cache JSON may omit modelUsed.
+    const modelUsed =
+      (typeof parsed.modelUsed === 'string' && parsed.modelUsed.trim()) || fromColumn || undefined;
+    return { ...parsed, ...(modelUsed ? { modelUsed } : {}) };
   } catch (err) {
     if (__DEV__) console.warn('[aiCache] Failed to parse cached content:', err);
     return null;
@@ -27,9 +33,9 @@ export async function setCachedContent(
   content: AIContent,
   modelUsed: string,
 ): Promise<void> {
-  const db = getDb();
+  const db = getAiCacheDb();
   await db.runAsync(
-    `INSERT INTO ai_cache (topic_id, content_type, content_json, model_used, created_at)
+    `INSERT INTO ${SQL_AI_CACHE} (topic_id, content_type, content_json, model_used, created_at)
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT(topic_id, content_type) DO UPDATE SET
        content_json = excluded.content_json,
@@ -89,11 +95,11 @@ function shuffleQuestions(questions: MockQuestion[]): MockQuestion[] {
 }
 
 export async function getCachedQuestionCount(): Promise<number> {
-  const db = getDb();
+  const db = getAiCacheDb();
   try {
     const row = await db.getFirstAsync<{ count: number }>(
       `SELECT COALESCE(SUM(json_array_length(content_json, '$.questions')), 0) AS count
-       FROM ai_cache
+       FROM ${SQL_AI_CACHE}
        WHERE content_type = 'quiz'`,
     );
     return row?.count ?? 0;
@@ -107,10 +113,11 @@ export async function getCachedQuestionCount(): Promise<number> {
 export async function getMockQuestions(limit: number): Promise<MockQuestion[]> {
   if (limit <= 0) return [];
 
-  const db = getDb();
-  const rowIds = await db.getAllAsync<{ id: number }>(
+  const cacheDb = getAiCacheDb();
+  const mainDb = getDb();
+  const rowIds = await cacheDb.getAllAsync<{ id: number }>(
     `SELECT id
-     FROM ai_cache
+     FROM ${SQL_AI_CACHE}
      WHERE content_type = 'quiz'
      ORDER BY RANDOM()`,
   );
@@ -122,18 +129,18 @@ export async function getMockQuestions(limit: number): Promise<MockQuestion[]> {
   let parsedQuestions: MockQuestion[] = [];
 
   while (offset < rowIds.length && parsedQuestions.length < limit) {
-    const ids = rowIds.slice(offset, offset + batchSize).map((row) => row.id);
+    const ids = rowIds.slice(offset, offset + batchSize).map((row: { id: number }) => row.id);
     offset += batchSize;
     if (ids.length === 0) break;
 
     const placeholders = ids.map(() => '?').join(',');
-    const rows = await db.getAllAsync<{
+    const rows = await mainDb.getAllAsync<{
       content_json: string;
       topic_name: string;
       subject_name: string;
     }>(
       `SELECT c.content_json, t.name AS topic_name, s.name AS subject_name
-       FROM ai_cache c
+       FROM ${SQL_AI_CACHE} c
        JOIN topics t ON c.topic_id = t.id
        JOIN subjects s ON t.subject_id = s.id
        WHERE c.id IN (${placeholders})`,
@@ -155,7 +162,7 @@ export async function getAllCachedQuestions(): Promise<MockQuestion[]> {
     subject_name: string;
   }>(
     `SELECT c.content_json, t.name as topic_name, s.name as subject_name
-     FROM ai_cache c
+     FROM ${SQL_AI_CACHE} c
      JOIN topics t ON c.topic_id = t.id
      JOIN subjects s ON t.subject_id = s.id
      WHERE c.content_type = 'quiz'`,
@@ -168,19 +175,18 @@ export async function setContentFlagged(
   contentType: ContentType,
   flagged: boolean,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync('UPDATE ai_cache SET is_flagged = ? WHERE topic_id = ? AND content_type = ?', [
-    flagged ? 1 : 0,
-    topicId,
-    contentType,
-  ]);
+  const db = getAiCacheDb();
+  await db.runAsync(
+    `UPDATE ${SQL_AI_CACHE} SET is_flagged = ? WHERE topic_id = ? AND content_type = ?`,
+    [flagged ? 1 : 0, topicId, contentType],
+  );
 }
 
 export async function flagTopicForReview(topicId: number, topicName: string): Promise<ContentType> {
-  const db = getDb();
+  const db = getAiCacheDb();
   const existing = await db.getFirstAsync<{ content_type: ContentType }>(
     `SELECT content_type
-     FROM ai_cache
+     FROM ${SQL_AI_CACHE}
      WHERE topic_id = ?
      ORDER BY created_at DESC
      LIMIT 1`,
@@ -214,9 +220,9 @@ export async function isContentFlagged(
   topicId: number,
   contentType: ContentType,
 ): Promise<boolean> {
-  const db = getDb();
+  const db = getAiCacheDb();
   const row = await db.getFirstAsync<{ is_flagged: number }>(
-    'SELECT is_flagged FROM ai_cache WHERE topic_id = ? AND content_type = ?',
+    `SELECT is_flagged FROM ${SQL_AI_CACHE} WHERE topic_id = ? AND content_type = ?`,
     [topicId, contentType],
   );
   return (row?.is_flagged ?? 0) === 1;
@@ -245,7 +251,7 @@ export async function getFlaggedContent(): Promise<FlaggedItem[]> {
   }>(
     `SELECT c.topic_id, t.name AS topic_name, s.name AS subject_name,
             c.content_type, c.content_json, c.model_used, c.created_at
-     FROM ai_cache c
+     FROM ${SQL_AI_CACHE} c
      JOIN topics t ON c.topic_id = t.id
      JOIN subjects s ON t.subject_id = s.id
      WHERE c.is_flagged = 1
@@ -263,16 +269,16 @@ export async function getFlaggedContent(): Promise<FlaggedItem[]> {
 }
 
 export async function clearTopicCache(topicId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ?', [topicId]);
+  const db = getAiCacheDb();
+  await db.runAsync(`DELETE FROM ${SQL_AI_CACHE} WHERE topic_id = ?`, [topicId]);
 }
 
 export async function clearSpecificContentCache(
   topicId: number,
   contentType: ContentType,
 ): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM ai_cache WHERE topic_id = ? AND content_type = ?', [
+  const db = getAiCacheDb();
+  await db.runAsync(`DELETE FROM ${SQL_AI_CACHE} WHERE topic_id = ? AND content_type = ?`, [
     topicId,
     contentType,
   ]);

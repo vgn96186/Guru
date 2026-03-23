@@ -2,7 +2,16 @@ import { AppState } from 'react-native';
 import { initLlama, LlamaContext } from 'llama.rn';
 import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
-import { OPENROUTER_FREE_MODELS, GROQ_MODELS, GEMINI_MODELS, CLOUDFLARE_MODELS, DEEPSEEK_MODELS, MULEROUTER_MODELS } from './config';
+import {
+  OPENROUTER_FREE_MODELS,
+  GROQ_MODELS,
+  GEMINI_MODELS,
+  CLOUDFLARE_MODELS,
+  DEEPSEEK_MODELS,
+  GITHUB_MODELS_CHAT_MODELS,
+  GITHUB_MODELS_API_VERSION,
+  getGitHubModelsChatCompletionsUrl,
+} from './config';
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
@@ -12,6 +21,99 @@ let currentLlamaPath: string | null = null;
 let llamaContextPromise: Promise<LlamaContext> | null = null;
 type AppStateSubscription = { remove?: () => void };
 const APPSTATE_SUB_KEY = '__guru_llmRouting_appState_sub_v1';
+
+/** Metro / RN debugger only — physical devices cannot reach host `127.0.0.1` debug ingest. */
+function devLogOpenRouter(message: string, data: Record<string, unknown>) {
+  if (__DEV__) console.log(`[Guru:OpenRouter] ${message}`, data);
+}
+
+/** Multimodal `message.content` arrays from OpenRouter / OpenAI chat. */
+function stringifyChatMessageContentParts(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return content
+    .map((part) => {
+      if (!part || typeof part !== 'object') return '';
+      const p = part as Record<string, unknown>;
+      if (p.type === 'text' && typeof p.text === 'string') return p.text;
+      if (typeof p.text === 'string') return p.text;
+      return '';
+    })
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * OpenRouter chat completion JSON: normal `message.content`, multimodal arrays,
+ * reasoning-only models (e.g. some Nemotron streams), top-level `error`, or `refusal`.
+ */
+function extractOpenRouterAssistantText(data: unknown, model: string): string {
+  if (!data || typeof data !== 'object') {
+    throw new Error(`OpenRouter invalid response body for ${model}`);
+  }
+  const d = data as Record<string, unknown>;
+  const topErr = d.error;
+  if (topErr && typeof topErr === 'object') {
+    const em = (topErr as Record<string, unknown>).message;
+    throw new Error(
+      `OpenRouter error (${model}): ${typeof em === 'string' ? em : JSON.stringify(topErr)}`,
+    );
+  }
+
+  const choices = d.choices;
+  if (!Array.isArray(choices) || choices.length === 0) {
+    throw new Error(`OpenRouter returned no choices for ${model}`);
+  }
+
+  const ch0 = choices[0] as Record<string, unknown>;
+  const msg = ch0.message as Record<string, unknown> | undefined;
+
+  if (msg && typeof msg.refusal === 'string' && msg.refusal.trim()) {
+    throw new Error(`OpenRouter model ${model} refused: ${msg.refusal.trim()}`);
+  }
+
+  const fromContent = msg ? stringifyChatMessageContentParts(msg.content) : '';
+  if (fromContent.trim()) return fromContent.trim();
+
+  const reasoningFromMsg = typeof msg?.reasoning === 'string' ? msg.reasoning : '';
+  const reasoningFromMsgDetails =
+    typeof msg?.reasoning_details === 'string' ? msg.reasoning_details : '';
+  const reasoningFromChoice =
+    typeof ch0.reasoning === 'string'
+      ? ch0.reasoning
+      : typeof ch0.reasoning_content === 'string'
+        ? ch0.reasoning_content
+        : '';
+  const reasoning =
+    [reasoningFromMsg, reasoningFromMsgDetails, reasoningFromChoice].find((s) => s.trim()) ?? '';
+
+  if (reasoning.trim()) {
+    devLogOpenRouter('reasoning_text_used', { model, contentLen: reasoning.trim().length });
+    // #region agent log
+    fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
+      body: JSON.stringify({
+        sessionId: 'ca9385',
+        hypothesisId: 'H4',
+        location: 'llmRouting.extractOpenRouterAssistantText',
+        message: 'openrouter_reasoning_fallback',
+        data: { model, contentLen: reasoning.trim().length },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    return reasoning.trim();
+  }
+
+  const legacyText = typeof ch0.text === 'string' ? ch0.text : '';
+  if (legacyText.trim()) return legacyText.trim();
+
+  const fr = ch0.finish_reason;
+  throw new Error(
+    `Empty response from OpenRouter model ${model} (finish_reason: ${String(fr ?? 'n/a')})`,
+  );
+}
 
 // Promise-based mutex: prevents concurrent LLM generation which corrupts native context.
 // Unlike a boolean flag, this properly queues callers and can't deadlock on thrown errors.
@@ -142,6 +244,7 @@ async function callLocalLLM(
 }
 
 async function callOpenRouter(messages: Message[], orKey: string, model: string): Promise<string> {
+  const t0 = Date.now();
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -154,8 +257,15 @@ async function callOpenRouter(messages: Message[], orKey: string, model: string)
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 4096,
     }),
+  });
+
+  devLogOpenRouter('nonstream_http_status', {
+    model,
+    ms: Date.now() - t0,
+    status: res.status,
+    ok: res.ok,
   });
 
   if (res.status === 429) {
@@ -168,8 +278,8 @@ async function callOpenRouter(messages: Message[], orKey: string, model: string)
   }
 
   const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from OpenRouter model ${model}`);
+  const text = extractOpenRouterAssistantText(data, model);
+  devLogOpenRouter('nonstream_done', { model, ms: Date.now() - t0, outLen: text.length });
   return text;
 }
 
@@ -367,6 +477,7 @@ async function streamOpenRouterChat(
   model: string,
   onDelta: (delta: string) => void,
 ): Promise<string> {
+  const t0 = Date.now();
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -379,9 +490,16 @@ async function streamOpenRouterChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 1200,
+      max_tokens: 4096,
       stream: true,
     }),
+  });
+
+  devLogOpenRouter('stream_first_http', {
+    model,
+    msToHeaders: Date.now() - t0,
+    status: res.status,
+    hasBody: !!res.body,
   });
 
   if (res.status === 429) {
@@ -394,13 +512,36 @@ async function streamOpenRouterChat(
   }
 
   if (!res.body) {
+    devLogOpenRouter('stream_no_body_using_nonstream', { model });
     const text = await callOpenRouter(messages, orKey, model);
     onDelta(text);
+    devLogOpenRouter('stream_path_done', {
+      model,
+      msTotal: Date.now() - t0,
+      path: 'nonstream_only',
+    });
     return text;
   }
 
-  const text = await readOpenAiCompatibleSse(res, onDelta);
-  if (!text.trim()) throw new Error(`Empty response from OpenRouter model ${model}`);
+  const tSse = Date.now();
+  let text = await readOpenAiCompatibleSse(res, onDelta);
+  const sseMs = Date.now() - tSse;
+  let usedNonstreamRetry = false;
+  if (!text.trim()) {
+    devLogOpenRouter('stream_empty_retry_nonstream', { model, sseMs, accumulatedLen: text.length });
+    const tRetry = Date.now();
+    text = await callOpenRouter(messages, orKey, model);
+    usedNonstreamRetry = true;
+    devLogOpenRouter('stream_retry_nonstream_ms', { model, retryMs: Date.now() - tRetry });
+    onDelta(text);
+  }
+  devLogOpenRouter('stream_path_done', {
+    model,
+    msTotal: Date.now() - t0,
+    sseMs,
+    usedNonstreamRetry,
+    outLen: text.length,
+  });
   return text;
 }
 
@@ -508,14 +649,23 @@ async function streamDeepSeekChat(
   return text;
 }
 
-/** MuleRouter (MuleAI) — OpenAI-compatible endpoint. */
-async function callMuleRouter(
+function githubModelsHeaders(pat: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': GITHUB_MODELS_API_VERSION,
+    Authorization: `Bearer ${pat}`,
+  };
+}
+
+/** GitHub Models — OpenAI-style chat at models.github.ai (REST inference API). */
+async function callGitHubModels(
   messages: Message[],
-  mulerouterKey: string,
+  pat: string,
   model: string,
   jsonMode = true,
 ): Promise<string> {
-  if (__DEV__) console.log(`[AI] callMuleRouter attempt: model=${model} json=${jsonMode}`);
+  if (__DEV__) console.log(`[AI] callGitHubModels attempt: model=${model} json=${jsonMode}`);
   const clonedMessages = [...messages];
   if (jsonMode) {
     const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
@@ -545,46 +695,39 @@ async function callMuleRouter(
     body.response_format = { type: 'json_object' };
   }
 
-  // Verifying canonical MuleRouter path (vendors/openai/v1) works better than the v1 alias.
-  const res = await fetch('https://api.mulerouter.ai/vendors/openai/v1/chat/completions', {
+  const res = await fetch(getGitHubModelsChatCompletionsUrl(), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mulerouterKey}`,
-    },
+    headers: githubModelsHeaders(pat),
     body: JSON.stringify(body),
   });
 
   if (res.status === 429) {
-    if (__DEV__) console.warn(`[AI] MuleRouter 429: ${model}`);
-    throw new RateLimitError(`MuleRouter rate limit on ${model}`);
+    if (__DEV__) console.warn(`[AI] GitHub Models 429: ${model}`);
+    throw new RateLimitError(`GitHub Models rate limit on ${model}`);
   }
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
-    if (__DEV__) console.error(`[AI] MuleRouter ${res.status} (${model}):`, err);
-    throw new Error(`MuleRouter error ${res.status} (${model}): ${err}`);
+    if (__DEV__) console.error(`[AI] GitHub Models ${res.status} (${model}):`, err);
+    throw new Error(`GitHub Models error ${res.status} (${model}): ${err}`);
   }
 
   const data = await res.json();
   const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from MuleRouter model ${model}`);
-  if (__DEV__) console.log(`[AI] MuleRouter success: ${model} (${text.length} chars)`);
+  if (!text || !text.trim()) throw new Error(`Empty response from GitHub model ${model}`);
+  if (__DEV__) console.log(`[AI] GitHub Models success: ${model} (${text.length} chars)`);
   return text;
 }
 
-async function streamMuleRouterChat(
+async function streamGitHubModelsChat(
   messages: Message[],
-  mulerouterKey: string,
+  pat: string,
   model: string,
   onDelta: (delta: string) => void,
 ): Promise<string> {
-  const res = await fetch('https://api.mulerouter.ai/vendors/openai/v1/chat/completions', {
+  const res = await fetch(getGitHubModelsChatCompletionsUrl(), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${mulerouterKey}`,
-    },
+    headers: githubModelsHeaders(pat),
     body: JSON.stringify({
       model,
       messages,
@@ -595,22 +738,22 @@ async function streamMuleRouterChat(
   });
 
   if (res.status === 429) {
-    throw new RateLimitError(`MuleRouter rate limit on ${model}`);
+    throw new RateLimitError(`GitHub Models rate limit on ${model}`);
   }
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
-    throw new Error(`MuleRouter error ${res.status} (${model}): ${err}`);
+    throw new Error(`GitHub Models error ${res.status} (${model}): ${err}`);
   }
 
   if (!res.body) {
-    const text = await callMuleRouter(messages, mulerouterKey, model, false);
+    const text = await callGitHubModels(messages, pat, model, false);
     onDelta(text);
     return text;
   }
 
   const text = await readOpenAiCompatibleSse(res, onDelta);
-  if (!text.trim()) throw new Error(`Empty response from MuleRouter model ${model}`);
+  if (!text.trim()) throw new Error(`Empty response from GitHub model ${model}`);
   return text;
 }
 
@@ -629,17 +772,54 @@ export async function attemptCloudLLMStream(
   cfAccountId?: string | undefined,
   cfApiToken?: string | undefined,
   deepseekKey?: string | undefined,
-  mulerouterKey?: string | undefined,
+  githubModelsPat?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
-  const preferredGroqModel = chosenModel?.startsWith('groq/') ? chosenModel.replace('groq/', '') : undefined;
-  const preferredGeminiModel = chosenModel?.startsWith('gemini/') ? chosenModel.replace('gemini/', '') : undefined;
-  const preferredCfModel = chosenModel?.startsWith('cf/') ? chosenModel.replace('cf/', '') : undefined;
-  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/') ? chosenModel.replace('deepseek/', '') : undefined;
-  const preferredMulerouterModel = chosenModel?.startsWith('mulerouter/') ? chosenModel.replace('mulerouter/', '') : undefined;
+  const preferredGroqModel = chosenModel?.startsWith('groq/')
+    ? chosenModel.replace('groq/', '')
+    : undefined;
+  const preferredGeminiModel = chosenModel?.startsWith('gemini/')
+    ? chosenModel.replace('gemini/', '')
+    : undefined;
+  const preferredCfModel = chosenModel?.startsWith('cf/')
+    ? chosenModel.replace('cf/', '')
+    : undefined;
+  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/')
+    ? chosenModel.replace('deepseek/', '')
+    : undefined;
+  const preferredGithubModel = chosenModel?.startsWith('github/')
+    ? chosenModel.replace('github/', '')
+    : undefined;
   const preferredOpenRouterModel =
-    chosenModel && !preferredGroqModel && !preferredGeminiModel && !preferredCfModel && !preferredDeepseekModel && !preferredMulerouterModel && chosenModel !== 'local' && chosenModel !== 'auto'
+    chosenModel &&
+    !preferredGroqModel &&
+    !preferredGeminiModel &&
+    !preferredCfModel &&
+    !preferredDeepseekModel &&
+    !preferredGithubModel &&
+    chosenModel !== 'local' &&
+    chosenModel !== 'auto'
       ? chosenModel
       : undefined;
+
+  // #region agent log
+  fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
+    body: JSON.stringify({
+      sessionId: 'ca9385',
+      hypothesisId: 'H2',
+      location: 'llmRouting.attemptCloudLLMStream',
+      message: 'stream_routing_inputs',
+      data: {
+        chosenModel: chosenModel ?? 'undefined',
+        preferredGroq: preferredGroqModel ?? null,
+        preferredOr: preferredOpenRouterModel ?? null,
+        preferredDeepseek: preferredDeepseekModel ?? null,
+      },
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {});
+  // #endregion
 
   let lastCloudError: Error | null = null;
 
@@ -664,7 +844,12 @@ export async function attemptCloudLLMStream(
 
   if (preferredGeminiModel && geminiKey) {
     try {
-      const text = await geminiGenerateContentStreamSdk(messages, geminiKey, preferredGeminiModel, onDelta);
+      const text = await geminiGenerateContentStreamSdk(
+        messages,
+        geminiKey,
+        preferredGeminiModel,
+        onDelta,
+      );
       return { text, modelUsed: `gemini/${preferredGeminiModel}` };
     } catch (err) {
       lastCloudError = err as Error;
@@ -673,29 +858,75 @@ export async function attemptCloudLLMStream(
 
   if (preferredCfModel && cfAccountId && cfApiToken) {
     try {
-      const text = await streamCloudflareChat(messages, cfAccountId, cfApiToken, preferredCfModel, onDelta);
+      const text = await streamCloudflareChat(
+        messages,
+        cfAccountId,
+        cfApiToken,
+        preferredCfModel,
+        onDelta,
+      );
       return { text, modelUsed: `cf/${preferredCfModel}` };
     } catch (err) {
       lastCloudError = err as Error;
     }
   }
 
-  if (preferredMulerouterModel && mulerouterKey) {
+  if (preferredGithubModel && githubModelsPat) {
     try {
-      const text = await streamMuleRouterChat(messages, mulerouterKey, preferredMulerouterModel, onDelta);
-      return { text, modelUsed: `mulerouter/${preferredMulerouterModel}` };
+      const text = await streamGitHubModelsChat(
+        messages,
+        githubModelsPat,
+        preferredGithubModel,
+        onDelta,
+      );
+      return { text, modelUsed: `github/${preferredGithubModel}` };
     } catch (err) {
       lastCloudError = err as Error;
     }
   }
 
+  if (preferredDeepseekModel && deepseekKey) {
+    try {
+      const text = await streamDeepSeekChat(messages, deepseekKey, preferredDeepseekModel, onDelta);
+      return { text, modelUsed: `deepseek/${preferredDeepseekModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  const userPickedSpecificModel =
+    !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
+  if (userPickedSpecificModel) {
+    // #region agent log
+    fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': 'ca9385' },
+      body: JSON.stringify({
+        sessionId: 'ca9385',
+        hypothesisId: 'H3',
+        location: 'llmRouting.attemptCloudLLMStream',
+        message: 'explicit_model_failed_no_fallback',
+        data: {
+          chosenModel,
+          lastError: lastCloudError?.message ?? null,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+    if (lastCloudError) throw lastCloudError;
+    throw new Error(
+      `Could not use the selected chat model (${chosenModel}). Check API keys in Settings.`,
+    );
+  }
+
   // 2. Default Routing
-  if (mulerouterKey) {
-    for (const model of MULEROUTER_MODELS) {
-      if (preferredMulerouterModel && model === preferredMulerouterModel) continue;
+  if (deepseekKey) {
+    for (const model of DEEPSEEK_MODELS) {
+      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
       try {
-        const text = await streamMuleRouterChat(messages, mulerouterKey, model, onDelta);
-        return { text, modelUsed: `mulerouter/${model}` };
+        const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
+        return { text, modelUsed: `deepseek/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -704,12 +935,12 @@ export async function attemptCloudLLMStream(
     }
   }
 
-  if (deepseekKey) {
-    for (const model of DEEPSEEK_MODELS) {
-      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
+  if (githubModelsPat) {
+    for (const model of GITHUB_MODELS_CHAT_MODELS) {
+      if (preferredGithubModel && model === preferredGithubModel) continue;
       try {
-        const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
-        return { text, modelUsed: `deepseek/${model}` };
+        const text = await streamGitHubModelsChat(messages, githubModelsPat, model, onDelta);
+        return { text, modelUsed: `github/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -750,7 +981,12 @@ export async function attemptCloudLLMStream(
     for (const model of GEMINI_MODELS) {
       if (preferredGeminiModel && model === preferredGeminiModel) continue;
       try {
-        const text = await geminiGenerateContentStreamSdk(messages, geminiFallbackKey, model, onDelta);
+        const text = await geminiGenerateContentStreamSdk(
+          messages,
+          geminiFallbackKey,
+          model,
+          onDelta,
+        );
         return { text, modelUsed: `gemini/${model} (fallback_key)` };
       } catch (err) {
         lastCloudError = err as Error;
@@ -868,38 +1104,55 @@ export async function attemptCloudLLM(
   cfAccountId?: string | undefined,
   cfApiToken?: string | undefined,
   deepseekKey?: string | undefined,
-  mulerouterKey?: string | undefined,
+  githubModelsPat?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
-  const preferredGroqModel = chosenModel?.startsWith('groq/') ? chosenModel.replace('groq/', '') : undefined;
-  const preferredGeminiModel = chosenModel?.startsWith('gemini/') ? chosenModel.replace('gemini/', '') : undefined;
-  const preferredCfModel = chosenModel?.startsWith('cf/') ? chosenModel.replace('cf/', '') : undefined;
-  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/') ? chosenModel.replace('deepseek/', '') : undefined;
-  const preferredMulerouterModel = chosenModel?.startsWith('mulerouter/') ? chosenModel.replace('mulerouter/', '') : undefined;
+  const preferredGroqModel = chosenModel?.startsWith('groq/')
+    ? chosenModel.replace('groq/', '')
+    : undefined;
+  const preferredGeminiModel = chosenModel?.startsWith('gemini/')
+    ? chosenModel.replace('gemini/', '')
+    : undefined;
+  const preferredCfModel = chosenModel?.startsWith('cf/')
+    ? chosenModel.replace('cf/', '')
+    : undefined;
+  const preferredDeepseekModel = chosenModel?.startsWith('deepseek/')
+    ? chosenModel.replace('deepseek/', '')
+    : undefined;
+  const preferredGithubModel = chosenModel?.startsWith('github/')
+    ? chosenModel.replace('github/', '')
+    : undefined;
   const preferredOpenRouterModel =
-    chosenModel && !preferredGroqModel && !preferredGeminiModel && !preferredCfModel && !preferredDeepseekModel && !preferredMulerouterModel && chosenModel !== 'local' && chosenModel !== 'auto'
+    chosenModel &&
+    !preferredGroqModel &&
+    !preferredGeminiModel &&
+    !preferredCfModel &&
+    !preferredDeepseekModel &&
+    !preferredGithubModel &&
+    chosenModel !== 'local' &&
+    chosenModel !== 'auto'
       ? chosenModel
       : undefined;
 
   let lastCloudError: Error | null = null;
 
   // 1. Explicit UI Selections
-  if (preferredMulerouterModel && mulerouterKey) {
-    try {
-      const text = textMode
-        ? await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel, false)
-        : await callMuleRouter(messages, mulerouterKey, preferredMulerouterModel);
-      return { text, modelUsed: `mulerouter/${preferredMulerouterModel}` };
-    } catch (err) {
-      lastCloudError = err as Error;
-    }
-  }
-
   if (preferredDeepseekModel && deepseekKey) {
     try {
       const text = textMode
         ? await callDeepSeek(messages, deepseekKey, preferredDeepseekModel, false)
         : await callDeepSeek(messages, deepseekKey, preferredDeepseekModel);
       return { text, modelUsed: `deepseek/${preferredDeepseekModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredGithubModel && githubModelsPat) {
+    try {
+      const text = textMode
+        ? await callGitHubModels(messages, githubModelsPat, preferredGithubModel, false)
+        : await callGitHubModels(messages, githubModelsPat, preferredGithubModel);
+      return { text, modelUsed: `github/${preferredGithubModel}` };
     } catch (err) {
       lastCloudError = err as Error;
     }
@@ -944,22 +1197,6 @@ export async function attemptCloudLLM(
   }
 
   // 2. Default Routing
-  if (mulerouterKey) {
-    for (const model of MULEROUTER_MODELS) {
-      if (preferredMulerouterModel && model === preferredMulerouterModel) continue;
-      try {
-        const text = textMode
-          ? await callMuleRouter(messages, mulerouterKey, model, false)
-          : await callMuleRouter(messages, mulerouterKey, model);
-        return { text, modelUsed: `mulerouter/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
   if (deepseekKey) {
     for (const model of DEEPSEEK_MODELS) {
       if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
@@ -968,6 +1205,22 @@ export async function attemptCloudLLM(
           ? await callDeepSeek(messages, deepseekKey, model, false)
           : await callDeepSeek(messages, deepseekKey, model);
         return { text, modelUsed: `deepseek/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (githubModelsPat) {
+    for (const model of GITHUB_MODELS_CHAT_MODELS) {
+      if (preferredGithubModel && model === preferredGithubModel) continue;
+      try {
+        const text = textMode
+          ? await callGitHubModels(messages, githubModelsPat, model, false)
+          : await callGitHubModels(messages, githubModelsPat, model);
+        return { text, modelUsed: `github/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;

@@ -209,6 +209,18 @@ export async function runFullTranscriptionPipeline(opts: {
 
 async function enhanceNoteInBackground(noteId: number, logId: number, analysis: LectureAnalysis) {
   try {
+    // If the transcript yielded no useful medical context, mark as completed to prevent endless retries
+    if (
+      !analysis.subject ||
+      analysis.subject.toLowerCase().includes('unclear') ||
+      (analysis.topics.length === 0 && analysis.keyConcepts.length === 0)
+    ) {
+      if (__DEV__)
+        console.log(`[SessionMonitor] Skipping enhancement for empty/unclear note ${noteId}`);
+      await updateSessionNoteEnhancementStatus(logId, 'completed');
+      return;
+    }
+
     const existingNote = await getLectureNoteById(noteId);
     const currentNote = existingNote?.note?.trim() ?? '';
     const enhanced = await generateADHDNote(analysis);

@@ -51,7 +51,7 @@ describe('generateJSONWithRouting', () => {
       cfApiToken: undefined,
       geminiFallbackKey: undefined,
       deepseekKey: undefined,
-      mulerouterKey: undefined,
+      githubModelsPat: undefined,
     });
     jest.mocked(profileRepository.getProfile).mockResolvedValue(minimalProfile);
     jest.mocked(geminiGenerateStructuredJsonSdk).mockReset();
@@ -63,7 +63,7 @@ describe('generateJSONWithRouting', () => {
     const parsed = { a: 1 };
     jest.mocked(attemptCloudLLM).mockResolvedValue({
       text: '{"a":1}',
-      modelUsed: 'mulerouter/qwen3.5-plus',
+      modelUsed: 'deepseek/deepseek-chat',
     });
 
     const schema = z.object({ a: z.number() });
@@ -75,7 +75,7 @@ describe('generateJSONWithRouting', () => {
     );
 
     expect(out.parsed).toEqual(parsed);
-    expect(out.modelUsed).toBe('mulerouter/qwen3.5-plus');
+    expect(out.modelUsed).toBe('deepseek/deepseek-chat');
     expect(attemptCloudLLM).toHaveBeenCalled();
     // We no longer call the specialized Gemini SDK at the top level
     expect(geminiGenerateStructuredJsonSdk).not.toHaveBeenCalled();

@@ -128,10 +128,19 @@ export function InstallModelProgressOverlay() {
     hideTimerRef.current = setTimeout(() => {
       setSnapshot(null);
       clearLocalModelDownload();
-    }, 1800);
+    }, 1200);
     return () => {
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
     };
+  }, [snapshot]);
+
+  // If finalize never runs, progress can sit at 100% with stage still "downloading" — clear after a grace period.
+  useEffect(() => {
+    if (!snapshot || snapshot.stage !== 'downloading' || snapshot.progress < 99) return;
+    const t = setTimeout(() => {
+      clearLocalModelDownload();
+    }, 20000);
+    return () => clearTimeout(t);
   }, [snapshot]);
 
   const progressWidth: DimensionValue =

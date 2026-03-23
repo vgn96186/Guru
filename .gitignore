@@ -29,6 +29,7 @@ expo*.log
 serve.log
 start_debug*.log
 metro.log
+logs/*.agent.log
 
 # macOS
 .DS_Store

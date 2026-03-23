@@ -15,9 +15,11 @@ import {
   BUNDLED_CF_ACCOUNT_ID,
   BUNDLED_CF_API_TOKEN,
   BUNDLED_DEEPSEEK_KEY,
-  BUNDLED_MULEROUTER_KEY,
+  BUNDLED_GITHUB_MODELS_PAT,
   DEEPSEEK_MODELS,
-  MULEROUTER_MODELS,
+  GITHUB_MODELS_CHAT_MODELS,
+  GITHUB_MODELS_API_VERSION,
+  getGitHubModelsChatCompletionsUrl,
 } from '../../config/appConfig';
 
 export {
@@ -37,9 +39,11 @@ export {
   BUNDLED_CF_ACCOUNT_ID,
   BUNDLED_CF_API_TOKEN,
   BUNDLED_DEEPSEEK_KEY,
-  BUNDLED_MULEROUTER_KEY,
+  BUNDLED_GITHUB_MODELS_PAT,
   DEEPSEEK_MODELS,
-  MULEROUTER_MODELS,
+  GITHUB_MODELS_CHAT_MODELS,
+  GITHUB_MODELS_API_VERSION,
+  getGitHubModelsChatCompletionsUrl,
 };
 
 /** Read API keys from the user profile. When profile is omitted, returns empty keys (no DB access). */
@@ -51,7 +55,7 @@ export function getApiKeys(
     cloudflareAccountId?: string;
     cloudflareApiToken?: string;
     deepseekKey?: string;
-    mulerouterKey?: string;
+    githubModelsPat?: string;
   } | null,
 ): {
   orKey: string | undefined;
@@ -61,7 +65,7 @@ export function getApiKeys(
   cfAccountId: string | undefined;
   cfApiToken: string | undefined;
   deepseekKey: string | undefined;
-  mulerouterKey: string | undefined;
+  githubModelsPat: string | undefined;
 } {
   if (!profile) {
     return {
@@ -72,7 +76,7 @@ export function getApiKeys(
       cfAccountId: BUNDLED_CF_ACCOUNT_ID || undefined,
       cfApiToken: BUNDLED_CF_API_TOKEN || undefined,
       deepseekKey: BUNDLED_DEEPSEEK_KEY || undefined,
-      mulerouterKey: BUNDLED_MULEROUTER_KEY || undefined,
+      githubModelsPat: BUNDLED_GITHUB_MODELS_PAT || undefined,
     };
   }
   return {
@@ -83,6 +87,6 @@ export function getApiKeys(
     cfAccountId: profile.cloudflareAccountId?.trim() || BUNDLED_CF_ACCOUNT_ID || undefined,
     cfApiToken: profile.cloudflareApiToken?.trim() || BUNDLED_CF_API_TOKEN || undefined,
     deepseekKey: profile.deepseekKey?.trim() || BUNDLED_DEEPSEEK_KEY || undefined,
-    mulerouterKey: profile.mulerouterKey?.trim() || BUNDLED_MULEROUTER_KEY || undefined,
+    githubModelsPat: profile.githubModelsPat?.trim() || BUNDLED_GITHUB_MODELS_PAT || undefined,
   };
 }

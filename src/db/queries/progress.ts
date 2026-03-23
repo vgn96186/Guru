@@ -1,4 +1,5 @@
-import { getDb, runInTransaction, todayStr, dateStr } from '../database';
+import { getDb, runInTransaction, todayStr, dateStr, SQL_AI_CACHE } from '../database';
+import { getAiCacheDb } from '../aiCacheDatabase';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { MS_PER_DAY, INTERVALS } from '../../constants/time';
 import type {
@@ -82,6 +83,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     guru_memory_notes: string;
     image_generation_model: string;
     prefer_gemini_structured_json: number | null;
+    github_models_pat: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -136,6 +138,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       imageGenerationModel: DEFAULT_IMAGE_GENERATION_MODEL,
       guruMemoryNotes: '',
       preferGeminiStructuredJson: true,
+      githubModelsPat: '',
     };
   }
 
@@ -221,6 +224,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     imageGenerationModel: r.image_generation_model ?? DEFAULT_IMAGE_GENERATION_MODEL,
     guruMemoryNotes: r.guru_memory_notes ?? '',
     preferGeminiStructuredJson: (r.prefer_gemini_structured_json ?? 1) === 1,
+    githubModelsPat: r.github_models_pat ?? '',
   };
 }
 
@@ -274,6 +278,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     imageGenerationModel: 'image_generation_model',
     guruMemoryNotes: 'guru_memory_notes',
     preferGeminiStructuredJson: 'prefer_gemini_structured_json',
+    githubModelsPat: 'github_models_pat',
   };
 
   const setClauses: string[] = [];
@@ -587,7 +592,7 @@ export async function resetStudyProgress(): Promise<void> {
 
 export async function clearAiCache(): Promise<void> {
   try {
-    await getDb().runAsync('DELETE FROM ai_cache');
+    await getAiCacheDb().runAsync(`DELETE FROM ${SQL_AI_CACHE}`);
   } catch (err: any) {
     showToast(`Failed to clear AI cache: ${err.message || 'Unknown error'}`, 'error');
     throw err;

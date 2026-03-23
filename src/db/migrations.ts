@@ -413,7 +413,8 @@ export const MIGRATIONS: Migration[] = [
   {
     version: 94,
     sql: `ALTER TABLE user_profile ADD COLUMN guru_chat_default_model TEXT NOT NULL DEFAULT 'auto'`,
-    description: 'Default Guru Chat model id (auto, local, groq/..., openrouter id, gemini/..., cf/...)',
+    description:
+      'Default Guru Chat model id (auto, local, groq/..., openrouter id, gemini/..., cf/...)',
   },
   {
     version: 95,
@@ -455,7 +456,12 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1`,
     description: 'Prefer Gemini native JSON + schema for structured AI (generateJSONWithRouting)',
   },
+  {
+    version: 102,
+    sql: `ALTER TABLE user_profile ADD COLUMN github_models_pat TEXT NOT NULL DEFAULT ''`,
+    description: 'GitHub Models PAT (models:read) for OpenAI-style chat at models.github.ai',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 101;
+export const LATEST_VERSION = 102;

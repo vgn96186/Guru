@@ -21,6 +21,10 @@ if (!__DEV__) {
 LogBox.ignoreLogs([
   'Setting a timer',
   'AsyncStorage has been extracted',
+  'ProgressBarAndroid has been extracted',
+  'SafeAreaView has been deprecated',
+  'Clipboard has been extracted',
+  'PushNotificationIOS has been extracted',
 ]);
 
 registerRootComponent(App);

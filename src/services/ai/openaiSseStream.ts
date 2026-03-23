@@ -17,8 +17,14 @@ export function consumeSseEventBlock(block: string): { texts: string[]; sawDone:
     }
     try {
       const json = JSON.parse(payload);
-      const piece = json?.choices?.[0]?.delta?.content;
-      if (typeof piece === 'string' && piece.length) {
+      const ch0 = json?.choices?.[0];
+      const piece =
+        (typeof ch0?.delta?.content === 'string' && ch0.delta.content) ||
+        (typeof ch0?.message?.content === 'string' && ch0.message.content) ||
+        (typeof ch0?.delta?.reasoning === 'string' && ch0.delta.reasoning) ||
+        (typeof ch0?.delta?.reasoning_content === 'string' && ch0.delta.reasoning_content) ||
+        '';
+      if (piece.length) {
         texts.push(piece);
       }
     } catch {

@@ -1,5 +1,16 @@
 import { fetchWikipediaImage } from './imageService';
 
+function mockWikiResponse(data: unknown) {
+  const s = JSON.stringify(data);
+  return {
+    ok: true,
+    status: 200,
+    headers: { get: () => 'application/json' },
+    text: async () => s,
+    json: async () => data,
+  };
+}
+
 describe('imageService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -8,8 +19,8 @@ describe('imageService', () => {
 
   describe('fetchWikipediaImage', () => {
     it('returns thumbnail for exact match', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValueOnce({
-        json: async () => ({
+      (globalThis.fetch as jest.Mock).mockResolvedValueOnce(
+        mockWikiResponse({
           query: {
             pages: {
               '123': {
@@ -18,20 +29,25 @@ describe('imageService', () => {
             },
           },
         }),
-      });
+      );
 
       const result = await fetchWikipediaImage('Heart');
       expect(result).toBe('https://example.com/exact.jpg');
       expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+      expect((globalThis.fetch as jest.Mock).mock.calls[0][1]).toEqual(
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'User-Agent': expect.stringContaining('GuruStudyApp'),
+          }),
+        }),
+      );
     });
 
     it('cleans the topic name and falls back to cleaned string match', async () => {
       (globalThis.fetch as jest.Mock)
-        .mockResolvedValueOnce({
-          json: async () => ({ query: { pages: { '-1': {} } } }), // Exact match fails
-        })
-        .mockResolvedValueOnce({
-          json: async () => ({
+        .mockResolvedValueOnce(mockWikiResponse({ query: { pages: { '-1': {} } } })) // Exact match fails
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: {
               pages: {
                 '456': {
@@ -39,8 +55,8 @@ describe('imageService', () => {
                 },
               },
             },
-          }), // Cleaned match succeeds
-        });
+          }),
+        ); // Cleaned match succeeds
 
       const result = await fetchWikipediaImage('Anatomy of Heart');
       expect(result).toBe('https://example.com/cleaned.jpg');
@@ -55,14 +71,14 @@ describe('imageService', () => {
 
     it('falls back to Wikipedia search match if direct matches fail', async () => {
       (globalThis.fetch as jest.Mock)
-        .mockResolvedValueOnce({ json: async () => ({}) }) // Exact match fails
-        .mockResolvedValueOnce({
-          json: async () => ({
+        .mockResolvedValueOnce(mockWikiResponse({})) // Exact match fails
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: { search: [{ title: 'Heart Search Result' }] },
           }),
-        }) // Search returns result
-        .mockResolvedValueOnce({
-          json: async () => ({
+        ) // Search returns result
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: {
               pages: {
                 '789': {
@@ -71,7 +87,7 @@ describe('imageService', () => {
               },
             },
           }),
-        }); // searchWiki for firstResult succeeds
+        ); // searchWiki for firstResult succeeds
 
       const result = await fetchWikipediaImage('UnknownTopic');
       expect(result).toBe('https://example.com/search.jpg');
@@ -80,15 +96,15 @@ describe('imageService', () => {
 
     it('falls back to Wikimedia Commons if Wikipedia search fails', async () => {
       (globalThis.fetch as jest.Mock)
-        .mockResolvedValueOnce({ json: async () => ({}) }) // Exact match fails
+        .mockResolvedValueOnce(mockWikiResponse({})) // Exact match fails
         .mockRejectedValueOnce(new Error('Search failed')) // Wikipedia Search fails
-        .mockResolvedValueOnce({
-          json: async () => ({
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: { search: [{ title: 'File:Heart_Commons.jpg' }] },
           }),
-        }) // Commons search returns result
-        .mockResolvedValueOnce({
-          json: async () => ({
+        ) // Commons search returns result
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: {
               pages: {
                 '101': {
@@ -97,7 +113,7 @@ describe('imageService', () => {
               },
             },
           }),
-        }); // Commons file info succeeds
+        ); // Commons file info succeeds
 
       const result = await fetchWikipediaImage('UnknownTopic');
       expect(result).toBe('https://example.com/commons.jpg');
@@ -109,15 +125,11 @@ describe('imageService', () => {
 
       const result = await fetchWikipediaImage('FailTopic');
       expect(result).toBeNull();
-      // exact match searchWiki
-      // skip cleaned string because FailTopic equals cleaned
-      // wikipedia search
-      // commons search
       expect(globalThis.fetch).toHaveBeenCalledTimes(3);
     });
 
     it('returns null if searchWiki fails due to missing pages', async () => {
-      (globalThis.fetch as jest.Mock).mockResolvedValue({ json: async () => ({ query: {} }) }); // No pages
+      (globalThis.fetch as jest.Mock).mockResolvedValue(mockWikiResponse({ query: {} })); // No pages
 
       const result = await fetchWikipediaImage('NoPagesTopic');
       expect(result).toBeNull();
@@ -125,18 +137,18 @@ describe('imageService', () => {
 
     it('returns null if Commons file info returns no pages', async () => {
       (globalThis.fetch as jest.Mock)
-        .mockResolvedValueOnce({ json: async () => ({}) }) // Exact match fails
-        .mockResolvedValueOnce({ json: async () => ({ query: { search: [] } }) }) // Wikipedia Search no results
-        .mockResolvedValueOnce({
-          json: async () => ({
+        .mockResolvedValueOnce(mockWikiResponse({})) // Exact match fails
+        .mockResolvedValueOnce(mockWikiResponse({ query: { search: [] } })) // Wikipedia Search no results
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: { search: [{ title: 'File:NoPages_Commons.jpg' }] },
           }),
-        }) // Commons search returns result
-        .mockResolvedValueOnce({
-          json: async () => ({
+        ) // Commons search returns result
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: {}, // Commons file info no pages
           }),
-        });
+        );
 
       const result = await fetchWikipediaImage('NoCommonsPagesTopic');
       expect(result).toBeNull();
@@ -144,18 +156,18 @@ describe('imageService', () => {
 
     it('returns null if Commons file info returns -1 pageId', async () => {
       (globalThis.fetch as jest.Mock)
-        .mockResolvedValueOnce({ json: async () => ({}) }) // Exact match fails
-        .mockResolvedValueOnce({ json: async () => ({ query: { search: [] } }) }) // Wikipedia Search no results
-        .mockResolvedValueOnce({
-          json: async () => ({
+        .mockResolvedValueOnce(mockWikiResponse({})) // Exact match fails
+        .mockResolvedValueOnce(mockWikiResponse({ query: { search: [] } })) // Wikipedia Search no results
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: { search: [{ title: 'File:MinusOne_Commons.jpg' }] },
           }),
-        }) // Commons search returns result
-        .mockResolvedValueOnce({
-          json: async () => ({
+        ) // Commons search returns result
+        .mockResolvedValueOnce(
+          mockWikiResponse({
             query: { pages: { '-1': {} } }, // Commons file info pageId -1
           }),
-        });
+        );
 
       const result = await fetchWikipediaImage('MinusOneCommonsTopic');
       expect(result).toBeNull();

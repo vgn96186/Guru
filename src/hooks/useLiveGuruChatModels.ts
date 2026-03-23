@@ -3,6 +3,7 @@ import type { UserProfile } from '../types';
 import {
   CLOUDFLARE_MODELS,
   GEMINI_MODELS,
+  GITHUB_MODELS_CHAT_MODELS,
   GROQ_MODELS,
   OPENROUTER_FREE_MODELS,
 } from '../config/appConfig';
@@ -18,6 +19,7 @@ export type LiveGuruChatDraftKeys = {
   geminiKey?: string;
   cloudflareAccountId?: string;
   cloudflareApiToken?: string;
+  githubModelsPat?: string;
 };
 
 function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): UserProfile {
@@ -28,6 +30,7 @@ function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): 
     geminiKey: draft.geminiKey?.trim() || profile.geminiKey || '',
     cloudflareAccountId: draft.cloudflareAccountId?.trim() || profile.cloudflareAccountId || '',
     cloudflareApiToken: draft.cloudflareApiToken?.trim() || profile.cloudflareApiToken || '',
+    githubModelsPat: draft.githubModelsPat?.trim() || profile.githubModelsPat || '',
   };
 }
 
@@ -48,10 +51,7 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
  * Loads provider model IDs from live APIs (with static fallbacks in `liveModelCatalog`).
  * When `draft` is passed (Settings form), refetches are debounced while keys are edited.
  */
-export function useLiveGuruChatModels(
-  profile: UserProfile | null,
-  draft?: LiveGuruChatDraftKeys,
-) {
+export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveGuruChatDraftKeys) {
   const draftRef = useRef(draft);
   draftRef.current = draft;
 
@@ -64,6 +64,7 @@ export function useLiveGuruChatModels(
             draft.geminiKey ?? '',
             draft.cloudflareAccountId ?? '',
             draft.cloudflareApiToken ?? '',
+            draft.githubModelsPat ?? '',
           ].join('\0')
         : '',
     [draft],
@@ -114,11 +115,23 @@ export function useLiveGuruChatModels(
     };
   }, [profile, debouncedKeysString, refreshToken]);
 
+  const mergedProfile = (() => {
+    if (!profile) return null;
+    const d = draftRef.current;
+    if (d) return mergeDraftProfile(profile, d);
+    return profile;
+  })();
+  const githubList =
+    mergedProfile && getApiKeys(mergedProfile).githubModelsPat
+      ? [...GITHUB_MODELS_CHAT_MODELS]
+      : [];
+
   return {
     groq: live?.groq ?? GROQ_MODELS,
     openrouter: live?.openrouter ?? OPENROUTER_FREE_MODELS,
     gemini: live?.gemini ?? GEMINI_MODELS,
     cloudflare: live?.cloudflare ?? CLOUDFLARE_MODELS,
+    github: githubList,
     loading,
     anyLive: live?.anyLive ?? false,
     errors: live?.errors ?? {},

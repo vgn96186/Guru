@@ -104,10 +104,11 @@ CREATE TABLE IF NOT EXISTS daily_log (
   session_count INTEGER NOT NULL DEFAULT 0
 )`;
 
-export const CREATE_AI_CACHE = `
+/** Lives in `neet_ai_cache.db` (excluded from Android auto-backup). No FK — topic deletes are handled in app code. */
+export const CREATE_AI_CACHE_STANDALONE = `
 CREATE TABLE IF NOT EXISTS ai_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  topic_id INTEGER NOT NULL REFERENCES topics(id) ON DELETE CASCADE,
+  topic_id INTEGER NOT NULL,
   content_type TEXT NOT NULL
     CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective')),
   content_json TEXT NOT NULL,
@@ -116,6 +117,26 @@ CREATE TABLE IF NOT EXISTS ai_cache (
   is_flagged INTEGER NOT NULL DEFAULT 0,
   UNIQUE(topic_id, content_type)
 )`;
+
+/**
+ * Same table on the attached DB alias `guru_aicache` (single SQLite connection — avoids opening
+ * `neet_ai_cache.db` twice, which causes SQLITE_BUSY / "database is locked" with expo-sqlite).
+ */
+export const CREATE_AI_CACHE_ATTACHED = `
+CREATE TABLE IF NOT EXISTS guru_aicache.ai_cache (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL,
+  content_type TEXT NOT NULL
+    CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective')),
+  content_json TEXT NOT NULL,
+  model_used TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  is_flagged INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(topic_id, content_type)
+)`;
+
+export const CREATE_INDEX_AI_CACHE_ATTACHED =
+  'CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON guru_aicache.ai_cache(topic_id, content_type)';
 
 export const CREATE_USER_PROFILE = `
 CREATE TABLE IF NOT EXISTS user_profile (
@@ -174,6 +195,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , exam_type TEXT NOT NULL DEFAULT 'INICET'
     CHECK(exam_type IN ('INICET','NEET'))
   , prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1
+  , github_models_pat TEXT NOT NULL DEFAULT ''
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `
@@ -294,8 +316,7 @@ CREATE TABLE IF NOT EXISTS topic_suggestions (
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
   `CREATE INDEX IF NOT EXISTS idx_tp_status_fsrs_due ON topic_progress(status, fsrs_due, confidence)`,
-  // AI cache content fetches (topic detail screen)
-  `CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
+  // ai_cache index lives on attached guru_aicache (see database.ensureAiCacheAttachedToMain)
   // Lecture notes chronological listing
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created ON lecture_notes(created_at DESC)`,
   // Lecture notes by subject for stats
@@ -333,7 +354,6 @@ export const ALL_SCHEMAS = [
   CREATE_SESSIONS,
   CREATE_LECTURE_NOTES,
   CREATE_DAILY_LOG,
-  CREATE_AI_CACHE,
   CREATE_USER_PROFILE,
   CREATE_BRAIN_DUMPS,
   CREATE_EXTERNAL_APP_LOGS,

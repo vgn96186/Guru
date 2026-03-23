@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { showToast } from '../components/Toast';
 import { generateAccountabilityMessages, generateBreakEndMessages } from './aiService';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
@@ -15,6 +16,9 @@ import type { Mood } from '../types';
 
 let areNotificationsSupported = true;
 const NOTIFICATION_SCHEDULING_FAILED_MESSAGE = 'Notification scheduling failed — check permissions';
+const ACCOUNTABILITY_REFRESH_MIN_INTERVAL_MS = 6 * 60 * 60 * 1000;
+const ACCOUNTABILITY_REFRESH_KEY = 'guru_last_accountability_refresh';
+let accountabilityRefreshInFlight: Promise<void> | null = null;
 
 function showNotificationSchedulingFailedToast(): void {
   showToast(NOTIFICATION_SCHEDULING_FAILED_MESSAGE, 'warning');
@@ -322,6 +326,9 @@ export async function cancelAllNotifications(): Promise<void> {
 
 export async function refreshAccountabilityNotifications(): Promise<void> {
   if (!areNotificationsSupported) return;
+  const perms = await Notifications.getPermissionsAsync().catch(() => null);
+  if (!perms?.granted) return;
+
   const profile = await profileRepository.getProfile();
   if (!profile.notificationsEnabled) return;
 
@@ -501,9 +508,30 @@ export async function refreshAccountabilityNotifications(): Promise<void> {
 export async function refreshAccountabilityNotificationsSafely(
   onError?: (error: unknown) => void,
 ): Promise<void> {
+  if (accountabilityRefreshInFlight) return accountabilityRefreshInFlight;
+
+  accountabilityRefreshInFlight = (async () => {
+    try {
+      const now = Date.now();
+      const lastStr = await AsyncStorage.getItem(ACCOUNTABILITY_REFRESH_KEY);
+      const last = lastStr ? parseInt(lastStr, 10) : 0;
+
+      if (now - last < ACCOUNTABILITY_REFRESH_MIN_INTERVAL_MS) {
+        return;
+      }
+
+      await refreshAccountabilityNotifications();
+      await AsyncStorage.setItem(ACCOUNTABILITY_REFRESH_KEY, now.toString());
+    } catch (error) {
+      onError?.(error);
+    } finally {
+      accountabilityRefreshInFlight = null;
+    }
+  })();
+
   try {
-    await refreshAccountabilityNotifications();
-  } catch (error) {
-    onError?.(error);
+    await accountabilityRefreshInFlight;
+  } catch {
+    // already handled
   }
 }

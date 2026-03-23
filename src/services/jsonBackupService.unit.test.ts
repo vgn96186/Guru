@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Alert } from 'react-native';
 import { getDb } from '../db/database';
+import { getAiCacheDb } from '../db/aiCacheDatabase';
 
 jest.mock('expo-file-system/legacy', () => ({
   cacheDirectory: 'file:///mock-cache/',
@@ -29,6 +30,10 @@ jest.mock('../db/database', () => ({
   getDb: jest.fn(),
 }));
 
+jest.mock('../db/aiCacheDatabase', () => ({
+  getAiCacheDb: jest.fn(),
+}));
+
 describe('jsonBackupService', () => {
   let mockDb: any;
 
@@ -39,6 +44,7 @@ describe('jsonBackupService', () => {
       getAllAsync: jest.fn(),
     };
     (getDb as jest.Mock).mockReturnValue(mockDb);
+    (getAiCacheDb as jest.Mock).mockReturnValue(mockDb);
 
     mockDb.getAllAsync.mockImplementation(async (query: string) => {
       if (query.includes('FROM subjects')) {

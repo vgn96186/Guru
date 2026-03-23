@@ -48,6 +48,7 @@ import {
   testOpenRouterConnection,
   testGeminiConnection,
   testCloudflareConnection,
+  testGitHubModelsConnection,
 } from '../services/ai/providerHealth';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
@@ -340,6 +341,9 @@ export default function SettingsScreen() {
   const [fetchDatesMsg, setFetchDatesMsg] = useState('');
   const [testingGroqKey, setTestingGroqKey] = useState(false);
   const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [githubModelsPat, setGithubModelsPat] = useState('');
+  const [testingGithubPat, setTestingGithubPat] = useState(false);
+  const [githubPatTestResult, setGithubPatTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingOpenRouterKey, setTestingOpenRouterKey] = useState(false);
   const [openRouterKeyTestResult, setOpenRouterKeyTestResult] = useState<'ok' | 'fail' | null>(
     null,
@@ -356,7 +360,9 @@ export default function SettingsScreen() {
   const [testingCloudflare, setTestingCloudflare] = useState(false);
   const [cloudflareTestResult, setCloudflareTestResult] = useState<'ok' | 'fail' | null>(null);
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
-  const [imageGenerationModel, setImageGenerationModel] = useState<string>(DEFAULT_IMAGE_GENERATION_MODEL);
+  const [imageGenerationModel, setImageGenerationModel] = useState<string>(
+    DEFAULT_IMAGE_GENERATION_MODEL,
+  );
   const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
   const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
 
@@ -366,6 +372,7 @@ export default function SettingsScreen() {
     geminiKey: geminiKey,
     cloudflareAccountId: cfAccountId,
     cloudflareApiToken: cfApiToken,
+    githubModelsPat,
   });
 
   useEffect(() => {
@@ -385,6 +392,19 @@ export default function SettingsScreen() {
     const res = await testGroqConnection(key);
     setGroqKeyTestResult(res.ok ? 'ok' : 'fail');
     setTestingGroqKey(false);
+  }
+
+  async function testGithubModelsPat() {
+    const pat = githubModelsPat.trim() || profile?.githubModelsPat || '';
+    if (!pat) {
+      Alert.alert('No token', 'Enter a GitHub personal access token with Models access first.');
+      return;
+    }
+    setTestingGithubPat(true);
+    setGithubPatTestResult(null);
+    const res = await testGitHubModelsConnection(pat);
+    setGithubPatTestResult(res.ok ? 'ok' : 'fail');
+    setTestingGithubPat(false);
   }
 
   async function testOpenRouterKey() {
@@ -495,6 +515,7 @@ export default function SettingsScreen() {
     loadSubjects();
     if (profile) {
       setGroqKey(profile.groqApiKey ?? '');
+      setGithubModelsPat(profile.githubModelsPat ?? '');
       setOrKey(profile.openrouterKey ?? '');
       setGeminiKey(profile.geminiKey ?? '');
       setCfAccountId(profile.cloudflareAccountId ?? '');
@@ -530,6 +551,7 @@ export default function SettingsScreen() {
     try {
       updateUserProfile({
         groqApiKey: groqKey.trim(),
+        githubModelsPat: githubModelsPat.trim(),
         openrouterKey: orKey.trim(),
         geminiKey: geminiKey.trim(),
         cloudflareAccountId: cfAccountId.trim(),
@@ -757,6 +779,73 @@ export default function SettingsScreen() {
             })}
           </View>
 
+          <Label text="GitHub Models (models.github.ai)" />
+          <TextInput
+            style={styles.input}
+            placeholder="GitHub PAT (fine-grained: Models read)"
+            placeholderTextColor={theme.colors.textMuted}
+            value={githubModelsPat}
+            onChangeText={setGithubModelsPat}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            OpenAI-compatible chat at models.github.ai. Fine-grained PAT: grant Models (read).
+            Classic PAT: include the models scope. See GitHub docs: REST API Models inference.
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testGithubModelsPat}
+            disabled={testingGithubPat}
+            activeOpacity={0.8}
+          >
+            {testingGithubPat ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  githubPatTestResult === 'ok' && { color: theme.colors.success },
+                  githubPatTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {githubPatTestResult === 'ok'
+                  ? '✅ GitHub Models token works!'
+                  : githubPatTestResult === 'fail'
+                    ? '❌ Token invalid or Models unreachable'
+                    : 'Test GitHub Models'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          {liveGuruChatModels.github.length > 0 ? (
+            <>
+              <Label text="Guru Chat: GitHub Models" />
+              <View style={styles.modelChipRow}>
+                {liveGuruChatModels.github.map((m) => {
+                  const id = `github/${m}`;
+                  return (
+                    <TouchableOpacity
+                      key={id}
+                      style={[styles.freqBtn, guruChatDefaultModel === id && styles.freqBtnActive]}
+                      onPress={() => setGuruChatDefaultModel(id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.freqText,
+                          guruChatDefaultModel === id && styles.freqTextActive,
+                        ]}
+                      >
+                        {formatGuruChatModelChipLabel(id)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </>
+          ) : null}
+
           <Label text="OpenRouter API Key — optional fallback" />
           <TextInput
             style={styles.input}
@@ -769,8 +858,8 @@ export default function SettingsScreen() {
             autoCorrect={false}
           />
           <Text style={styles.hint}>
-            Optional. Guru falls back to free OpenRouter models (Llama 3.3, Qwen 2.5, etc.) when
-            Groq is unavailable. Get a free key at openrouter.ai
+            Optional. Guru falls back to free OpenRouter models (Llama 3.3, Gemma, DeepSeek, etc.)
+            when Groq is unavailable. Get a free key at openrouter.ai
           </Text>
           <TouchableOpacity
             style={[styles.testBtn, { marginBottom: 4 }]}
@@ -805,7 +894,9 @@ export default function SettingsScreen() {
                 onPress={() => setGuruChatDefaultModel(m)}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.freqText, guruChatDefaultModel === m && styles.freqTextActive]}>
+                <Text
+                  style={[styles.freqText, guruChatDefaultModel === m && styles.freqTextActive]}
+                >
                   {formatGuruChatModelChipLabel(m)}
                 </Text>
               </TouchableOpacity>
@@ -963,17 +1054,14 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>
             Diagrams from Guru Chat and topic notes. On a free Google AI Studio key, pick{' '}
             <Text style={{ fontWeight: '600' }}>2.5 Flash Image</Text> or{' '}
-            <Text style={{ fontWeight: '600' }}>3.1 Flash Image</Text> if Pro returns a billing error.
-            Auto tries those before Pro, then Cloudflare Flux.
+            <Text style={{ fontWeight: '600' }}>3.1 Flash Image</Text> if Pro returns a billing
+            error. Auto tries those before Pro, then Cloudflare Flux.
           </Text>
           <View style={styles.modelChipRow}>
             {IMAGE_GENERATION_MODEL_OPTIONS.map((opt) => (
               <TouchableOpacity
                 key={opt.value}
-                style={[
-                  styles.freqBtn,
-                  imageGenerationModel === opt.value && styles.freqBtnActive,
-                ]}
+                style={[styles.freqBtn, imageGenerationModel === opt.value && styles.freqBtnActive]}
                 onPress={() => setImageGenerationModel(opt.value)}
                 activeOpacity={0.8}
               >

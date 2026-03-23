@@ -9,6 +9,8 @@ import {
   Alert,
   Animated,
   ScrollView,
+  Modal,
+  Pressable,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +28,7 @@ import { invalidatePlanCache } from '../services/studyPlanner';
 import { buildSession } from '../services/sessionPlanner';
 import { fetchContent, prefetchTopicContent } from '../services/aiService';
 import { sendImmediateNag } from '../services/notificationService';
-import { createSession, endSession } from '../db/queries/sessions';
+import { createSession, endSession, isSessionAlreadyFinalized } from '../db/queries/sessions';
 import {
   updateTopicProgress,
   incrementWrongCount,
@@ -52,9 +54,24 @@ import { useGuruPresence } from '../hooks/useGuruPresence';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
+import { showToast } from '../components/Toast';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
+
+/** Human-readable AI route for the session header (matches llmRouting modelUsed prefixes). */
+function formatSessionModelLabel(modelUsed?: string | null): string {
+  if (!modelUsed?.trim()) return 'AI · model not recorded';
+  const m = modelUsed.replace(/^local-/, '');
+  if (m.startsWith('groq/')) return `AI · Groq / ${m.slice(5)}`;
+  if (m.startsWith('gemini/')) return `AI · Gemini / ${m.slice(7)}`;
+  if (m.startsWith('github/')) return `AI · GitHub Models / ${m.slice(7)}`;
+  if (m.startsWith('deepseek/')) return `AI · DeepSeek / ${m.slice(9)}`;
+  if (m.startsWith('cf/')) return `AI · Cloudflare / ${m.slice(3)}`;
+  if (modelUsed.startsWith('local-')) return `AI · On-device / ${m}`;
+  if (m.includes('/')) return `AI · ${m.replace('/', ' / ')}`;
+  return `AI · ${m}`;
+}
 
 export default function SessionScreen() {
   const navigation = useNavigation<Nav>();
@@ -77,36 +94,71 @@ export default function SessionScreen() {
     preferredActionType?: 'study' | 'review' | 'deep_dive';
   };
 
-  const store = useSessionStore();
-  const storeRef = useRef(store);
+  // ── Store State (Selective Subscriptions) ──
+  const sessionId = useSessionStore((s) => s.sessionId);
+  const sessionState = useSessionStore((s) => s.sessionState);
+  const agenda = useSessionStore((s) => s.agenda);
+  const currentItemIndex = useSessionStore((s) => s.currentItemIndex);
+  const currentContentIndex = useSessionStore((s) => s.currentContentIndex);
+  const currentContent = useSessionStore((s) => s.currentContent);
+  const isLoadingContent = useSessionStore((s) => s.isLoadingContent);
+  const completedTopicIds = useSessionStore((s) => s.completedTopicIds);
+  const quizResults = useSessionStore((s) => s.quizResults);
+  const startedAt = useSessionStore((s) => s.startedAt);
+  const activeStudyDuration = useSessionStore((s) => s.activeStudyDuration);
+  const isOnBreak = useSessionStore((s) => s.isOnBreak);
+  const breakCountdown = useSessionStore((s) => s.breakCountdown);
+  const isPaused = useSessionStore((s) => s.isPaused);
+
+  // ── Store Actions (Stable) ──
+  const setSessionId = useSessionStore((s) => s.setSessionId);
+  const setSessionState = useSessionStore((s) => s.setSessionState);
+  const setAgenda = useSessionStore((s) => s.setAgenda);
+  const setCurrentContent = useSessionStore((s) => s.setCurrentContent);
+  const setLoadingContent = useSessionStore((s) => s.setLoadingContent);
+  const setPaused = useSessionStore((s) => s.setPaused);
+  const nextContent = useSessionStore((s) => s.nextContent);
+  const nextTopic = useSessionStore((s) => s.nextTopic);
+  const markTopicComplete = useSessionStore((s) => s.markTopicComplete);
+  const nextTopicNoBreak = useSessionStore((s) => s.nextTopicNoBreak);
+  const addQuizResult = useSessionStore((s) => s.addQuizResult);
+  const startBreak = useSessionStore((s) => s.startBreak);
+  const endBreak = useSessionStore((s) => s.endBreak);
+  const tickBreak = useSessionStore((s) => s.tickBreak);
+  const resetSession = useSessionStore((s) => s.resetSession);
+  const incrementActiveStudyDuration = useSessionStore((s) => s.incrementActiveStudyDuration);
+  const downgradeSession = useSessionStore((s) => s.downgradeSession);
+
+  // ── App Store ──
   const profile = useAppStore((s) => s.profile);
   const dailyAvailability = useAppStore((s) => s.dailyAvailability);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
 
+  // UI State
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeElapsedSeconds, setActiveElapsedSeconds] = useState(0);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [showXp, setShowXp] = useState(0);
+  const [sessionXpTotal, setSessionXpTotal] = useState(0);
+
+  // Refs for stable timer/async access
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const agendaRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const xpAnim = useRef(new Animated.Value(0)).current;
-  const [showXp, setShowXp] = useState(0);
-  const [sessionXpTotal, setSessionXpTotal] = useState(0);
-  const [aiError, setAiError] = useState<string | null>(null);
-  const [menuVisible, setMenuVisible] = useState(false);
-  const isPausedRef = useRef(store.isPaused);
+  const isPausedRef = useRef(isPaused);
   const isManuallyPausedRef = useRef(false);
   const hasInitializedRef = useRef(false);
-  const startPlanningRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const finishSessionLockRef = useRef(false);
 
+  // Sync ref with state
   useEffect(() => {
-    storeRef.current = store;
-  }, [store]);
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
-  const isStudying = store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused;
+  const isStudying = sessionState === 'studying' && !isOnBreak && !isPaused;
 
-  const topicNames = useMemo(
-    () => store.agenda?.items.map((i) => i.topic.name) ?? [],
-    [store.agenda],
-  );
+  const topicNames = useMemo(() => agenda?.items.map((i) => i.topic.name) ?? [], [agenda]);
 
   const { currentMessage, presencePulse, toastOpacity, triggerEvent } = useGuruPresence({
     topicNames,
@@ -119,8 +171,8 @@ export default function SessionScreen() {
   const { panHandlers } = useIdleTimer({
     timeout: idleTimeout,
     onIdle: () => {
-      if (store.sessionState === 'studying' && !store.isOnBreak && !store.isPaused) {
-        store.setPaused(true);
+      if (sessionState === 'studying' && !isOnBreak && !isPaused) {
+        setPaused(true);
         sendImmediateNag(
           'Are you there, Doctor?',
           'Your study session is paused due to inactivity.',
@@ -128,52 +180,77 @@ export default function SessionScreen() {
       }
     },
     onActive: () => {
-      if (store.isPaused && !isManuallyPausedRef.current) {
-        store.setPaused(false);
+      if (isPaused && !isManuallyPausedRef.current) {
+        setPaused(false);
       }
     },
-    disabled: store.sessionState !== 'studying' || store.isOnBreak,
+    disabled: sessionState !== 'studying' || isOnBreak,
   });
 
-  const activeElapsedRef = useRef(activeElapsedSeconds);
+  const activeElapsedSecondsRef = useRef(activeElapsedSeconds);
   useEffect(() => {
-    activeElapsedRef.current = activeElapsedSeconds;
+    activeElapsedSecondsRef.current = activeElapsedSeconds;
   }, [activeElapsedSeconds]);
 
   const finishSession = useCallback(async () => {
+    if (finishSessionLockRef.current) return;
+    finishSessionLockRef.current = true;
     try {
       if (timerRef.current) clearInterval(timerRef.current);
       if (agendaRevealTimeoutRef.current) {
         clearTimeout(agendaRevealTimeoutRef.current);
         agendaRevealTimeoutRef.current = null;
       }
+
+      // Read latest state from store directly for final persistence
       const s = useSessionStore.getState();
       if (!s.sessionId) {
         navigation.goBack();
         return;
       }
-      const durationMin = Math.round(activeElapsedRef.current / 60);
+      if (await isSessionAlreadyFinalized(s.sessionId)) {
+        return;
+      }
+
+      const durationMin = Math.round(activeElapsedSecondsRef.current / 60);
       const completedTopics = (s.agenda?.items ?? [])
         .filter((i: AgendaItem) => s.completedTopicIds.includes(i.topic.id))
         .map((i: AgendaItem) => i.topic);
+
       const dailyLog = await dailyLogRepository.getDailyLog();
       const isFirstToday = (dailyLog?.sessionCount ?? 0) === 0;
-      const xpResult = await calculateAndAwardSessionXp(completedTopics, s.quizResults, isFirstToday);
+      const xpResult = await calculateAndAwardSessionXp(
+        completedTopics,
+        s.quizResults,
+        isFirstToday,
+      );
+
       await endSession(s.sessionId, s.completedTopicIds, xpResult.total, durationMin);
       await profileRepository.updateStreak(durationMin >= STREAK_MIN_MINUTES);
+
       setSessionXpTotal(xpResult.total);
       refreshProfile().catch((err) =>
         console.error('[Session] Post-session profile refresh failed:', err),
       );
       invalidatePlanCache();
-      s.setSessionState('session_done');
+      setSessionState('session_done');
     } catch (e: any) {
       console.error('[Session] finishSession error:', e);
       Alert.alert('Session Error', 'Could not save session progress properly: ' + e.message);
       navigation.navigate('Home');
+    } finally {
+      finishSessionLockRef.current = false;
     }
-  }, [navigation, refreshProfile]);
+  }, [navigation, refreshProfile, setSessionState]);
 
+  // Effect: Persist XP/end session when state hits done naturally
+  useEffect(() => {
+    if (sessionState === 'session_done') {
+      void finishSession();
+    }
+  }, [sessionState, finishSession]);
+
+  // Effect: Hardware back button handler
   useEffect(() => {
     const handler = BackHandler.addEventListener('hardwareBackPress', () => {
       Alert.alert('Leave session?', 'Your progress will be saved.', [
@@ -185,21 +262,18 @@ export default function SessionScreen() {
     return () => handler.remove();
   }, [finishSession]);
 
+  // Effect: App background nag
   useAppStateTransition({
     onBackground: () => {
-      if (store.sessionState === 'studying' && profile?.strictModeEnabled) {
+      if (sessionState === 'studying' && profile?.strictModeEnabled) {
         sendImmediateNag('COME BACK! 😡', "Your session is still running. Don't break the flow!");
       }
     },
   });
 
-  useEffect(() => {
-    isPausedRef.current = store.isPaused;
-  }, [store.isPaused]);
-
   const startPlanning = useCallback(async () => {
     setAiError(null);
-    useSessionStore.getState().setSessionState('planning');
+    setSessionState('planning');
     try {
       const isWarmup = forcedMode === 'warmup';
       const isMcqBlock = forcedMode === 'mcq_block';
@@ -212,7 +286,8 @@ export default function SessionScreen() {
             : dailyAvailability && dailyAvailability > 0
               ? dailyAvailability
               : (profile?.preferredSessionLength ?? 45);
-      const agenda = await buildSession(
+
+      const agendaResult = await buildSession(
         mood,
         sessionLength,
         profile?.openrouterApiKey ?? '',
@@ -220,24 +295,26 @@ export default function SessionScreen() {
         profile?.groqApiKey,
         { focusTopicId, focusTopicIds, preferredActionType, mode: forcedMode },
       );
-      const sessionId = await createSession(
-        agenda.items.map((i) => i.topic.id),
+
+      const sessId = await createSession(
+        agendaResult.items.map((i) => i.topic.id),
         mood,
-        agenda.mode,
+        agendaResult.mode,
       );
-      const sessionState = useSessionStore.getState();
-      sessionState.setSessionId(sessionId);
-      sessionState.setAgenda(agenda);
+
+      setSessionId(sessId);
+      setAgenda(agendaResult);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
       if (isWarmup || isMcqBlock) {
-        sessionState.setSessionState('studying');
+        setSessionState('studying');
       } else {
-        sessionState.setSessionState('agenda_reveal');
+        setSessionState('agenda_reveal');
         if (agendaRevealTimeoutRef.current) {
           clearTimeout(agendaRevealTimeoutRef.current);
         }
         agendaRevealTimeoutRef.current = setTimeout(() => {
-          useSessionStore.getState().setSessionState('studying');
+          setSessionState('studying');
           agendaRevealTimeoutRef.current = null;
         }, 3000);
       }
@@ -253,171 +330,175 @@ export default function SessionScreen() {
     focusTopicId,
     focusTopicIds,
     preferredActionType,
+    setSessionId,
+    setSessionState,
+    setAgenda,
   ]);
 
-  // Keep ref in sync so the init effect always sees the latest version
+  // Main Initialization Effect
   useEffect(() => {
-    startPlanningRef.current = startPlanning;
-  }, [startPlanning]);
-
-  useEffect(() => {
-    // Guard: only run once per mount to prevent session restart loops.
-    // Without this, profile changes (from refreshProfile) would cause
-    // startPlanning's reference to change, re-triggering this effect.
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
 
+    // Check if we should resume or start fresh
+    const s = useSessionStore.getState();
     const hasResumableSession =
-      Boolean(storeRef.current.sessionId) &&
-      Boolean(storeRef.current.agenda) &&
-      storeRef.current.sessionState !== 'session_done';
+      Boolean(s.sessionId) && Boolean(s.agenda) && s.sessionState !== 'session_done';
 
     if (resume && hasResumableSession) {
-      const elapsed = storeRef.current.startedAt
-        ? Math.max(0, Math.floor((Date.now() - storeRef.current.startedAt) / 1000))
-        : Math.floor(storeRef.current.activeStudyDuration);
+      const elapsed = s.startedAt ? Math.max(0, Math.floor((Date.now() - s.startedAt) / 1000)) : 0;
       setElapsedSeconds(elapsed);
-      setActiveElapsedSeconds(Math.floor(storeRef.current.activeStudyDuration));
-      if (
-        storeRef.current.sessionState === 'planning' ||
-        storeRef.current.sessionState === 'agenda_reveal'
-      ) {
-        storeRef.current.setSessionState('studying');
+      setActiveElapsedSeconds(Math.floor(s.activeStudyDuration));
+      if (s.sessionState === 'planning' || s.sessionState === 'agenda_reveal') {
+        setSessionState('studying');
       }
     } else {
-      storeRef.current.resetSession();
-      startPlanningRef.current?.();
+      resetSession();
+      void startPlanning();
     }
 
+    // Master Timer
     timerRef.current = setInterval(() => {
-      setElapsedSeconds((s) => s + 1);
-      if (!isPausedRef.current) {
-        setActiveElapsedSeconds((s) => s + 1);
-        storeRef.current.incrementActiveStudyDuration(1);
+      setElapsedSeconds((prev) => prev + 1);
+      if (!isPausedRef.current && !useSessionStore.getState().isOnBreak) {
+        setActiveElapsedSeconds((prev) => prev + 1);
+        incrementActiveStudyDuration(1);
       }
     }, 1000);
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
-      if (agendaRevealTimeoutRef.current) {
-        clearTimeout(agendaRevealTimeoutRef.current);
-        agendaRevealTimeoutRef.current = null;
-      }
+      if (agendaRevealTimeoutRef.current) clearTimeout(agendaRevealTimeoutRef.current);
     };
-  }, [resume]);
+  }, [resume, resetSession, startPlanning, incrementActiveStudyDuration, setSessionState]);
 
+  // Break Timer Effect
   useEffect(() => {
-    if (!store.isOnBreak) return;
-    const tickBreak = useSessionStore.getState().tickBreak;
-    const t = setInterval(tickBreak, 1000);
+    if (!isOnBreak) return;
+    const t = setInterval(() => tickBreak(), 1000);
     return () => clearInterval(t);
-  }, [store.isOnBreak]);
+  }, [isOnBreak, tickBreak]);
 
   const handleContentDone = useCallback(() => {
     const s = useSessionStore.getState();
-    const item = getCurrentAgendaItem(s);
-    const contentType = getCurrentContentType(s);
-    if (!item || !contentType) return;
-    if (s.currentContentIndex < item.contentTypes.length - 1) {
-      s.nextContent();
+    const curItem = s.agenda?.items[s.currentItemIndex];
+    if (!curItem) return;
+
+    if (s.currentContentIndex < curItem.contentTypes.length - 1) {
+      nextContent();
     } else {
-      s.markTopicComplete();
+      markTopicComplete();
       const isLast = s.currentItemIndex >= (s.agenda?.items.length ?? 1) - 1;
       if (isLast) {
-        s.nextTopic();
+        setSessionState('session_done');
       } else if (s.agenda?.skipBreaks) {
-        s.nextTopicNoBreak();
+        nextTopicNoBreak();
       } else {
-        s.startBreak((profile?.breakDurationMinutes ?? 5) * 60);
+        startBreak((profile?.breakDurationMinutes ?? 5) * 60);
       }
     }
-  }, [profile?.breakDurationMinutes]);
+  }, [
+    profile?.breakDurationMinutes,
+    nextContent,
+    markTopicComplete,
+    setSessionState,
+    nextTopicNoBreak,
+    startBreak,
+  ]);
 
+  // Effect: Auto-load AI content
   useEffect(() => {
-    if (store.sessionState !== 'studying') return;
-    if (store.currentContent || store.isLoadingContent) return;
-    const item = getCurrentAgendaItem(store);
-    const contentType = getCurrentContentType(store);
-    if (!item || !contentType) return;
+    if (sessionState !== 'studying' || isOnBreak || isPaused) return;
+    if (currentContent || isLoadingContent || aiError) return;
+
+    const s = useSessionStore.getState();
+    const item = getCurrentAgendaItem(s);
+    const cType = getCurrentContentType(s);
+    if (!item || !cType) return;
+
     setAiError(null);
-    store.setLoadingContent(true);
-    fetchContent(item.topic, contentType)
+    setLoadingContent(true);
+    fetchContent(item.topic, cType)
       .then((content) => {
-        const s = useSessionStore.getState();
-        s.setCurrentContent(content);
-        s.setLoadingContent(false);
+        setCurrentContent(content);
+        setLoadingContent(false);
       })
       .catch((e) => {
-        const s = useSessionStore.getState();
-        s.setLoadingContent(false);
+        setLoadingContent(false);
         setAiError(e?.message ?? 'AI content failed');
       });
   }, [
-    store.sessionState,
-    store.currentItemIndex,
-    store.currentContentIndex,
-    store.currentContent,
-    store.isLoadingContent,
+    sessionState,
+    isOnBreak,
+    isPaused,
+    currentItemIndex,
+    currentContentIndex,
+    currentContent,
+    isLoadingContent,
+    aiError,
+    setCurrentContent,
+    setLoadingContent,
   ]);
 
+  // Prefetch Effect
   useEffect(() => {
-    if (!store.agenda) return;
-    const nextItem = store.agenda.items[store.currentItemIndex + 1];
+    if (!agenda) return;
+    const nextItem = agenda.items[currentItemIndex + 1];
     if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes);
-  }, [store.currentItemIndex, store.agenda]);
+  }, [currentItemIndex, agenda]);
 
   const handleStartManualReview = useCallback(() => {
     setAiError(null);
-    const s = useSessionStore.getState();
-    const item = getCurrentAgendaItem(s);
+    const item = getCurrentAgendaItem(useSessionStore.getState());
     if (item) {
-      s.setCurrentContent({ type: 'manual', topicName: item.topic.name });
+      setCurrentContent({ type: 'manual', topicName: item.topic.name });
     } else {
       navigation.goBack();
     }
-  }, [navigation]);
+  }, [navigation, setCurrentContent]);
 
   const handleContinueWithoutAi = useCallback(() => {
     setAiError(null);
-    if (!store.agenda) {
+    if (!agenda) {
       handleStartManualReview();
       return;
     }
     handleContentDone();
-  }, [handleStartManualReview, handleContentDone]);
+  }, [agenda, handleStartManualReview, handleContentDone]);
 
   const handleBreakDone = useCallback(() => {
-    const s = useSessionStore.getState();
-    s.endBreak();
-    s.nextTopic();
-    // Re-read state after mutations
+    endBreak();
+    nextTopic();
     if (useSessionStore.getState().sessionState !== 'session_done') {
-      useSessionStore.getState().setSessionState('studying');
+      setSessionState('studying');
     }
-  }, []);
+  }, [endBreak, nextTopic, setSessionState]);
 
   const handleConfidenceRating = useCallback(
     async (confidence: number) => {
       const s = useSessionStore.getState();
       const item = getCurrentAgendaItem(s);
       if (!item) return;
+
       const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
       const xp =
         item.topic.progress.status === 'unseen' ? XP_REWARDS.TOPIC_UNSEEN : XP_REWARDS.TOPIC_REVIEW;
+
       await updateTopicProgress(item.topic.id, status, confidence, xp);
       setShowXp(xp);
+
       Animated.sequence([
         Animated.timing(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
         Animated.delay(800),
         Animated.timing(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
       ]).start();
+
       if (confidence === 1) triggerEvent('again_rated');
       else triggerEvent('card_done');
 
-      // Clear the cache for the content type that was just finished/rated
-      // so next time this topic is studied, the user gets a fresh generation.
-      const currentContentType = getCurrentContentType(s);
-      if (currentContentType) {
-        clearSpecificContentCache(item.topic.id, currentContentType).catch((err: any) =>
+      const currentType = getCurrentContentType(s);
+      if (currentType) {
+        clearSpecificContentCache(item.topic.id, currentType).catch((err) =>
           console.error('[Session] Cache clear failed:', err),
         );
       }
@@ -433,25 +514,24 @@ export default function SessionScreen() {
       {
         text: 'Downgrade',
         onPress: () => {
+          downgradeSession();
+          setLoadingContent(true);
+          setCurrentContent(null);
           const s = useSessionStore.getState();
-          s.downgradeSession();
-          s.setLoadingContent(true);
-          s.setCurrentContent(null);
           const item = getCurrentAgendaItem(s);
-          const contentType = getCurrentContentType(s);
-          if (item && contentType) {
-            fetchContent(item.topic, contentType)
+          const cType = getCurrentContentType(s);
+          if (item && cType) {
+            fetchContent(item.topic, cType)
               .then((c) => {
-                const st = useSessionStore.getState();
-                st.setCurrentContent(c);
-                st.setLoadingContent(false);
+                setCurrentContent(c);
+                setLoadingContent(false);
               })
-              .catch(() => useSessionStore.getState().setLoadingContent(false));
+              .catch(() => setLoadingContent(false));
           }
         },
       },
     ]);
-  }, []);
+  }, [downgradeSession, setLoadingContent, setCurrentContent]);
 
   const handleMarkForReview = useCallback(() => {
     const s = useSessionStore.getState();
@@ -470,10 +550,10 @@ export default function SessionScreen() {
             if (st.currentContent?.type === 'manual') {
               flaggedType = await flagTopicForReview(item.topic.id, item.topic.name);
             } else {
-              const currentType = st.currentContent?.type;
-              if (currentType) {
-                await setContentFlagged(item.topic.id, currentType, true);
-                flaggedType = currentType;
+              const curType = st.currentContent?.type;
+              if (curType) {
+                await setContentFlagged(item.topic.id, curType, true);
+                flaggedType = curType;
               } else {
                 flaggedType = await flagTopicForReview(item.topic.id, item.topic.name);
               }
@@ -485,7 +565,13 @@ export default function SessionScreen() {
     );
   }, []);
 
-  if (aiError) {
+  const handleSkipToNextTopic = useCallback(() => {
+    nextTopicNoBreak();
+  }, [nextTopicNoBreak]);
+
+  // ── Render Path ──
+
+  if (aiError && sessionState !== 'session_done') {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.errorContainer}>
@@ -496,23 +582,18 @@ export default function SessionScreen() {
             style={styles.retryBtn}
             onPress={() => {
               setAiError(null);
-              if (!store.agenda) startPlanningRef.current?.();
-              else store.setCurrentContent(null);
+              if (!agenda) startPlanning();
+              else setCurrentContent(null);
             }}
           >
             <Text style={styles.retryBtnText}>Retry AI</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.manualBtn} onPress={handleContinueWithoutAi}>
             <Text style={styles.manualBtnText}>
-              {store.agenda ? 'Continue Without AI' : 'Start Manual Review'}
+              {agenda ? 'Continue Without AI' : 'Start Manual Review'}
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.leaveBtn}
-            onPress={() => navigation.goBack()}
-            accessibilityRole="button"
-            accessibilityLabel="Leave session"
-          >
+          <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.leaveBtnText}>Leave Session</Text>
           </TouchableOpacity>
         </ResponsiveContainer>
@@ -520,29 +601,30 @@ export default function SessionScreen() {
     );
   }
 
-  if (store.sessionState === 'planning')
+  if (sessionState === 'planning') {
     return (
       <SafeAreaView style={styles.safe} testID="session-planning">
         <LoadingOrb message="Guru is planning your session..." />
       </SafeAreaView>
     );
+  }
 
-  if (store.sessionState === 'agenda_reveal' && store.agenda) {
+  if (sessionState === 'agenda_reveal' && agenda) {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={styles.revealContainer} testID="session-agenda-reveal">
           <Text style={styles.revealEmoji}>🎯</Text>
-          <Text style={styles.revealFocus}>{store.agenda.focusNote}</Text>
-          <Text style={styles.revealGuru}>"{store.agenda.guruMessage}"</Text>
+          <Text style={styles.revealFocus}>{agenda.focusNote}</Text>
+          <Text style={styles.revealGuru}>"{agenda.guruMessage}"</Text>
           <Text style={styles.revealSub}>Starting in a moment...</Text>
-          {store.agenda.items.map((item) => (
-            <View key={item.topic.id} style={styles.revealTopic}>
-              <View style={[styles.revealDot, { backgroundColor: item.topic.subjectColor }]} />
+          {agenda.items.map((i) => (
+            <View key={i.topic.id} style={styles.revealTopic}>
+              <View style={[styles.revealDot, { backgroundColor: i.topic.subjectColor }]} />
               <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
-                {item.topic.name}
+                {i.topic.name}
               </Text>
-              <Text style={styles.revealTopicSub}>{item.topic.subjectCode}</Text>
+              <Text style={styles.revealTopicSub}>{i.topic.subjectCode}</Text>
             </View>
           ))}
         </ResponsiveContainer>
@@ -550,42 +632,42 @@ export default function SessionScreen() {
     );
   }
 
-  if (store.isOnBreak) {
-    const item = getCurrentAgendaItem(store);
+  if (isOnBreak) {
+    const curItem = agenda?.items[currentItemIndex];
     return (
       <BreakScreen
-        countdown={store.breakCountdown}
+        countdown={breakCountdown}
         totalSeconds={(profile?.breakDurationMinutes ?? 5) * 60}
-        topicId={item?.topic.id}
+        topicId={curItem?.topic.id}
         onDone={handleBreakDone}
         onEndSession={finishSession}
       />
     );
   }
 
-  if (store.sessionState === 'session_done') {
+  if (sessionState === 'session_done') {
     if (forcedMode === 'warmup') {
-      const correctTotal = store.quizResults.reduce((s, r) => s + r.correct, 0);
-      const answeredTotal = store.quizResults.reduce((s, r) => s + r.total, 0);
+      const correctTotal = quizResults.reduce((s, r) => s + r.correct, 0);
+      const answeredTotal = quizResults.reduce((s, r) => s + r.total, 0);
       return (
         <WarmUpMomentumScreen
           correctTotal={correctTotal}
           answeredTotal={answeredTotal}
           mood={mood}
           onMCQBlock={() => {
-            store.resetSession();
+            resetSession();
             navigation.replace('Session', { mood, mode: 'mcq_block', forcedMinutes: 60 });
           }}
           onContinue={() => {
-            store.resetSession();
+            resetSession();
             navigation.replace('Session', { mood });
           }}
           onLecture={() => {
-            store.resetSession();
+            resetSession();
             navigation.navigate('LectureMode', {});
           }}
           onDone={() => {
-            store.resetSession();
+            resetSession();
             try {
               navigation.popToTop();
             } catch {
@@ -597,10 +679,11 @@ export default function SessionScreen() {
     }
     return (
       <SessionDoneScreen
-        completedCount={store.completedTopicIds.length}
+        completedCount={completedTopicIds.length}
         elapsedSeconds={elapsedSeconds}
         xpTotal={sessionXpTotal}
         onClose={() => {
+          resetSession();
           try {
             navigation.popToTop();
           } catch {
@@ -611,13 +694,14 @@ export default function SessionScreen() {
     );
   }
 
-  if (store.sessionState === 'topic_done') {
+  if (sessionState === 'topic_done') {
+    const curItem = agenda?.items[currentItemIndex];
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.topicDoneContainer}>
           <Text style={styles.topicDoneEmoji}>✅</Text>
           <Text style={styles.topicDoneName} numberOfLines={2} ellipsizeMode="tail">
-            {getCurrentAgendaItem(store)?.topic.name}
+            {curItem?.topic.name}
           </Text>
           <Text style={styles.topicDoneSub}>
             Topic complete! Taking a {profile?.breakDurationMinutes ?? 5}-min break...
@@ -627,27 +711,19 @@ export default function SessionScreen() {
     );
   }
 
-  const item = getCurrentAgendaItem(store);
-  const contentType = getCurrentContentType(store);
-  if (!item || !contentType) {
+  const curItem = agenda?.items[currentItemIndex];
+  const curContentType = curItem ? curItem.contentTypes[currentContentIndex] : null;
+
+  if (!curItem || !curContentType) {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
-          <Text style={styles.errorTitle}>Session Error</Text>
-          <Text style={styles.errorMsg}>
-            Could not load the next topic. Your progress has been saved.
-          </Text>
-          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.retryBtnText}>Back to Home</Text>
-          </TouchableOpacity>
+          <LoadingOrb message="Loading..." />
         </ResponsiveContainer>
       </SafeAreaView>
     );
   }
 
-  const topicNum = store.currentItemIndex + 1;
-  const totalTopics = store.agenda?.items.length ?? 1;
   const totalSessionSeconds =
     (forcedMinutes
       ? forcedMinutes
@@ -658,14 +734,12 @@ export default function SessionScreen() {
     100,
     Math.round((activeElapsedSeconds / totalSessionSeconds) * 100),
   );
-  const showPausedOverlay = store.isPaused && store.sessionState === 'studying' && !store.isOnBreak;
+  const showPausedOverlay = isPaused && sessionState === 'studying' && !isOnBreak;
 
   return (
     <SafeAreaView style={styles.safe} {...panHandlers} testID="session-studying">
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-
       <ResponsiveContainer>
-        {/* Story-style time progress bar across top edge */}
         <View style={styles.storyBarContainer}>
           <View style={[styles.storyBarFill, { width: `${timeProgressPercent}%` }]} />
         </View>
@@ -674,61 +748,44 @@ export default function SessionScreen() {
           <View style={styles.headerLeft}>
             <View style={styles.phaseRow}>
               <Text style={styles.phaseBadge}>
-                {store.isPaused
+                {isPaused
                   ? '⏸️ Paused'
-                  : store.isOnBreak
+                  : isOnBreak
                     ? '☕ Break'
-                    : store.sessionState === 'studying'
+                    : sessionState === 'studying'
                       ? '📖 Studying'
-                      : (store.sessionState as string) === 'planning'
-                        ? '📋 Planning'
-                        : (store.sessionState as string) === 'agenda_reveal'
-                          ? '✨ Starting'
-                          : '💤 Done'}
+                      : '💤 Done'}
               </Text>
               <Text style={styles.topicProgress}>
-                Topic {topicNum}/{totalTopics}
+                Topic {currentItemIndex + 1}/{agenda?.items.length ?? 0}
               </Text>
-              {store.currentContent?.modelUsed && (
-                <Text style={[styles.topicProgress, { marginLeft: 6, opacity: 0.6 }]}>
-                  🤖 {store.currentContent.modelUsed.replace('local-', '')}
-                </Text>
-              )}
             </View>
             <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
-              {item.topic.name}
+              {curItem.topic.name}
             </Text>
-            <Text style={styles.subjectTag}>{item.topic.subjectCode}</Text>
+            <Text style={styles.subjectTag}>{curItem.topic.subjectCode}</Text>
+            <Text style={styles.aiSourceLine}>
+              {isLoadingContent
+                ? 'AI · fetching card…'
+                : formatSessionModelLabel(currentContent?.modelUsed)}
+            </Text>
           </View>
           <View style={styles.headerRight}>
             {isStudying && (
               <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
             )}
-            {store.sessionState === 'studying' && !store.isOnBreak && (
-              <TouchableOpacity
-                onPress={() => {
-                  const next = !store.isPaused;
-                  isPausedRef.current = next;
-                  isManuallyPausedRef.current = next;
-                  store.setPaused(next);
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }}
-                style={styles.pauseBtn}
-                testID="session-pause-btn"
-                accessibilityLabel={store.isPaused ? 'Resume session' : 'Pause session'}
-                accessibilityRole="button"
-              >
-                <Text style={styles.pauseBtnText}>{store.isPaused ? '▶' : '⏸'}</Text>
-              </TouchableOpacity>
-            )}
             <TouchableOpacity
-              onPress={() => setMenuVisible(true)}
-              style={styles.menuBtn}
-              testID="session-menu-btn"
-              accessibilityLabel="Session options menu"
-              accessibilityRole="button"
-              accessibilityHint="Opens menu with session options"
+              onPress={() => {
+                const next = !isPaused;
+                isManuallyPausedRef.current = next;
+                setPaused(next);
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }}
+              style={styles.pauseBtn}
             >
+              <Text style={styles.pauseBtnText}>{isPaused ? '▶' : '⏸'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.menuBtn}>
               <Text style={styles.menuBtnText}>•••</Text>
             </TouchableOpacity>
           </View>
@@ -749,8 +806,6 @@ export default function SessionScreen() {
                   setMenuVisible(false);
                   handleMarkForReview();
                 }}
-                accessibilityRole="menuitem"
-                accessibilityLabel="Mark current topic for review"
               >
                 <Text style={styles.menuItemEmoji}>🚩</Text>
                 <Text style={styles.menuItemText}>Mark for Review</Text>
@@ -762,8 +817,6 @@ export default function SessionScreen() {
                   setMenuVisible(false);
                   handleDowngrade();
                 }}
-                accessibilityRole="menuitem"
-                accessibilityLabel="Downgrade session to sprint mode"
               >
                 <Text style={styles.menuItemEmoji}>🆘</Text>
                 <Text style={styles.menuItemText}>Downgrade to Sprint</Text>
@@ -775,9 +828,6 @@ export default function SessionScreen() {
                   setMenuVisible(false);
                   finishSession();
                 }}
-                testID="end-session-btn"
-                accessibilityRole="menuitem"
-                accessibilityLabel="End session and save progress"
               >
                 <Text style={styles.menuItemEmoji}>🚪</Text>
                 <Text style={[styles.menuItemText, { color: theme.colors.error }]}>
@@ -794,39 +844,16 @@ export default function SessionScreen() {
           </Animated.View>
         )}
 
-        {/* Topic progress indicator */}
-        {store.sessionState === 'studying' && store.agenda && (
-          <View style={styles.topicProgressSection}>
-            <Text style={styles.topicProgressLabel}>
-              {store.currentItemIndex + 1} of {store.agenda.items.length} topics
-            </Text>
-            <View style={styles.topicProgressTrack}>
-              <View
-                style={[
-                  styles.topicProgressFill,
-                  {
-                    width: `${(store.currentItemIndex / store.agenda.items.length) * 100}%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        )}
-
         <View style={styles.tabRowWrapper}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ flexGrow: 0, flexShrink: 0, flex: 1 }}
-          >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
             <View style={styles.contentTypeTabs}>
-              {item.contentTypes.map((ct, idx) => (
+              {curItem.contentTypes.map((ct, idx) => (
                 <View
                   key={ct}
                   style={[
                     styles.contentTab,
-                    idx === store.currentContentIndex && styles.contentTabActive,
-                    idx < store.currentContentIndex && styles.contentTabDone,
+                    idx === currentContentIndex && styles.contentTabActive,
+                    idx < currentContentIndex && styles.contentTabDone,
                   ]}
                 >
                   <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
@@ -835,32 +862,33 @@ export default function SessionScreen() {
             </View>
           </ScrollView>
           <Text style={styles.cardCountText}>
-            {store.currentContentIndex + 1}/{item.contentTypes.length}
+            {currentContentIndex + 1}/{curItem.contentTypes.length}
           </Text>
         </View>
 
-        {store.isLoadingContent ? (
+        {isLoadingContent ? (
           <LoadingOrb message="Fetching content..." />
-        ) : store.currentContent ? (
+        ) : currentContent ? (
           <ErrorBoundary>
             <ContentCard
-              content={store.currentContent}
-              topicId={item?.topic.id}
+              key={`${curItem.topic.id}-${currentContentIndex}-${curContentType}`}
+              content={currentContent}
+              topicId={curItem.topic.id}
               onDone={handleConfidenceRating}
               onSkip={handleContentDone}
               onQuizAnswered={(c) => {
                 triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
-                if (!c && item?.topic.id) {
+                if (!c && curItem.topic.id) {
                   void Promise.allSettled([
-                    incrementWrongCount(item.topic.id),
-                    markTopicNeedsAttention(item.topic.id),
-                    setContentFlagged(item.topic.id, 'quiz', true),
+                    incrementWrongCount(curItem.topic.id),
+                    markTopicNeedsAttention(curItem.topic.id),
+                    setContentFlagged(curItem.topic.id, 'quiz', true),
                   ]);
                 }
               }}
-              onQuizComplete={(correct, total) => {
-                if (item) store.addQuizResult({ topicId: item.topic.id, correct, total });
-              }}
+              onQuizComplete={(correct, total) =>
+                addQuizResult({ topicId: curItem.topic.id, correct, total })
+              }
             />
           </ErrorBoundary>
         ) : (
@@ -889,7 +917,7 @@ export default function SessionScreen() {
               style={styles.resumeOverlayBtn}
               onPress={() => {
                 isManuallyPausedRef.current = false;
-                store.setPaused(false);
+                setPaused(false);
               }}
             >
               <Text style={styles.resumeOverlayBtnText}>Resume Session</Text>
@@ -983,7 +1011,6 @@ function SessionDoneScreen({
   onClose: () => void;
 }) {
   const mins = Math.round(elapsedSeconds / 60);
-  const xpEarned = xpTotal;
   return (
     <SafeAreaView style={styles.safe}>
       <ResponsiveContainer style={styles.doneContainer} testID="session-done">
@@ -1002,9 +1029,7 @@ function SessionDoneScreen({
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryValue, { color: theme.colors.warning }]}>
-                +{xpEarned}
-              </Text>
+              <Text style={[styles.summaryValue, { color: theme.colors.warning }]}>+{xpTotal}</Text>
               <Text style={styles.summaryLabel}>XP</Text>
             </View>
           </View>
@@ -1024,10 +1049,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   storyBarContainer: { height: 3, backgroundColor: theme.colors.border },
   storyBarFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 0 },
-  topicProgressSection: {
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: 8,
-  },
+  topicProgressSection: { paddingHorizontal: theme.spacing.lg, marginBottom: 8 },
   topicProgressLabel: {
     color: theme.colors.textMuted,
     fontSize: 11,
@@ -1040,11 +1062,7 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     overflow: 'hidden',
   },
-  topicProgressFill: {
-    height: '100%',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 1.5,
-  },
+  topicProgressFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 1.5 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1068,6 +1086,13 @@ const styles = StyleSheet.create({
   },
   topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18, flex: 1 },
   subjectTag: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
+  aiSourceLine: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    marginTop: 6,
+    fontWeight: '600',
+    lineHeight: 15,
+  },
   pauseBtn: {
     backgroundColor: theme.colors.border,
     borderRadius: 8,

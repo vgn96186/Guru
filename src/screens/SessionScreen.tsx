@@ -179,11 +179,8 @@ export default function SessionScreen() {
         );
       }
     },
-    onActive: () => {
-      if (isPaused && !isManuallyPausedRef.current) {
-        setPaused(false);
-      }
-    },
+    // No auto-resume on activity — user must explicitly tap Resume or the pause button.
+    // The old onActive handler raced with the pause button's onPress via PanResponder capture.
     disabled: sessionState !== 'studying' || isOnBreak,
   });
 
@@ -781,6 +778,7 @@ export default function SessionScreen() {
                 setPaused(next);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }}
+              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
               style={styles.pauseBtn}
             >
               <Text style={styles.pauseBtnText}>{isPaused ? '▶' : '⏸'}</Text>

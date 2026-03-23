@@ -1,20 +1,12 @@
 import * as SQLite from 'expo-sqlite';
 import * as FileSystem from 'expo-file-system/legacy';
-import {
-  ALL_SCHEMAS,
-  DB_INDEXES,
-  CREATE_AI_CACHE_ATTACHED,
-  CREATE_INDEX_AI_CACHE_ATTACHED,
-} from './schema';
+import { ALL_SCHEMAS, DB_INDEXES } from './schema';
 import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 import { MS_PER_DAY } from '../constants/time';
 
 let _db: SQLite.SQLiteDatabase | null = null;
-const _embeddingSeedTask: Promise<void> | null = null;
-/** True after `neet_ai_cache.db` is ATTACHed on the main connection and schema exists. */
-let _aiCacheAttachedReady = false;
 
 /** Typed access to the global DB slot and init queue (survives hot reloads in dev). */
 const _globalDb = global as unknown as {
@@ -32,15 +24,15 @@ export function getDb(): SQLite.SQLiteDatabase {
   return db;
 }
 
-/** Main DB SQL qualifier after ATTACH (JOIN ai_cache with topics / subjects). */
-export const SQL_AI_CACHE = 'guru_aicache.ai_cache';
+/** Table name for AI cache (lives in main DB to avoid ATTACH issues on Android). */
+export const SQL_AI_CACHE = 'ai_cache';
 
 export function getAiCacheDb(): SQLite.SQLiteDatabase {
   return getDb();
 }
 
 export function resetAiCacheDbSingleton(): void {
-  _aiCacheAttachedReady = false;
+  // No-op: AI cache now lives in the main DB. Kept for backward compatibility.
 }
 
 /** Clear the DB singleton (used before re-importing a backup). */
@@ -48,7 +40,6 @@ export function resetDbSingleton(): void {
   _db = null;
   _globalDb.__GURU_DB__ = undefined;
   _globalDb.__GURU_DB_INIT_QUEUE__ = Promise.resolve();
-  resetAiCacheDbSingleton();
 }
 
 /**
@@ -233,9 +224,6 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
     }
   }
 
-  // AI Cache initialization
-  await ensureAiCacheAttachedToMain(db);
-
   // Repair legacy rows before enforcing foreign keys on the shared connection.
   const integrityRepairs = [
     `DELETE FROM topic_progress WHERE topic_id NOT IN (SELECT id FROM topics)`,
@@ -274,34 +262,6 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
 
   // Update streak on open
   await updateStreakOnOpen(db);
-}
-
-/** Strips file:// prefix for SQLite path compatibility. */
-function stripFileUri(uri: string): string {
-  return uri.replace(/^file:\/\//, '');
-}
-
-async function attachAiCacheDatabaseForJoins(mainDb: SQLite.SQLiteDatabase): Promise<void> {
-  const raw = FileSystem.documentDirectory ?? '';
-  const dir = raw.replace(/^file:\/\//, '');
-  const cachePath = `${dir}SQLite/neet_ai_cache.db`.replace(/'/g, "''");
-  try {
-    await mainDb.execAsync(`ATTACH DATABASE '${cachePath}' AS guru_aicache`);
-  } catch (err: unknown) {
-    const msg = String((err as Error)?.message ?? err).toLowerCase();
-    if (msg.includes('already attached') || msg.includes('already in use')) return;
-    console.warn('[DB] ATTACH guru_aicache failed:', err);
-    throw err;
-  }
-}
-
-/** Attach `neet_ai_cache.db` on the main connection and create cache schema (single handle to that file). */
-async function ensureAiCacheAttachedToMain(mainDb: SQLite.SQLiteDatabase): Promise<void> {
-  if (_aiCacheAttachedReady) return;
-  await attachAiCacheDatabaseForJoins(mainDb);
-  await mainDb.execAsync(CREATE_AI_CACHE_ATTACHED);
-  await mainDb.execAsync(CREATE_INDEX_AI_CACHE_ATTACHED);
-  _aiCacheAttachedReady = true;
 }
 
 /**

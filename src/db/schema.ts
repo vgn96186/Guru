@@ -316,7 +316,7 @@ CREATE TABLE IF NOT EXISTS topic_suggestions (
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
   `CREATE INDEX IF NOT EXISTS idx_tp_status_fsrs_due ON topic_progress(status, fsrs_due, confidence)`,
-  // ai_cache index lives on attached guru_aicache (see database.ensureAiCacheAttachedToMain)
+  `CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
   // Lecture notes chronological listing
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created ON lecture_notes(created_at DESC)`,
   // Lecture notes by subject for stats
@@ -365,4 +365,5 @@ export const ALL_SCHEMAS = [
   CREATE_PLAN_EVENTS,
   CREATE_TOPIC_SUGGESTIONS,
   CREATE_LECTURE_LEARNED_TOPICS,
+  CREATE_AI_CACHE_STANDALONE,
 ];

@@ -653,18 +653,18 @@ const styles = StyleSheet.create({
   },
   examChip: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
   examChipDays: {
-    fontSize: 12,
+    fontSize: 20,
     fontWeight: '900',
-    letterSpacing: 0.2,
+    letterSpacing: -0.3,
   },
   examDivider: {
     color: theme.colors.border,
-    fontSize: 12,
+    fontSize: 14,
   },
 
   // ── AI Status ──
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
   heroStatItem: { alignItems: 'center' },
   heroStatValue: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.3,
   },

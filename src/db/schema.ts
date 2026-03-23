@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS ai_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   topic_id INTEGER NOT NULL,
   content_type TEXT NOT NULL
-    CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective')),
+    CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
   content_json TEXT NOT NULL,
   model_used TEXT NOT NULL,
   created_at INTEGER NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS guru_aicache.ai_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   topic_id INTEGER NOT NULL,
   content_type TEXT NOT NULL
-    CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective')),
+    CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
   content_json TEXT NOT NULL,
   model_used TEXT NOT NULL,
   created_at INTEGER NOT NULL,

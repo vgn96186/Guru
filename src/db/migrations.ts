@@ -461,7 +461,22 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN github_models_pat TEXT NOT NULL DEFAULT ''`,
     description: 'GitHub Models PAT (models:read) for OpenAI-style chat at models.github.ai',
   },
+  {
+    version: 103,
+    sql: `DROP TABLE IF EXISTS ai_cache; CREATE TABLE IF NOT EXISTS ai_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      topic_id INTEGER NOT NULL,
+      content_type TEXT NOT NULL
+        CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
+      content_json TEXT NOT NULL,
+      model_used TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      is_flagged INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(topic_id, content_type)
+    ); CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
+    description: 'Recreate ai_cache with updated CHECK constraint (add manual, socratic content types)',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 102;
+export const LATEST_VERSION = 103;

@@ -355,8 +355,59 @@ async function searchPubMedFallback(
 }
 
 /**
+ * DuckDuckGo Instant Answer API — free, no API key.
+ * Returns abstract text and related topics for medical terms.
+ */
+async function searchDuckDuckGo(
+  query: string,
+  maxResults = 4,
+): Promise<MedicalGroundingSource[]> {
+  const medicalQuery = query.replace(/\(India.*?\)/g, '').trim();
+  const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(medicalQuery)}&format=json&no_html=1&skip_disambig=1`;
+  const data = await fetchJsonWithTimeout<{
+    AbstractText?: string;
+    AbstractSource?: string;
+    AbstractURL?: string;
+    Heading?: string;
+    RelatedTopics?: Array<{
+      Text?: string;
+      FirstURL?: string;
+      Result?: string;
+    }>;
+  }>(url);
+
+  const results: MedicalGroundingSource[] = [];
+
+  if (data.AbstractText?.trim()) {
+    results.push({
+      id: `ddg-abstract-${Date.now()}`,
+      title: data.Heading || medicalQuery,
+      url: data.AbstractURL || '',
+      snippet: clipText(data.AbstractText, 500),
+      source: 'DuckDuckGo',
+    });
+  }
+
+  if (data.RelatedTopics) {
+    for (const topic of data.RelatedTopics.slice(0, maxResults - results.length)) {
+      if (topic.Text && topic.FirstURL) {
+        results.push({
+          id: `ddg-${results.length}-${Date.now()}`,
+          title: clipText(topic.Text.split(' - ')[0] || topic.Text, 120),
+          url: topic.FirstURL,
+          snippet: clipText(topic.Text, 300),
+          source: 'DuckDuckGo',
+        });
+      }
+    }
+  }
+
+  return results.slice(0, maxResults);
+}
+
+/**
  * Search for medical articles (text-based grounding).
- * Use this for text explanations, not images.
+ * Uses Wikipedia + DuckDuckGo + EuropePMC, with PubMed as fallback.
  */
 export async function searchLatestMedicalSources(
   query: string,
@@ -371,6 +422,14 @@ export async function searchLatestMedicalSources(
     collected.push(...wiki);
   } catch (err) {
     if (__DEV__) console.warn('[GuruGrounded] Wikipedia failed:', (err as Error).message);
+  }
+
+  // DuckDuckGo — free web search for broader context (no API key needed)
+  try {
+    const ddg = await searchDuckDuckGo(query, 3);
+    collected.push(...ddg);
+  } catch (err) {
+    if (__DEV__) console.warn('[GuruGrounded] DuckDuckGo failed:', (err as Error).message);
   }
 
   try {

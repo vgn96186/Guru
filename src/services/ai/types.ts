@@ -53,7 +53,7 @@ export interface MedicalGroundingSource {
   snippet: string;
   journal?: string;
   publishedAt?: string;
-  source: 'EuropePMC' | 'PubMed' | 'Wikipedia' | 'Wikimedia Commons' | 'Open i (NIH)';
+  source: 'EuropePMC' | 'PubMed' | 'Wikipedia' | 'Wikimedia Commons' | 'Open i (NIH)' | 'DuckDuckGo';
   author?: string;
   license?: string;
 }

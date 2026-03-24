@@ -2,7 +2,12 @@ import { renderHook, waitFor, act } from '@testing-library/react-native';
 import { InteractionManager, Alert } from 'react-native';
 import { useHomeDashboardData } from './useHomeDashboardData';
 import { dailyLogRepository } from '../db/repositories';
-import { getWeakestTopics, getTopicsDueForReview, markNemesisTopics } from '../db/queries/topics';
+import {
+  getWeakestTopics,
+  getTopicsDueForReview,
+  markNemesisTopics,
+  getHighPriorityUnseenTopics,
+} from '../db/queries/topics';
 import { getCompletedSessionCount } from '../db/queries/sessions';
 import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
 import { getTodaysAgendaWithTimes } from '../services/studyPlanner';
@@ -31,6 +36,7 @@ jest.mock('../db/queries/topics', () => ({
   getWeakestTopics: jest.fn(),
   getTopicsDueForReview: jest.fn(),
   markNemesisTopics: jest.fn(),
+  getHighPriorityUnseenTopics: jest.fn(),
 }));
 
 jest.mock('../db/queries/sessions', () => ({
@@ -59,6 +65,7 @@ describe('useHomeDashboardData', () => {
     consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     (markNemesisTopics as jest.Mock).mockResolvedValue(undefined);
+    (getHighPriorityUnseenTopics as jest.Mock).mockResolvedValue([]);
     (getWeakestTopics as jest.Mock).mockResolvedValue(mockWeakTopics);
     (getTopicsDueForReview as jest.Mock).mockResolvedValue(mockDueTopics);
     (getTodaysAgendaWithTimes as jest.Mock).mockResolvedValue(mockTodayTasks);

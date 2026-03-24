@@ -24,6 +24,7 @@ import { theme } from '../constants/theme';
 import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
 import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
+import { MarkdownRender } from './MarkdownRender';
 import SubjectSelectionCard from './SubjectSelectionCard';
 
 interface Props {
@@ -169,15 +170,15 @@ export default function LectureReturnSheet(props: Props) {
           <View style={styles.sheet}>
             <View style={styles.sheetTopRow}>
               <View style={styles.handle} />
-              {isProcessingPhase && (
-                <TouchableOpacity
-                  style={styles.minimizeBtn}
-                  onPress={() => setIsExpanded(false)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.minimizeBtnText}>Keep browsing</Text>
-                </TouchableOpacity>
-              )}
+              <TouchableOpacity
+                style={styles.minimizeBtn}
+                onPress={() => setIsExpanded(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.minimizeBtnText}>
+                  {isProcessingPhase ? 'Keep browsing' : 'Minimize'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* Phase: intro / transcribing */}
@@ -455,7 +456,7 @@ export default function LectureReturnSheet(props: Props) {
                         >
                           {selected === q.correctIndex ? '✅ Correct!' : '❌ Incorrect'}
                         </Text>
-                        <Text style={styles.explText}>{q.explanation}</Text>
+                        <MarkdownRender content={q.explanation} compact />
                       </View>
                     )}
                   </View>
@@ -635,7 +636,7 @@ export default function LectureReturnSheet(props: Props) {
 const styles = StyleSheet.create({
   layer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
   overlay: {
     flex: 1,
@@ -645,7 +646,7 @@ const styles = StyleSheet.create({
   },
   compactDock: {
     paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingTop: 12,
   },
   compactCard: {
     flexDirection: 'row',

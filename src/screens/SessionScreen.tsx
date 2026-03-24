@@ -479,31 +479,42 @@ export default function SessionScreen() {
     async (confidence: number) => {
       const s = useSessionStore.getState();
       const item = getCurrentAgendaItem(s);
-      if (!item) return;
-
-      const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
-      const xp =
-        item.topic.progress.status === 'unseen' ? XP_REWARDS.TOPIC_UNSEEN : XP_REWARDS.TOPIC_REVIEW;
-
-      await updateTopicProgress(item.topic.id, status, confidence, xp);
-      setShowXp(xp);
-
-      Animated.sequence([
-        Animated.timing(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.delay(800),
-        Animated.timing(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
-      ]).start();
-
-      if (confidence === 1) triggerEvent('again_rated');
-      else triggerEvent('card_done');
-
-      const currentType = getCurrentContentType(s);
-      if (currentType) {
-        clearSpecificContentCache(item.topic.id, currentType).catch((err) =>
-          console.error('[Session] Cache clear failed:', err),
-        );
+      if (!item) {
+        // Safety: if agenda item is missing, still advance the session
+        handleContentDone();
+        return;
       }
 
+      try {
+        const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
+        const xp =
+          item.topic.progress.status === 'unseen'
+            ? XP_REWARDS.TOPIC_UNSEEN
+            : XP_REWARDS.TOPIC_REVIEW;
+
+        await updateTopicProgress(item.topic.id, status, confidence, xp);
+        setShowXp(xp);
+
+        Animated.sequence([
+          Animated.timing(xpAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+          Animated.delay(800),
+          Animated.timing(xpAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        ]).start();
+
+        if (confidence === 1) triggerEvent('again_rated');
+        else triggerEvent('card_done');
+
+        const currentType = getCurrentContentType(s);
+        if (currentType) {
+          clearSpecificContentCache(item.topic.id, currentType).catch((err) =>
+            console.error('[Session] Cache clear failed:', err),
+          );
+        }
+      } catch (err) {
+        console.error('[Session] handleConfidenceRating error (continuing):', err);
+      }
+
+      // Always advance the session, even if DB operations above failed
       handleContentDone();
     },
     [xpAnim, triggerEvent, handleContentDone],
@@ -681,7 +692,7 @@ export default function SessionScreen() {
     return (
       <SessionDoneScreen
         completedCount={completedTopicIds.length}
-        elapsedSeconds={elapsedSeconds}
+        elapsedSeconds={activeElapsedSeconds}
         xpTotal={sessionXpTotal}
         onClose={() => {
           resetSession();

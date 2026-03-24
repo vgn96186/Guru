@@ -476,7 +476,12 @@ export const MIGRATIONS: Migration[] = [
     ); CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
     description: 'Recreate ai_cache with updated CHECK constraint (add manual, socratic content types)',
   },
+  {
+    version: 104,
+    sql: `ALTER TABLE user_profile ADD COLUMN kilo_api_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Kilo gateway API key for OpenAI-compatible chat routing',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 103;
+export const LATEST_VERSION = 104;

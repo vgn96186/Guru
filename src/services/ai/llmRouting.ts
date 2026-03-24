@@ -8,6 +8,7 @@ import {
   GEMINI_MODELS,
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
+  KILO_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -21,6 +22,8 @@ let currentLlamaPath: string | null = null;
 let llamaContextPromise: Promise<LlamaContext> | null = null;
 type AppStateSubscription = { remove?: () => void };
 const APPSTATE_SUB_KEY = '__guru_llmRouting_appState_sub_v1';
+const KILO_MODELS_CACHE_TTL_MS = 10 * 60 * 1000;
+let kiloModelsCache: { expiresAt: number; models: string[] } | null = null;
 
 /** Metro / RN debugger only — physical devices cannot reach host `127.0.0.1` debug ingest. */
 function devLogOpenRouter(message: string, data: Record<string, unknown>) {
@@ -41,6 +44,71 @@ function stringifyChatMessageContentParts(content: unknown): string {
     })
     .filter(Boolean)
     .join('\n');
+}
+
+function isLikelyFreeKiloModel(row: Record<string, unknown>): boolean {
+  const flags = [
+    row.free,
+    row.is_free,
+    row.isFree,
+    row.has_free_tier,
+    row.hasFreeTier,
+    row.free_tier,
+    row.freeTier,
+  ];
+  if (flags.some((v) => v === true)) return true;
+
+  const pricing = row.pricing;
+  if (pricing && typeof pricing === 'object') {
+    const p = pricing as Record<string, unknown>;
+    const prompt = Number(p.prompt ?? p.input ?? p.prompt_tokens ?? NaN);
+    const completion = Number(p.completion ?? p.output ?? p.completion_tokens ?? NaN);
+    if (Number.isFinite(prompt) && Number.isFinite(completion) && prompt === 0 && completion === 0) {
+      return true;
+    }
+  }
+
+  const rawTagFields = [row.tier, row.plan, row.label, row.category, row.type, row.tags];
+  const tagText = rawTagFields
+    .flatMap((v) => (Array.isArray(v) ? v : [v]))
+    .filter((v): v is string => typeof v === 'string')
+    .join(' ')
+    .toLowerCase();
+  return /\bfree\b/.test(tagText);
+}
+
+async function getKiloPreferredModels(kiloApiKey: string): Promise<string[]> {
+  const now = Date.now();
+  if (kiloModelsCache && kiloModelsCache.expiresAt > now && kiloModelsCache.models.length > 0) {
+    return kiloModelsCache.models;
+  }
+
+  try {
+    const res = await fetch('https://api.kilo.ai/api/gateway/models', {
+      headers: { Authorization: `Bearer ${kiloApiKey}` },
+    });
+    if (!res.ok) {
+      return [...KILO_MODELS];
+    }
+    const data = (await res.json()) as { data?: Record<string, unknown>[] };
+    const rows = Array.isArray(data.data) ? data.data : [];
+    const all = rows
+      .map((r) => r.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const free = rows
+      .filter((r) => isLikelyFreeKiloModel(r))
+      .map((r) => r.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const preferred = [...new Set([...(free.length > 0 ? free : all), ...KILO_MODELS])];
+    if (preferred.length > 0) {
+      kiloModelsCache = { expiresAt: now + KILO_MODELS_CACHE_TTL_MS, models: preferred };
+      return preferred;
+    }
+  } catch {
+    // Ignore — fallback list below
+  }
+
+  return [...KILO_MODELS];
 }
 
 /**
@@ -757,6 +825,95 @@ async function streamGitHubModelsChat(
   return text;
 }
 
+async function callKilo(
+  messages: Message[],
+  kiloApiKey: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+  const body: Record<string, unknown> = {
+    model,
+    messages: clonedMessages,
+    temperature: 0.7,
+    max_tokens: 2000,
+  };
+  if (jsonMode) body.response_format = { type: 'json_object' };
+  const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${kiloApiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 429) {
+    throw new RateLimitError(`Kilo rate limit on ${model}`);
+  }
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Kilo error ${res.status} (${model}): ${err}`);
+  }
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from Kilo model ${model}`);
+  return text;
+}
+
+async function streamKiloChat(
+  messages: Message[],
+  kiloApiKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${kiloApiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 2000,
+      stream: true,
+    }),
+  });
+  if (res.status === 429) {
+    throw new RateLimitError(`Kilo rate limit on ${model}`);
+  }
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Kilo error ${res.status} (${model}): ${err}`);
+  }
+  if (!res.body) {
+    const text = await callKilo(messages, kiloApiKey, model, false);
+    onDelta(text);
+    return text;
+  }
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from Kilo model ${model}`);
+  return text;
+}
+
 /**
  * Same routing policy as attemptCloudLLM, but streams assistant tokens via onDelta.
  * (JSON / structured output is not streamed — use {@link attemptCloudLLM} instead.)
@@ -773,6 +930,7 @@ export async function attemptCloudLLMStream(
   cfApiToken?: string | undefined,
   deepseekKey?: string | undefined,
   githubModelsPat?: string | undefined,
+  kiloApiKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -789,6 +947,9 @@ export async function attemptCloudLLMStream(
   const preferredGithubModel = chosenModel?.startsWith('github/')
     ? chosenModel.replace('github/', '')
     : undefined;
+  const preferredKiloModel = chosenModel?.startsWith('kilo/')
+    ? chosenModel.replace('kilo/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -796,6 +957,7 @@ export async function attemptCloudLLMStream(
     !preferredCfModel &&
     !preferredDeepseekModel &&
     !preferredGithubModel &&
+    !preferredKiloModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -885,6 +1047,15 @@ export async function attemptCloudLLMStream(
     }
   }
 
+  if (preferredKiloModel && kiloApiKey) {
+    try {
+      const text = await streamKiloChat(messages, kiloApiKey, preferredKiloModel, onDelta);
+      return { text, modelUsed: `kilo/${preferredKiloModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   if (preferredDeepseekModel && deepseekKey) {
     try {
       const text = await streamDeepSeekChat(messages, deepseekKey, preferredDeepseekModel, onDelta);
@@ -941,6 +1112,21 @@ export async function attemptCloudLLMStream(
       try {
         const text = await streamGitHubModelsChat(messages, githubModelsPat, model, onDelta);
         return { text, modelUsed: `github/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (kiloApiKey) {
+    const kiloModels = await getKiloPreferredModels(kiloApiKey);
+    for (const model of kiloModels) {
+      if (preferredKiloModel && model === preferredKiloModel) continue;
+      try {
+        const text = await streamKiloChat(messages, kiloApiKey, model, onDelta);
+        return { text, modelUsed: `kilo/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -1105,6 +1291,7 @@ export async function attemptCloudLLM(
   cfApiToken?: string | undefined,
   deepseekKey?: string | undefined,
   githubModelsPat?: string | undefined,
+  kiloApiKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1121,6 +1308,9 @@ export async function attemptCloudLLM(
   const preferredGithubModel = chosenModel?.startsWith('github/')
     ? chosenModel.replace('github/', '')
     : undefined;
+  const preferredKiloModel = chosenModel?.startsWith('kilo/')
+    ? chosenModel.replace('kilo/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -1128,6 +1318,7 @@ export async function attemptCloudLLM(
     !preferredCfModel &&
     !preferredDeepseekModel &&
     !preferredGithubModel &&
+    !preferredKiloModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -1153,6 +1344,17 @@ export async function attemptCloudLLM(
         ? await callGitHubModels(messages, githubModelsPat, preferredGithubModel, false)
         : await callGitHubModels(messages, githubModelsPat, preferredGithubModel);
       return { text, modelUsed: `github/${preferredGithubModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredKiloModel && kiloApiKey) {
+    try {
+      const text = textMode
+        ? await callKilo(messages, kiloApiKey, preferredKiloModel, false)
+        : await callKilo(messages, kiloApiKey, preferredKiloModel);
+      return { text, modelUsed: `kilo/${preferredKiloModel}` };
     } catch (err) {
       lastCloudError = err as Error;
     }
@@ -1221,6 +1423,23 @@ export async function attemptCloudLLM(
           ? await callGitHubModels(messages, githubModelsPat, model, false)
           : await callGitHubModels(messages, githubModelsPat, model);
         return { text, modelUsed: `github/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (kiloApiKey) {
+    const kiloModels = await getKiloPreferredModels(kiloApiKey);
+    for (const model of kiloModels) {
+      if (preferredKiloModel && model === preferredKiloModel) continue;
+      try {
+        const text = textMode
+          ? await callKilo(messages, kiloApiKey, model, false)
+          : await callKilo(messages, kiloApiKey, model);
+        return { text, modelUsed: `kilo/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;

@@ -356,10 +356,12 @@ export default function GuruChatScreen() {
     gemini: geminiModelIds,
     cloudflare: cfModelIds,
     github: githubModelIds,
+    kilo: kiloModelIds,
   } = useLiveGuruChatModels(profile);
 
   const availableModels = useMemo(() => {
-    const { orKey, groqKey } = getApiKeys(profile ?? undefined);
+    const { orKey, groqKey, geminiKey, cfAccountId, cfApiToken, githubModelsPat, kiloApiKey } =
+      getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
     if (profile?.useLocalModel && profile?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
@@ -386,7 +388,7 @@ export default function GuruChatScreen() {
       });
     }
 
-    if (getApiKeys(profile).geminiKey) {
+    if (geminiKey) {
       geminiModelIds.forEach((model) => {
         list.push({
           id: `gemini/${model}`,
@@ -396,7 +398,7 @@ export default function GuruChatScreen() {
       });
     }
 
-    if (getApiKeys(profile).cfAccountId && getApiKeys(profile).cfApiToken) {
+    if (cfAccountId && cfApiToken) {
       cfModelIds.forEach((model) => {
         list.push({
           id: `cf/${model}`,
@@ -406,7 +408,7 @@ export default function GuruChatScreen() {
       });
     }
 
-    if (getApiKeys(profile).githubModelsPat) {
+    if (githubModelsPat) {
       githubModelIds.forEach((model) => {
         list.push({
           id: `github/${model}`,
@@ -416,8 +418,18 @@ export default function GuruChatScreen() {
       });
     }
 
+    if (kiloApiKey) {
+      kiloModelIds.forEach((model) => {
+        list.push({
+          id: `kilo/${model}`,
+          name: guruChatPickerNameForGithubModel(model),
+          group: 'Kilo',
+        });
+      });
+    }
+
     return list;
-  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds, githubModelIds]);
+  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds, githubModelIds, kiloModelIds]);
 
   useEffect(() => {
     if (!profile) return;

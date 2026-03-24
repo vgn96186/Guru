@@ -3,7 +3,9 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Dimensions,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -132,6 +134,15 @@ function ActionHubPlaceholder() {
   return null;
 }
 
+const EXTERNAL_APP_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
+  cerebellum: 'school-outline',
+  dbmci: 'medkit-outline',
+  marrow: 'flask-outline',
+  prepladder: 'layers-outline',
+  bhatia: 'person-outline',
+  youtube: 'logo-youtube',
+};
+
 export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
@@ -143,7 +154,10 @@ export default function TabNavigator() {
   const localWhisperPath =
     profile?.useLocalWhisper && profile?.localWhisperPath ? profile.localWhisperPath : undefined;
   const [isActionHubOpen, setIsActionHubOpen] = useState(false);
+  const isActionHubOpenRef = useRef(false);
+  isActionHubOpenRef.current = isActionHubOpen;
   const sheetAnim = useRef(new Animated.Value(0)).current;
+  const sheetDragY = useRef(new Animated.Value(0)).current;
   const bottomInset = Math.max(insets.bottom, 8);
   const [dueCount, setDueCount] = useState(0);
   const [returnSheet, setReturnSheet] = useState<LectureReturnSheetData | null>(null);
@@ -174,6 +188,39 @@ export default function TabNavigator() {
       useNativeDriver: true,
     }).start();
   }, [isActionHubOpen]);
+
+  useEffect(() => {
+    if (isActionHubOpen) {
+      sheetDragY.setValue(0);
+    }
+  }, [isActionHubOpen, sheetDragY]);
+
+  useEffect(() => {
+    const { width, height } = Dimensions.get('window');
+    // #region agent log
+    fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
+      body: JSON.stringify({
+        sessionId: '76b91e',
+        runId: 'pre-fix',
+        hypothesisId: 'H1-H2',
+        location: 'src/navigation/TabNavigator.tsx:sheet-state',
+        message: 'Action hub state with viewport and tabbar metrics',
+        data: {
+          isActionHubOpen,
+          windowWidth: width,
+          windowHeight: height,
+          orientation: width > height ? 'landscape' : 'portrait',
+          bottomInset,
+          tabBarHeight: 66 + bottomInset,
+          sheetHeightStyle: '85%',
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+    // #endregion
+  }, [isActionHubOpen, bottomInset]);
 
   // Intercept Android hardware/gesture back to close the sheet instead of popping navigator
   useEffect(() => {
@@ -209,6 +256,68 @@ export default function TabNavigator() {
   const [uploadSubjectRequired, setUploadSubjectRequired] = useState(false);
   const [selectedUploadSubjectName, setSelectedUploadSubjectName] = useState<string | null>(null);
   const [isSavingUpload, setIsSavingUpload] = useState(false);
+  const externalLayoutLogRef = useRef<Record<string, boolean>>({});
+
+  const dismissThreshold = 60;
+  const dismissVelocity = 1;
+  const sheetScrollYRef = useRef(0);
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, gs) =>
+        isActionHubOpenRef.current &&
+        sheetScrollYRef.current <= 0 &&
+        gs.dy > 10 &&
+        Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+      onMoveShouldSetPanResponderCapture: (_, gs) =>
+        isActionHubOpenRef.current &&
+        sheetScrollYRef.current <= 0 &&
+        gs.dy > 10 &&
+        Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+      onPanResponderTerminationRequest: () => false,
+      onPanResponderMove: (_, gs) => {
+        sheetDragY.setValue(Math.max(0, gs.dy));
+      },
+      onPanResponderRelease: (_, gs) => {
+        const shouldDismiss =
+          gs.dy > dismissThreshold || gs.vy > dismissVelocity;
+        if (shouldDismiss) {
+          Animated.parallel([
+            Animated.spring(sheetDragY, {
+              toValue: 800,
+              velocity: gs.vy,
+              tension: 40,
+              friction: 8,
+              useNativeDriver: true,
+            }),
+            Animated.timing(sheetAnim, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setIsActionHubOpen(false);
+          });
+          return;
+        }
+        Animated.spring(sheetDragY, {
+          toValue: 0,
+          velocity: gs.vy,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(sheetDragY, {
+          toValue: 0,
+          tension: 65,
+          friction: 11,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
 
   useLectureReturnRecovery({
     onRecovered: setReturnSheet,
@@ -422,6 +531,31 @@ export default function TabNavigator() {
         <Animated.View
           style={[styles.sheetBackdrop, { opacity: sheetAnim }]}
           pointerEvents={isActionHubOpen ? 'auto' : 'none'}
+          onLayout={(event) => {
+            const layout = event.nativeEvent.layout;
+            // #region agent log
+            fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
+              body: JSON.stringify({
+                sessionId: '76b91e',
+                runId: 'pre-fix',
+                hypothesisId: 'H3',
+                location: 'src/navigation/TabNavigator.tsx:sheet-backdrop-layout',
+                message: 'Backdrop layout and pointer-events state',
+                data: {
+                  isActionHubOpen,
+                  pointerEvents: isActionHubOpen ? 'auto' : 'none',
+                  x: layout.x,
+                  y: layout.y,
+                  width: layout.width,
+                  height: layout.height,
+                },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => {});
+            // #endregion
+          }}
         >
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -431,31 +565,67 @@ export default function TabNavigator() {
           />
         </Animated.View>
         <Animated.View
+          {...sheetPanResponder.panHandlers}
           style={[
             styles.sheet,
             { paddingBottom: bottomInset + theme.spacing.lg },
             {
               transform: [
                 {
-                  translateY: sheetAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [800, 0],
-                  }),
+                  translateY: Animated.add(
+                    sheetAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [800, 0],
+                    }),
+                    sheetDragY,
+                  ),
                 },
               ],
             },
           ]}
+          onLayout={(event) => {
+            const layout = event.nativeEvent.layout;
+            // #region agent log
+            fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
+              body: JSON.stringify({
+                sessionId: '76b91e',
+                runId: 'pre-fix',
+                hypothesisId: 'H1',
+                location: 'src/navigation/TabNavigator.tsx:sheet-layout',
+                message: 'Bottom sheet rendered layout',
+                data: {
+                  isActionHubOpen,
+                  x: layout.x,
+                  y: layout.y,
+                  width: layout.width,
+                  height: layout.height,
+                },
+                timestamp: Date.now(),
+              }),
+            }).catch(() => {});
+            // #endregion
+          }}
         >
+          <View style={styles.sheetHandleHitbox}>
+            <View style={styles.sheetHandle} />
+          </View>
           <ScrollView
             style={styles.sheetScroll}
             contentContainerStyle={styles.sheetScrollContent}
             showsVerticalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
+            nestedScrollEnabled
+            onScroll={(e) => { sheetScrollYRef.current = e.nativeEvent.contentOffset.y; }}
+            scrollEventThrottle={16}
           >
             <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
             <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
-            <View style={styles.primaryActions}>
+            <View style={styles.topActionRow}>
               <Pressable
-                style={({ pressed }) => [styles.primaryAction, pressed && styles.actionPressed]}
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 android_ripple={{ color: '#ffffff18' }}
                 onPress={() => openRoute('HomeTab', 'LectureMode', {})}
                 testID="action-hub-record-lecture"
@@ -463,44 +633,37 @@ export default function TabNavigator() {
                 accessibilityLabel="Record lecture"
               >
                 <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
-                <Text style={styles.primaryActionTitle}>Record Lecture</Text>
-                <Text style={styles.primaryActionSubtitle}>
-                  Capture long-form audio and route it back safely.
-                </Text>
+                <Text style={styles.topActionTitle}>Record Lecture</Text>
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 android_ripple={{ color: '#ffffff18' }}
                 onPress={() => openRoute('HomeTab', 'GlobalTopicSearch')}
                 testID="action-hub-search-topics"
                 accessibilityRole="button"
                 accessibilityLabel="Search any topic"
               >
-                <Ionicons name="search-outline" size={20} color={theme.colors.info} />
-                <Text style={styles.secondaryActionTitle}>Search Topics</Text>
-                <Text style={styles.secondaryActionSubtitle}>Find any micro-topic globally.</Text>
+                <Ionicons name="search-outline" size={22} color={theme.colors.info} />
+                <Text style={styles.topActionTitle}>Search Topics</Text>
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [styles.secondaryAction, pressed && styles.actionPressed]}
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 android_ripple={{ color: '#ffffff18' }}
                 onPress={() => openRoute('MenuTab', 'NotesHub')}
                 testID="action-hub-quick-note"
                 accessibilityRole="button"
                 accessibilityLabel="Quick note, open notes vault"
               >
-                <Ionicons name="create-outline" size={20} color={theme.colors.accentAlt} />
-                <Text style={styles.secondaryActionTitle}>Quick Note</Text>
-                <Text style={styles.secondaryActionSubtitle}>
-                  Jump into your notes vault and capture context.
-                </Text>
+                <Ionicons name="create-outline" size={22} color={theme.colors.accentAlt} />
+                <Text style={styles.topActionTitle}>Quick Note</Text>
               </Pressable>
             </View>
 
             <View style={styles.manualActionsContainer}>
               <Pressable
-                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 onPress={handleAudioUpload}
                 disabled={isTranscribingUpload}
                 testID="action-hub-upload-audio"
@@ -518,7 +681,7 @@ export default function TabNavigator() {
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 onPress={() => openRoute('MenuTab', 'ManualNoteCreation')}
                 testID="action-hub-paste-transcript"
                 accessibilityRole="button"
@@ -529,7 +692,7 @@ export default function TabNavigator() {
               </Pressable>
 
               <Pressable
-                style={({ pressed }) => [styles.manualAction, pressed && styles.actionPressed]}
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 onPress={() => navigation.navigate('BrainDumpReview' as never)}
                 testID="action-hub-parked-thoughts"
                 accessibilityRole="button"
@@ -553,11 +716,44 @@ export default function TabNavigator() {
                   style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
                   android_ripple={{ color: `${app.color}22` }}
                   onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
+                  onLayout={(event) => {
+                    if (externalLayoutLogRef.current[app.id]) return;
+                    externalLayoutLogRef.current[app.id] = true;
+                    const layout = event.nativeEvent.layout;
+                    // #region agent log
+                    fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
+                      body: JSON.stringify({
+                        sessionId: '76b91e',
+                        runId: 'pre-fix',
+                        hypothesisId: 'H5',
+                        location: 'src/navigation/TabNavigator.tsx:external-chip-layout',
+                        message: 'External chip layout metrics',
+                        data: {
+                          appId: app.id,
+                          appName: app.name,
+                          x: layout.x,
+                          y: layout.y,
+                          width: layout.width,
+                          height: layout.height,
+                        },
+                        timestamp: Date.now(),
+                      }),
+                    }).catch(() => {});
+                    // #endregion
+                  }}
                   testID={`action-hub-external-${app.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${app.name}`}
                 >
-                  <Text style={styles.externalEmoji}>{app.iconEmoji}</Text>
+                  <View style={[styles.externalIconCircle, { backgroundColor: `${app.color}1E`, borderColor: `${app.color}4A` }]}>
+                    <Ionicons
+                      name={EXTERNAL_APP_ICON_MAP[app.id] ?? 'apps-outline'}
+                      size={26}
+                      color={app.color}
+                    />
+                  </View>
                   <Text style={styles.externalChipLabel}>{app.name}</Text>
                 </Pressable>
               ))}
@@ -670,12 +866,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -18,
   },
   fabButton: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -687,7 +882,7 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 10,
     fontWeight: '700',
-    marginTop: 4,
+    marginTop: 2,
     letterSpacing: 0.3,
   },
   sheetRoot: {
@@ -760,11 +955,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xl,
-    height: '85%',
+    paddingTop: theme.spacing.sm,
+    maxHeight: '85%',
   },
   sheetScroll: {
-    flex: 1,
+    flexGrow: 0,
+  },
+  sheetHandleHitbox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  sheetHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: theme.colors.textMuted,
+    opacity: 0.55,
   },
   sheetScrollContent: {
     gap: theme.spacing.lg,
@@ -782,30 +990,39 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 30,
   },
-  primaryActions: {
-    gap: theme.spacing.md,
+  topActionRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.sm,
+  },
+  topActionTile: {
+    flex: 1,
+    minHeight: 88,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  topActionTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   manualActionsContainer: {
     flexDirection: 'row',
-    gap: theme.spacing.md,
+    gap: theme.spacing.sm,
     marginTop: theme.spacing.sm,
   },
-  manualAction: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 6,
-  },
   manualActionText: {
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   primaryAction: {
     backgroundColor: theme.colors.primaryDark,
@@ -860,30 +1077,26 @@ const styles = StyleSheet.create({
   externalGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.sm,
-    justifyContent: 'center',
+    justifyContent: 'space-evenly',
+    rowGap: theme.spacing.md,
   },
   externalChip: {
-    flex: 1,
-    minWidth: '28%',
-    maxWidth: '31%',
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.lg,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    gap: 4,
+    width: '16%',
   },
-  externalEmoji: {
-    fontSize: 22,
-    marginBottom: 6,
-    textAlign: 'center',
+  externalIconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   externalChipLabel: {
-    color: theme.colors.textPrimary,
-    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontSize: 10,
     fontWeight: '700',
     textAlign: 'center',
   },

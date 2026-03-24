@@ -21,6 +21,7 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     cfApiToken,
     deepseekKey,
     githubModelsPat,
+    kiloApiKey,
   } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
   const hasCloud =
@@ -30,7 +31,8 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     !!geminiFallbackKey ||
     (!!cfAccountId && !!cfApiToken) ||
     !!deepseekKey ||
-    !!githubModelsPat;
+    !!githubModelsPat ||
+    !!kiloApiKey;
 
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
@@ -51,6 +53,7 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     cfApiToken,
     deepseekKey,
     githubModelsPat,
+    kiloApiKey,
   };
 }
 
@@ -72,6 +75,7 @@ export async function generateJSONWithRouting<T>(
     cfApiToken,
     deepseekKey,
     githubModelsPat,
+    kiloApiKey,
   } = getBackendAttemptOrder(profile);
 
   if (forceProvider === 'groq') {
@@ -114,6 +118,7 @@ export async function generateJSONWithRouting<T>(
         cfApiToken,
         deepseekKey,
         githubModelsPat,
+        kiloApiKey,
       );
       const parsed = await parseStructuredJson(text, schema);
       return { parsed, modelUsed };
@@ -165,6 +170,7 @@ export async function generateTextWithRouting(
     cfApiToken,
     deepseekKey,
     githubModelsPat,
+    kiloApiKey,
   } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -185,6 +191,7 @@ export async function generateTextWithRouting(
               cfApiToken,
               deepseekKey,
               githubModelsPat,
+              kiloApiKey,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       return { text, modelUsed };
@@ -238,6 +245,7 @@ export async function generateTextWithRoutingStream(
     cfApiToken,
     deepseekKey,
     githubModelsPat,
+    kiloApiKey,
   } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -260,6 +268,7 @@ export async function generateTextWithRoutingStream(
         cfApiToken,
         deepseekKey,
         githubModelsPat,
+        kiloApiKey,
       );
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);

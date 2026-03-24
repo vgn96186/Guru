@@ -5,6 +5,7 @@ import {
   GEMINI_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GROQ_MODELS,
+  KILO_MODELS,
   OPENROUTER_FREE_MODELS,
 } from '../config/appConfig';
 import { getApiKeys } from '../services/ai/config';
@@ -20,6 +21,7 @@ export type LiveGuruChatDraftKeys = {
   cloudflareAccountId?: string;
   cloudflareApiToken?: string;
   githubModelsPat?: string;
+  kiloApiKey?: string;
 };
 
 function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): UserProfile {
@@ -31,6 +33,7 @@ function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): 
     cloudflareAccountId: draft.cloudflareAccountId?.trim() || profile.cloudflareAccountId || '',
     cloudflareApiToken: draft.cloudflareApiToken?.trim() || profile.cloudflareApiToken || '',
     githubModelsPat: draft.githubModelsPat?.trim() || profile.githubModelsPat || '',
+    kiloApiKey: draft.kiloApiKey?.trim() || profile.kiloApiKey || '',
   };
 }
 
@@ -65,6 +68,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
             draft.cloudflareAccountId ?? '',
             draft.cloudflareApiToken ?? '',
             draft.githubModelsPat ?? '',
+            draft.kiloApiKey ?? '',
           ].join('\0')
         : '',
     [draft],
@@ -92,6 +96,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     })();
 
     const { groqKey, orKey, geminiKey, cfAccountId, cfApiToken } = getApiKeys(mergedProfile);
+  const { kiloApiKey } = getApiKeys(mergedProfile);
 
     fetchAllLiveGuruChatModelIds({
       groqKey,
@@ -99,6 +104,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       geminiKey,
       cfAccountId,
       cfApiToken,
+      kiloApiKey,
     })
       .then((r) => {
         if (!cancelled) setLive(r);
@@ -125,6 +131,10 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     mergedProfile && getApiKeys(mergedProfile).githubModelsPat
       ? [...GITHUB_MODELS_CHAT_MODELS]
       : [];
+  const kiloList =
+    mergedProfile && getApiKeys(mergedProfile).kiloApiKey
+      ? (live?.kilo ?? [...KILO_MODELS])
+      : [];
 
   return {
     groq: live?.groq ?? GROQ_MODELS,
@@ -132,6 +142,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     gemini: live?.gemini ?? GEMINI_MODELS,
     cloudflare: live?.cloudflare ?? CLOUDFLARE_MODELS,
     github: githubList,
+    kilo: kiloList,
     loading,
     anyLive: live?.anyLive ?? false,
     errors: live?.errors ?? {},

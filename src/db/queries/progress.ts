@@ -84,6 +84,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     image_generation_model: string;
     prefer_gemini_structured_json: number | null;
     github_models_pat: string;
+    kilo_api_key: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -139,6 +140,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       guruMemoryNotes: '',
       preferGeminiStructuredJson: true,
       githubModelsPat: '',
+      kiloApiKey: '',
     };
   }
 
@@ -225,6 +227,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     guruMemoryNotes: r.guru_memory_notes ?? '',
     preferGeminiStructuredJson: (r.prefer_gemini_structured_json ?? 1) === 1,
     githubModelsPat: r.github_models_pat ?? '',
+    kiloApiKey: r.kilo_api_key ?? '',
   };
 }
 
@@ -279,6 +282,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     guruMemoryNotes: 'guru_memory_notes',
     preferGeminiStructuredJson: 'prefer_gemini_structured_json',
     githubModelsPat: 'github_models_pat',
+    kiloApiKey: 'kilo_api_key',
   };
 
   const setClauses: string[] = [];

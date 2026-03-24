@@ -51,6 +51,7 @@ import {
   testGeminiConnection,
   testCloudflareConnection,
   testGitHubModelsConnection,
+  testKiloConnection,
 } from '../services/ai/providerHealth';
 import type { ContentType, Subject } from '../types';
 import { theme } from '../constants/theme';
@@ -361,6 +362,9 @@ export default function SettingsScreen() {
   const [geminiKeyTestResult, setGeminiKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingCloudflare, setTestingCloudflare] = useState(false);
   const [cloudflareTestResult, setCloudflareTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [kiloApiKey, setKiloApiKey] = useState('');
+  const [testingKiloKey, setTestingKiloKey] = useState(false);
+  const [kiloKeyTestResult, setKiloKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
     DEFAULT_IMAGE_GENERATION_MODEL,
@@ -375,6 +379,7 @@ export default function SettingsScreen() {
     cloudflareAccountId: cfAccountId,
     cloudflareApiToken: cfApiToken,
     githubModelsPat,
+    kiloApiKey,
   });
 
   useEffect(() => {
@@ -420,6 +425,19 @@ export default function SettingsScreen() {
     const res = await testOpenRouterConnection(key);
     setOpenRouterKeyTestResult(res.ok ? 'ok' : 'fail');
     setTestingOpenRouterKey(false);
+  }
+
+  async function testKiloKey() {
+    const key = kiloApiKey.trim() || profile?.kiloApiKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter a Kilo API key first.');
+      return;
+    }
+    setTestingKiloKey(true);
+    setKiloKeyTestResult(null);
+    const res = await testKiloConnection(key);
+    setKiloKeyTestResult(res.ok ? 'ok' : 'fail');
+    setTestingKiloKey(false);
   }
 
   async function testHuggingFaceKey() {
@@ -518,6 +536,7 @@ export default function SettingsScreen() {
     if (profile) {
       setGroqKey(profile.groqApiKey ?? '');
       setGithubModelsPat(profile.githubModelsPat ?? '');
+      setKiloApiKey(profile.kiloApiKey ?? '');
       setOrKey(profile.openrouterKey ?? '');
       setGeminiKey(profile.geminiKey ?? '');
       setCfAccountId(profile.cloudflareAccountId ?? '');
@@ -554,6 +573,7 @@ export default function SettingsScreen() {
       updateUserProfile({
         groqApiKey: groqKey.trim(),
         githubModelsPat: githubModelsPat.trim(),
+        kiloApiKey: kiloApiKey.trim(),
         openrouterKey: orKey.trim(),
         geminiKey: geminiKey.trim(),
         cloudflareAccountId: cfAccountId.trim(),
@@ -709,6 +729,11 @@ export default function SettingsScreen() {
                 label: formatGuruChatModelChipLabel(`github/${m}`),
                 group: 'GitHub Models',
               })),
+              ...liveGuruChatModels.kilo.map((m) => ({
+                id: `kilo/${m}`,
+                label: formatGuruChatModelChipLabel(`kilo/${m}`),
+                group: 'Kilo',
+              })),
               ...liveGuruChatModels.openrouter.map((m) => ({
                 id: m,
                 label: formatGuruChatModelChipLabel(m),
@@ -840,6 +865,45 @@ export default function SettingsScreen() {
                   : openRouterKeyTestResult === 'fail'
                     ? '❌ Key invalid or unreachable'
                     : 'Test OpenRouter Connection'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <Label text="Kilo API Key — optional provider" />
+          <TextInput
+            style={styles.input}
+            placeholder="kilo_..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={kiloApiKey}
+            onChangeText={setKiloApiKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            OpenAI-compatible gateway at api.kilo.ai. Supports model IDs like
+            `anthropic/claude-sonnet-4.5`.
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testKiloKey}
+            disabled={testingKiloKey}
+            activeOpacity={0.8}
+          >
+            {testingKiloKey ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  kiloKeyTestResult === 'ok' && { color: theme.colors.success },
+                  kiloKeyTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {kiloKeyTestResult === 'ok'
+                  ? '✅ Kilo key works!'
+                  : kiloKeyTestResult === 'fail'
+                    ? '❌ Key invalid or unreachable'
+                    : 'Test Kilo Connection'}
               </Text>
             )}
           </TouchableOpacity>

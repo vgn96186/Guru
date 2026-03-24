@@ -4,6 +4,7 @@ import {
   GEMINI_MODELS,
   CLOUDFLARE_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
+  KILO_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
 } from '../../config/appConfig';
@@ -185,6 +186,34 @@ export async function testCloudflareConnection(
         }),
       },
     );
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testKiloConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty key' };
+  }
+  try {
+    const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${trimmed}`,
+      },
+      body: JSON.stringify({
+        model: KILO_MODELS[0],
+        messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+        max_tokens: 8,
+      }),
+    });
     return toHealthResult(res);
   } catch (error) {
     return {

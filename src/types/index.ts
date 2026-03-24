@@ -164,6 +164,8 @@ export interface UserProfile {
   deepseekKey?: string;
   /** GitHub Models API — fine-grained PAT with `models: read` (or classic PAT with models scope). */
   githubModelsPat?: string;
+  /** Kilo gateway API key (OpenAI-compatible endpoint at api.kilo.ai). */
+  kiloApiKey?: string;
 }
 
 // AI Content shapes

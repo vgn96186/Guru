@@ -6,6 +6,7 @@ import {
   CLOUDFLARE_MODELS,
   GEMINI_MODELS,
   GROQ_MODELS,
+  KILO_MODELS,
   OPENROUTER_FREE_MODELS,
 } from '../../config/appConfig';
 import { fetchGeminiChatModelIdsViaSdk, mergeGeminiListWithDefaults } from './google/geminiListModels';
@@ -216,15 +217,50 @@ export async function fetchCloudflareChatModelIds(
   }
 }
 
+/** Kilo gateway — OpenAI-compatible models endpoint. */
+export async function fetchKiloModelIds(
+  apiKey: string,
+): Promise<{ ids: string[] } & LiveModelFetchMeta> {
+  const key = apiKey.trim();
+  if (!key) {
+    return { ids: [...KILO_MODELS], source: 'fallback' };
+  }
+  try {
+    const res = await fetch('https://api.kilo.ai/api/gateway/models', {
+      headers: { Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) {
+      return {
+        ids: [...KILO_MODELS],
+        source: 'fallback',
+        error: await res.text().catch(() => String(res.status)),
+      };
+    }
+    const data = (await res.json()) as { data?: { id?: string }[] };
+    const ids = (data.data ?? [])
+      .map((m) => m.id)
+      .filter((id): id is string => typeof id === 'string' && id.length > 0);
+    const merged = mergeUnique(ids, KILO_MODELS);
+    return { ids: merged, source: ids.length ? 'live' : 'fallback' };
+  } catch (e) {
+    return {
+      ids: [...KILO_MODELS],
+      source: 'fallback',
+      error: e instanceof Error ? e.message : 'network error',
+    };
+  }
+}
+
 export interface LiveGuruChatModelIds {
   groq: string[];
   openrouter: string[];
   gemini: string[];
   cloudflare: string[];
+  kilo: string[];
   /** True if any provider returned live data this refresh */
   anyLive: boolean;
   /** Last error strings per provider (debug) */
-  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare', string>>;
+  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo', string>>;
 }
 
 export async function fetchAllLiveGuruChatModelIds(keys: {
@@ -233,12 +269,14 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
   geminiKey?: string;
   cfAccountId?: string;
   cfApiToken?: string;
+  kiloApiKey?: string;
 }): Promise<LiveGuruChatModelIds> {
-  const [groqR, orR, gemR, cfR] = await Promise.all([
+  const [groqR, orR, gemR, cfR, kiloR] = await Promise.all([
     fetchGroqChatModelIds(keys.groqKey ?? ''),
     fetchOpenRouterFreeModelIds(keys.orKey ?? ''),
     fetchGeminiChatModelIds(keys.geminiKey ?? ''),
     fetchCloudflareChatModelIds(keys.cfAccountId ?? '', keys.cfApiToken ?? ''),
+    fetchKiloModelIds(keys.kiloApiKey ?? ''),
   ]);
 
   const errors: LiveGuruChatModelIds['errors'] = {};
@@ -246,18 +284,21 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
   if (orR.error) errors.openrouter = orR.error;
   if (gemR.error) errors.gemini = gemR.error;
   if (cfR.error) errors.cloudflare = cfR.error;
+  if (kiloR.error) errors.kilo = kiloR.error;
 
   const anyLive =
     groqR.source === 'live' ||
     orR.source === 'live' ||
     gemR.source === 'live' ||
-    cfR.source === 'live';
+    cfR.source === 'live' ||
+    kiloR.source === 'live';
 
   return {
     groq: groqR.ids,
     openrouter: orR.ids,
     gemini: gemR.ids,
     cloudflare: cfR.ids,
+    kilo: kiloR.ids,
     anyLive,
     errors,
   };

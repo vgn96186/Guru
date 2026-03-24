@@ -196,6 +196,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
     CHECK(exam_type IN ('INICET','NEET'))
   , prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1
   , github_models_pat TEXT NOT NULL DEFAULT ''
+  , kilo_api_key TEXT NOT NULL DEFAULT ''
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

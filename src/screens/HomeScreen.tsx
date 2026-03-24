@@ -680,9 +680,10 @@ const styles = StyleSheet.create({
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: theme.spacing.xl,
   },
-  heroStatItem: { alignItems: 'center' },
+  heroStatItem: { alignItems: 'center', minWidth: 50 },
   heroStatValue: {
     color: theme.colors.textPrimary,
     fontSize: 22,

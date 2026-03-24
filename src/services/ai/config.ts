@@ -17,6 +17,7 @@ import {
   BUNDLED_DEEPSEEK_KEY,
   BUNDLED_GITHUB_MODELS_PAT,
   DEEPSEEK_MODELS,
+  KILO_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -41,6 +42,7 @@ export {
   BUNDLED_DEEPSEEK_KEY,
   BUNDLED_GITHUB_MODELS_PAT,
   DEEPSEEK_MODELS,
+  KILO_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -56,6 +58,7 @@ export function getApiKeys(
     cloudflareApiToken?: string;
     deepseekKey?: string;
     githubModelsPat?: string;
+    kiloApiKey?: string;
   } | null,
 ): {
   orKey: string | undefined;
@@ -66,6 +69,7 @@ export function getApiKeys(
   cfApiToken: string | undefined;
   deepseekKey: string | undefined;
   githubModelsPat: string | undefined;
+  kiloApiKey: string | undefined;
 } {
   if (!profile) {
     return {
@@ -77,6 +81,7 @@ export function getApiKeys(
       cfApiToken: BUNDLED_CF_API_TOKEN || undefined,
       deepseekKey: BUNDLED_DEEPSEEK_KEY || undefined,
       githubModelsPat: BUNDLED_GITHUB_MODELS_PAT || undefined,
+      kiloApiKey: undefined,
     };
   }
   return {
@@ -88,5 +93,6 @@ export function getApiKeys(
     cfApiToken: profile.cloudflareApiToken?.trim() || BUNDLED_CF_API_TOKEN || undefined,
     deepseekKey: profile.deepseekKey?.trim() || BUNDLED_DEEPSEEK_KEY || undefined,
     githubModelsPat: profile.githubModelsPat?.trim() || BUNDLED_GITHUB_MODELS_PAT || undefined,
+    kiloApiKey: profile.kiloApiKey?.trim() || undefined,
   };
 }

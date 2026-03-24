@@ -221,3 +221,38 @@ export async function askGuru(question: string, context: string): Promise<string
   const { parsed } = await generateJSONWithRouting(messages, schema, 'low');
   return JSON.stringify(parsed);
 }
+
+/**
+ * Generate a structured deeper explanation for a quiz question.
+ * Returns plain markdown text (not JSON) suitable for direct rendering.
+ */
+export async function explainTopicDeeper(
+  topicName: string,
+  question: string,
+  correctAnswer: string,
+  originalExplanation: string,
+): Promise<string> {
+  const messages: Message[] = [
+    {
+      role: 'system',
+      content: `You are Guru, a warm Socratic medical tutor for NEET-PG/INICET students. Explain concepts clearly using markdown formatting. Use **bold** for key terms, bullet points for lists, and keep it structured and readable. Never use raw escape characters like \\n in your output.`,
+    },
+    {
+      role: 'user',
+      content: `The student doesn't understand a quiz question about "${topicName}". Help them understand the broader concept.
+
+**Question:** ${question}
+**Correct answer:** ${correctAnswer}
+**Original explanation:** ${originalExplanation}
+
+Explain using this structure:
+1. **What is the core concept?** (1-2 sentences)
+2. **Why is "${correctAnswer}" correct?** (explain the reasoning)
+3. **Key facts to remember:**
+   - Bullet point each fact
+4. **Clinical/exam tip** (one practical takeaway)`,
+    },
+  ];
+  const { text } = await generateTextWithRouting(messages);
+  return text.trim();
+}

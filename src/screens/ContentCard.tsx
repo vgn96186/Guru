@@ -24,7 +24,7 @@ import type {
   SocraticContent,
 } from '../types';
 
-import { askGuru } from '../services/aiService';
+import { askGuru, explainTopicDeeper } from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
@@ -457,7 +457,23 @@ function QuizCard({
   const [deepExplanation, setDeepExplanation] = useState<string | null>(null);
   const [isLoadingDeepExpl, setIsLoadingDeepExpl] = useState(false);
 
-  const q = content.questions[currentQ];
+  // Filter out incomplete questions (truncated AI output)
+  const validQuestions = useMemo(
+    () =>
+      content.questions.filter(
+        (question) =>
+          question.question?.trim() &&
+          Array.isArray(question.options) &&
+          question.options.length >= 2 &&
+          question.options.every((opt: string) => opt?.trim()) &&
+          typeof question.correctIndex === 'number' &&
+          question.correctIndex >= 0 &&
+          question.correctIndex < question.options.length,
+      ),
+    [content.questions],
+  );
+
+  const q = validQuestions[currentQ];
   if (!q) return null;
 
   useEffect(() => {
@@ -466,7 +482,7 @@ function QuizCard({
       compactLines(
         [
           `Card type: Quiz`,
-          `Current question ${currentQ + 1} of ${content.questions.length}: ${q.question}`,
+          `Current question ${currentQ + 1} of ${validQuestions.length}: ${q.question}`,
           `Options: ${q.options.join(' | ')}`,
           selectedOption
             ? `Student selected: ${selectedOption}`
@@ -476,7 +492,7 @@ function QuizCard({
         5,
       ),
     );
-  }, [content.questions.length, currentQ, onContextChange, q, selected, showExpl]);
+  }, [validQuestions.length, currentQ, onContextChange, q, selected, showExpl]);
 
   const scoreRef = React.useRef(score);
   scoreRef.current = score;
@@ -511,15 +527,11 @@ function QuizCard({
     if (isLoadingDeepExpl || deepExplanation) return;
     setIsLoadingDeepExpl(true);
     try {
-      const context = [
-        `Topic: ${content.topicName}`,
-        `Question: ${q.question}`,
-        `Correct answer: ${q.options[q.correctIndex]}`,
-        `Original explanation: ${q.explanation}`,
-      ].join('\n');
-      const result = await askGuru(
-        `The student doesn't understand this question. Explain the underlying concept in a structured way:\n1. **What is the core concept?** (1-2 sentences)\n2. **Why is "${q.options[q.correctIndex]}" correct?** (explain the reasoning)\n3. **Key facts to remember** (bullet points)\n4. **Clinical/exam tip** (one practical takeaway)`,
-        context,
+      const result = await explainTopicDeeper(
+        content.topicName,
+        q.question,
+        q.options[q.correctIndex],
+        q.explanation,
       );
       setDeepExplanation(result);
     } catch {
@@ -530,7 +542,7 @@ function QuizCard({
   }
 
   function handleNext() {
-    if (currentQ < content.questions.length - 1) {
+    if (currentQ < validQuestions.length - 1) {
       setCurrentQ((c) => c + 1);
       setSelected(null);
       setShowExpl(false);
@@ -539,8 +551,8 @@ function QuizCard({
     } else {
       // Ref is updated synchronously in handleSelect on last correct; fallback to state.
       const finalScore = Math.max(scoreRef.current, score);
-      onQuizComplete?.(finalScore, content.questions.length);
-      const confidence = Math.round((finalScore / content.questions.length) * 4) + 1;
+      onQuizComplete?.(finalScore, validQuestions.length);
+      const confidence = Math.round((finalScore / validQuestions.length) * 4) + 1;
       onDone(Math.min(5, confidence));
     }
   }
@@ -548,7 +560,7 @@ function QuizCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>
-        🎯 QUIZ {currentQ + 1}/{content.questions.length}
+        🎯 QUIZ {currentQ + 1}/{validQuestions.length}
       </Text>
       <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
         {content.topicName}
@@ -639,9 +651,9 @@ function QuizCard({
       {showExpl && (
         <TouchableOpacity style={s.doneBtn} onPress={handleNext} activeOpacity={0.8}>
           <Text style={s.doneBtnText}>
-            {currentQ < content.questions.length - 1
+            {currentQ < validQuestions.length - 1
               ? 'Next Question →'
-              : `Done (${score}/${content.questions.length}) →`}
+              : `Done (${score}/${validQuestions.length}) →`}
           </Text>
         </TouchableOpacity>
       )}

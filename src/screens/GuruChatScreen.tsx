@@ -72,7 +72,14 @@ type ChatMessage = {
 type ModelOption = {
   id: string;
   name: string;
-  group: 'Local' | 'Groq' | 'OpenRouter' | 'Gemini' | 'Cloudflare' | 'GitHub Models';
+  group:
+    | 'Local'
+    | 'Groq'
+    | 'OpenRouter'
+    | 'Gemini'
+    | 'Cloudflare'
+    | 'GitHub Models'
+    | 'Kilo';
 };
 
 type ChatItem =

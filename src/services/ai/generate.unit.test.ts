@@ -52,6 +52,7 @@ describe('generateJSONWithRouting', () => {
       geminiFallbackKey: undefined,
       deepseekKey: undefined,
       githubModelsPat: undefined,
+      kiloApiKey: undefined,
     });
     jest.mocked(profileRepository.getProfile).mockResolvedValue(minimalProfile);
     jest.mocked(geminiGenerateStructuredJsonSdk).mockReset();

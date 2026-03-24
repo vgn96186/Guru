@@ -41,6 +41,6 @@ module.exports = {
     'node_modules/.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*)/)',
+    'node_modules/(?!(jest-runner|@react-native|react-native|react-native-reanimated|react-native-markdown-display|@react-navigation|expo/.*|expo-.*|@expo/.*|@unimodules/.*|unimodules|sentry-expo|native-base|@sentry/.*)/)',
   ],
 };

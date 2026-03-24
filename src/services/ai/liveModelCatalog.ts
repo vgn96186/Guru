@@ -7,6 +7,7 @@ import {
   GEMINI_MODELS,
   GROQ_MODELS,
   KILO_MODELS,
+  AGENTROUTER_MODELS,
   OPENROUTER_FREE_MODELS,
 } from '../../config/appConfig';
 import { fetchGeminiChatModelIdsViaSdk, mergeGeminiListWithDefaults } from './google/geminiListModels';
@@ -251,16 +252,22 @@ export async function fetchKiloModelIds(
   }
 }
 
+/** AgentRouter — OpenAI-compatible, static model list (no /models endpoint documented). */
+export function fetchAgentRouterModelIds(): { ids: string[] } & LiveModelFetchMeta {
+  return { ids: [...AGENTROUTER_MODELS], source: 'fallback' };
+}
+
 export interface LiveGuruChatModelIds {
   groq: string[];
   openrouter: string[];
   gemini: string[];
   cloudflare: string[];
   kilo: string[];
+  agentrouter: string[];
   /** True if any provider returned live data this refresh */
   anyLive: boolean;
   /** Last error strings per provider (debug) */
-  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo', string>>;
+  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo' | 'agentrouter', string>>;
 }
 
 export async function fetchAllLiveGuruChatModelIds(keys: {
@@ -270,6 +277,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
   cfAccountId?: string;
   cfApiToken?: string;
   kiloApiKey?: string;
+  agentRouterKey?: string;
 }): Promise<LiveGuruChatModelIds> {
   const [groqR, orR, gemR, cfR, kiloR] = await Promise.all([
     fetchGroqChatModelIds(keys.groqKey ?? ''),
@@ -278,6 +286,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
     fetchCloudflareChatModelIds(keys.cfAccountId ?? '', keys.cfApiToken ?? ''),
     fetchKiloModelIds(keys.kiloApiKey ?? ''),
   ]);
+  const arR = fetchAgentRouterModelIds();
 
   const errors: LiveGuruChatModelIds['errors'] = {};
   if (groqR.error) errors.groq = groqR.error;
@@ -299,6 +308,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
     gemini: gemR.ids,
     cloudflare: cfR.ids,
     kilo: kiloR.ids,
+    agentrouter: arR.ids,
     anyLive,
     errors,
   };

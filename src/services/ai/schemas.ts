@@ -11,6 +11,7 @@ const QuizQuestionSchema = z.object({
   options: z.tuple([z.string(), z.string(), z.string(), z.string()]).describe('Exactly four options'),
   correctIndex: z.number().describe('0–3 index into options'),
   explanation: z.string().describe('Why the correct option is right'),
+  imageSearchQuery: z.string().optional().describe('Search query to fetch a relevant medical image for this question'),
 });
 const QuizSchema = z.object({
   type: z.literal('quiz').describe('Discriminator for quiz card'),

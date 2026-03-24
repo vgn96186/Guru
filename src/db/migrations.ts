@@ -481,7 +481,17 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN kilo_api_key TEXT NOT NULL DEFAULT ''`,
     description: 'Kilo gateway API key for OpenAI-compatible chat routing',
   },
+  {
+    version: 105,
+    sql: `ALTER TABLE user_profile ADD COLUMN deepseek_key TEXT NOT NULL DEFAULT ''`,
+    description: 'DeepSeek API key for direct DeepSeek chat/reasoner routing',
+  },
+  {
+    version: 106,
+    sql: `ALTER TABLE user_profile ADD COLUMN agentrouter_key TEXT NOT NULL DEFAULT ''`,
+    description: 'AgentRouter API key (OpenAI-compatible proxy at agentrouter.org)',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 104;
+export const LATEST_VERSION = 106;

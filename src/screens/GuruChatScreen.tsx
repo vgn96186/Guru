@@ -79,7 +79,8 @@ type ModelOption = {
     | 'Gemini'
     | 'Cloudflare'
     | 'GitHub Models'
-    | 'Kilo';
+    | 'Kilo'
+    | 'AgentRouter';
 };
 
 type ChatItem =
@@ -364,10 +365,11 @@ export default function GuruChatScreen() {
     cloudflare: cfModelIds,
     github: githubModelIds,
     kilo: kiloModelIds,
+    agentrouter: arModelIds,
   } = useLiveGuruChatModels(profile);
 
   const availableModels = useMemo(() => {
-    const { orKey, groqKey, geminiKey, cfAccountId, cfApiToken, githubModelsPat, kiloApiKey } =
+    const { orKey, groqKey, geminiKey, cfAccountId, cfApiToken, githubModelsPat, kiloApiKey, agentRouterKey } =
       getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
@@ -435,8 +437,18 @@ export default function GuruChatScreen() {
       });
     }
 
+    if (agentRouterKey) {
+      arModelIds.forEach((model) => {
+        list.push({
+          id: `ar/${model}`,
+          name: model,
+          group: 'AgentRouter',
+        });
+      });
+    }
+
     return list;
-  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds, githubModelIds, kiloModelIds]);
+  }, [profile, groqModelIds, orModelIds, geminiModelIds, cfModelIds, githubModelIds, kiloModelIds, arModelIds]);
 
   useEffect(() => {
     if (!profile) return;

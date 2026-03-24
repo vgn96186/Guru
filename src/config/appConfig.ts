@@ -87,6 +87,8 @@ export const GITHUB_MODELS_CHAT_MODELS = [
 export const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'] as const;
 /** Kilo gateway models (OpenAI-compatible). */
 export const KILO_MODELS = ['xiaomi/mimo', 'anthropic/claude-sonnet-4.5'] as const;
+/** AgentRouter models (OpenAI-compatible at agentrouter.org/v1). */
+export const AGENTROUTER_MODELS = ['deepseek-v3.2', 'deepseek-v3.1', 'deepseek-r1-0528', 'glm-4.5', 'glm-4.6'] as const;
 
 /**
  * Gemini text chat / streaming — fallback order.

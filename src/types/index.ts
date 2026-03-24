@@ -166,6 +166,8 @@ export interface UserProfile {
   githubModelsPat?: string;
   /** Kilo gateway API key (OpenAI-compatible endpoint at api.kilo.ai). */
   kiloApiKey?: string;
+  /** AgentRouter API key (OpenAI-compatible endpoint at agentrouter.org/v1). */
+  agentRouterKey?: string;
 }
 
 // AI Content shapes
@@ -181,6 +183,8 @@ export interface QuizQuestion {
   options: [string, string, string, string];
   correctIndex: number;
   explanation: string;
+  imageSearchQuery?: string;
+  imageUrl?: string;
 }
 
 export interface QuizContent {

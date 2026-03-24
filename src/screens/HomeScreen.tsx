@@ -30,7 +30,7 @@ import { connectToRoom } from '../services/deviceSyncService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import { theme } from '../constants/theme';
-import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
+import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood, UserProfile } from '../types';
 
@@ -113,7 +113,6 @@ export default function HomeScreen() {
   const moreAnim = useRef(new Animated.Value(0)).current;
 
   // Added from UI-UX audit branch
-  const [criticalExpanded, setCriticalExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -241,27 +240,9 @@ export default function HomeScreen() {
     };
   })();
 
-  const criticalItems = [
-    {
-      key: 'inertia',
-      title: 'Task Paralysis',
-      sub: "Can't get started? Break the loop.",
-      badge: 'BLOCKER',
-      accent: theme.colors.error,
-      onPress: () => navigation.navigate('Inertia'),
-    },
-    {
-      key: 'doomscroll',
-      title: 'Harassment Mode',
-      sub: 'Stop mindless scrolling now.',
-      badge: 'URGENT',
-      accent: theme.colors.warning,
-      onPress: () => navigation.getParent()?.navigate('DoomscrollGuide'),
-    },
-  ];
 
-  const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate);
-  const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate);
+  const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
+  const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -333,50 +314,6 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           )}
-
-          {/* CRITICAL NOW Section from UX Audit */}
-          <View style={styles.collapsibleSection}>
-            <TouchableOpacity
-              style={styles.collapsibleHeader}
-              onPress={() => setCriticalExpanded((prev) => !prev)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={
-                criticalExpanded ? 'Collapse Critical Now section' : 'Expand Critical Now section'
-              }
-            >
-              <Text style={styles.sectionLabel}>CRITICAL NOW</Text>
-              <Ionicons
-                name={criticalExpanded ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={theme.colors.textMuted}
-              />
-            </TouchableOpacity>
-            {criticalExpanded && (
-              <View style={styles.criticalSectionContent}>
-                {criticalItems.map((item) => (
-                  <TouchableOpacity
-                    key={item.key}
-                    testID={item.key === 'inertia' ? 'task-paralysis-btn' : undefined}
-                    style={[styles.criticalCard, { borderColor: item.accent + '44' }]}
-                    onPress={item.onPress}
-                    activeOpacity={0.8}
-                    accessibilityRole="button"
-                    accessibilityLabel={item.title}
-                  >
-                    <View style={styles.criticalCardTop}>
-                      <Text style={[styles.criticalBadge, { color: item.accent }]}>
-                        {item.badge}
-                      </Text>
-                      <Text style={[styles.criticalArrow, { color: item.accent }]}>›</Text>
-                    </View>
-                    <Text style={styles.criticalTitle}>{item.title}</Text>
-                    <Text style={styles.criticalSub}>{item.sub}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
 
           <View style={isTabletLandscape ? styles.gridLandscape : null}>
             <View style={isTabletLandscape ? { flex: 1.1 } : null}>
@@ -534,6 +471,25 @@ export default function HomeScreen() {
 
           {moreExpanded && (
             <View style={styles.moreContent}>
+              <TouchableOpacity
+                style={styles.moreLink}
+                onPress={() => navigation.navigate('Inertia')}
+                testID="task-paralysis-btn"
+                accessibilityRole="button"
+                accessibilityLabel="Open Task Paralysis helper"
+              >
+                <Ionicons name="flash-outline" size={18} color={theme.colors.textMuted} />
+                <Text style={styles.moreLinkText}>Task Paralysis</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.moreLink}
+                onPress={() => navigation.getParent()?.navigate('DoomscrollGuide')}
+                accessibilityRole="button"
+                accessibilityLabel="Open Harassment Mode"
+              >
+                <Ionicons name="alert-circle-outline" size={18} color={theme.colors.textMuted} />
+                <Text style={styles.moreLinkText}>Harassment Mode</Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.moreLink}
                 onPress={() => navigation.getParent()?.navigate('SleepMode')}
@@ -776,42 +732,6 @@ const styles = StyleSheet.create({
   },
   moreLinkText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '500' },
 
-  // ── Critical section ──
-  collapsibleSection: { marginBottom: SECTION_GAP },
-  collapsibleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: theme.spacing.sm,
-  },
-  criticalSectionContent: { gap: 10, marginTop: theme.spacing.sm },
-  criticalCard: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    padding: theme.spacing.lg,
-    borderColor: theme.colors.border,
-  },
-  criticalCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  criticalBadge: {
-    fontSize: 10,
-    fontWeight: '900',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  criticalArrow: { fontSize: 18, fontWeight: '800' },
-  criticalTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 3,
-  },
-  criticalSub: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
 
   // ── See all link ──
   seeAllLink: {

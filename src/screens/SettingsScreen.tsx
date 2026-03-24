@@ -365,6 +365,12 @@ export default function SettingsScreen() {
   const [kiloApiKey, setKiloApiKey] = useState('');
   const [testingKiloKey, setTestingKiloKey] = useState(false);
   const [kiloKeyTestResult, setKiloKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [deepseekKey, setDeepseekKey] = useState('');
+  const [testingDeepseekKey, setTestingDeepseekKey] = useState(false);
+  const [deepseekKeyTestResult, setDeepseekKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [agentRouterKey, setAgentRouterKey] = useState('');
+  const [testingAgentRouterKey, setTestingAgentRouterKey] = useState(false);
+  const [agentRouterKeyTestResult, setAgentRouterKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
     DEFAULT_IMAGE_GENERATION_MODEL,
@@ -438,6 +444,44 @@ export default function SettingsScreen() {
     const res = await testKiloConnection(key);
     setKiloKeyTestResult(res.ok ? 'ok' : 'fail');
     setTestingKiloKey(false);
+  }
+
+  async function testDeepseekKey() {
+    const key = deepseekKey.trim() || profile?.deepseekKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter a DeepSeek API key first.');
+      return;
+    }
+    setTestingDeepseekKey(true);
+    setDeepseekKeyTestResult(null);
+    try {
+      const res = await fetch('https://api.deepseek.com/models', {
+        headers: { Authorization: `Bearer ${key}` },
+      });
+      setDeepseekKeyTestResult(res.ok ? 'ok' : 'fail');
+    } catch {
+      setDeepseekKeyTestResult('fail');
+    }
+    setTestingDeepseekKey(false);
+  }
+
+  async function testAgentRouterKey() {
+    const key = agentRouterKey.trim() || profile?.agentRouterKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter an AgentRouter key first.');
+      return;
+    }
+    setTestingAgentRouterKey(true);
+    setAgentRouterKeyTestResult(null);
+    try {
+      const res = await fetch('https://agentrouter.org/v1/models', {
+        headers: { Authorization: `Bearer ${key}` },
+      });
+      setAgentRouterKeyTestResult(res.ok ? 'ok' : 'fail');
+    } catch {
+      setAgentRouterKeyTestResult('fail');
+    }
+    setTestingAgentRouterKey(false);
   }
 
   async function testHuggingFaceKey() {
@@ -537,6 +581,8 @@ export default function SettingsScreen() {
       setGroqKey(profile.groqApiKey ?? '');
       setGithubModelsPat(profile.githubModelsPat ?? '');
       setKiloApiKey(profile.kiloApiKey ?? '');
+      setDeepseekKey(profile.deepseekKey ?? '');
+      setAgentRouterKey(profile.agentRouterKey ?? '');
       setOrKey(profile.openrouterKey ?? '');
       setGeminiKey(profile.geminiKey ?? '');
       setCfAccountId(profile.cloudflareAccountId ?? '');
@@ -570,10 +616,12 @@ export default function SettingsScreen() {
   async function save() {
     setSaving(true);
     try {
-      updateUserProfile({
+      await updateUserProfile({
         groqApiKey: groqKey.trim(),
         githubModelsPat: githubModelsPat.trim(),
         kiloApiKey: kiloApiKey.trim(),
+        deepseekKey: deepseekKey.trim(),
+        agentRouterKey: agentRouterKey.trim(),
         openrouterKey: orKey.trim(),
         geminiKey: geminiKey.trim(),
         cloudflareAccountId: cfAccountId.trim(),
@@ -733,6 +781,11 @@ export default function SettingsScreen() {
                 id: `kilo/${m}`,
                 label: formatGuruChatModelChipLabel(`kilo/${m}`),
                 group: 'Kilo',
+              })),
+              ...liveGuruChatModels.agentrouter.map((m: string) => ({
+                id: `ar/${m}`,
+                label: formatGuruChatModelChipLabel(`ar/${m}`),
+                group: 'AgentRouter',
               })),
               ...liveGuruChatModels.openrouter.map((m) => ({
                 id: m,
@@ -904,6 +957,84 @@ export default function SettingsScreen() {
                   : kiloKeyTestResult === 'fail'
                     ? '❌ Key invalid or unreachable'
                     : 'Test Kilo Connection'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <Label text="DeepSeek API Key — optional" />
+          <TextInput
+            style={styles.input}
+            placeholder="sk-..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={deepseekKey}
+            onChangeText={setDeepseekKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Direct DeepSeek API access (deepseek-chat, deepseek-reasoner). Get a key at
+            platform.deepseek.com
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testDeepseekKey}
+            disabled={testingDeepseekKey}
+            activeOpacity={0.8}
+          >
+            {testingDeepseekKey ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  deepseekKeyTestResult === 'ok' && { color: theme.colors.success },
+                  deepseekKeyTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {deepseekKeyTestResult === 'ok'
+                  ? '✅ DeepSeek key works!'
+                  : deepseekKeyTestResult === 'fail'
+                    ? '❌ Key invalid or unreachable'
+                    : 'Test DeepSeek Connection'}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <Label text="AgentRouter API Key — optional" />
+          <TextInput
+            style={styles.input}
+            placeholder="sk-..."
+            placeholderTextColor={theme.colors.textMuted}
+            value={agentRouterKey}
+            onChangeText={setAgentRouterKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.hint}>
+            Free AI proxy (DeepSeek V3.2, R1, GLM 4.5/4.6). Get a key at
+            agentrouter.org/console/token
+          </Text>
+          <TouchableOpacity
+            style={[styles.testBtn, { marginBottom: 4 }]}
+            onPress={testAgentRouterKey}
+            disabled={testingAgentRouterKey}
+            activeOpacity={0.8}
+          >
+            {testingAgentRouterKey ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Text
+                style={[
+                  styles.testBtnText,
+                  agentRouterKeyTestResult === 'ok' && { color: theme.colors.success },
+                  agentRouterKeyTestResult === 'fail' && { color: theme.colors.error },
+                ]}
+              >
+                {agentRouterKeyTestResult === 'ok'
+                  ? '✅ AgentRouter key works!'
+                  : agentRouterKeyTestResult === 'fail'
+                    ? '❌ Key invalid or unreachable'
+                    : 'Test AgentRouter Connection'}
               </Text>
             )}
           </TouchableOpacity>

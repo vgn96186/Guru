@@ -9,6 +9,7 @@ import {
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
   KILO_MODELS,
+  AGENTROUTER_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -914,6 +915,69 @@ async function streamKiloChat(
   return text;
 }
 
+async function callAgentRouter(
+  messages: Message[],
+  apiKey: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = { ...clonedMessages[systemIdx], content: clonedMessages[systemIdx].content + '\nRespond in JSON format.' };
+      } else {
+        clonedMessages[0] = { ...clonedMessages[0], content: clonedMessages[0].content + '\nRespond in JSON format.' };
+      }
+    }
+  }
+  const body: Record<string, unknown> = { model, messages: clonedMessages, temperature: 0.7, max_tokens: 2000 };
+  if (jsonMode) body.response_format = { type: 'json_object' };
+  if (__DEV__) console.log(`[AI] callAgentRouter: model=${model} json=${jsonMode}`);
+  const res = await fetch('https://agentrouter.org/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`AgentRouter error ${res.status} (${model}): ${err}`);
+  }
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from AgentRouter model ${model}`);
+  return text;
+}
+
+async function streamAgentRouterChat(
+  messages: Message[],
+  apiKey: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch('https://agentrouter.org/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 2000, stream: true }),
+  });
+  if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`AgentRouter error ${res.status} (${model}): ${err}`);
+  }
+  if (!res.body) {
+    const text = await callAgentRouter(messages, apiKey, model, false);
+    onDelta(text);
+    return text;
+  }
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  if (!text.trim()) throw new Error(`Empty response from AgentRouter model ${model}`);
+  return text;
+}
+
 /**
  * Same routing policy as attemptCloudLLM, but streams assistant tokens via onDelta.
  * (JSON / structured output is not streamed — use {@link attemptCloudLLM} instead.)
@@ -931,6 +995,7 @@ export async function attemptCloudLLMStream(
   deepseekKey?: string | undefined,
   githubModelsPat?: string | undefined,
   kiloApiKey?: string | undefined,
+  agentRouterKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -950,6 +1015,9 @@ export async function attemptCloudLLMStream(
   const preferredKiloModel = chosenModel?.startsWith('kilo/')
     ? chosenModel.replace('kilo/', '')
     : undefined;
+  const preferredAgentRouterModel = chosenModel?.startsWith('ar/')
+    ? chosenModel.replace('ar/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -958,6 +1026,7 @@ export async function attemptCloudLLMStream(
     !preferredDeepseekModel &&
     !preferredGithubModel &&
     !preferredKiloModel &&
+    !preferredAgentRouterModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -1065,6 +1134,15 @@ export async function attemptCloudLLMStream(
     }
   }
 
+  if (preferredAgentRouterModel && agentRouterKey) {
+    try {
+      const text = await streamAgentRouterChat(messages, agentRouterKey, preferredAgentRouterModel, onDelta);
+      return { text, modelUsed: `ar/${preferredAgentRouterModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   const userPickedSpecificModel =
     !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
   if (userPickedSpecificModel) {
@@ -1141,6 +1219,20 @@ export async function attemptCloudLLMStream(
       try {
         const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
         return { text, modelUsed: `deepseek/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (agentRouterKey) {
+    for (const model of AGENTROUTER_MODELS) {
+      if (preferredAgentRouterModel && model === preferredAgentRouterModel) continue;
+      try {
+        const text = await streamAgentRouterChat(messages, agentRouterKey, model, onDelta);
+        return { text, modelUsed: `ar/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;
@@ -1292,6 +1384,7 @@ export async function attemptCloudLLM(
   deepseekKey?: string | undefined,
   githubModelsPat?: string | undefined,
   kiloApiKey?: string | undefined,
+  agentRouterKey?: string | undefined,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1311,6 +1404,9 @@ export async function attemptCloudLLM(
   const preferredKiloModel = chosenModel?.startsWith('kilo/')
     ? chosenModel.replace('kilo/', '')
     : undefined;
+  const preferredAgentRouterModel = chosenModel?.startsWith('ar/')
+    ? chosenModel.replace('ar/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -1319,6 +1415,7 @@ export async function attemptCloudLLM(
     !preferredDeepseekModel &&
     !preferredGithubModel &&
     !preferredKiloModel &&
+    !preferredAgentRouterModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -1355,6 +1452,17 @@ export async function attemptCloudLLM(
         ? await callKilo(messages, kiloApiKey, preferredKiloModel, false)
         : await callKilo(messages, kiloApiKey, preferredKiloModel);
       return { text, modelUsed: `kilo/${preferredKiloModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredAgentRouterModel && agentRouterKey) {
+    try {
+      const text = textMode
+        ? await callAgentRouter(messages, agentRouterKey, preferredAgentRouterModel, false)
+        : await callAgentRouter(messages, agentRouterKey, preferredAgentRouterModel);
+      return { text, modelUsed: `ar/${preferredAgentRouterModel}` };
     } catch (err) {
       lastCloudError = err as Error;
     }
@@ -1456,6 +1564,22 @@ export async function attemptCloudLLM(
           ? await callDeepSeek(messages, deepseekKey, model, false)
           : await callDeepSeek(messages, deepseekKey, model);
         return { text, modelUsed: `deepseek/${model}` };
+      } catch (err) {
+        lastCloudError = err as Error;
+        if (err instanceof RateLimitError) continue;
+        continue;
+      }
+    }
+  }
+
+  if (agentRouterKey) {
+    for (const model of AGENTROUTER_MODELS) {
+      if (preferredAgentRouterModel && model === preferredAgentRouterModel) continue;
+      try {
+        const text = textMode
+          ? await callAgentRouter(messages, agentRouterKey, model, false)
+          : await callAgentRouter(messages, agentRouterKey, model);
+        return { text, modelUsed: `ar/${model}` };
       } catch (err) {
         lastCloudError = err as Error;
         if (err instanceof RateLimitError) continue;

@@ -8,6 +8,8 @@ import {
 } from './generate';
 import {
   searchLatestMedicalSources,
+  searchMedicalImages,
+  dedupeGroundingSources,
   renderSourcesForPrompt,
   clipText,
   buildMedicalSearchQuery,
@@ -145,7 +147,19 @@ export async function chatWithGuruGroundedStreaming(
 ): Promise<import('./types').GroundedGuruResponse> {
   const trimmedQuestion = question.replace(/\s+/g, ' ').trim();
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
-  const sources = await searchLatestMedicalSources(searchQuery, 6);
+
+  // Image search uses a clean query (no SEO suffixes that pollute Wikimedia/Open i)
+  const imageQuery = trimmedQuestion.slice(0, 120);
+
+  // Parallel text + image search (fault-tolerant)
+  const [textResult, imageResult] = await Promise.allSettled([
+    searchLatestMedicalSources(searchQuery, 5),
+    searchMedicalImages(topicName ? `${topicName} ${imageQuery}` : imageQuery, 3),
+  ]);
+  const allSources: import('./types').MedicalGroundingSource[] = [];
+  if (textResult.status === 'fulfilled') allSources.push(...textResult.value);
+  if (imageResult.status === 'fulfilled') allSources.push(...imageResult.value);
+  const sources = dedupeGroundingSources(allSources).slice(0, 8);
 
   const historyStr = history
     .slice(-6)

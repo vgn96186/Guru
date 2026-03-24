@@ -1,4 +1,5 @@
-import type { MedicalGroundingSource } from './types';
+import type { MedicalGroundingSource, Message } from './types';
+import { generateTextWithRouting } from './generate';
 
 function compactWhitespace(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim();
@@ -56,31 +57,69 @@ export function dedupeGroundingSources(
 
 // ─── MEDICAL IMAGE SEARCH ─────────────────────────────────────────────────────
 
+const MEDICAL_TERMS = [
+  'medical', 'anatomy', 'disease', 'pathology', 'histology', 'radiology',
+  'x-ray', 'xray', 'ct scan', 'mri', 'ultrasound', 'ecg', 'ekg',
+  'microscopy', 'biopsy', 'clinical', 'surgical', 'dermato', 'ophthalm',
+  'cardio', 'neuro', 'hepat', 'renal', 'pulmon', 'gastro', 'hematol',
+  'oncol', 'endocrin', 'immunol', 'infect', 'pharma', 'symptom',
+  'diagnosis', 'treatment', 'syndrome', 'carcinoma', 'tumor', 'tumour',
+  'fracture', 'lesion', 'abscess', 'edema', 'oedema', 'fibrosis',
+  'necrosis', 'inflammation', 'hemorrhage', 'haemorrhage',
+  'virus', 'bacteria', 'fungal', 'parasite', 'organ', 'tissue', 'cell',
+  'specimen', 'stain', 'gram stain', 'h&e', 'slide',
+];
+
+const NOISE_TERMS = [
+  'logo', 'icon', 'flag', 'map', 'coat of arms', 'screenshot',
+  'photo of building', 'portrait', 'headshot', 'selfie',
+];
+
+function scoreWikimediaRelevance(title: string, description: string, originalQuery: string): number {
+  const titleLower = title.toLowerCase();
+  const descLower = description.toLowerCase();
+  const combined = `${titleLower} ${descLower}`;
+  const queryTerms = originalQuery.toLowerCase().split(/\s+/).filter((t) => t.length > 3);
+  let score = 0;
+
+  for (const term of queryTerms) {
+    if (titleLower.includes(term)) score += 3;
+    else if (descLower.includes(term)) score += 2;
+  }
+
+  for (const term of MEDICAL_TERMS) {
+    if (combined.includes(term)) { score += 1; break; }
+  }
+
+  for (const term of NOISE_TERMS) {
+    if (combined.includes(term)) { score -= 5; break; }
+  }
+
+  return score;
+}
+
 /**
- * Search Wikimedia Commons for medical images.
- * Uses category filtering to ensure medical relevance.
+ * Search Wikimedia Commons for medical images with relevance scoring.
  */
 async function searchWikimediaCommons(
   query: string,
   maxResults: number,
 ): Promise<MedicalGroundingSource[]> {
-  // Wikimedia Commons API - search for images in medical categories
-  const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=file:${encodeURIComponent(query)}&srnamespace=6&srlimit=${maxResults}&format=json`;
+  const fetchLimit = maxResults * 3; // over-fetch for ranking
+  const searchUrl = `https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=file:${encodeURIComponent(query)}&srnamespace=6&srlimit=${fetchLimit}&format=json`;
 
   try {
     const searchData = await fetchJsonWithTimeout<any>(searchUrl, 8000);
     const pages = searchData?.query?.search || [];
-
     if (pages.length === 0) return [];
 
-    // Get image info for each result
     const titles = pages.map((p: any) => p.title).join('|');
     const imageInfoUrl = `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(titles)}&prop=imageinfo&iiprop=url|extmetadata|size&format=json`;
 
     const infoData = await fetchJsonWithTimeout<any>(imageInfoUrl, 8000);
     const imagePages = infoData?.query?.pages || {};
 
-    const results: MedicalGroundingSource[] = [];
+    const scored: Array<{ source: MedicalGroundingSource; score: number }> = [];
 
     for (const page of pages) {
       const imagePage = imagePages[page.pageid];
@@ -90,60 +129,34 @@ async function searchWikimediaCommons(
       const url = info.url;
       const title = clipText(page.title.replace(/^File:/, ''), 220);
 
-      // Extract description from metadata
       const metadata = info.extmetadata || {};
       const description = metadata.ImageDescription?.value || metadata.ObjectName?.value || '';
-      const cleanDesc = description
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const cleanDesc = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 
-      // Filter out non-medical images by checking categories and description
-      const isMedical =
-        page.title.toLowerCase().includes('medical') ||
-        page.title.toLowerCase().includes('anatomy') ||
-        page.title.toLowerCase().includes('disease') ||
-        page.title.toLowerCase().includes('symptom') ||
-        page.title.toLowerCase().includes('diagnosis') ||
-        page.title.toLowerCase().includes('treatment') ||
-        page.title.toLowerCase().includes('health') ||
-        page.title.toLowerCase().includes('medicine') ||
-        page.title.toLowerCase().includes('doctor') ||
-        page.title.toLowerCase().includes('hospital') ||
-        page.title.toLowerCase().includes('patient') ||
-        page.title.toLowerCase().includes('virus') ||
-        page.title.toLowerCase().includes('bacteria') ||
-        page.title.toLowerCase().includes('organ') ||
-        page.title.toLowerCase().includes('cell') ||
-        page.title.toLowerCase().includes('tissue') ||
-        (cleanDesc &&
-          (cleanDesc.toLowerCase().includes('medical') ||
-            cleanDesc.toLowerCase().includes('anatomy') ||
-            cleanDesc.toLowerCase().includes('disease') ||
-            cleanDesc.toLowerCase().includes('symptom') ||
-            cleanDesc.toLowerCase().includes('diagnosis') ||
-            cleanDesc.toLowerCase().includes('treatment')));
+      const score = scoreWikimediaRelevance(title, cleanDesc, query);
+      if (score < 1) continue;
 
-      if (!isMedical) continue;
-
-      // Get author/attribution
       const author = metadata.Artist?.value || metadata.Credit?.value || 'Wikimedia Commons';
 
-      results.push({
-        id: `commons-${page.pageid}`,
-        title,
-        url: page.url, // Link to the file page
-        imageUrl: url,
-        snippet: clipText(cleanDesc || `Medical image from Wikimedia Commons: ${title}`, 420),
-        source: 'Wikimedia Commons',
-        author: clipText(author, 100),
-        license: metadata.LicenseShortName?.value || 'CC BY-SA',
+      scored.push({
+        score,
+        source: {
+          id: `commons-${page.pageid}`,
+          title,
+          url: `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title)}`,
+          imageUrl: url,
+          snippet: clipText(cleanDesc || `Medical image: ${title}`, 420),
+          source: 'Wikimedia Commons',
+          author: clipText(author.replace(/<[^>]+>/g, ''), 100),
+          license: metadata.LicenseShortName?.value || 'CC BY-SA',
+        },
       });
-
-      if (results.length >= maxResults) break;
     }
 
-    return results;
+    return scored
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxResults)
+      .map((s) => s.source);
   } catch (err) {
     if (__DEV__) console.warn('[MedicalSearch] Wikimedia Commons failed:', (err as Error).message);
     return [];
@@ -151,42 +164,63 @@ async function searchWikimediaCommons(
 }
 
 /**
- * Search Open i (NIH's medical image database)
- * Provides high-quality, medically-reviewed images
+ * Search Open i (NIH's medical image database).
+ * @param collection - optional collection filter: 'mpx' for MedPix, undefined for all
  */
-async function searchOpenI(query: string, maxResults: number): Promise<MedicalGroundingSource[]> {
-  // Open i API - medical images from NIH
-  const searchUrl = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(query)}&m=1&n=${maxResults}&it=xg`;
+async function searchOpenI(
+  query: string,
+  maxResults: number,
+  collection?: string,
+): Promise<MedicalGroundingSource[]> {
+  let searchUrl = `https://openi.nlm.nih.gov/api/search?query=${encodeURIComponent(query)}&m=1&n=${maxResults}`;
+  if (collection) searchUrl += `&coll=${collection}`;
+
+  const sourceLabel = collection === 'mpx' ? 'MedPix (NIH)' : 'Open i (NIH)';
 
   try {
     const data = await fetchJsonWithTimeout<any>(searchUrl, 10000);
-    const results = data?.results || [];
+    // API returns results in 'list' array
+    const results = data?.list || data?.results || [];
 
     return results
-      .filter((r: any) => r?.image?.url && r?.title)
+      .filter((r: any) => {
+        // Accept entries with imgLarge/imgThumb or nested image.url
+        return r?.title && (r?.imgLarge || r?.imgThumb || r?.image?.url);
+      })
       .slice(0, maxResults)
       .map((r: any): MedicalGroundingSource => {
         const title = clipText(r.title, 220);
-        const imageUrl = r.image.url.replace(/^\/\//, 'https://');
-        const description = r.description || r.title || '';
+        // Prefer imgLarge for quality, fall back to imgThumb or image.url
+        const rawImg = r.imgLarge || r.imgThumb || r.image?.url || '';
+        const imageUrl = rawImg.startsWith('//')
+          ? `https:${rawImg}`
+          : rawImg.startsWith('/')
+            ? `https://openi.nlm.nih.gov${rawImg}`
+            : rawImg;
+        const description = r.abstract || r.description || r.title || '';
         const cleanDesc = description
           .replace(/<[^>]+>/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
 
+        const uid = r.uid || r.uuid || '';
+        const imgId = r.image?.id || r.medpixFigureId || '';
+
         return {
-          id: `openi-${r.uuid || r.image.url}`,
+          id: `openi-${uid}-${imgId || imageUrl}`,
           title,
-          url: `https://openi.nlm.nih.gov/detail.jsp?img=${r.uuid}`,
+          url: uid.startsWith('MPX')
+            ? `https://openi.nlm.nih.gov/detailedresult?img=${imgId}&query=${encodeURIComponent(query)}`
+            : `https://openi.nlm.nih.gov/detailedresult?img=${imgId || uid}&query=${encodeURIComponent(query)}`,
           imageUrl,
           snippet: clipText(cleanDesc, 420),
-          source: 'Open i (NIH)',
-          author: r.owner || 'NIH',
-          license: 'Public Domain (U.S. Government)',
+          source: sourceLabel,
+          author: r.owner || r.authors || 'NIH',
+          license: collection === 'mpx' ? 'Public Domain (MedPix/NIH)' : 'Public Domain (U.S. Government)',
         };
       });
   } catch (err) {
-    if (__DEV__) console.warn('[MedicalSearch] Open i failed:', (err as Error).message);
+    if (__DEV__) console.warn(`[MedicalSearch] ${sourceLabel} failed:`, (err as Error).message);
     return [];
   }
 }
@@ -199,36 +233,58 @@ export async function searchMedicalImages(
   query: string,
   maxResults = 6,
 ): Promise<MedicalGroundingSource[]> {
+  if (__DEV__) console.log('[MedicalSearch] Image query:', query);
+
+  const [commons, medpix, openi] = await Promise.allSettled([
+    searchWikimediaCommons(query, Math.min(3, maxResults)),
+    searchOpenI(query, Math.min(3, maxResults), 'mpx'),
+    searchOpenI(query, Math.min(2, maxResults)),
+  ]);
+
+  // Prioritize MedPix (curated teaching images), then Wikimedia, then general Open i
   const collected: MedicalGroundingSource[] = [];
+  if (medpix.status === 'fulfilled') collected.push(...medpix.value);
+  if (commons.status === 'fulfilled') collected.push(...commons.value);
+  if (openi.status === 'fulfilled') collected.push(...openi.value);
 
-  // Try Wikimedia Commons first (good for anatomy, diagrams)
-  try {
-    const commons = await searchWikimediaCommons(query, Math.min(4, maxResults));
-    collected.push(...commons);
-  } catch (err) {
-    // Continue to fallbacks
-  }
+  if (__DEV__) console.log(`[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'})`);
 
-  // If we don't have enough, try Open i (good for clinical images, radiology)
-  if (collected.length < Math.min(3, maxResults)) {
-    try {
-      const openi = await searchOpenI(query, maxResults - collected.length);
-      collected.push(...openi);
-    } catch (err) {
-      // Continue
-    }
-  }
-
-  // If still no images, fall back to article sources (they might have relevant thumbnails)
   if (collected.length === 0) {
     if (__DEV__)
-      console.warn(
-        '[MedicalSearch] No images from specialized sources, falling back to article search',
-      );
-    return searchLatestMedicalSources(query, maxResults);
+      console.warn('[MedicalSearch] No images from specialized sources');
+    return [];
   }
 
   return dedupeGroundingSources(collected).slice(0, maxResults);
+}
+
+/**
+ * Uses the LLM to produce a precise medical image search query.
+ * Falls back to the raw topic name if the LLM call fails.
+ */
+export async function generateImageSearchQuery(
+  topicName: string,
+  context?: string,
+): Promise<string> {
+  const msgs: Message[] = [
+    {
+      role: 'system',
+      content:
+        'You generate concise medical image search queries for Wikimedia Commons. Output ONLY the search query string, nothing else. Use precise medical terminology. Include imaging modality when relevant (e.g., "histology", "X-ray", "gross pathology", "microscopy", "dermatoscopy").',
+    },
+    {
+      role: 'user',
+      content: context
+        ? `Generate a search query to find a relevant medical image for this quiz question about "${topicName}":\n${context}`
+        : `Generate a search query to find a relevant medical image for: "${topicName}"`,
+    },
+  ];
+  try {
+    const { text } = await generateTextWithRouting(msgs);
+    return text.replace(/^["']|["']$/g, '').trim().slice(0, 120) || topicName;
+  } catch {
+    return topicName;
+  }
 }
 
 // ─── ARTICLE SEARCH (for text-based grounding) ───────────────────────────────────

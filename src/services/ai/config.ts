@@ -18,6 +18,7 @@ import {
   BUNDLED_GITHUB_MODELS_PAT,
   DEEPSEEK_MODELS,
   KILO_MODELS,
+  AGENTROUTER_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -43,6 +44,7 @@ export {
   BUNDLED_GITHUB_MODELS_PAT,
   DEEPSEEK_MODELS,
   KILO_MODELS,
+  AGENTROUTER_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -59,6 +61,7 @@ export function getApiKeys(
     deepseekKey?: string;
     githubModelsPat?: string;
     kiloApiKey?: string;
+    agentRouterKey?: string;
   } | null,
 ): {
   orKey: string | undefined;
@@ -70,6 +73,7 @@ export function getApiKeys(
   deepseekKey: string | undefined;
   githubModelsPat: string | undefined;
   kiloApiKey: string | undefined;
+  agentRouterKey: string | undefined;
 } {
   if (!profile) {
     return {
@@ -82,6 +86,7 @@ export function getApiKeys(
       deepseekKey: BUNDLED_DEEPSEEK_KEY || undefined,
       githubModelsPat: BUNDLED_GITHUB_MODELS_PAT || undefined,
       kiloApiKey: undefined,
+      agentRouterKey: undefined,
     };
   }
   return {
@@ -94,5 +99,6 @@ export function getApiKeys(
     deepseekKey: profile.deepseekKey?.trim() || BUNDLED_DEEPSEEK_KEY || undefined,
     githubModelsPat: profile.githubModelsPat?.trim() || BUNDLED_GITHUB_MODELS_PAT || undefined,
     kiloApiKey: profile.kiloApiKey?.trim() || undefined,
+    agentRouterKey: profile.agentRouterKey?.trim() || undefined,
   };
 }

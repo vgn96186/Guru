@@ -10,6 +10,9 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
+  Pressable,
+  Dimensions,
 } from 'react-native';
 import type {
   AIContent,
@@ -52,6 +55,31 @@ const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps
   if (!imageUrl) return null;
 
   return <Image source={{ uri: imageUrl }} style={s.topicImage} resizeMode="contain" />;
+});
+
+/** Per-question medical image with tap-to-enlarge lightbox. */
+const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const screenW = Dimensions.get('window').width;
+  const screenH = Dimensions.get('window').height;
+
+  return (
+    <>
+      <TouchableOpacity activeOpacity={0.85} onPress={() => setLightboxOpen(true)}>
+        <Image source={{ uri: url }} style={s.questionImage} resizeMode="contain" />
+        <Text style={s.tapToEnlarge}>Tap to enlarge</Text>
+      </TouchableOpacity>
+      <Modal visible={lightboxOpen} transparent animationType="fade" onRequestClose={() => setLightboxOpen(false)}>
+        <Pressable style={s.lightboxBackdrop} onPress={() => setLightboxOpen(false)}>
+          <Image
+            source={{ uri: url }}
+            style={{ width: screenW * 0.95, height: screenH * 0.7 }}
+            resizeMode="contain"
+          />
+        </Pressable>
+      </Modal>
+    </>
+  );
 });
 
 interface Props {
@@ -565,7 +593,11 @@ function QuizCard({
       <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
         {content.topicName}
       </Text>
-      <TopicImage topicName={content.topicName} />
+      {q.imageUrl ? (
+        <QuestionImage url={q.imageUrl} />
+      ) : (
+        <TopicImage topicName={content.topicName} />
+      )}
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
@@ -1313,6 +1345,25 @@ const s = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 20,
     backgroundColor: '#1A1A24',
+  },
+  questionImage: {
+    width: '100%',
+    height: 220,
+    borderRadius: 12,
+    marginBottom: 4,
+    backgroundColor: '#1A1A24',
+  },
+  tapToEnlarge: {
+    color: '#888',
+    fontSize: 11,
+    textAlign: 'center' as const,
+    marginBottom: 14,
+  },
+  lightboxBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.92)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   pointsContainer: { marginBottom: 16 },
   pointRow: { flexDirection: 'row', marginBottom: 12 },

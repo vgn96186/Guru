@@ -85,6 +85,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     prefer_gemini_structured_json: number | null;
     github_models_pat: string;
     kilo_api_key: string;
+    deepseek_key: string;
+    agentrouter_key: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -141,6 +143,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       preferGeminiStructuredJson: true,
       githubModelsPat: '',
       kiloApiKey: '',
+      deepseekKey: '',
+      agentRouterKey: '',
     };
   }
 
@@ -228,6 +232,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     preferGeminiStructuredJson: (r.prefer_gemini_structured_json ?? 1) === 1,
     githubModelsPat: r.github_models_pat ?? '',
     kiloApiKey: r.kilo_api_key ?? '',
+    deepseekKey: r.deepseek_key ?? '',
+    agentRouterKey: r.agentrouter_key ?? '',
   };
 }
 
@@ -283,6 +289,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     preferGeminiStructuredJson: 'prefer_gemini_structured_json',
     githubModelsPat: 'github_models_pat',
     kiloApiKey: 'kilo_api_key',
+    deepseekKey: 'deepseek_key',
+    agentRouterKey: 'agentrouter_key',
   };
 
   const setClauses: string[] = [];

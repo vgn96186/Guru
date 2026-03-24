@@ -22,6 +22,7 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     deepseekKey,
     githubModelsPat,
     kiloApiKey,
+    agentRouterKey,
   } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
   const hasCloud =
@@ -32,7 +33,8 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     (!!cfAccountId && !!cfApiToken) ||
     !!deepseekKey ||
     !!githubModelsPat ||
-    !!kiloApiKey;
+    !!kiloApiKey ||
+    !!agentRouterKey;
 
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
@@ -54,6 +56,7 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     deepseekKey,
     githubModelsPat,
     kiloApiKey,
+    agentRouterKey,
   };
 }
 
@@ -76,6 +79,7 @@ export async function generateJSONWithRouting<T>(
     deepseekKey,
     githubModelsPat,
     kiloApiKey,
+    agentRouterKey,
   } = getBackendAttemptOrder(profile);
 
   if (forceProvider === 'groq') {
@@ -119,6 +123,7 @@ export async function generateJSONWithRouting<T>(
         deepseekKey,
         githubModelsPat,
         kiloApiKey,
+        agentRouterKey,
       );
       const parsed = await parseStructuredJson(text, schema);
       return { parsed, modelUsed };
@@ -171,6 +176,7 @@ export async function generateTextWithRouting(
     deepseekKey,
     githubModelsPat,
     kiloApiKey,
+    agentRouterKey,
   } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -192,6 +198,7 @@ export async function generateTextWithRouting(
               deepseekKey,
               githubModelsPat,
               kiloApiKey,
+              agentRouterKey,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       return { text, modelUsed };
@@ -246,6 +253,7 @@ export async function generateTextWithRoutingStream(
     deepseekKey,
     githubModelsPat,
     kiloApiKey,
+    agentRouterKey,
   } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -269,6 +277,7 @@ export async function generateTextWithRoutingStream(
         deepseekKey,
         githubModelsPat,
         kiloApiKey,
+        agentRouterKey,
       );
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);

@@ -51,7 +51,10 @@ Return JSON:
   ]
 }
 
-Style: Extended clinical vignettes, highly rigorous, INICET standard difficulty.`;
+Style: Extended clinical vignettes, highly rigorous, INICET standard difficulty.
+
+IMAGE-BASED QUESTIONS (optional):
+For topics involving visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology), include an "imageSearchQuery" field in 1-2 questions with a precise medical image search query (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma"). The question text should reference the image: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" for non-visual questions.`;
 }
 
 export function buildStoryPrompt(topicName: string, subjectName: string): string {

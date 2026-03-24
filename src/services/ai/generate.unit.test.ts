@@ -53,6 +53,7 @@ describe('generateJSONWithRouting', () => {
       deepseekKey: undefined,
       githubModelsPat: undefined,
       kiloApiKey: undefined,
+      agentRouterKey: undefined,
     });
     jest.mocked(profileRepository.getProfile).mockResolvedValue(minimalProfile);
     jest.mocked(geminiGenerateStructuredJsonSdk).mockReset();

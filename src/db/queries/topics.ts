@@ -386,7 +386,7 @@ export async function updateTopicProgressInTx(
       updatedCard.lapses,
       updatedCard.state,
       updatedCard.last_review?.toISOString() ?? null,
-      noteToAppend ?? null,
+      noteToAppend ?? '',
     ],
   );
 }
@@ -491,7 +491,7 @@ export async function updateTopicsProgressBatch(updates: TopicProgressUpdate[]):
           updatedCard.lapses,
           updatedCard.state,
           updatedCard.last_review?.toISOString() ?? null,
-          update.noteToAppend ?? null,
+          update.noteToAppend ?? '',
         ],
       );
     }

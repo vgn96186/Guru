@@ -125,6 +125,39 @@ function resolveFocusedContentTypes(
   return focusedTypes;
 }
 
+/**
+ * Interleave agenda items so topics alternate (ADHD-friendly).
+ * Instead of: A-keypoints, A-quiz, A-story, B-keypoints, B-quiz
+ * Produces:   A-keypoints, B-keypoints, A-quiz, B-quiz, A-story
+ *
+ * Each original multi-content item is split into single-content items,
+ * then round-robined by content-type slot across topics.
+ */
+function interleaveAgendaItems(items: AgendaItem[]): AgendaItem[] {
+  if (items.length <= 1) return items;
+
+  // Split each item into per-content-type items
+  const perTopic: AgendaItem[][] = items.map((item) =>
+    item.contentTypes.map((ct) => ({
+      topic: item.topic,
+      contentTypes: [ct],
+      estimatedMinutes: Math.round(item.estimatedMinutes / item.contentTypes.length),
+    })),
+  );
+
+  // Round-robin: slot 0 of each topic, then slot 1, etc.
+  const maxSlots = Math.max(...perTopic.map((t) => t.length));
+  const result: AgendaItem[] = [];
+  for (let slot = 0; slot < maxSlots; slot++) {
+    for (const topicItems of perTopic) {
+      if (slot < topicItems.length) {
+        result.push(topicItems[slot]);
+      }
+    }
+  }
+  return result;
+}
+
 export async function buildSession(
   mood: Mood,
   preferredMinutes: number,
@@ -198,7 +231,7 @@ export async function buildSession(
       const focusNames = slicedTopics.map((topic) => topic.name);
 
       return {
-        items,
+        items: interleaveAgendaItems(items),
         totalMinutes,
         focusNote: `Focused ${options?.preferredActionType ?? 'study'}: ${focusNames.join(' + ')}`,
         mode: options?.preferredActionType === 'deep_dive' ? 'deep' : mode,
@@ -360,7 +393,7 @@ export async function buildSession(
   }
 
   return {
-    items,
+    items: interleaveAgendaItems(items),
     totalMinutes: sessionMinutes,
     focusNote: agendaResponse.focusNote,
     mode,

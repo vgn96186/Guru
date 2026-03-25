@@ -491,7 +491,12 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN agentrouter_key TEXT NOT NULL DEFAULT ''`,
     description: 'AgentRouter API key (OpenAI-compatible proxy at agentrouter.org)',
   },
+  {
+    version: 107,
+    sql: `ALTER TABLE user_profile ADD COLUMN provider_order TEXT NOT NULL DEFAULT '[]'`,
+    description: 'Customisable cloud LLM provider priority order (JSON array of provider IDs)',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 106;
+export const LATEST_VERSION = 107;

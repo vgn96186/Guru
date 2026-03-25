@@ -17,6 +17,8 @@ import {
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
+import type { ProviderId } from '../../types';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
 
 let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
@@ -915,6 +917,21 @@ async function streamKiloChat(
   return text;
 }
 
+/** Headers that satisfy AgentRouter's OpenAI-SDK client fingerprint check. */
+const AGENTROUTER_HEADERS = {
+  'User-Agent': 'Kilo-Code/5.11.0',
+  'HTTP-Referer': 'https://kilocode.ai',
+  'X-Title': 'Kilo Code',
+  'X-KiloCode-Version': '5.11.0',
+  'x-stainless-arch': 'x64',
+  'x-stainless-lang': 'js',
+  'x-stainless-os': 'Android',
+  'x-stainless-package-version': '6.32.0',
+  'x-stainless-retry-count': '0',
+  'x-stainless-runtime': 'node',
+  'x-stainless-runtime-version': 'v20.20.0',
+} as const;
+
 async function callAgentRouter(
   messages: Message[],
   apiKey: string,
@@ -938,7 +955,7 @@ async function callAgentRouter(
   if (__DEV__) console.log(`[AI] callAgentRouter: model=${model} json=${jsonMode}`);
   const res = await fetch('https://agentrouter.org/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, ...AGENTROUTER_HEADERS },
     body: JSON.stringify(body),
   });
   if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
@@ -960,7 +977,7 @@ async function streamAgentRouterChat(
 ): Promise<string> {
   const res = await fetch('https://agentrouter.org/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, ...AGENTROUTER_HEADERS },
     body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 2000, stream: true }),
   });
   if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
@@ -976,6 +993,152 @@ async function streamAgentRouterChat(
   const text = await readOpenAiCompatibleSse(res, onDelta);
   if (!text.trim()) throw new Error(`Empty response from AgentRouter model ${model}`);
   return text;
+}
+
+/** Keys bag shared by the provider loop helpers. */
+interface ProviderKeys {
+  groqKey?: string; githubModelsPat?: string; kiloApiKey?: string;
+  deepseekKey?: string; agentRouterKey?: string; geminiKey?: string;
+  geminiFallbackKey?: string; orKey?: string; cfAccountId?: string; cfApiToken?: string;
+}
+
+/** Check if a provider has a usable key configured. */
+function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
+  switch (provider) {
+    case 'groq': return !!keys.groqKey;
+    case 'github': return !!keys.githubModelsPat;
+    case 'kilo': return !!keys.kiloApiKey;
+    case 'deepseek': return !!keys.deepseekKey;
+    case 'agentrouter': return !!keys.agentRouterKey;
+    case 'gemini': return !!keys.geminiKey;
+    case 'gemini_fallback': return !!keys.geminiFallbackKey;
+    case 'openrouter': return !!keys.orKey;
+    case 'cloudflare': return !!(keys.cfAccountId && keys.cfApiToken);
+    default: return false;
+  }
+}
+
+/** Try all models for a single provider (streaming). Returns result, or null if none succeeded. */
+async function tryStreamProvider(
+  provider: ProviderId,
+  messages: Message[],
+  onDelta: (delta: string) => void,
+  skipModel: string | undefined,
+  keys: ProviderKeys,
+): Promise<{ text: string; modelUsed: string } | null> {
+  let lastErr: Error | null = null;
+  const tryModels = async (
+    models: readonly string[],
+    fn: (model: string) => Promise<string>,
+    prefix: string,
+  ): Promise<{ text: string; modelUsed: string } | null> => {
+    for (const model of models) {
+      if (skipModel && model === skipModel) continue;
+      try {
+        if (__DEV__) console.log(`[AI] trying ${prefix || 'or'}/${model}...`);
+        const text = await fn(model);
+        return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
+      } catch (err) {
+        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message?.slice(0, 80));
+        lastErr = err as Error;
+        continue;
+      }
+    }
+    return null;
+  };
+
+  switch (provider) {
+    case 'groq':
+      if (!keys.groqKey) return null;
+      return tryModels(GROQ_MODELS, (m) => streamGroqChat(messages, keys.groqKey!, m, onDelta), 'groq');
+    case 'github':
+      if (!keys.githubModelsPat) return null;
+      return tryModels(GITHUB_MODELS_CHAT_MODELS, (m) => streamGitHubModelsChat(messages, keys.githubModelsPat!, m, onDelta), 'github');
+    case 'kilo':
+      if (!keys.kiloApiKey) return null;
+      return tryModels(await getKiloPreferredModels(keys.kiloApiKey), (m) => streamKiloChat(messages, keys.kiloApiKey!, m, onDelta), 'kilo');
+    case 'deepseek':
+      if (!keys.deepseekKey) return null;
+      return tryModels(DEEPSEEK_MODELS, (m) => streamDeepSeekChat(messages, keys.deepseekKey!, m, onDelta), 'deepseek');
+    case 'agentrouter':
+      if (!keys.agentRouterKey) return null;
+      return tryModels(AGENTROUTER_MODELS, (m) => streamAgentRouterChat(messages, keys.agentRouterKey!, m, onDelta), 'ar');
+    case 'gemini':
+      if (!keys.geminiKey) return null;
+      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentStreamSdk(messages, keys.geminiKey!, m, onDelta), 'gemini');
+    case 'gemini_fallback':
+      if (!keys.geminiFallbackKey) return null;
+      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentStreamSdk(messages, keys.geminiFallbackKey!, m, onDelta), 'gemini');
+    case 'openrouter':
+      if (!keys.orKey) return null;
+      return tryModels(OPENROUTER_FREE_MODELS, (m) => streamOpenRouterChat(messages, keys.orKey!, m, onDelta), '');
+    case 'cloudflare':
+      if (!keys.cfAccountId || !keys.cfApiToken) return null;
+      return tryModels(CLOUDFLARE_MODELS, (m) => streamCloudflareChat(messages, keys.cfAccountId!, keys.cfApiToken!, m, onDelta), 'cf');
+    default:
+      return null;
+  }
+}
+
+/** Try all models for a single provider (non-streaming). Returns result, or null if none succeeded. */
+async function tryProvider(
+  provider: ProviderId,
+  messages: Message[],
+  textMode: boolean,
+  skipModel: string | undefined,
+  keys: ProviderKeys,
+): Promise<{ text: string; modelUsed: string } | null> {
+  const tryModels = async (
+    models: readonly string[],
+    fn: (model: string) => Promise<string>,
+    prefix: string,
+  ): Promise<{ text: string; modelUsed: string } | null> => {
+    for (const model of models) {
+      if (skipModel && model === skipModel) continue;
+      try {
+        if (__DEV__) console.log(`[AI] trying ${prefix || 'or'}/${model}...`);
+        const text = await fn(model);
+        return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
+      } catch (err) {
+        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message?.slice(0, 80));
+        continue;
+      }
+    }
+    return null;
+  };
+
+  const json = !textMode;
+  switch (provider) {
+    case 'groq':
+      if (!keys.groqKey) return null;
+      return tryModels(GROQ_MODELS, (m) => callGroq(messages, keys.groqKey!, m, json), 'groq');
+    case 'github':
+      if (!keys.githubModelsPat) return null;
+      return tryModels(GITHUB_MODELS_CHAT_MODELS, (m) => callGitHubModels(messages, keys.githubModelsPat!, m, json), 'github');
+    case 'kilo':
+      if (!keys.kiloApiKey) return null;
+      return tryModels(await getKiloPreferredModels(keys.kiloApiKey), (m) => callKilo(messages, keys.kiloApiKey!, m, json), 'kilo');
+    case 'deepseek':
+      if (!keys.deepseekKey) return null;
+      return tryModels(DEEPSEEK_MODELS, (m) => callDeepSeek(messages, keys.deepseekKey!, m, json), 'deepseek');
+    case 'agentrouter':
+      if (!keys.agentRouterKey) return null;
+      return tryModels(AGENTROUTER_MODELS, (m) => callAgentRouter(messages, keys.agentRouterKey!, m, json), 'ar');
+    case 'gemini':
+      if (!keys.geminiKey) return null;
+      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentSdk(messages, keys.geminiKey!, m), 'gemini');
+    case 'gemini_fallback':
+      if (!keys.geminiFallbackKey) return null;
+      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentSdk(messages, keys.geminiFallbackKey!, m), 'gemini');
+    case 'openrouter':
+      if (!keys.orKey) return null;
+      return tryModels(OPENROUTER_FREE_MODELS, (m) => callOpenRouter(messages, keys.orKey!, m), '');
+    case 'cloudflare':
+      if (!keys.cfAccountId || !keys.cfApiToken) return null;
+      return tryModels(CLOUDFLARE_MODELS, (m) => callCloudflare(messages, keys.cfAccountId!, keys.cfApiToken!, m), 'cf');
+    default:
+      return null;
+  }
 }
 
 /**
@@ -996,6 +1159,7 @@ export async function attemptCloudLLMStream(
   githubModelsPat?: string | undefined,
   kiloApiKey?: string | undefined,
   agentRouterKey?: string | undefined,
+  providerOrder?: ProviderId[],
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1169,150 +1333,32 @@ export async function attemptCloudLLMStream(
     );
   }
 
-  // 2. Default Routing — Groq first (fastest, free OSS models), then fallbacks
-  if (groqKey) {
-    for (const model of GROQ_MODELS) {
-      if (preferredGroqModel && model === preferredGroqModel) continue;
-      try {
-        const text = await streamGroqChat(messages, groqKey, model, onDelta);
-        return { text, modelUsed: `groq/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
+  // 2. Default Routing — iterate providers in user-defined (or default) order
+  const order = providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER;
+  const keys: ProviderKeys = {
+    groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey,
+    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken,
+  };
+  const skipModels: Record<string, string | undefined> = {
+    groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
+    deepseek: preferredDeepseekModel, agentrouter: preferredAgentRouterModel,
+    gemini: preferredGeminiModel, gemini_fallback: preferredGeminiModel,
+    openrouter: preferredOpenRouterModel, cloudflare: preferredCfModel,
+  };
+
+  if (__DEV__) {
+    const available = order.filter((p) => providerHasKey(p, keys));
+    console.log(`[AI] stream routing order: [${order.join(' → ')}] (available: ${available.join(', ')})`);
   }
 
-  if (githubModelsPat) {
-    for (const model of GITHUB_MODELS_CHAT_MODELS) {
-      if (preferredGithubModel && model === preferredGithubModel) continue;
-      try {
-        const text = await streamGitHubModelsChat(messages, githubModelsPat, model, onDelta);
-        return { text, modelUsed: `github/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
+  for (const provider of order) {
+    if (!providerHasKey(provider, keys)) {
+      if (__DEV__) console.log(`[AI] skip ${provider} (no key)`);
+      continue;
     }
-  }
-
-  if (kiloApiKey) {
-    const kiloModels = await getKiloPreferredModels(kiloApiKey);
-    for (const model of kiloModels) {
-      if (preferredKiloModel && model === preferredKiloModel) continue;
-      try {
-        const text = await streamKiloChat(messages, kiloApiKey, model, onDelta);
-        return { text, modelUsed: `kilo/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (deepseekKey) {
-    for (const model of DEEPSEEK_MODELS) {
-      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
-      try {
-        const text = await streamDeepSeekChat(messages, deepseekKey, model, onDelta);
-        return { text, modelUsed: `deepseek/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (agentRouterKey) {
-    for (const model of AGENTROUTER_MODELS) {
-      if (preferredAgentRouterModel && model === preferredAgentRouterModel) continue;
-      try {
-        const text = await streamAgentRouterChat(messages, agentRouterKey, model, onDelta);
-        return { text, modelUsed: `ar/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (geminiKey) {
-    for (const model of GEMINI_MODELS) {
-      if (preferredGeminiModel && model === preferredGeminiModel) continue;
-      try {
-        const text = await geminiGenerateContentStreamSdk(messages, geminiKey, model, onDelta);
-        return { text, modelUsed: `gemini/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (geminiFallbackKey) {
-    for (const model of GEMINI_MODELS) {
-      if (preferredGeminiModel && model === preferredGeminiModel) continue;
-      try {
-        const text = await geminiGenerateContentStreamSdk(
-          messages,
-          geminiFallbackKey,
-          model,
-          onDelta,
-        );
-        return { text, modelUsed: `gemini/${model} (fallback_key)` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (groqKey) {
-    for (const model of GROQ_MODELS) {
-      if (preferredGroqModel && model === preferredGroqModel) continue;
-      try {
-        const text = await streamGroqChat(messages, groqKey, model, onDelta);
-        return { text, modelUsed: `groq/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (orKey) {
-    for (const model of OPENROUTER_FREE_MODELS) {
-      if (preferredOpenRouterModel && model === preferredOpenRouterModel) continue;
-      try {
-        const text = await streamOpenRouterChat(messages, orKey, model, onDelta);
-        return { text, modelUsed: model };
-      } catch (err) {
-        lastCloudError = err as Error;
-        continue;
-      }
-    }
-  }
-
-  if (cfAccountId && cfApiToken) {
-    for (const model of CLOUDFLARE_MODELS) {
-      if (preferredCfModel && model === preferredCfModel) continue;
-      try {
-        const text = await streamCloudflareChat(messages, cfAccountId, cfApiToken, model, onDelta);
-        return { text, modelUsed: `cf/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
+    const skip = skipModels[provider];
+    const result = await tryStreamProvider(provider, messages, onDelta, skip, keys);
+    if (result) return result;
   }
 
   if (lastCloudError) {
@@ -1385,6 +1431,7 @@ export async function attemptCloudLLM(
   githubModelsPat?: string | undefined,
   kiloApiKey?: string | undefined,
   agentRouterKey?: string | undefined,
+  providerOrder?: ProviderId[],
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1506,141 +1553,29 @@ export async function attemptCloudLLM(
     }
   }
 
-  // 2. Default Routing — Groq first (fastest, free OSS models), then fallbacks
-  if (groqKey) {
-    for (const model of GROQ_MODELS) {
-      if (preferredGroqModel && model === preferredGroqModel) continue;
-      try {
-        const text = textMode
-          ? await callGroq(messages, groqKey, model, false)
-          : await callGroq(messages, groqKey, model);
-        return { text, modelUsed: `groq/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
+  // 2. Default Routing — iterate providers in user-defined (or default) order
+  const order = providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER;
+  const keys2: ProviderKeys = {
+    groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey,
+    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken,
+  };
+  const skipModels: Record<string, string | undefined> = {
+    groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
+    deepseek: preferredDeepseekModel, agentrouter: preferredAgentRouterModel,
+    gemini: preferredGeminiModel, gemini_fallback: preferredGeminiModel,
+    openrouter: preferredOpenRouterModel, cloudflare: preferredCfModel,
+  };
+
+  if (__DEV__) {
+    const available = order.filter((p) => providerHasKey(p, keys2));
+    console.log(`[AI] routing order: [${order.join(' → ')}] (available: ${available.join(', ')}) textMode=${textMode}`);
   }
 
-  if (githubModelsPat) {
-    for (const model of GITHUB_MODELS_CHAT_MODELS) {
-      if (preferredGithubModel && model === preferredGithubModel) continue;
-      try {
-        const text = textMode
-          ? await callGitHubModels(messages, githubModelsPat, model, false)
-          : await callGitHubModels(messages, githubModelsPat, model);
-        return { text, modelUsed: `github/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (kiloApiKey) {
-    const kiloModels = await getKiloPreferredModels(kiloApiKey);
-    for (const model of kiloModels) {
-      if (preferredKiloModel && model === preferredKiloModel) continue;
-      try {
-        const text = textMode
-          ? await callKilo(messages, kiloApiKey, model, false)
-          : await callKilo(messages, kiloApiKey, model);
-        return { text, modelUsed: `kilo/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (deepseekKey) {
-    for (const model of DEEPSEEK_MODELS) {
-      if (preferredDeepseekModel && model === preferredDeepseekModel) continue;
-      try {
-        const text = textMode
-          ? await callDeepSeek(messages, deepseekKey, model, false)
-          : await callDeepSeek(messages, deepseekKey, model);
-        return { text, modelUsed: `deepseek/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (agentRouterKey) {
-    for (const model of AGENTROUTER_MODELS) {
-      if (preferredAgentRouterModel && model === preferredAgentRouterModel) continue;
-      try {
-        const text = textMode
-          ? await callAgentRouter(messages, agentRouterKey, model, false)
-          : await callAgentRouter(messages, agentRouterKey, model);
-        return { text, modelUsed: `ar/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (geminiKey) {
-    for (const model of GEMINI_MODELS) {
-      if (preferredGeminiModel && model === preferredGeminiModel) continue;
-      try {
-        const text = await geminiGenerateContentSdk(messages, geminiKey, model);
-        return { text, modelUsed: `gemini/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (geminiFallbackKey) {
-    for (const model of GEMINI_MODELS) {
-      if (preferredGeminiModel && model === preferredGeminiModel) continue;
-      try {
-        const text = await geminiGenerateContentSdk(messages, geminiFallbackKey, model);
-        return { text, modelUsed: `gemini/${model} (fallback_key)` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
-  }
-
-  if (orKey) {
-    for (const model of OPENROUTER_FREE_MODELS) {
-      if (preferredOpenRouterModel && model === preferredOpenRouterModel) continue;
-      try {
-        const text = await callOpenRouter(messages, orKey, model);
-        return { text, modelUsed: model };
-      } catch (err) {
-        lastCloudError = err as Error;
-        continue;
-      }
-    }
-  }
-
-  if (cfAccountId && cfApiToken) {
-    for (const model of CLOUDFLARE_MODELS) {
-      if (preferredCfModel && model === preferredCfModel) continue;
-      try {
-        const text = await callCloudflare(messages, cfAccountId, cfApiToken, model);
-        return { text, modelUsed: `cf/${model}` };
-      } catch (err) {
-        lastCloudError = err as Error;
-        if (err instanceof RateLimitError) continue;
-        continue;
-      }
-    }
+  for (const provider of order) {
+    if (!providerHasKey(provider, keys2)) continue;
+    const skip = skipModels[provider];
+    const result = await tryProvider(provider, messages, textMode, skip, keys2);
+    if (result) return result;
   }
 
   if (lastCloudError) {

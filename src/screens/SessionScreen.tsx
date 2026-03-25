@@ -393,7 +393,15 @@ export default function SessionScreen() {
       } else if (s.agenda?.skipBreaks) {
         nextTopicNoBreak();
       } else {
-        startBreak((profile?.breakDurationMinutes ?? 5) * 60);
+        // Only break when switching to a different topic (interleaved items
+        // mean the same topic can appear in consecutive slots)
+        const nextItem = s.agenda?.items[s.currentItemIndex + 1];
+        const sameTopic = nextItem && nextItem.topic.id === curItem.topic.id;
+        if (sameTopic) {
+          nextTopicNoBreak();
+        } else {
+          startBreak((profile?.breakDurationMinutes ?? 5) * 60);
+        }
       }
     }
   }, [

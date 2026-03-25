@@ -56,6 +56,18 @@ async function resolveQuizImages<T extends QuizContent>(quiz: T): Promise<T> {
         ...updatedQuestions[i],
         imageUrl: result.value[0].imageUrl ?? result.value[0].url,
       };
+    } else {
+      // Image search failed — strip image-referencing language from the question text
+      // so it doesn't confuse the student with "Based on the image shown..." when there's no image.
+      const q = updatedQuestions[i];
+      updatedQuestions[i] = {
+        ...q,
+        imageSearchQuery: undefined,
+        question: q.question
+          .replace(/\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi, '')
+          .replace(/The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi, '')
+          .replace(/^\s*[.,]\s*/, ''),
+      };
     }
   });
 

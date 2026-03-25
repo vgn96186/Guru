@@ -595,9 +595,7 @@ function QuizCard({
       </Text>
       {q.imageUrl ? (
         <QuestionImage url={q.imageUrl} />
-      ) : (
-        <TopicImage topicName={content.topicName} />
-      )}
+      ) : null}
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {

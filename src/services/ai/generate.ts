@@ -11,7 +11,7 @@ import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
 import { RateLimitError } from './schemas';
 
 /** Resolve backend attempt order from profile. Used by both JSON and text routing. */
-function getBackendAttemptOrder(profile: UserProfile): any {
+function getBackendAttemptOrder(profile: UserProfile) {
   const {
     orKey,
     groqKey,
@@ -57,6 +57,7 @@ function getBackendAttemptOrder(profile: UserProfile): any {
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    providerOrder: profile.providerOrder,
   };
 }
 
@@ -80,6 +81,7 @@ export async function generateJSONWithRouting<T>(
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    providerOrder,
   } = getBackendAttemptOrder(profile);
 
   if (forceProvider === 'groq') {
@@ -124,6 +126,7 @@ export async function generateJSONWithRouting<T>(
         githubModelsPat,
         kiloApiKey,
         agentRouterKey,
+        providerOrder,
       );
       const parsed = await parseStructuredJson(text, schema);
       return { parsed, modelUsed };
@@ -177,6 +180,7 @@ export async function generateTextWithRouting(
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    providerOrder: textProviderOrder,
   } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -199,6 +203,7 @@ export async function generateTextWithRouting(
               githubModelsPat,
               kiloApiKey,
               agentRouterKey,
+              textProviderOrder,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       return { text, modelUsed };
@@ -254,6 +259,7 @@ export async function generateTextWithRoutingStream(
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    providerOrder: streamProviderOrder,
   } = getBackendAttemptOrder(profile);
 
   let lastError: Error | null = null;
@@ -278,6 +284,7 @@ export async function generateTextWithRoutingStream(
         githubModelsPat,
         kiloApiKey,
         agentRouterKey,
+        streamProviderOrder,
       );
     } catch (err) {
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);

@@ -162,9 +162,13 @@ describe('sessionPlanner', () => {
       focusTopicIds: [1, 2],
     });
 
-    expect(agenda.items.length).toBe(2);
-    expect(agenda.items.map(i => i.topic.id)).toContain(1);
-    expect(agenda.items.map(i => i.topic.id)).toContain(2);
+    // Interleaved: Topic 1 gets [keypoints, quiz], Topic 2 (overdue) gets [quiz] = 3 items
+    expect(agenda.items.length).toBeGreaterThanOrEqual(2);
+    const topicIds = agenda.items.map(i => i.topic.id);
+    expect(topicIds).toContain(1);
+    expect(topicIds).toContain(2);
+    // Each item should have exactly one content type (interleaved)
+    agenda.items.forEach(item => expect(item.contentTypes.length).toBe(1));
   });
 
   it('should respect blocked content types', async () => {

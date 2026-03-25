@@ -59,46 +59,42 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
   }
 
   // 2. Fallback: OpenRouter OpenAI text-embedding-3-small (Requires credits)
-  if (!orKey) return null;
+  if (orKey) {
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${orKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/text-embedding-3-small',
+          input: normalized.slice(0, 8000),
+        }),
+      });
 
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${orKey}`,
-      },
-      body: JSON.stringify({
-        model: 'openai/text-embedding-3-small',
-        input: normalized.slice(0, 8000),
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      if (response.status === 402) {
-        if (__DEV__) console.warn('[Embedding] OpenRouter insufficient credits (402).');
+      if (response.ok) {
+        _embeddingFailCount = 0;
+        const data = await response.json();
+        const embedding = data?.data?.[0]?.embedding;
+        if (Array.isArray(embedding) && embedding.length > 0) {
+          if (__DEV__)
+            console.log(`[Embedding] OpenRouter success: text-3-small (${embedding.length} dims)`);
+          return embedding;
+        }
+      } else {
+        if (response.status === 401 || response.status === 403) _embeddingFailCount++;
+        if (__DEV__) console.log(`[Embedding] OpenRouter ${response.status}, skipping`);
       }
-      if (response.status === 401 || response.status === 403) {
-        _embeddingFailCount++;
-      }
-      throw new Error(`Embedding failed: ${err}`);
+    } catch {
+      // Network error — fall through silently
     }
-
-    _embeddingFailCount = 0;
-    const data = await response.json();
-    const embedding = data?.data?.[0]?.embedding;
-    if (!Array.isArray(embedding) || embedding.length === 0) {
-      throw new Error('Embedding response did not include a vector');
-    }
-    if (__DEV__)
-      console.log(`[Embedding] OpenRouter success: text-3-small (${embedding.length} dims)`);
-    return embedding;
-  } catch (err) {
-    if (__DEV__ && _embeddingFailCount < EMBEDDING_FAIL_THRESHOLD + 1)
-      console.warn('[Embedding] Error:', err);
-    return null;
   }
+
+  // Embeddings are optional — don't spam logs, just return null
+  if (__DEV__ && _embeddingFailCount === 1)
+    console.log('[Embedding] No working embedding provider; topic search will use text matching');
+  return null;
 }
 
 let _embeddingSeedTask: Promise<void> | null = null;

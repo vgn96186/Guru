@@ -4,6 +4,7 @@
  */
 import {
   CLOUDFLARE_MODELS,
+  DEEPSEEK_MODELS,
   GEMINI_MODELS,
   GROQ_MODELS,
   KILO_MODELS,
@@ -252,6 +253,11 @@ export async function fetchKiloModelIds(
   }
 }
 
+/** DeepSeek — static model list (direct API at api.deepseek.com). */
+export function fetchDeepSeekModelIds(): { ids: string[] } & LiveModelFetchMeta {
+  return { ids: [...DEEPSEEK_MODELS], source: 'fallback' };
+}
+
 /** AgentRouter — OpenAI-compatible, static model list (no /models endpoint documented). */
 export function fetchAgentRouterModelIds(): { ids: string[] } & LiveModelFetchMeta {
   return { ids: [...AGENTROUTER_MODELS], source: 'fallback' };
@@ -263,11 +269,12 @@ export interface LiveGuruChatModelIds {
   gemini: string[];
   cloudflare: string[];
   kilo: string[];
+  deepseek: string[];
   agentrouter: string[];
   /** True if any provider returned live data this refresh */
   anyLive: boolean;
   /** Last error strings per provider (debug) */
-  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo' | 'agentrouter', string>>;
+  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo' | 'deepseek' | 'agentrouter', string>>;
 }
 
 export async function fetchAllLiveGuruChatModelIds(keys: {
@@ -277,6 +284,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
   cfAccountId?: string;
   cfApiToken?: string;
   kiloApiKey?: string;
+  deepseekKey?: string;
   agentRouterKey?: string;
 }): Promise<LiveGuruChatModelIds> {
   const [groqR, orR, gemR, cfR, kiloR] = await Promise.all([
@@ -286,6 +294,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
     fetchCloudflareChatModelIds(keys.cfAccountId ?? '', keys.cfApiToken ?? ''),
     fetchKiloModelIds(keys.kiloApiKey ?? ''),
   ]);
+  const dsR = fetchDeepSeekModelIds();
   const arR = fetchAgentRouterModelIds();
 
   const errors: LiveGuruChatModelIds['errors'] = {};
@@ -308,6 +317,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
     gemini: gemR.ids,
     cloudflare: cfR.ids,
     kilo: kiloR.ids,
+    deepseek: dsR.ids,
     agentrouter: arR.ids,
     anyLive,
     errors,

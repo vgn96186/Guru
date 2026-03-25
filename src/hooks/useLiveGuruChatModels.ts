@@ -3,6 +3,7 @@ import type { UserProfile } from '../types';
 import {
   AGENTROUTER_MODELS,
   CLOUDFLARE_MODELS,
+  DEEPSEEK_MODELS,
   GEMINI_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GROQ_MODELS,
@@ -23,6 +24,7 @@ export type LiveGuruChatDraftKeys = {
   cloudflareApiToken?: string;
   githubModelsPat?: string;
   kiloApiKey?: string;
+  deepseekKey?: string;
   agentRouterKey?: string;
 };
 
@@ -36,6 +38,7 @@ function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): 
     cloudflareApiToken: draft.cloudflareApiToken?.trim() || profile.cloudflareApiToken || '',
     githubModelsPat: draft.githubModelsPat?.trim() || profile.githubModelsPat || '',
     kiloApiKey: draft.kiloApiKey?.trim() || profile.kiloApiKey || '',
+    deepseekKey: draft.deepseekKey?.trim() || profile.deepseekKey || '',
     agentRouterKey: draft.agentRouterKey?.trim() || profile.agentRouterKey || '',
   };
 }
@@ -72,6 +75,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
             draft.cloudflareApiToken ?? '',
             draft.githubModelsPat ?? '',
             draft.kiloApiKey ?? '',
+            draft.deepseekKey ?? '',
             draft.agentRouterKey ?? '',
           ].join('\0')
         : '',
@@ -99,7 +103,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       return profile;
     })();
 
-    const { groqKey, orKey, geminiKey, cfAccountId, cfApiToken, kiloApiKey, agentRouterKey } =
+    const { groqKey, orKey, geminiKey, cfAccountId, cfApiToken, kiloApiKey, deepseekKey, agentRouterKey } =
       getApiKeys(mergedProfile);
 
     fetchAllLiveGuruChatModelIds({
@@ -109,6 +113,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       cfAccountId,
       cfApiToken,
       kiloApiKey,
+      deepseekKey,
       agentRouterKey,
     })
       .then((r) => {
@@ -132,27 +137,17 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     if (d) return mergeDraftProfile(profile, d);
     return profile;
   })();
-  const githubList =
-    mergedProfile && getApiKeys(mergedProfile).githubModelsPat
-      ? [...GITHUB_MODELS_CHAT_MODELS]
-      : [];
-  const kiloList =
-    mergedProfile && getApiKeys(mergedProfile).kiloApiKey
-      ? (live?.kilo ?? [...KILO_MODELS])
-      : [];
-  const agentRouterList =
-    mergedProfile && getApiKeys(mergedProfile).agentRouterKey
-      ? (live?.agentrouter ?? [...AGENTROUTER_MODELS])
-      : [];
+  const resolvedKeys = mergedProfile ? getApiKeys(mergedProfile) : null;
 
   return {
-    groq: live?.groq ?? GROQ_MODELS,
-    openrouter: live?.openrouter ?? OPENROUTER_FREE_MODELS,
-    gemini: live?.gemini ?? GEMINI_MODELS,
-    cloudflare: live?.cloudflare ?? CLOUDFLARE_MODELS,
-    github: githubList,
-    kilo: kiloList,
-    agentrouter: agentRouterList,
+    groq: live?.groq ?? (resolvedKeys?.groqKey ? [...GROQ_MODELS] : []),
+    openrouter: live?.openrouter ?? (resolvedKeys?.orKey ? [...OPENROUTER_FREE_MODELS] : []),
+    gemini: live?.gemini ?? (resolvedKeys?.geminiKey ? [...GEMINI_MODELS] : []),
+    cloudflare: live?.cloudflare ?? (resolvedKeys?.cfAccountId && resolvedKeys?.cfApiToken ? [...CLOUDFLARE_MODELS] : []),
+    github: resolvedKeys?.githubModelsPat ? [...GITHUB_MODELS_CHAT_MODELS] : [],
+    kilo: resolvedKeys?.kiloApiKey ? (live?.kilo ?? [...KILO_MODELS]) : [],
+    deepseek: resolvedKeys?.deepseekKey ? (live?.deepseek ?? [...DEEPSEEK_MODELS]) : [],
+    agentrouter: resolvedKeys?.agentRouterKey ? (live?.agentrouter ?? [...AGENTROUTER_MODELS]) : [],
     loading,
     anyLive: live?.anyLive ?? false,
     errors: live?.errors ?? {},

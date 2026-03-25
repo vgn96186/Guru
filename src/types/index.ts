@@ -168,7 +168,44 @@ export interface UserProfile {
   kiloApiKey?: string;
   /** AgentRouter API key (OpenAI-compatible endpoint at agentrouter.org/v1). */
   agentRouterKey?: string;
+  /** User-defined cloud LLM provider priority order. Empty = default order. */
+  providerOrder?: ProviderId[];
 }
+
+export type ProviderId =
+  | 'groq'
+  | 'github'
+  | 'kilo'
+  | 'deepseek'
+  | 'agentrouter'
+  | 'gemini'
+  | 'gemini_fallback'
+  | 'openrouter'
+  | 'cloudflare';
+
+export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
+  'groq',
+  'github',
+  'kilo',
+  'deepseek',
+  'agentrouter',
+  'gemini',
+  'gemini_fallback',
+  'openrouter',
+  'cloudflare',
+];
+
+export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
+  groq: 'Groq',
+  github: 'GitHub Models',
+  kilo: 'Kilo',
+  deepseek: 'DeepSeek',
+  agentrouter: 'AgentRouter',
+  gemini: 'Gemini',
+  gemini_fallback: 'Gemini (Free)',
+  openrouter: 'OpenRouter',
+  cloudflare: 'Cloudflare',
+};
 
 // AI Content shapes
 export interface KeyPointsContent {

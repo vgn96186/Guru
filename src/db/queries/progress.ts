@@ -87,6 +87,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     kilo_api_key: string;
     deepseek_key: string;
     agentrouter_key: string;
+    provider_order: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -145,6 +146,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       kiloApiKey: '',
       deepseekKey: '',
       agentRouterKey: '',
+      providerOrder: [],
     };
   }
 
@@ -234,6 +236,13 @@ export async function getUserProfile(): Promise<UserProfile> {
     kiloApiKey: r.kilo_api_key ?? '',
     deepseekKey: r.deepseek_key ?? '',
     agentRouterKey: r.agentrouter_key ?? '',
+    providerOrder: (() => {
+      try {
+        return JSON.parse(r.provider_order ?? '[]');
+      } catch {
+        return [];
+      }
+    })() as import('../../types').ProviderId[],
   };
 }
 
@@ -316,6 +325,10 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   if ('customSubjectLoadMultipliers' in updates) {
     setClauses.push('subject_load_overrides_json = ?');
     values.push(JSON.stringify(updates.customSubjectLoadMultipliers ?? {}));
+  }
+  if ('providerOrder' in updates) {
+    setClauses.push('provider_order = ?');
+    values.push(JSON.stringify(updates.providerOrder ?? []));
   }
 
   if (setClauses.length === 0) return;

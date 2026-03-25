@@ -53,7 +53,8 @@ import {
   testGitHubModelsConnection,
   testKiloConnection,
 } from '../services/ai/providerHealth';
-import type { ContentType, Subject } from '../types';
+import type { ContentType, Subject, ProviderId } from '../types';
+import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
 import { theme } from '../constants/theme';
 import {
   BUNDLED_HF_TOKEN,
@@ -377,6 +378,7 @@ export default function SettingsScreen() {
   );
   const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
   const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
+  const [providerOrder, setProviderOrder] = useState<import('../types').ProviderId[]>([]);
 
   const liveGuruChatModels = useLiveGuruChatModels(profile ?? null, {
     groqApiKey: groqKey,
@@ -386,6 +388,8 @@ export default function SettingsScreen() {
     cloudflareApiToken: cfApiToken,
     githubModelsPat,
     kiloApiKey,
+    deepseekKey,
+    agentRouterKey,
   });
 
   useEffect(() => {
@@ -474,8 +478,28 @@ export default function SettingsScreen() {
     setTestingAgentRouterKey(true);
     setAgentRouterKeyTestResult(null);
     try {
-      const res = await fetch('https://agentrouter.org/v1/models', {
-        headers: { Authorization: `Bearer ${key}` },
+      const res = await fetch('https://agentrouter.org/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+          'User-Agent': 'Kilo-Code/5.11.0',
+          'HTTP-Referer': 'https://kilocode.ai',
+          'X-Title': 'Kilo Code',
+          'X-KiloCode-Version': '5.11.0',
+          'x-stainless-arch': 'x64',
+          'x-stainless-lang': 'js',
+          'x-stainless-os': 'Android',
+          'x-stainless-package-version': '6.32.0',
+          'x-stainless-retry-count': '0',
+          'x-stainless-runtime': 'node',
+          'x-stainless-runtime-version': 'v20.20.0',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-v3.2',
+          messages: [{ role: 'user', content: 'hi' }],
+          max_tokens: 5,
+        }),
       });
       setAgentRouterKeyTestResult(res.ok ? 'ok' : 'fail');
     } catch {
@@ -583,6 +607,7 @@ export default function SettingsScreen() {
       setKiloApiKey(profile.kiloApiKey ?? '');
       setDeepseekKey(profile.deepseekKey ?? '');
       setAgentRouterKey(profile.agentRouterKey ?? '');
+      setProviderOrder(profile.providerOrder?.length ? profile.providerOrder : [...DEFAULT_PROVIDER_ORDER]);
       setOrKey(profile.openrouterKey ?? '');
       setGeminiKey(profile.geminiKey ?? '');
       setCfAccountId(profile.cloudflareAccountId ?? '');
@@ -622,6 +647,7 @@ export default function SettingsScreen() {
         kiloApiKey: kiloApiKey.trim(),
         deepseekKey: deepseekKey.trim(),
         agentRouterKey: agentRouterKey.trim(),
+        providerOrder,
         openrouterKey: orKey.trim(),
         geminiKey: geminiKey.trim(),
         cloudflareAccountId: cfAccountId.trim(),
@@ -781,6 +807,11 @@ export default function SettingsScreen() {
                 id: `kilo/${m}`,
                 label: formatGuruChatModelChipLabel(`kilo/${m}`),
                 group: 'Kilo',
+              })),
+              ...liveGuruChatModels.deepseek.map((m: string) => ({
+                id: `deepseek/${m}`,
+                label: formatGuruChatModelChipLabel(`deepseek/${m}`),
+                group: 'DeepSeek',
               })),
               ...liveGuruChatModels.agentrouter.map((m: string) => ({
                 id: `ar/${m}`,
@@ -1143,6 +1174,69 @@ export default function SettingsScreen() {
               </Text>
             )}
           </TouchableOpacity>
+          <Label text="Provider Priority Order" />
+          <Text style={styles.hint}>
+            Drag providers up/down to change fallback order. The first available provider is used.
+          </Text>
+          {providerOrder.map((id, index) => {
+            const hasKey = (() => {
+              switch (id) {
+                case 'groq': return !!(groqKey.trim() || profile?.groqApiKey);
+                case 'github': return !!(githubModelsPat.trim() || profile?.githubModelsPat);
+                case 'kilo': return !!(kiloApiKey.trim() || profile?.kiloApiKey);
+                case 'deepseek': return !!(deepseekKey.trim() || profile?.deepseekKey);
+                case 'agentrouter': return !!(agentRouterKey.trim() || profile?.agentRouterKey);
+                case 'gemini': return !!(geminiKey.trim() || profile?.geminiKey);
+                case 'gemini_fallback': return true; // bundled key
+                case 'openrouter': return !!(orKey.trim() || profile?.openrouterKey);
+                case 'cloudflare': return !!((cfAccountId.trim() || profile?.cloudflareAccountId) && (cfApiToken.trim() || profile?.cloudflareApiToken));
+                default: return false;
+              }
+            })();
+            return (
+              <View key={id} style={[styles.providerRow, !hasKey && { opacity: 0.45 }]}>
+                <Text style={styles.providerIndex}>{index + 1}</Text>
+                <View style={[styles.providerDot, { backgroundColor: hasKey ? theme.colors.success : theme.colors.textMuted }]} />
+                <Text style={[styles.providerName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
+                  {PROVIDER_DISPLAY_NAMES[id]}
+                </Text>
+                <View style={styles.providerArrows}>
+                  <TouchableOpacity
+                    disabled={index === 0}
+                    onPress={() => {
+                      const next = [...providerOrder];
+                      [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                      setProviderOrder(next);
+                    }}
+                    style={[styles.arrowBtn, index === 0 && { opacity: 0.25 }]}
+                    activeOpacity={0.6}
+                  >
+                    <Ionicons name="chevron-up" size={18} color={theme.colors.textPrimary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={index === providerOrder.length - 1}
+                    onPress={() => {
+                      const next = [...providerOrder];
+                      [next[index], next[index + 1]] = [next[index + 1], next[index]];
+                      setProviderOrder(next);
+                    }}
+                    style={[styles.arrowBtn, index === providerOrder.length - 1 && { opacity: 0.25 }]}
+                    activeOpacity={0.6}
+                  >
+                    <Ionicons name="chevron-down" size={18} color={theme.colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })}
+          <TouchableOpacity
+            style={[styles.testBtn, { marginTop: 4, marginBottom: 12 }]}
+            onPress={() => setProviderOrder([...DEFAULT_PROVIDER_ORDER])}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.testBtnText}>Reset to Default Order</Text>
+          </TouchableOpacity>
+
           <Label text="Study image generation — model" />
           <Text style={styles.hint}>
             Diagrams from Guru Chat and topic notes. On a free Google AI Studio key, pick{' '}
@@ -2059,6 +2153,20 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.primaryTintMedium,
   },
   testBtnText: { color: theme.colors.primary, fontWeight: '600', fontSize: 14 },
+  providerRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 4,
+  },
+  providerIndex: { color: theme.colors.textMuted, fontSize: 13, width: 20, fontWeight: '600' as const },
+  providerDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  providerName: { flex: 1, fontSize: 14, fontWeight: '500' as const },
+  providerArrows: { flexDirection: 'row' as const, gap: 2 },
+  arrowBtn: { padding: 4 },
   saveBtn: {
     backgroundColor: theme.colors.primary,
     borderRadius: 16,

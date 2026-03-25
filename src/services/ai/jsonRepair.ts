@@ -172,7 +172,7 @@ async function parseStructuredJsonWithTimeout<T>(
   return Promise.race([
     (async () => {
       if (__DEV__)
-        console.log('[AI] Raw text for JSON parsing (first 600 chars):', raw.slice(0, 600));
+        console.log(`[AI] Raw text for JSON parsing (${raw.length} chars):\n`, raw);
 
       // Size limit check
       if (raw.length > MAX_INPUT_SIZE) {

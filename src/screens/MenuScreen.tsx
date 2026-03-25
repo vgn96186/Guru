@@ -80,7 +80,7 @@ export default function MenuScreen() {
             {PRIMARY_DESTINATIONS.map((item) => (
               <Pressable
                 key={item.route}
-                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                style={({ pressed }) => [styles.listItem, pressed && styles.cardPressed]}
                 android_ripple={{ color: `${item.tint}22` }}
                 onPress={() => navigation.navigate(item.route as never)}
                 accessibilityRole="button"
@@ -88,18 +88,17 @@ export default function MenuScreen() {
               >
                 <View
                   style={[
-                    styles.iconWrap,
+                    styles.listIconWrap,
                     { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
                   ]}
                 >
                   <Ionicons name={item.icon} size={22} color={item.tint} />
                 </View>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-                <View style={styles.cardFooter}>
-                  <Text style={styles.cardLink}>Open</Text>
-                  <Ionicons name="arrow-forward" size={16} color={theme.colors.textMuted} />
+                <View style={styles.listTextContent}>
+                  <Text style={styles.listTitle}>{item.title}</Text>
+                  <Text style={styles.listSubtitle}>{item.subtitle}</Text>
                 </View>
+                <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
               </Pressable>
             ))}
           </View>
@@ -188,48 +187,40 @@ const styles = StyleSheet.create({
   grid: {
     gap: theme.spacing.md,
   },
-  card: {
+  cardPressed: {
+    opacity: theme.alpha.pressed,
+    transform: [{ scale: 0.99 }],
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
-  cardPressed: {
-    opacity: theme.alpha.pressed,
-    transform: [{ scale: 0.99 }],
-  },
-  iconWrap: {
+  listIconWrap: {
     width: 46,
     height: 46,
-    borderRadius: 16,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    marginBottom: theme.spacing.md,
   },
-  cardTitle: {
+  listTextContent: {
+    flex: 1,
+  },
+  listTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
   },
-  cardSubtitle: {
+  listSubtitle: {
     color: theme.colors.textSecondary,
     fontSize: 13,
-    lineHeight: 20,
-    marginTop: theme.spacing.xs,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: theme.spacing.lg,
-  },
-  cardLink: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
+    lineHeight: 18,
+    marginTop: 2,
   },
 });

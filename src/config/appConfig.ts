@@ -11,45 +11,18 @@ export const DEFAULT_INICET_DATE =
 export const DEFAULT_NEET_DATE =
   (process.env.EXPO_PUBLIC_DEFAULT_NEET_DATE ?? '2026-08-30').trim() || '2026-08-30';
 
-// Bundled defaults generated from `.env` by `scripts/generate-bundled-env.js`.
-import * as env from './bundledEnv'; // Import the env object
-
-export const BUNDLED_GROQ_KEY =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_GROQ_KEY || env.BUNDLED_GROQ_KEY
-    : env.BUNDLED_GROQ_KEY;
-export const BUNDLED_HF_TOKEN =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_HF_TOKEN || env.BUNDLED_HF_TOKEN
-    : env.BUNDLED_HF_TOKEN;
-export const BUNDLED_OPENROUTER_KEY =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_OPENROUTER_KEY || env.BUNDLED_OPENROUTER_KEY
-    : env.BUNDLED_OPENROUTER_KEY;
-export const BUNDLED_GEMINI_KEY =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_KEY || env.BUNDLED_GEMINI_KEY
-    : env.BUNDLED_GEMINI_KEY;
-export const BUNDLED_GEMINI_FALLBACK_KEY =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_GEMINI_FALLBACK_KEY || env.BUNDLED_GEMINI_FALLBACK_KEY
-    : env.BUNDLED_GEMINI_FALLBACK_KEY;
-export const BUNDLED_CF_ACCOUNT_ID =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_CF_ACCOUNT_ID || env.BUNDLED_CF_ACCOUNT_ID
-    : env.BUNDLED_CF_ACCOUNT_ID;
-export const BUNDLED_CF_API_TOKEN =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_CF_API_TOKEN || env.BUNDLED_CF_API_TOKEN
-    : env.BUNDLED_CF_API_TOKEN;
-export const BUNDLED_DEEPSEEK_KEY =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_DEEPSEEK_KEY || env.BUNDLED_DEEPSEEK_KEY
-    : env.BUNDLED_DEEPSEEK_KEY;
-export const BUNDLED_GITHUB_MODELS_PAT =
-  typeof process !== 'undefined'
-    ? process.env.EXPO_PUBLIC_BUNDLED_GITHUB_MODELS_PAT || env.BUNDLED_GITHUB_MODELS_PAT
-    : env.BUNDLED_GITHUB_MODELS_PAT;
+// ── No bundled API keys in release builds ────────────────────────────────────
+// Users must manually enter keys in Settings after a fresh install.
+// Dev builds can still override via .env (EXPO_PUBLIC_BUNDLED_*) if needed.
+export const BUNDLED_GROQ_KEY = '';
+export const BUNDLED_HF_TOKEN = '';
+export const BUNDLED_OPENROUTER_KEY = '';
+export const BUNDLED_GEMINI_KEY = '';
+export const BUNDLED_GEMINI_FALLBACK_KEY = '';
+export const BUNDLED_CF_ACCOUNT_ID = '';
+export const BUNDLED_CF_API_TOKEN = '';
+export const BUNDLED_DEEPSEEK_KEY = '';
+export const BUNDLED_GITHUB_MODELS_PAT = '';
 
 /**
  * GitHub Models inference API (OpenAI-style chat). See REST: POST .../inference/chat/completions.

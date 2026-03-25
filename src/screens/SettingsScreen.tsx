@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -57,7 +57,6 @@ import type { ContentType, Subject, ProviderId } from '../types';
 import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
 import { theme } from '../constants/theme';
 import {
-  BUNDLED_HF_TOKEN,
   DEFAULT_HF_TRANSCRIPTION_MODEL,
   DEFAULT_IMAGE_GENERATION_MODEL,
   IMAGE_GENERATION_MODEL_OPTIONS,
@@ -591,6 +590,9 @@ export default function SettingsScreen() {
     });
   }
 
+  // ── Profile → local state hydration ────────────────────────────────────────
+  const profileLoaded = useRef(false);
+
   useEffect(() => {
     const loadSubjects = async () => {
       try {
@@ -616,7 +618,7 @@ export default function SettingsScreen() {
       setImageGenerationModel(profile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL);
       setGuruMemoryNotes(profile.guruMemoryNotes ?? '');
       setPreferGeminiStructuredJson(profile.preferGeminiStructuredJson !== false);
-      setHuggingFaceToken(profile.huggingFaceToken ?? BUNDLED_HF_TOKEN);
+      setHuggingFaceToken(profile.huggingFaceToken ?? '');
       setHuggingFaceModel(profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
@@ -635,10 +637,16 @@ export default function SettingsScreen() {
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
+      // Mark profile as loaded so auto-save starts after this render
+      setTimeout(() => { profileLoaded.current = true; }, 0);
     }
   }, [profile]);
 
-  async function save() {
+  // ── Debounced auto-save ──────────────────────────────────────────────────────
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const doAutoSave = useCallback(async () => {
+    if (!profileLoaded.current) return;
     setSaving(true);
     try {
       await updateUserProfile({
@@ -676,18 +684,36 @@ export default function SettingsScreen() {
         guruFrequency,
         focusSubjectIds,
       });
-
       if (notifs) {
-        await requestNotificationPermissions();
-        await refreshAccountabilityNotifications();
+        try {
+          await requestNotificationPermissions();
+          await refreshAccountabilityNotifications();
+        } catch { /* non-critical */ }
       }
-
       refreshProfile();
-      Alert.alert('Saved', 'Settings updated!');
+    } catch (err) {
+      // updateUserProfile already shows a toast on error
+      if (__DEV__) console.warn('[Settings] Auto-save failed:', err);
     } finally {
       setSaving(false);
     }
-  }
+  }, [
+    groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey, providerOrder,
+    orKey, geminiKey, cfAccountId, cfApiToken, guruChatDefaultModel, imageGenerationModel,
+    guruMemoryNotes, preferGeminiStructuredJson, huggingFaceToken, huggingFaceModel,
+    transcriptionProvider, name, inicetDate, neetDate, sessionLength, dailyGoal,
+    notifs, strictMode, bodyDoubling, blockedTypes, idleTimeout, breakDuration,
+    pomodoroEnabled, pomodoroInterval, notifHour, guruFrequency, focusSubjectIds,
+    refreshProfile,
+  ]);
+
+  // Fire auto-save 600ms after any setting changes (skip initial profile load)
+  useEffect(() => {
+    if (!profileLoaded.current) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(doAutoSave, 600);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [doAutoSave]);
 
   async function testNotification() {
     try {
@@ -1929,14 +1955,12 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </SectionToggle>
 
-        <TouchableOpacity
-          style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
-          onPress={save}
-          disabled={saving}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.saveBtnText}>{saving ? 'Saving...' : 'Save Settings'}</Text>
-        </TouchableOpacity>
+        {saving && (
+          <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
+            <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+            <Text style={[styles.saveBtnText, { marginLeft: 8 }]}>Auto-saving…</Text>
+          </View>
+        )}
 
         <Text style={styles.footer}>Guru AI · v1.0.0</Text>
       </ScrollView>
@@ -2172,6 +2196,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row' as const,
     marginTop: 8,
   },
   saveBtnDisabled: { backgroundColor: theme.colors.border },

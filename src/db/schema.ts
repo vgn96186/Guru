@@ -197,6 +197,9 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1
   , github_models_pat TEXT NOT NULL DEFAULT ''
   , kilo_api_key TEXT NOT NULL DEFAULT ''
+  , deepseek_key TEXT NOT NULL DEFAULT ''
+  , agentrouter_key TEXT NOT NULL DEFAULT ''
+  , provider_order TEXT NOT NULL DEFAULT '[]'
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

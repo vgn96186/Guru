@@ -5,6 +5,7 @@ import { LATEST_VERSION, MIGRATIONS } from './migrations';
 import { SUBJECTS_SEED, TOPICS_SEED } from '../constants/syllabus';
 import { VAULT_TOPICS_SEED } from '../constants/vaultTopics';
 import { MS_PER_DAY } from '../constants/time';
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
@@ -224,6 +225,13 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
     }
   }
 
+  // ── Defensive column verification ──────────────────────────────────────────
+  // Handles desync caused by backup restores: the PRAGMA user_version may be
+  // up-to-date while the actual schema is missing columns that the migration
+  // runner would have added. We introspect all critical tables and add any
+  // missing columns that the current schema expects.
+  await ensureCriticalColumns(db);
+
   // Repair legacy rows before enforcing foreign keys on the shared connection.
   const integrityRepairs = [
     `DELETE FROM topic_progress WHERE topic_id NOT IN (SELECT id FROM topics)`,
@@ -361,6 +369,148 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
 
 async function seedUserProfile(db: SQLite.SQLiteDatabase): Promise<void> {
   await db.runAsync(`INSERT OR IGNORE INTO user_profile (id) VALUES (1)`);
+}
+
+/**
+ * Defensive schema verification for user_profile.
+ * After migrations run, we introspect the actual table and add any columns
+ * that the current code expects but that are missing — e.g. after restoring
+ * a backup whose PRAGMA user_version was already high enough to skip the
+ * ALTER TABLE migration.
+ */
+async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
+  // Every column that migrations or schema.ts adds to critical tables
+  // Format: [columnName, "TYPE DEFAULT ..."]
+  const tables: Record<string, [string, string][]> = {
+    user_profile: [
+      ['strict_mode_enabled', 'INTEGER DEFAULT 0'],
+      ['streak_shield_available', 'INTEGER DEFAULT 1'],
+      ['openrouter_key', "TEXT NOT NULL DEFAULT ''"],
+      ['body_doubling_enabled', 'INTEGER NOT NULL DEFAULT 1'],
+      ['blocked_content_types', "TEXT NOT NULL DEFAULT '[]'"],
+      ['idle_timeout_minutes', 'INTEGER NOT NULL DEFAULT 2'],
+      ['break_duration_minutes', 'INTEGER NOT NULL DEFAULT 5'],
+      ['notification_hour', 'INTEGER NOT NULL DEFAULT 7'],
+      ['focus_subject_ids', "TEXT NOT NULL DEFAULT '[]'"],
+      ['focus_audio_enabled', 'INTEGER NOT NULL DEFAULT 0'],
+      ['visual_timers_enabled', 'INTEGER NOT NULL DEFAULT 0'],
+      ['face_tracking_enabled', 'INTEGER NOT NULL DEFAULT 0'],
+      ['quiz_correct_count', 'INTEGER NOT NULL DEFAULT 0'],
+      ['last_backup_date', 'TEXT'],
+      ['guru_frequency', "TEXT NOT NULL DEFAULT 'normal'"],
+      ['use_local_model', 'INTEGER NOT NULL DEFAULT 1'],
+      ['local_model_path', 'TEXT'],
+      ['use_local_whisper', 'INTEGER NOT NULL DEFAULT 1'],
+      ['local_whisper_path', 'TEXT'],
+      ['quick_start_streak', 'INTEGER NOT NULL DEFAULT 0'],
+      ['groq_api_key', "TEXT NOT NULL DEFAULT ''"],
+      ['study_resource_mode', "TEXT NOT NULL DEFAULT 'hybrid'"],
+      ['subject_load_overrides_json', "TEXT NOT NULL DEFAULT '{}'"],
+      ['inicet_date', `TEXT NOT NULL DEFAULT '${DEFAULT_INICET_DATE}'`],
+      ['neet_date', `TEXT NOT NULL DEFAULT '${DEFAULT_NEET_DATE}'`],
+      ['harassment_tone', "TEXT NOT NULL DEFAULT 'shame'"],
+      ['backup_directory_uri', 'TEXT'],
+      ['pomodoro_enabled', 'INTEGER NOT NULL DEFAULT 1'],
+      ['pomodoro_interval_minutes', 'INTEGER NOT NULL DEFAULT 20'],
+      ['huggingface_token', "TEXT NOT NULL DEFAULT ''"],
+      ['huggingface_transcription_model', "TEXT NOT NULL DEFAULT 'openai/whisper-large-v3'"],
+      ['transcription_provider', "TEXT NOT NULL DEFAULT 'auto'"],
+      ['cloudflare_account_id', "TEXT NOT NULL DEFAULT ''"],
+      ['cloudflare_api_token', "TEXT NOT NULL DEFAULT ''"],
+      ['gemini_key', "TEXT NOT NULL DEFAULT ''"],
+      ['guru_chat_default_model', "TEXT NOT NULL DEFAULT 'auto'"],
+      ['guru_memory_notes', "TEXT NOT NULL DEFAULT ''"],
+      ['image_generation_model', "TEXT NOT NULL DEFAULT 'auto'"],
+      ['exam_type', "TEXT NOT NULL DEFAULT 'INICET'"],
+      ['prefer_gemini_structured_json', 'INTEGER NOT NULL DEFAULT 1'],
+      ['github_models_pat', "TEXT NOT NULL DEFAULT ''"],
+      ['kilo_api_key', "TEXT NOT NULL DEFAULT ''"],
+      ['deepseek_key', "TEXT NOT NULL DEFAULT ''"],
+      ['agentrouter_key', "TEXT NOT NULL DEFAULT ''"],
+      ['provider_order', "TEXT NOT NULL DEFAULT '[]'"],
+    ],
+    topics: [
+      ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],
+      ['embedding', 'BLOB'],
+    ],
+    topic_progress: [
+      ['next_review_date', 'TEXT'],
+      ['user_notes', "TEXT NOT NULL DEFAULT ''"],
+      ['wrong_count', 'INTEGER NOT NULL DEFAULT 0'],
+      ['is_nemesis', 'INTEGER NOT NULL DEFAULT 0'],
+      ['fsrs_due', 'TEXT'],
+      ['fsrs_stability', 'REAL DEFAULT 0'],
+      ['fsrs_difficulty', 'REAL DEFAULT 0'],
+      ['fsrs_elapsed_days', 'INTEGER DEFAULT 0'],
+      ['fsrs_scheduled_days', 'INTEGER DEFAULT 0'],
+      ['fsrs_reps', 'INTEGER DEFAULT 0'],
+      ['fsrs_lapses', 'INTEGER DEFAULT 0'],
+      ['fsrs_state', 'INTEGER DEFAULT 0'],
+      ['fsrs_last_review', 'TEXT'],
+    ],
+    lecture_notes: [
+      ['transcript', 'TEXT'],
+      ['summary', 'TEXT'],
+      ['topics_json', 'TEXT'],
+      ['app_name', 'TEXT'],
+      ['duration_minutes', 'INTEGER'],
+      ['confidence', 'INTEGER DEFAULT 2'],
+      ['embedding', 'BLOB'],
+      ['recording_path', 'TEXT'],
+      ['recording_duration_seconds', 'INTEGER'],
+      ['transcription_confidence', 'REAL'],
+      ['processing_metrics_json', 'TEXT'],
+      ['retry_count', 'INTEGER DEFAULT 0'],
+      ['last_error', 'TEXT'],
+    ],
+    external_app_logs: [
+      ['recording_path', 'TEXT'],
+      ['transcription_status', "TEXT DEFAULT 'pending'"],
+      ['transcription_error', 'TEXT'],
+      ['lecture_note_id', 'INTEGER REFERENCES lecture_notes(id) ON DELETE SET NULL'],
+      ['note_enhancement_status', "TEXT DEFAULT 'pending'"],
+      ['pipeline_metrics_json', 'TEXT'],
+    ],
+    chat_history: [
+      ['sources_json', 'TEXT'],
+      ['model_used', 'TEXT'],
+    ],
+  };
+
+  let totalAdded = 0;
+
+  for (const [tableName, expectedCols] of Object.entries(tables)) {
+    try {
+      // Check if table exists before adding columns
+      const tableCheck = await db.getFirstAsync<{ count: number }>(
+        `SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='${tableName}'`,
+      );
+      if (!tableCheck || tableCheck.count === 0) continue;
+
+      const cols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName})`);
+      const existing = new Set(cols.map((c) => c.name));
+
+      for (const [col, def] of expectedCols) {
+        if (!existing.has(col)) {
+          try {
+            await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${col} ${def}`);
+            totalAdded++;
+            if (__DEV__) console.log(`[DB] Recovered missing column: ${tableName}.${col}`);
+          } catch (err: any) {
+            if (!err?.message?.includes('duplicate column name')) {
+              if (__DEV__) console.error(`[DB] Failed to add column ${tableName}.${col}:`, err);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      if (__DEV__) console.error(`[DB] Error ensuring columns for ${tableName}:`, err);
+    }
+  }
+
+  if (totalAdded > 0 && !__DEV__) {
+    console.log(`[DB] Recovered ${totalAdded} missing column(s) across standard tables`);
+  }
 }
 
 async function updateStreakOnOpen(db: SQLite.SQLiteDatabase): Promise<void> {

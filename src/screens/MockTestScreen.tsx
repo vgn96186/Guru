@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getCachedQuestionCount, getMockQuestions, type MockQuestion } from '../db/queries/aiCache';
+import { saveBulkQuestions } from '../db/queries/questionBank';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -49,6 +50,20 @@ export default function MockTestScreen() {
   async function startTest(count: number) {
     setPhase('loading');
     const subset = await getMockQuestions(count);
+    // Auto-save to Question Bank
+    saveBulkQuestions(
+      subset.map((q) => ({
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+        explanation: q.explanation,
+        topicName: q.topicName,
+        subjectName: q.subjectName,
+        source: 'mock_test' as const,
+      })),
+    ).catch((err) => {
+      if (__DEV__) console.warn('[QuestionBank] Auto-save from mock test failed:', err);
+    });
     setQuestions(subset);
     setAnswers(new Array(subset.length).fill(null));
     setCurrent(0);

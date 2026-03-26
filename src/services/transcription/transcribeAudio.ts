@@ -12,6 +12,7 @@ import {
   transcribeRawWithGroq,
   transcribeRawWithHuggingFace,
   transcribeRawWithCloudflare,
+  transcribeRawWithDeepgram,
   transcribeRawWithLocalWhisper,
 } from './engines';
 import { runTranscriptionProviders, type TranscriptionProvider } from './providerFallback';
@@ -31,6 +32,7 @@ export async function transcribeAudio(opts: {
   groqKey?: string;
   huggingFaceToken?: string;
   huggingFaceModel?: string;
+  deepgramKey?: string;
   useLocalWhisper?: boolean;
   localWhisperPath?: string;
   transcriptionProvider?: TranscriptionProvider;
@@ -44,6 +46,7 @@ export async function transcribeAudio(opts: {
     groqKey = getApiKeys(profile).groqKey,
     huggingFaceToken = profile.huggingFaceToken || BUNDLED_HF_TOKEN,
     huggingFaceModel = profile.huggingFaceTranscriptionModel || DEFAULT_HF_TRANSCRIPTION_MODEL,
+    deepgramKey = (profile as any).deepgramApiKey || getApiKeys(profile).deepgramKey,
     useLocalWhisper = profile.useLocalWhisper,
     localWhisperPath = profile.localWhisperPath,
     transcriptionProvider = profile.transcriptionProvider || 'auto',
@@ -64,6 +67,7 @@ export async function transcribeAudio(opts: {
   let transcript = '';
   const hasGroq = !!groqKey?.trim();
   const hasHuggingFace = !!huggingFaceToken?.trim();
+  const hasDeepgram = !!deepgramKey?.trim();
   const hasLocalWhisper = !!(useLocalWhisper && localWhisperPath);
   const { cfAccountId, cfApiToken } = getApiKeys(profile);
   const hasCloudflare = !!(cfAccountId && cfApiToken);
@@ -73,6 +77,7 @@ export async function transcribeAudio(opts: {
       groq: hasGroq,
       huggingface: hasHuggingFace,
       cloudflare: hasCloudflare,
+      deepgram: hasDeepgram,
       local: hasLocalWhisper,
     },
     isUsableResult: (value) => typeof value === 'string' && value.trim().length > 0,
@@ -84,6 +89,8 @@ export async function transcribeAudio(opts: {
         onProgress?.({ stage: 'transcribing', message: 'Transcribing with Cloudflare Whisper' });
       } else if (provider === 'huggingface') {
         onProgress?.({ stage: 'transcribing', message: 'Transcribing with Hugging Face' });
+      } else if (provider === 'deepgram') {
+        onProgress?.({ stage: 'transcribing', message: 'Transcribing with Deepgram Nova-2' });
       } else {
         onProgress?.({ stage: 'transcribing', message: 'Using local transcription engine...' });
       }
@@ -97,6 +104,8 @@ export async function transcribeAudio(opts: {
         if (__DEV__) console.warn('[Transcription] Cloudflare failed:', err);
       } else if (provider === 'huggingface') {
         if (__DEV__) console.warn('[Transcription] Hugging Face failed:', err);
+      } else if (provider === 'deepgram') {
+        if (__DEV__) console.warn('[Transcription] Deepgram failed:', err);
       } else {
         if (__DEV__) console.warn('[Transcription] Local Whisper failed:', err);
       }
@@ -135,6 +144,10 @@ export async function transcribeAudio(opts: {
         if (!huggingFaceToken?.trim()) return '';
         return transcribeRawWithHuggingFace(audioFilePath, huggingFaceToken, huggingFaceModel);
       },
+      deepgram: async () => {
+        if (!deepgramKey?.trim()) return '';
+        return transcribeRawWithDeepgram(audioFilePath, deepgramKey);
+      },
       local: async () => {
         if (!(useLocalWhisper && localWhisperPath)) return '';
         return transcribeRawWithLocalWhisper(audioFilePath, localWhisperPath);
@@ -147,9 +160,9 @@ export async function transcribeAudio(opts: {
   }
 
   if (!transcript) {
-    if (!hasGroq && !hasHuggingFace && !hasCloudflare && !hasLocalWhisper) {
+    if (!hasGroq && !hasHuggingFace && !hasCloudflare && !hasDeepgram && !hasLocalWhisper) {
       throw new Error(
-        'No transcription engine available. Configure Groq, Cloudflare, or Hugging Face, or enable local Whisper in Settings.',
+        'No transcription engine available. Configure Groq, Cloudflare, Deepgram, or Hugging Face, or enable local Whisper in Settings.',
       );
     }
     if (lastError) {

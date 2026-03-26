@@ -227,3 +227,63 @@ export async function listPublicRecordings(): Promise<string[]> {
 export async function getPublicRecordingsDir(): Promise<string> {
   return GuruAppLauncher.getPublicRecordingsDir();
 }
+
+export interface NativeRecordingEntry {
+  name: string;
+  path: string;
+  size: number;
+}
+
+/**
+ * Recursively finds all .m4a files under Documents/Guru/ (Recordings, Backups, etc.).
+ * Returns entries with absolute path and size so no further validation is needed.
+ */
+/** Whether the app has MANAGE_EXTERNAL_STORAGE (full file access) on Android 11+. */
+export async function hasAllFilesAccess(): Promise<boolean> {
+  return GuruAppLauncher.hasAllFilesAccess();
+}
+
+/** Opens Android settings to grant MANAGE_EXTERNAL_STORAGE. Returns false if not needed. */
+export async function requestAllFilesAccess(): Promise<boolean> {
+  return GuruAppLauncher.requestAllFilesAccess();
+}
+
+export async function findAllRecordings(): Promise<NativeRecordingEntry[]> {
+  return GuruAppLauncher.findAllRecordings();
+}
+
+/**
+ * Scans an arbitrary absolute directory path for .m4a files recursively.
+ * Returns empty array if path doesn't exist or isn't a directory.
+ */
+export async function scanPathForRecordings(absolutePath: string): Promise<NativeRecordingEntry[]> {
+  return GuruAppLauncher.scanPathForRecordings(absolutePath);
+}
+
+export interface FolderPickResult {
+  treeUri: string;
+  label: string;
+  entries: NativeRecordingEntry[];
+}
+
+/**
+ * Opens the Android folder picker (SAF), scans the selected folder for .m4a files,
+ * and persists read permission. Returns { treeUri, label, entries } or empty object if cancelled.
+ */
+export async function pickFolderAndScan(): Promise<FolderPickResult | null> {
+  const result: Record<string, unknown> = await withTimeout(
+    GuruAppLauncher.pickFolderAndScan(),
+    120_000,
+    'pickFolderAndScan',
+  );
+  if (!result || !result.treeUri) return null;
+  return result as unknown as FolderPickResult;
+}
+
+/**
+ * Re-scans a previously picked SAF tree URI for .m4a files.
+ * Works with content:// URIs persisted via takePersistableUriPermission.
+ */
+export async function scanSafUri(uriString: string): Promise<NativeRecordingEntry[]> {
+  return GuruAppLauncher.scanSafUri(uriString);
+}

@@ -33,6 +33,11 @@ import { theme } from '../constants/theme';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood, UserProfile } from '../types';
+import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
+
+function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): boolean {
+  return allIds.every((id) => validLeafIds.has(id));
+}
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -71,20 +76,19 @@ function ExamCountdownChips({ daysToInicet, daysToNeetPg }: { daysToInicet: numb
       accessibilityRole="text"
       accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
-      <View style={styles.examChipInner}>
-        <Text style={styles.examChip}>INICET </Text>
-        <Animated.Text style={[styles.examChipDays, { color: pulseDigitColor }]}>
+      <View style={styles.examPill}>
+        <Text style={styles.examPillLabel}>INICET</Text>
+        <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
           {daysToInicet}
         </Animated.Text>
-        <Text style={styles.examChip}>d</Text>
+        <Text style={styles.examPillUnit}>days</Text>
       </View>
-      <Text style={styles.examDivider}>·</Text>
-      <View style={styles.examChipInner}>
-        <Text style={styles.examChip}>NEET </Text>
-        <Animated.Text style={[styles.examChipDays, { color: pulseDigitColor }]}>
+      <View style={styles.examPill}>
+        <Text style={styles.examPillLabel}>NEET-PG</Text>
+        <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
           {daysToNeetPg}
         </Animated.Text>
-        <Text style={styles.examChip}>d</Text>
+        <Text style={styles.examPillUnit}>days</Text>
       </View>
     </View>
   );
@@ -149,14 +153,18 @@ export default function HomeScreen() {
           const db = getDb();
           const placeholders = allIds.map(() => '?').join(',');
           const rows = await db.getAllAsync<{ id: number }>(
-            `SELECT id FROM topics WHERE id IN (${placeholders})`,
+            `SELECT id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
             allIds,
           );
-          const validIds = new Set(rows.map((r) => r.id));
-          const invalidCount = allIds.filter((id) => !validIds.has(id)).length;
-          if (invalidCount > 0) {
-            // Stale plan with hallucinated IDs — discard it
-            if (__DEV__) console.warn(`[Home] Discarding stale plan: ${invalidCount} invalid topic IDs`);
+          const validLeafIds = new Set(rows.map((r) => r.id));
+          const hasInvalidTopicIds = !isLeafTopicIdListValid(allIds, validLeafIds);
+          if (hasInvalidTopicIds) {
+            if (__DEV__) {
+              const invalidCount = allIds.filter((id) => !validLeafIds.has(id)).length;
+              console.warn(
+                `[Home] Discarding stale plan: ${invalidCount} invalid or parent topic IDs`,
+              );
+            }
             await dailyAgendaRepository.deleteDailyAgenda(date);
             return;
           }
@@ -204,20 +212,19 @@ export default function HomeScreen() {
     100,
     Math.max(0, Math.round((todayMinutes / (profile.dailyGoalMinutes || 120)) * 100)),
   );
-  const greeting =
-    new Date().getHours() < 12
-      ? 'Good morning'
-      : new Date().getHours() < 18
-        ? 'Good afternoon'
-        : 'Good evening';
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Morning' : hour < 18 ? 'Afternoon' : 'Evening';
   const firstName = profile.displayName?.split(' ')[0] || 'Doctor';
 
   const heroCta = (() => {
     if (sessionResumeValid) {
       return {
-        label: 'RESUME FOCUS',
-        sublabel: 'Pick up where you left off',
-        onPress: () => navigation.navigate('Session', { mood, resume: true }),
+        label: 'START FRESH',
+        sublabel: 'New session',
+        onPress: () => {
+          useSessionStore.getState().resetSession();
+          navigation.navigate('Session', { mood, mode: 'warmup' });
+        },
       };
     }
     if (todayTasks.length > 0) {
@@ -241,8 +248,12 @@ export default function HomeScreen() {
   })();
 
 
-  const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
-  const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
+  const rawInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
+  const rawNeet = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
+  // Final safety net: if the computed days is 0 and the date isn't literally today,
+  // re-derive from the hardcoded default so the countdown never misleadingly shows 0.
+  const daysToInicet = rawInicet || profileRepository.getDaysToExam(DEFAULT_INICET_DATE);
+  const daysToNeetPg = rawNeet || profileRepository.getDaysToExam(DEFAULT_NEET_DATE);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -258,11 +269,11 @@ export default function HomeScreen() {
           <View style={styles.headerRow}>
             <View style={styles.headerLeft}>
               <Text style={styles.greetingText}>
-                {greeting}, {firstName}
+                {greeting}, <Text style={styles.greetingName}>{firstName}</Text>
               </Text>
               <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} />
             </View>
-            <AiStatusDot profile={profile} />
+            <AiStatusIndicator profile={profile} />
           </View>
 
           {/* ── Hero: Start button + inline stats ── */}
@@ -363,7 +374,14 @@ export default function HomeScreen() {
                     <Text style={styles.emptySectionText}>
                       Nothing scheduled — tap to open Study Plan.
                     </Text>
-                    <Text style={styles.seeAllLink}>See full plan →</Text>
+                    <View style={styles.seeAllButton}>
+                      <Text style={styles.seeAllButtonText}>Open study plan</Text>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={14}
+                        color={theme.colors.primary}
+                      />
+                    </View>
                   </TouchableOpacity>
                 ) : (
                   <>
@@ -388,12 +406,20 @@ export default function HomeScreen() {
                     ))}
                     {todayTasks.length > 2 && (
                       <TouchableOpacity
+                        style={styles.seeAllButtonStandalone}
                         onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
                         activeOpacity={0.7}
                         accessibilityRole="button"
                         accessibilityLabel="See full study plan"
                       >
-                        <Text style={styles.seeAllLink}>See full plan →</Text>
+                        <View style={styles.seeAllButton}>
+                          <Text style={styles.seeAllButtonText}>Open study plan</Text>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={14}
+                            color={theme.colors.primary}
+                          />
+                        </View>
                       </TouchableOpacity>
                     )}
                   </>
@@ -516,40 +542,156 @@ export default function HomeScreen() {
   );
 }
 
-function AiStatusDot({ profile }: { profile: NonNullable<UserProfile | null> }) {
-  // LLM backend
-  const hasGroq = !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY);
-  const hasOpenRouter = !!profile.openrouterKey?.trim();
-  const hasLocal = isLocalLlmUsable(profile);
+function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | null> }) {
+  const runtime = useAiRuntimeStatus();
+  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const [elapsed, setElapsed] = useState(0);
+  const isActive = runtime.activeCount > 0;
 
-  const llmColor = hasGroq
-    ? '#22c55e'
-    : hasOpenRouter
-      ? '#a78bfa'
-      : hasLocal
-        ? '#60a5fa'
-        : '#ef4444';
+  useEffect(() => {
+    if (isActive) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: false }),
+          Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: false }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }
+    pulseAnim.setValue(0);
+  }, [isActive, pulseAnim]);
 
-  // STT (transcription) backend
-  const hasHF = !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
-  const hasLocalWhisper = !!(profile.useLocalWhisper && profile.localWhisperPath);
-  const hasGroqSTT = hasGroq;
+  useEffect(() => {
+    if (!isActive) { setElapsed(0); return; }
+    const start = runtime.active[0]?.startedAt ?? Date.now();
+    setElapsed(Math.floor((Date.now() - start) / 1000));
+    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
+    return () => clearInterval(id);
+  }, [isActive, runtime.active]);
 
-  const sttColor = hasLocalWhisper
-    ? '#60a5fa'
-    : hasGroqSTT
-      ? '#22c55e'
-      : hasHF
-        ? '#f59e0b'
-        : '#ef4444';
+  // Build provider list
+  const providers: { name: string; on: boolean }[] = [
+    { name: 'Groq', on: !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY) },
+    { name: 'Gemini', on: !!profile.geminiKey?.trim() },
+    { name: 'OR', on: !!profile.openrouterKey?.trim() },
+    { name: 'DeepSeek', on: !!profile.deepseekKey?.trim() },
+    { name: 'AgentR', on: !!profile.agentRouterKey?.trim() },
+    { name: 'GitHub', on: !!profile.githubModelsPat?.trim() },
+    { name: 'Local', on: isLocalLlmUsable(profile) },
+  ];
+  const onlineProviders = providers.filter((p) => p.on);
+  const hasAnyStt = !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN)
+    || !!(profile.useLocalWhisper && profile.localWhisperPath);
+
+  // Active request banner
+  const activeReq = runtime.active[0];
+  const activeBanner = isActive
+    ? `${activeReq?.modelUsed?.split('/').pop() ?? activeReq?.backend ?? 'AI'}${elapsed > 0 ? ` ${elapsed}s` : ''}`
+    : runtime.lastError
+      ? `Err: ${runtime.lastError.slice(0, 30)}`
+      : null;
+
+  const bannerColor = isActive ? theme.colors.primary : theme.colors.warning;
+  const glowOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.4] });
 
   return (
-    <View style={styles.aiDotRow}>
-      <View style={[styles.aiDot, { backgroundColor: llmColor }]} />
-      <View style={[styles.aiDot, { backgroundColor: sttColor }]} />
+    <View style={aiStyles.wrap}>
+      {/* Active / error banner */}
+      {activeBanner && (
+        <View style={[aiStyles.banner, { borderColor: bannerColor }]}>
+          {isActive && (
+            <Animated.View style={[aiStyles.bannerGlow, { backgroundColor: bannerColor, opacity: glowOpacity }]} />
+          )}
+          <View style={[aiStyles.bannerDot, { backgroundColor: bannerColor }]} />
+          <Text style={[aiStyles.bannerText, { color: bannerColor }]} numberOfLines={1}>
+            {activeBanner}
+          </Text>
+        </View>
+      )}
+      {/* Provider tags row */}
+      <View style={aiStyles.tagRow}>
+        {onlineProviders.length > 0 ? (
+          onlineProviders.map((p) => (
+            <View key={p.name} style={aiStyles.tag}>
+              <View style={[aiStyles.tagDot, { backgroundColor: theme.colors.success }]} />
+              <Text style={aiStyles.tagText}>{p.name}</Text>
+            </View>
+          ))
+        ) : (
+          <View style={aiStyles.tag}>
+            <View style={[aiStyles.tagDot, { backgroundColor: hasAnyStt ? theme.colors.warning : theme.colors.error }]} />
+            <Text style={[aiStyles.tagText, { color: theme.colors.error }]}>
+              {hasAnyStt ? 'STT only' : 'No AI'}
+            </Text>
+          </View>
+        )}
+      </View>
     </View>
   );
 }
+
+const aiStyles = StyleSheet.create({
+  wrap: {
+    alignItems: 'flex-end',
+    gap: 6,
+    flexShrink: 1,
+  },
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  bannerGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  bannerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  bannerText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-end',
+    gap: 4,
+  },
+  tag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  tagDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  tagText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: theme.colors.textSecondary,
+  },
+});
 
 function Section({
   label,
@@ -591,41 +733,50 @@ const styles = StyleSheet.create({
   },
   headerLeft: { flex: 1 },
   greetingText: {
+    color: theme.colors.textMuted,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  greetingName: {
     color: theme.colors.textPrimary,
-    fontSize: 22,
     fontWeight: '800',
-    letterSpacing: -0.3,
   },
   examCountRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
-    gap: 6,
+    marginTop: 8,
+    gap: 8,
     flexWrap: 'wrap',
   },
-  examChipInner: {
+  examPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  examChip: {
+  examPillLabel: {
     color: theme.colors.textMuted,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.4,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  examChipDays: {
-    fontSize: 20,
+  examPillDays: {
+    fontSize: 18,
     fontWeight: '900',
     letterSpacing: -0.3,
   },
-  examDivider: {
-    color: theme.colors.border,
-    fontSize: 14,
+  examPillUnit: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
   },
 
-  // ── AI Status ──
-  aiDotRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6 },
-  aiDot: { width: 8, height: 8, borderRadius: 4 },
+  // AI Status styles moved to aiStyles (inline with AiStatusIndicator)
 
   // ── Hero section ──
   heroSection: {
@@ -734,12 +885,26 @@ const styles = StyleSheet.create({
 
 
   // ── See all link ──
-  seeAllLink: {
+  seeAllButtonStandalone: {
+    marginTop: 8,
+    alignSelf: 'flex-end',
+  },
+  seeAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 4,
+    marginTop: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryTintMedium,
+  },
+  seeAllButtonText: {
     color: theme.colors.primary,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
-    marginTop: 6,
-    textAlign: 'right',
-    textDecorationLine: 'underline',
   },
 });

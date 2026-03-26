@@ -9,6 +9,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -54,6 +55,7 @@ import {
 import { buildChatImageContextKey, generateStudyImage } from '../services/studyImageService';
 import { maybeSummarizeGuruSession } from '../services/guruChatSessionSummary';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
+import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
 
 type Nav = NativeStackNavigationProp<ChatStackParamList, 'GuruChat'>;
 type ScreenRoute = RouteProp<ChatStackParamList, 'GuruChat'>;
@@ -73,14 +75,14 @@ type ModelOption = {
   id: string;
   name: string;
   group:
-    | 'Local'
-    | 'Groq'
-    | 'OpenRouter'
-    | 'Gemini'
-    | 'Cloudflare'
-    | 'GitHub Models'
-    | 'Kilo'
-    | 'AgentRouter';
+  | 'Local'
+  | 'Groq'
+  | 'OpenRouter'
+  | 'Gemini'
+  | 'Cloudflare'
+  | 'GitHub Models'
+  | 'Kilo'
+  | 'AgentRouter';
 };
 
 type ChatItem =
@@ -88,26 +90,111 @@ type ChatItem =
   | { id: string; type: 'typing' };
 
 const CHAT_HISTORY_LIMIT = 100;
+const MODEL_GROUP_ORDER: ModelOption['group'][] = [
+  'Local',
+  'Groq',
+  'OpenRouter',
+  'Gemini',
+  'Cloudflare',
+  'GitHub Models',
+  'Kilo',
+  'AgentRouter',
+];
+
+function getShortModelLabel(modelName?: string | null) {
+  return modelName?.split('/').pop() ?? null;
+}
+
+function getRuntimeStatusTone(args: {
+  isActive: boolean;
+  hasError: boolean;
+  hasLastModel: boolean;
+}) {
+  if (args.isActive) {
+    return {
+      backgroundColor: theme.colors.primaryTintSoft,
+      borderColor: theme.colors.primaryLight,
+      dotColor: theme.colors.primary,
+      textColor: theme.colors.primary,
+    };
+  }
+
+  if (args.hasError) {
+    return {
+      backgroundColor: theme.colors.errorTintSoft,
+      borderColor: theme.colors.error,
+      dotColor: theme.colors.error,
+      textColor: theme.colors.textSecondary,
+    };
+  }
+
+  if (args.hasLastModel) {
+    return {
+      backgroundColor: theme.colors.successTintSoft,
+      borderColor: theme.colors.success,
+      dotColor: theme.colors.success,
+      textColor: theme.colors.textSecondary,
+    };
+  }
+
+  return {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderColor: theme.colors.border,
+    dotColor: theme.colors.textMuted,
+    textColor: theme.colors.textMuted,
+  };
+}
 
 function getStartersForTopic(topicName: string) {
   return [
-    { icon: 'book-outline', text: `Let's discuss ${topicName}. Ask me something.` },
-    { icon: 'help-circle-outline', text: `Quiz me on ${topicName}.` },
-    { icon: 'bulb-outline', text: `Walk me through ${topicName} step by step.` },
-    { icon: 'list-outline', text: `Test my understanding of ${topicName}.` },
-    { icon: 'alert-circle-outline', text: `I'm fuzzy on ${topicName}. Start from the basics.` },
-    { icon: 'medkit-outline', text: `What should I know about ${topicName} for the exam?` },
+    { icon: 'help-circle-outline', text: `Quiz me on ${topicName}` },
+    { icon: 'bulb-outline', text: `Explain ${topicName} step by step` },
+    { icon: 'alert-circle-outline', text: `${topicName} from the basics` },
+    { icon: 'medkit-outline', text: `High-yield points for exam` },
   ];
 }
 
 const FALLBACK_STARTERS = [
-  { icon: 'book-outline', text: 'Pick a high-yield topic and quiz me.' },
-  { icon: 'help-circle-outline', text: 'Test my understanding of something important.' },
-  { icon: 'bulb-outline', text: 'Walk me through a clinical scenario.' },
-  { icon: 'list-outline', text: "Start with something I probably don't know well." },
-  { icon: 'alert-circle-outline', text: 'Quiz me on pharmacology.' },
-  { icon: 'medkit-outline', text: 'Ask me about a common exam topic.' },
+  { icon: 'help-circle-outline', text: 'Quiz me on a high-yield topic' },
+  { icon: 'bulb-outline', text: 'Walk me through a clinical case' },
+  { icon: 'alert-circle-outline', text: 'Quiz me on pharmacology' },
+  { icon: 'medkit-outline', text: 'Common exam topic' },
 ];
+
+const QUICK_REPLY_OPTIONS = [
+  {
+    key: 'explain',
+    label: 'Explain',
+    prompt: 'Explain that step by step in simple terms.',
+    icon: 'school-outline',
+  },
+  {
+    key: 'dont-know',
+    label: "Don't know",
+    prompt: "I don't know this yet. Start from absolute basics and then ask one quick check question.",
+    icon: 'help-buoy-outline',
+  },
+  {
+    key: 'change-topic',
+    label: 'Change topic',
+    prompt: 'Change topic to a high-yield concept for my exam and start teaching it.',
+    icon: 'swap-horizontal-outline',
+  },
+  {
+    key: 'quiz-me',
+    label: 'Quiz me',
+    prompt: 'Quiz me with one NEET-PG style MCQ and explain the answer.',
+    icon: 'checkmark-done-outline',
+  },
+] as const;
+
+function getLastUserPrompt(messages: ChatMessage[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role === 'user') return message.text;
+  }
+  return null;
+}
 
 async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
   try {
@@ -121,24 +208,20 @@ async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
        WHERE tp.status IN ('seen', 'reviewed')
          AND tp.confidence <= 2
        ORDER BY tp.confidence ASC, tp.last_studied_at ASC
-       LIMIT 6`,
+       LIMIT 4`,
     );
     if (rows.length === 0) return FALLBACK_STARTERS;
     const icons = [
-      'book-outline',
       'help-circle-outline',
       'bulb-outline',
-      'list-outline',
       'alert-circle-outline',
       'medkit-outline',
     ];
     const templates = [
-      (n: string) => `Let's discuss ${n}. Ask me something.`,
-      (n: string) => `Quiz me on ${n}.`,
-      (n: string) => `Walk me through ${n} step by step.`,
-      (n: string) => `Test my understanding of ${n}.`,
-      (n: string) => `I'm fuzzy on ${n}. Start from the basics.`,
-      (n: string) => `What should I know about ${n} for the exam?`,
+      (n: string) => `Quiz me on ${n}`,
+      (n: string) => `Explain ${n} step by step`,
+      (n: string) => `${n} from the basics`,
+      (n: string) => `High-yield points for ${n}`,
     ];
     return rows.map((r, i) => ({
       icon: icons[i % icons.length],
@@ -317,6 +400,17 @@ export default function GuruChatScreen() {
   const localLlmWarning = getLocalLlmRamWarning();
   /** Tracks Settings `guruChatDefaultModel` so we only reset picker when that changes — not on every live model list refresh. */
   const prevGuruChatDefaultRef = useRef<string | undefined>(undefined);
+  const chosenModelRef = useRef<string>('auto');
+  const runtime = useAiRuntimeStatus();
+
+  const applyChosenModel = useCallback((modelId: string) => {
+    chosenModelRef.current = modelId;
+    setChosenModel(modelId);
+  }, []);
+
+  useEffect(() => {
+    chosenModelRef.current = chosenModel;
+  }, [chosenModel]);
 
   useEffect(() => {
     void getSessionMemoryRow(topicName).then((r) => setSessionSummary(r?.summaryText ?? ''));
@@ -472,10 +566,58 @@ export default function GuruChatScreen() {
     return found ? found.name : 'Auto';
   }, [availableModels, chosenModel]);
 
+  const visibleModelGroups = useMemo(() => {
+    const presentGroups = new Set(availableModels.map((model) => model.group));
+    return MODEL_GROUP_ORDER.filter((group) => presentGroups.has(group));
+  }, [availableModels]);
+
+  const runtimeStatus = useMemo(() => {
+    const activeRequest = runtime.active[0];
+    const activeModel = getShortModelLabel(activeRequest?.modelUsed);
+    const lastModel = getShortModelLabel(runtime.lastModelUsed);
+    const backend = activeRequest?.backend ?? runtime.lastBackend;
+
+    if (runtime.activeCount > 0) {
+      return {
+        text: activeModel
+          ? `Live: ${activeModel}${backend ? ` via ${backend}` : ''}`
+          : backend
+            ? `Live: ${backend}`
+            : 'AI working',
+        tone: getRuntimeStatusTone({
+          isActive: true,
+          hasError: false,
+          hasLastModel: false,
+        }),
+      };
+    }
+
+    if (lastModel) {
+      return {
+        text: `Last reply: ${lastModel}${backend ? ` via ${backend}` : ''}`,
+        tone: getRuntimeStatusTone({
+          isActive: false,
+          hasError: !!runtime.lastError,
+          hasLastModel: true,
+        }),
+      };
+    }
+
+    return {
+      text: `Selected: ${currentModelName}`,
+      tone: getRuntimeStatusTone({
+        isActive: false,
+        hasError: !!runtime.lastError,
+        hasLastModel: false,
+      }),
+    };
+  }, [currentModelName, runtime]);
+
   const modelHistory = useMemo(
     () => messages.map((message) => ({ role: message.role, text: message.text })),
     [messages],
   );
+  const lastUserPrompt = useMemo(() => getLastUserPrompt(messages), [messages]);
 
   const chatItems = useMemo<ChatItem[]>(() => {
     const items: ChatItem[] = messages.map((message) => ({
@@ -574,7 +716,8 @@ export default function GuruChatScreen() {
 
     try {
       const studyContextLine = await buildBoundedGuruChatStudyContext(profile);
-      const modelForApi = chosenModel === 'auto' ? undefined : chosenModel;
+      const selectedModelAtSend = chosenModelRef.current;
+      const modelForApi = selectedModelAtSend === 'auto' ? undefined : selectedModelAtSend;
       // #region agent log
       fetch('http://127.0.0.1:7507/ingest/f6a0734c-b45d-4770-9e51-aa07e5c2da6e', {
         method: 'POST',
@@ -584,10 +727,14 @@ export default function GuruChatScreen() {
           hypothesisId: 'H1',
           location: 'GuruChatScreen.handleSend',
           message: 'guru_chat_model_passed',
-          data: { chosenModel, modelForApi: modelForApi ?? 'undefined(auto)' },
+          data: {
+            chosenModelState: chosenModel,
+            chosenModelRef: selectedModelAtSend,
+            modelForApi: modelForApi ?? 'undefined(auto)',
+          },
           timestamp: Date.now(),
         }),
-      }).catch(() => {});
+      }).catch(() => { });
       // #endregion
       const grounded = await chatWithGuruGroundedStreaming(
         question,
@@ -689,6 +836,15 @@ export default function GuruChatScreen() {
       setLoading(false);
       scrollToLatest(120);
     }
+  }
+
+  async function handleRegenerateReply() {
+    if (loading) return;
+    if (!lastUserPrompt) {
+      Alert.alert('Nothing to regenerate', 'Send a message first.');
+      return;
+    }
+    await handleSend(lastUserPrompt);
   }
 
   function startNewChat() {
@@ -866,8 +1022,33 @@ export default function GuruChatScreen() {
               >
                 <View>
                   <Text style={styles.title}>Guru Chat</Text>
+                  <View
+                    style={[
+                      styles.runtimeBadge,
+                      {
+                        backgroundColor: runtimeStatus.tone.backgroundColor,
+                        borderColor: runtimeStatus.tone.borderColor,
+                      },
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.runtimeBadgeDot,
+                        { backgroundColor: runtimeStatus.tone.dotColor },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.runtimeBadgeText,
+                        { color: runtimeStatus.tone.textColor },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {runtimeStatus.text}
+                    </Text>
+                  </View>
                   <View style={styles.modelBadge}>
-                    <Text style={styles.modelBadgeText}>{currentModelName}</Text>
+                    <Text style={styles.modelBadgeText}>Select: {currentModelName}</Text>
                     <Ionicons name="chevron-down" size={10} color={theme.colors.primary} />
                   </View>
                 </View>
@@ -893,7 +1074,7 @@ export default function GuruChatScreen() {
                 <Text style={styles.sheetTitle}>Choose Brain</Text>
                 {localLlmWarning ? <Text style={styles.warningText}>{localLlmWarning}</Text> : null}
                 <FlatList
-                  data={['Local', 'Groq', 'OpenRouter']}
+                  data={visibleModelGroups}
                   keyExtractor={(group) => group}
                   renderItem={({ item: group }) => {
                     const groupModels = availableModels.filter((model) => model.group === group);
@@ -920,14 +1101,14 @@ export default function GuruChatScreen() {
                                     {
                                       text: 'Switch',
                                       onPress: () => {
-                                        setChosenModel(model.id);
+                                        applyChosenModel(model.id);
                                         setShowModelPicker(false);
                                       },
                                     },
                                   ],
                                 );
                               } else {
-                                setChosenModel(model.id);
+                                applyChosenModel(model.id);
                                 setShowModelPicker(false);
                               }
                             }}
@@ -982,11 +1163,15 @@ export default function GuruChatScreen() {
 
           {messages.length === 0 && !loading ? (
             <View style={styles.emptyWrap}>
-              <View style={styles.guruAvatarLarge}>
-                <Ionicons name="sparkles" size={32} color={theme.colors.primary} />
+              <View style={styles.heroRow}>
+                <View style={styles.guruAvatarLarge}>
+                  <Ionicons name="sparkles" size={20} color={theme.colors.primary} />
+                </View>
+                <View>
+                  <Text style={styles.emptyTitle}>What do you want to know?</Text>
+                  <Text style={styles.emptyHint}>Ask anything or tap a suggestion</Text>
+                </View>
               </View>
-              <Text style={styles.emptyTitle}>What do you want to know?</Text>
-              <Text style={styles.emptyHint}>Try a question or pick a prompt below.</Text>
               <View style={styles.starterGrid}>
                 {starters.map((starter) => (
                   <Pressable
@@ -998,11 +1183,10 @@ export default function GuruChatScreen() {
                   >
                     <Ionicons
                       name={starter.icon as keyof typeof Ionicons.glyphMap}
-                      size={16}
+                      size={14}
                       color={theme.colors.primary}
-                      style={styles.starterIcon}
                     />
-                    <Text style={styles.starterChipText}>{starter.text}</Text>
+                    <Text style={styles.starterChipText} numberOfLines={2}>{starter.text}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -1022,6 +1206,48 @@ export default function GuruChatScreen() {
               maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
             />
           )}
+
+          <View style={styles.quickActionsWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.quickActionsContent}
+            >
+              {QUICK_REPLY_OPTIONS.map((option) => (
+                <Pressable
+                  key={option.key}
+                  style={({ pressed }) => [
+                    styles.quickActionChip,
+                    loading && styles.quickActionChipDisabled,
+                    pressed && !loading && styles.pressed,
+                  ]}
+                  onPress={() => handleSend(option.prompt)}
+                  disabled={loading}
+                >
+                  <Ionicons
+                    name={option.icon as keyof typeof Ionicons.glyphMap}
+                    size={12}
+                    color={theme.colors.primary}
+                  />
+                  <Text style={styles.quickActionText}>{option.label}</Text>
+                </Pressable>
+              ))}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.quickActionChip,
+                  styles.quickActionChipPrimary,
+                  (loading || !lastUserPrompt) && styles.quickActionChipDisabled,
+                  pressed && !loading && !!lastUserPrompt && styles.pressed,
+                ]}
+                onPress={() => handleRegenerateReply()}
+                disabled={loading || !lastUserPrompt}
+              >
+                <Ionicons name="refresh-outline" size={12} color={theme.colors.textPrimary} />
+                <Text style={styles.quickActionTextPrimary}>Regenerate</Text>
+              </Pressable>
+            </ScrollView>
+          </View>
 
           <View style={styles.inputRow}>
             <TextInput
@@ -1134,13 +1360,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 1,
+    marginTop: 4,
   },
   modelBadgeText: {
     color: theme.colors.primary,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
+  },
+  runtimeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 2,
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  runtimeBadgeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 999,
+  },
+  runtimeBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   sheetOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -1471,6 +1718,44 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: theme.colors.primary,
   },
+  quickActionsWrap: {
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.divider,
+    paddingTop: 8,
+    backgroundColor: theme.colors.background,
+  },
+  quickActionsContent: {
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  quickActionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.inputBg,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  quickActionChipPrimary: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
+  },
+  quickActionChipDisabled: {
+    opacity: 0.6,
+  },
+  quickActionText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  quickActionTextPrimary: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1508,55 +1793,58 @@ const styles = StyleSheet.create({
   },
   emptyWrap: {
     flex: 1,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 14,
+    paddingBottom: 16,
+  },
+  heroRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingBottom: 24,
+    gap: 12,
+    marginBottom: 16,
   },
   guruAvatarLarge: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: theme.colors.primaryTint,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: theme.colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
   emptyTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
-    marginBottom: 6,
   },
   emptyHint: {
     color: theme.colors.textMuted,
-    fontSize: 13,
-    marginBottom: 20,
+    fontSize: 12,
+    marginTop: 2,
   },
   starterGrid: {
-    width: '100%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   starterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    borderRadius: 12,
+    gap: 6,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.inputBg,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    minHeight: 56,
-  },
-  starterIcon: {
-    flexShrink: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexBasis: '47%',
+    flexGrow: 1,
   },
   starterChipText: {
     color: theme.colors.textSecondary,
-    fontSize: 13,
+    fontSize: 12,
     flex: 1,
+    lineHeight: 16,
   },
 });

@@ -9,6 +9,7 @@ import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
 import type { UserProfile } from '../../types';
 import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
 import { RateLimitError } from './schemas';
+import { createAiRequestTrace, logStreamEvent, previewText } from './runtimeDebug';
 
 /** Resolve backend attempt order from profile. Used by both JSON and text routing. */
 function getBackendAttemptOrder(profile: UserProfile) {
@@ -61,6 +62,10 @@ function getBackendAttemptOrder(profile: UserProfile) {
   };
 }
 
+function isExplicitCloudModel(chosenModel?: string): boolean {
+  return !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
+}
+
 export async function generateJSONWithRouting<T>(
   messages: Message[],
   schema: z.ZodType<T>,
@@ -68,6 +73,11 @@ export async function generateJSONWithRouting<T>(
   queueOnFailure = true,
   forceProvider?: 'groq' | 'gemini',
 ): Promise<{ parsed: T; modelUsed: string }> {
+  const trace = createAiRequestTrace('json', messages, {
+    taskComplexity,
+    queueOnFailure,
+    forceProvider: forceProvider ?? 'auto',
+  });
   const profile = await profileRepository.getProfile();
   let {
     attempts,
@@ -93,6 +103,9 @@ export async function generateJSONWithRouting<T>(
     cfApiToken = undefined;
     deepseekKey = undefined;
     githubModelsPat = undefined;
+    kiloApiKey = undefined;
+    agentRouterKey = undefined;
+    providerOrder = ['groq'];
   } else if (forceProvider === 'gemini') {
     attempts = ['cloud'];
     orKey = undefined;
@@ -101,6 +114,9 @@ export async function generateJSONWithRouting<T>(
     cfApiToken = undefined;
     deepseekKey = undefined;
     githubModelsPat = undefined;
+    kiloApiKey = undefined;
+    agentRouterKey = undefined;
+    providerOrder = ['gemini', 'gemini_fallback'];
   }
 
   let lastError: Error | null = null;
@@ -109,6 +125,13 @@ export async function generateJSONWithRouting<T>(
       if (backend === 'local') {
         const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, false);
         const parsed = await parseStructuredJson(text, schema);
+        trace.success({
+          backend,
+          modelUsed,
+          responseChars: text.length,
+          responsePreview: previewText(text),
+          responseText: text,
+        });
         return { parsed, modelUsed };
       }
 
@@ -129,8 +152,18 @@ export async function generateJSONWithRouting<T>(
         providerOrder,
       );
       const parsed = await parseStructuredJson(text, schema);
+      trace.success({
+        backend,
+        modelUsed,
+        responseChars: text.length,
+        responsePreview: previewText(text),
+        responseText: text,
+        providerOrder:
+          providerOrder?.length && backend === 'cloud' ? providerOrder.join(' -> ') : undefined,
+      });
       return { parsed, modelUsed };
     } catch (err) {
+      trace.fail(err, { backend });
       if (__DEV__)
         console.warn(`[AI] ${backend} inference/parsing failed:`, (err as Error).message);
       lastError = err as Error;
@@ -147,6 +180,7 @@ export async function generateJSONWithRouting<T>(
   if (__DEV__) {
     console.warn('[AI] structured_json_parse path=failed', lastError?.message ?? 'unknown');
   }
+  trace.fail(lastError, { final: true });
   throw lastError || new Error('All AI attempts failed');
 }
 
@@ -155,6 +189,11 @@ export async function generateTextWithRouting(
   options?: { preferCloud?: boolean; chosenModel?: string },
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
+  const trace = createAiRequestTrace('text', messages, {
+    chosenModel: options?.chosenModel ?? 'auto',
+    preferCloud: options?.preferCloud ?? false,
+    queueOnFailure,
+  });
   const profile = await profileRepository.getProfile();
 
   // If a specific model is chosen and it's local
@@ -165,11 +204,19 @@ export async function generateTextWithRouting(
     );
   }
   if (options?.chosenModel === 'local' && isLocalLlmUsable(profile)) {
-    return await attemptLocalLLM(messages, profile.localModelPath!, true);
+    const result = await attemptLocalLLM(messages, profile.localModelPath!, true);
+    trace.success({
+      backend: 'local',
+      modelUsed: result.modelUsed,
+      responseChars: result.text.length,
+      responsePreview: previewText(result.text),
+      responseText: result.text,
+    });
+    return result;
   }
 
   const {
-    attempts,
+    attempts: initialAttempts,
     orKey,
     groqKey,
     geminiKey,
@@ -182,6 +229,7 @@ export async function generateTextWithRouting(
     agentRouterKey,
     providerOrder: textProviderOrder,
   } = getBackendAttemptOrder(profile);
+  const attempts = isExplicitCloudModel(options?.chosenModel) ? ['cloud' as const] : initialAttempts;
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -206,8 +254,20 @@ export async function generateTextWithRouting(
               textProviderOrder,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
+      trace.success({
+        backend,
+        modelUsed,
+        responseChars: text.length,
+        responsePreview: previewText(text),
+        responseText: text,
+        providerOrder:
+          textProviderOrder?.length && backend === 'cloud'
+            ? textProviderOrder.join(' -> ')
+            : undefined,
+      });
       return { text, modelUsed };
     } catch (err) {
+      trace.fail(err, { backend });
       if (__DEV__) console.warn(`[AI] ${backend} inference failed:`, (err as Error).message);
       lastError = err as Error;
       continue;
@@ -220,6 +280,7 @@ export async function generateTextWithRouting(
     );
   }
 
+  trace.fail(lastError, { final: true });
   throw lastError || new Error('All AI attempts failed');
 }
 
@@ -233,6 +294,10 @@ export async function generateTextWithRoutingStream(
   onDelta: (delta: string) => void,
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
+  const trace = createAiRequestTrace('stream', messages, {
+    chosenModel: options?.chosenModel ?? 'auto',
+    queueOnFailure,
+  });
   const profile = await profileRepository.getProfile();
 
   if (options?.chosenModel === 'local' && profile.localModelPath && !isLocalLlmUsable(profile)) {
@@ -243,12 +308,24 @@ export async function generateTextWithRoutingStream(
   }
   if (options?.chosenModel === 'local' && isLocalLlmUsable(profile)) {
     const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
+    logStreamEvent('local_single_chunk', {
+      modelUsed,
+      outputChars: text.length,
+      chosenModel: options?.chosenModel ?? 'auto',
+    });
     onDelta(text);
+    trace.success({
+      backend: 'local',
+      modelUsed,
+      responseChars: text.length,
+      responsePreview: previewText(text),
+      responseText: text,
+    });
     return { text, modelUsed };
   }
 
   const {
-    attempts,
+    attempts: initialAttempts,
     orKey,
     groqKey,
     geminiKey,
@@ -261,16 +338,30 @@ export async function generateTextWithRoutingStream(
     agentRouterKey,
     providerOrder: streamProviderOrder,
   } = getBackendAttemptOrder(profile);
+  const attempts =
+    isExplicitCloudModel(options?.chosenModel) ? ['cloud' as const] : initialAttempts;
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
     try {
       if (backend === 'local') {
         const { text, modelUsed } = await attemptLocalLLM(messages, profile.localModelPath!, true);
+        logStreamEvent('local_single_chunk', {
+          modelUsed,
+          outputChars: text.length,
+          chosenModel: options?.chosenModel ?? 'auto',
+        });
         onDelta(text);
+        trace.success({
+          backend,
+          modelUsed,
+          responseChars: text.length,
+          responsePreview: previewText(text),
+          responseText: text,
+        });
         return { text, modelUsed };
       }
-      return await attemptCloudLLMStream(
+      const result = await attemptCloudLLMStream(
         messages,
         orKey,
         groqKey,
@@ -286,7 +377,20 @@ export async function generateTextWithRoutingStream(
         agentRouterKey,
         streamProviderOrder,
       );
+      trace.success({
+        backend,
+        modelUsed: result.modelUsed,
+        responseChars: result.text.length,
+        responsePreview: previewText(result.text),
+        responseText: result.text,
+        providerOrder:
+          streamProviderOrder?.length && backend === 'cloud'
+            ? streamProviderOrder.join(' -> ')
+            : undefined,
+      });
+      return result;
     } catch (err) {
+      trace.fail(err, { backend });
       if (__DEV__) console.warn(`[AI] ${backend} stream inference failed:`, (err as Error).message);
       lastError = err as Error;
       continue;
@@ -299,5 +403,6 @@ export async function generateTextWithRoutingStream(
     );
   }
 
+  trace.fail(lastError, { final: true });
   throw lastError || new Error('All AI attempts failed');
 }

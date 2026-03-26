@@ -518,6 +518,7 @@ export async function getTopicsDueForReview(limit = 10): Promise<TopicWithProgre
      JOIN topic_progress p ON t.id = p.topic_id
      WHERE p.status != 'unseen'
        AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE(?))
+       AND NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
      ORDER BY p.fsrs_due ASC, p.confidence ASC
      LIMIT ?`,
     [today, limit],
@@ -592,7 +593,9 @@ export async function getWeakestTopics(limit = 5): Promise<TopicWithProgress[]> 
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
      LEFT JOIN topic_progress p ON t.id = p.topic_id
-     WHERE p.times_studied > 0 AND p.confidence < 3
+      WHERE p.times_studied > 0 AND p.confidence < 3
+       AND t.parent_topic_id IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
      ORDER BY p.confidence ASC, p.times_studied DESC
      LIMIT ?`,
     [limit],
@@ -610,6 +613,7 @@ export async function getHighPriorityUnseenTopics(limit = 3): Promise<TopicWithP
      LEFT JOIN topic_progress p ON t.id = p.topic_id
      WHERE COALESCE(p.status, 'unseen') = 'unseen'
        AND t.parent_topic_id IS NOT NULL
+       AND NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
      ORDER BY t.inicet_priority DESC, RANDOM()
      LIMIT ?`,
     [limit],

@@ -11,6 +11,7 @@ import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../c
 import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';
 import { useAppStateTransition } from './useAppStateTransition';
 import { requestNotifications } from '../services/appPermissions';
+import { warmAiContentCache } from '../services/backgroundTasks';
 
 /**
  * Master initialization hook.
@@ -90,6 +91,11 @@ export function useAppBootstrap(): void {
 
       // 4. Deferred Recovery (10s delay to stay out of critical path)
       const profileForRecovery = useAppStore.getState().profile;
+      setTimeout(() => {
+        warmAiContentCache({ topicLimit: 2, refreshNotifications: false }).catch((e) =>
+          console.warn('[AIWarmup] Startup prefetch failed:', e),
+        );
+      }, 4000);
       if (profileForRecovery?.groqApiKey) {
         setTimeout(() => {
           retryFailedTasks(profileForRecovery.groqApiKey).catch((e) =>

@@ -7,6 +7,7 @@ interface ProviderAvailability {
   groq: boolean;
   huggingface: boolean;
   cloudflare: boolean;
+  deepgram: boolean;
   local: boolean;
 }
 
@@ -26,24 +27,19 @@ export function buildTranscriptionProviderOrder(
 ): RunnableTranscriptionProvider[] {
   const orderedProviders: RunnableTranscriptionProvider[] =
     preferredProvider === 'groq'
-      ? ['groq', 'cloudflare', 'huggingface', 'local']
+      ? ['groq', 'cloudflare', 'huggingface', 'deepgram', 'local']
       : preferredProvider === 'cloudflare'
-        ? ['cloudflare', 'groq', 'huggingface', 'local']
+        ? ['cloudflare', 'groq', 'huggingface', 'deepgram', 'local']
         : preferredProvider === 'huggingface'
-          ? ['huggingface', 'groq', 'cloudflare', 'local']
-          : preferredProvider === 'local'
-            ? ['local', 'groq', 'cloudflare', 'huggingface']
-            : ['groq', 'cloudflare', 'huggingface', 'local'];
+          ? ['huggingface', 'groq', 'cloudflare', 'deepgram', 'local']
+          : preferredProvider === 'deepgram'
+            ? ['deepgram', 'groq', 'cloudflare', 'huggingface', 'local']
+            : preferredProvider === 'local'
+              ? ['local', 'groq', 'cloudflare', 'huggingface', 'deepgram']
+              : ['groq', 'cloudflare', 'huggingface', 'deepgram', 'local'];
 
   return orderedProviders.filter((provider, index) => {
-    if (
-      (provider === 'groq' && !availability.groq) ||
-      (provider === 'huggingface' && !availability.huggingface) ||
-      (provider === 'cloudflare' && !availability.cloudflare) ||
-      (provider === 'local' && !availability.local)
-    ) {
-      return false;
-    }
+    if (!availability[provider]) return false;
     return orderedProviders.indexOf(provider) === index;
   });
 }

@@ -19,6 +19,7 @@ import { useAppStore } from '../store/useAppStore';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from './deviceMemory';
 import { showToast } from '../components/Toast';
 import { updateLocalModelDownload } from './localModelDownloadState';
+import { logBootstrapEvent } from './ai/runtimeDebug';
 import {
   deleteLocalModelFile,
   getLocalModelFilePath,
@@ -34,8 +35,6 @@ const WHISPER_MODEL = {
   name: 'ggml-large-v3-turbo.bin',
   url: 'https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo.bin',
 };
-
-const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
 
 // Active download handles — exposed for pause/resume from UI
 let activeDownload: FileSystem.DownloadResumable | null = null;
@@ -68,7 +67,7 @@ export async function pauseDownload(): Promise<void> {
       progress: 0,
       message: 'Download paused',
     });
-    if (isDev) console.log(`[Bootstrap] ${activeDownloadType} download paused`);
+    logBootstrapEvent('download_paused', { type: activeDownloadType });
   } catch (e) {
     console.warn('[Bootstrap] Pause failed:', e);
   }
@@ -81,6 +80,7 @@ export async function resumeDownload(): Promise<void> {
   if (!activeDownload || !isPaused) return;
   isPaused = false;
   try {
+    logBootstrapEvent('download_resume_requested', { type: activeDownloadType });
     const result = await activeDownload.resumeAsync();
     if (result && result.status === 200) {
       await handleDownloadComplete(activeDownloadType!);
@@ -116,6 +116,14 @@ export async function bootstrapLocalModels(): Promise<void> {
   const needsWhisper = !profile.localWhisperPath;
 
   if (!needsLlm && !needsWhisper) return;
+
+  logBootstrapEvent('bootstrap_check', {
+    needsLlm,
+    needsWhisper,
+    llmAllowed,
+    hasLocalModel: !!profile.localModelPath,
+    hasLocalWhisper: !!profile.localWhisperPath,
+  });
 
   if (!llmAllowed && !profile.localModelPath) {
     const warning = getLocalLlmRamWarning();
@@ -158,6 +166,7 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
     totalBytes: undefined,
     message: type === 'whisper' ? 'Verifying offline transcription' : 'Verifying offline study AI',
   });
+  logBootstrapEvent('download_verifying', { type, targetUri });
 
   const downloadedValidation = await validateLocalModelFile({
     path: partialUri,
@@ -167,6 +176,11 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
     console.warn(
       `[Bootstrap] ${type} download too small: ${downloadedValidation.size} bytes, expected >= ${minSize}`,
     );
+    logBootstrapEvent('download_invalid', {
+      type,
+      size: downloadedValidation.size,
+      minSize,
+    });
     await deleteLocalModelFile(partialUri);
     updateLocalModelDownload({
       visible: true,
@@ -187,6 +201,10 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
     await FileSystem.moveAsync({ from: partialUri, to: targetUri });
   } catch (moveErr) {
     console.warn(`[Bootstrap] ${type} finalize (move) failed:`, moveErr);
+    logBootstrapEvent('download_finalize_failed', {
+      type,
+      error: moveErr instanceof Error ? moveErr.message : String(moveErr),
+    });
     updateLocalModelDownload({
       visible: true,
       source: 'bootstrap',
@@ -233,7 +251,11 @@ async function handleDownloadComplete(type: 'llm' | 'whisper'): Promise<void> {
   activeDownload = null;
   activeDownloadType = null;
   isPaused = false;
-  if (isDev) console.log(`[Bootstrap] ${type} model downloaded successfully`);
+  logBootstrapEvent('download_complete', {
+    type,
+    targetUri,
+    size: downloadedValidation.size,
+  });
 }
 
 function makeProgressCallback(type: 'llm' | 'whisper', modelName: string) {
@@ -252,7 +274,6 @@ function makeProgressCallback(type: 'llm' | 'whisper', modelName: string) {
         downloadedBytes: progress.totalBytesWritten,
         totalBytes: progress.totalBytesExpectedToWrite,
       });
-      if (pct % 10 === 0 && isDev) console.log(`[Bootstrap] ${type} download: ${pct}%`);
     }
   };
 }
@@ -277,6 +298,7 @@ async function downloadModel(
       message:
         type === 'whisper' ? 'Preparing offline transcription' : 'Preparing offline study AI',
     });
+    logBootstrapEvent('download_prepare', { type, modelName: model.name });
 
     // Check if fully-downloaded file already exists
     const existingValidation = await validateLocalModelFile({
@@ -306,7 +328,12 @@ async function downloadModel(
         });
       }
       await refreshProfileSafely();
-      if (isDev) console.log(`[Bootstrap] ${type} model already available at ${targetUri}`);
+      logBootstrapEvent('download_already_available', {
+        type,
+        modelName: model.name,
+        targetUri,
+        size: existingValidation.size,
+      });
       return;
     }
 
@@ -318,6 +345,22 @@ async function downloadModel(
       await deleteLocalModelFile(targetUri);
     }
 
+    const partialValidation = await validateLocalModelFile({
+      path: partialUri,
+      minBytes: minSize,
+    });
+    if (partialValidation.exists && partialValidation.isValid) {
+      logBootstrapEvent('download_finalize_existing_partial', {
+        type,
+        modelName: model.name,
+        partialUri,
+        size: partialValidation.size,
+      });
+      activeDownloadType = type;
+      await handleDownloadComplete(type);
+      return;
+    }
+
     // Try to resume from saved resume data (persisted across app restarts)
     const resumeDataPath = getResumeDataPath(type);
     let resumed = false;
@@ -325,7 +368,7 @@ async function downloadModel(
       const resumeJson = await FileSystem.readAsStringAsync(resumeDataPath);
       const resumeData = JSON.parse(resumeJson);
       if (resumeData?.url === model.url) {
-        if (isDev) console.log(`[Bootstrap] Resuming ${type} download from saved state`);
+        logBootstrapEvent('download_resuming', { type, modelName: model.name });
         const downloadResumable = new FileSystem.DownloadResumable(
           resumeData.url,
           resumeData.fileUri,
@@ -349,14 +392,28 @@ async function downloadModel(
     }
 
     if (!resumed) {
-      // Check if partial file exists (download was interrupted without saving resume data)
-      const partialInfo = await FileSystem.getInfoAsync(partialUri);
-      if (partialInfo.exists) {
-        if (isDev) console.log(`[Bootstrap] Found partial ${type} file, deleting to start fresh`);
-        await deleteLocalModelFile(partialUri);
+      // If a partial file exists but we have no resumable state, don't restart from zero on every reload.
+      if (partialValidation.exists && partialValidation.size > 0) {
+        logBootstrapEvent('download_interrupted_partial_detected', {
+          type,
+          modelName: model.name,
+          partialUri,
+          size: partialValidation.size,
+        });
+        updateLocalModelDownload({
+          visible: true,
+          source: 'bootstrap',
+          type,
+          stage: 'error',
+          modelName: model.name,
+          progress: 0,
+          downloadedBytes: partialValidation.size,
+          message: 'Install interrupted. Open On-Device AI Setup to restart safely.',
+        });
+        return;
       }
 
-      if (isDev) console.log(`[Bootstrap] Starting ${type} download: ${model.name}`);
+      logBootstrapEvent('download_start', { type, modelName: model.name, url: model.url });
 
       const downloadResumable = FileSystem.createDownloadResumable(
         model.url,
@@ -375,6 +432,7 @@ async function downloadModel(
         await handleDownloadComplete(type);
       } else {
         console.warn(`[Bootstrap] ${type} download failed with status ${result?.status}`);
+        logBootstrapEvent('download_failed', { type, status: result?.status });
         await deleteLocalModelFile(partialUri);
         updateLocalModelDownload({
           visible: true,
@@ -390,6 +448,10 @@ async function downloadModel(
   } catch (e) {
     // Non-fatal — user can still use the app, just without local AI
     console.warn(`[Bootstrap] ${type} download error:`, e);
+    logBootstrapEvent('download_error', {
+      type,
+      error: e instanceof Error ? e.message : String(e),
+    });
     // Don't delete partial — resume next time
     updateLocalModelDownload({
       visible: true,

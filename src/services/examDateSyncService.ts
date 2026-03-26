@@ -337,10 +337,24 @@ export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
   const profile = await profileRepository.getProfile();
   const updates: { inicetDate?: string; neetDate?: string } = {};
 
-  if (inicetSync.date && inicetSync.date !== profile.inicetDate) {
+  // Only auto-sync dates that are still at their hardcoded defaults.
+  // If the user (or a previous sync) has set a custom date, don't overwrite it —
+  // the user can always update manually in Settings.
+  const HARDCODED_INICET_DEFAULTS = ['2026-05-01', '2026-05-17'];
+  const HARDCODED_NEET_DEFAULTS = ['2026-08-01', '2026-08-30'];
+
+  if (
+    inicetSync.date &&
+    inicetSync.date !== profile.inicetDate &&
+    HARDCODED_INICET_DEFAULTS.includes(profile.inicetDate)
+  ) {
     updates.inicetDate = inicetSync.date;
   }
-  if (neetSync.date && neetSync.date !== profile.neetDate) {
+  if (
+    neetSync.date &&
+    neetSync.date !== profile.neetDate &&
+    HARDCODED_NEET_DEFAULTS.includes(profile.neetDate)
+  ) {
     updates.neetDate = neetSync.date;
   }
   if (updates.inicetDate || updates.neetDate) {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, InteractionManager } from 'react-native';
 import { dailyLogRepository } from '../db/repositories';
 import {
@@ -9,7 +9,8 @@ import {
 } from '../db/queries/topics';
 import { getCompletedSessionCount } from '../db/queries/sessions';
 import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
-import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
+import { getTodaysAgendaWithTimes, invalidatePlanCache, type TodayTask } from '../services/studyPlanner';
+import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import type { TopicWithProgress } from '../types';
 
 export function useHomeDashboardData() {
@@ -20,6 +21,7 @@ export function useHomeDashboardData() {
   const [completedSessions, setCompletedSessions] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const reload = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) {
@@ -42,6 +44,7 @@ export function useHomeDashboardData() {
       }
       setDueTopics(due);
 
+      invalidatePlanCache();
       const tasks = await getTodaysAgendaWithTimes();
       setTodayTasks(tasks);
 
@@ -63,6 +66,7 @@ export function useHomeDashboardData() {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
       void reload();
@@ -70,6 +74,29 @@ export function useHomeDashboardData() {
 
     return () => {
       task.cancel();
+    };
+  }, [reload]);
+
+  // Auto-refresh when progress or profile changes (e.g. after a session, settings save)
+  useEffect(() => {
+    const onDataChanged = () => {
+      // Debounce: collapse rapid successive events into one reload after 500ms
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+      retryTimer.current = setTimeout(() => {
+        retryTimer.current = null;
+        void reload({ silent: true });
+      }, 500);
+    };
+
+    dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, onDataChanged);
+    dbEvents.on(DB_EVENT_KEYS.PROFILE_UPDATED, onDataChanged);
+    dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onDataChanged);
+
+    return () => {
+      dbEvents.off(DB_EVENT_KEYS.PROGRESS_UPDATED, onDataChanged);
+      dbEvents.off(DB_EVENT_KEYS.PROFILE_UPDATED, onDataChanged);
+      dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onDataChanged);
+      if (retryTimer.current) clearTimeout(retryTimer.current);
     };
   }, [reload]);
 

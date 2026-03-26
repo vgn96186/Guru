@@ -496,7 +496,130 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE user_profile ADD COLUMN provider_order TEXT NOT NULL DEFAULT '[]'`,
     description: 'Customisable cloud LLM provider priority order (JSON array of provider IDs)',
   },
+  {
+    version: 108,
+    sql: `ALTER TABLE user_profile ADD COLUMN deepgram_api_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Deepgram API key for batch + live WebSocket transcription',
+  },
+  {
+    version: 109,
+    sql: `CREATE TABLE IF NOT EXISTS question_bank (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question TEXT NOT NULL,
+  options TEXT NOT NULL,
+  correct_index INTEGER NOT NULL,
+  explanation TEXT NOT NULL,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  topic_name TEXT NOT NULL DEFAULT '',
+  subject_name TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'content_card'
+    CHECK(source IN ('content_card','lecture_quiz','mock_test','live_lecture','manual')),
+  source_id TEXT,
+  image_url TEXT,
+  is_bookmarked INTEGER NOT NULL DEFAULT 0,
+  is_mastered INTEGER NOT NULL DEFAULT 0,
+  times_seen INTEGER NOT NULL DEFAULT 0,
+  times_correct INTEGER NOT NULL DEFAULT 0,
+  last_seen_at INTEGER,
+  next_review_at INTEGER,
+  difficulty REAL NOT NULL DEFAULT 0.5,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_qb_subject ON question_bank(subject_name);
+CREATE INDEX IF NOT EXISTS idx_qb_topic ON question_bank(topic_id);
+CREATE INDEX IF NOT EXISTS idx_qb_review ON question_bank(next_review_at, is_mastered);
+CREATE INDEX IF NOT EXISTS idx_qb_bookmarked ON question_bank(is_bookmarked);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_qb_dedup ON question_bank(question)`,
+    description: 'Question bank table for auto-saved MCQs with SR scheduling',
+  },
+  {
+    version: 110,
+    sql: `
+-- Rebuild user_profile to widen the transcription_provider CHECK constraint to include 'deepgram'.
+-- SQLite cannot ALTER a CHECK, so we recreate the table.
+CREATE TABLE user_profile_new (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  display_name TEXT NOT NULL DEFAULT 'Doctor',
+  total_xp INTEGER NOT NULL DEFAULT 0,
+  current_level INTEGER NOT NULL DEFAULT 1,
+  streak_current INTEGER NOT NULL DEFAULT 0,
+  streak_best INTEGER NOT NULL DEFAULT 0,
+  daily_goal_minutes INTEGER NOT NULL DEFAULT 120,
+  inicet_date TEXT NOT NULL DEFAULT '2026-05-01',
+  neet_date TEXT NOT NULL DEFAULT '2026-08-01',
+  preferred_session_length INTEGER NOT NULL DEFAULT 45,
+  openrouter_api_key TEXT NOT NULL DEFAULT '',
+  openrouter_key TEXT NOT NULL DEFAULT '',
+  notifications_enabled INTEGER NOT NULL DEFAULT 1,
+  last_active_date TEXT,
+  sync_code TEXT,
+  strict_mode_enabled INTEGER NOT NULL DEFAULT 0,
+  streak_shield_available INTEGER NOT NULL DEFAULT 1,
+  body_doubling_enabled INTEGER NOT NULL DEFAULT 1,
+  blocked_content_types TEXT NOT NULL DEFAULT '[]',
+  idle_timeout_minutes INTEGER NOT NULL DEFAULT 2,
+  break_duration_minutes INTEGER NOT NULL DEFAULT 5,
+  notification_hour INTEGER NOT NULL DEFAULT 7,
+  guru_frequency TEXT NOT NULL DEFAULT 'normal',
+  focus_subject_ids TEXT NOT NULL DEFAULT '[]',
+  focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
+  visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
+  face_tracking_enabled INTEGER NOT NULL DEFAULT 0,
+  quiz_correct_count INTEGER NOT NULL DEFAULT 0,
+  last_backup_date TEXT,
+  use_local_model INTEGER NOT NULL DEFAULT 1,
+  local_model_path TEXT,
+  use_local_whisper INTEGER NOT NULL DEFAULT 1,
+  local_whisper_path TEXT,
+  quick_start_streak INTEGER NOT NULL DEFAULT 0,
+  groq_api_key TEXT NOT NULL DEFAULT '',
+  gemini_key TEXT NOT NULL DEFAULT '',
+  huggingface_token TEXT NOT NULL DEFAULT '',
+  huggingface_transcription_model TEXT NOT NULL DEFAULT 'openai/whisper-large-v3',
+  transcription_provider TEXT NOT NULL DEFAULT 'auto',
+  study_resource_mode TEXT NOT NULL DEFAULT 'hybrid',
+  subject_load_overrides_json TEXT NOT NULL DEFAULT '{}',
+  backup_directory_uri TEXT,
+  pomodoro_enabled INTEGER NOT NULL DEFAULT 1,
+  pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20,
+  cloudflare_account_id TEXT NOT NULL DEFAULT '',
+  cloudflare_api_token TEXT NOT NULL DEFAULT '',
+  guru_chat_default_model TEXT NOT NULL DEFAULT 'auto',
+  guru_memory_notes TEXT NOT NULL DEFAULT '',
+  image_generation_model TEXT NOT NULL DEFAULT 'auto',
+  exam_type TEXT NOT NULL DEFAULT 'INICET',
+  prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1,
+  github_models_pat TEXT NOT NULL DEFAULT '',
+  kilo_api_key TEXT NOT NULL DEFAULT '',
+  deepseek_key TEXT NOT NULL DEFAULT '',
+  agentrouter_key TEXT NOT NULL DEFAULT '',
+  provider_order TEXT NOT NULL DEFAULT '[]',
+  deepgram_api_key TEXT NOT NULL DEFAULT ''
+);
+
+INSERT INTO user_profile_new SELECT
+  id, display_name, total_xp, current_level, streak_current, streak_best,
+  daily_goal_minutes, inicet_date, neet_date, preferred_session_length,
+  openrouter_api_key, openrouter_key, notifications_enabled, last_active_date,
+  sync_code, strict_mode_enabled, streak_shield_available, body_doubling_enabled,
+  blocked_content_types, idle_timeout_minutes, break_duration_minutes, notification_hour,
+  guru_frequency, focus_subject_ids, focus_audio_enabled, visual_timers_enabled,
+  face_tracking_enabled, quiz_correct_count, last_backup_date, use_local_model,
+  local_model_path, use_local_whisper, local_whisper_path, quick_start_streak,
+  groq_api_key, gemini_key, huggingface_token, huggingface_transcription_model,
+  CASE WHEN transcription_provider IN ('auto','groq','huggingface','cloudflare','deepgram','local') THEN transcription_provider ELSE 'auto' END,
+  study_resource_mode, subject_load_overrides_json, backup_directory_uri,
+  pomodoro_enabled, pomodoro_interval_minutes, cloudflare_account_id, cloudflare_api_token,
+  guru_chat_default_model, guru_memory_notes, image_generation_model, exam_type,
+  prefer_gemini_structured_json, github_models_pat, kilo_api_key, deepseek_key,
+  agentrouter_key, provider_order, deepgram_api_key
+FROM user_profile;
+
+DROP TABLE user_profile;
+ALTER TABLE user_profile_new RENAME TO user_profile`,
+    description: 'Rebuild user_profile to strip CHECK constraints (validation moved to app layer)',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 107;
+export const LATEST_VERSION = 110;

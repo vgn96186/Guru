@@ -122,7 +122,7 @@ export interface UserProfile {
   geminiKey?: string;
   huggingFaceToken?: string;
   huggingFaceTranscriptionModel?: string;
-  transcriptionProvider?: 'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'local';
+  transcriptionProvider?: 'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'deepgram' | 'local';
   notificationsEnabled: boolean;
   strictModeEnabled: boolean;
   bodyDoublingEnabled: boolean;
@@ -170,6 +170,8 @@ export interface UserProfile {
   agentRouterKey?: string;
   /** User-defined cloud LLM provider priority order. Empty = default order. */
   providerOrder?: ProviderId[];
+  /** Deepgram API key for batch + live WebSocket transcription. */
+  deepgramApiKey?: string;
 }
 
 export type ProviderId =
@@ -228,6 +230,52 @@ export interface QuizContent {
   type: 'quiz';
   topicName: string;
   questions: QuizQuestion[];
+}
+
+export type QuestionBankSource = 'content_card' | 'lecture_quiz' | 'mock_test' | 'live_lecture' | 'manual';
+
+export interface QuestionBankItem {
+  id: number;
+  question: string;
+  options: [string, string, string, string];
+  correctIndex: number;
+  explanation: string;
+  topicId: number | null;
+  topicName: string;
+  subjectName: string;
+  source: QuestionBankSource;
+  sourceId: string | null;
+  imageUrl: string | null;
+  isBookmarked: boolean;
+  isMastered: boolean;
+  timesSeen: number;
+  timesCorrect: number;
+  lastSeenAt: number | null;
+  nextReviewAt: number | null;
+  difficulty: number;
+  createdAt: number;
+}
+
+export interface SaveQuestionInput {
+  question: string;
+  options: [string, string, string, string];
+  correctIndex: number;
+  explanation: string;
+  topicId?: number | null;
+  topicName?: string;
+  subjectName?: string;
+  source: QuestionBankSource;
+  sourceId?: string | null;
+  imageUrl?: string | null;
+}
+
+export interface QuestionFilters {
+  subjectName?: string;
+  topicId?: number;
+  isBookmarked?: boolean;
+  isMastered?: boolean;
+  dueForReview?: boolean;
+  search?: string;
 }
 
 export interface StoryContent {

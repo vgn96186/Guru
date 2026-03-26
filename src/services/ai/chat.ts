@@ -15,6 +15,135 @@ import {
   buildMedicalSearchQuery,
 } from './medicalSearch';
 
+const MAX_CONTINUATION_ATTEMPTS = 2;
+
+function sanitizeSingleGuruTurn(raw: string): string {
+  let text = (raw ?? '').replace(/\r/g, '').trim();
+  if (!text) return '';
+
+  text = text.replace(/^(?:guru|assistant)\s*:\s*/i, '').trim();
+
+  const firstStudentTurn = text.search(/(?:^|\n|\s)(?:student|user|learner)\s*:/i);
+  if (firstStudentTurn >= 0) {
+    text = text.slice(0, firstStudentTurn).trim();
+  }
+
+  const secondGuruTurn = text.search(/(?:^|\n|\s)(?:guru|assistant)\s*:/i);
+  if (secondGuruTurn >= 0) {
+    text = text.slice(0, secondGuruTurn).trim();
+  }
+
+  text = truncateAfterAskedQuestion(text);
+
+  return text;
+}
+
+function truncateAfterAskedQuestion(text: string): string {
+  const firstQuestionIndex = text.indexOf('?');
+  if (firstQuestionIndex === -1) return text;
+  const trailing = text.slice(firstQuestionIndex + 1).trim();
+  if (!trailing) return text;
+
+  const hasAnotherQuestion = trailing.includes('?');
+  const startsLikeContinuationAnswer =
+    /^[A-Z0-9*_(["']/.test(trailing) || /^(the|it|they|this|that|these|those|because|so|therefore|plasma|interstitial|answer)\b/i.test(trailing);
+
+  if (hasAnotherQuestion || startsLikeContinuationAnswer) {
+    return text.slice(0, firstQuestionIndex + 1).trim();
+  }
+
+  return text;
+}
+
+function looksTruncatedReply(text: string): boolean {
+  const t = text.trim();
+  if (!t) return true;
+  if (t.includes('?')) return false;
+  if (/\*\*[^*]*$/.test(t)) return true;
+  if (/[A-Za-z0-9]+-$/.test(t)) return true;
+  if (/[([{"'`]$/.test(t)) return true;
+  const openParens = (t.match(/\(/g) ?? []).length;
+  const closeParens = (t.match(/\)/g) ?? []).length;
+  if (openParens > closeParens) return true;
+  if (t.length >= 320 && !/[.!?]["')\]]?$/.test(t)) return true;
+  return false;
+}
+
+function hasUsefulContinuation(base: string, continuation: string): boolean {
+  const c = continuation.trim();
+  if (!c) return false;
+  if (c.length < 8) return false;
+  if (base.includes(c)) return false;
+  if (looksLikeRestartedReply(base, c)) return false;
+  return true;
+}
+
+function normalizeWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[*_`()[\]{}:;,.!?'"\\/-]+/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function hasTailPrefixOverlap(base: string, continuation: string): boolean {
+  const baseWords = normalizeWords(base).slice(-6);
+  const continuationWords = normalizeWords(continuation).slice(0, 8);
+  const maxLen = Math.min(baseWords.length, continuationWords.length, 4);
+  for (let len = maxLen; len >= 2; len -= 1) {
+    const baseSlice = baseWords.slice(-len).join(' ');
+    const continuationSlice = continuationWords.slice(0, len).join(' ');
+    if (baseSlice && baseSlice === continuationSlice) return true;
+  }
+  return false;
+}
+
+function looksLikeRestartedReply(base: string, continuation: string): boolean {
+  const trimmedBase = base.trim();
+  const trimmedContinuation = continuation.trim();
+  if (!trimmedBase || !trimmedContinuation) return false;
+  if (/[.!?]["')\]]?$/.test(trimmedBase)) return false;
+  if (hasTailPrefixOverlap(trimmedBase, trimmedContinuation)) return false;
+  return /^(correct|exactly|yes|no|the\b|this\b|that\b|remember\b|it\b|both\b|\*\*)/i.test(
+    trimmedContinuation,
+  );
+}
+
+function appendContinuation(base: string, continuation: string): string {
+  const b = base.trimEnd();
+  const c = continuation.trim();
+  if (!c) return b;
+  if (/^[,.;:!?)}\]]/.test(c) || b.endsWith(' ')) return `${b}${c}`;
+  return `${b} ${c}`;
+}
+
+function buildContinuationMessages(base: Message[], partialReply: string): Message[] {
+  const trailingExcerpt = partialReply.trim().slice(-120);
+  return [
+    ...base,
+    { role: 'assistant', content: partialReply },
+    {
+      role: 'user',
+      content: `Continue exactly from where your previous reply stopped.
+Do not restart the answer.
+Do not repeat any prior text.
+Do not answer the student's earlier question from scratch.
+Return only the missing continuation that comes immediately after this trailing excerpt:
+"${trailingExcerpt}"`,
+    },
+  ];
+}
+
+function buildHistoryMessages(
+  history: Array<{ role: 'user' | 'guru'; text: string }>,
+  limit: number,
+): Message[] {
+  return history.slice(-limit).map((entry) => ({
+    role: entry.role === 'user' ? 'user' : 'assistant',
+    content: clipText(entry.text, 280),
+  }));
+}
+
 function mapGroundedChatError(error: unknown): Error {
   const msg = error instanceof Error ? error.message : String(error);
   if (__DEV__) console.warn('[GuruGrounded] Generation failed:', msg);
@@ -43,10 +172,9 @@ export async function chatWithGuru(
   chosenModel?: string,
   studyContext?: string,
 ): Promise<{ reply: string }> {
-  const historyStr = history
-    .slice(-4)
-    .map((m) => `${m.role === 'user' ? 'Student' : 'Guru'}: ${m.text}`)
-    .join('\n');
+  const contextPrompt = `Topic: ${topicName}${
+    studyContext ? `\n\nStudy context:\n${studyContext}` : ''
+  }`;
   const systemPrompt = `You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers — never lecture.
 Rules:
 1. Ask ONE focused clinical question per response. No information dumps.
@@ -56,18 +184,19 @@ Rules:
 5. Wrap key clinical terms in **bold**.
 6. If the student says "just tell me" or "explain it", give a brief 2-sentence summary then ask a follow-up.
 7. Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.
-8. Never output JSON.`;
-  const userPrompt = `Topic: ${topicName}${
-    studyContext ? `\n\nStudy context:\n${studyContext}` : ''
-  }${historyStr ? `\n\nConversation so far:\n${historyStr}` : ''}\n\nStudent: ${question}`;
+8. Never output JSON.
+9. Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.
+10. If you ask a question, that question must be the final sentence in your reply. Never answer your own question.`;
   const { text } = await generateTextWithRouting(
     [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
+      { role: 'system', content: contextPrompt },
+      ...buildHistoryMessages(history, 4),
+      { role: 'user', content: question },
     ],
     { chosenModel },
   );
-  return { reply: text.trim() };
+  return { reply: sanitizeSingleGuruTurn(text) };
 }
 
 export async function chatWithGuruGrounded(
@@ -79,11 +208,6 @@ export async function chatWithGuruGrounded(
   const trimmedQuestion = question.replace(/\s+/g, ' ').trim();
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
   const sources = await searchLatestMedicalSources(searchQuery, 6);
-
-  const historyStr = history
-    .slice(-6)
-    .map((m) => `${m.role === 'user' ? 'Student' : 'Guru'}: ${clipText(m.text, 280)}`)
-    .join('\n');
 
   const sourcesBlock =
     sources.length > 0
@@ -98,26 +222,50 @@ Rules:
 4) Max 3 sentences per response. Be warm and conversational.
 5) Wrap key clinical terms in **bold**.
 6) If the student says "just tell me" or "explain it", give a 2-sentence summary then follow up with a question.
-7) Do not use citations inline — keep it natural, not academic.
-8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.`;
+7) Do not use citations inline - keep it natural, not academic.
+8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.
+9) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.
+10) If you ask a question, that question must be the final sentence in your reply. Never answer your own question.`;
 
   const userPrompt = `Topic context: ${topicName || 'General Medicine'}
-${historyStr ? `Recent conversation:\n${historyStr}\n` : ''}
 Student question: ${trimmedQuestion}
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
 Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
 
   const msgs: Message[] = [
     { role: 'system', content: systemPrompt },
+    ...buildHistoryMessages(history, 6),
     { role: 'user', content: userPrompt },
   ];
 
   try {
     const response = await generateTextWithRouting(msgs, { chosenModel });
+    let finalReply = sanitizeSingleGuruTurn(response.text);
+    let modelUsed = response.modelUsed;
+    for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
+      if (!looksTruncatedReply(finalReply)) break;
+      if (__DEV__) {
+        console.warn('[GuruGrounded] Reply appears truncated, requesting continuation.', {
+          attempt,
+          maxAttempts: MAX_CONTINUATION_ATTEMPTS,
+          chars: finalReply.length,
+        });
+      }
+      const continuation = await generateTextWithRouting(
+        buildContinuationMessages(msgs, finalReply),
+        { chosenModel },
+      );
+      const continuationText = sanitizeSingleGuruTurn(continuation.text);
+      if (!hasUsefulContinuation(finalReply, continuationText)) break;
+      const appended = appendContinuation(finalReply, continuationText);
+      if (appended.length <= finalReply.length) break;
+      finalReply = appended;
+      modelUsed = continuation.modelUsed || modelUsed;
+    }
     return {
-      reply: response.text.trim(),
+      reply: finalReply,
       sources,
-      modelUsed: response.modelUsed,
+      modelUsed,
       searchQuery,
     };
   } catch (error: unknown) {
@@ -161,11 +309,6 @@ export async function chatWithGuruGroundedStreaming(
   if (imageResult.status === 'fulfilled') allSources.push(...imageResult.value);
   const sources = dedupeGroundingSources(allSources).slice(0, 8);
 
-  const historyStr = history
-    .slice(-6)
-    .map((m) => `${m.role === 'user' ? 'Student' : 'Guru'}: ${clipText(m.text, 280)}`)
-    .join('\n');
-
   const sourcesBlock =
     sources.length > 0
       ? renderSourcesForPrompt(sources)
@@ -191,8 +334,10 @@ Rules:
 4) Max 3 sentences per response. Be warm and conversational.
 5) Wrap key clinical terms in **bold**.
 6) If the student says "just tell me" or "explain it", give a 2-sentence summary then follow up with a question.
-7) Do not use citations inline — keep it natural, not academic.
-8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.`;
+7) Do not use citations inline - keep it natural, not academic.
+8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.
+9) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.
+10) If you ask a question, that question must be the final sentence in your reply. Never answer your own question.`;
 
   const topicLabel =
     (topicName || 'General Medicine') +
@@ -200,22 +345,70 @@ Rules:
       ? ` (syllabus topic id ${memoryContext.syllabusTopicId})`
       : '');
   const userPrompt = `Topic context: ${topicLabel}
-${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}${historyStr ? `Recent conversation:\n${historyStr}\n` : ''}
+${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}
 Student question: ${trimmedQuestion}
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
 Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
 
   const msgs: Message[] = [
     { role: 'system', content: systemPrompt },
+    ...buildHistoryMessages(history, 6),
     { role: 'user', content: userPrompt },
   ];
 
   try {
-    const response = await generateTextWithRoutingStream(msgs, { chosenModel }, onReplyDelta);
+    let emittedReply = '';
+    const safeEmitDelta = (delta: string) => {
+      if (!delta) return;
+      const nextSanitized = sanitizeSingleGuruTurn(`${emittedReply}${delta}`);
+      if (nextSanitized.length <= emittedReply.length) return;
+      const cleanDelta = nextSanitized.slice(emittedReply.length);
+      emittedReply = nextSanitized;
+      if (cleanDelta) onReplyDelta(cleanDelta);
+    };
+
+    const response = await generateTextWithRoutingStream(msgs, { chosenModel }, safeEmitDelta);
+    let finalReply = sanitizeSingleGuruTurn(response.text);
+    if (finalReply.length > emittedReply.length) {
+      const remaining = finalReply.slice(emittedReply.length);
+      if (remaining) {
+        onReplyDelta(remaining);
+        emittedReply = finalReply;
+      }
+    }
+    let modelUsed = response.modelUsed;
+    for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
+      if (!looksTruncatedReply(finalReply)) break;
+      if (__DEV__) {
+        console.warn('[GuruGrounded] Stream reply appears truncated, requesting continuation.', {
+          attempt,
+          maxAttempts: MAX_CONTINUATION_ATTEMPTS,
+          chars: finalReply.length,
+        });
+      }
+      const continuation = await generateTextWithRoutingStream(
+        buildContinuationMessages(msgs, finalReply),
+        { chosenModel },
+        safeEmitDelta,
+      );
+      const continuationText = sanitizeSingleGuruTurn(continuation.text);
+      if (!hasUsefulContinuation(finalReply, continuationText)) break;
+      const appended = appendContinuation(finalReply, continuationText);
+      if (appended.length <= finalReply.length) break;
+      finalReply = appended;
+      if (finalReply.length > emittedReply.length) {
+        const remaining = finalReply.slice(emittedReply.length);
+        if (remaining) {
+          onReplyDelta(remaining);
+          emittedReply = finalReply;
+        }
+      }
+      modelUsed = continuation.modelUsed || modelUsed;
+    }
     return {
-      reply: response.text.trim(),
+      reply: finalReply,
       sources,
-      modelUsed: response.modelUsed,
+      modelUsed,
       searchQuery,
     };
   } catch (error: unknown) {

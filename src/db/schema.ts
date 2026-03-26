@@ -162,8 +162,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   idle_timeout_minutes INTEGER NOT NULL DEFAULT 2,
   break_duration_minutes INTEGER NOT NULL DEFAULT 5,
   notification_hour INTEGER NOT NULL DEFAULT 7,
-  guru_frequency TEXT NOT NULL DEFAULT 'normal'
-    CHECK(guru_frequency IN ('rare','normal','frequent','off')),
+  guru_frequency TEXT NOT NULL DEFAULT 'normal',
   focus_subject_ids TEXT NOT NULL DEFAULT '[]',
   focus_audio_enabled INTEGER NOT NULL DEFAULT 0,
   visual_timers_enabled INTEGER NOT NULL DEFAULT 0,
@@ -180,9 +179,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , huggingface_token TEXT NOT NULL DEFAULT ''
   , huggingface_transcription_model TEXT NOT NULL DEFAULT 'openai/whisper-large-v3'
   , transcription_provider TEXT NOT NULL DEFAULT 'auto'
-    CHECK(transcription_provider IN ('auto','groq','huggingface','cloudflare','local'))
   , study_resource_mode TEXT NOT NULL DEFAULT 'hybrid'
-    CHECK(study_resource_mode IN ('standard','btr','dbmci_live','hybrid'))
   , subject_load_overrides_json TEXT NOT NULL DEFAULT '{}'
   , backup_directory_uri TEXT
   , pomodoro_enabled INTEGER NOT NULL DEFAULT 1
@@ -193,13 +190,13 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , guru_memory_notes TEXT NOT NULL DEFAULT ''
   , image_generation_model TEXT NOT NULL DEFAULT 'auto'
   , exam_type TEXT NOT NULL DEFAULT 'INICET'
-    CHECK(exam_type IN ('INICET','NEET'))
   , prefer_gemini_structured_json INTEGER NOT NULL DEFAULT 1
   , github_models_pat TEXT NOT NULL DEFAULT ''
   , kilo_api_key TEXT NOT NULL DEFAULT ''
   , deepseek_key TEXT NOT NULL DEFAULT ''
   , agentrouter_key TEXT NOT NULL DEFAULT ''
   , provider_order TEXT NOT NULL DEFAULT '[]'
+  , deepgram_api_key TEXT NOT NULL DEFAULT ''
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `
@@ -316,6 +313,30 @@ CREATE TABLE IF NOT EXISTS topic_suggestions (
   UNIQUE(subject_id, normalized_name)
 )`;
 
+export const CREATE_QUESTION_BANK = `
+CREATE TABLE IF NOT EXISTS question_bank (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question TEXT NOT NULL,
+  options TEXT NOT NULL,
+  correct_index INTEGER NOT NULL,
+  explanation TEXT NOT NULL,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  topic_name TEXT NOT NULL DEFAULT '',
+  subject_name TEXT NOT NULL DEFAULT '',
+  source TEXT NOT NULL DEFAULT 'content_card'
+    CHECK(source IN ('content_card','lecture_quiz','mock_test','live_lecture','manual')),
+  source_id TEXT,
+  image_url TEXT,
+  is_bookmarked INTEGER NOT NULL DEFAULT 0,
+  is_mastered INTEGER NOT NULL DEFAULT 0,
+  times_seen INTEGER NOT NULL DEFAULT 0,
+  times_correct INTEGER NOT NULL DEFAULT 0,
+  last_seen_at INTEGER,
+  next_review_at INTEGER,
+  difficulty REAL NOT NULL DEFAULT 0.5,
+  created_at INTEGER NOT NULL
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
@@ -349,6 +370,12 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created_at ON lecture_notes(created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_generated_study_images_context ON generated_study_images(context_type, context_key, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_generated_study_images_topic ON generated_study_images(topic_name, context_type, created_at DESC)`,
+  // Question bank
+  `CREATE INDEX IF NOT EXISTS idx_qb_subject ON question_bank(subject_name)`,
+  `CREATE INDEX IF NOT EXISTS idx_qb_topic ON question_bank(topic_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_qb_review ON question_bank(next_review_at, is_mastered)`,
+  `CREATE INDEX IF NOT EXISTS idx_qb_bookmarked ON question_bank(is_bookmarked)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_qb_dedup ON question_bank(question)`,
 ];
 
 export const ALL_SCHEMAS = [
@@ -370,4 +397,5 @@ export const ALL_SCHEMAS = [
   CREATE_TOPIC_SUGGESTIONS,
   CREATE_LECTURE_LEARNED_TOPICS,
   CREATE_AI_CACHE_STANDALONE,
+  CREATE_QUESTION_BANK,
 ];

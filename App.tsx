@@ -9,6 +9,7 @@ import { InstallModelProgressOverlay } from './src/components/InstallModelProgre
 import { ToastContainer } from './src/components/Toast';
 import DevConsole, { installDevConsoleInterceptors } from './src/components/DevConsole';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { enableFreeze, enableScreens } from 'react-native-screens';
 import { navigationRef } from './src/navigation/navigationRef';
 import { useAppInitialization } from './src/hooks/useAppInitialization';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
@@ -16,6 +17,8 @@ import linking from './src/navigation/linking';
 
 // Install console interceptors early so all logs are captured
 installDevConsoleInterceptors();
+enableScreens(true);
+enableFreeze(true);
 
 export { navigationRef };
 

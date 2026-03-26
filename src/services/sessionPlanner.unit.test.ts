@@ -266,7 +266,8 @@ describe('sessionPlanner', () => {
 
     expect(agenda.mode).toBe('warmup');
     expect(agenda.skipBreaks).toBe(true);
-    expect(agenda.items[0].estimatedMinutes).toBe(2);
+    expect(agenda.items[0].estimatedMinutes).toBe(4);
+    expect(agenda.items[0].contentTypes).toEqual(['keypoints', 'quiz']);
   });
 
   it('should handle mcq_block mode fast path', async () => {

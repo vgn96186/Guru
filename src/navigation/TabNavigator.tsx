@@ -3,7 +3,6 @@ import {
   Alert,
   Animated,
   BackHandler,
-  Dimensions,
   Modal,
   PanResponder,
   Pressable,
@@ -43,10 +42,12 @@ import StudyPlanScreen from '../screens/StudyPlanScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
 import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
+import QuestionBankScreen from '../screens/QuestionBankScreen';
 import MenuScreen from '../screens/MenuScreen';
 import GlobalTopicSearchScreen from '../screens/GlobalTopicSearchScreen';
 import DeviceLinkScreen from '../screens/DeviceLinkScreen';
 import ManualNoteCreationScreen from '../screens/ManualNoteCreationScreen';
+import RecordingVaultScreen from '../screens/RecordingVaultScreen';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
@@ -81,7 +82,7 @@ const MenuStack = createNativeStackNavigator<MenuStackParamList>();
 
 function HomeStackNav() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+    <HomeStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }}>
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="Session" component={SessionScreen} />
       <HomeStack.Screen name="LectureMode" component={LectureModeScreen} />
@@ -99,7 +100,7 @@ function HomeStackNav() {
 
 function SyllabusStackNav() {
   return (
-    <SyllabusStack.Navigator screenOptions={{ headerShown: false }}>
+    <SyllabusStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }}>
       <SyllabusStack.Screen name="Syllabus" component={SyllabusScreen} />
       <SyllabusStack.Screen name="TopicDetail" component={TopicDetailScreen} />
     </SyllabusStack.Navigator>
@@ -108,7 +109,10 @@ function SyllabusStackNav() {
 
 function ChatStackNav() {
   return (
-    <ChatStack.Navigator initialRouteName="GuruChat" screenOptions={{ headerShown: false }}>
+    <ChatStack.Navigator
+      initialRouteName="GuruChat"
+      screenOptions={{ headerShown: false, freezeOnBlur: true }}
+    >
       <ChatStack.Screen name="GuruChat" component={GuruChatScreen} />
     </ChatStack.Navigator>
   );
@@ -116,7 +120,10 @@ function ChatStackNav() {
 
 function MenuStackNav() {
   return (
-    <MenuStack.Navigator initialRouteName="MenuHome" screenOptions={{ headerShown: false }}>
+    <MenuStack.Navigator
+      initialRouteName="MenuHome"
+      screenOptions={{ headerShown: false, freezeOnBlur: true }}
+    >
       <MenuStack.Screen name="MenuHome" component={MenuScreen} />
       <MenuStack.Screen name="StudyPlan" component={StudyPlanScreen} />
       <MenuStack.Screen name="Stats" component={StatsScreen} />
@@ -126,6 +133,8 @@ function MenuStackNav() {
       <MenuStack.Screen name="NotesSearch" component={NotesSearchScreen} />
       <MenuStack.Screen name="ManualNoteCreation" component={ManualNoteCreationScreen} />
       <MenuStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} />
+      <MenuStack.Screen name="QuestionBank" component={QuestionBankScreen} />
+      <MenuStack.Screen name="RecordingVault" component={RecordingVaultScreen} />
     </MenuStack.Navigator>
   );
 }
@@ -146,7 +155,8 @@ const EXTERNAL_APP_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
 export default function TabNavigator() {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
-  const { profile, refreshProfile } = useAppStore();
+  const profile = useAppStore((state) => state.profile);
+  const refreshProfile = useAppStore((state) => state.refreshProfile);
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
   const huggingFaceToken = (profile?.huggingFaceToken || BUNDLED_HF_TOKEN || '').trim();
@@ -195,33 +205,6 @@ export default function TabNavigator() {
     }
   }, [isActionHubOpen, sheetDragY]);
 
-  useEffect(() => {
-    const { width, height } = Dimensions.get('window');
-    // #region agent log
-    fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
-      body: JSON.stringify({
-        sessionId: '76b91e',
-        runId: 'pre-fix',
-        hypothesisId: 'H1-H2',
-        location: 'src/navigation/TabNavigator.tsx:sheet-state',
-        message: 'Action hub state with viewport and tabbar metrics',
-        data: {
-          isActionHubOpen,
-          windowWidth: width,
-          windowHeight: height,
-          orientation: width > height ? 'landscape' : 'portrait',
-          bottomInset,
-          tabBarHeight: 66 + bottomInset,
-          sheetHeightStyle: '85%',
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
-  }, [isActionHubOpen, bottomInset]);
-
   // Intercept Android hardware/gesture back to close the sheet instead of popping navigator
   useEffect(() => {
     if (!isActionHubOpen) return;
@@ -256,8 +239,6 @@ export default function TabNavigator() {
   const [uploadSubjectRequired, setUploadSubjectRequired] = useState(false);
   const [selectedUploadSubjectName, setSelectedUploadSubjectName] = useState<string | null>(null);
   const [isSavingUpload, setIsSavingUpload] = useState(false);
-  const externalLayoutLogRef = useRef<Record<string, boolean>>({});
-
   const dismissThreshold = 60;
   const dismissVelocity = 1;
   const sheetScrollYRef = useRef(0);
@@ -422,6 +403,7 @@ export default function TabNavigator() {
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
+          freezeOnBlur: true,
           tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
           tabBarLabelStyle: {
@@ -531,31 +513,6 @@ export default function TabNavigator() {
         <Animated.View
           style={[styles.sheetBackdrop, { opacity: sheetAnim }]}
           pointerEvents={isActionHubOpen ? 'auto' : 'none'}
-          onLayout={(event) => {
-            const layout = event.nativeEvent.layout;
-            // #region agent log
-            fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
-              body: JSON.stringify({
-                sessionId: '76b91e',
-                runId: 'pre-fix',
-                hypothesisId: 'H3',
-                location: 'src/navigation/TabNavigator.tsx:sheet-backdrop-layout',
-                message: 'Backdrop layout and pointer-events state',
-                data: {
-                  isActionHubOpen,
-                  pointerEvents: isActionHubOpen ? 'auto' : 'none',
-                  x: layout.x,
-                  y: layout.y,
-                  width: layout.width,
-                  height: layout.height,
-                },
-                timestamp: Date.now(),
-              }),
-            }).catch(() => {});
-            // #endregion
-          }}
         >
           <Pressable
             style={StyleSheet.absoluteFill}
@@ -583,30 +540,6 @@ export default function TabNavigator() {
               ],
             },
           ]}
-          onLayout={(event) => {
-            const layout = event.nativeEvent.layout;
-            // #region agent log
-            fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
-              body: JSON.stringify({
-                sessionId: '76b91e',
-                runId: 'pre-fix',
-                hypothesisId: 'H1',
-                location: 'src/navigation/TabNavigator.tsx:sheet-layout',
-                message: 'Bottom sheet rendered layout',
-                data: {
-                  isActionHubOpen,
-                  x: layout.x,
-                  y: layout.y,
-                  width: layout.width,
-                  height: layout.height,
-                },
-                timestamp: Date.now(),
-              }),
-            }).catch(() => {});
-            // #endregion
-          }}
         >
           <View style={styles.sheetHandleHitbox}>
             <View style={styles.sheetHandle} />
@@ -716,33 +649,6 @@ export default function TabNavigator() {
                   style={({ pressed }) => [styles.externalChip, pressed && styles.actionPressed]}
                   android_ripple={{ color: `${app.color}22` }}
                   onPress={() => launchExternalAction(app.id as SupportedMedicalApp)}
-                  onLayout={(event) => {
-                    if (externalLayoutLogRef.current[app.id]) return;
-                    externalLayoutLogRef.current[app.id] = true;
-                    const layout = event.nativeEvent.layout;
-                    // #region agent log
-                    fetch('http://127.0.0.1:7908/ingest/636b981e-8434-4bc5-8b5f-487a61d99dc1', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '76b91e' },
-                      body: JSON.stringify({
-                        sessionId: '76b91e',
-                        runId: 'pre-fix',
-                        hypothesisId: 'H5',
-                        location: 'src/navigation/TabNavigator.tsx:external-chip-layout',
-                        message: 'External chip layout metrics',
-                        data: {
-                          appId: app.id,
-                          appName: app.name,
-                          x: layout.x,
-                          y: layout.y,
-                          width: layout.width,
-                          height: layout.height,
-                        },
-                        timestamp: Date.now(),
-                      }),
-                    }).catch(() => {});
-                    // #endregion
-                  }}
                   testID={`action-hub-external-${app.id}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${app.name}`}

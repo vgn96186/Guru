@@ -7,6 +7,7 @@ const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 const mockBuildSession = jest.fn();
 const mockCreateSession = jest.fn();
+const mockPrefetchTopicContent = jest.fn();
 
 jest.mock('react-native', () => {
   const React = require('react');
@@ -156,7 +157,7 @@ jest.mock('../db/queries/sessions', () => ({
 
 jest.mock('../services/aiService', () => ({
   fetchContent: jest.fn(),
-  prefetchTopicContent: jest.fn(),
+  prefetchTopicContent: (...args: unknown[]) => mockPrefetchTopicContent(...args),
 }));
 
 jest.mock('../services/notificationService', () => ({
@@ -201,8 +202,10 @@ jest.mock('../hooks/useGuruPresence', () => ({
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
-  SafeAreaView: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
-    React.createElement('SafeAreaView', props, children),
+  SafeAreaView: ({ children, ...props }: { children?: unknown }) => {
+    const mockReact = require('react');
+    return mockReact.createElement('SafeAreaView', props, children);
+  },
 }));
 
 jest.mock('../hooks/useAppStateTransition', () => ({
@@ -238,11 +241,21 @@ describe('SessionScreen', () => {
     sessionStoreState.sessionState = 'planning';
     sessionStoreState.agenda = null;
     mockBuildSession.mockResolvedValue({
-      items: [],
+      items: [
+        {
+          topic: { id: 1, name: 'Topic 1', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          contentTypes: ['quiz'],
+        },
+        {
+          topic: { id: 2, name: 'Topic 2', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          contentTypes: ['keypoints'],
+        },
+      ],
       mode: 'normal',
       focusNote: '',
     });
     mockCreateSession.mockResolvedValue(101);
+    mockPrefetchTopicContent.mockResolvedValue(undefined);
     sessionStoreState.currentContent = { type: 'quiz' };
     latestContentCardProps = undefined;
   });
@@ -257,6 +270,40 @@ describe('SessionScreen', () => {
     });
     expect(sessionStoreState.resetSession).toHaveBeenCalledTimes(1);
     expect(mockCreateSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('prefetches the first session items as soon as the agenda is ready', async () => {
+    sessionStoreState.sessionState = 'studying';
+    sessionStoreState.agenda = {
+      items: [
+        {
+          topic: { id: 1, name: 'Topic 1', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          contentTypes: ['quiz'],
+        },
+        {
+          topic: { id: 2, name: 'Topic 2', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          contentTypes: ['keypoints'],
+        },
+      ],
+      mode: 'normal',
+      focusNote: '',
+    };
+    const SessionScreen = require('./SessionScreen').default;
+
+    render(<SessionScreen />);
+
+    await waitFor(() => {
+      expect(mockPrefetchTopicContent).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, name: 'Topic 1' }),
+        ['quiz'],
+        'groq',
+      );
+      expect(mockPrefetchTopicContent).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 2, name: 'Topic 2' }),
+        expect.any(Array),
+        undefined,
+      );
+    });
   });
 
   it('marks wrong quiz answers as needing attention immediately', async () => {

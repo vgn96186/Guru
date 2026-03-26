@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  logJsonParseFailure,
+  logJsonParseSuccess,
+  logJsonParseSummary,
+  previewText,
+} from './runtimeDebug';
 
 // Timeout for JSON repair operations (ms)
 const JSON_REPAIR_TIMEOUT = 5000;
@@ -171,9 +177,6 @@ async function parseStructuredJsonWithTimeout<T>(
 ): Promise<T> {
   return Promise.race([
     (async () => {
-      if (__DEV__)
-        console.log(`[AI] Raw text for JSON parsing (${raw.length} chars):\n`, raw);
-
       // Size limit check
       if (raw.length > MAX_INPUT_SIZE) {
         throw new Error(
@@ -198,21 +201,28 @@ async function parseStructuredJsonWithTimeout<T>(
         ),
       );
 
+      logJsonParseSummary({
+        rawLength: raw.length,
+        candidateCount: candidates.length,
+        preview: previewText(raw, 180),
+      });
+
       let lastError: Error | null = null;
-      for (const candidate of candidates) {
+      for (const [candidateIndex, candidate] of candidates.entries()) {
         try {
-          return schema.parse(JSON.parse(candidate));
+          const parsed = schema.parse(JSON.parse(candidate));
+          logJsonParseSuccess({ candidateIndex, candidateLength: candidate.length });
+          return parsed;
         } catch (err) {
           lastError = err as Error;
         }
       }
 
-      if (__DEV__) {
-        console.warn(
-          '[AI] All JSON parse candidates failed. Candidates tried:',
-          candidates.map((c) => c.slice(0, 200)),
-        );
-      }
+      logJsonParseFailure({
+        candidateCount: candidates.length,
+        candidateLengths: candidates.map((c) => c.length),
+        error: lastError?.message,
+      });
 
       throw lastError || new Error('Failed to parse structured JSON response');
     })(),

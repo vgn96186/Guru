@@ -1,12 +1,39 @@
+jest.mock('./generate', () => ({
+  generateTextWithRouting: jest.fn(),
+}));
+
 import {
   clipText,
   buildMedicalSearchQuery,
   dedupeGroundingSources,
   renderSourcesForPrompt,
+  searchLatestMedicalSources,
 } from './medicalSearch';
 import type { MedicalGroundingSource } from './types';
 
+type MockJsonResponse = {
+  ok: boolean;
+  status?: number;
+  json: () => Promise<unknown>;
+  text: () => Promise<string>;
+};
+
+function createJsonResponse(payload: unknown, status = 200): MockJsonResponse {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => payload,
+    text: async () => JSON.stringify(payload),
+  };
+}
+
 describe('medicalSearch utilities', () => {
+  beforeEach(() => {
+    jest.restoreAllMocks();
+    (globalThis as { __DEV__?: boolean }).__DEV__ = true;
+    global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+  });
+
   describe('clipText', () => {
     it('returns text unchanged when under maxChars', () => {
       expect(clipText('short', 10)).toBe('short');
@@ -199,6 +226,91 @@ describe('medicalSearch utilities', () => {
       const result = renderSourcesForPrompt([src]);
       expect(result).toContain('Journal: NEJM');
       expect(result).toContain('Published: 2024-01-15');
+    });
+  });
+
+  describe('searchLatestMedicalSources', () => {
+    it('includes DuckDuckGo grounding results when the API returns them', async () => {
+      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      fetchMock.mockImplementation(async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.includes('wikipedia.org')) {
+          return createJsonResponse({ pages: [] }) as unknown as Response;
+        }
+        if (url.includes('api.duckduckgo.com')) {
+          return createJsonResponse({
+            AbstractText: 'Hypertension is persistently elevated arterial blood pressure.',
+            AbstractURL: 'https://duckduckgo.com/Hypertension',
+            Heading: 'Hypertension',
+            RelatedTopics: [
+              {
+                Text: 'Hypertension - Chronic elevation of blood pressure.',
+                FirstURL: 'https://duckduckgo.com/Hypertension_topic',
+              },
+            ],
+          }) as unknown as Response;
+        }
+        if (url.includes('europepmc')) {
+          return createJsonResponse({ resultList: { result: [] } }) as unknown as Response;
+        }
+        if (url.includes('esearch.fcgi')) {
+          return createJsonResponse({ esearchresult: { idlist: [] } }) as unknown as Response;
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      });
+
+      const results = await searchLatestMedicalSources('hypertension management', 6);
+
+      expect(results.some((row) => row.source === 'DuckDuckGo')).toBe(true);
+      expect(results.find((row) => row.source === 'DuckDuckGo')?.title).toContain('Hypertension');
+    });
+
+    it('still returns other grounding sources when DuckDuckGo fails', async () => {
+      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      fetchMock.mockImplementation(async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.includes('wikipedia.org')) {
+          return createJsonResponse({
+            pages: [
+              {
+                id: 1,
+                key: 'Myocardial_infarction',
+                title: 'Myocardial infarction',
+                excerpt: 'Heart attack due to ischemia.',
+              },
+            ],
+          }) as unknown as Response;
+        }
+        if (url.includes('api.duckduckgo.com')) {
+          throw new Error('DuckDuckGo offline');
+        }
+        if (url.includes('europepmc')) {
+          return createJsonResponse({
+            resultList: {
+              result: [
+                {
+                  id: '1',
+                  title: 'Acute myocardial infarction review',
+                  abstractText: 'A review of diagnosis and treatment.',
+                  journalTitle: 'BMJ',
+                  firstPublicationDate: '2024-01-15',
+                  doi: '10.1000/test',
+                },
+              ],
+            },
+          }) as unknown as Response;
+        }
+        if (url.includes('esearch.fcgi')) {
+          return createJsonResponse({ esearchresult: { idlist: [] } }) as unknown as Response;
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      });
+
+      const results = await searchLatestMedicalSources('myocardial infarction', 6);
+
+      expect(results.some((row) => row.source === 'Wikipedia')).toBe(true);
+      expect(results.some((row) => row.source === 'EuropePMC')).toBe(true);
+      expect(results.some((row) => row.source === 'DuckDuckGo')).toBe(false);
     });
   });
 });

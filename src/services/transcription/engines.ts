@@ -229,6 +229,54 @@ export async function transcribeRawWithCloudflare(
   return transcript;
 }
 
+/** Cloud fallback: Deepgram Nova-2 Medical transcription */
+export async function transcribeRawWithDeepgram(
+  audioFilePath: string,
+  deepgramKey: string,
+): Promise<string> {
+  if (!deepgramKey?.trim()) {
+    throw new Error('Deepgram API key missing. Add one in Settings.');
+  }
+
+  const fileUri = toFileUri(audioFilePath);
+  const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  if (!fileInfo?.exists || fileInfo.size === 0) {
+    throw new Error(`Audio file is missing or empty: ${audioFilePath}`);
+  }
+
+  const response = await fetch(fileUri);
+  if (!response.ok) {
+    throw new Error(`Failed to read local audio file for Deepgram: ${response.status}`);
+  }
+
+  const audioBlob = await response.blob();
+  const mimeType = getAudioMimeType(audioFilePath);
+  const res = await fetch(
+    'https://api.deepgram.com/v1/listen?model=nova-2-medical&language=en&smart_format=true&punctuate=true&diarize=false',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Token ${deepgramKey}`,
+        'Content-Type': mimeType,
+      },
+      body: audioBlob,
+    },
+  );
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Deepgram transcription error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const rawText = String(
+    data?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '',
+  ).trim();
+  const transcript = sanitizeTranscript(rawText);
+  if (isLikelyHallucination(transcript)) return '';
+  return transcript;
+}
+
 /** Engine 2: Local Whisper.rn */
 export async function transcribeRawWithLocalWhisper(
   audioFilePath: string,

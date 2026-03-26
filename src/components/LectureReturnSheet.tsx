@@ -163,6 +163,15 @@ export default function LectureReturnSheet(props: Props) {
                 <Text style={styles.compactChevron}>Open</Text>
               )}
             </View>
+            {!isProcessingPhase && (
+              <TouchableOpacity
+                style={styles.compactDismiss}
+                onPress={() => void cleanupAndClose()}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text style={styles.compactDismissText}>X</Text>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         </View>
       ) : (
@@ -699,6 +708,20 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
+  },
+  compactDismiss: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+  },
+  compactDismissText: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
   },
   sheet: {
     backgroundColor: theme.colors.surface,

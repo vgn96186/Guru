@@ -58,6 +58,11 @@ export const DBMCI_SUBJECT_ORDER = [
   'ORTH',
 ];
 
+/** Parent/container topics (e.g. "Head and Neck") should not be scheduled as study items. */
+function isParentTopic(topic: TopicWithProgress): boolean {
+  return !topic.parentTopicId;
+}
+
 export function buildPlanBuckets(params: {
   allTopics: TopicWithProgress[];
   due: TopicWithProgress[];
@@ -69,12 +74,14 @@ export function buildPlanBuckets(params: {
   const dueIdSet = new Set(due.map((topic) => topic.id));
 
   const weak = allTopics.filter((topic) => {
+    if (isParentTopic(topic)) return false;
     if (topic.progress.status === 'unseen' || topic.progress.confidence >= 3) return false;
     if (mode === 'high_yield') return topic.inicetPriority >= 7;
     return !dueIdSet.has(topic.id);
   });
 
   const newTopics = allTopics.filter((topic) => {
+    if (isParentTopic(topic)) return false;
     if (topic.progress.status !== 'unseen') return false;
     if (mode === 'high_yield') return topic.inicetPriority >= 8;
     if (mode === 'exam_crunch') return topic.inicetPriority >= 9;

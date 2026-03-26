@@ -1,0 +1,552 @@
+/**
+ * RecordingVaultScreen
+ *
+ * Browse old .m4a lecture recordings stored anywhere under Documents/Guru/.
+ * Select files to re-transcribe and save to the Notes Vault.
+ */
+
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  StatusBar,
+  Alert,
+  ActivityIndicator,
+  AppState,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  findAllRecordings,
+  pickFolderAndScan,
+  scanSafUri,
+  deleteRecording,
+  hasAllFilesAccess,
+  requestAllFilesAccess,
+} from '../../modules/app-launcher';
+import * as FileSystem from 'expo-file-system/legacy';
+import { transcribeAudio } from '../services/transcription/transcribeAudio';
+import { saveLecturePersistence } from '../services/lecture/persistence';
+import { profileRepository } from '../db/repositories';
+import { getApiKeys } from '../services/ai/config';
+import { ResponsiveContainer } from '../hooks/useResponsive';
+import { theme } from '../constants/theme';
+
+const CUSTOM_FOLDERS_KEY = 'guru_recording_vault_custom_folders';
+
+interface SavedFolder {
+  uri: string;   // SAF content:// tree URI
+  label: string; // human-readable folder name
+}
+
+interface RecordingFile {
+  name: string;
+  path: string;
+  sizeMB: number;
+  date: Date | null;
+  folder: string;
+}
+
+type ProcessingState = 'idle' | 'transcribing' | 'saving' | 'done' | 'error';
+
+function entriesToRecordingFiles(entries: { name: string; path: string; size: number }[]): RecordingFile[] {
+  return entries.map((e) => {
+    const tsMatch = e.name.match(/lecture_(\d+)/);
+    const date = tsMatch ? new Date(parseInt(tsMatch[1], 10)) : null;
+    const parts = e.path.replace(/\\/g, '/').split('/');
+    const guruIdx = parts.indexOf('Guru');
+    const folder = guruIdx >= 0 && guruIdx < parts.length - 2
+      ? parts.slice(guruIdx + 1, -1).join('/')
+      : parts.slice(-2, -1)[0] ?? 'Unknown';
+    return {
+      name: e.name,
+      path: e.path,
+      sizeMB: Math.round((e.size / (1024 * 1024)) * 10) / 10,
+      date,
+      folder,
+    };
+  });
+}
+
+export default function RecordingVaultScreen() {
+  const navigation = useNavigation();
+  const [recordings, setRecordings] = useState<RecordingFile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [processingFile, setProcessingFile] = useState<string | null>(null);
+  const [processingState, setProcessingState] = useState<ProcessingState>('idle');
+  const [processingMsg, setProcessingMsg] = useState('');
+  const [savedFolders, setSavedFolders] = useState<SavedFolder[]>([]);
+  const [needsFileAccess, setNeedsFileAccess] = useState(false);
+
+  // Load persisted custom folders on mount
+  useEffect(() => {
+    void AsyncStorage.getItem(CUSTOM_FOLDERS_KEY).then((raw) => {
+      if (raw) {
+        try { setSavedFolders(JSON.parse(raw)); } catch { /* ignore */ }
+      }
+    });
+  }, []);
+
+  const persistFolders = useCallback(async (folders: SavedFolder[]) => {
+    setSavedFolders(folders);
+    await AsyncStorage.setItem(CUSTOM_FOLDERS_KEY, JSON.stringify(folders));
+  }, []);
+
+  const loadRecordings = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Check file access permission on Android 11+
+      const hasAccess = await hasAllFilesAccess();
+      setNeedsFileAccess(!hasAccess);
+
+      // Scan default Documents/Guru/ tree
+      const defaultEntries = await findAllRecordings();
+      const allItems = entriesToRecordingFiles(defaultEntries);
+
+      // Re-scan each saved SAF folder
+      const savedRaw = await AsyncStorage.getItem(CUSTOM_FOLDERS_KEY);
+      const folders: SavedFolder[] = savedRaw ? JSON.parse(savedRaw) : [];
+      for (const folder of folders) {
+        try {
+          const extra = await scanSafUri(folder.uri);
+          allItems.push(...entriesToRecordingFiles(extra));
+        } catch {
+          // Skip inaccessible folders (permission may have been revoked)
+        }
+      }
+
+      // Deduplicate by path
+      const seen = new Set<string>();
+      const unique = allItems.filter((item) => {
+        if (seen.has(item.path)) return false;
+        seen.add(item.path);
+        return true;
+      });
+
+      // Sort newest first
+      unique.sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
+      setRecordings(unique);
+    } catch (e) {
+      console.warn('[RecordingVault] Failed to list recordings:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRecordings();
+  }, [loadRecordings]);
+
+  // Re-scan when returning from settings (permission grant)
+  const appStateRef = useRef(AppState.currentState);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (appStateRef.current !== 'active' && next === 'active' && needsFileAccess) {
+        void loadRecordings();
+      }
+      appStateRef.current = next;
+    });
+    return () => sub.remove();
+  }, [needsFileAccess, loadRecordings]);
+
+  const handleProcess = useCallback(async (item: RecordingFile) => {
+    setProcessingFile(item.path);
+    setProcessingState('transcribing');
+    setProcessingMsg('Preparing audio...');
+    try {
+      // SAF content:// URIs must be copied to cache for transcription APIs
+      let filePath = item.path;
+      if (item.path.startsWith('content://')) {
+        const cacheDir = FileSystem.cacheDirectory ?? '';
+        const dest = `${cacheDir}vault_${Date.now()}_${item.name}`;
+        await FileSystem.copyAsync({ from: item.path, to: dest });
+        filePath = dest;
+      }
+
+      setProcessingMsg('Transcribing audio...');
+      const profile = await profileRepository.getProfile();
+      const keys = getApiKeys(profile);
+
+      const analysis = await transcribeAudio({
+        audioFilePath: filePath,
+        groqKey: keys.groqKey,
+        huggingFaceToken: keys.hfToken,
+        useLocalWhisper: profile.useLocalWhisper,
+        localWhisperPath: profile.localWhisperPath ?? undefined,
+      });
+
+      if (!analysis.transcript?.trim()) {
+        setProcessingState('error');
+        setProcessingMsg('No speech detected in this recording.');
+        return;
+      }
+
+      setProcessingState('saving');
+      setProcessingMsg(`Found ${analysis.topics.length} topics — saving...`);
+
+      await saveLecturePersistence({
+        analysis,
+        appName: 'Recording Vault',
+        durationMinutes: item.sizeMB > 0 ? Math.round(item.sizeMB * 30) : 0, // rough estimate
+        logId: 0,
+        quickNote: '',
+        recordingPath: item.path,
+      });
+
+      setProcessingState('done');
+      setProcessingMsg(`Saved! ${analysis.topics.length} topics from ${analysis.subject}`);
+    } catch (e: any) {
+      setProcessingState('error');
+      setProcessingMsg(e?.message ?? 'Processing failed');
+    }
+  }, []);
+
+  const handleDelete = useCallback((item: RecordingFile) => {
+    Alert.alert(
+      'Delete Recording',
+      `Delete "${item.name}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteRecording(item.path);
+              setRecordings((prev) => prev.filter((r) => r.path !== item.path));
+            } catch {
+              Alert.alert('Error', 'Could not delete the file.');
+            }
+          },
+        },
+      ],
+    );
+  }, []);
+
+  const resetProcessing = useCallback(() => {
+    setProcessingFile(null);
+    setProcessingState('idle');
+    setProcessingMsg('');
+  }, []);
+
+  const formatDate = (d: Date | null) => {
+    if (!d) return 'Unknown date';
+    return d.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const renderItem = ({ item }: { item: RecordingFile }) => {
+    const isProcessing = processingFile === item.path;
+    const isDone = isProcessing && processingState === 'done';
+    const isError = isProcessing && processingState === 'error';
+
+    return (
+      <View style={[styles.card, isDone && styles.cardDone, isError && styles.cardError]}>
+        <View style={styles.cardIcon}>
+          <Ionicons
+            name={isDone ? 'checkmark-circle' : 'mic-outline'}
+            size={24}
+            color={isDone ? theme.colors.success : theme.colors.primary}
+          />
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.cardName} numberOfLines={1} ellipsizeMode="middle">
+            {item.name}
+          </Text>
+          <Text style={styles.cardMeta}>
+            {formatDate(item.date)} · {item.sizeMB} MB · {item.folder}
+          </Text>
+          {isProcessing && processingMsg ? (
+            <View style={styles.statusRow}>
+              {processingState === 'transcribing' || processingState === 'saving' ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginRight: 6 }} />
+              ) : null}
+              <Text
+                style={[
+                  styles.statusText,
+                  isDone && { color: theme.colors.success },
+                  isError && { color: theme.colors.error },
+                ]}
+                numberOfLines={2}
+              >
+                {processingMsg}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.cardActions}>
+          {!isProcessing || isDone || isError ? (
+            <>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => {
+                  if (isDone || isError) resetProcessing();
+                  void handleProcess(item);
+                }}
+                disabled={isProcessing && !isDone && !isError}
+              >
+                <Ionicons name="cloud-upload-outline" size={20} color={theme.colors.primary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => handleDelete(item)}
+                disabled={isProcessing && !isDone && !isError}
+              >
+                <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
+              </TouchableOpacity>
+            </>
+          ) : (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const handlePickFolder = useCallback(async () => {
+    try {
+      const result = await pickFolderAndScan();
+      if (!result) return; // User cancelled
+
+      const { treeUri, label, entries } = result;
+
+      // Check if already saved
+      if (savedFolders.some((f) => f.uri === treeUri)) {
+        Alert.alert('Already added', 'This folder is already being scanned.');
+        void loadRecordings();
+        return;
+      }
+
+      const folder: SavedFolder = { uri: treeUri, label };
+      const updated = [...savedFolders, folder];
+      await persistFolders(updated);
+      void loadRecordings();
+
+      if (entries.length > 0) {
+        Alert.alert('Folder added', `Found ${entries.length} recording${entries.length !== 1 ? 's' : ''}.`);
+      } else {
+        Alert.alert('Folder added', 'No .m4a files found yet. It will be scanned on each refresh.');
+      }
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      console.warn('[RecordingVault] pickFolderAndScan error:', msg);
+      if (msg.includes('timed out')) return;
+      Alert.alert('Error', `Could not open folder picker.\n\n${msg}`);
+    }
+  }, [savedFolders, persistFolders, loadRecordings]);
+
+  const handleRemoveFolder = useCallback((folder: SavedFolder) => {
+    Alert.alert('Remove folder?', folder.label, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          const updated = savedFolders.filter((f) => f.uri !== folder.uri);
+          await persistFolders(updated);
+          void loadRecordings();
+        },
+      },
+    ]);
+  }, [savedFolders, persistFolders, loadRecordings]);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <ResponsiveContainer style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
+          </TouchableOpacity>
+          <View style={styles.headerTextWrap}>
+            <Text style={styles.headerTitle}>Recording Vault</Text>
+            <Text style={styles.headerSub}>
+              {recordings.length} recording{recordings.length !== 1 ? 's' : ''} found
+            </Text>
+          </View>
+          <TouchableOpacity onPress={handlePickFolder} style={styles.refreshBtn}>
+            <Ionicons name="folder-open-outline" size={20} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={loadRecordings} style={styles.refreshBtn}>
+            <Ionicons name="refresh" size={20} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+        </View>
+
+        {/* File access permission banner */}
+        {needsFileAccess && (
+          <TouchableOpacity
+            style={styles.permBanner}
+            onPress={async () => {
+              await requestAllFilesAccess();
+              // User will be sent to settings — re-check on return
+            }}
+          >
+            <Ionicons name="lock-open-outline" size={18} color={theme.colors.warning} />
+            <Text style={styles.permBannerText}>
+              Grant "All files access" to scan all folders automatically.
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+          </TouchableOpacity>
+        )}
+
+        {/* Custom folders strip */}
+        {savedFolders.length > 0 && (
+          <View style={styles.foldersStrip}>
+            {savedFolders.map((f) => (
+              <TouchableOpacity
+                key={f.uri}
+                style={styles.folderChip}
+                onLongPress={() => handleRemoveFolder(f)}
+              >
+                <Ionicons name="folder-outline" size={14} color={theme.colors.primary} />
+                <Text style={styles.folderChipText} numberOfLines={1}>
+                  {f.label}
+                </Text>
+                <TouchableOpacity onPress={() => handleRemoveFolder(f)} hitSlop={8}>
+                  <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.emptyText}>Scanning recordings...</Text>
+          </View>
+        ) : recordings.length === 0 ? (
+          <View style={styles.center}>
+            <Ionicons name="mic-off-outline" size={48} color={theme.colors.textMuted} />
+            <Text style={styles.emptyTitle}>No recordings found</Text>
+            <Text style={styles.emptyText}>
+              Lecture recordings appear here after you use the external app recording feature.
+              {'\n\n'}Tap the folder icon above to browse for a folder.
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={recordings}
+            keyExtractor={(item) => item.path}
+            renderItem={renderItem}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </ResponsiveContainer>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: theme.colors.background },
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  backBtn: { marginRight: 12, padding: 4 },
+  headerTextWrap: { flex: 1 },
+  headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
+  headerSub: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  refreshBtn: { padding: 8 },
+  list: { padding: theme.spacing.lg, paddingBottom: 40 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  cardDone: { borderColor: theme.colors.successTintSoft },
+  cardError: { borderColor: theme.colors.errorTintSoft },
+  cardIcon: { marginRight: 12 },
+  cardBody: { flex: 1, minWidth: 0 },
+  cardName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  cardMeta: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  statusText: { color: theme.colors.textSecondary, fontSize: 12, flex: 1 },
+  cardActions: { flexDirection: 'row', gap: 4, marginLeft: 8 },
+  actionBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
+  emptyTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
+  foldersStrip: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: 8,
+    gap: 6,
+  },
+  folderChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  folderChipText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    maxWidth: 160,
+  },
+  permBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${theme.colors.warning}15`,
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: `${theme.colors.warning}40`,
+    gap: 8,
+  },
+  permBannerText: {
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+});

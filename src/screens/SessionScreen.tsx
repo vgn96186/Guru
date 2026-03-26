@@ -11,6 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -37,6 +38,7 @@ import {
   setContentFlagged,
   clearSpecificContentCache,
 } from '../db/queries/aiCache';
+import { getCachedUnseenQuestionsForSessionFallback } from '../db/queries/questionBank';
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
@@ -44,7 +46,7 @@ import ContentCard from './ContentCard';
 import ErrorBoundary from '../components/ErrorBoundary';
 import BreakScreen from './BreakScreen';
 import BrainDumpFab from '../components/BrainDumpFab';
-import type { Mood, SessionMode, AgendaItem } from '../types';
+import type { AIContent, Mood, QuestionBankItem, SessionMode, AgendaItem } from '../types';
 import { XP_REWARDS, STREAK_MIN_MINUTES } from '../constants/gamification';
 import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { useIdleTimer } from '../hooks/useIdleTimer';
@@ -56,6 +58,43 @@ import { theme } from '../constants/theme';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
+
+// ── Shared UI helpers ──
+
+function IconCircle({ name, color, size = 56 }: { name: string; color: string; size?: number }) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        backgroundColor: color + '22',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...theme.shadows.glow(color),
+      }}
+    >
+      <Ionicons name={name as any} size={size * 0.5} color={color} />
+    </View>
+  );
+}
+
+function useEntranceAnimation(duration = 400) {
+  const fade = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(24)).current;
+  useEffect(() => {
+    fade.setValue(0);
+    slide.setValue(24);
+    Animated.parallel([
+      Animated.timing(fade, { toValue: 1, duration, useNativeDriver: true }),
+      Animated.timing(slide, { toValue: 0, duration, useNativeDriver: true }),
+    ]).start();
+  }, []);
+  return { fade, slide };
+}
+const SESSION_PREFETCH_LOOKAHEAD = 3;
+const CONTENT_AUTO_RETRY_DELAYS_MS = [2000, 5000] as const;
+const PLANNING_AUTO_RETRY_DELAYS_MS = [1500, 4000] as const;
 
 /** Human-readable AI route for the session header (matches llmRouting modelUsed prefixes). */
 function formatSessionModelLabel(modelUsed?: string | null): string {
@@ -69,6 +108,21 @@ function formatSessionModelLabel(modelUsed?: string | null): string {
   if (modelUsed.startsWith('local-')) return `AI · On-device / ${m}`;
   if (m.includes('/')) return `AI · ${m.replace('/', ' / ')}`;
   return `AI · ${m}`;
+}
+
+function buildCachedQuestionFallbackContent(topicName: string, questions: QuestionBankItem[]): AIContent {
+  return {
+    type: 'quiz',
+    topicName,
+    questions: questions.map((question) => ({
+      question: question.question,
+      options: question.options,
+      correctIndex: question.correctIndex,
+      explanation: question.explanation,
+      imageUrl: question.imageUrl ?? undefined,
+    })),
+    modelUsed: 'cache/question_bank',
+  };
 }
 
 export default function SessionScreen() {
@@ -136,6 +190,7 @@ export default function SessionScreen() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeElapsedSeconds, setActiveElapsedSeconds] = useState(0);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [contentRetryPending, setContentRetryPending] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [showXp, setShowXp] = useState(0);
   const [sessionXpTotal, setSessionXpTotal] = useState(0);
@@ -148,6 +203,8 @@ export default function SessionScreen() {
   const isManuallyPausedRef = useRef(false);
   const hasInitializedRef = useRef(false);
   const finishSessionLockRef = useRef(false);
+  const contentRetryCount = useRef(0);
+  const contentRetryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Sync ref with state
   useEffect(() => {
@@ -273,52 +330,70 @@ export default function SessionScreen() {
   const startPlanning = useCallback(async () => {
     setAiError(null);
     setSessionState('planning');
-    try {
-      const isWarmup = forcedMode === 'warmup';
-      const isMcqBlock = forcedMode === 'mcq_block';
-      const sessionLength = forcedMinutes
-        ? forcedMinutes
-        : isWarmup
-          ? 5
-          : forcedMode === 'sprint'
-            ? 10
-            : dailyAvailability && dailyAvailability > 0
-              ? dailyAvailability
-              : (profile?.preferredSessionLength ?? 45);
+    const isWarmup = forcedMode === 'warmup';
+    const isMcqBlock = forcedMode === 'mcq_block';
+    const sessionLength = forcedMinutes
+      ? forcedMinutes
+      : isWarmup
+        ? 5
+        : forcedMode === 'sprint'
+          ? 10
+          : dailyAvailability && dailyAvailability > 0
+            ? dailyAvailability
+            : (profile?.preferredSessionLength ?? 45);
 
-      const agendaResult = await buildSession(
-        mood,
-        sessionLength,
-        profile?.openrouterApiKey ?? '',
-        profile?.openrouterKey,
-        profile?.groqApiKey,
-        { focusTopicId, focusTopicIds, preferredActionType, mode: forcedMode },
-      );
+    for (let attempt = 0; attempt <= PLANNING_AUTO_RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        const agendaResult = await buildSession(
+          mood,
+          sessionLength,
+          profile?.openrouterApiKey ?? '',
+          profile?.openrouterKey,
+          profile?.groqApiKey,
+          { focusTopicId, focusTopicIds, preferredActionType, mode: forcedMode },
+        );
 
-      const sessId = await createSession(
-        agendaResult.items.map((i) => i.topic.id),
-        mood,
-        agendaResult.mode,
-      );
+        const sessId = await createSession(
+          agendaResult.items.map((i) => i.topic.id),
+          mood,
+          agendaResult.mode,
+        );
 
-      setSessionId(sessId);
-      setAgenda(agendaResult);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      if (isWarmup || isMcqBlock) {
-        setSessionState('studying');
-      } else {
-        setSessionState('agenda_reveal');
-        if (agendaRevealTimeoutRef.current) {
-          clearTimeout(agendaRevealTimeoutRef.current);
+        setSessionId(sessId);
+        // Eagerly prefetch first item with Groq (fastest) before state transitions
+        if (agendaResult.items.length > 0) {
+          void prefetchTopicContent(agendaResult.items[0].topic, agendaResult.items[0].contentTypes, 'groq');
         }
-        agendaRevealTimeoutRef.current = setTimeout(() => {
+        setAgenda(agendaResult);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        if (isWarmup || isMcqBlock) {
           setSessionState('studying');
-          agendaRevealTimeoutRef.current = null;
-        }, 3000);
+        } else {
+          setSessionState('agenda_reveal');
+          if (agendaRevealTimeoutRef.current) {
+            clearTimeout(agendaRevealTimeoutRef.current);
+          }
+          agendaRevealTimeoutRef.current = setTimeout(() => {
+            setSessionState('studying');
+            agendaRevealTimeoutRef.current = null;
+          }, 3000);
+        }
+        return;
+      } catch (e: any) {
+        if (attempt < PLANNING_AUTO_RETRY_DELAYS_MS.length) {
+          const delay = PLANNING_AUTO_RETRY_DELAYS_MS[attempt];
+          if (__DEV__) {
+            console.warn(
+              `[Session] Planning failed (attempt ${attempt + 1}/${PLANNING_AUTO_RETRY_DELAYS_MS.length + 1}), retrying in ${delay}ms:`,
+              e?.message,
+            );
+          }
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
+        }
+        setAiError(e?.message ?? 'Could not plan session');
       }
-    } catch (e: any) {
-      setAiError(e?.message ?? 'Could not plan session');
     }
   }, [
     mood,
@@ -413,26 +488,89 @@ export default function SessionScreen() {
     startBreak,
   ]);
 
-  // Effect: Auto-load AI content
+  const tryUseCachedQuestionFallback = useCallback(
+    async (topic: AgendaItem['topic']): Promise<boolean> => {
+      const fallbackQuestions = await getCachedUnseenQuestionsForSessionFallback(topic.id, topic.subjectName, 3);
+      if (!fallbackQuestions.length) return false;
+
+      if (__DEV__) {
+        console.info('[Session] Using cached unseen questions fallback', {
+          topicId: topic.id,
+          subjectName: topic.subjectName,
+          count: fallbackQuestions.length,
+        });
+      }
+
+      setCurrentContent(buildCachedQuestionFallbackContent(topic.name, fallbackQuestions));
+      setAiError(null);
+      return true;
+    },
+    [setCurrentContent],
+  );
+
   useEffect(() => {
-    if (sessionState !== 'studying' || isOnBreak || isPaused) return;
-    if (currentContent || isLoadingContent || aiError) return;
+    if ((sessionState !== 'studying' && sessionState !== 'agenda_reveal') || isOnBreak || isPaused) return;
+    if (contentRetryPending) return;
+    if (currentContent || isLoadingContent) return;
 
     const s = useSessionStore.getState();
     const item = getCurrentAgendaItem(s);
     const cType = getCurrentContentType(s);
     if (!item || !cType) return;
 
-    setAiError(null);
+    // If there's an active aiError, don't auto-load (user must tap retry or skip)
+    if (aiError) return;
+
+    // Force Groq (fastest provider) for the very first content card
+    const forceGroq = currentItemIndex === 0 && currentContentIndex === 0 ? 'groq' as const : undefined;
     setLoadingContent(true);
-    fetchContent(item.topic, cType)
+    fetchContent(item.topic, cType, forceGroq)
       .then((content) => {
         setCurrentContent(content);
         setLoadingContent(false);
+        contentRetryCount.current = 0;
+        setContentRetryPending(false);
       })
       .catch((e) => {
-        setLoadingContent(false);
-        setAiError(e?.message ?? 'AI content failed');
+        const attempt = contentRetryCount.current;
+        if (attempt < CONTENT_AUTO_RETRY_DELAYS_MS.length) {
+          setLoadingContent(false);
+          contentRetryCount.current = attempt + 1;
+          const delay = CONTENT_AUTO_RETRY_DELAYS_MS[attempt];
+          setContentRetryPending(true);
+          if (__DEV__) {
+            console.warn(
+              `[Session] AI content failed (attempt ${attempt + 1}/${CONTENT_AUTO_RETRY_DELAYS_MS.length + 1}), retrying in ${delay}ms:`,
+              e?.message,
+            );
+          }
+          if (contentRetryTimer.current) clearTimeout(contentRetryTimer.current);
+          contentRetryTimer.current = setTimeout(() => {
+            contentRetryTimer.current = null;
+            setContentRetryPending(false);
+          }, delay);
+        } else {
+          void tryUseCachedQuestionFallback(item.topic)
+            .then((usedFallback) => {
+              contentRetryCount.current = 0;
+              setContentRetryPending(false);
+              if (!usedFallback) {
+                setAiError(e?.message ?? 'AI content failed');
+              }
+            })
+            .catch((fallbackError) => {
+              contentRetryCount.current = 0;
+              setContentRetryPending(false);
+              if (__DEV__) {
+                console.warn('[Session] Cached question fallback failed:', fallbackError);
+              }
+              setAiError(e?.message ?? 'AI content failed');
+            })
+            .finally(() => {
+              setLoadingContent(false);
+            });
+          return;
+        }
       });
   }, [
     sessionState,
@@ -443,16 +581,43 @@ export default function SessionScreen() {
     currentContent,
     isLoadingContent,
     aiError,
+    contentRetryPending,
     setCurrentContent,
     setLoadingContent,
+    tryUseCachedQuestionFallback,
   ]);
+
+  // Cleanup retry timer on unmount
+  useEffect(() => {
+    return () => {
+      if (contentRetryTimer.current) clearTimeout(contentRetryTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    contentRetryCount.current = 0;
+    setContentRetryPending(false);
+    if (contentRetryTimer.current) {
+      clearTimeout(contentRetryTimer.current);
+      contentRetryTimer.current = null;
+    }
+  }, [currentItemIndex, currentContentIndex]);
+
+  const prefetchAgendaWindow = useCallback((startIndex: number) => {
+    if (!agenda) return;
+    const items = agenda.items.slice(startIndex, startIndex + SESSION_PREFETCH_LOOKAHEAD);
+    items.forEach((item, i) => {
+      // Force Groq (fastest) for the very first agenda item so content appears instantly
+      const useGroqFast = startIndex === 0 && i === 0 ? 'groq' as const : undefined;
+      void prefetchTopicContent(item.topic, item.contentTypes, useGroqFast);
+    });
+  }, [agenda]);
 
   // Prefetch Effect
   useEffect(() => {
     if (!agenda) return;
-    const nextItem = agenda.items[currentItemIndex + 1];
-    if (nextItem) prefetchTopicContent(nextItem.topic, nextItem.contentTypes);
-  }, [currentItemIndex, agenda]);
+    prefetchAgendaWindow(currentItemIndex);
+  }, [currentItemIndex, agenda, prefetchAgendaWindow]);
 
   const handleStartManualReview = useCallback(() => {
     setAiError(null);
@@ -544,12 +709,28 @@ export default function SessionScreen() {
                 setCurrentContent(c);
                 setLoadingContent(false);
               })
-              .catch(() => setLoadingContent(false));
+              .catch((e) => {
+                void tryUseCachedQuestionFallback(item.topic)
+                  .then((usedFallback) => {
+                    if (!usedFallback) {
+                      setAiError(e?.message ?? 'AI content failed');
+                    }
+                  })
+                  .catch((fallbackError) => {
+                    if (__DEV__) {
+                      console.warn('[Session] Cached question fallback failed after downgrade:', fallbackError);
+                    }
+                    setAiError(e?.message ?? 'AI content failed');
+                  })
+                  .finally(() => {
+                    setLoadingContent(false);
+                  });
+              });
           }
         },
       },
     ]);
-  }, [downgradeSession, setLoadingContent, setCurrentContent]);
+  }, [downgradeSession, setLoadingContent, setCurrentContent, tryUseCachedQuestionFallback]);
 
   const handleMarkForReview = useCallback(() => {
     const s = useSessionStore.getState();
@@ -592,27 +773,45 @@ export default function SessionScreen() {
   if (aiError && sessionState !== 'session_done') {
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={styles.errorContainer}>
-          <Text style={styles.errorEmoji}>⚠️</Text>
+          <IconCircle name="alert-circle" color={theme.colors.error} size={56} />
           <Text style={styles.errorTitle}>AI Unavailable</Text>
-          <Text style={styles.errorMsg}>{aiError}</Text>
+          <View style={styles.errorMsgCard}>
+            <Text style={styles.errorMsg}>{aiError}</Text>
+          </View>
           <TouchableOpacity
             style={styles.retryBtn}
             onPress={() => {
+              if (contentRetryTimer.current) {
+                clearTimeout(contentRetryTimer.current);
+                contentRetryTimer.current = null;
+              }
+              contentRetryCount.current = 0;
+              setContentRetryPending(false);
               setAiError(null);
               if (!agenda) startPlanning();
               else setCurrentContent(null);
             }}
           >
-            <Text style={styles.retryBtnText}>Retry AI</Text>
+            <View style={styles.btnRow}>
+              <Ionicons name="reload" size={16} color={theme.colors.textPrimary} />
+              <Text style={styles.retryBtnText}>Retry AI</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.manualBtn} onPress={handleContinueWithoutAi}>
-            <Text style={styles.manualBtnText}>
-              {agenda ? 'Continue Without AI' : 'Start Manual Review'}
-            </Text>
+            <View style={styles.btnRow}>
+              <Ionicons name="book-outline" size={16} color={theme.colors.textPrimary} />
+              <Text style={styles.manualBtnText}>
+                {agenda ? 'Continue Without AI' : 'Start Manual Review'}
+              </Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.leaveBtnText}>Leave Session</Text>
+            <View style={styles.btnRow}>
+              <Ionicons name="arrow-back" size={14} color={theme.colors.textMuted} />
+              <Text style={styles.leaveBtnText}>Leave Session</Text>
+            </View>
           </TouchableOpacity>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -622,7 +821,11 @@ export default function SessionScreen() {
   if (sessionState === 'planning') {
     return (
       <SafeAreaView style={styles.safe} testID="session-planning">
-        <LoadingOrb message="Guru is planning your session..." />
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <View style={styles.planningContainer}>
+          <LoadingOrb message="Guru is planning your session..." />
+          <Text style={styles.planningSubtext}>This usually takes a few seconds</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -632,19 +835,32 @@ export default function SessionScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={styles.revealContainer} testID="session-agenda-reveal">
-          <Text style={styles.revealEmoji}>🎯</Text>
+          <IconCircle name="flag" color={theme.colors.primary} size={56} />
           <Text style={styles.revealFocus}>{agenda.focusNote}</Text>
-          <Text style={styles.revealGuru}>"{agenda.guruMessage}"</Text>
-          <Text style={styles.revealSub}>Starting in a moment...</Text>
-          {agenda.items.map((i) => (
-            <View key={i.topic.id} style={styles.revealTopic}>
-              <View style={[styles.revealDot, { backgroundColor: i.topic.subjectColor }]} />
-              <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
-                {i.topic.name}
-              </Text>
-              <Text style={styles.revealTopicSub}>{i.topic.subjectCode}</Text>
-            </View>
-          ))}
+          <View style={styles.revealGuruCard}>
+            <Text style={styles.revealGuru}>"{agenda.guruMessage}"</Text>
+          </View>
+          <View style={styles.revealTopicList}>
+            {agenda.items.map((i) => (
+              <View key={i.topic.id} style={styles.revealTopic}>
+                <View style={[styles.revealInitial, { backgroundColor: (i.topic.subjectColor || theme.colors.primary) + '33' }]}>
+                  <Text style={[styles.revealInitialText, { color: i.topic.subjectColor || theme.colors.primary }]}>
+                    {(i.topic.subjectCode || i.topic.name)[0]}
+                  </Text>
+                </View>
+                <View style={styles.revealTopicInfo}>
+                  <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
+                    {i.topic.name}
+                  </Text>
+                  <Text style={styles.revealTopicSub}>{i.topic.subjectCode}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={styles.revealLiveRow}>
+            <View style={styles.revealLiveDot} />
+            <Text style={styles.revealSub}>Starting in a moment...</Text>
+          </View>
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -714,16 +930,24 @@ export default function SessionScreen() {
 
   if (sessionState === 'topic_done') {
     const curItem = agenda?.items[currentItemIndex];
+    const nextItem = agenda?.items[currentItemIndex + 1];
     return (
       <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
         <ResponsiveContainer style={styles.topicDoneContainer}>
-          <Text style={styles.topicDoneEmoji}>✅</Text>
+          <IconCircle name="checkmark-circle" color={theme.colors.success} size={64} />
           <Text style={styles.topicDoneName} numberOfLines={2} ellipsizeMode="tail">
             {curItem?.topic.name}
           </Text>
+          <View style={styles.topicDoneDivider} />
           <Text style={styles.topicDoneSub}>
             Topic complete! Taking a {profile?.breakDurationMinutes ?? 5}-min break...
           </Text>
+          {nextItem && (
+            <Text style={styles.topicDoneNext}>
+              Up next: {nextItem.topic.name}
+            </Text>
+          )}
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -765,15 +989,34 @@ export default function SessionScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.phaseRow}>
-              <Text style={styles.phaseBadge}>
-                {isPaused
-                  ? '⏸️ Paused'
-                  : isOnBreak
-                    ? '☕ Break'
-                    : sessionState === 'studying'
-                      ? '📖 Studying'
-                      : '💤 Done'}
-              </Text>
+              <View style={[
+                styles.phaseBadge,
+                isPaused ? styles.phaseBadgeWarn
+                  : isOnBreak ? styles.phaseBadgeAccent
+                  : sessionState === 'studying' ? null
+                  : styles.phaseBadgeSuccess,
+              ]}>
+                <Ionicons
+                  name={
+                    isPaused ? 'pause' : isOnBreak ? 'cafe-outline'
+                      : sessionState === 'studying' ? 'book-outline' : 'checkmark-circle'
+                  }
+                  size={11}
+                  color={
+                    isPaused ? theme.colors.warning : isOnBreak ? theme.colors.accent
+                      : sessionState === 'studying' ? theme.colors.primary : theme.colors.success
+                  }
+                />
+                <Text style={[
+                  styles.phaseBadgeText,
+                  isPaused ? { color: theme.colors.warning }
+                    : isOnBreak ? { color: theme.colors.accent }
+                    : sessionState !== 'studying' ? { color: theme.colors.success }
+                    : null,
+                ]}>
+                  {isPaused ? 'Paused' : isOnBreak ? 'Break' : sessionState === 'studying' ? 'Studying' : 'Done'}
+                </Text>
+              </View>
               <Text style={styles.topicProgress}>
                 Topic {currentItemIndex + 1}/{agenda?.items.length ?? 0}
               </Text>
@@ -801,11 +1044,26 @@ export default function SessionScreen() {
               }}
               hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
               style={styles.pauseBtn}
+              accessibilityRole="button"
+              accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
             >
-              <Text style={styles.pauseBtnText}>{isPaused ? '▶' : '⏸'}</Text>
+              <Ionicons
+                name={isPaused ? 'play' : 'pause'}
+                size={16}
+                color={theme.colors.primary}
+              />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.menuBtn}>
-              <Text style={styles.menuBtnText}>•••</Text>
+            <TouchableOpacity
+              onPress={() => setMenuVisible(true)}
+              style={styles.menuBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Session menu"
+            >
+              <Ionicons
+                name="ellipsis-horizontal"
+                size={18}
+                color={theme.colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -966,54 +1224,50 @@ function WarmUpMomentumScreen({
   onLecture: () => void;
   onDone: () => void;
 }) {
+  const { fade, slide } = useEntranceAnimation();
+  const pct = answeredTotal > 0 ? Math.round((correctTotal / answeredTotal) * 100) : 0;
+  const scoreColor = pct >= 70 ? theme.colors.success : pct >= 40 ? theme.colors.warning : theme.colors.error;
+  useEffect(() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }, []);
   return (
     <SafeAreaView style={styles.safe}>
-      <ResponsiveContainer style={styles.doneContainer}>
-        <Text style={styles.doneEmoji}>⚡</Text>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <Animated.View style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}>
+        <IconCircle name="flash" color={theme.colors.accentAlt} size={64} />
         <Text style={styles.doneTitle}>Nice work, Doctor.</Text>
-        <Text style={[styles.doneStat, { marginBottom: 8 }]}>
-          {answeredTotal > 0 ? `${correctTotal}/${answeredTotal} correct` : 'Session complete'}
-        </Text>
-        <Text style={[styles.doneStat, { marginBottom: 32 }]}>What's next?</Text>
+        {answeredTotal > 0 ? (
+          <View style={styles.warmupScoreCard}>
+            <Text style={[styles.warmupScoreNumber, { color: scoreColor }]}>{pct}%</Text>
+            <Text style={styles.warmupScoreFraction}>{correctTotal}/{answeredTotal} correct</Text>
+          </View>
+        ) : (
+          <Text style={styles.doneStat}>Session complete</Text>
+        )}
+        <Text style={[styles.doneStat, { marginBottom: 24 }]}>What's next?</Text>
         <TouchableOpacity style={styles.doneBtn} onPress={onLecture}>
-          <Text style={styles.doneBtnText}>🎥 Watch a lecture</Text>
+          <View style={styles.btnRow}>
+            <Ionicons name="videocam-outline" size={18} color={theme.colors.textPrimary} />
+            <Text style={styles.doneBtnText}>Watch a lecture</Text>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.doneBtn,
-            {
-              marginTop: 12,
-              backgroundColor: theme.colors.surface,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-            },
-          ]}
-          onPress={onMCQBlock}
-        >
-          <Text style={[styles.doneBtnText, { color: theme.colors.textPrimary }]}>
-            📝 50 MCQ Block
-          </Text>
+        <TouchableOpacity style={styles.doneSecondaryBtn} onPress={onMCQBlock}>
+          <View style={styles.btnRow}>
+            <Ionicons name="list-outline" size={18} color={theme.colors.textPrimary} />
+            <Text style={styles.doneSecondaryBtnText}>50 MCQ Block</Text>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.doneBtn,
-            {
-              marginTop: 12,
-              backgroundColor: theme.colors.surface,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-            },
-          ]}
-          onPress={onContinue}
-        >
-          <Text style={[styles.doneBtnText, { color: theme.colors.textPrimary }]}>
-            📚 Continue studying
-          </Text>
+        <TouchableOpacity style={styles.doneSecondaryBtn} onPress={onContinue}>
+          <View style={styles.btnRow}>
+            <Ionicons name="book-outline" size={18} color={theme.colors.textPrimary} />
+            <Text style={styles.doneSecondaryBtnText}>Continue studying</Text>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity style={{ paddingVertical: 20, marginTop: 4 }} onPress={onDone}>
-          <Text style={styles.leaveBtnText}>✋ That&apos;s enough for now</Text>
+        <TouchableOpacity style={styles.leaveBtn} onPress={onDone}>
+          <View style={styles.btnRow}>
+            <Ionicons name="hand-left-outline" size={14} color={theme.colors.textMuted} />
+            <Text style={styles.leaveBtnText}>That's enough for now</Text>
+          </View>
         </TouchableOpacity>
-      </ResponsiveContainer>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -1029,37 +1283,40 @@ function SessionDoneScreen({
   xpTotal: number;
   onClose: () => void;
 }) {
+  const { fade, slide } = useEntranceAnimation();
   const mins = Math.round(elapsedSeconds / 60);
+  useEffect(() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }, []);
   return (
     <SafeAreaView style={styles.safe}>
-      <ResponsiveContainer style={styles.doneContainer} testID="session-done">
-        <Text style={styles.doneEmoji}>🎉</Text>
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <Animated.View style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]} testID="session-done">
+        <IconCircle name="trophy" color={theme.colors.accentAlt} size={64} />
         <Text style={styles.doneTitle}>Session Complete!</Text>
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
+              <Ionicons name="book-outline" size={18} color={theme.colors.textMuted} style={{ marginBottom: 4 }} />
               <Text style={styles.summaryValue}>{completedCount}</Text>
               <Text style={styles.summaryLabel}>Topics</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
+              <Ionicons name="time-outline" size={18} color={theme.colors.textMuted} style={{ marginBottom: 4 }} />
               <Text style={styles.summaryValue}>{mins}</Text>
               <Text style={styles.summaryLabel}>Minutes</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Text style={[styles.summaryValue, { color: theme.colors.warning }]}>+{xpTotal}</Text>
+              <Ionicons name="star-outline" size={18} color={theme.colors.accentAlt} style={{ marginBottom: 4 }} />
+              <Text style={[styles.summaryValue, { color: theme.colors.accentAlt }]}>+{xpTotal}</Text>
               <Text style={styles.summaryLabel}>XP</Text>
             </View>
           </View>
         </View>
-        <Text style={styles.doneStat}>
-          {completedCount} topics covered · {mins} min
-        </Text>
         <TouchableOpacity style={styles.doneBtn} onPress={onClose} testID="back-to-home-btn">
           <Text style={styles.doneBtnText}>Back to Home</Text>
         </TouchableOpacity>
-      </ResponsiveContainer>
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -1095,14 +1352,22 @@ const styles = StyleSheet.create({
   topicProgress: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 2 },
   phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   phaseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.primaryTintSoft,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  phaseBadgeText: {
     color: theme.colors.primary,
     fontSize: 11,
     fontWeight: '700',
-    backgroundColor: theme.colors.primaryTintSoft,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
   },
+  phaseBadgeWarn: { backgroundColor: theme.colors.warningTintSoft },
+  phaseBadgeAccent: { backgroundColor: theme.colors.primaryTintSoft },
+  phaseBadgeSuccess: { backgroundColor: theme.colors.successTintSoft },
   topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18, flex: 1 },
   subjectTag: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
   aiSourceLine: {
@@ -1118,20 +1383,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     marginLeft: 8,
+    minWidth: 38,
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  pauseBtnText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
   menuBtn: {
     backgroundColor: theme.colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginLeft: 8,
-  },
-  menuBtnText: {
-    color: theme.colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 2,
+    minWidth: 38,
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   menuOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 },
   menuBackdrop: { flex: 1 },
@@ -1188,40 +1454,86 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.xxl,
   },
-  revealEmoji: { fontSize: 48, marginBottom: theme.spacing.lg },
   revealFocus: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 20,
     textAlign: 'center',
+    marginTop: theme.spacing.lg,
     marginBottom: 12,
+  },
+  revealGuruCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.lg,
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary,
+    width: '100%',
+    marginBottom: 24,
   },
   revealGuru: {
     color: theme.colors.textSecondary,
     fontSize: 15,
     fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: 24,
   },
-  revealSub: { color: theme.colors.textSecondary, fontSize: 13 },
-  revealTopic: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
-  revealDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
+  revealTopicList: { width: '100%', marginBottom: 20 },
+  revealTopic: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.sm,
+    marginBottom: 8,
+  },
+  revealInitial: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  revealInitialText: { fontSize: 13, fontWeight: '800' },
+  revealTopicInfo: { flex: 1 },
   revealTopicName: {
     color: theme.colors.textPrimary,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
-    marginRight: 8,
   },
-  revealTopicSub: { color: theme.colors.textSecondary, fontSize: 12 },
-  topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  topicDoneEmoji: { fontSize: 64, marginBottom: theme.spacing.lg },
+  revealTopicSub: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  revealLiveRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  revealLiveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.success,
+    ...theme.shadows.glow(theme.colors.success),
+  },
+  revealSub: { color: theme.colors.textSecondary, fontSize: 13 },
+  topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xxl },
   topicDoneName: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 20,
-    marginBottom: 8,
+    marginTop: theme.spacing.lg,
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  topicDoneSub: { color: theme.colors.textSecondary, fontSize: 14 },
+  topicDoneDivider: {
+    width: 40,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: theme.colors.success,
+    marginBottom: 12,
+  },
+  topicDoneSub: { color: theme.colors.textSecondary, fontSize: 14, textAlign: 'center' },
+  topicDoneNext: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    marginTop: 16,
+    fontStyle: 'italic',
+  },
   xpPop: {
     position: 'absolute',
     top: 16,
@@ -1238,11 +1550,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.xxl,
   },
-  doneEmoji: { fontSize: 64, marginBottom: theme.spacing.lg },
   doneTitle: {
     color: theme.colors.textPrimary,
     fontWeight: '900',
     fontSize: 28,
+    marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.xl,
   },
   summaryCard: {
@@ -1251,6 +1563,9 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: theme.spacing.xl,
     width: '100%',
+    borderWidth: 1,
+    borderColor: theme.colors.primaryTintSoft,
+    ...theme.shadows.glow(theme.colors.primary),
   },
   summaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
   summaryItem: { alignItems: 'center' },
@@ -1265,19 +1580,51 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.lg,
   },
   doneBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  doneSecondaryBtn: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 40,
+    paddingVertical: theme.spacing.lg,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    width: '100%',
+    alignItems: 'center',
+  },
+  doneSecondaryBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 16 },
+  btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  warmupScoreCard: {
+    alignItems: 'center',
+    marginBottom: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+  },
+  warmupScoreNumber: { fontSize: 42, fontWeight: '900' },
+  warmupScoreFraction: { color: theme.colors.textSecondary, fontSize: 14, marginTop: 4 },
+  planningContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  planningSubtext: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: theme.spacing.xxl,
   },
-  errorEmoji: { fontSize: 48, marginBottom: 12 },
-  errorTitle: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 22, marginBottom: 8 },
+  errorTitle: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 22, marginTop: 16, marginBottom: 8 },
+  errorMsgCard: {
+    backgroundColor: theme.colors.errorSurface,
+    borderRadius: theme.borderRadius.md,
+    borderTopWidth: 3,
+    borderTopColor: theme.colors.error,
+    padding: theme.spacing.lg,
+    width: '100%',
+    marginBottom: 24,
+  },
   errorMsg: {
     color: theme.colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
-    marginBottom: 24,
     lineHeight: 20,
   },
   retryBtn: {

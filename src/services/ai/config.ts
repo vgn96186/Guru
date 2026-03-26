@@ -62,6 +62,7 @@ export function getApiKeys(
     githubModelsPat?: string;
     kiloApiKey?: string;
     agentRouterKey?: string;
+    deepgramApiKey?: string;
   } | null,
 ): {
   orKey: string | undefined;
@@ -74,6 +75,7 @@ export function getApiKeys(
   githubModelsPat: string | undefined;
   kiloApiKey: string | undefined;
   agentRouterKey: string | undefined;
+  deepgramKey: string | undefined;
 } {
   if (!profile) {
     return {
@@ -87,6 +89,7 @@ export function getApiKeys(
       githubModelsPat: BUNDLED_GITHUB_MODELS_PAT || undefined,
       kiloApiKey: undefined,
       agentRouterKey: undefined,
+      deepgramKey: undefined,
     };
   }
   return {
@@ -100,5 +103,6 @@ export function getApiKeys(
     githubModelsPat: profile.githubModelsPat?.trim() || BUNDLED_GITHUB_MODELS_PAT || undefined,
     kiloApiKey: profile.kiloApiKey?.trim() || undefined,
     agentRouterKey: profile.agentRouterKey?.trim() || undefined,
+    deepgramKey: profile.deepgramApiKey?.trim() || undefined,
   };
 }

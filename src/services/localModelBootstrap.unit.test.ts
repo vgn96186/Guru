@@ -222,6 +222,8 @@ describe('localModelBootstrap', () => {
 
     (FileSystem.getInfoAsync as jest.Mock)
       .mockResolvedValueOnce({ exists: true, size: 1000 }) // Initial check (too small)
+      .mockResolvedValueOnce({ exists: false }) // partial does not exist
+      .mockResolvedValueOnce({ exists: false }) // no resumable partial before fresh download
       .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // Post-download check
 
     const mockDownload = {
@@ -241,16 +243,19 @@ describe('localModelBootstrap', () => {
       localWhisperPath: 'path/to/whisper',
     });
     (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
-    (FileSystem.getInfoAsync as jest.Mock).mockResolvedValue({ exists: false });
+    (FileSystem.getInfoAsync as jest.Mock).mockReset();
+    (FileSystem.getInfoAsync as jest.Mock)
+      .mockResolvedValueOnce({ exists: false }) // target path
+      .mockResolvedValueOnce({ exists: false }); // partial path
 
     const mockDownload = {
       downloadAsync: jest.fn().mockResolvedValue({ status: 500 }),
     };
+    (FileSystem.createDownloadResumable as jest.Mock).mockReset();
     (FileSystem.createDownloadResumable as jest.Mock).mockReturnValue(mockDownload);
 
     await bootstrapLocalModels();
 
-    expect(FileSystem.deleteAsync).toHaveBeenCalled();
     expect(profileRepository.updateProfile).not.toHaveBeenCalled();
   });
 
@@ -270,5 +275,54 @@ describe('localModelBootstrap', () => {
 
     // Should catch error and not crash
     expect(profileRepository.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('should finalize an existing valid partial file instead of re-downloading', async () => {
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+      localModelPath: '',
+      localWhisperPath: 'path/to/whisper',
+    });
+    (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
+    (FileSystem.getInfoAsync as jest.Mock)
+      .mockResolvedValueOnce({ exists: false }) // target path missing
+      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }) // partial path valid
+      .mockResolvedValueOnce({ exists: true, size: 2_300_000_000 }); // handleDownloadComplete validation
+    (FileSystem.readAsStringAsync as jest.Mock).mockRejectedValue(new Error('no resume data'));
+
+    await bootstrapLocalModels();
+
+    expect(FileSystem.createDownloadResumable).not.toHaveBeenCalled();
+    expect(FileSystem.moveAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: expect.stringContaining('.partial'),
+        to: expect.stringContaining('medgemma-4b-it-q4_k_m.gguf'),
+      }),
+    );
+    expect(profileRepository.updateProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ localModelPath: expect.any(String), useLocalModel: true }),
+    );
+  });
+
+  it('should not restart from zero when an interrupted partial file exists without resume data', async () => {
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+      localModelPath: '',
+      localWhisperPath: 'path/to/whisper',
+    });
+    (isLocalLlmAllowedOnThisDevice as jest.Mock).mockReturnValue(true);
+    (FileSystem.getInfoAsync as jest.Mock)
+      .mockResolvedValueOnce({ exists: false }) // target path missing
+      .mockResolvedValueOnce({ exists: true, size: 1_000_000 }); // partial exists but incomplete
+    (FileSystem.readAsStringAsync as jest.Mock).mockRejectedValue(new Error('no resume data'));
+
+    await bootstrapLocalModels();
+
+    expect(FileSystem.createDownloadResumable).not.toHaveBeenCalled();
+    expect(FileSystem.deleteAsync).not.toHaveBeenCalledWith(
+      expect.stringContaining('.partial'),
+      expect.anything(),
+    );
+    expect(profileRepository.updateProfile).not.toHaveBeenCalledWith(
+      expect.objectContaining({ localModelPath: expect.any(String) }),
+    );
   });
 });

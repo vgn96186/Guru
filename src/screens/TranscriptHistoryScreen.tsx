@@ -291,6 +291,8 @@ export default function TranscriptHistoryScreen() {
   const [sortBy, setSortBy] = useState<'date' | 'subject' | 'confidence'>('date');
   const [managerFilter, setManagerFilter] = useState<LectureManagerFilter>('all');
   const [isManagerBusy, setIsManagerBusy] = useState(false);
+  const [readerContent, setReaderContent] = useState<string | null>(null);
+  const [readerTitle, setReaderTitle] = useState('');
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const loadNotes = useCallback(async () => {
@@ -650,7 +652,7 @@ export default function TranscriptHistoryScreen() {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ScreenHeader
-        title="Transcript History"
+        title="Transcript Vault"
         subtitle="Search, review, and manage captured lectures."
         onBackPress={() => navigation.navigate('NotesHub')}
       />
@@ -972,7 +974,19 @@ export default function TranscriptHistoryScreen() {
               {/* ADHD-formatted study note */}
               {selectedNote?.note && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Study Note</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={styles.modalSectionTitle}>Study Note</Text>
+                    <TouchableOpacity
+                      style={styles.readerOpenBtn}
+                      onPress={() => {
+                        setReaderTitle(getLectureTitle(selectedNote));
+                        setReaderContent(selectedNote.note);
+                      }}
+                    >
+                      <Ionicons name="book-outline" size={16} color={theme.colors.primary} />
+                      <Text style={styles.readerOpenText}>Read</Text>
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.studyNoteCard}>
                     <MarkdownRender content={selectedNote.note} />
                   </View>
@@ -981,10 +995,67 @@ export default function TranscriptHistoryScreen() {
 
               {/* Full transcript (collapsible) */}
               {selectedNote?.transcript && (
-                <TranscriptSection transcript={selectedNote.transcript} />
+                <View style={{ marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <View />
+                    <TouchableOpacity
+                      style={styles.readerOpenBtn}
+                      onPress={async () => {
+                        const text = await loadTranscriptFromFile(selectedNote.transcript!);
+                        setReaderTitle('Raw Transcript');
+                        setReaderContent(text || 'No transcript available.');
+                      }}
+                    >
+                      <Ionicons name="book-outline" size={16} color={theme.colors.primary} />
+                      <Text style={styles.readerOpenText}>Read Full</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TranscriptSection transcript={selectedNote.transcript} />
+                </View>
               )}
             </ScrollView>
           </View>
+        </View>
+      </Modal>
+
+      {/* Full-screen reader */}
+      <Modal
+        visible={!!readerContent}
+        animationType="slide"
+        onRequestClose={() => setReaderContent(null)}
+      >
+        <View style={styles.readerContainer}>
+          <View style={styles.readerHeader}>
+            <TouchableOpacity
+              onPress={() => setReaderContent(null)}
+              style={styles.readerCloseBtn}
+            >
+              <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.readerHeaderTitle} numberOfLines={1}>
+              {readerTitle}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (readerContent) {
+                  void import('expo-clipboard').then((Clipboard) =>
+                    Clipboard.setStringAsync(readerContent),
+                  );
+                  Haptics.selectionAsync();
+                }
+              }}
+              style={styles.readerCopyBtn}
+            >
+              <Ionicons name="copy-outline" size={20} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            style={styles.readerScroll}
+            contentContainerStyle={styles.readerScrollContent}
+            showsVerticalScrollIndicator
+          >
+            <MarkdownRender content={readerContent ?? ''} />
+          </ScrollView>
         </View>
       </Modal>
     </View>
@@ -1309,4 +1380,29 @@ const styles = StyleSheet.create({
   },
   selectionModeBannerText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
   selectionModeCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
+  readerOpenBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primary + '18',
+  },
+  readerOpenText: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
+  readerContainer: { flex: 1, backgroundColor: '#0A0A0A' },
+  readerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+    backgroundColor: '#111',
+  },
+  readerCloseBtn: { padding: 6, marginRight: 8 },
+  readerHeaderTitle: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '700' },
+  readerCopyBtn: { padding: 8 },
+  readerScroll: { flex: 1 },
+  readerScrollContent: { padding: 20, paddingBottom: 60 },
 });

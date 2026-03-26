@@ -280,15 +280,19 @@ export async function buildSession(
   if (options?.mode === 'warmup') {
     const warmupTopics = scored.length > 0 ? scored : candidates;
     return {
-      items: warmupTopics.map((t) => ({
-        topic: t,
-        contentTypes: !blockedContentTypes.has('quiz')
-          ? ['quiz' as ContentType]
-          : ['keypoints' as ContentType],
-        estimatedMinutes: 2,
-      })),
+      items: warmupTopics.map((t) => {
+        const types: ContentType[] = [];
+        if (!blockedContentTypes.has('keypoints')) types.push('keypoints');
+        if (!blockedContentTypes.has('quiz')) types.push('quiz');
+        if (types.length === 0) types.push('keypoints');
+        return {
+          topic: t,
+          contentTypes: types,
+          estimatedMinutes: types.length * 2,
+        };
+      }),
       totalMinutes: 60,
-      focusNote: 'Quiz — end anytime',
+      focusNote: 'Discuss & Quiz — end anytime',
       mode: 'warmup' as SessionMode,
       guruMessage: "Let's go. Stop whenever you're ready.",
       skipBreaks: true,

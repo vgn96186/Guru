@@ -34,8 +34,12 @@ class AppLauncherModule : Module() {
     private var projectionResultCode: Int = 0
     private var projectionData: Intent? = null
 
+    // SAF folder picker handling — returns { treeUri, label, entries[] }
+    private var folderPickerDeferred: CompletableDeferred<Map<String, Any>>? = null
+
     private companion object {
         private const val MEDIA_PROJECTION_RC = 7001
+        private const val FOLDER_PICKER_RC = 7002
         private const val TAG = "GuruAppLauncher"
         private const val WAV_HEADER_BYTES = 44
         private const val WAV_BYTES_PER_SECOND = 16_000 * 1 * 2 // 16kHz mono 16-bit
@@ -66,6 +70,62 @@ class AppLauncherModule : Module() {
             guruDir.mkdirs()
         }
         return if (guruDir.exists()) guruDir else appContext.reactContext?.filesDir ?: File("/tmp")
+    }
+
+    private fun getPublicGuruRoot(): File {
+        val publicDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
+        val guruDir = File(publicDir, "Guru")
+        if (!guruDir.exists()) guruDir.mkdirs()
+        return if (guruDir.exists()) guruDir else appContext.reactContext?.filesDir ?: File("/tmp")
+    }
+
+    /**
+     * Recursively collects all .m4a files under Documents/Guru/.
+     * Returns a list of maps with { name, path, size }.
+     */
+    private fun findAllM4aFiles(dir: File): List<Map<String, Any>> {
+        val results = mutableListOf<Map<String, Any>>()
+        val files = dir.listFiles() ?: return results
+        for (f in files) {
+            if (f.isDirectory) {
+                results.addAll(findAllM4aFiles(f))
+            } else if (f.name.endsWith(".m4a", ignoreCase = true) && f.length() > 100) {
+                results.add(mapOf(
+                    "name" to f.name,
+                    "path" to f.absolutePath,
+                    "size" to f.length()
+                ))
+            }
+        }
+        return results
+    }
+
+    /**
+     * Walks a SAF document tree URI and collects all .m4a files.
+     * Returns list of maps with { name, path (content URI string), size }.
+     */
+    private fun walkDocumentTree(context: Context, treeUri: android.net.Uri): List<Map<String, Any>> {
+        val results = mutableListOf<Map<String, Any>>()
+        val docUri = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri) ?: return results
+        walkDocumentFileRecursive(docUri, results)
+        return results
+    }
+
+    private fun walkDocumentFileRecursive(
+        dir: androidx.documentfile.provider.DocumentFile,
+        results: MutableList<Map<String, Any>>
+    ) {
+        for (file in dir.listFiles()) {
+            if (file.isDirectory) {
+                walkDocumentFileRecursive(file, results)
+            } else if (file.name?.endsWith(".m4a", ignoreCase = true) == true && file.length() > 100) {
+                results.add(mapOf(
+                    "name" to (file.name ?: "unknown.m4a"),
+                    "path" to file.uri.toString(),
+                    "size" to file.length()
+                ))
+            }
+        }
     }
 
     private fun getPublicGuruBackupDir(): File {
@@ -193,7 +253,59 @@ class AppLauncherModule : Module() {
             return@AsyncFunction getPublicGuruDir().absolutePath
         }
 
-        // ── Activity result handler for MediaProjection ────────────
+        AsyncFunction("hasAllFilesAccess") { ->
+            return@AsyncFunction if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                Environment.isExternalStorageManager()
+            } else {
+                true // pre-Android 11, READ_EXTERNAL_STORAGE suffices
+            }
+        }
+
+        AsyncFunction("requestAllFilesAccess") { ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+                val activity = appContext.currentActivity ?: throw Exception("No activity")
+                val intent = Intent(android.provider.Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)
+                activity.startActivity(intent)
+                return@AsyncFunction true
+            }
+            return@AsyncFunction false
+        }
+
+        AsyncFunction("findAllRecordings") { ->
+            return@AsyncFunction try {
+                findAllM4aFiles(getPublicGuruRoot())
+            } catch (e: Exception) {
+                Log.e(TAG, "findAllRecordings failed", e)
+                emptyList<Map<String, Any>>()
+            }
+        }
+
+        AsyncFunction("scanPathForRecordings") { absolutePath: String ->
+            return@AsyncFunction try {
+                val dir = File(absolutePath)
+                if (dir.exists() && dir.isDirectory) {
+                    findAllM4aFiles(dir)
+                } else {
+                    emptyList<Map<String, Any>>()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "scanPathForRecordings failed for $absolutePath", e)
+                emptyList<Map<String, Any>>()
+            }
+        }
+
+        AsyncFunction("scanSafUri") { uriString: String ->
+            return@AsyncFunction try {
+                val context = appContext.reactContext ?: return@AsyncFunction emptyList<Map<String, Any>>()
+                val uri = android.net.Uri.parse(uriString)
+                walkDocumentTree(context, uri)
+            } catch (e: Exception) {
+                Log.e(TAG, "scanSafUri failed for $uriString", e)
+                emptyList<Map<String, Any>>()
+            }
+        }
+
+        // ── Activity result handlers ────────────
         OnActivityResult { _, payload ->
             if (payload.requestCode == MEDIA_PROJECTION_RC) {
                 projectionResultCode = payload.resultCode
@@ -203,7 +315,53 @@ class AppLauncherModule : Module() {
                 } else {
                     projectionDeferred?.complete(false)
                 }
+            } else if (payload.requestCode == FOLDER_PICKER_RC) {
+                if (payload.resultCode == Activity.RESULT_OK && payload.data?.data != null) {
+                    val treeUri = payload.data!!.data!!
+                    val context = appContext.reactContext
+                    if (context != null) {
+                        // Persist read permission across reboots
+                        try {
+                            context.contentResolver.takePersistableUriPermission(
+                                treeUri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Could not persist URI permission", e)
+                        }
+                        val entries = walkDocumentTree(context, treeUri)
+                        // Derive a human-readable label from the URI
+                        val decoded = java.net.URLDecoder.decode(treeUri.toString(), "UTF-8")
+                        val label = decoded.substringAfterLast(":").substringAfterLast("/").ifEmpty { "Custom folder" }
+                        folderPickerDeferred?.complete(mapOf(
+                            "treeUri" to treeUri.toString(),
+                            "label" to label,
+                            "entries" to entries
+                        ))
+                    } else {
+                        folderPickerDeferred?.complete(emptyMap())
+                    }
+                } else {
+                    // User cancelled
+                    folderPickerDeferred?.complete(emptyMap())
+                }
             }
+        }
+
+        AsyncFunction("pickFolderAndScan") { ->
+            val activity = appContext.currentActivity
+                ?: throw Exception("No activity")
+
+            folderPickerDeferred = CompletableDeferred()
+            val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+            }
+            activity.startActivityForResult(intent, FOLDER_PICKER_RC)
+
+            // Expo's AsyncFunction runs on a separate thread, so runBlocking is safe.
+            val results = runBlocking { folderPickerDeferred!!.await() }
+            folderPickerDeferred = null
+            return@AsyncFunction results
         }
 
         AsyncFunction("launchApp") { packageName: String ->

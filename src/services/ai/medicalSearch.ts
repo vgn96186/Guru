@@ -1,5 +1,6 @@
 import type { MedicalGroundingSource, Message } from './types';
 import { generateTextWithRouting } from './generate';
+import { logGroundingEvent, previewText } from './runtimeDebug';
 
 function compactWhitespace(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim();
@@ -35,9 +36,26 @@ async function fetchJsonWithTimeout<T>(url: string, timeoutMs = 12000): Promise<
       throw new Error(`HTTP ${res.status}: ${text}`);
     }
     return (await res.json()) as T;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const name = error instanceof Error ? error.name : '';
+    if (name === 'AbortError' || /aborted/i.test(message)) {
+      const timeoutError = new Error(`Timeout after ${timeoutMs}ms`);
+      timeoutError.name = 'TimeoutError';
+      throw timeoutError;
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }
+}
+
+function describeMedicalSearchError(error: unknown): string {
+  if (error instanceof Error) {
+    if (error.name === 'TimeoutError') return error.message;
+    return error.message;
+  }
+  return String(error);
 }
 
 /** Deduplicates sources by title+url (case-insensitive). Exported for unit testing. */
@@ -158,7 +176,12 @@ async function searchWikimediaCommons(
       .slice(0, maxResults)
       .map((s) => s.source);
   } catch (err) {
-    if (__DEV__) console.warn('[MedicalSearch] Wikimedia Commons failed:', (err as Error).message);
+    if (__DEV__) {
+      console.warn(
+        '[MedicalSearch] Wikimedia Commons failed:',
+        describeMedicalSearchError(err),
+      );
+    }
     return [];
   }
 }
@@ -220,7 +243,12 @@ async function searchOpenI(
         };
       });
   } catch (err) {
-    if (__DEV__) console.warn(`[MedicalSearch] ${sourceLabel} failed:`, (err as Error).message);
+    if (__DEV__) {
+      console.warn(
+        `[MedicalSearch] ${sourceLabel} failed:`,
+        describeMedicalSearchError(err),
+      );
+    }
     return [];
   }
 }
@@ -473,10 +501,25 @@ export async function searchLatestMedicalSources(
   const wikiLimit = Math.min(3, maxResults);
   const litLimit = maxResults;
 
+  logGroundingEvent('search_start', {
+    query: previewText(query, 140),
+    maxResults,
+  });
+
   try {
     const wiki = await searchWikipedia(query, wikiLimit);
     collected.push(...wiki);
+    logGroundingEvent('provider_result', {
+      provider: 'Wikipedia',
+      count: wiki.length,
+      query: previewText(query, 100),
+    });
   } catch (err) {
+    logGroundingEvent('provider_error', {
+      provider: 'Wikipedia',
+      error: err instanceof Error ? err.message : String(err),
+      query: previewText(query, 100),
+    });
     if (__DEV__) console.warn('[GuruGrounded] Wikipedia failed:', (err as Error).message);
   }
 
@@ -484,14 +527,35 @@ export async function searchLatestMedicalSources(
   try {
     const ddg = await searchDuckDuckGo(query, 3);
     collected.push(...ddg);
+    logGroundingEvent('provider_result', {
+      provider: 'DuckDuckGo',
+      count: ddg.length,
+      query: previewText(query, 100),
+      titles: ddg.map((src) => previewText(src.title, 60)),
+    });
   } catch (err) {
+    logGroundingEvent('provider_error', {
+      provider: 'DuckDuckGo',
+      error: err instanceof Error ? err.message : String(err),
+      query: previewText(query, 100),
+    });
     if (__DEV__) console.warn('[GuruGrounded] DuckDuckGo failed:', (err as Error).message);
   }
 
   try {
     const europe = await searchEuropePMC(query, litLimit);
     collected.push(...europe);
+    logGroundingEvent('provider_result', {
+      provider: 'EuropePMC',
+      count: europe.length,
+      query: previewText(query, 100),
+    });
   } catch (err) {
+    logGroundingEvent('provider_error', {
+      provider: 'EuropePMC',
+      error: err instanceof Error ? err.message : String(err),
+      query: previewText(query, 100),
+    });
     if (__DEV__) console.warn('[GuruGrounded] EuropePMC failed:', (err as Error).message);
   }
 
@@ -499,12 +563,35 @@ export async function searchLatestMedicalSources(
     try {
       const pubmed = await searchPubMedFallback(query, litLimit);
       collected.push(...pubmed);
+      logGroundingEvent('provider_result', {
+        provider: 'PubMed',
+        count: pubmed.length,
+        query: previewText(query, 100),
+        fallback: true,
+      });
     } catch (err) {
+      logGroundingEvent('provider_error', {
+        provider: 'PubMed',
+        error: err instanceof Error ? err.message : String(err),
+        query: previewText(query, 100),
+        fallback: true,
+      });
       if (__DEV__) console.warn('[GuruGrounded] PubMed fallback failed:', (err as Error).message);
     }
   }
 
-  return dedupeGroundingSources(collected).slice(0, maxResults);
+  const deduped = dedupeGroundingSources(collected).slice(0, maxResults);
+  logGroundingEvent('search_complete', {
+    query: previewText(query, 140),
+    totalCollected: collected.length,
+    totalReturned: deduped.length,
+    providerBreakdown: deduped.reduce<Record<string, number>>((acc, src) => {
+      acc[src.source] = (acc[src.source] ?? 0) + 1;
+      return acc;
+    }, {}),
+  });
+
+  return deduped;
 }
 
 export function renderSourcesForPrompt(sources: MedicalGroundingSource[]): string {

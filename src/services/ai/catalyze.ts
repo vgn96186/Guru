@@ -2,6 +2,8 @@ import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
 import { CatalystSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
+import { saveBulkQuestions } from '../../db/queries/questionBank';
+import type { SaveQuestionInput } from '../../types';
 
 export async function catalyzeTranscript(
   transcript: string,
@@ -38,5 +40,22 @@ Return ONLY a JSON object matching this structure:
   ];
 
   const { parsed } = await generateJSONWithRouting(messages, CatalystSchema, 'high');
+
+  // Auto-save quiz questions to Question Bank
+  if (parsed.quiz?.questions?.length) {
+    const inputs: SaveQuestionInput[] = parsed.quiz.questions.map((q) => ({
+      question: q.question,
+      options: q.options as [string, string, string, string],
+      correctIndex: q.correctIndex,
+      explanation: q.explanation,
+      subjectName: parsed.subject ?? '',
+      topicName: parsed.topics?.[0] ?? '',
+      source: 'lecture_quiz' as const,
+    }));
+    saveBulkQuestions(inputs).catch((err) => {
+      if (__DEV__) console.warn('[QuestionBank] Auto-save from catalyze failed:', err);
+    });
+  }
+
   return parsed;
 }

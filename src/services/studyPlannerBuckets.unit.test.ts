@@ -13,7 +13,7 @@ function makeTopic(params: {
   return {
     id: params.id,
     subjectId: params.subjectId ?? 1,
-    parentTopicId: null,
+    parentTopicId: 999,
     name: `Topic ${params.id}`,
     subtopics: [],
     estimatedMinutes: 30,

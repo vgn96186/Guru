@@ -71,6 +71,8 @@ export type MenuStackParamList = {
   NotesSearch: undefined;
   ManualNoteCreation: undefined;
   TranscriptHistory: { noteId?: number } | undefined;
+  RecordingVault: undefined;
+  QuestionBank: undefined;
 };
 
 export type TabParamList = {

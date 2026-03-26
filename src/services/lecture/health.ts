@@ -105,6 +105,7 @@ async function runTranscriptionEvidenceCheck(
         groq: !!opts.groqKey,
         huggingface: !!opts.huggingFaceToken,
         cloudflare: false,
+        deepgram: false,
         local: !!opts.localWhisperPath,
       },
       isUsableResult: (value) => value.trim().length > 0,

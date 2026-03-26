@@ -14,6 +14,7 @@ import {
   Platform,
   Modal,
   Pressable,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -52,13 +53,16 @@ import {
   testCloudflareConnection,
   testGitHubModelsConnection,
   testKiloConnection,
+  testDeepgramConnection,
 } from '../services/ai/providerHealth';
-import type { ContentType, Subject, ProviderId } from '../types';
+import type { ContentType, Subject } from '../types';
 import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
 import { theme } from '../constants/theme';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
+  DEFAULT_INICET_DATE,
   DEFAULT_IMAGE_GENERATION_MODEL,
+  DEFAULT_NEET_DATE,
   IMAGE_GENERATION_MODEL_OPTIONS,
 } from '../config/appConfig';
 import { formatGuruChatModelChipLabel } from '../services/ai/guruChatModelPreference';
@@ -264,16 +268,21 @@ export default function SettingsScreen() {
       >
     >();
   const isFocused = useIsFocused();
-  const { profile, refreshProfile } = useAppStore();
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['ai_config']));
+  const profile = useAppStore((state) => state.profile);
+  const refreshProfile = useAppStore((state) => state.refreshProfile);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   function SectionToggle({
     id,
     title,
+    icon,
+    tint,
     children,
   }: {
     id: string;
     title: string;
+    icon: keyof typeof Ionicons.glyphMap;
+    tint: string;
     children: React.ReactNode;
   }) {
     const isExpanded = expandedSections.has(id);
@@ -291,14 +300,60 @@ export default function SettingsScreen() {
           }
           activeOpacity={0.8}
         >
-          <Text style={styles.sectionTitle}>{title}</Text>
+          <View style={styles.sectionHeaderLeft}>
+            <View
+              style={[
+                styles.sectionIconWrap,
+                { backgroundColor: `${tint}18`, borderColor: `${tint}55` },
+              ]}
+            >
+              <Ionicons name={icon} size={18} color={tint} />
+            </View>
+            <Text style={styles.sectionTitle}>{title}</Text>
+          </View>
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={20}
+            size={18}
             color={theme.colors.textMuted}
           />
         </TouchableOpacity>
         {isExpanded && <View style={styles.sectionContent}>{children}</View>}
+      </View>
+    );
+  }
+
+  function SubSectionToggle({
+    id,
+    title,
+    children,
+  }: {
+    id: string;
+    title: string;
+    children: React.ReactNode;
+  }) {
+    const isExpanded = expandedSections.has(id);
+    return (
+      <View>
+        <TouchableOpacity
+          style={styles.subSectionHeader}
+          onPress={() =>
+            setExpandedSections((prev) => {
+              const next = new Set(prev);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            })
+          }
+          activeOpacity={0.8}
+        >
+          <Text style={styles.subSectionLabel}>{title}</Text>
+          <Ionicons
+            name={isExpanded ? 'chevron-up' : 'chevron-down'}
+            size={14}
+            color={theme.colors.primary}
+          />
+        </TouchableOpacity>
+        {isExpanded && children}
       </View>
     );
   }
@@ -315,11 +370,11 @@ export default function SettingsScreen() {
   const [huggingFaceToken, setHuggingFaceToken] = useState('');
   const [huggingFaceModel, setHuggingFaceModel] = useState(DEFAULT_HF_TRANSCRIPTION_MODEL);
   const [transcriptionProvider, setTranscriptionProvider] = useState<
-    'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'local'
+    'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'deepgram' | 'local'
   >('auto');
   const [name, setName] = useState('');
-  const [inicetDate, setInicetDate] = useState('2026-05-01');
-  const [neetDate, setNeetDate] = useState('2026-08-01');
+  const [inicetDate, setInicetDate] = useState(DEFAULT_INICET_DATE);
+  const [neetDate, setNeetDate] = useState(DEFAULT_NEET_DATE);
   const [sessionLength, setSessionLength] = useState('45');
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
@@ -371,6 +426,9 @@ export default function SettingsScreen() {
   const [agentRouterKey, setAgentRouterKey] = useState('');
   const [testingAgentRouterKey, setTestingAgentRouterKey] = useState(false);
   const [agentRouterKeyTestResult, setAgentRouterKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [deepgramApiKey, setDeepgramApiKey] = useState('');
+  const [testingDeepgramKey, setTestingDeepgramKey] = useState(false);
+  const [deepgramKeyTestResult, setDeepgramKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
     DEFAULT_IMAGE_GENERATION_MODEL,
@@ -378,6 +436,7 @@ export default function SettingsScreen() {
   const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
   const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
   const [providerOrder, setProviderOrder] = useState<import('../types').ProviderId[]>([]);
+  const profileHydrationSignatureRef = useRef<string | null>(null);
 
   const liveGuruChatModels = useLiveGuruChatModels(profile ?? null, {
     groqApiKey: groqKey,
@@ -520,6 +579,19 @@ export default function SettingsScreen() {
     setTestingHuggingFaceToken(false);
   }
 
+  async function testDeepgramKey() {
+    const key = deepgramApiKey.trim() || (profile as any)?.deepgramApiKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter a Deepgram API key first.');
+      return;
+    }
+    setTestingDeepgramKey(true);
+    setDeepgramKeyTestResult(null);
+    const res = await testDeepgramConnection(key);
+    setDeepgramKeyTestResult(res.ok ? 'ok' : 'fail');
+    setTestingDeepgramKey(false);
+  }
+
   async function testGeminiKey() {
     const key = geminiKey.trim() || profile?.geminiKey || '';
     if (!key) {
@@ -593,6 +665,49 @@ export default function SettingsScreen() {
   // ── Profile → local state hydration ────────────────────────────────────────
   const profileLoaded = useRef(false);
 
+  const buildProfileHydrationSignature = useCallback((currentProfile: typeof profile): string | null => {
+    if (!currentProfile) return null;
+    return JSON.stringify({
+      groqApiKey: currentProfile.groqApiKey ?? '',
+      githubModelsPat: currentProfile.githubModelsPat ?? '',
+      kiloApiKey: currentProfile.kiloApiKey ?? '',
+      deepseekKey: currentProfile.deepseekKey ?? '',
+      agentRouterKey: currentProfile.agentRouterKey ?? '',
+      providerOrder: currentProfile.providerOrder?.length
+        ? currentProfile.providerOrder
+        : DEFAULT_PROVIDER_ORDER,
+      openrouterKey: currentProfile.openrouterKey ?? '',
+      geminiKey: currentProfile.geminiKey ?? '',
+      cloudflareAccountId: currentProfile.cloudflareAccountId ?? '',
+      cloudflareApiToken: currentProfile.cloudflareApiToken ?? '',
+      guruChatDefaultModel: currentProfile.guruChatDefaultModel ?? 'auto',
+      imageGenerationModel:
+        currentProfile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL,
+      guruMemoryNotes: currentProfile.guruMemoryNotes ?? '',
+      preferGeminiStructuredJson: currentProfile.preferGeminiStructuredJson !== false,
+      huggingFaceToken: currentProfile.huggingFaceToken ?? '',
+      huggingFaceTranscriptionModel:
+        currentProfile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL,
+      transcriptionProvider: currentProfile.transcriptionProvider ?? 'auto',
+      displayName: currentProfile.displayName,
+      inicetDate: currentProfile.inicetDate,
+      neetDate: currentProfile.neetDate,
+      preferredSessionLength: currentProfile.preferredSessionLength,
+      dailyGoalMinutes: currentProfile.dailyGoalMinutes,
+      notificationsEnabled: currentProfile.notificationsEnabled,
+      strictModeEnabled: currentProfile.strictModeEnabled,
+      bodyDoublingEnabled: currentProfile.bodyDoublingEnabled ?? true,
+      blockedContentTypes: currentProfile.blockedContentTypes ?? [],
+      idleTimeoutMinutes: currentProfile.idleTimeoutMinutes ?? 2,
+      breakDurationMinutes: currentProfile.breakDurationMinutes ?? 5,
+      pomodoroEnabled: currentProfile.pomodoroEnabled ?? true,
+      pomodoroIntervalMinutes: currentProfile.pomodoroIntervalMinutes ?? 20,
+      notificationHour: currentProfile.notificationHour ?? 7,
+      guruFrequency: currentProfile.guruFrequency ?? 'normal',
+      focusSubjectIds: currentProfile.focusSubjectIds ?? [],
+    });
+  }, []);
+
   useEffect(() => {
     const loadSubjects = async () => {
       try {
@@ -604,6 +719,12 @@ export default function SettingsScreen() {
     };
     loadSubjects();
     if (profile) {
+      const nextSignature = buildProfileHydrationSignature(profile);
+      if (nextSignature && profileHydrationSignatureRef.current === nextSignature) {
+        if (!profileLoaded.current) profileLoaded.current = true;
+        return;
+      }
+
       setGroqKey(profile.groqApiKey ?? '');
       setGithubModelsPat(profile.githubModelsPat ?? '');
       setKiloApiKey(profile.kiloApiKey ?? '');
@@ -620,6 +741,7 @@ export default function SettingsScreen() {
       setPreferGeminiStructuredJson(profile.preferGeminiStructuredJson !== false);
       setHuggingFaceToken(profile.huggingFaceToken ?? '');
       setHuggingFaceModel(profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
+      setDeepgramApiKey((profile as any).deepgramApiKey ?? '');
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
@@ -637,10 +759,10 @@ export default function SettingsScreen() {
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
-      // Mark profile as loaded so auto-save starts after this render
-      setTimeout(() => { profileLoaded.current = true; }, 0);
+      profileHydrationSignatureRef.current = nextSignature;
+      profileLoaded.current = true;
     }
-  }, [profile]);
+  }, [buildProfileHydrationSignature, profile]);
 
   // ── Debounced auto-save ──────────────────────────────────────────────────────
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -666,6 +788,7 @@ export default function SettingsScreen() {
         preferGeminiStructuredJson,
         huggingFaceToken: huggingFaceToken.trim(),
         huggingFaceTranscriptionModel: huggingFaceModel.trim() || DEFAULT_HF_TRANSCRIPTION_MODEL,
+        deepgramApiKey: deepgramApiKey.trim(),
         transcriptionProvider,
         displayName: name.trim() || 'Doctor',
         inicetDate,
@@ -688,9 +811,10 @@ export default function SettingsScreen() {
         try {
           await requestNotificationPermissions();
           await refreshAccountabilityNotifications();
-        } catch { /* non-critical */ }
+        } catch {
+          /* non-critical */
+        }
       }
-      refreshProfile();
     } catch (err) {
       // updateUserProfile already shows a toast on error
       if (__DEV__) console.warn('[Settings] Auto-save failed:', err);
@@ -704,7 +828,6 @@ export default function SettingsScreen() {
     transcriptionProvider, name, inicetDate, neetDate, sessionLength, dailyGoal,
     notifs, strictMode, bodyDoubling, blockedTypes, idleTimeout, breakDuration,
     pomodoroEnabled, pomodoroInterval, notifHour, guruFrequency, focusSubjectIds,
-    refreshProfile,
   ]);
 
   // Fire auto-save 600ms after any setting changes (skip initial profile load)
@@ -714,6 +837,34 @@ export default function SettingsScreen() {
     autoSaveTimer.current = setTimeout(doAutoSave, 600);
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [doAutoSave]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('blur', () => {
+      refreshProfile().catch((err) => {
+        if (__DEV__) console.warn('[Settings] refresh on blur failed:', err);
+      });
+    });
+    return unsubscribe;
+  }, [navigation, refreshProfile]);
+
+  const moveProvider = useCallback((fromIndex: number, toIndex: number) => {
+    setProviderOrder((currentOrder) => {
+      if (
+        fromIndex < 0 ||
+        toIndex < 0 ||
+        fromIndex >= currentOrder.length ||
+        toIndex >= currentOrder.length ||
+        fromIndex === toIndex
+      ) {
+        return currentOrder;
+      }
+
+      const next = [...currentOrder];
+      const [moved] = next.splice(fromIndex, 1);
+      next.splice(toIndex, 0, moved);
+      return next;
+    });
+  }, []);
 
   async function testNotification() {
     try {
@@ -767,34 +918,30 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'none'}
+        overScrollMode="never"
+      >
         <ScreenHeader
           title="Settings"
           subtitle="Control sync, backups, AI, and study behavior."
           onBackPress={() => navigation.navigate('MenuHome')}
         />
 
-        <SectionToggle id="ai_config" title="🤖 AI Configuration">
-          <Label text="Guru Chat — default model" />
+        <Text style={styles.categoryLabel}>AI & PROVIDERS</Text>
+        <SectionToggle id="ai_config" title="AI Configuration" icon="hardware-chip-outline" tint="#6C63FF">
+          {/* ── Chat Model ─────────────────────────────── */}
+          <SubSectionToggle id="ai_chat_model" title="CHAT MODEL">
           <Text style={styles.hint}>
-            Saved default when you open Guru Chat (you can still change per session). Pick Auto,
-            on-device, or a specific model under each provider below.
+            Default model for Guru Chat (changeable per session).
           </Text>
-          <Label text="Guru remembers (optional)" />
-          <Text style={styles.hint}>
-            Short notes Guru uses in every chat: target exam, weak subjects, or how you like to
-            learn. Session-specific memory is built automatically from your messages.
-          </Text>
-          <TextInput
-            style={[styles.input, styles.guruMemoryInput]}
-            placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
-            placeholderTextColor={theme.colors.textMuted}
-            value={guruMemoryNotes}
-            onChangeText={setGuruMemoryNotes}
-            multiline
-            textAlignVertical="top"
-            autoCapitalize="sentences"
-          />
           <View style={styles.liveModelsRefreshRow}>
             <TouchableOpacity
               style={[styles.testBtn, { marginBottom: 0, flexShrink: 1 }]}
@@ -862,278 +1009,261 @@ export default function SettingsScreen() {
             ]}
           />
 
-          <Label text="Groq API Key (console.groq.com)" />
-          <TextInput
-            style={styles.input}
-            placeholder="gsk_..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={groqKey}
-            onChangeText={setGroqKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+          </SubSectionToggle>
+
+          {/* ── Memory ─────────────────────────────── */}
+          <View style={styles.subSectionDivider} />
+          <SubSectionToggle id="ai_memory" title="GURU MEMORY">
           <Text style={styles.hint}>
-            Used for transcription and AI generation. Get a free key at console.groq.com
+            Persistent notes Guru uses in every chat. Session memory is built automatically.
           </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testGroqKey}
-            disabled={testingGroqKey}
-            activeOpacity={0.8}
-          >
-            {testingGroqKey ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  groqKeyTestResult === 'ok' && { color: theme.colors.success },
-                  groqKeyTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {groqKeyTestResult === 'ok'
-                  ? '✅ Groq key works!'
-                  : groqKeyTestResult === 'fail'
-                    ? '❌ Key invalid or unreachable'
-                    : 'Test Groq Connection'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="GitHub Models (models.github.ai)" />
           <TextInput
-            style={styles.input}
-            placeholder="GitHub PAT (fine-grained: Models read)"
+            style={[styles.input, styles.guruMemoryInput]}
+            placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
             placeholderTextColor={theme.colors.textMuted}
-            value={githubModelsPat}
-            onChangeText={setGithubModelsPat}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
+            value={guruMemoryNotes}
+            onChangeText={setGuruMemoryNotes}
+            multiline
+            textAlignVertical="top"
+            autoCapitalize="sentences"
           />
-          <Text style={styles.hint}>
-            OpenAI-compatible chat at models.github.ai. Fine-grained PAT: grant Models (read).
-            Classic PAT: include the models scope. See GitHub docs: REST API Models inference.
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testGithubModelsPat}
-            disabled={testingGithubPat}
-            activeOpacity={0.8}
-          >
-            {testingGithubPat ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  githubPatTestResult === 'ok' && { color: theme.colors.success },
-                  githubPatTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {githubPatTestResult === 'ok'
-                  ? '✅ GitHub Models token works!'
-                  : githubPatTestResult === 'fail'
-                    ? '❌ Token invalid or Models unreachable'
-                    : 'Test GitHub Models'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="OpenRouter API Key — optional fallback" />
-          <TextInput
-            style={styles.input}
-            placeholder="sk-or-v1-..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={orKey}
-            onChangeText={setOrKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            Optional. Guru falls back to free OpenRouter models (Llama 3.3, Gemma, DeepSeek, etc.)
-            when Groq is unavailable. Get a free key at openrouter.ai
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testOpenRouterKey}
-            disabled={testingOpenRouterKey}
-            activeOpacity={0.8}
-          >
-            {testingOpenRouterKey ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  openRouterKeyTestResult === 'ok' && { color: theme.colors.success },
-                  openRouterKeyTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {openRouterKeyTestResult === 'ok'
-                  ? '✅ OpenRouter key works!'
-                  : openRouterKeyTestResult === 'fail'
-                    ? '❌ Key invalid or unreachable'
-                    : 'Test OpenRouter Connection'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="Kilo API Key — optional provider" />
-          <TextInput
-            style={styles.input}
-            placeholder="kilo_..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={kiloApiKey}
-            onChangeText={setKiloApiKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            OpenAI-compatible gateway at api.kilo.ai. Supports model IDs like
-            `anthropic/claude-sonnet-4.5`.
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testKiloKey}
-            disabled={testingKiloKey}
-            activeOpacity={0.8}
-          >
-            {testingKiloKey ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  kiloKeyTestResult === 'ok' && { color: theme.colors.success },
-                  kiloKeyTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {kiloKeyTestResult === 'ok'
-                  ? '✅ Kilo key works!'
-                  : kiloKeyTestResult === 'fail'
-                    ? '❌ Key invalid or unreachable'
-                    : 'Test Kilo Connection'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="DeepSeek API Key — optional" />
-          <TextInput
-            style={styles.input}
-            placeholder="sk-..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={deepseekKey}
-            onChangeText={setDeepseekKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            Direct DeepSeek API access (deepseek-chat, deepseek-reasoner). Get a key at
-            platform.deepseek.com
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testDeepseekKey}
-            disabled={testingDeepseekKey}
-            activeOpacity={0.8}
-          >
-            {testingDeepseekKey ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  deepseekKeyTestResult === 'ok' && { color: theme.colors.success },
-                  deepseekKeyTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {deepseekKeyTestResult === 'ok'
-                  ? '✅ DeepSeek key works!'
-                  : deepseekKeyTestResult === 'fail'
-                    ? '❌ Key invalid or unreachable'
-                    : 'Test DeepSeek Connection'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="AgentRouter API Key — optional" />
-          <TextInput
-            style={styles.input}
-            placeholder="sk-..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={agentRouterKey}
-            onChangeText={setAgentRouterKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            Free AI proxy (DeepSeek V3.2, R1, GLM 4.5/4.6). Get a key at
-            agentrouter.org/console/token
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testAgentRouterKey}
-            disabled={testingAgentRouterKey}
-            activeOpacity={0.8}
-          >
-            {testingAgentRouterKey ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  agentRouterKeyTestResult === 'ok' && { color: theme.colors.success },
-                  agentRouterKeyTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {agentRouterKeyTestResult === 'ok'
-                  ? '✅ AgentRouter key works!'
-                  : agentRouterKeyTestResult === 'fail'
-                    ? '❌ Key invalid or unreachable'
-                    : 'Test AgentRouter Connection'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="Google AI (Gemini) API Key — optional" />
-          <TextInput
-            style={styles.input}
-            placeholder="AIza..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={geminiKey}
-            onChangeText={setGeminiKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            Enables Gemini and Gemini image models in Guru Chat and routing. Create a key at
-            aistudio.google.com/apikey
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testGeminiKey}
-            disabled={testingGeminiKey}
-            activeOpacity={0.8}
-          >
-            {testingGeminiKey ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  geminiKeyTestResult === 'ok' && { color: theme.colors.success },
-                  geminiKeyTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {geminiKeyTestResult === 'ok'
-                  ? '✅ Gemini key works!'
-                  : geminiKeyTestResult === 'fail'
-                    ? '❌ Key invalid or unreachable'
-                    : 'Test Gemini Connection'}
-              </Text>
-            )}
-          </TouchableOpacity>
+          </SubSectionToggle>
+
+          {/* ── API Keys ─────────────────────────────── */}
+          <View style={styles.subSectionDivider} />
+          <SubSectionToggle id="ai_api_keys" title="API KEYS">
+
+          <Label text="Groq" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="gsk_..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={groqKey}
+              onChangeText={setGroqKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, groqKeyTestResult === 'ok' && styles.validateBtnOk, groqKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testGroqKey}
+              disabled={testingGroqKey}
+              activeOpacity={0.8}
+            >
+              {testingGroqKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={groqKeyTestResult === 'ok' ? 'checkmark-circle' : groqKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={groqKeyTestResult === 'ok' ? theme.colors.success : groqKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Transcription + AI generation. Free key at console.groq.com</Text>
+          <Label text="GitHub Models" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="GitHub PAT (Models read)"
+              placeholderTextColor={theme.colors.textMuted}
+              value={githubModelsPat}
+              onChangeText={setGithubModelsPat}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, githubPatTestResult === 'ok' && styles.validateBtnOk, githubPatTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testGithubModelsPat}
+              disabled={testingGithubPat}
+              activeOpacity={0.8}
+            >
+              {testingGithubPat ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={githubPatTestResult === 'ok' ? 'checkmark-circle' : githubPatTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={githubPatTestResult === 'ok' ? theme.colors.success : githubPatTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Fine-grained PAT with Models (read) scope at models.github.ai</Text>
+          <Label text="OpenRouter" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="sk-or-v1-..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={orKey}
+              onChangeText={setOrKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, openRouterKeyTestResult === 'ok' && styles.validateBtnOk, openRouterKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testOpenRouterKey}
+              disabled={testingOpenRouterKey}
+              activeOpacity={0.8}
+            >
+              {testingOpenRouterKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={openRouterKeyTestResult === 'ok' ? 'checkmark-circle' : openRouterKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={openRouterKeyTestResult === 'ok' ? theme.colors.success : openRouterKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Free model fallback. Key at openrouter.ai</Text>
+          <Label text="Kilo" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="kilo_..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={kiloApiKey}
+              onChangeText={setKiloApiKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, kiloKeyTestResult === 'ok' && styles.validateBtnOk, kiloKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testKiloKey}
+              disabled={testingKiloKey}
+              activeOpacity={0.8}
+            >
+              {testingKiloKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={kiloKeyTestResult === 'ok' ? 'checkmark-circle' : kiloKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={kiloKeyTestResult === 'ok' ? theme.colors.success : kiloKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Gateway at api.kilo.ai (e.g. anthropic/claude-sonnet-4.5)</Text>
+          <Label text="DeepSeek" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="sk-..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={deepseekKey}
+              onChangeText={setDeepseekKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, deepseekKeyTestResult === 'ok' && styles.validateBtnOk, deepseekKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testDeepseekKey}
+              disabled={testingDeepseekKey}
+              activeOpacity={0.8}
+            >
+              {testingDeepseekKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={deepseekKeyTestResult === 'ok' ? 'checkmark-circle' : deepseekKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={deepseekKeyTestResult === 'ok' ? theme.colors.success : deepseekKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Key at platform.deepseek.com</Text>
+          <Label text="AgentRouter" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="sk-..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={agentRouterKey}
+              onChangeText={setAgentRouterKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, agentRouterKeyTestResult === 'ok' && styles.validateBtnOk, agentRouterKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testAgentRouterKey}
+              disabled={testingAgentRouterKey}
+              activeOpacity={0.8}
+            >
+              {testingAgentRouterKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={agentRouterKeyTestResult === 'ok' ? 'checkmark-circle' : agentRouterKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={agentRouterKeyTestResult === 'ok' ? theme.colors.success : agentRouterKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Free proxy. Key at agentrouter.org/console/token</Text>
+          <Label text="Google Gemini" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="AIza..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={geminiKey}
+              onChangeText={setGeminiKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, geminiKeyTestResult === 'ok' && styles.validateBtnOk, geminiKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testGeminiKey}
+              disabled={testingGeminiKey}
+              activeOpacity={0.8}
+            >
+              {testingGeminiKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={geminiKeyTestResult === 'ok' ? 'checkmark-circle' : geminiKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={geminiKeyTestResult === 'ok' ? theme.colors.success : geminiKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Chat + image models. Key at aistudio.google.com/apikey</Text>
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Structured JSON (Gemini)</Text>
@@ -1150,59 +1280,57 @@ export default function SettingsScreen() {
               thumbColor={theme.colors.textPrimary}
             />
           </View>
-          <Label text="Cloudflare Workers AI — Account ID" />
+          <Label text="Cloudflare Workers AI" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="Account ID (32-char hex)"
+              placeholderTextColor={theme.colors.textMuted}
+              value={cfAccountId}
+              onChangeText={setCfAccountId}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, cloudflareTestResult === 'ok' && styles.validateBtnOk, cloudflareTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testCloudflareKeys}
+              disabled={testingCloudflare}
+              activeOpacity={0.8}
+            >
+              {testingCloudflare ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={cloudflareTestResult === 'ok' ? 'checkmark-circle' : cloudflareTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={cloudflareTestResult === 'ok' ? theme.colors.success : cloudflareTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
           <TextInput
             style={styles.input}
-            placeholder="32-char hex account id"
-            placeholderTextColor={theme.colors.textMuted}
-            value={cfAccountId}
-            onChangeText={setCfAccountId}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Label text="Cloudflare Workers AI — API Token" />
-          <TextInput
-            style={styles.input}
-            placeholder="API token with Workers AI read"
+            placeholder="API Token (Workers AI read)"
             placeholderTextColor={theme.colors.textMuted}
             value={cfApiToken}
             onChangeText={setCfApiToken}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
+            autoComplete="off"
+            importantForAutofill="no"
+            textContentType="none"
           />
+          <Text style={styles.hint}>Chat, images, and Whisper transcription via Cloudflare</Text>
+          </SubSectionToggle>
+
+          {/* ── Routing ─────────────────────────────── */}
+          <View style={styles.subSectionDivider} />
+          <SubSectionToggle id="ai_routing" title="PROVIDER ROUTING">
           <Text style={styles.hint}>
-            Used for Cloudflare chat models, image generation, and optional Whisper transcription.
-            Dashboard → Workers AI → copy Account ID; create an API token with Workers AI
-            permissions.
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testCloudflareKeys}
-            disabled={testingCloudflare}
-            activeOpacity={0.8}
-          >
-            {testingCloudflare ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  cloudflareTestResult === 'ok' && { color: theme.colors.success },
-                  cloudflareTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {cloudflareTestResult === 'ok'
-                  ? '✅ Cloudflare Workers AI works!'
-                  : cloudflareTestResult === 'fail'
-                    ? '❌ Invalid credentials or AI unavailable'
-                    : 'Test Cloudflare Workers AI'}
-              </Text>
-            )}
-          </TouchableOpacity>
-          <Label text="Provider Priority Order" />
-          <Text style={styles.hint}>
-            Drag providers up/down to change fallback order. The first available provider is used.
+            Reorder fallback priority. First available provider is used.
           </Text>
           {providerOrder.map((id, index) => {
             const hasKey = (() => {
@@ -1226,31 +1354,61 @@ export default function SettingsScreen() {
                 <Text style={[styles.providerName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                   {PROVIDER_DISPLAY_NAMES[id]}
                 </Text>
-                <View style={styles.providerArrows}>
+                <View style={styles.providerActions}>
+                  <Pressable
+                    disabled={index === 0}
+                    onPress={() => moveProvider(index, 0)}
+                    style={({ pressed }) => [
+                      styles.providerActionBtn,
+                      index === 0 && styles.providerActionBtnDisabled,
+                      pressed && index !== 0 && styles.providerActionBtnPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Move ${PROVIDER_DISPLAY_NAMES[id]} to top`}
+                  >
+                    <Ionicons name="play-skip-back" size={16} color={theme.colors.textPrimary} />
+                  </Pressable>
                   <TouchableOpacity
                     disabled={index === 0}
-                    onPress={() => {
-                      const next = [...providerOrder];
-                      [next[index - 1], next[index]] = [next[index], next[index - 1]];
-                      setProviderOrder(next);
-                    }}
-                    style={[styles.arrowBtn, index === 0 && { opacity: 0.25 }]}
+                    onPress={() => moveProvider(index, index - 1)}
+                    style={[
+                      styles.providerActionBtn,
+                      index === 0 && styles.providerActionBtnDisabled,
+                    ]}
                     activeOpacity={0.6}
                   >
                     <Ionicons name="chevron-up" size={18} color={theme.colors.textPrimary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     disabled={index === providerOrder.length - 1}
-                    onPress={() => {
-                      const next = [...providerOrder];
-                      [next[index], next[index + 1]] = [next[index + 1], next[index]];
-                      setProviderOrder(next);
-                    }}
-                    style={[styles.arrowBtn, index === providerOrder.length - 1 && { opacity: 0.25 }]}
+                    onPress={() => moveProvider(index, index + 1)}
+                    style={[
+                      styles.providerActionBtn,
+                      index === providerOrder.length - 1 && styles.providerActionBtnDisabled,
+                    ]}
                     activeOpacity={0.6}
                   >
                     <Ionicons name="chevron-down" size={18} color={theme.colors.textPrimary} />
                   </TouchableOpacity>
+                  <Pressable
+                    disabled={index === providerOrder.length - 1}
+                    onPress={() => moveProvider(index, providerOrder.length - 1)}
+                    style={({ pressed }) => [
+                      styles.providerActionBtn,
+                      index === providerOrder.length - 1 && styles.providerActionBtnDisabled,
+                      pressed &&
+                        index !== providerOrder.length - 1 &&
+                        styles.providerActionBtnPressed,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Move ${PROVIDER_DISPLAY_NAMES[id]} to bottom`}
+                  >
+                    <Ionicons
+                      name="play-skip-forward"
+                      size={16}
+                      color={theme.colors.textPrimary}
+                    />
+                  </Pressable>
                 </View>
               </View>
             );
@@ -1263,12 +1421,13 @@ export default function SettingsScreen() {
             <Text style={styles.testBtnText}>Reset to Default Order</Text>
           </TouchableOpacity>
 
-          <Label text="Study image generation — model" />
+          </SubSectionToggle>
+
+          {/* ── Image Generation ────────────────────── */}
+          <View style={styles.subSectionDivider} />
+          <SubSectionToggle id="ai_image_gen" title="IMAGE GENERATION">
           <Text style={styles.hint}>
-            Diagrams from Guru Chat and topic notes. On a free Google AI Studio key, pick{' '}
-            <Text style={{ fontWeight: '600' }}>2.5 Flash Image</Text> or{' '}
-            <Text style={{ fontWeight: '600' }}>3.1 Flash Image</Text> if Pro returns a billing
-            error. Auto tries those before Pro, then Cloudflare Flux.
+            Diagrams and study images. On a free Gemini key, use Flash if Pro returns a billing error.
           </Text>
           <View style={styles.modelChipRow}>
             {IMAGE_GENERATION_MODEL_OPTIONS.map((opt) => (
@@ -1290,46 +1449,47 @@ export default function SettingsScreen() {
             ))}
           </View>
 
-          <Label text="Hugging Face token — optional transcription provider" />
-          <TextInput
-            style={styles.input}
-            placeholder="hf_..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={huggingFaceToken}
-            onChangeText={setHuggingFaceToken}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            Used only for speech-to-text. Create a token at huggingface.co/settings/tokens.
-          </Text>
-          <TouchableOpacity
-            style={[styles.testBtn, { marginBottom: 4 }]}
-            onPress={testHuggingFaceKey}
-            disabled={testingHuggingFaceToken}
-            activeOpacity={0.8}
-          >
-            {testingHuggingFaceToken ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Text
-                style={[
-                  styles.testBtnText,
-                  huggingFaceTokenTestResult === 'ok' && { color: theme.colors.success },
-                  huggingFaceTokenTestResult === 'fail' && { color: theme.colors.error },
-                ]}
-              >
-                {huggingFaceTokenTestResult === 'ok'
-                  ? '✅ Hugging Face token works!'
-                  : huggingFaceTokenTestResult === 'fail'
-                    ? '❌ Token invalid or unreachable'
-                    : 'Test Hugging Face Token'}
-              </Text>
-            )}
-          </TouchableOpacity>
+          </SubSectionToggle>
 
-          <Label text="Hugging Face transcription model" />
+          {/* ── Transcription ───────────────────────── */}
+          <View style={styles.subSectionDivider} />
+          <SubSectionToggle id="ai_transcription" title="TRANSCRIPTION">
+
+          <Label text="Hugging Face" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="hf_..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={huggingFaceToken}
+              onChangeText={setHuggingFaceToken}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, huggingFaceTokenTestResult === 'ok' && styles.validateBtnOk, huggingFaceTokenTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testHuggingFaceKey}
+              disabled={testingHuggingFaceToken}
+              activeOpacity={0.8}
+            >
+              {testingHuggingFaceToken ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={huggingFaceTokenTestResult === 'ok' ? 'checkmark-circle' : huggingFaceTokenTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={huggingFaceTokenTestResult === 'ok' ? theme.colors.success : huggingFaceTokenTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Speech-to-text. Token at huggingface.co/settings/tokens</Text>
+
+          <Label text="HF transcription model" />
           <TextInput
             style={styles.input}
             placeholder={DEFAULT_HF_TRANSCRIPTION_MODEL}
@@ -1340,9 +1500,42 @@ export default function SettingsScreen() {
             autoCorrect={false}
           />
           <Text style={styles.hint}>
-            Example: `openai/whisper-large-v3-turbo`. This is cloud inference, not the local
-            whisper.cpp downloader below.
+            e.g. openai/whisper-large-v3-turbo (cloud, not local whisper)
           </Text>
+
+          <Label text="Deepgram" />
+          <View style={styles.apiKeyRow}>
+            <TextInput
+              style={[styles.input, styles.apiKeyInput]}
+              placeholder="dg_..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={deepgramApiKey}
+              onChangeText={setDeepgramApiKey}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              textContentType="none"
+            />
+            <TouchableOpacity
+              style={[styles.validateBtn, deepgramKeyTestResult === 'ok' && styles.validateBtnOk, deepgramKeyTestResult === 'fail' && styles.validateBtnFail]}
+              onPress={testDeepgramKey}
+              disabled={testingDeepgramKey}
+              activeOpacity={0.8}
+            >
+              {testingDeepgramKey ? (
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              ) : (
+                <Ionicons
+                  name={deepgramKeyTestResult === 'ok' ? 'checkmark-circle' : deepgramKeyTestResult === 'fail' ? 'close-circle' : 'flash-outline'}
+                  size={20}
+                  color={deepgramKeyTestResult === 'ok' ? theme.colors.success : deepgramKeyTestResult === 'fail' ? theme.colors.error : theme.colors.primary}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.hint}>Nova-2 Medical transcription. Key at console.deepgram.com</Text>
 
           <Label text="Preferred transcription provider" />
           <View style={styles.frequencyRow}>
@@ -1352,6 +1545,7 @@ export default function SettingsScreen() {
                 ['groq', 'Groq'],
                 ['huggingface', 'Hugging Face'],
                 ['cloudflare', 'Cloudflare'],
+                ['deepgram', 'Deepgram'],
                 ['local', 'Local Whisper'],
               ] as const
             ).map(([provider, label]) => (
@@ -1372,20 +1566,25 @@ export default function SettingsScreen() {
             ))}
           </View>
           <Text style={styles.hint}>
-            `Auto` tries Groq first, then Cloudflare (if Account ID + token are set), Hugging Face,
-            then Local Whisper if enabled.
+            Auto: Groq → Cloudflare → HF → Deepgram → Local Whisper
           </Text>
 
+          </SubSectionToggle>
+
+          {/* ── Local Models ────────────────────────── */}
+          <View style={styles.subSectionDivider} />
           <TouchableOpacity
             style={styles.localModelBtn}
             activeOpacity={0.8}
             onPress={() => navigation.navigate('LocalModel' as any)}
           >
-            <Text style={styles.localModelBtnText}>🧠 Download Local AI Models (Offline)</Text>
+            <Ionicons name="download-outline" size={18} color={theme.colors.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={styles.localModelBtnText}>Download Local AI Models (Offline)</Text>
           </TouchableOpacity>
         </SectionToggle>
 
-        <SectionToggle id="permissions" title="✅ Permissions & Diagnostics">
+        <Text style={styles.categoryLabel}>ACCOUNT</Text>
+        <SectionToggle id="permissions" title="Permissions & Diagnostics" icon="shield-checkmark-outline" tint="#4CAF50">
           <PermissionRow
             label="Notifications"
             status={permStatus.notifs}
@@ -1429,7 +1628,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </SectionToggle>
 
-        <SectionToggle id="profile" title="👤 Profile">
+        <SectionToggle id="profile" title="Profile" icon="person-outline" tint="#8EC5FF">
           <TouchableOpacity
             style={[
               styles.testBtn,
@@ -1452,7 +1651,7 @@ export default function SettingsScreen() {
           />
         </SectionToggle>
 
-        <SectionToggle id="exam_dates" title="📅 Exam Dates">
+        <SectionToggle id="exam_dates" title="Exam Dates" icon="calendar-outline" tint="#FF9800">
           <Label text="INICET date (YYYY-MM-DD)" />
           <TextInput
             style={styles.input}
@@ -1497,7 +1696,8 @@ export default function SettingsScreen() {
           )}
         </SectionToggle>
 
-        <SectionToggle id="study_prefs" title="⏱️ Study Preferences">
+        <Text style={styles.categoryLabel}>STUDY</Text>
+        <SectionToggle id="study_prefs" title="Study Preferences" icon="school-outline" tint="#E040FB">
           <Label text="Preferred session length (minutes)" />
           <TextInput
             style={styles.input}
@@ -1531,7 +1731,7 @@ export default function SettingsScreen() {
           </View>
         </SectionToggle>
 
-        <SectionToggle id="notifications" title="🔔 Notifications">
+        <SectionToggle id="notifications" title="Notifications" icon="notifications-outline" tint="#FFD700">
           <View style={styles.switchRow}>
             <View>
               <Text style={styles.switchLabel}>Enable Guru's reminders</Text>
@@ -1578,7 +1778,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </SectionToggle>
 
-        <SectionToggle id="body_doubling" title="👻 Body Doubling">
+        <SectionToggle id="body_doubling" title="Body Doubling" icon="people-outline" tint="#7ED6A7">
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Guru presence during sessions</Text>
@@ -1595,7 +1795,7 @@ export default function SettingsScreen() {
           </View>
         </SectionToggle>
 
-        <SectionToggle id="content" title="🃏 Content Type Preferences">
+        <SectionToggle id="content" title="Content Type Preferences" icon="layers-outline" tint="#FF6B9D">
           <Text style={styles.hint}>
             Block card types you don't want in sessions. Keypoints can't be blocked.
           </Text>
@@ -1629,7 +1829,7 @@ export default function SettingsScreen() {
           </View>
         </SectionToggle>
 
-        <SectionToggle id="focus_subjects" title="🔬 Focus Subjects">
+        <SectionToggle id="focus_subjects" title="Focus Subjects" icon="flask-outline" tint="#2196F3">
           <Text style={styles.hint}>
             Pin subjects to limit sessions to those areas only. Clear all to study everything.
           </Text>
@@ -1664,7 +1864,7 @@ export default function SettingsScreen() {
           )}
         </SectionToggle>
 
-        <SectionToggle id="session" title="⏱️ Session Timing">
+        <SectionToggle id="session" title="Session Timing" icon="timer-outline" tint="#FF9800">
           <Label text="Idle timeout (minutes before auto-pause)" />
           <TextInput
             style={styles.input}
@@ -1683,7 +1883,7 @@ export default function SettingsScreen() {
           />
         </SectionToggle>
 
-        <SectionToggle id="pomodoro" title="🍅 Pomodoro (Lecture Overlay)">
+        <SectionToggle id="pomodoro" title="Pomodoro (Lecture Overlay)" icon="alarm-outline" tint="#F44336">
           <View style={styles.switchRow}>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text style={styles.switchLabel}>Enable Pomodoro Suggestion</Text>
@@ -1710,7 +1910,8 @@ export default function SettingsScreen() {
           <Text style={styles.hint}>Suggested: 20-30 minutes for optimal focus.</Text>
         </SectionToggle>
 
-        <SectionToggle id="data" title="🗑️ Data">
+        <Text style={styles.categoryLabel}>STORAGE</Text>
+        <SectionToggle id="data" title="Data" icon="trash-outline" tint="#F44336">
           <TouchableOpacity
             style={styles.dangerBtn}
             onPress={() =>
@@ -1768,7 +1969,7 @@ export default function SettingsScreen() {
           </Text>
         </SectionToggle>
 
-        <SectionToggle id="backup" title="💾 Backup & Restore">
+        <SectionToggle id="backup" title="Backup & Restore" icon="cloud-upload-outline" tint="#4CAF50">
           <Text style={styles.hint}>
             Export your study progress to a JSON file, or restore from a previous backup.
           </Text>
@@ -1844,7 +2045,7 @@ export default function SettingsScreen() {
           </View>
         </SectionToggle>
 
-        <SectionToggle id="advanced" title="🛠️ Library Maintenance">
+        <SectionToggle id="advanced" title="Library Maintenance" icon="construct-outline" tint="#8080A0">
           <Text style={styles.hint}>
             Run repair and recovery only when you need it instead of during startup.
           </Text>
@@ -1964,6 +2165,7 @@ export default function SettingsScreen() {
 
         <Text style={styles.footer}>Guru AI · v1.0.0</Text>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -2074,6 +2276,7 @@ function ModelDropdown({
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
   safe: { flex: 1, backgroundColor: theme.colors.background },
   content: { padding: theme.spacing.lg, paddingBottom: 60 },
   title: {
@@ -2083,19 +2286,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     marginTop: 8,
   },
-  section: { marginBottom: theme.spacing.xl },
+  section: { marginBottom: theme.spacing.md },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
+  },
+  sectionHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    flex: 1,
+  },
+  sectionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   sectionTitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 12,
+    color: theme.colors.textPrimary,
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
+  },
+  categoryLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.xs,
   },
   sectionContent: {
     backgroundColor: theme.colors.surface,
@@ -2133,20 +2356,47 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.success,
   },
   validateBtnError: { backgroundColor: theme.colors.errorSurface, borderColor: theme.colors.error },
+  validateBtnOk: {
+    backgroundColor: theme.colors.successSurface,
+    borderColor: theme.colors.success,
+  },
+  validateBtnFail: {
+    backgroundColor: theme.colors.errorSurface,
+    borderColor: theme.colors.error,
+  },
   validateBtnTesting: { backgroundColor: theme.colors.card, borderColor: theme.colors.primary },
   validateBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   validationMsg: { fontSize: 12, marginTop: 6, marginBottom: 2 },
   validationSuccess: { color: theme.colors.success },
   validationError: { color: theme.colors.error },
   hint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 4 },
+  subSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  subSectionLabel: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  subSectionDivider: {
+    height: 1,
+    backgroundColor: theme.colors.border,
+    marginVertical: 14,
+  },
   localModelBtn: {
     marginTop: 12,
+    flexDirection: 'row',
     backgroundColor: theme.colors.surface,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   localModelBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   autoFetchBtn: {
@@ -2189,8 +2439,19 @@ const styles = StyleSheet.create({
   providerIndex: { color: theme.colors.textMuted, fontSize: 13, width: 20, fontWeight: '600' as const },
   providerDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
   providerName: { flex: 1, fontSize: 14, fontWeight: '500' as const },
-  providerArrows: { flexDirection: 'row' as const, gap: 2 },
-  arrowBtn: { padding: 4 },
+  providerActions: { flexDirection: 'row' as const, gap: 6, marginLeft: 8 },
+  providerActionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  providerActionBtnDisabled: { opacity: 0.25 },
+  providerActionBtnPressed: { backgroundColor: theme.colors.card },
   saveBtn: {
     backgroundColor: theme.colors.primary,
     borderRadius: 16,

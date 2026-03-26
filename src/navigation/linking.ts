@@ -45,6 +45,8 @@ const linking: LinkingOptions<RootStackParamList> = {
               NotesHub: 'menu/notes',
               NotesSearch: 'menu/notes-search',
               TranscriptHistory: 'menu/lecture-history',
+              QuestionBank: 'menu/question-bank',
+              RecordingVault: 'menu/recording-vault',
             },
           },
         },

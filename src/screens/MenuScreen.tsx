@@ -26,10 +26,24 @@ const PRIMARY_DESTINATIONS: Array<{
   },
   {
     route: 'NotesHub',
-    title: 'Notes Vault',
-    subtitle: 'Lecture transcripts, topic notes, and search.',
+    title: 'Transcript Vault',
+    subtitle: 'Lecture transcripts, study notes, and search.',
     icon: 'library-outline',
     tint: '#7ED6A7',
+  },
+  {
+    route: 'QuestionBank',
+    title: 'Question Bank',
+    subtitle: 'All your MCQs — practice, review, and master.',
+    icon: 'help-circle-outline',
+    tint: '#E040FB',
+  },
+  {
+    route: 'RecordingVault',
+    title: 'Recording Vault',
+    subtitle: 'Browse old lecture recordings and re-process them.',
+    icon: 'mic-outline',
+    tint: '#FF7043',
   },
   {
     route: 'Settings',
@@ -57,50 +71,51 @@ export default function MenuScreen() {
             </Text>
           </View>
 
-          <Pressable
-            style={({ pressed }) => [styles.planBanner, pressed && styles.cardPressed]}
-            onPress={() => navigation.navigate('StudyPlan' as never)}
-            accessibilityRole="button"
-            accessibilityLabel="Open Plan"
-          >
-            <View style={styles.planBannerIconWrap}>
-              <Ionicons name="calendar" size={24} color="#6C63FF" />
-            </View>
-            <View style={styles.planBannerText}>
-              <Text style={styles.planBannerTitle}>Study Plan</Text>
-              <Text style={styles.planBannerSubtitle}>
-                Daily agenda, buckets, and next best moves
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
-          </Pressable>
+          <View style={styles.destinations}>
+            <Pressable
+              style={({ pressed }) => [styles.planBanner, pressed && styles.cardPressed]}
+              onPress={() => navigation.navigate('StudyPlan' as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Open Plan"
+            >
+              <View style={styles.planBannerIconWrap}>
+                <Ionicons name="calendar" size={24} color="#6C63FF" />
+              </View>
+              <View style={styles.planBannerText}>
+                <Text style={styles.planBannerTitle}>Study Plan</Text>
+                <Text style={styles.planBannerSubtitle}>
+                  Daily agenda, buckets, and next best moves
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+            </Pressable>
 
-          <Text style={styles.sectionLabel}>More</Text>
-          <View style={styles.grid}>
-            {PRIMARY_DESTINATIONS.map((item) => (
-              <Pressable
-                key={item.route}
-                style={({ pressed }) => [styles.listItem, pressed && styles.cardPressed]}
-                android_ripple={{ color: `${item.tint}22` }}
-                onPress={() => navigation.navigate(item.route as never)}
-                accessibilityRole="button"
-                accessibilityLabel={item.title}
-              >
-                <View
-                  style={[
-                    styles.listIconWrap,
-                    { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
-                  ]}
+            <View style={styles.grid}>
+              {PRIMARY_DESTINATIONS.map((item) => (
+                <Pressable
+                  key={item.route}
+                  style={({ pressed }) => [styles.listItem, pressed && styles.cardPressed]}
+                  android_ripple={{ color: `${item.tint}22` }}
+                  onPress={() => navigation.navigate(item.route as never)}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
                 >
-                  <Ionicons name={item.icon} size={22} color={item.tint} />
-                </View>
-                <View style={styles.listTextContent}>
-                  <Text style={styles.listTitle}>{item.title}</Text>
-                  <Text style={styles.listSubtitle}>{item.subtitle}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
-              </Pressable>
-            ))}
+                  <View
+                    style={[
+                      styles.listIconWrap,
+                      { backgroundColor: `${item.tint}18`, borderColor: `${item.tint}55` },
+                    ]}
+                  >
+                    <Ionicons name={item.icon} size={22} color={item.tint} />
+                  </View>
+                  <View style={styles.listTextContent}>
+                    <Text style={styles.listTitle}>{item.title}</Text>
+                    <Text style={styles.listSubtitle}>{item.subtitle}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                </Pressable>
+              ))}
+            </View>
           </View>
         </ScrollView>
       </ResponsiveContainer>
@@ -120,6 +135,9 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     paddingBottom: theme.spacing.xxxl,
     gap: theme.spacing.xl,
+  },
+  destinations: {
+    gap: theme.spacing.md,
   },
   hero: {
     backgroundColor: theme.colors.surface,
@@ -153,7 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(108, 99, 255, 0.4)',
+    borderColor: theme.colors.border,
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
   },
@@ -175,14 +193,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     fontSize: 13,
     marginTop: 2,
-  },
-  sectionLabel: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-    marginBottom: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
   },
   grid: {
     gap: theme.spacing.md,

@@ -43,13 +43,14 @@ import { getAllTopicsWithProgress } from '../db/queries/topics';
 import { prefetchTopicContent } from './aiService';
 import { profileRepository } from '../db/repositories';
 import { refreshAccountabilityNotificationsSafely } from './notificationService';
-import { registerBackgroundFetch } from './backgroundTasks';
+import { registerBackgroundFetch, warmAiContentCache } from './backgroundTasks';
 
 describe('backgroundTasks', () => {
   const PREFETCH_TASK = 'PREFETCH_AI_CONTENT';
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (globalThis as { __DEV__?: boolean }).__DEV__ = true;
   });
 
   describe('registerBackgroundFetch', () => {
@@ -145,6 +146,25 @@ describe('backgroundTasks', () => {
 
       const typesToFetch = (prefetchTopicContent as jest.Mock).mock.calls[0][1];
       expect(typesToFetch).not.toContain('keypoints');
+    });
+  });
+
+  describe('warmAiContentCache', () => {
+    it('prefetches a small candidate set on app-open warmup without notification refresh', async () => {
+      (profileRepository.getProfile as jest.Mock).mockResolvedValue({
+        blockedContentTypes: [],
+      });
+      (getAllTopicsWithProgress as jest.Mock).mockResolvedValue([
+        { name: 'Topic 1', inicetPriority: 5, progress: { status: 'unseen' } },
+        { name: 'Topic 2', inicetPriority: 15, progress: { status: 'unseen' } },
+        { name: 'Topic 3', inicetPriority: 1, progress: { status: 'unseen' } },
+      ]);
+
+      const count = await warmAiContentCache({ topicLimit: 2, refreshNotifications: false });
+
+      expect(count).toBe(2);
+      expect(prefetchTopicContent).toHaveBeenCalledTimes(2);
+      expect(refreshAccountabilityNotificationsSafely).not.toHaveBeenCalled();
     });
   });
 });

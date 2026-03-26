@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
@@ -46,6 +47,18 @@ export function InstallModelProgressOverlay() {
   const translateY = useRef(new Animated.Value(18)).current;
   const shimmer = useRef(new Animated.Value(0)).current;
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cardPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_event, gestureState) =>
+        Math.abs(gestureState.dy) > 12 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onPanResponderRelease: (_event, gestureState) => {
+        if (gestureState.dy < -28) {
+          setDownloadMinimized(true);
+        }
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     return subscribeToLocalModelDownload((nextSnapshot) => {
@@ -62,6 +75,19 @@ export function InstallModelProgressOverlay() {
   }, []);
 
   useEffect(() => subscribeToMinimized(setMinimized), []);
+
+  useEffect(() => {
+    if (!snapshot) return;
+    const shouldAutoMinimize =
+      snapshot.stage === 'preparing' ||
+      snapshot.stage === 'downloading' ||
+      snapshot.stage === 'verifying';
+    if (shouldAutoMinimize) {
+      setDownloadMinimized(true);
+    } else {
+      setDownloadMinimized(false);
+    }
+  }, [snapshot]);
 
   useEffect(() => {
     if (!snapshot && mountedSnapshot) {
@@ -134,7 +160,6 @@ export function InstallModelProgressOverlay() {
     };
   }, [snapshot]);
 
-  // If finalize never runs, progress can sit at 100% with stage still "downloading" — clear after a grace period.
   useEffect(() => {
     if (!snapshot || snapshot.stage !== 'downloading' || snapshot.progress < 99) return;
     const t = setTimeout(() => {
@@ -166,14 +191,19 @@ export function InstallModelProgressOverlay() {
     mountedSnapshot.stage === 'preparing' ||
     (mountedSnapshot.stage === 'error' && mountedSnapshot.message === 'Download paused');
 
-  // Minimized: small floating pill
-  if (minimized && isActive) {
+  const shouldUseCompactUi =
+    minimized ||
+    mountedSnapshot.stage === 'preparing' ||
+    mountedSnapshot.stage === 'downloading' ||
+    mountedSnapshot.stage === 'verifying';
+
+  if (shouldUseCompactUi && isActive) {
     return (
       <Animated.View
         style={[
           styles.miniContainer,
           {
-            top: insets.top + 12,
+            top: insets.top + 10,
             opacity,
             transform: [{ translateY }],
           },
@@ -184,12 +214,22 @@ export function InstallModelProgressOverlay() {
           onPress={() => setDownloadMinimized(false)}
         >
           <View style={[styles.miniDot, { backgroundColor: accentColor }]} />
+          <Text style={styles.miniLabel}>
+            {mountedSnapshot.type === 'whisper' ? 'Speech' : 'Study AI'}
+          </Text>
           <Text style={styles.miniText}>{Math.round(mountedSnapshot.progress)}%</Text>
           <View style={styles.miniBarTrack}>
             <View
               style={[styles.miniBarFill, { width: progressWidth, backgroundColor: accentColor }]}
             />
           </View>
+          <Text style={styles.miniMeta} numberOfLines={1}>
+            {mountedSnapshot.stage === 'verifying'
+              ? 'Verifying'
+              : downloadedText && totalText
+                ? `${downloadedText} / ${totalText}`
+                : getStageLabel(mountedSnapshot)}
+          </Text>
         </Pressable>
       </Animated.View>
     );
@@ -207,7 +247,7 @@ export function InstallModelProgressOverlay() {
         },
       ]}
     >
-      <View style={styles.card}>
+      <View style={styles.card} {...cardPanResponder.panHandlers}>
         <View style={styles.row}>
           <View
             style={[
@@ -225,7 +265,7 @@ export function InstallModelProgressOverlay() {
             {isActive ? (
               <>
                 <Pressable
-                  style={styles.actionBtn}
+                  style={styles.iconBtn}
                   onPress={() => {
                     if (paused) {
                       resumeDownload();
@@ -237,14 +277,22 @@ export function InstallModelProgressOverlay() {
                   }}
                   hitSlop={12}
                 >
-                  <Text style={styles.actionBtnText}>{paused ? '▶' : '⏸'}</Text>
+                  <Ionicons
+                    name={paused ? 'play' : 'pause'}
+                    size={15}
+                    color={theme.colors.textSecondary}
+                  />
                 </Pressable>
                 <Pressable
-                  style={styles.minimizeBtn}
+                  style={styles.iconBtn}
                   onPress={() => setDownloadMinimized(true)}
                   hitSlop={12}
                 >
-                  <Text style={styles.minimizeBtnText}>—</Text>
+                  <Ionicons
+                    name="chevron-up"
+                    size={16}
+                    color={theme.colors.textSecondary}
+                  />
                 </Pressable>
               </>
             ) : null}
@@ -278,6 +326,7 @@ export function InstallModelProgressOverlay() {
             {downloadedText} of {totalText}
           </Text>
         ) : null}
+        {isActive ? <Text style={styles.gestureHint}>Swipe up to minimize</Text> : null}
       </View>
     </Animated.View>
   );
@@ -339,31 +388,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.4,
   },
-  actionBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+  iconBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: theme.colors.card,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  actionBtnText: {
-    color: theme.colors.textSecondary,
-    fontSize: 12,
-  },
-  minimizeBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  minimizeBtnText: {
-    color: theme.colors.textSecondary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: -2,
   },
   title: {
     color: theme.colors.textPrimary,
@@ -400,7 +433,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  // Minimized pill styles
+  gestureHint: {
+    marginTop: 8,
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    textAlign: 'right',
+    letterSpacing: 0.3,
+  },
   miniContainer: {
     position: 'absolute',
     right: 14,
@@ -414,7 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowRadius: 10,
@@ -431,8 +470,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  miniLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
   miniBarTrack: {
-    width: 40,
+    width: 52,
     height: 4,
     backgroundColor: 'rgba(255,255,255,0.08)',
     borderRadius: 999,
@@ -441,5 +485,10 @@ const styles = StyleSheet.create({
   miniBarFill: {
     height: '100%',
     borderRadius: 999,
+  },
+  miniMeta: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    maxWidth: 92,
   },
 });

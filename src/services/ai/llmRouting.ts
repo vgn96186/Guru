@@ -19,6 +19,7 @@ import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import type { ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
+import { logStreamEvent } from './runtimeDebug';
 
 let llamaContext: LlamaContext | null = null;
 let currentLlamaPath: string | null = null;
@@ -31,6 +32,60 @@ let kiloModelsCache: { expiresAt: number; models: string[] } | null = null;
 /** Metro / RN debugger only — physical devices cannot reach host `127.0.0.1` debug ingest. */
 function devLogOpenRouter(message: string, data: Record<string, unknown>) {
   if (__DEV__) console.log(`[Guru:OpenRouter] ${message}`, data);
+}
+
+function splitForPseudoStream(text: string, targetChunkChars = 34): string[] {
+  const parts = text.split(/(\s+)/).filter((part) => part.length > 0);
+  const chunks: string[] = [];
+  let current = '';
+  for (const part of parts) {
+    if (current.length > 0 && current.length + part.length > targetChunkChars) {
+      chunks.push(current);
+      current = part;
+      continue;
+    }
+    current += part;
+  }
+  if (current.length > 0) chunks.push(current);
+  return chunks.length > 0 ? chunks : [text];
+}
+
+async function emitPseudoStreamFallback(
+  text: string,
+  onDelta: (delta: string) => void,
+  meta: { provider: string; model: string; reason: 'no_body' | 'empty_sse' },
+) {
+  const chunks = splitForPseudoStream(text);
+  const targetDurationMs = Math.min(1400, Math.max(280, Math.round(text.length * 2.2)));
+  const delayMs =
+    chunks.length > 1
+      ? Math.max(12, Math.min(56, Math.round(targetDurationMs / (chunks.length - 1))))
+      : 0;
+
+  logStreamEvent('fallback_chunk_stream_start', {
+    provider: meta.provider,
+    model: meta.model,
+    reason: meta.reason,
+    outputChars: text.length,
+    chunks: chunks.length,
+    delayMs,
+  });
+
+  for (let i = 0; i < chunks.length; i += 1) {
+    onDelta(chunks[i]);
+    if (delayMs > 0 && i < chunks.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  logStreamEvent('fallback_chunk_stream_complete', {
+    provider: meta.provider,
+    model: meta.model,
+    reason: meta.reason,
+    outputChars: text.length,
+    chunks: chunks.length,
+    delayMs,
+  });
 }
 
 /** Multimodal `message.content` arrays from OpenRouter / OpenAI chat. */
@@ -296,7 +351,7 @@ async function callLocalLLM(
       prompt += `{`;
     }
 
-    const n_predict = textMode ? 2000 : 1024;
+    const n_predict = textMode ? 3072 : 2048;
     const result = await ctx.completion({
       prompt,
       n_predict,
@@ -373,7 +428,7 @@ async function callCloudflare(
         model,
         messages,
         temperature: 0.7,
-        max_tokens: 1200,
+        max_tokens: 4096,
       }),
     },
   );
@@ -413,7 +468,7 @@ async function streamCloudflareChat(
         model,
         messages,
         temperature: 0.7,
-        max_tokens: 1200,
+        max_tokens: 4096,
         stream: true,
       }),
     },
@@ -429,12 +484,28 @@ async function streamCloudflareChat(
   }
 
   if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'cloudflare', model });
     const text = await callCloudflare(messages, accountId, apiToken, model);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'cloudflare',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'cloudflare',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     return text;
   }
 
   const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'cloudflare',
+    model,
+    outputChars: text.length,
+  });
   if (!text.trim()) throw new Error(`Empty response from Cloudflare model ${model}`);
   return text;
 }
@@ -469,7 +540,7 @@ async function callGroq(
     model,
     messages: jsonMode ? clonedMessages : messages,
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 4096,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -516,7 +587,7 @@ async function streamGroqChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4096,
       stream: true,
     }),
   });
@@ -531,12 +602,28 @@ async function streamGroqChat(
   }
 
   if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'groq', model });
     const text = await callGroq(messages, groqKey, model, false);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'groq',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'groq',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     return text;
   }
 
   const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'groq',
+    model,
+    outputChars: text.length,
+  });
   if (!text.trim()) throw new Error(`Empty response from Groq model ${model}`);
   return text;
 }
@@ -584,8 +671,19 @@ async function streamOpenRouterChat(
 
   if (!res.body) {
     devLogOpenRouter('stream_no_body_using_nonstream', { model });
+    logStreamEvent('no_body_fallback', { provider: 'openrouter', model });
     const text = await callOpenRouter(messages, orKey, model);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'openrouter',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'openrouter',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     devLogOpenRouter('stream_path_done', {
       model,
       msTotal: Date.now() - t0,
@@ -600,12 +698,29 @@ async function streamOpenRouterChat(
   let usedNonstreamRetry = false;
   if (!text.trim()) {
     devLogOpenRouter('stream_empty_retry_nonstream', { model, sseMs, accumulatedLen: text.length });
+    logStreamEvent('empty_sse_retry_nonstream', {
+      provider: 'openrouter',
+      model,
+      sseMs,
+      accumulatedChars: text.length,
+    });
     const tRetry = Date.now();
     text = await callOpenRouter(messages, orKey, model);
     usedNonstreamRetry = true;
     devLogOpenRouter('stream_retry_nonstream_ms', { model, retryMs: Date.now() - tRetry });
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'openrouter',
+      model,
+      reason: 'empty_sse',
+    });
   }
+  logStreamEvent('sse_complete', {
+    provider: 'openrouter',
+    model,
+    outputChars: text.length,
+    sseMs,
+    usedNonstreamRetry,
+  });
   devLogOpenRouter('stream_path_done', {
     model,
     msTotal: Date.now() - t0,
@@ -646,7 +761,7 @@ async function callDeepSeek(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 4096,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -695,7 +810,7 @@ async function streamDeepSeekChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4096,
       stream: true,
     }),
   });
@@ -710,12 +825,28 @@ async function streamDeepSeekChat(
   }
 
   if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'deepseek', model });
     const text = await callDeepSeek(messages, deepseekKey, model, false);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'deepseek',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'deepseek',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     return text;
   }
 
   const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'deepseek',
+    model,
+    outputChars: text.length,
+  });
   if (!text.trim()) throw new Error(`Empty response from DeepSeek model ${model}`);
   return text;
 }
@@ -760,7 +891,7 @@ async function callGitHubModels(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 4096,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -803,7 +934,7 @@ async function streamGitHubModelsChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4096,
       stream: true,
     }),
   });
@@ -818,12 +949,28 @@ async function streamGitHubModelsChat(
   }
 
   if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'github', model });
     const text = await callGitHubModels(messages, pat, model, false);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'github',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'github',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     return text;
   }
 
   const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'github',
+    model,
+    outputChars: text.length,
+  });
   if (!text.trim()) throw new Error(`Empty response from GitHub model ${model}`);
   return text;
 }
@@ -856,7 +1003,7 @@ async function callKilo(
     model,
     messages: clonedMessages,
     temperature: 0.7,
-    max_tokens: 2000,
+    max_tokens: 4096,
   };
   if (jsonMode) body.response_format = { type: 'json_object' };
   const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
@@ -896,7 +1043,7 @@ async function streamKiloChat(
       model,
       messages,
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4096,
       stream: true,
     }),
   });
@@ -908,11 +1055,27 @@ async function streamKiloChat(
     throw new Error(`Kilo error ${res.status} (${model}): ${err}`);
   }
   if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'kilo', model });
     const text = await callKilo(messages, kiloApiKey, model, false);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'kilo',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'kilo',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     return text;
   }
   const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'kilo',
+    model,
+    outputChars: text.length,
+  });
   if (!text.trim()) throw new Error(`Empty response from Kilo model ${model}`);
   return text;
 }
@@ -950,7 +1113,7 @@ async function callAgentRouter(
       }
     }
   }
-  const body: Record<string, unknown> = { model, messages: clonedMessages, temperature: 0.7, max_tokens: 2000 };
+  const body: Record<string, unknown> = { model, messages: clonedMessages, temperature: 0.7, max_tokens: 4096 };
   if (jsonMode) body.response_format = { type: 'json_object' };
   if (__DEV__) console.log(`[AI] callAgentRouter: model=${model} json=${jsonMode}`);
   const res = await fetch('https://agentrouter.org/v1/chat/completions', {
@@ -978,7 +1141,7 @@ async function streamAgentRouterChat(
   const res = await fetch('https://agentrouter.org/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, ...AGENTROUTER_HEADERS },
-    body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 2000, stream: true }),
+    body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 4096, stream: true }),
   });
   if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
   if (!res.ok) {
@@ -986,11 +1149,27 @@ async function streamAgentRouterChat(
     throw new Error(`AgentRouter error ${res.status} (${model}): ${err}`);
   }
   if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'agentrouter', model });
     const text = await callAgentRouter(messages, apiKey, model, false);
-    onDelta(text);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'agentrouter',
+      model,
+      reason: 'no_body',
+    });
+    logStreamEvent('fallback_complete', {
+      provider: 'agentrouter',
+      model,
+      mode: 'nonstream_chunked',
+      outputChars: text.length,
+    });
     return text;
   }
   const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'agentrouter',
+    model,
+    outputChars: text.length,
+  });
   if (!text.trim()) throw new Error(`Empty response from AgentRouter model ${model}`);
   return text;
 }

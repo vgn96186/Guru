@@ -19,6 +19,23 @@ import {
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../../services/databaseEvents';
 import { showToast } from '../../components/Toast';
 
+// ── Enum allow-lists (single source of truth — update here when adding values) ──
+const VALID_ENUMS: Record<string, { values: readonly string[]; fallback: string }> = {
+  transcriptionProvider: { values: ['auto', 'groq', 'huggingface', 'cloudflare', 'deepgram', 'local'], fallback: 'auto' },
+  guruFrequency:         { values: ['rare', 'normal', 'frequent', 'off'], fallback: 'normal' },
+  studyResourceMode:     { values: ['standard', 'btr', 'dbmci_live', 'hybrid'], fallback: 'hybrid' },
+  examType:              { values: ['INICET', 'NEET'], fallback: 'INICET' },
+};
+
+/** Clamp an enum field to its allow-list; returns fallback if value is invalid. */
+function sanitizeEnum(field: string, value: unknown): string {
+  const spec = VALID_ENUMS[field];
+  if (!spec) return String(value ?? '');
+  if (typeof value === 'string' && spec.values.includes(value)) return value;
+  if (__DEV__) console.warn(`[DB] Invalid value "${value}" for ${field}, falling back to "${spec.fallback}"`);
+  return spec.fallback;
+}
+
 function isValidFutureDate(dateStr: string | null): boolean {
   if (!dateStr || typeof dateStr !== 'string') return false;
   const exam = new Date(dateStr);
@@ -27,6 +44,10 @@ function isValidFutureDate(dateStr: string | null): boolean {
   now.setHours(0, 0, 0, 0);
   exam.setHours(0, 0, 0, 0);
   return exam.getTime() >= now.getTime();
+}
+
+function sanitizeExamDateOrDefault(dateStr: unknown, fallback: string): string {
+  return typeof dateStr === 'string' && isValidFutureDate(dateStr) ? dateStr : fallback;
 }
 
 export async function getUserProfile(): Promise<UserProfile> {
@@ -158,8 +179,16 @@ export async function getUserProfile(): Promise<UserProfile> {
     streakBest: r.streak_best,
     dailyGoalMinutes: r.daily_goal_minutes,
     examType: (r.exam_type === 'NEET' ? 'NEET' : 'INICET') as 'INICET' | 'NEET',
-    inicetDate: isValidFutureDate(r.inicet_date) ? r.inicet_date : DEFAULT_INICET_DATE,
-    neetDate: isValidFutureDate(r.neet_date) ? r.neet_date : DEFAULT_NEET_DATE,
+    inicetDate: (() => {
+      const v = sanitizeExamDateOrDefault(r.inicet_date, DEFAULT_INICET_DATE);
+      if (v !== r.inicet_date && __DEV__) console.warn(`[Profile] inicet_date sanitized: DB="${r.inicet_date}" → "${v}"`);
+      return v;
+    })(),
+    neetDate: (() => {
+      const v = sanitizeExamDateOrDefault(r.neet_date, DEFAULT_NEET_DATE);
+      if (v !== r.neet_date && __DEV__) console.warn(`[Profile] neet_date sanitized: DB="${r.neet_date}" → "${v}"`);
+      return v;
+    })(),
     preferredSessionLength: r.preferred_session_length,
     openrouterApiKey: r.openrouter_api_key,
     openrouterKey: r.openrouter_key ?? '',
@@ -300,6 +329,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     kiloApiKey: 'kilo_api_key',
     deepseekKey: 'deepseek_key',
     agentRouterKey: 'agentrouter_key',
+    deepgramApiKey: 'deepgram_api_key',
   };
 
   const setClauses: string[] = [];
@@ -308,7 +338,15 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   for (const [key, col] of Object.entries(map)) {
     if (key in updates) {
       setClauses.push(`${col} = ?`);
-      const val = (updates as Record<string, unknown>)[key];
+      let val = (updates as Record<string, unknown>)[key];
+      // Sanitize enum fields so invalid values never reach the DB
+      if (key in VALID_ENUMS) {
+        val = sanitizeEnum(key, val);
+      } else if (key === 'inicetDate') {
+        val = sanitizeExamDateOrDefault(val, DEFAULT_INICET_DATE);
+      } else if (key === 'neetDate') {
+        val = sanitizeExamDateOrDefault(val, DEFAULT_NEET_DATE);
+      }
       values.push(typeof val === 'boolean' ? (val ? 1 : 0) : (val as string | number | null));
     }
   }
@@ -625,7 +663,10 @@ export async function clearAiCache(): Promise<void> {
 }
 
 export function getDaysToExam(examDateStr: string): number {
-  if (!examDateStr) return 0;
+  if (!examDateStr) {
+    if (__DEV__) console.warn('[getDaysToExam] Empty exam date string');
+    return 0;
+  }
 
   let examTime = 0;
   const parts = examDateStr.split('-');
@@ -633,7 +674,7 @@ export function getDaysToExam(examDateStr: string): number {
     const y = parseInt(parts[0], 10);
     const m = parseInt(parts[1], 10) - 1;
     const d = parseInt(parts[2], 10);
-    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d) && y >= 2024) {
       examTime = new Date(y, m, d).getTime();
     }
   }
@@ -642,16 +683,22 @@ export function getDaysToExam(examDateStr: string): number {
     examTime = new Date(examDateStr).getTime();
   }
 
-  if (isNaN(examTime) || examTime === 0) return 0;
+  if (isNaN(examTime) || examTime === 0) {
+    if (__DEV__) console.warn(`[getDaysToExam] Unparseable exam date: "${examDateStr}"`);
+    return 0;
+  }
 
   const now = new Date();
-  now.setHours(0, 0, 0, 0); // Calculate from local midnight
+  now.setHours(0, 0, 0, 0);
 
-  // Also adjust examTime to be local midnight if it's not already
   const exam = new Date(examTime);
   exam.setHours(0, 0, 0, 0);
 
-  return Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / MS_PER_DAY));
+  const days = Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / MS_PER_DAY));
+  if (days === 0 && __DEV__) {
+    console.warn(`[getDaysToExam] 0 days for "${examDateStr}" (exam=${exam.toISOString()}, now=${now.toISOString()})`);
+  }
+  return days;
 }
 
 /**

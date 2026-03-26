@@ -4,11 +4,11 @@ import {
 } from './providerFallback';
 
 describe('buildTranscriptionProviderOrder', () => {
-  const allAvailable = { groq: true, huggingface: true, cloudflare: true, local: true };
+  const allAvailable = { groq: true, huggingface: true, cloudflare: true, deepgram: true, local: true };
 
   it('should default to groq-first order for auto provider', () => {
     const order = buildTranscriptionProviderOrder('auto', allAvailable);
-    expect(order).toEqual(['groq', 'cloudflare', 'huggingface', 'local']);
+    expect(order).toEqual(['groq', 'cloudflare', 'huggingface', 'deepgram', 'local']);
   });
 
   it('should prefer the specified provider first', () => {
@@ -23,6 +23,7 @@ describe('buildTranscriptionProviderOrder', () => {
       groq: false,
       huggingface: true,
       cloudflare: false,
+      deepgram: false,
       local: true,
     });
     expect(order).toEqual(['huggingface', 'local']);
@@ -35,6 +36,7 @@ describe('buildTranscriptionProviderOrder', () => {
       groq: false,
       huggingface: false,
       cloudflare: false,
+      deepgram: false,
       local: false,
     });
     expect(order).toEqual([]);
@@ -43,7 +45,7 @@ describe('buildTranscriptionProviderOrder', () => {
   it('should still include fallbacks even when preferred is first', () => {
     const order = buildTranscriptionProviderOrder('local', allAvailable);
     expect(order[0]).toBe('local');
-    expect(order.length).toBe(4);
+    expect(order.length).toBe(5);
     expect(order).toContain('groq');
   });
 });
@@ -52,7 +54,7 @@ describe('runTranscriptionProviders', () => {
   it('should return result from first successful provider', async () => {
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: false, cloudflare: false, local: false },
+      availability: { groq: true, huggingface: false, cloudflare: false, deepgram: false, local: false },
       runners: {
         groq: async () => 'transcript from groq',
       },
@@ -67,7 +69,7 @@ describe('runTranscriptionProviders', () => {
     const onError = jest.fn();
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, local: false },
+      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
       runners: {
         groq: async () => {
           throw new Error('Groq API down');
@@ -87,7 +89,7 @@ describe('runTranscriptionProviders', () => {
   it('should fall back when result is not usable (empty string)', async () => {
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, local: false },
+      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
       runners: {
         groq: async () => '',
         huggingface: async () => 'fallback transcript',
@@ -102,7 +104,7 @@ describe('runTranscriptionProviders', () => {
   it('should return null when all providers fail', async () => {
     const { result, provider, lastError } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: false, cloudflare: false, local: false },
+      availability: { groq: true, huggingface: false, cloudflare: false, deepgram: false, local: false },
       runners: {
         groq: async () => {
           throw new Error('fail');
@@ -120,7 +122,7 @@ describe('runTranscriptionProviders', () => {
     await expect(
       runTranscriptionProviders<string>({
         preferredProvider: 'auto',
-        availability: { groq: true, huggingface: true, cloudflare: false, local: false },
+        availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
         runners: {
           groq: async () => {
             throw new Error('fatal');
@@ -136,7 +138,7 @@ describe('runTranscriptionProviders', () => {
     const onStart = jest.fn();
     await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, local: false },
+      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
       runners: {
         groq: async () => '',
         huggingface: async () => 'ok',
@@ -153,7 +155,7 @@ describe('runTranscriptionProviders', () => {
   it('should skip providers without a runner', async () => {
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, local: false },
+      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
       runners: {
         huggingface: async () => 'hf only',
       },

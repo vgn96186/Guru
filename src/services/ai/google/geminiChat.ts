@@ -3,9 +3,10 @@ import type { Message } from '../types';
 import { getGoogleGenAI } from './genaiClient';
 import { messagesToGeminiContents } from './geminiContents';
 import { isGeminiSdkRateLimitError, rethrowGeminiSdkError } from './geminiSdkErrors';
+import { logStreamEvent } from '../runtimeDebug';
 
 /** Guru chat answers are short; allow headroom for code fences / lists without truncating. */
-const MAX_OUTPUT_TOKENS = 2048;
+const MAX_OUTPUT_TOKENS = 4096;
 /** Slightly lower than 0.7 for steadier exam-style tutoring; still conversational. */
 const TEMPERATURE = 0.65;
 
@@ -101,5 +102,10 @@ export async function geminiGenerateContentStreamSdk(
   if (!full) {
     throw new Error('Empty response from Gemini SDK stream');
   }
+  logStreamEvent('sdk_stream_complete', {
+    provider: 'gemini',
+    model,
+    outputChars: full.length,
+  });
   return full;
 }

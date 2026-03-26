@@ -172,15 +172,13 @@ Summary: ${result.lectureSummary}`;
       if (!result.transcript?.trim()) {
         setActiveStage(null);
         setStageMessage('');
-        setErrorMsg(
-          "In-app audio wasn't captured (this app may block it). Next time we'll use the microphone — keep device speaker on when you open the lecture app.",
-        );
         await updateSessionTranscriptionStatus(
           logId,
           'no_audio',
           'No speech detected in recording',
         );
-        setPhase('error');
+        // Auto-dismiss — no useful content to show
+        void cleanupAndClose();
         return;
       }
       setAnalysis(result);
@@ -369,12 +367,9 @@ Summary: ${result.lectureSummary}`;
       const delay = setTimeout(() => runTranscription(), 150);
       return () => clearTimeout(delay);
     } else if (visible && !recordingPath) {
-      setIsExpanded(true);
-      setErrorMsg(
-        'No lecture audio was captured for this session. Please retry with microphone permission enabled.',
-      );
       void updateSessionTranscriptionStatus(logId, 'no_audio', 'No recording file captured');
-      setPhase('error');
+      // Auto-dismiss — nothing to process
+      void cleanupAndClose();
     } else if (visible && recordingPath && !groqKey && !hasHuggingFace && !hasLocalWhisper) {
       setIsExpanded(true);
       setErrorMsg(

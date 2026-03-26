@@ -196,6 +196,29 @@ export async function testCloudflareConnection(
   }
 }
 
+/** Lightweight Deepgram auth probe — hits the projects endpoint (no audio needed). */
+export async function testDeepgramConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty key' };
+  }
+  try {
+    const res = await fetch('https://api.deepgram.com/v1/projects', {
+      method: 'GET',
+      headers: {
+        Authorization: `Token ${trimmed}`,
+      },
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
 export async function testKiloConnection(key: string): Promise<ProviderHealthResult> {
   const trimmed = key.trim();
   if (!trimmed) {

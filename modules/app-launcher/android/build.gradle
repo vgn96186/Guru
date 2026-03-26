@@ -57,6 +57,9 @@ dependencies {
 
     // ML Kit Face Detection — on-device, no network needed
     implementation "com.google.mlkit:face-detection:16.1.7"
+
+    // DocumentFile — for SAF folder picker tree walking
+    implementation "androidx.documentfile:documentfile:1.0.1"
 }
 
 def safeExtGet(prop, fallback) {

@@ -1,6 +1,7 @@
 const getProfileMock: any = jest.fn();
 const makeDirectoryAsyncMock: any = jest.fn();
 const writeAsStringAsyncMock: any = jest.fn();
+const downloadAsyncMock: any = jest.fn();
 
 async function loadModule(configOverrides?: {
   bundledGeminiKey?: string;
@@ -21,6 +22,7 @@ async function loadModule(configOverrides?: {
     documentDirectory: 'file:///test-docs/',
     makeDirectoryAsync: (...args: unknown[]) => makeDirectoryAsyncMock(...args),
     writeAsStringAsync: (...args: unknown[]) => writeAsStringAsyncMock(...args),
+    downloadAsync: (...args: unknown[]) => downloadAsyncMock(...args),
     EncodingType: {
       Base64: 'base64',
     },
@@ -31,6 +33,12 @@ async function loadModule(configOverrides?: {
   }));
 
   jest.doMock('./config', () => ({
+    FAL_IMAGE_MODELS: [
+      'fal-ai/nano-banana-2',
+      'fal-ai/flux-pro/kontext/max/text-to-image',
+      'fal-ai/qwen-image-2/pro/text-to-image',
+      'fal-ai/gpt-image-1.5',
+    ],
     CLOUDFLARE_IMAGE_MODELS: [
       '@cf/black-forest-labs/flux-2-dev',
       '@cf/black-forest-labs/flux-1-schnell',
@@ -44,6 +52,8 @@ async function loadModule(configOverrides?: {
       geminiKey?: string;
       cloudflareAccountId?: string;
       cloudflareApiToken?: string;
+      falApiKey?: string;
+      openrouterKey?: string;
       imageGenerationModel?: string;
     }) => ({
       geminiKey: profile?.geminiKey?.trim() || configOverrides?.bundledGeminiKey || undefined,
@@ -51,6 +61,8 @@ async function loadModule(configOverrides?: {
         profile?.cloudflareAccountId?.trim() || configOverrides?.bundledCfAccountId || undefined,
       cfApiToken:
         profile?.cloudflareApiToken?.trim() || configOverrides?.bundledCfApiToken || undefined,
+      falKey: profile?.falApiKey?.trim() || undefined,
+      orKey: profile?.openrouterKey?.trim() || undefined,
     }),
   }));
 
@@ -67,6 +79,7 @@ describe('ai/imageGeneration', () => {
     });
     makeDirectoryAsyncMock.mockResolvedValue(undefined);
     writeAsStringAsyncMock.mockResolvedValue(undefined);
+    downloadAsyncMock.mockResolvedValue({ uri: 'file:///test-docs/generated_images/guru_img_123.png' });
   });
 
   it('uses Gemini first and saves the generated image locally', async () => {
@@ -225,5 +238,91 @@ describe('ai/imageGeneration', () => {
     await expect(generateImage('simple chart')).rejects.toThrow(
       'No image generation backend available',
     );
+  });
+
+  it('uses fal when imageGenerationModel is a fal image model id', async () => {
+    getProfileMock.mockResolvedValue({
+      geminiKey: '',
+      cloudflareAccountId: '',
+      cloudflareApiToken: '',
+      falApiKey: 'fal-key',
+      imageGenerationModel: 'fal-ai/gpt-image-1.5',
+    });
+
+    jest.spyOn(globalThis, 'fetch' as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        images: [
+          {
+            url: 'https://fal.media/example.png',
+            content_type: 'image/png',
+          },
+        ],
+      }),
+    } as any);
+    const { generateImage } = await loadModule();
+    const result = await generateImage('draw nephron');
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect((globalThis.fetch as jest.Mock).mock.calls[0][0]).toBe(
+      'https://fal.run/fal-ai/gpt-image-1.5',
+    );
+    expect((globalThis.fetch as jest.Mock).mock.calls[0][1]).toMatchObject({
+      method: 'POST',
+      headers: expect.objectContaining({
+        Authorization: 'Key fal-key',
+        'Content-Type': 'application/json',
+      }),
+    });
+    const body = JSON.parse((globalThis.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body.prompt).toBe('draw nephron');
+    expect(body.output_format).toBe('png');
+    expect(result.provider).toBe('fal');
+    expect(result.modelUsed).toBe('fal-ai/gpt-image-1.5');
+  });
+
+  it('uses the newer fal text-to-image payload for Nano Banana 2', async () => {
+    getProfileMock.mockResolvedValue({
+      geminiKey: '',
+      cloudflareAccountId: '',
+      cloudflareApiToken: '',
+      falApiKey: 'fal-key',
+      imageGenerationModel: 'fal-ai/nano-banana-2',
+    });
+
+    jest.spyOn(globalThis, 'fetch' as any).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        images: [
+          {
+            url: 'https://fal.media/nano-banana.png',
+            content_type: 'image/png',
+          },
+        ],
+      }),
+    } as any);
+
+    const { generateImage } = await loadModule();
+    const result = await generateImage('draw a nephron as a clean study diagram');
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect((globalThis.fetch as jest.Mock).mock.calls[0][0]).toBe(
+      'https://fal.run/fal-ai/nano-banana-2',
+    );
+    const body = JSON.parse((globalThis.fetch as jest.Mock).mock.calls[0][1].body);
+    expect(body).toMatchObject({
+      prompt: 'draw a nephron as a clean study diagram',
+      aspect_ratio: '1:1',
+      output_format: 'png',
+      num_images: 1,
+    });
+    expect(body.image_size).toBeUndefined();
+    expect(body.quality).toBeUndefined();
+    expect(result.modelUsed).toBe('fal-ai/nano-banana-2');
+  });
+
+  it('reports image generation as available when fal key is present', async () => {
+    const { isImageGenerationAvailable } = await loadModule();
+    expect(isImageGenerationAvailable({ falApiKey: 'fal-key' })).toBe(true);
   });
 });

@@ -17,6 +17,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { chatWithGuru } from '../services/aiService';
+import { markTopicDiscussedInChat } from '../db/queries/topics';
 import { useAppStore } from '../store/useAppStore';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
 import { theme } from '../constants/theme';
@@ -53,6 +54,7 @@ export default function GuruChatOverlay({
   const scrollRef = useRef<ScrollView>(null);
   const isMountedRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const hasPersistedTopicProgressRef = useRef(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(300)).current;
   const pulseAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -170,6 +172,14 @@ export default function GuruChatOverlay({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         scrollToEnd();
       }
+      if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
+        try {
+          await markTopicDiscussedInChat(syllabusTopicId);
+          hasPersistedTopicProgressRef.current = true;
+        } catch {
+          // Progress persistence should not block the conversation flow.
+        }
+      }
     } catch (err: any) {
       if (isMountedRef.current) {
         if (err.name === 'AbortError') {
@@ -210,8 +220,13 @@ export default function GuruChatOverlay({
     if (!visible) {
       setInput('');
       setError(null);
+      hasPersistedTopicProgressRef.current = false;
     }
   }, [visible]);
+
+  useEffect(() => {
+    hasPersistedTopicProgressRef.current = false;
+  }, [syllabusTopicId, topicName]);
 
   return (
     <Modal

@@ -78,7 +78,7 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
     lastRecoveryAttemptRef.current = now;
     try {
       const [recoveredTranscriptions, recoveredEnhancements] = await Promise.all([
-        retryFailedTranscriptions(),
+        Promise.resolve(0), // Auto-retry disabled — use Recording Vault
         retryPendingNoteEnhancements(),
       ]);
       const totalRecovered = recoveredTranscriptions + recoveredEnhancements;

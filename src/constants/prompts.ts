@@ -46,12 +46,13 @@ Return JSON:
       "question": "A [Age]-year-old [Sex] presents with [Symptoms]... [Relevant Exam findings, Labs/Imaging]... Which of the following is the most appropriate next step in management? (or similar targeted multi-step question)",
       "options": ["A. [Plausible distractor]", "B. [Plausible distractor]", "C. [Plausible distractor]", "D. [Plausible distractor]"],
       "correctIndex": 0,
-      "explanation": "Correct Answer: [Letter]. [Detailed explanation of why it is correct based on the vignette, highlighting the **most crucial mechanism** with markdown bolding]. [Specific breakdown of why EACH of the other options is incorrect, bolding **the distinguishing factor**]."
+      "explanation": "### Correct answer\n**[Letter]. [Option text]**\n\n### Why this is correct\n- [Most crucial clue from the vignette]\n- [Core mechanism/pathophysiology]\n- [Exam-level takeaway]\n\n### Why other options are wrong\n- **A:** [Why incorrect; highlight the distinguishing factor]\n- **B:** [Why incorrect; highlight the distinguishing factor]\n- **C:** [Why incorrect; highlight the distinguishing factor]\n- **D:** [Why incorrect; highlight the distinguishing factor]"
     }
   ]
 }
 
 Style: Extended clinical vignettes, highly rigorous, INICET standard difficulty.
+Explanation formatting is mandatory: use markdown headings and bullet points exactly as shown so it renders cleanly in-app. Avoid a single paragraph block.
 
 IMAGE-BASED QUESTIONS (optional):
 For topics involving visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology), include an "imageSearchQuery" field in 1-2 questions with a precise medical image search query (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma"). The question text should reference the image: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" for non-visual questions.`;
@@ -298,7 +299,7 @@ Return exactly one JSON object with the following structure:
         "question": "A [Age]-year-old [Sex] presents with [Symptoms] based on the transcript... Which of the following is the most appropriate next step? (Must be a multi-step reasoning clinical vignette. No direct 1-liner recall questions.)",
         "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
         "correctIndex": 0,
-        "explanation": "why correct + detailed breakdown of why EACH of the other options is incorrect"
+        "explanation": "### Correct answer\n**[Letter]. [Option text]**\n\n### Why this is correct\n- [Most crucial clue from the vignette]\n- [Core mechanism/pathophysiology]\n- [Exam-level takeaway]\n\n### Why other options are wrong\n- **A:** [Why incorrect; highlight the distinguishing factor]\n- **B:** [Why incorrect; highlight the distinguishing factor]\n- **C:** [Why incorrect; highlight the distinguishing factor]\n- **D:** [Why incorrect; highlight the distinguishing factor]"
       },
       // generate exactly 3 highly rigorous, INICET standard difficulty questions
     ]

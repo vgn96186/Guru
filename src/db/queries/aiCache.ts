@@ -611,10 +611,18 @@ export async function getLegacyLectureNotes(limit = 5): Promise<LectureHistoryIt
 
 export async function deleteLectureNote(id: number): Promise<void> {
   const db = getDb();
-  await db.runAsync(
-    'UPDATE external_app_logs SET lecture_note_id = NULL WHERE lecture_note_id = ?',
-    [id],
-  );
+  // Try 'dismissed' first (post-migration 112), fall back to 'no_audio' for old schemas
+  try {
+    await db.runAsync(
+      "UPDATE external_app_logs SET lecture_note_id = NULL, transcription_status = 'dismissed' WHERE lecture_note_id = ?",
+      [id],
+    );
+  } catch {
+    await db.runAsync(
+      "UPDATE external_app_logs SET lecture_note_id = NULL, transcription_status = 'no_audio' WHERE lecture_note_id = ?",
+      [id],
+    );
+  }
   await db.runAsync('DELETE FROM lecture_notes WHERE id = ?', [id]);
 }
 
@@ -662,6 +670,7 @@ export async function getLectureTranscriptsBySubject(
 
 export interface ChatHistoryMessage {
   id: number;
+  threadId: number | null;
   topicName: string;
   role: 'user' | 'guru';
   message: string;
@@ -670,7 +679,155 @@ export interface ChatHistoryMessage {
   modelUsed?: string;
 }
 
+export interface GuruChatThread {
+  id: number;
+  topicName: string;
+  syllabusTopicId: number | null;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  lastMessageAt: number;
+  lastMessagePreview: string;
+}
+
+function buildThreadTitle(topicName: string, message?: string | null): string {
+  const trimmed = (message ?? '').replace(/\s+/g, ' ').trim();
+  if (!trimmed) return topicName;
+  const clipped = trimmed.slice(0, 56).trim();
+  return clipped.length < trimmed.length ? `${clipped}...` : clipped;
+}
+
+function buildThreadPreview(message: string): string {
+  const trimmed = message.replace(/\s+/g, ' ').trim();
+  const clipped = trimmed.slice(0, 96).trim();
+  return clipped.length < trimmed.length ? `${clipped}...` : clipped;
+}
+
+export async function createGuruChatThread(
+  topicName: string,
+  syllabusTopicId?: number | null,
+  title?: string | null,
+): Promise<GuruChatThread> {
+  const db = getDb();
+  const ts = nowTs();
+  const normalizedTitle = (title ?? '').trim() || topicName;
+  const result = await db.runAsync(
+    `INSERT INTO guru_chat_threads
+      (topic_name, syllabus_topic_id, title, created_at, updated_at, last_message_at, last_message_preview)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [topicName, syllabusTopicId ?? null, normalizedTitle, ts, ts, ts, ''],
+  );
+  const id = Number(result.lastInsertRowId ?? 0);
+  const row = await getGuruChatThreadById(id);
+  if (!row) {
+    throw new Error('Failed to create Guru chat thread');
+  }
+  return row;
+}
+
+export async function getGuruChatThreadById(threadId: number): Promise<GuruChatThread | null> {
+  const db = getDb();
+  const row = await db.getFirstAsync<{
+    id: number;
+    topic_name: string;
+    syllabus_topic_id: number | null;
+    title: string;
+    created_at: number;
+    updated_at: number;
+    last_message_at: number;
+    last_message_preview: string;
+  }>('SELECT * FROM guru_chat_threads WHERE id = ?', [threadId]);
+  if (!row) return null;
+  return {
+    id: row.id,
+    topicName: row.topic_name,
+    syllabusTopicId: row.syllabus_topic_id ?? null,
+    title: row.title,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastMessageAt: row.last_message_at,
+    lastMessagePreview: row.last_message_preview,
+  };
+}
+
+export async function getLatestGuruChatThread(
+  topicName: string,
+  syllabusTopicId?: number | null,
+): Promise<GuruChatThread | null> {
+  const db = getDb();
+  const row = await db.getFirstAsync<{
+    id: number;
+  }>(
+    `SELECT id
+     FROM guru_chat_threads
+     WHERE topic_name = ?
+       AND (? IS NULL OR syllabus_topic_id = ? OR syllabus_topic_id IS NULL)
+     ORDER BY last_message_at DESC, updated_at DESC, id DESC
+     LIMIT 1`,
+    [topicName, syllabusTopicId ?? null, syllabusTopicId ?? null],
+  );
+  if (!row?.id) return null;
+  return getGuruChatThreadById(row.id);
+}
+
+export async function getOrCreateLatestGuruChatThread(
+  topicName: string,
+  syllabusTopicId?: number | null,
+): Promise<GuruChatThread> {
+  const existing = await getLatestGuruChatThread(topicName, syllabusTopicId);
+  if (existing) return existing;
+  return createGuruChatThread(topicName, syllabusTopicId);
+}
+
+export async function listGuruChatThreads(limit = 40): Promise<GuruChatThread[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    topic_name: string;
+    syllabus_topic_id: number | null;
+    title: string;
+    created_at: number;
+    updated_at: number;
+    last_message_at: number;
+    last_message_preview: string;
+  }>(
+    `SELECT *
+     FROM guru_chat_threads
+     ORDER BY last_message_at DESC, updated_at DESC, id DESC
+     LIMIT ?`,
+    [limit],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    topicName: row.topic_name,
+    syllabusTopicId: row.syllabus_topic_id ?? null,
+    title: row.title,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    lastMessageAt: row.last_message_at,
+    lastMessagePreview: row.last_message_preview,
+  }));
+}
+
+export async function renameGuruChatThread(threadId: number, title: string): Promise<void> {
+  const db = getDb();
+  const normalized = title.trim();
+  if (!normalized) return;
+  await db.runAsync(
+    'UPDATE guru_chat_threads SET title = ?, updated_at = ? WHERE id = ?',
+    [normalized, nowTs(), threadId],
+  );
+}
+
+export async function deleteGuruChatThread(threadId: number): Promise<void> {
+  const db = getDb();
+  await db.runAsync('DELETE FROM chat_history WHERE thread_id = ?', [threadId]);
+  await db.runAsync('DELETE FROM guru_chat_session_memory WHERE thread_id = ?', [threadId]);
+  await db.runAsync('DELETE FROM guru_chat_threads WHERE id = ?', [threadId]);
+}
+
 export async function saveChatMessage(
+  threadId: number,
   topicName: string,
   role: 'user' | 'guru',
   message: string,
@@ -680,36 +837,56 @@ export async function saveChatMessage(
 ): Promise<void> {
   const db = getDb();
   await db.runAsync(
-    'INSERT INTO chat_history (topic_name, role, message, timestamp, sources_json, model_used) VALUES (?, ?, ?, ?, ?, ?)',
-    [topicName, role, message, timestamp, sourcesJson ?? null, modelUsed ?? null],
+    `INSERT INTO chat_history
+      (thread_id, topic_name, role, message, timestamp, sources_json, model_used)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [threadId, topicName, role, message, timestamp, sourcesJson ?? null, modelUsed ?? null],
+  );
+  const preview = buildThreadPreview(message);
+  const title = role === 'user' ? buildThreadTitle(topicName, message) : topicName;
+  await db.runAsync(
+    `UPDATE guru_chat_threads
+     SET updated_at = ?,
+         last_message_at = ?,
+         last_message_preview = ?,
+         title = CASE
+           WHEN COALESCE(NULLIF(TRIM(title), ''), '') = ''
+             OR title = topic_name
+           THEN ?
+           ELSE title
+         END
+     WHERE id = ?`,
+    [timestamp, timestamp, preview, title, threadId],
   );
 }
 
-export async function getChatMessageCount(topicName: string): Promise<number> {
+export async function getChatMessageCount(threadId: number): Promise<number> {
   const db = getDb();
   const r = await db.getFirstAsync<{ c: number }>(
-    'SELECT COUNT(*) as c FROM chat_history WHERE topic_name = ?',
-    [topicName],
+    'SELECT COUNT(*) as c FROM chat_history WHERE thread_id = ?',
+    [threadId],
   );
   return r?.c ?? 0;
 }
 
-export async function getChatHistory(topicName: string, limit = 20): Promise<ChatHistoryMessage[]> {
+export async function getChatHistory(threadId: number, limit = 20): Promise<ChatHistoryMessage[]> {
   const db = getDb();
   const rows = await db.getAllAsync<{
     id: number;
+    thread_id: number | null;
     topic_name: string;
     role: string;
     message: string;
     timestamp: number;
     sources_json: string | null;
     model_used: string | null;
-  }>('SELECT * FROM chat_history WHERE topic_name = ? ORDER BY timestamp ASC LIMIT ?', [
-    topicName,
+  }>('SELECT * FROM chat_history WHERE thread_id = ? ORDER BY timestamp ASC LIMIT ?', [
+    threadId,
     limit,
   ]);
   return rows.map((r) => ({
     id: r.id,
+    threadId: r.thread_id ?? null,
     topicName: r.topic_name,
     role: r.role as 'user' | 'guru',
     message: r.message,
@@ -723,4 +900,5 @@ export async function clearChatHistory(topicName: string): Promise<void> {
   const db = getDb();
   await db.runAsync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
   await db.runAsync('DELETE FROM guru_chat_session_memory WHERE topic_name = ?', [topicName]);
+  await db.runAsync('DELETE FROM guru_chat_threads WHERE topic_name = ?', [topicName]);
 }

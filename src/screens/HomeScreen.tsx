@@ -248,12 +248,8 @@ export default function HomeScreen() {
   })();
 
 
-  const rawInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
-  const rawNeet = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
-  // Final safety net: if the computed days is 0 and the date isn't literally today,
-  // re-derive from the hardcoded default so the countdown never misleadingly shows 0.
-  const daysToInicet = rawInicet || profileRepository.getDaysToExam(DEFAULT_INICET_DATE);
-  const daysToNeetPg = rawNeet || profileRepository.getDaysToExam(DEFAULT_NEET_DATE);
+  const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
+  const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -440,7 +436,7 @@ export default function HomeScreen() {
                     title="Notes Vault"
                     icon="library-outline"
                     accent={theme.colors.success}
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesHub' })}
+                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesVault' })}
                     accessibilityLabel="Open Notes Vault"
                   />
                   <ShortcutTile

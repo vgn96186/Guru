@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import { useAppStore } from '../store/useAppStore';
-import { syncExamDatesFromInternet } from '../services/examDateSyncService';
+import { syncExamDatesIfStale } from '../services/examDateSyncService';
 import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
 import { navigationRef } from '../navigation/navigationRef';
 import { dailyLogRepository, profileRepository } from '../db/repositories';
-import { retryFailedTasks } from '../services/lecture/lectureSessionMonitor';
 import { invalidatePlanCache } from '../services/studyPlanner';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
 import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';
@@ -17,7 +16,7 @@ import { warmAiContentCache } from '../services/backgroundTasks';
  * Master initialization hook.
  * Orchestrates all startup side-effects in a single, predictable flow.
  */
-export function useAppBootstrap(): void {
+export function useAppBootstrap(onFatalError?: (message: string) => void): void {
   const loadProfile = useAppStore((s) => s.loadProfile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
@@ -26,6 +25,11 @@ export function useAppBootstrap(): void {
   useAppStateTransition({
     onActive: () => {
       refreshProfile();
+      syncExamDatesIfStale(24)
+        .then((res) => {
+          if (res?.updated) refreshProfile();
+        })
+        .catch((e) => console.error('[Sync] Exam date sync failed on foreground:', e));
       void refreshAccountabilityNotificationsSafely((e) =>
         console.error('[Notifications] Refresh failed on foreground:', e),
       );
@@ -80,9 +84,9 @@ export function useAppBootstrap(): void {
       );
 
       // 3. Sync and Maintenance
-      syncExamDatesFromInternet()
+      syncExamDatesIfStale(24)
         .then((res) => {
-          if (res.updated) refreshProfile();
+          if (res?.updated) refreshProfile();
         })
         .catch((e) => console.error('[Sync] Exam date sync failed:', e));
       void refreshAccountabilityNotificationsSafely((e) =>
@@ -90,22 +94,25 @@ export function useAppBootstrap(): void {
       );
 
       // 4. Deferred Recovery (10s delay to stay out of critical path)
-      const profileForRecovery = useAppStore.getState().profile;
       setTimeout(() => {
         warmAiContentCache({ topicLimit: 2, refreshNotifications: false }).catch((e) =>
           console.warn('[AIWarmup] Startup prefetch failed:', e),
         );
       }, 4000);
-      if (profileForRecovery?.groqApiKey) {
-        setTimeout(() => {
-          retryFailedTasks(profileForRecovery.groqApiKey).catch((e) =>
-            console.error('[Recovery] Transcription retry failed:', e),
-          );
-        }, 10000);
-      }
+      // Auto-retry disabled — users process recordings manually via Recording Vault.
+      // if (profileForRecovery?.groqApiKey) {
+      //   setTimeout(() => {
+      //     retryFailedTasks(profileForRecovery.groqApiKey).catch((e) =>
+      //       console.error('[Recovery] Transcription retry failed:', e),
+      //     );
+      //   }, 10000);
+      // }
     };
 
-    bootstrap();
+    void bootstrap().catch((e) => {
+      console.error('[AppBootstrap] Fatal startup error:', e);
+      onFatalError?.(e instanceof Error ? e.message : 'App startup failed');
+    });
 
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data;
@@ -117,5 +124,5 @@ export function useAppBootstrap(): void {
     return () => {
       sub.remove();
     };
-  }, []);
+  }, [loadProfile, onFatalError, refreshProfile, setDailyAvailability]);
 }

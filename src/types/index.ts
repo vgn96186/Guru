@@ -147,11 +147,13 @@ export interface UserProfile {
   pomodoroIntervalMinutes?: number;
   cloudflareAccountId?: string;
   cloudflareApiToken?: string;
+  falApiKey?: string;
+  braveSearchApiKey?: string;
   /** Guru Chat default model id: `auto`, `local`, `groq/...`, OpenRouter model id, `gemini/...`, `cf/...`. */
   guruChatDefaultModel?: string;
   /**
-   * Study image generation: `auto` (Gemini then Cloudflare), a Gemini image model id, or a
-   * `@cf/...` Workers AI image model id.
+   * Study image generation: `auto`, a ChatGPT/OpenAI image model id, a Gemini image model id,
+   * an OpenRouter image model id, or a `@cf/...` Workers AI image model id.
    */
   imageGenerationModel?: string;
   /** Optional facts Guru should remember across chats (exam goals, weak areas, etc.). */
@@ -172,6 +174,10 @@ export interface UserProfile {
   providerOrder?: ProviderId[];
   /** Deepgram API key for batch + live WebSocket transcription. */
   deepgramApiKey?: string;
+  /** Persisted provider validation metadata used by Settings key status indicators. */
+  apiValidation?: Partial<Record<ProviderId | 'deepgram' | 'fal' | 'brave', { verified: boolean; verifiedAt: number; fingerprint: string }>>;
+  /** True when ChatGPT OAuth tokens are stored in secure store. */
+  chatgptConnected?: boolean;
 }
 
 export type ProviderId =
@@ -183,9 +189,11 @@ export type ProviderId =
   | 'gemini'
   | 'gemini_fallback'
   | 'openrouter'
-  | 'cloudflare';
+  | 'cloudflare'
+  | 'chatgpt';
 
 export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
+  'chatgpt',
   'groq',
   'github',
   'kilo',
@@ -198,6 +206,7 @@ export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
 ];
 
 export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
+  chatgpt: 'ChatGPT',
   groq: 'Groq',
   github: 'GitHub Models',
   kilo: 'Kilo',

@@ -24,6 +24,7 @@ function getBackendAttemptOrder(profile: UserProfile) {
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    chatgptConnected,
   } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
   const hasCloud =
@@ -35,7 +36,8 @@ function getBackendAttemptOrder(profile: UserProfile) {
     !!deepseekKey ||
     !!githubModelsPat ||
     !!kiloApiKey ||
-    !!agentRouterKey;
+    !!agentRouterKey ||
+    chatgptConnected;
 
   const attempts: ('local' | 'cloud')[] = [];
   if (hasCloud) attempts.push('cloud');
@@ -58,6 +60,7 @@ function getBackendAttemptOrder(profile: UserProfile) {
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    chatgptConnected,
     providerOrder: profile.providerOrder,
   };
 }
@@ -91,6 +94,7 @@ export async function generateJSONWithRouting<T>(
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    chatgptConnected,
     providerOrder,
   } = getBackendAttemptOrder(profile);
 
@@ -150,6 +154,7 @@ export async function generateJSONWithRouting<T>(
         kiloApiKey,
         agentRouterKey,
         providerOrder,
+        chatgptConnected,
       );
       const parsed = await parseStructuredJson(text, schema);
       trace.success({
@@ -227,6 +232,7 @@ export async function generateTextWithRouting(
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    chatgptConnected,
     providerOrder: textProviderOrder,
   } = getBackendAttemptOrder(profile);
   const attempts = isExplicitCloudModel(options?.chosenModel) ? ['cloud' as const] : initialAttempts;
@@ -252,6 +258,7 @@ export async function generateTextWithRouting(
               kiloApiKey,
               agentRouterKey,
               textProviderOrder,
+              chatgptConnected,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       trace.success({
@@ -336,6 +343,7 @@ export async function generateTextWithRoutingStream(
     githubModelsPat,
     kiloApiKey,
     agentRouterKey,
+    chatgptConnected,
     providerOrder: streamProviderOrder,
   } = getBackendAttemptOrder(profile);
   const attempts =
@@ -376,6 +384,7 @@ export async function generateTextWithRoutingStream(
         kiloApiKey,
         agentRouterKey,
         streamProviderOrder,
+        chatgptConnected,
       );
       trace.success({
         backend,

@@ -199,7 +199,7 @@ export default function ManualNoteCreationScreen(
         <ScreenHeader
           title="Paste Transcript"
           subtitle="Turn copied lecture text into structured notes without leaving the app flow."
-          onBackPress={() => navigation.navigate('NotesHub' as never)}
+          onBackPress={() => navigation.goBack()}
         />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
@@ -232,7 +232,7 @@ export default function ManualNoteCreationScreen(
           <Text style={styles.processingText}>Analyzing transcript and building notes...</Text>
         )}
         <TouchableOpacity
-          onPress={() => navigation.navigate('NotesHub' as never)}
+          onPress={() => navigation.goBack()}
           style={styles.cancelInlineBtn}
           disabled={isProcessing}
         >

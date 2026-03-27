@@ -10,6 +10,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   FlatList,
   StyleSheet,
   StatusBar,
@@ -17,10 +18,12 @@ import {
   ActivityIndicator,
   AppState,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
 import {
   findAllRecordings,
   pickFolderAndScan,
@@ -36,6 +39,7 @@ import { profileRepository } from '../db/repositories';
 import { getApiKeys } from '../services/ai/config';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
+import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
 
 const CUSTOM_FOLDERS_KEY = 'guru_recording_vault_custom_folders';
 
@@ -82,6 +86,8 @@ export default function RecordingVaultScreen() {
   const [processingMsg, setProcessingMsg] = useState('');
   const [savedFolders, setSavedFolders] = useState<SavedFolder[]>([]);
   const [needsFileAccess, setNeedsFileAccess] = useState(false);
+  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
   // Load persisted custom folders on mount
   useEffect(() => {
@@ -154,7 +160,9 @@ export default function RecordingVaultScreen() {
     return () => sub.remove();
   }, [needsFileAccess, loadRecordings]);
 
-  const handleProcess = useCallback(async (item: RecordingFile) => {
+  const processRecording = useCallback(async (
+    item: Pick<RecordingFile, 'path' | 'name' | 'sizeMB'> & { appName?: string },
+  ) => {
     setProcessingFile(item.path);
     setProcessingState('transcribing');
     setProcessingMsg('Preparing audio...');
@@ -191,7 +199,7 @@ export default function RecordingVaultScreen() {
 
       await saveLecturePersistence({
         analysis,
-        appName: 'Recording Vault',
+        appName: item.appName ?? 'Recording Vault',
         durationMinutes: item.sizeMB > 0 ? Math.round(item.sizeMB * 30) : 0, // rough estimate
         logId: 0,
         quickNote: '',
@@ -205,6 +213,10 @@ export default function RecordingVaultScreen() {
       setProcessingMsg(e?.message ?? 'Processing failed');
     }
   }, []);
+
+  const handleProcess = useCallback(async (item: RecordingFile) => {
+    await processRecording(item);
+  }, [processRecording]);
 
   const handleDelete = useCallback((item: RecordingFile) => {
     Alert.alert(
@@ -234,6 +246,58 @@ export default function RecordingVaultScreen() {
     setProcessingMsg('');
   }, []);
 
+  const isSelectionMode = selectedPaths.size > 0;
+
+  const toggleSelection = useCallback((path: string) => {
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  }, []);
+
+  const handleLongPress = useCallback((path: string) => {
+    Haptics.selectionAsync();
+    setSelectedPaths((prev) => {
+      const next = new Set(prev);
+      next.add(path);
+      return next;
+    });
+  }, []);
+
+  const cancelSelection = useCallback(() => {
+    setSelectedPaths(new Set());
+  }, []);
+
+  const handleBatchDelete = useCallback(() => {
+    const count = selectedPaths.size;
+    Alert.alert(
+      `Delete ${count} recording${count !== 1 ? 's' : ''}?`,
+      'This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete All',
+          style: 'destructive',
+          onPress: async () => {
+            const paths = [...selectedPaths];
+            let deleted = 0;
+            for (const p of paths) {
+              try {
+                await deleteRecording(p);
+                deleted++;
+              } catch { /* skip failures */ }
+            }
+            setRecordings((prev) => prev.filter((r) => !selectedPaths.has(r.path)));
+            setSelectedPaths(new Set());
+            Alert.alert('Done', `Deleted ${deleted} recording${deleted !== 1 ? 's' : ''}.`);
+          },
+        },
+      ],
+    );
+  }, [selectedPaths]);
+
   const formatDate = (d: Date | null) => {
     if (!d) return 'Unknown date';
     return d.toLocaleDateString('en-IN', {
@@ -249,16 +313,42 @@ export default function RecordingVaultScreen() {
     const isProcessing = processingFile === item.path;
     const isDone = isProcessing && processingState === 'done';
     const isError = isProcessing && processingState === 'error';
+    const isSelected = selectedPaths.has(item.path);
 
     return (
-      <View style={[styles.card, isDone && styles.cardDone, isError && styles.cardError]}>
-        <View style={styles.cardIcon}>
-          <Ionicons
-            name={isDone ? 'checkmark-circle' : 'mic-outline'}
-            size={24}
-            color={isDone ? theme.colors.success : theme.colors.primary}
-          />
-        </View>
+      <Pressable
+        style={[
+          styles.card,
+          isDone && styles.cardDone,
+          isError && styles.cardError,
+          isSelected && styles.cardSelected,
+        ]}
+        onLongPress={() => handleLongPress(item.path)}
+        onPress={() => {
+          if (isSelectionMode) {
+            Haptics.selectionAsync();
+            toggleSelection(item.path);
+          }
+        }}
+        delayLongPress={220}
+      >
+        {isSelectionMode ? (
+          <View style={styles.cardIcon}>
+            <Ionicons
+              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+              size={24}
+              color={isSelected ? theme.colors.primary : theme.colors.textMuted}
+            />
+          </View>
+        ) : (
+          <View style={styles.cardIcon}>
+            <Ionicons
+              name={isDone ? 'checkmark-circle' : 'mic-outline'}
+              size={24}
+              color={isDone ? theme.colors.success : theme.colors.primary}
+            />
+          </View>
+        )}
         <View style={styles.cardBody}>
           <Text style={styles.cardName} numberOfLines={1} ellipsizeMode="middle">
             {item.name}
@@ -284,32 +374,34 @@ export default function RecordingVaultScreen() {
             </View>
           ) : null}
         </View>
-        <View style={styles.cardActions}>
-          {!isProcessing || isDone || isError ? (
-            <>
-              <TouchableOpacity
-                style={styles.actionBtn}
-                onPress={() => {
-                  if (isDone || isError) resetProcessing();
-                  void handleProcess(item);
-                }}
-                disabled={isProcessing && !isDone && !isError}
-              >
-                <Ionicons name="cloud-upload-outline" size={20} color={theme.colors.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.actionBtn}
-                onPress={() => handleDelete(item)}
-                disabled={isProcessing && !isDone && !isError}
-              >
-                <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
-              </TouchableOpacity>
-            </>
-          ) : (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-          )}
-        </View>
-      </View>
+        {!isSelectionMode && (
+          <View style={styles.cardActions}>
+            {!isProcessing || isDone || isError ? (
+              <>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => {
+                    if (isDone || isError) resetProcessing();
+                    void handleProcess(item);
+                  }}
+                  disabled={isProcessing && !isDone && !isError}
+                >
+                  <Ionicons name="cloud-upload-outline" size={20} color={theme.colors.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => handleDelete(item)}
+                  disabled={isProcessing && !isDone && !isError}
+                >
+                  <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            )}
+          </View>
+        )}
+      </Pressable>
     );
   };
 
@@ -344,6 +436,29 @@ export default function RecordingVaultScreen() {
       Alert.alert('Error', `Could not open folder picker.\n\n${msg}`);
     }
   }, [savedFolders, persistFolders, loadRecordings]);
+
+  const handleUploadAudio = useCallback(async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        type: ['audio/*'],
+      });
+      if (result.canceled || !result.assets[0]) return;
+
+      setIsUploadingAudio(true);
+      const asset = result.assets[0];
+      await processRecording({
+        name: asset.name ?? `upload-${Date.now()}.m4a`,
+        path: asset.uri,
+        sizeMB: Math.round((((asset.size ?? 0) / (1024 * 1024)) || 0) * 10) / 10,
+        appName: 'Recording Vault Upload',
+      });
+    } catch (e: any) {
+      Alert.alert('Upload failed', e?.message ?? 'Could not process the selected audio file.');
+    } finally {
+      setIsUploadingAudio(false);
+    }
+  }, [processRecording]);
 
   const handleRemoveFolder = useCallback((folder: SavedFolder) => {
     Alert.alert('Remove folder?', folder.label, [
@@ -381,6 +496,52 @@ export default function RecordingVaultScreen() {
             <Ionicons name="refresh" size={20} color={theme.colors.textMuted} />
           </TouchableOpacity>
         </View>
+
+        <View style={styles.topActions}>
+          <TouchableOpacity
+            style={[styles.topActionBtn, isUploadingAudio && styles.topActionBtnDisabled]}
+            onPress={() => void handleUploadAudio()}
+            disabled={isUploadingAudio}
+            activeOpacity={0.8}
+          >
+            {isUploadingAudio ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Ionicons name="cloud-upload-outline" size={18} color={theme.colors.primary} />
+            )}
+            <Text style={styles.topActionText}>
+              {isUploadingAudio ? 'Uploading…' : 'Upload Audio'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.topActionBtn}
+            onPress={handlePickFolder}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="folder-open-outline" size={18} color={theme.colors.primary} />
+            <Text style={styles.topActionText}>Add Folder</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TranscriptionSettingsPanel />
+
+        {/* Selection mode banner */}
+        {isSelectionMode && (
+          <View style={styles.selectionBanner}>
+            <Text style={styles.selectionText}>
+              {selectedPaths.size} selected
+            </Text>
+            <View style={styles.selectionActions}>
+              <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
+                <Text style={styles.selectionCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
+                <Ionicons name="trash-outline" size={14} color="#fff" />
+                <Text style={styles.selectionDeleteText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* File access permission banner */}
         {needsFileAccess && (
@@ -464,6 +625,34 @@ const styles = StyleSheet.create({
   headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
   headerSub: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
   refreshBtn: { padding: 8 },
+  topActions: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: 10,
+  },
+  topActionBtn: {
+    flex: 1,
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  topActionBtnDisabled: {
+    opacity: 0.6,
+  },
+  topActionText: {
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
   list: { padding: theme.spacing.lg, paddingBottom: 40 },
   card: {
     flexDirection: 'row',
@@ -477,6 +666,7 @@ const styles = StyleSheet.create({
   },
   cardDone: { borderColor: theme.colors.successTintSoft },
   cardError: { borderColor: theme.colors.errorTintSoft },
+  cardSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '12' },
   cardIcon: { marginRight: 12 },
   cardBody: { flex: 1, minWidth: 0 },
   cardName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
@@ -530,6 +720,33 @@ const styles = StyleSheet.create({
     fontSize: 12,
     maxWidth: 160,
   },
+  selectionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.primary + '18',
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '40',
+  },
+  selectionText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
+  selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  selectionCancelBtn: { paddingHorizontal: 12, paddingVertical: 6 },
+  selectionCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '700' },
+  selectionDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.error,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  selectionDeleteText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   permBanner: {
     flexDirection: 'row',
     alignItems: 'center',

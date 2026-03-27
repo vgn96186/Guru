@@ -747,6 +747,33 @@ export async function markTopicNeedsAttention(topicId: number): Promise<void> {
   }
 }
 
+export async function markTopicDiscussedInChat(topicId: number): Promise<void> {
+  const db = getDb();
+  const now = Date.now();
+  const sp = 'sp_mark_topic_discussed_in_chat';
+  await db.execAsync(`SAVEPOINT ${sp}`);
+  try {
+    await db.runAsync(
+      `INSERT INTO topic_progress (topic_id, status, confidence, last_studied_at, times_studied)
+       VALUES (?, 'seen', 1, ?, 1)
+       ON CONFLICT(topic_id) DO UPDATE SET
+         status = CASE
+           WHEN topic_progress.status = 'unseen' THEN 'seen'
+           ELSE topic_progress.status
+         END,
+         confidence = MAX(topic_progress.confidence, 1),
+         last_studied_at = ?,
+         times_studied = topic_progress.times_studied + 1`,
+      [topicId, now, now],
+    );
+    await db.execAsync(`RELEASE ${sp}`);
+  } catch (err) {
+    await db.execAsync(`ROLLBACK TO ${sp}`);
+    await db.execAsync(`RELEASE ${sp}`);
+    throw err;
+  }
+}
+
 export interface SubjectBreakdownRow {
   id: number;
   name: string;

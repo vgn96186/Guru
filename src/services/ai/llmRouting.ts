@@ -10,6 +10,7 @@ import {
   DEEPSEEK_MODELS,
   KILO_MODELS,
   AGENTROUTER_MODELS,
+  CHATGPT_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
@@ -17,6 +18,7 @@ import {
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
+import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
 import type { ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { logStreamEvent } from './runtimeDebug';
@@ -1179,11 +1181,19 @@ interface ProviderKeys {
   groqKey?: string; githubModelsPat?: string; kiloApiKey?: string;
   deepseekKey?: string; agentRouterKey?: string; geminiKey?: string;
   geminiFallbackKey?: string; orKey?: string; cfAccountId?: string; cfApiToken?: string;
+  chatgptConnected?: boolean;
+}
+
+/** Ensure chatgpt is in the provider order (old saved orders won't have it). */
+function ensureChatGptInOrder(order: ProviderId[]): ProviderId[] {
+  if (order.includes('chatgpt')) return order;
+  return ['chatgpt', ...order];
 }
 
 /** Check if a provider has a usable key configured. */
 function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
   switch (provider) {
+    case 'chatgpt': return !!keys.chatgptConnected;
     case 'groq': return !!keys.groqKey;
     case 'github': return !!keys.githubModelsPat;
     case 'kilo': return !!keys.kiloApiKey;
@@ -1218,7 +1228,7 @@ async function tryStreamProvider(
         const text = await fn(model);
         return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
       } catch (err) {
-        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message?.slice(0, 80));
+        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
         lastErr = err as Error;
         continue;
       }
@@ -1227,6 +1237,9 @@ async function tryStreamProvider(
   };
 
   switch (provider) {
+    case 'chatgpt':
+      if (!keys.chatgptConnected) return null;
+      return tryModels(CHATGPT_MODELS, (m) => streamChatGpt(messages, m, onDelta), 'chatgpt');
     case 'groq':
       if (!keys.groqKey) return null;
       return tryModels(GROQ_MODELS, (m) => streamGroqChat(messages, keys.groqKey!, m, onDelta), 'groq');
@@ -1279,7 +1292,7 @@ async function tryProvider(
         const text = await fn(model);
         return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
       } catch (err) {
-        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message?.slice(0, 80));
+        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
         continue;
       }
     }
@@ -1288,6 +1301,9 @@ async function tryProvider(
 
   const json = !textMode;
   switch (provider) {
+    case 'chatgpt':
+      if (!keys.chatgptConnected) return null;
+      return tryModels(CHATGPT_MODELS, (m) => callChatGpt(messages, m, json), 'chatgpt');
     case 'groq':
       if (!keys.groqKey) return null;
       return tryModels(GROQ_MODELS, (m) => callGroq(messages, keys.groqKey!, m, json), 'groq');
@@ -1339,6 +1355,7 @@ export async function attemptCloudLLMStream(
   kiloApiKey?: string | undefined,
   agentRouterKey?: string | undefined,
   providerOrder?: ProviderId[],
+  chatgptConnected?: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1361,6 +1378,9 @@ export async function attemptCloudLLMStream(
   const preferredAgentRouterModel = chosenModel?.startsWith('ar/')
     ? chosenModel.replace('ar/', '')
     : undefined;
+  const preferredChatGptModel = chosenModel?.startsWith('chatgpt/')
+    ? chosenModel.replace('chatgpt/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -1370,6 +1390,7 @@ export async function attemptCloudLLMStream(
     !preferredGithubModel &&
     !preferredKiloModel &&
     !preferredAgentRouterModel &&
+    !preferredChatGptModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -1486,6 +1507,15 @@ export async function attemptCloudLLMStream(
     }
   }
 
+  if (preferredChatGptModel && chatgptConnected) {
+    try {
+      const text = await streamChatGpt(messages, preferredChatGptModel, onDelta);
+      return { text, modelUsed: `chatgpt/${preferredChatGptModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   const userPickedSpecificModel =
     !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
   if (userPickedSpecificModel) {
@@ -1513,13 +1543,13 @@ export async function attemptCloudLLMStream(
   }
 
   // 2. Default Routing — iterate providers in user-defined (or default) order
-  const order = providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER;
+  const order = ensureChatGptInOrder(providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER);
   const keys: ProviderKeys = {
     groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey,
-    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken,
+    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken, chatgptConnected,
   };
   const skipModels: Record<string, string | undefined> = {
-    groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
+    chatgpt: preferredChatGptModel, groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
     deepseek: preferredDeepseekModel, agentrouter: preferredAgentRouterModel,
     gemini: preferredGeminiModel, gemini_fallback: preferredGeminiModel,
     openrouter: preferredOpenRouterModel, cloudflare: preferredCfModel,
@@ -1611,6 +1641,7 @@ export async function attemptCloudLLM(
   kiloApiKey?: string | undefined,
   agentRouterKey?: string | undefined,
   providerOrder?: ProviderId[],
+  chatgptConnected?: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1633,6 +1664,9 @@ export async function attemptCloudLLM(
   const preferredAgentRouterModel = chosenModel?.startsWith('ar/')
     ? chosenModel.replace('ar/', '')
     : undefined;
+  const preferredChatGptModel = chosenModel?.startsWith('chatgpt/')
+    ? chosenModel.replace('chatgpt/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -1642,6 +1676,7 @@ export async function attemptCloudLLM(
     !preferredGithubModel &&
     !preferredKiloModel &&
     !preferredAgentRouterModel &&
+    !preferredChatGptModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -1650,6 +1685,15 @@ export async function attemptCloudLLM(
   let lastCloudError: Error | null = null;
 
   // 1. Explicit UI Selections
+  if (preferredChatGptModel && chatgptConnected) {
+    try {
+      const text = await callChatGpt(messages, preferredChatGptModel, !textMode);
+      return { text, modelUsed: `chatgpt/${preferredChatGptModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   if (preferredDeepseekModel && deepseekKey) {
     try {
       const text = textMode
@@ -1733,13 +1777,13 @@ export async function attemptCloudLLM(
   }
 
   // 2. Default Routing — iterate providers in user-defined (or default) order
-  const order = providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER;
+  const order = ensureChatGptInOrder(providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER);
   const keys2: ProviderKeys = {
     groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey,
-    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken,
+    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken, chatgptConnected,
   };
   const skipModels: Record<string, string | undefined> = {
-    groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
+    chatgpt: preferredChatGptModel, groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
     deepseek: preferredDeepseekModel, agentrouter: preferredAgentRouterModel,
     gemini: preferredGeminiModel, gemini_fallback: preferredGeminiModel,
     openrouter: preferredOpenRouterModel, cloudflare: preferredCfModel,

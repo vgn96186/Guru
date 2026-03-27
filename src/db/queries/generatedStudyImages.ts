@@ -189,3 +189,32 @@ export async function listGeneratedStudyImagesForTopic(
   );
   return rows.map(mapRow);
 }
+
+export async function listGeneratedStudyImages(limit = 500): Promise<GeneratedStudyImageRecord[]> {
+  const db = getDb();
+  const rows = await db.getAllAsync<{
+    id: number;
+    context_type: GeneratedStudyImageContextType;
+    context_key: string;
+    topic_id: number | null;
+    topic_name: string;
+    lecture_note_id: number | null;
+    style: GeneratedStudyImageStyle;
+    prompt: string;
+    provider: string;
+    model_used: string;
+    mime_type: string;
+    local_uri: string;
+    remote_url: string | null;
+    width: number | null;
+    height: number | null;
+    created_at: number;
+  }>(
+    `SELECT *
+     FROM generated_study_images
+     ORDER BY created_at DESC
+     LIMIT ?`,
+    [limit],
+  );
+  return rows.map(mapRow);
+}

@@ -21,6 +21,8 @@ export const BUNDLED_GEMINI_KEY = '';
 export const BUNDLED_GEMINI_FALLBACK_KEY = '';
 export const BUNDLED_CF_ACCOUNT_ID = '';
 export const BUNDLED_CF_API_TOKEN = '';
+export const BUNDLED_FAL_KEY = '';
+export const BUNDLED_BRAVE_SEARCH_KEY = '';
 export const BUNDLED_DEEPSEEK_KEY = '';
 export const BUNDLED_GITHUB_MODELS_PAT = '';
 
@@ -62,6 +64,22 @@ export const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'] as const;
 export const KILO_MODELS = ['xiaomi/mimo', 'anthropic/claude-sonnet-4.5'] as const;
 /** AgentRouter models (OpenAI-compatible at agentrouter.org/v1). */
 export const AGENTROUTER_MODELS = ['deepseek-v3.2', 'deepseek-v3.1', 'deepseek-r1-0528', 'glm-4.5', 'glm-4.6'] as const;
+/**
+ * ChatGPT subscription models via the Codex backend.
+ * GPT-4.x is not supported in Codex. Keep this list aligned with the official Codex models page.
+ * Docs currently recommend starting with GPT-5.4 and using GPT-5.4-mini for lower-cost tasks.
+ */
+export const CHATGPT_MODELS = [
+  'gpt-5.4',
+  'gpt-5.4-mini',
+  'gpt-5.3-codex',
+  'gpt-5.2-codex',
+  'gpt-5.2',
+  'gpt-5.1-codex-max',
+  'gpt-5.1-codex',
+  'gpt-5.1-codex-mini',
+  'gpt-5-codex',
+] as const;
 
 /**
  * Gemini text chat / streaming — fallback order.
@@ -111,6 +129,13 @@ export const GEMINI_IMAGE_MODELS = [
   'gemini-3-pro-image-preview',
 ] as const;
 
+export const FAL_IMAGE_MODELS = [
+  'fal-ai/nano-banana-2',
+  'fal-ai/flux-pro/kontext/max/text-to-image',
+  'fal-ai/qwen-image-2/pro/text-to-image',
+  'fal-ai/gpt-image-1.5',
+] as const;
+
 /** OpenRouter free image models — tried in order when Cloudflare & Gemini are unavailable or rate limited. */
 export const OPENROUTER_IMAGE_MODELS = [
   'bytedance-seed/seedream-4.5',
@@ -124,6 +149,21 @@ export const GEMINI_IMAGE_MODEL_LABELS: Record<(typeof GEMINI_IMAGE_MODELS)[numb
   'gemini-3.1-flash-image-preview': '3.1 Flash Image preview',
   'gemini-3-pro-image-preview': '3 Pro Image (often paid / higher tier)',
 };
+
+export const FAL_IMAGE_MODEL_LABELS: Record<(typeof FAL_IMAGE_MODELS)[number], string> = {
+  'fal-ai/nano-banana-2': 'Nano Banana 2 via fal',
+  'fal-ai/flux-pro/kontext/max/text-to-image': 'FLUX.1 Kontext Max via fal',
+  'fal-ai/qwen-image-2/pro/text-to-image': 'Qwen Image 2 Pro via fal',
+  'fal-ai/gpt-image-1.5': 'GPT Image 1.5 via fal',
+};
+
+export const FAL_IMAGE_GENERATION_MODEL_OPTIONS: ReadonlyArray<{
+  value: string;
+  label: string;
+}> = FAL_IMAGE_MODELS.map((m) => ({
+  value: m,
+  label: `fal - ${FAL_IMAGE_MODEL_LABELS[m]}`,
+}));
 
 /** Persisted in `user_profile.image_generation_model`. `auto` = Gemini chain, then Cloudflare. */
 export const DEFAULT_IMAGE_GENERATION_MODEL = 'auto' as const;
@@ -148,6 +188,7 @@ export function normalizeImageGenerationModel(raw: string | undefined | null): s
   if (!v || v === DEFAULT_IMAGE_GENERATION_MODEL) return DEFAULT_IMAGE_GENERATION_MODEL;
   const allowed = new Set<string>([
     DEFAULT_IMAGE_GENERATION_MODEL,
+    ...FAL_IMAGE_MODELS,
     ...GEMINI_IMAGE_MODELS,
     ...CLOUDFLARE_IMAGE_MODELS,
     ...OPENROUTER_IMAGE_MODELS,

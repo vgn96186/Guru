@@ -1,6 +1,8 @@
 import type { MedicalGroundingSource, Message } from './types';
 import { generateTextWithRouting } from './generate';
 import { logGroundingEvent, previewText } from './runtimeDebug';
+import { profileRepository } from '../../db/repositories';
+import { getApiKeys } from './config';
 
 function compactWhitespace(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim();
@@ -58,6 +60,27 @@ function describeMedicalSearchError(error: unknown): string {
   return String(error);
 }
 
+const IMAGE_QUERY_STOPWORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'clinical', 'context', 'diagram', 'exam',
+  'examination', 'find', 'for', 'image', 'in', 'is', 'medical', 'movement', 'of', 'or', 'question',
+  'relevant', 'showing', 'student', 'the', 'this', 'to', 'what', 'with',
+]);
+
+function compactImageSearchQuery(raw: string, maxTerms = 8): string {
+  const cleaned = raw
+    .toLowerCase()
+    .replace(/["']/g, ' ')
+    .replace(/[^a-z0-9\s/-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const prioritized = cleaned
+    .split(' ')
+    .filter((term) => term.length > 2 && !IMAGE_QUERY_STOPWORDS.has(term));
+
+  return Array.from(new Set(prioritized)).slice(0, maxTerms).join(' ').trim();
+}
+
 /** Deduplicates sources by title+url (case-insensitive). Exported for unit testing. */
 export function dedupeGroundingSources(
   sources: MedicalGroundingSource[],
@@ -71,6 +94,107 @@ export function dedupeGroundingSources(
     deduped.push(src);
   }
   return deduped;
+}
+
+const QUERY_STOPWORDS = new Set([
+  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'how', 'in', 'into', 'is',
+  'it', 'of', 'on', 'or', 'the', 'to', 'with', 'what', 'which', 'when', 'why',
+  'india', 'indian', 'icmr', 'aiims', 'who', 'guidelines', 'guideline', 'protocol', 'protocols',
+  'diagnosis', 'diagnostic', 'treatment', 'clinical', 'presentation', 'management', 'approach',
+  'overview', 'medicine', 'medical', 'disease', 'disorder',
+]);
+
+function extractQueryTerms(query: string): string[] {
+  return Array.from(
+    new Set(
+      query
+        .toLowerCase()
+        .replace(/\([^)]*\)/g, ' ')
+        .replace(/[^a-z0-9\s-]/g, ' ')
+        .split(/\s+/)
+        .map((term) => term.trim())
+        .filter((term) => term.length >= 3 && !QUERY_STOPWORDS.has(term)),
+    ),
+  );
+}
+
+function scoreGroundingSource(source: MedicalGroundingSource, query: string): number {
+  const title = source.title.toLowerCase();
+  const snippet = source.snippet.toLowerCase();
+  const url = source.url.toLowerCase();
+  const queryTerms = extractQueryTerms(query);
+  let score =
+    source.source === 'PubMed'
+      ? 36
+      : source.source === 'EuropePMC'
+        ? 34
+        : source.source === 'Wikipedia'
+          ? 22
+          : source.source === 'DuckDuckGo'
+            ? 6
+            : 18;
+
+  let titleHits = 0;
+  let snippetHits = 0;
+
+  for (const term of queryTerms) {
+    if (title.includes(term)) {
+      score += 8;
+      titleHits += 1;
+      continue;
+    }
+    if (snippet.includes(term)) {
+      score += 3;
+      snippetHits += 1;
+      continue;
+    }
+    if (url.includes(term)) {
+      score += 2;
+    }
+  }
+
+  if (queryTerms.length > 0 && titleHits === 0 && snippetHits === 0) {
+    score -= 18;
+  }
+
+  if (source.source === 'DuckDuckGo') {
+    score -= 6;
+    if (titleHits === 0) score -= 10;
+  }
+
+  if (source.source === 'Wikipedia' && titleHits === 0) {
+    score -= 6;
+  }
+
+  if (source.publishedAt && /^\d{4}/.test(source.publishedAt)) {
+    const publishedYear = Number(source.publishedAt.slice(0, 4));
+    const ageYears = Number.isFinite(publishedYear)
+      ? Math.max(0, new Date().getFullYear() - publishedYear)
+      : 0;
+    score += Math.max(0, 6 - Math.min(ageYears, 6));
+  }
+
+  return score;
+}
+
+function rankGroundingSources(
+  sources: MedicalGroundingSource[],
+  query: string,
+  maxResults: number,
+): MedicalGroundingSource[] {
+  return dedupeGroundingSources(sources)
+    .map((source, index) => ({
+      source,
+      index,
+      score: scoreGroundingSource(source, query),
+    }))
+    .filter(({ score }) => score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.index - b.index;
+    })
+    .slice(0, maxResults)
+    .map(({ source }) => source);
 }
 
 // ─── MEDICAL IMAGE SEARCH ─────────────────────────────────────────────────────
@@ -253,6 +377,76 @@ async function searchOpenI(
   }
 }
 
+async function searchBraveImages(
+  query: string,
+  maxResults: number,
+): Promise<MedicalGroundingSource[]> {
+  const profile = await profileRepository.getProfile().catch(() => null);
+  const { braveSearchKey } = getApiKeys(profile);
+  const trimmed = braveSearchKey?.trim();
+  if (!trimmed) return [];
+
+  const url = `https://api.search.brave.com/res/v1/images/search?q=${encodeURIComponent(query)}&count=${Math.min(
+    Math.max(maxResults, 1),
+    10,
+  )}&search_lang=en&country=us&safesearch=strict&spellcheck=1`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10000);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+        'X-Subscription-Token': trimmed,
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => String(res.status));
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+    const data = (await res.json()) as {
+      results?: Array<{
+        title?: string;
+        url?: string;
+        page_fetched?: string;
+        source?: string;
+        description?: string;
+        thumbnail?: { src?: string };
+        properties?: { url?: string };
+      }>;
+    };
+
+    const rows = Array.isArray(data?.results) ? data.results : [];
+    return rows
+      .filter((row) => row?.title && (row?.thumbnail?.src || row?.properties?.url || row?.url))
+      .slice(0, maxResults)
+      .map((row, index): MedicalGroundingSource => ({
+        id: `brave-${index}-${row.url ?? row.properties?.url ?? row.thumbnail?.src ?? ''}`,
+        title: clipText(String(row.title), 220),
+        url: String(row.url ?? row.page_fetched ?? row.properties?.url ?? '').trim(),
+        imageUrl: String(row.thumbnail?.src ?? row.properties?.url ?? '').trim() || undefined,
+        snippet: clipText(
+          String(row.description ?? row.source ?? row.page_fetched ?? row.title ?? ''),
+          420,
+        ),
+        source: 'Brave Search',
+      }));
+  } catch (err) {
+    if (__DEV__) {
+      console.warn(
+        '[MedicalSearch] Brave Search failed:',
+        describeMedicalSearchError(err),
+      );
+    }
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Search for medical images using specialized medical image databases.
  * Falls back to article sources only if no images found.
@@ -261,25 +455,68 @@ export async function searchMedicalImages(
   query: string,
   maxResults = 6,
 ): Promise<MedicalGroundingSource[]> {
+  logGroundingEvent('image_search_start', {
+    query: previewText(query, 140),
+    maxResults,
+  });
   if (__DEV__) console.log('[MedicalSearch] Image query:', query);
 
-  const [commons, medpix, openi] = await Promise.allSettled([
-    searchWikimediaCommons(query, Math.min(3, maxResults)),
-    searchOpenI(query, Math.min(3, maxResults), 'mpx'),
-    searchOpenI(query, Math.min(2, maxResults)),
-  ]);
+  async function runImageSearch(searchQuery: string) {
+    const [commons, medpix, openi, brave] = await Promise.allSettled([
+      searchWikimediaCommons(searchQuery, Math.min(3, maxResults)),
+      searchOpenI(searchQuery, Math.min(3, maxResults), 'mpx'),
+      searchOpenI(searchQuery, Math.min(2, maxResults)),
+      searchBraveImages(searchQuery, Math.min(3, maxResults)),
+    ]);
 
-  // Prioritize MedPix (curated teaching images), then Wikimedia, then general Open i
-  const collected: MedicalGroundingSource[] = [];
-  if (medpix.status === 'fulfilled') collected.push(...medpix.value);
-  if (commons.status === 'fulfilled') collected.push(...commons.value);
-  if (openi.status === 'fulfilled') collected.push(...openi.value);
+    const collected: MedicalGroundingSource[] = [];
+    if (medpix.status === 'fulfilled') collected.push(...medpix.value);
+    if (commons.status === 'fulfilled') collected.push(...commons.value);
+    if (openi.status === 'fulfilled') collected.push(...openi.value);
+    if (collected.length === 0 && brave.status === 'fulfilled') collected.push(...brave.value);
 
-  if (__DEV__) console.log(`[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'})`);
+    return {
+      collected,
+      commons,
+      medpix,
+      openi,
+      brave,
+    };
+  }
+
+  let effectiveQuery = query;
+  let { collected, commons, medpix, openi, brave } = await runImageSearch(effectiveQuery);
+
+  if (collected.length === 0) {
+    const compacted = compactImageSearchQuery(query);
+    if (compacted && compacted !== query.trim().toLowerCase()) {
+      logGroundingEvent('image_search_retry', {
+        originalQuery: previewText(query, 140),
+        retryQuery: previewText(compacted, 140),
+      });
+      effectiveQuery = compacted;
+      ({ collected, commons, medpix, openi, brave } = await runImageSearch(effectiveQuery));
+    }
+  }
+
+  logGroundingEvent('image_search_complete', {
+    query: previewText(effectiveQuery, 140),
+    totalCollected: collected.length,
+    providerBreakdown: {
+      medpix: medpix.status === 'fulfilled' ? medpix.value.length : 'failed',
+      commons: commons.status === 'fulfilled' ? commons.value.length : 'failed',
+      openi: openi.status === 'fulfilled' ? openi.value.length : 'failed',
+      brave: brave.status === 'fulfilled' ? brave.value.length : 'failed',
+    },
+    sampleTitles: collected.slice(0, 3).map((row) => previewText(row.title, 80)),
+    sampleUrls: collected.slice(0, 3).map((row) => previewText(row.imageUrl ?? row.url, 120)),
+  });
+
+  if (__DEV__) console.log(`[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`);
 
   if (collected.length === 0) {
     if (__DEV__)
-      console.warn('[MedicalSearch] No images from specialized sources');
+      console.warn('[MedicalSearch] No images from specialized or Brave fallback sources');
     return [];
   }
 
@@ -298,7 +535,7 @@ export async function generateImageSearchQuery(
     {
       role: 'system',
       content:
-        'You generate concise medical image search queries for Wikimedia Commons. Output ONLY the search query string, nothing else. Use precise medical terminology. Include imaging modality when relevant (e.g., "histology", "X-ray", "gross pathology", "microscopy", "dermatoscopy").',
+        'You generate concise medical image search queries for medical reference images. Output ONLY the search query string, nothing else. Use precise medical terminology. Keep it to 3-8 words. Prefer the core anatomical structure, pathology, or imaging finding over long explanatory phrases. Include imaging modality only when clearly relevant (e.g., histology, x-ray, MRI, gross pathology, microscopy, fundus photo).',
     },
     {
       role: 'user',
@@ -309,9 +546,10 @@ export async function generateImageSearchQuery(
   ];
   try {
     const { text } = await generateTextWithRouting(msgs);
-    return text.replace(/^["']|["']$/g, '').trim().slice(0, 120) || topicName;
+    const candidate = text.replace(/^["']|["']$/g, '').trim().slice(0, 120);
+    return compactImageSearchQuery(candidate) || compactImageSearchQuery(topicName) || topicName;
   } catch {
-    return topicName;
+    return compactImageSearchQuery(topicName) || topicName;
   }
 }
 
@@ -500,6 +738,7 @@ export async function searchLatestMedicalSources(
   const collected: MedicalGroundingSource[] = [];
   const wikiLimit = Math.min(3, maxResults);
   const litLimit = maxResults;
+  const minStrongResults = Math.min(3, maxResults);
 
   logGroundingEvent('search_start', {
     query: previewText(query, 140),
@@ -524,24 +763,6 @@ export async function searchLatestMedicalSources(
   }
 
   // DuckDuckGo — free web search for broader context (no API key needed)
-  try {
-    const ddg = await searchDuckDuckGo(query, 3);
-    collected.push(...ddg);
-    logGroundingEvent('provider_result', {
-      provider: 'DuckDuckGo',
-      count: ddg.length,
-      query: previewText(query, 100),
-      titles: ddg.map((src) => previewText(src.title, 60)),
-    });
-  } catch (err) {
-    logGroundingEvent('provider_error', {
-      provider: 'DuckDuckGo',
-      error: err instanceof Error ? err.message : String(err),
-      query: previewText(query, 100),
-    });
-    if (__DEV__) console.warn('[GuruGrounded] DuckDuckGo failed:', (err as Error).message);
-  }
-
   try {
     const europe = await searchEuropePMC(query, litLimit);
     collected.push(...europe);
@@ -580,7 +801,29 @@ export async function searchLatestMedicalSources(
     }
   }
 
-  const deduped = dedupeGroundingSources(collected).slice(0, maxResults);
+  if (collected.length < minStrongResults) {
+    try {
+      const ddg = await searchDuckDuckGo(query, 3);
+      collected.push(...ddg);
+      logGroundingEvent('provider_result', {
+        provider: 'DuckDuckGo',
+        count: ddg.length,
+        query: previewText(query, 100),
+        titles: ddg.map((src) => previewText(src.title, 60)),
+        fallback: true,
+      });
+    } catch (err) {
+      logGroundingEvent('provider_error', {
+        provider: 'DuckDuckGo',
+        error: err instanceof Error ? err.message : String(err),
+        query: previewText(query, 100),
+        fallback: true,
+      });
+      if (__DEV__) console.warn('[GuruGrounded] DuckDuckGo failed:', (err as Error).message);
+    }
+  }
+
+  const deduped = rankGroundingSources(collected, query, maxResults);
   logGroundingEvent('search_complete', {
     query: previewText(query, 140),
     totalCollected: collected.length,

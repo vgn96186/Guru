@@ -169,6 +169,16 @@ export function buildLectureFileStem(input: LectureIdentityInput, maxTopics = 3)
   return [subjectSlug, ...topicSlugs, ...suffix].join('__');
 }
 
+function formatTimestamp(ts: number): string {
+  const d = new Date(ts);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}_${hh}${min}`;
+}
+
 export function buildLectureArtifactFileName(
   kind: 'transcript' | 'note' | 'recording',
   input: LectureIdentityInput,
@@ -176,5 +186,12 @@ export function buildLectureArtifactFileName(
   extension: string,
 ): string {
   const safeExtension = extension.startsWith('.') ? extension : `.${extension}`;
-  return `${buildLectureFileStem(input)}__${kind}__${timestamp}${safeExtension}`;
+  const subject = clipPart(slugify(resolveLectureSubjectLabel(input)), 32);
+  const topics = resolveLectureTopicLabels(input)
+    .slice(0, 2)
+    .map((t) => clipPart(slugify(t), 28));
+  const topicPart = topics.length > 0 ? `_${topics.join('_')}` : '';
+  const dateStr = formatTimestamp(timestamp);
+  // Format: "anatomy_cardiac-valves_transcript_2025-03-26_1430.txt"
+  return `${subject}${topicPart}_${kind}_${dateStr}${safeExtension}`;
 }

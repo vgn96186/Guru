@@ -8,7 +8,16 @@ interface MarkdownRenderProps {
   compact?: boolean;
 }
 
+function normalizeRenderableMarkdown(content: string): string {
+  return (content ?? '')
+    .replace(/\u00A0/g, ' ')
+    .replace(/[\u200B\u200C\u200D\u2060\uFEFF]/g, '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n');
+}
+
 export const MarkdownRender = React.memo(function MarkdownRender({ content, compact }: MarkdownRenderProps) {
+  const normalizedContent = normalizeRenderableMarkdown(content);
   const mergedStyles = compact
     ? { ...markdownStyles, paragraph: { marginBottom: 0, marginTop: 0 }, body: { ...markdownStyles.body, marginBottom: 0 } }
     : markdownStyles;
@@ -16,7 +25,7 @@ export const MarkdownRender = React.memo(function MarkdownRender({ content, comp
   return (
     <View style={styles.container}>
       <Markdown style={mergedStyles}>
-        {content}
+        {normalizedContent}
       </Markdown>
     </View>
   );
@@ -24,13 +33,20 @@ export const MarkdownRender = React.memo(function MarkdownRender({ content, comp
 
 const markdownStyles: any = {
   body: {
-    color: theme.colors.textSecondary,
-    fontSize: 15,
-    lineHeight: 24,
+    color: '#A9B2C6',
+    fontSize: 17,
+    lineHeight: 28,
+    flexShrink: 1,
+  },
+  text: {
+    color: '#A9B2C6',
+    fontSize: 17,
+    lineHeight: 28,
+    flexShrink: 1,
+    includeFontPadding: false,
   },
   strong: {
-    color: theme.colors.accentAlt,
-    backgroundColor: theme.colors.warningTintSoft,
+    color: '#E2D27A',
     fontWeight: '800',
   },
   em: {
@@ -41,13 +57,14 @@ const markdownStyles: any = {
     textDecorationLine: 'underline',
   },
   paragraph: {
-    marginBottom: theme.spacing.md,
+    marginBottom: 10,
+    flexShrink: 1,
   },
   bullet_list: {
-    marginBottom: theme.spacing.md,
+    marginBottom: 10,
   },
   ordered_list: {
-    marginBottom: theme.spacing.md,
+    marginBottom: 10,
   },
   bullet_list_icon: {
     marginLeft: 0,
@@ -114,6 +131,8 @@ const markdownStyles: any = {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    alignSelf: 'stretch',
+    minWidth: 0,
+    flexShrink: 1,
   },
 });

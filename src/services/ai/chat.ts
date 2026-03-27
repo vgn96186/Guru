@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
-import type { Message } from './types';
+import type { MedicalGroundingSource, Message } from './types';
 import {
   generateJSONWithRouting,
   generateTextWithRouting,
@@ -9,13 +9,184 @@ import {
 import {
   searchLatestMedicalSources,
   searchMedicalImages,
+  generateImageSearchQuery,
   dedupeGroundingSources,
   renderSourcesForPrompt,
   clipText,
   buildMedicalSearchQuery,
 } from './medicalSearch';
+import { logGroundingEvent, previewText } from './runtimeDebug';
 
 const MAX_CONTINUATION_ATTEMPTS = 2;
+
+const GURU_ADHD_FORMATTING_RULES = `Formatting rules:
+- Keep normal text plain. Use markdown bold only for the 3 or 4 most critical medical terms in a concept.
+- Keep paragraphs short: 1 or 2 sentences maximum per paragraph.
+- Leave a blank line between distinct thoughts or sections.
+- Do not use tables.
+- Do not turn the whole reply into a long list unless the content truly needs a list.
+- If you ask the student anything, put it alone on the final line prefixed exactly with "Question:".`;
+
+function buildGuruSystemPrompt(options: {
+  grounded?: boolean;
+  includeStudyContext?: boolean;
+}) {
+  const promptLines = [
+    'You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers - never lecture.',
+    'Rules:',
+    '1) Ask ONE focused clinical question per response. No information dumps.',
+    '2) If the student answers, react in one sentence (affirm or correct briefly), then ask the next logical question.',
+    options.grounded
+      ? '3) Use your medical knowledge as the PRIMARY basis for answers. Sources below are supplementary references only - ignore irrelevant ones.'
+      : '3) Focus only on high-yield exam facts - ignore rare minutiae.',
+    '4) Be warm, calm, and concise.',
+    '5) Prioritize forward progress over quizzing. If the student is uncertain, give the next important teaching point directly instead of asking another near-identical question.',
+    '6) If the student says "just tell me", "explain it", or "don\'t know", do not repeat the same question. Give a brief direct explanation, then continue with the rest of the concept before asking at most one simpler checkpoint question only if it truly helps.',
+    options.grounded
+      ? '7) Do not use citations inline - keep it natural, not academic.'
+      : options.includeStudyContext
+        ? '7) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
+        : '7) Never output JSON.',
+    options.grounded
+      ? '8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.'
+      : options.includeStudyContext
+        ? '8) Never output JSON.'
+        : '8) Output only Guru\'s next single turn. Never write Student:/User:/Guru: role labels and never invent the student\'s reply.',
+    options.grounded || options.includeStudyContext
+      ? '9) Output only Guru\'s next single turn. Never write Student:/User:/Guru: role labels and never invent the student\'s reply.'
+      : '9) If you ask a question, that question must be the final line in your reply. Never answer your own question.',
+    options.grounded || options.includeStudyContext
+      ? '10) Never ask the same or nearly the same question again if it was already asked in recent turns. Build on the conversation state instead.'
+      : null,
+    options.grounded || options.includeStudyContext
+      ? '11) If the student has already failed or declined to answer a point, do not quiz them on that same point again in the next turn. Teach it and move on.'
+      : null,
+    options.grounded || options.includeStudyContext
+      ? '12) If you ask a question, that question must be the final line in your reply. Never answer your own question.'
+      : '10) Follow these output constraints exactly:',
+    options.grounded || options.includeStudyContext ? '13) Follow these output constraints exactly:' : null,
+    GURU_ADHD_FORMATTING_RULES,
+  ];
+
+  return promptLines.filter(Boolean).join('\n');
+}
+
+function buildTopicContextLine(topicName?: string, syllabusTopicId?: number): string | null {
+  const normalizedTopic = topicName?.trim();
+  if (!normalizedTopic && syllabusTopicId == null) return null;
+  if (normalizedTopic && syllabusTopicId != null) {
+    return `Topic context: ${normalizedTopic} (syllabus topic id ${syllabusTopicId})`;
+  }
+  if (normalizedTopic) {
+    return `Topic context: ${normalizedTopic}`;
+  }
+  return `Syllabus topic id: ${syllabusTopicId}`;
+}
+
+function isLowInformationImagePrompt(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return true;
+  const tokens = normalized.split(/\s+/).filter(Boolean);
+  if (normalized.length <= 3) return true;
+  if (
+    tokens.length <= 2 &&
+    tokens.every((token) =>
+      [
+        'left',
+        'right',
+        'upper',
+        'lower',
+        'medial',
+        'lateral',
+        'anterior',
+        'posterior',
+        'proximal',
+        'distal',
+        'superior',
+        'inferior',
+        'yes',
+        'no',
+        'true',
+        'false',
+      ].includes(token),
+    )
+  ) {
+    return true;
+  }
+  return [
+    "don't know",
+    'dont know',
+    'do not know',
+    'explain',
+    'continue',
+    'quiz me',
+    'change topic',
+    'ok',
+    'okay',
+    'yes',
+    'no',
+  ].includes(normalized);
+}
+
+function buildImageSearchSeed(
+  question: string,
+  topicName: string | undefined,
+  history: Array<{ role: 'user' | 'guru'; text: string }>,
+): { topic: string; context?: string } | null {
+  const trimmedQuestion = question.trim();
+  const recentUserPrompt = [...history]
+    .reverse()
+    .find(
+      (entry) =>
+        entry.role === 'user' &&
+        !isLowInformationImagePrompt(entry.text) &&
+        entry.text.trim().length >= 8,
+    )
+    ?.text.trim();
+  const recentGuruReply = [...history]
+    .reverse()
+    .find((entry) => entry.role === 'guru' && entry.text.trim().length >= 16)
+    ?.text.trim();
+
+  if (!isLowInformationImagePrompt(trimmedQuestion)) {
+    return {
+      topic: (topicName?.trim() || trimmedQuestion).slice(0, 120),
+      context: [
+        topicName?.trim() ? `Topic: ${topicName.trim()}` : null,
+        recentUserPrompt ? `Earlier student question: ${clipText(recentUserPrompt, 220)}` : null,
+        recentGuruReply ? `Tutor context: ${clipText(recentGuruReply, 260)}` : null,
+        `Latest student message: ${clipText(trimmedQuestion, 160)}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    };
+  }
+
+  if (recentUserPrompt) {
+    return {
+      topic: (topicName?.trim() || recentUserPrompt).slice(0, 120),
+      context: [
+        topicName?.trim() ? `Topic: ${topicName.trim()}` : null,
+        `Earlier student question: ${clipText(recentUserPrompt, 220)}`,
+        recentGuruReply ? `Tutor context: ${clipText(recentGuruReply, 260)}` : null,
+        `Latest student message: ${clipText(trimmedQuestion, 160)}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    };
+  }
+
+  if (topicName?.trim()) {
+    return {
+      topic: topicName.trim().slice(0, 120),
+      context: recentGuruReply
+        ? `Topic: ${topicName.trim()}\nTutor context: ${clipText(recentGuruReply, 260)}\nLatest student message: ${clipText(trimmedQuestion, 160)}`
+        : `Topic: ${topicName.trim()}\nLatest student message: ${clipText(trimmedQuestion, 160)}`,
+    };
+  }
+
+  return null;
+}
 
 function sanitizeSingleGuruTurn(raw: string): string {
   let text = (raw ?? '').replace(/\r/g, '').trim();
@@ -144,6 +315,40 @@ function buildHistoryMessages(
   }));
 }
 
+function extractRecentGuruQuestions(
+  history: Array<{ role: 'user' | 'guru'; text: string }>,
+  limit = 4,
+): string[] {
+  const seen = new Set<string>();
+  const questions: string[] = [];
+
+  for (let i = history.length - 1; i >= 0 && questions.length < limit; i -= 1) {
+    const entry = history[i];
+    if (entry.role !== 'guru') continue;
+
+    const explicitQuestions = entry.text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => /^question:\s*/i.test(line))
+      .map((line) => line.replace(/^question:\s*/i, '').trim());
+
+    const fallbackQuestion =
+      explicitQuestions.length === 0 && /\?\s*$/.test(entry.text.trim())
+        ? entry.text.trim().split('\n').pop()?.trim().replace(/^question:\s*/i, '') ?? ''
+        : '';
+
+    for (const candidate of [...explicitQuestions, fallbackQuestion].filter(Boolean)) {
+      const normalized = candidate.toLowerCase();
+      if (seen.has(normalized)) continue;
+      seen.add(normalized);
+      questions.push(candidate);
+      if (questions.length >= limit) break;
+    }
+  }
+
+  return questions.reverse();
+}
+
 function mapGroundedChatError(error: unknown): Error {
   const msg = error instanceof Error ? error.message : String(error);
   if (__DEV__) console.warn('[GuruGrounded] Generation failed:', msg);
@@ -175,18 +380,7 @@ export async function chatWithGuru(
   const contextPrompt = `Topic: ${topicName}${
     studyContext ? `\n\nStudy context:\n${studyContext}` : ''
   }`;
-  const systemPrompt = `You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers — never lecture.
-Rules:
-1. Ask ONE focused clinical question per response. No information dumps.
-2. If the student answers, react in one sentence (affirm or gently correct), then ask the next logical question.
-3. Focus only on high-yield exam facts — ignore rare minutiae.
-4. Max 3 sentences per response. Be warm and conversational.
-5. Wrap key clinical terms in **bold**.
-6. If the student says "just tell me" or "explain it", give a brief 2-sentence summary then ask a follow-up.
-7. Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.
-8. Never output JSON.
-9. Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.
-10. If you ask a question, that question must be the final sentence in your reply. Never answer your own question.`;
+  const systemPrompt = buildGuruSystemPrompt({ includeStudyContext: true });
   const { text } = await generateTextWithRouting(
     [
       { role: 'system', content: systemPrompt },
@@ -208,27 +402,18 @@ export async function chatWithGuruGrounded(
   const trimmedQuestion = question.replace(/\s+/g, ' ').trim();
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
   const sources = await searchLatestMedicalSources(searchQuery, 6);
+  const recentGuruQuestions = extractRecentGuruQuestions(history);
 
   const sourcesBlock =
     sources.length > 0
       ? renderSourcesForPrompt(sources)
       : 'No live web sources were retrieved for this query.';
 
-  const systemPrompt = `You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers — never lecture.
-Rules:
-1) Ask ONE focused clinical question per response. No information dumps.
-2) If the student answers, react in one sentence (affirm or correct briefly), then ask the next logical question.
-3) Use your medical knowledge as the PRIMARY basis for answers. Sources below are supplementary references only — ignore irrelevant ones.
-4) Max 3 sentences per response. Be warm and conversational.
-5) Wrap key clinical terms in **bold**.
-6) If the student says "just tell me" or "explain it", give a 2-sentence summary then follow up with a question.
-7) Do not use citations inline - keep it natural, not academic.
-8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.
-9) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.
-10) If you ask a question, that question must be the final sentence in your reply. Never answer your own question.`;
+  const systemPrompt = buildGuruSystemPrompt({ grounded: true });
 
-  const userPrompt = `Topic context: ${topicName || 'General Medicine'}
-Student question: ${trimmedQuestion}
+  const topicContextLine = buildTopicContextLine(topicName);
+  const userPrompt = `${topicContextLine ? `${topicContextLine}\n` : ''}Student question: ${trimmedQuestion}
+${recentGuruQuestions.length > 0 ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n` : ''}
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
 Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
 
@@ -282,6 +467,9 @@ export type GuruChatMemoryContext = {
   studyContext?: string;
   /** Syllabus `topics.id` when navigation provided it (disambiguation / grounding). */
   syllabusTopicId?: number;
+  /** Optional local context from the user's own saved notes/transcripts. */
+  groundingContext?: string;
+  groundingTitle?: string;
 };
 
 /** Grounded Guru chat with SSE-style token deltas for cloud routes (local emits once at end). */
@@ -295,19 +483,54 @@ export async function chatWithGuruGroundedStreaming(
 ): Promise<import('./types').GroundedGuruResponse> {
   const trimmedQuestion = question.replace(/\s+/g, ' ').trim();
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
+  const imageSeed = buildImageSearchSeed(trimmedQuestion, topicName, history);
+  const recentGuruQuestions = extractRecentGuruQuestions(history);
 
-  // Image search uses a clean query (no SEO suffixes that pollute Wikimedia/Open i)
-  const imageQuery = trimmedQuestion.slice(0, 120);
-
-  // Parallel text + image search (fault-tolerant)
-  const [textResult, imageResult] = await Promise.allSettled([
+  // Parallel text + image search (fault-tolerant).
+  // Image search helps future visual features, but should not pollute the citation/source panel.
+  const [textResult, imageQueryResult] = await Promise.allSettled([
     searchLatestMedicalSources(searchQuery, 5),
-    searchMedicalImages(topicName ? `${topicName} ${imageQuery}` : imageQuery, 3),
+    imageSeed ? generateImageSearchQuery(imageSeed.topic, imageSeed.context) : Promise.resolve(null),
   ]);
-  const allSources: import('./types').MedicalGroundingSource[] = [];
-  if (textResult.status === 'fulfilled') allSources.push(...textResult.value);
-  if (imageResult.status === 'fulfilled') allSources.push(...imageResult.value);
-  const sources = dedupeGroundingSources(allSources).slice(0, 8);
+  const imageQuery =
+    imageQueryResult.status === 'fulfilled' ? imageQueryResult.value?.trim() || null : null;
+  const imageResult = imageQuery
+    ? await Promise.allSettled([searchMedicalImages(imageQuery, 3)]).then(([result]) => result)
+    : ({ status: 'fulfilled', value: [] } as PromiseFulfilledResult<MedicalGroundingSource[]>);
+  const sources =
+    textResult.status === 'fulfilled'
+      ? dedupeGroundingSources(textResult.value).slice(0, 8)
+      : [];
+  const referenceImages =
+    imageResult.status === 'fulfilled'
+      ? dedupeGroundingSources(imageResult.value)
+          .filter((image) => !!image.imageUrl)
+          .slice(0, 3)
+      : [];
+
+  logGroundingEvent('chat_reference_images', {
+    question: previewText(trimmedQuestion, 120),
+    topicName: topicName ?? '',
+    imageQuery: imageQuery ? previewText(imageQuery, 140) : '',
+    imageSearchStatus: imageResult.status,
+    imageSearchSkipped: !imageSeed,
+    imageSeedTopic: imageSeed?.topic ?? '',
+    imageSeedContext: imageSeed?.context ? previewText(imageSeed.context, 180) : '',
+    imageQueryGenerationStatus: imageQueryResult.status,
+    imageCandidates:
+      imageResult.status === 'fulfilled' ? imageResult.value.length : 0,
+    usableReferenceImages: referenceImages.length,
+    sampleReferenceTitles: referenceImages.slice(0, 3).map((image) => previewText(image.title, 80)),
+    sampleReferenceUrls: referenceImages
+      .slice(0, 3)
+      .map((image) => previewText(image.imageUrl ?? image.url, 120)),
+    imageSearchError:
+      imageResult.status === 'rejected'
+        ? imageResult.reason instanceof Error
+          ? imageResult.reason.message
+          : String(imageResult.reason)
+        : undefined,
+  });
 
   const sourcesBlock =
     sources.length > 0
@@ -326,27 +549,19 @@ export async function chatWithGuruGroundedStreaming(
     memoryContext?.studyContext?.trim() &&
     `Study snapshot from their progress DB (samples only):\n${memoryContext.studyContext.trim()}\n`;
 
-  const systemPrompt = `You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers — never lecture.
-Rules:
-1) Ask ONE focused clinical question per response. No information dumps.
-2) If the student answers, react in one sentence (affirm or correct briefly), then ask the next logical question.
-3) Use your medical knowledge as the PRIMARY basis for answers. Sources below are supplementary references only — ignore irrelevant ones.
-4) Max 3 sentences per response. Be warm and conversational.
-5) Wrap key clinical terms in **bold**.
-6) If the student says "just tell me" or "explain it", give a 2-sentence summary then follow up with a question.
-7) Do not use citations inline - keep it natural, not academic.
-8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.
-9) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.
-10) If you ask a question, that question must be the final sentence in your reply. Never answer your own question.`;
+  const localGroundingBlock =
+    memoryContext?.groundingContext?.trim() &&
+    `Student's saved notes context${memoryContext.groundingTitle ? ` (${memoryContext.groundingTitle})` : ''}:\n${clipText(
+      memoryContext.groundingContext.trim(),
+      5000,
+    )}\n`;
 
-  const topicLabel =
-    (topicName || 'General Medicine') +
-    (memoryContext?.syllabusTopicId != null
-      ? ` (syllabus topic id ${memoryContext.syllabusTopicId})`
-      : '');
-  const userPrompt = `Topic context: ${topicLabel}
-${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}
+  const systemPrompt = buildGuruSystemPrompt({ grounded: true });
+
+  const topicContextLine = buildTopicContextLine(topicName, memoryContext?.syllabusTopicId);
+  const userPrompt = `${topicContextLine ? `${topicContextLine}\n` : ''}${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}${localGroundingBlock ?? ''}
 Student question: ${trimmedQuestion}
+${recentGuruQuestions.length > 0 ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n` : ''}
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
 Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
 
@@ -408,6 +623,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
     return {
       reply: finalReply,
       sources,
+      referenceImages,
       modelUsed,
       searchQuery,
     };
@@ -442,7 +658,9 @@ export async function explainTopicDeeper(
   const messages: Message[] = [
     {
       role: 'system',
-      content: `You are Guru, a warm Socratic medical tutor for NEET-PG/INICET students. Explain concepts clearly using markdown formatting. Use **bold** for key terms, bullet points for lists, and keep it structured and readable. Never use raw escape characters like \\n in your output.`,
+      content: `You are Guru, a warm medical tutor for NEET-PG/INICET students. Explain concepts clearly using markdown formatting. Follow these output constraints exactly:
+${GURU_ADHD_FORMATTING_RULES}
+Never use raw escape characters like \\n in your output.`,
     },
     {
       role: 'user',
@@ -453,13 +671,19 @@ export async function explainTopicDeeper(
 **Original explanation:** ${originalExplanation}
 
 Explain using this structure:
-1. **What is the core concept?** (1-2 sentences)
-2. **Why is "${correctAnswer}" correct?** (explain the reasoning)
-3. **Key facts to remember:**
-   - Bullet point each fact
-4. **Clinical/exam tip** (one practical takeaway)`,
+1. **What is the core concept?** (1-2 short sentences)
+
+2. **Why is "${correctAnswer}" correct?** (1-2 short sentences)
+
+3. **Key facts to remember**
+- Keep each bullet short
+
+4. **Clinical/exam tip** (one short practical takeaway)
+
+Only bold the most important 3 or 4 terms in the whole answer.`,
     },
   ];
   const { text } = await generateTextWithRouting(messages);
   return text.trim();
 }
+

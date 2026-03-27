@@ -53,7 +53,7 @@ export interface MedicalGroundingSource {
   snippet: string;
   journal?: string;
   publishedAt?: string;
-  source: 'EuropePMC' | 'PubMed' | 'Wikipedia' | 'Wikimedia Commons' | 'Open i (NIH)' | 'MedPix (NIH)' | 'DuckDuckGo';
+  source: 'EuropePMC' | 'PubMed' | 'Wikipedia' | 'Wikimedia Commons' | 'Open i (NIH)' | 'MedPix (NIH)' | 'DuckDuckGo' | 'Brave Search';
   author?: string;
   license?: string;
 }
@@ -61,6 +61,7 @@ export interface MedicalGroundingSource {
 export interface GroundedGuruResponse {
   reply: string;
   sources: MedicalGroundingSource[];
+  referenceImages?: MedicalGroundingSource[];
   modelUsed: string;
   searchQuery: string;
 }

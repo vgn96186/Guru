@@ -30,6 +30,8 @@ import { getTranscriptText, backupNoteToPublic } from '../transcriptStorage';
 import { generateEmbedding } from '../ai/embeddingService';
 import { profileRepository } from '../../db/repositories';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
+import * as FileSystem from 'expo-file-system/legacy';
+import { toFileUri } from '../fileUri';
 
 export type LecturePipelineStage = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export interface LecturePipelineProgress {
@@ -85,10 +87,47 @@ export async function transcribeLectureWithRecovery(opts: {
 export async function retryFailedTranscriptions(groqKey?: string): Promise<number> {
   const pending = await getFailedOrPendingTranscriptions();
   if (pending.length === 0) return 0;
+
+  // Hard cap: never retry more than 3 sessions per boot to prevent runaway API usage
+  const MAX_RETRIES_PER_BOOT = 3;
   let recovered = 0;
+  let attempted = 0;
+
   for (const session of pending) {
+    if (attempted >= MAX_RETRIES_PER_BOOT) break;
+
     // Guard: skip sessions already being transcribed by another caller
     if (!session.recordingPath || inFlightLecturePipelines.has(session.id!)) continue;
+
+    // Dismiss sessions whose audio file no longer exists
+    try {
+      const info = await FileSystem.getInfoAsync(toFileUri(session.recordingPath));
+      if (!info?.exists) {
+        await updateSessionTranscriptionStatus(session.id!, 'dismissed', 'Recording file deleted');
+        continue;
+      }
+    } catch { /* proceed if check fails */ }
+
+    // Dismiss duplicate recordings (same filename already has a completed note)
+    try {
+      const fileName = session.recordingPath.split('/').pop() ?? '';
+      if (fileName) {
+        const db = (await import('../../db/database')).getDb();
+        const existing = await db.getFirstAsync<{ id: number }>(
+          `SELECT ln.id FROM lecture_notes ln
+           JOIN external_app_logs el ON el.lecture_note_id = ln.id
+           WHERE el.recording_path LIKE ? AND el.transcription_status = 'completed'
+           LIMIT 1`,
+          [`%${fileName}`],
+        );
+        if (existing) {
+          await updateSessionTranscriptionStatus(session.id!, 'dismissed', 'Duplicate of existing note');
+          continue;
+        }
+      }
+    } catch { /* proceed if check fails */ }
+
+    attempted++;
     try {
       const res = await runFullTranscriptionPipeline({
         recordingPath: session.recordingPath,
@@ -251,99 +290,23 @@ async function enhanceNoteInBackground(noteId: number, logId: number, analysis: 
 }
 
 /**
- * Scans the public recordings directory for any audio files
- * NOT referenced in external_app_logs and processes them.
+ * Orphan recording scanner — DISABLED.
+ * Was auto-creating duplicate transcriptions on every boot by misidentifying
+ * already-processed recordings as orphans due to path format mismatches.
+ * Use Recording Vault to manually re-process files instead.
  */
 export async function scanAndRecoverOrphanedRecordings(): Promise<number> {
-  try {
-    const db = (await import('../../db/database')).getDb();
-    const FileSystem = await import('expo-file-system/legacy');
-    const { Platform } = await import('react-native');
-    const { listPublicRecordings, getPublicRecordingsDir } =
-      await import('../../../modules/app-launcher');
-
-    if (Platform.OS !== 'android') return 0;
-
-    const INTERNAL_REC_DIR = FileSystem.documentDirectory + 'recordings/';
-
-    // Get all referenced recordings
-    const rows = await db.getAllAsync<{ recording_path: string }>(
-      'SELECT recording_path FROM external_app_logs WHERE recording_path IS NOT NULL',
-    );
-    const referencedFiles = new Set(
-      rows.map((r) => {
-        const parts = r.recording_path.split('/');
-        return parts[parts.length - 1];
-      }),
-    );
-
-    let recovered = 0;
-
-    async function processOrphanFiles(files: string[], dirUri: string) {
-      if (!files || files.length === 0) return;
-      for (const fileName of files) {
-        if (!fileName.endsWith('.m4a') && !fileName.endsWith('.wav')) continue;
-        if (referencedFiles.has(fileName)) continue;
-
-        // Orphan audio found!
-        const fileUri = (dirUri.endsWith('/') ? dirUri : dirUri + '/') + fileName;
-        if (__DEV__) console.log(`[Recovery] Found orphaned recording: ${fileName}. Processing...`);
-
-        // Create a dummy log entry
-        const logResult = await db.runAsync(
-          'INSERT INTO external_app_logs (app_name, launched_at, recording_path, transcription_status) VALUES (?, ?, ?, ?)',
-          ['Recovered Audio', Date.now(), fileUri, 'pending'],
-        );
-
-        const logId = logResult.lastInsertRowId;
-
-        // Trigger transcription pipeline
-        void runFullTranscriptionPipeline({
-          recordingPath: fileUri,
-          appName: 'Recovered Audio',
-          durationMinutes: 0,
-          logId: logId as number,
-        }).catch((err) => {
-          console.error(`[Recovery] Pipeline failed for ${fileName}:`, err);
-        });
-
-        referencedFiles.add(fileName);
-        recovered++;
-      }
-    }
-
-    // 1. Scan internal old recordings
-    const internalDirInfo = await FileSystem.getInfoAsync(INTERNAL_REC_DIR);
-    if (internalDirInfo.exists) {
-      const internalFiles = await FileSystem.readDirectoryAsync(INTERNAL_REC_DIR);
-      await processOrphanFiles(internalFiles, INTERNAL_REC_DIR);
-    }
-
-    // 2. Scan native public recordings (Documents/Guru/Recordings)
-    try {
-      const publicFiles = await listPublicRecordings();
-      const publicDirPath = await getPublicRecordingsDir();
-      const publicDirUri = 'file://' + publicDirPath;
-      await processOrphanFiles(publicFiles, publicDirUri);
-    } catch (err) {
-      console.warn('[Recovery] Failed to scan native public recordings:', err);
-    }
-
-    if (recovered > 0) {
-      notifyDbUpdate(DB_EVENT_KEYS.RECORDING_RECOVERED);
-    }
-
-    return recovered;
-  } catch (err) {
-    console.warn('[Recovery] Orphan recording scan failed:', err);
-    return 0;
-  }
+  return 0;
 }
 
 /**
  * Automatically repairs legacy or incomplete notes by re-analyzing their transcripts.
  */
+/** DISABLED — was burning API credits on boot. */
 export async function autoRepairLegacyNotes(): Promise<number> {
+  return 0;
+}
+async function _autoRepairLegacyNotes_DISABLED(): Promise<number> {
   const legacy = await getLegacyLectureNotes(3); // Small batch
   if (legacy.length === 0) return 0;
 
@@ -387,7 +350,15 @@ export async function autoRepairLegacyNotes(): Promise<number> {
  * Scans the transcripts directory (and public backup directory) for any files
  * NOT referenced in the database and creates lecture notes for them.
  */
+/**
+ * Orphan transcript scanner — DISABLED.
+ * Was auto-creating duplicate lecture notes on every boot.
+ */
 export async function scanAndRecoverOrphanedTranscripts(): Promise<number> {
+  return 0;
+}
+
+async function _scanAndRecoverOrphanedTranscripts_DISABLED(): Promise<number> {
   const { useAppStore } = await import('../../store/useAppStore');
   try {
     const db = (await import('../../db/database')).getDb();

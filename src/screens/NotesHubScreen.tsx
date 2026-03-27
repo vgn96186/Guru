@@ -418,12 +418,12 @@ export default function NotesHubScreen() {
               onPress={() => navigation.navigate('TranscriptHistory')}
               activeOpacity={0.85}
               accessibilityRole="button"
-              accessibilityLabel="Lecture transcripts"
+              accessibilityLabel="Transcript Vault"
             >
               <Ionicons name="document-text-outline" size={20} color={theme.colors.primaryLight} />
-              <Text style={styles.actionTitle}>Lecture transcripts</Text>
+              <Text style={styles.actionTitle}>Transcript Vault</Text>
               <Text style={styles.actionSub}>
-                Browse processed lecture notes and raw transcript history.
+                Browse lecture notes, raw transcripts, and search your vault.
               </Text>
             </TouchableOpacity>
 

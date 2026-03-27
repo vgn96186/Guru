@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, DevSettings } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import RootNavigator from './src/navigation/RootNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
+import AppRecoveryScreen from './src/components/AppRecoveryScreen';
 import LoadingOrb from './src/components/LoadingOrb';
 import { InstallModelProgressOverlay } from './src/components/InstallModelProgressOverlay';
 import { ToastContainer } from './src/components/Toast';
@@ -14,6 +15,7 @@ import { navigationRef } from './src/navigation/navigationRef';
 import { useAppInitialization } from './src/hooks/useAppInitialization';
 import { useAppBootstrap } from './src/hooks/useAppBootstrap';
 import linking from './src/navigation/linking';
+import { theme } from './src/constants/theme';
 
 // Install console interceptors early so all logs are captured
 installDevConsoleInterceptors();
@@ -32,8 +34,14 @@ Notifications.setNotificationHandler({
   }),
 });
 
-function AppContent({ initialRoute }: { initialRoute: 'Tabs' | 'CheckIn' }) {
-  useAppBootstrap();
+function AppContent({
+  initialRoute,
+  onFatalError,
+}: {
+  initialRoute: 'Tabs' | 'CheckIn';
+  onFatalError: (message: string) => void;
+}) {
+  useAppBootstrap(onFatalError);
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
@@ -45,16 +53,36 @@ function AppContent({ initialRoute }: { initialRoute: 'Tabs' | 'CheckIn' }) {
   );
 }
 
-export default function App() {
+function AppShell({
+  onFatalError,
+  onRetry,
+  onReload,
+}: {
+  onFatalError: (message: string) => void;
+  onRetry: () => void;
+  onReload: () => void;
+}) {
   const { isReady, initialRoute, error } = useAppInitialization();
 
   if (error) {
     return (
       <SafeAreaProvider>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Startup Error</Text>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
+        <AppRecoveryScreen
+          title="Startup error"
+          message="Guru could not finish launching. Your local study data should still be safe on this device."
+          detail={error}
+          statusLabel="Startup recovery"
+          primaryLabel="Reload App"
+          primaryAccessibilityLabel="Reload app"
+          onPrimary={onReload}
+          secondaryLabel="Try Launch Again"
+          secondaryAccessibilityLabel="Retry startup"
+          onSecondary={onRetry}
+          tips={[
+            'Reload the app for a clean restart, or retry launch without leaving the app.',
+            'If this keeps happening, the failure is likely in startup setup rather than your saved notes or progress.',
+          ]}
+        />
       </SafeAreaProvider>
     );
   }
@@ -72,26 +100,80 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <AppContent initialRoute={initialRoute} />
+        <AppContent initialRoute={initialRoute} onFatalError={onFatalError} />
       </ErrorBoundary>
     </SafeAreaProvider>
+  );
+}
+
+export default function App() {
+  const [appInstanceKey, setAppInstanceKey] = useState(0);
+  const [runtimeError, setRuntimeError] = useState<string | null>(null);
+
+  const retryApp = () => {
+    setRuntimeError(null);
+    setAppInstanceKey((current) => current + 1);
+  };
+
+  const reloadApp = () => {
+    try {
+      // `expo-updates` is optional in this project; fall back to DevSettings in dev.
+      const dynamicRequire = globalThis.eval?.('require') as
+        | ((id: string) => { reloadAsync?: () => Promise<void> })
+        | undefined;
+      const updatesModule = dynamicRequire?.('expo-updates');
+      if (updatesModule?.reloadAsync) {
+        void updatesModule.reloadAsync();
+        return;
+      }
+      if (__DEV__) {
+        DevSettings.reload();
+        return;
+      }
+      retryApp();
+    } catch {
+      retryApp();
+    }
+  };
+
+  if (runtimeError) {
+    return (
+      <SafeAreaProvider>
+        <AppRecoveryScreen
+          title="Something went wrong"
+          message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
+          detail={runtimeError}
+          statusLabel="App recovery"
+          primaryLabel="Reload App"
+          primaryAccessibilityLabel="Reload app"
+          onPrimary={reloadApp}
+          secondaryLabel="Try App Again"
+          secondaryAccessibilityLabel="Retry app"
+          onSecondary={retryApp}
+          tips={[
+            'Reload the app for a clean restart, or remount the app once without leaving this screen.',
+            'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
+          ]}
+        />
+      </SafeAreaProvider>
+    );
+  }
+
+  return (
+    <AppShell
+      key={appInstanceKey}
+      onFatalError={setRuntimeError}
+      onRetry={retryApp}
+      onReload={reloadApp}
+    />
   );
 }
 
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0F0F14',
+    backgroundColor: theme.colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  errorContainer: {
-    flex: 1,
-    backgroundColor: '#0F0F14',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  errorTitle: { color: '#F44336', fontSize: 20, fontWeight: '700', marginBottom: 8 },
-  errorText: { color: '#9E9E9E', fontSize: 14, textAlign: 'center' },
 });

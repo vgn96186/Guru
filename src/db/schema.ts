@@ -186,6 +186,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , pomodoro_interval_minutes INTEGER NOT NULL DEFAULT 20
   , cloudflare_account_id TEXT NOT NULL DEFAULT ''
   , cloudflare_api_token TEXT NOT NULL DEFAULT ''
+  , fal_api_key TEXT NOT NULL DEFAULT ''
+  , brave_search_api_key TEXT NOT NULL DEFAULT ''
   , guru_chat_default_model TEXT NOT NULL DEFAULT 'auto'
   , guru_memory_notes TEXT NOT NULL DEFAULT ''
   , image_generation_model TEXT NOT NULL DEFAULT 'auto'
@@ -197,14 +199,30 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , agentrouter_key TEXT NOT NULL DEFAULT ''
   , provider_order TEXT NOT NULL DEFAULT '[]'
   , deepgram_api_key TEXT NOT NULL DEFAULT ''
+  , api_validation_json TEXT NOT NULL DEFAULT '{}'
+  , chatgpt_connected INTEGER NOT NULL DEFAULT 0
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `
 CREATE TABLE IF NOT EXISTS guru_chat_session_memory (
-  topic_name TEXT PRIMARY KEY,
+  thread_id INTEGER PRIMARY KEY,
+  topic_name TEXT NOT NULL,
   summary_text TEXT NOT NULL DEFAULT '',
   updated_at INTEGER NOT NULL,
-  messages_at_last_summary INTEGER NOT NULL DEFAULT 0
+  messages_at_last_summary INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(thread_id) REFERENCES guru_chat_threads(id) ON DELETE CASCADE
+)`;
+
+export const CREATE_GURU_CHAT_THREADS = `
+CREATE TABLE IF NOT EXISTS guru_chat_threads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_name TEXT NOT NULL,
+  syllabus_topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  title TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  last_message_at INTEGER NOT NULL,
+  last_message_preview TEXT NOT NULL DEFAULT ''
 )`;
 
 export const CREATE_BRAIN_DUMPS = `
@@ -224,7 +242,7 @@ CREATE TABLE IF NOT EXISTS external_app_logs (
   notes TEXT,
   recording_path TEXT,
   transcription_status TEXT DEFAULT 'pending'
-    CHECK(transcription_status IN ('pending','recording','transcribing','completed','failed','no_audio')),
+    CHECK(transcription_status IN ('pending','recording','transcribing','completed','failed','no_audio','dismissed')),
   transcription_error TEXT,
   lecture_note_id INTEGER REFERENCES lecture_notes(id) ON DELETE SET NULL,
   note_enhancement_status TEXT DEFAULT 'pending'
@@ -235,6 +253,7 @@ CREATE TABLE IF NOT EXISTS external_app_logs (
 export const CREATE_CHAT_HISTORY = `
 CREATE TABLE IF NOT EXISTS chat_history (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  thread_id INTEGER REFERENCES guru_chat_threads(id) ON DELETE CASCADE,
   topic_name TEXT NOT NULL,
   role TEXT NOT NULL,
   message TEXT NOT NULL,
@@ -370,6 +389,10 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_lecture_notes_created_at ON lecture_notes(created_at)`,
   `CREATE INDEX IF NOT EXISTS idx_generated_study_images_context ON generated_study_images(context_type, context_key, created_at DESC)`,
   `CREATE INDEX IF NOT EXISTS idx_generated_study_images_topic ON generated_study_images(topic_name, context_type, created_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_guru_chat_threads_last_message ON guru_chat_threads(last_message_at DESC, updated_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_guru_chat_threads_topic ON guru_chat_threads(topic_name, syllabus_topic_id, last_message_at DESC)`,
+  `CREATE INDEX IF NOT EXISTS idx_chat_history_thread ON chat_history(thread_id, timestamp ASC)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_chat_session_memory(thread_id)`,
   // Question bank
   `CREATE INDEX IF NOT EXISTS idx_qb_subject ON question_bank(subject_name)`,
   `CREATE INDEX IF NOT EXISTS idx_qb_topic ON question_bank(topic_id)`,
@@ -389,6 +412,7 @@ export const ALL_SCHEMAS = [
   CREATE_BRAIN_DUMPS,
   CREATE_EXTERNAL_APP_LOGS,
   CREATE_OFFLINE_AI_QUEUE,
+  CREATE_GURU_CHAT_THREADS,
   CREATE_CHAT_HISTORY,
   CREATE_GURU_CHAT_SESSION_MEMORY,
   CREATE_GENERATED_STUDY_IMAGES,

@@ -619,7 +619,219 @@ DROP TABLE user_profile;
 ALTER TABLE user_profile_new RENAME TO user_profile`,
     description: 'Rebuild user_profile to strip CHECK constraints (validation moved to app layer)',
   },
+  {
+    version: 111,
+    sql: `ALTER TABLE user_profile ADD COLUMN api_validation_json TEXT NOT NULL DEFAULT '{}'`,
+    description: 'Persist API provider key validation metadata for Settings UI status',
+  },
+  {
+    version: 112,
+    sql: `DROP TABLE IF EXISTS external_app_logs_new`,
+    description: 'Cleanup leftover temp table from failed migration',
+  },
+  {
+    version: 113,
+    sql: `CREATE TABLE external_app_logs_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      app_name TEXT NOT NULL,
+      launched_at INTEGER NOT NULL,
+      returned_at INTEGER,
+      duration_minutes REAL,
+      notes TEXT,
+      recording_path TEXT,
+      transcription_status TEXT DEFAULT 'pending'
+        CHECK(transcription_status IN ('pending','recording','transcribing','completed','failed','no_audio','dismissed')),
+      transcription_error TEXT,
+      lecture_note_id INTEGER REFERENCES lecture_notes(id) ON DELETE SET NULL,
+      note_enhancement_status TEXT DEFAULT 'pending'
+        CHECK(note_enhancement_status IN ('pending','completed','failed')),
+      pipeline_metrics_json TEXT
+    )`,
+    description: 'Create new external_app_logs with dismissed in CHECK',
+  },
+  {
+    version: 114,
+    sql: `INSERT OR IGNORE INTO external_app_logs_new SELECT * FROM external_app_logs`,
+    description: 'Copy data to new external_app_logs table',
+  },
+  {
+    version: 115,
+    sql: `DROP TABLE external_app_logs`,
+    description: 'Drop old external_app_logs',
+  },
+  {
+    version: 116,
+    sql: `ALTER TABLE external_app_logs_new RENAME TO external_app_logs`,
+    description: 'Rename new table to external_app_logs',
+  },
+  {
+    version: 117,
+    sql: `ALTER TABLE user_profile ADD COLUMN chatgpt_connected INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add chatgpt_connected flag to user_profile',
+  },
+  {
+    version: 118,
+    sql: `ALTER TABLE user_profile ADD COLUMN fal_api_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Add fal API key for image generation',
+  },
+  {
+    version: 119,
+    sql: `CREATE TABLE IF NOT EXISTS guru_chat_threads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      topic_name TEXT NOT NULL,
+      syllabus_topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+      title TEXT NOT NULL DEFAULT '',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      last_message_at INTEGER NOT NULL,
+      last_message_preview TEXT NOT NULL DEFAULT ''
+    )`,
+    description: 'Create Guru chat thread table',
+  },
+  {
+    version: 120,
+    sql: `ALTER TABLE chat_history ADD COLUMN thread_id INTEGER`,
+    description: 'Add thread_id to chat_history',
+  },
+  {
+    version: 121,
+    sql: `ALTER TABLE guru_chat_session_memory ADD COLUMN thread_id INTEGER`,
+    description: 'Add thread_id to guru_chat_session_memory',
+  },
+  {
+    version: 122,
+    sql: `INSERT INTO guru_chat_threads (
+      topic_name,
+      syllabus_topic_id,
+      title,
+      created_at,
+      updated_at,
+      last_message_at,
+      last_message_preview
+    )
+    SELECT
+      topic_name,
+      NULL,
+      topic_name,
+      COALESCE(MIN(timestamp), CAST(strftime('%s','now') AS INTEGER) * 1000),
+      COALESCE(MAX(timestamp), CAST(strftime('%s','now') AS INTEGER) * 1000),
+      COALESCE(MAX(timestamp), CAST(strftime('%s','now') AS INTEGER) * 1000),
+      COALESCE((
+        SELECT substr(replace(replace(ch2.message, char(10), ' '), char(13), ' '), 1, 96)
+        FROM chat_history ch2
+        WHERE ch2.topic_name = grouped.topic_name
+        ORDER BY ch2.timestamp DESC, ch2.id DESC
+        LIMIT 1
+      ), '')
+    FROM (
+      SELECT topic_name, timestamp FROM chat_history
+      UNION ALL
+      SELECT topic_name, NULL AS timestamp FROM guru_chat_session_memory
+    ) AS grouped
+    GROUP BY topic_name`,
+    description: 'Backfill Guru chat threads from legacy chat history and session memory',
+  },
+  {
+    version: 123,
+    sql: `UPDATE chat_history
+      SET thread_id = (
+        SELECT id
+        FROM guru_chat_threads
+        WHERE guru_chat_threads.topic_name = chat_history.topic_name
+        ORDER BY last_message_at DESC, id DESC
+        LIMIT 1
+      )
+      WHERE thread_id IS NULL`,
+    description: 'Backfill chat_history.thread_id from legacy topic threads',
+  },
+  {
+    version: 124,
+    sql: `UPDATE guru_chat_session_memory
+      SET thread_id = (
+        SELECT id
+        FROM guru_chat_threads
+        WHERE guru_chat_threads.topic_name = guru_chat_session_memory.topic_name
+        ORDER BY last_message_at DESC, id DESC
+        LIMIT 1
+      )
+      WHERE thread_id IS NULL`,
+    description: 'Backfill guru_chat_session_memory.thread_id from legacy topic threads',
+  },
+  {
+    version: 125,
+    sql: `CREATE INDEX IF NOT EXISTS idx_guru_chat_threads_last_message ON guru_chat_threads(last_message_at DESC, updated_at DESC)`,
+    description: 'Index Guru chat threads by recent activity',
+  },
+  {
+    version: 126,
+    sql: `CREATE INDEX IF NOT EXISTS idx_guru_chat_threads_topic ON guru_chat_threads(topic_name, syllabus_topic_id, last_message_at DESC)`,
+    description: 'Index Guru chat threads by topic',
+  },
+  {
+    version: 127,
+    sql: `CREATE INDEX IF NOT EXISTS idx_chat_history_thread ON chat_history(thread_id, timestamp ASC)`,
+    description: 'Index chat history by thread',
+  },
+  {
+    version: 128,
+    sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_chat_session_memory(thread_id)`,
+    description: 'Ensure one session memory row per Guru chat thread',
+  },
+  {
+    version: 129,
+    sql: `DROP TABLE IF EXISTS guru_chat_session_memory_new;
+CREATE TABLE guru_chat_session_memory_new (
+  thread_id INTEGER PRIMARY KEY,
+  topic_name TEXT NOT NULL,
+  summary_text TEXT NOT NULL DEFAULT '',
+  updated_at INTEGER NOT NULL,
+  messages_at_last_summary INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY(thread_id) REFERENCES guru_chat_threads(id) ON DELETE CASCADE
+);
+INSERT OR REPLACE INTO guru_chat_session_memory_new (
+  thread_id,
+  topic_name,
+  summary_text,
+  updated_at,
+  messages_at_last_summary
+)
+SELECT
+  COALESCE(
+    thread_id,
+    (
+      SELECT id
+      FROM guru_chat_threads
+      WHERE guru_chat_threads.topic_name = guru_chat_session_memory.topic_name
+      ORDER BY last_message_at DESC, id DESC
+      LIMIT 1
+    )
+  ) AS resolved_thread_id,
+  topic_name,
+  summary_text,
+  updated_at,
+  messages_at_last_summary
+FROM guru_chat_session_memory
+WHERE COALESCE(
+  thread_id,
+  (
+    SELECT id
+    FROM guru_chat_threads
+    WHERE guru_chat_threads.topic_name = guru_chat_session_memory.topic_name
+    ORDER BY last_message_at DESC, id DESC
+    LIMIT 1
+  )
+) IS NOT NULL;
+DROP TABLE guru_chat_session_memory;
+ALTER TABLE guru_chat_session_memory_new RENAME TO guru_chat_session_memory;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_chat_session_memory(thread_id)`,
+    description: 'Rebuild guru_chat_session_memory to remove legacy topic_name uniqueness',
+  },
+  {
+    version: 130,
+    sql: `ALTER TABLE user_profile ADD COLUMN brave_search_api_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Brave Search API key for image search fallback',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 110;
+export const LATEST_VERSION = 130;

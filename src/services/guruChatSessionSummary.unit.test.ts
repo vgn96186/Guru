@@ -26,18 +26,24 @@ const mockUpsert = upsertSessionMemory as jest.MockedFunction<typeof upsertSessi
 describe('guruChatSessionSummary', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGenerate.mockResolvedValue({ text: ' • Point one', modelUsed: 'm' });
+    mockGenerate.mockResolvedValue({ text: '- Point one', modelUsed: 'm' });
     mockHistory.mockResolvedValue([
-      { id: 1, topicName: 't', role: 'user', message: 'hi', timestamp: 1 },
-      { id: 2, topicName: 't', role: 'guru', message: 'hello', timestamp: 2 },
+      { id: 1, threadId: 7, topicName: 't', role: 'user', message: 'hi', timestamp: 1 },
+      { id: 2, threadId: 7, topicName: 't', role: 'guru', message: 'hello', timestamp: 2 },
     ]);
   });
 
   it('skips when not enough new messages since last summary', async () => {
     mockCount.mockResolvedValue(5);
-    mockRow.mockResolvedValue({ topicName: 'x', summaryText: '', updatedAt: 0, messagesAtLastSummary: 0 });
+    mockRow.mockResolvedValue({
+      threadId: 7,
+      topicName: 'x',
+      summaryText: '',
+      updatedAt: 0,
+      messagesAtLastSummary: 0,
+    });
 
-    await maybeSummarizeGuruSession('x');
+    await maybeSummarizeGuruSession(7, 'x');
 
     expect(mockGenerate).not.toHaveBeenCalled();
     expect(mockUpsert).not.toHaveBeenCalled();
@@ -45,12 +51,18 @@ describe('guruChatSessionSummary', () => {
 
   it('summarizes and upserts when threshold reached', async () => {
     mockCount.mockResolvedValue(8);
-    mockRow.mockResolvedValue({ topicName: 'x', summaryText: '', updatedAt: 0, messagesAtLastSummary: 0 });
+    mockRow.mockResolvedValue({
+      threadId: 7,
+      topicName: 'x',
+      summaryText: '',
+      updatedAt: 0,
+      messagesAtLastSummary: 0,
+    });
 
-    await maybeSummarizeGuruSession('x');
+    await maybeSummarizeGuruSession(7, 'x');
 
     expect(mockGenerate).toHaveBeenCalled();
-    expect(mockUpsert).toHaveBeenCalledWith('x', '• Point one', 8);
+    expect(mockUpsert).toHaveBeenCalledWith(7, 'x', '- Point one', 8);
   });
 
   it('GURU_SESSION_SUMMARY_INTERVAL is positive', () => {
@@ -59,30 +71,48 @@ describe('guruChatSessionSummary', () => {
 
   it('does not upsert when generation fails', async () => {
     mockCount.mockResolvedValue(10);
-    mockRow.mockResolvedValue({ topicName: 'x', summaryText: '', updatedAt: 0, messagesAtLastSummary: 0 });
+    mockRow.mockResolvedValue({
+      threadId: 7,
+      topicName: 'x',
+      summaryText: '',
+      updatedAt: 0,
+      messagesAtLastSummary: 0,
+    });
     mockGenerate.mockRejectedValue(new Error('fail'));
 
-    await expect(maybeSummarizeGuruSession('x')).resolves.toBeUndefined();
+    await expect(maybeSummarizeGuruSession(7, 'x')).resolves.toBeUndefined();
 
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
   it('returns when history is empty', async () => {
     mockCount.mockResolvedValue(10);
-    mockRow.mockResolvedValue({ topicName: 'x', summaryText: '', updatedAt: 0, messagesAtLastSummary: 0 });
+    mockRow.mockResolvedValue({
+      threadId: 7,
+      topicName: 'x',
+      summaryText: '',
+      updatedAt: 0,
+      messagesAtLastSummary: 0,
+    });
     mockHistory.mockResolvedValue([]);
 
-    await maybeSummarizeGuruSession('x');
+    await maybeSummarizeGuruSession(7, 'x');
 
     expect(mockGenerate).not.toHaveBeenCalled();
   });
 
   it('does not upsert when model returns whitespace only', async () => {
     mockCount.mockResolvedValue(10);
-    mockRow.mockResolvedValue({ topicName: 'x', summaryText: '', updatedAt: 0, messagesAtLastSummary: 0 });
+    mockRow.mockResolvedValue({
+      threadId: 7,
+      topicName: 'x',
+      summaryText: '',
+      updatedAt: 0,
+      messagesAtLastSummary: 0,
+    });
     mockGenerate.mockResolvedValue({ text: '   ', modelUsed: 'm' });
 
-    await maybeSummarizeGuruSession('x');
+    await maybeSummarizeGuruSession(7, 'x');
 
     expect(mockUpsert).not.toHaveBeenCalled();
   });

@@ -1,5 +1,10 @@
 import * as FileSystem from 'expo-file-system/legacy';
-import { CLOUDFLARE_IMAGE_MODELS, GEMINI_IMAGE_MODELS, OPENROUTER_IMAGE_MODELS } from './config';
+import {
+  CLOUDFLARE_IMAGE_MODELS,
+  FAL_IMAGE_MODELS,
+  GEMINI_IMAGE_MODELS,
+  OPENROUTER_IMAGE_MODELS,
+} from './config';
 import { profileRepository } from '../../db/repositories';
 import { getApiKeys } from './config';
 import { normalizeImageGenerationModel } from '../../config/appConfig';
@@ -13,7 +18,7 @@ export interface GeneratedImage {
   /** Prompt used */
   prompt: string;
   /** Provider that generated the image */
-  provider: 'cloudflare' | 'google' | 'openrouter';
+  provider: 'cloudflare' | 'fal' | 'google' | 'openrouter';
   /** MIME type of the generated image */
   mimeType: string;
 }
@@ -26,7 +31,7 @@ interface EncodedImageResponse {
   base64Image: string;
   mimeType: string;
   modelUsed: string;
-  provider: 'cloudflare' | 'google' | 'openrouter';
+  provider: 'cloudflare' | 'fal' | 'google' | 'openrouter';
 }
 
 interface GeminiImageOutput {
@@ -37,11 +42,16 @@ interface GeminiImageOutput {
 
 type ImagePreference =
   | { kind: 'auto' }
+  | { kind: 'fal_only'; models: readonly string[] }
   | { kind: 'gemini_only'; models: readonly string[] }
   | { kind: 'cf_only'; models: readonly string[] }
   | { kind: 'openrouter_only'; models: readonly string[] };
 
 function resolveImagePreference(profile: { imageGenerationModel?: string | null }): ImagePreference {
+  const raw = (profile.imageGenerationModel ?? '').trim();
+  if ((FAL_IMAGE_MODELS as readonly string[]).includes(raw)) {
+    return { kind: 'fal_only', models: [raw] };
+  }
   const p = normalizeImageGenerationModel(profile.imageGenerationModel ?? undefined);
   if (p === 'auto') return { kind: 'auto' };
   if ((GEMINI_IMAGE_MODELS as readonly string[]).includes(p)) {
@@ -76,6 +86,74 @@ async function saveImageFromUrl(url: string, mimeType: string): Promise<string> 
   const localUri = `${dir}${filename}`;
   const downloaded = await FileSystem.downloadAsync(url, localUri);
   return downloaded.uri;
+}
+
+async function callFalImage(
+  prompt: string,
+  falKey: string,
+  models?: readonly string[],
+): Promise<GeneratedImage> {
+  const trimmedKey = falKey.trim();
+  const modelList =
+    models && models.length > 0
+      ? FAL_IMAGE_MODELS.filter((m) => models.includes(m))
+      : [...FAL_IMAGE_MODELS];
+  if (modelList.length === 0) {
+    throw new Error('No matching fal image models for preference');
+  }
+
+  const errors: string[] = [];
+  for (const model of modelList) {
+    const body =
+      model === 'fal-ai/gpt-image-1.5'
+        ? {
+            prompt,
+            image_size: '1024x1024',
+            quality: 'high',
+            output_format: 'png',
+            num_images: 1,
+          }
+        : {
+            prompt,
+            aspect_ratio: '1:1',
+            output_format: 'png',
+            num_images: 1,
+          };
+
+    const res = await fetch(`https://fal.run/${model}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Key ${trimmedKey}`,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => res.status.toString());
+      errors.push(`${model}: ${err}`);
+      continue;
+    }
+
+    const data = await res.json();
+    const image = data?.images?.[0];
+    if (!image?.url) {
+      errors.push(`${model}: no image url`);
+      continue;
+    }
+
+    const mimeType = image.content_type ?? 'image/png';
+    const uri = await saveImageFromUrl(image.url, mimeType);
+    return {
+      uri,
+      mimeType,
+      modelUsed: model,
+      provider: 'fal',
+      prompt,
+    };
+  }
+
+  throw new Error(`fal image generation failed: ${errors.join(' | ')}`);
 }
 
 async function callOpenRouterImage(
@@ -301,7 +379,7 @@ export async function generateImage(
   options?: GenerateImageOptions,
 ): Promise<GeneratedImage> {
   const profile = await profileRepository.getProfile();
-  const { cfAccountId, cfApiToken, geminiKey } = getApiKeys(profile);
+  const { cfAccountId, cfApiToken, falKey, geminiKey } = getApiKeys(profile);
   const preference = resolveImagePreference(profile);
   const errors: string[] = [];
 
@@ -349,6 +427,19 @@ export async function generateImage(
     }
   };
 
+  const tryFal = async (models?: readonly string[]) => {
+    if (!falKey) {
+      errors.push('fal credentials missing');
+      return null;
+    }
+    try {
+      return await callFalImage(prompt, falKey, models);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+      return null;
+    }
+  };
+
   if (preference.kind === 'auto') {
     const g = await tryGemini();
     if (g) {
@@ -373,6 +464,18 @@ export async function generateImage(
     const o = await tryOpenRouter();
     if (o) {
       return o;
+    }
+    const f = await tryFal();
+    if (f) {
+      return f;
+    }
+    throw new Error(`No image generation backend available. ${errors.join(' | ')}`);
+  }
+
+  if (preference.kind === 'fal_only') {
+    const f = await tryFal(preference.models);
+    if (f) {
+      return f;
     }
     throw new Error(`No image generation backend available. ${errors.join(' | ')}`);
   }
@@ -420,7 +523,8 @@ export function isImageGenerationAvailable(profile: {
   cloudflareAccountId?: string;
   cloudflareApiToken?: string;
   openrouterKey?: string;
+  falApiKey?: string;
 }): boolean {
-  const { cfAccountId, cfApiToken, geminiKey, orKey } = getApiKeys(profile);
-  return (!!cfAccountId && !!cfApiToken) || !!geminiKey || !!orKey;
+  const { cfAccountId, cfApiToken, falKey, geminiKey, orKey } = getApiKeys(profile);
+  return (!!cfAccountId && !!cfApiToken) || !!geminiKey || !!orKey || !!falKey;
 }

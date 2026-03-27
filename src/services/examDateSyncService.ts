@@ -324,6 +324,16 @@ export async function getExamDateSyncMeta(): Promise<ExamDateSyncMeta> {
   return readMeta();
 }
 
+export async function syncExamDatesIfStale(maxAgeHours = 24): Promise<ExamDateSyncResult | null> {
+  const meta = await readMeta();
+  const lastChecked = meta.lastCheckedAt ? Date.parse(meta.lastCheckedAt) : NaN;
+  const maxAgeMs = Math.max(1, maxAgeHours) * 60 * 60 * 1000;
+  if (Number.isFinite(lastChecked) && Date.now() - lastChecked < maxAgeMs) {
+    return null;
+  }
+  return syncExamDatesFromInternet();
+}
+
 export async function syncExamDatesFromInternet(): Promise<ExamDateSyncResult> {
   const now = new Date();
   const checkedAt = now.toISOString();

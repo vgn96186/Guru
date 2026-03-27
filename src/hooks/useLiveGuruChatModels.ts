@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { UserProfile } from '../types';
 import {
   AGENTROUTER_MODELS,
+  CHATGPT_MODELS,
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
   GEMINI_MODELS,
@@ -26,6 +27,7 @@ export type LiveGuruChatDraftKeys = {
   kiloApiKey?: string;
   deepseekKey?: string;
   agentRouterKey?: string;
+  chatgptConnected?: boolean;
 };
 
 function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): UserProfile {
@@ -40,6 +42,8 @@ function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): 
     kiloApiKey: draft.kiloApiKey?.trim() || profile.kiloApiKey || '',
     deepseekKey: draft.deepseekKey?.trim() || profile.deepseekKey || '',
     agentRouterKey: draft.agentRouterKey?.trim() || profile.agentRouterKey || '',
+    chatgptConnected:
+      typeof draft.chatgptConnected === 'boolean' ? draft.chatgptConnected : profile.chatgptConnected,
   };
 }
 
@@ -77,6 +81,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
             draft.kiloApiKey ?? '',
             draft.deepseekKey ?? '',
             draft.agentRouterKey ?? '',
+            draft.chatgptConnected ? '1' : '0',
           ].join('\0')
         : '',
     [draft],
@@ -103,10 +108,11 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       return profile;
     })();
 
-    const { groqKey, orKey, geminiKey, cfAccountId, cfApiToken, kiloApiKey, deepseekKey, agentRouterKey } =
+    const { groqKey, orKey, geminiKey, cfAccountId, cfApiToken, kiloApiKey, deepseekKey, agentRouterKey, chatgptConnected } =
       getApiKeys(mergedProfile);
 
     fetchAllLiveGuruChatModelIds({
+      chatgptConnected,
       groqKey,
       orKey,
       geminiKey,
@@ -140,6 +146,7 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
   const resolvedKeys = mergedProfile ? getApiKeys(mergedProfile) : null;
 
   return {
+    chatgpt: resolvedKeys?.chatgptConnected ? (live?.chatgpt ?? [...CHATGPT_MODELS]) : [],
     groq: live?.groq ?? (resolvedKeys?.groqKey ? [...GROQ_MODELS] : []),
     openrouter: live?.openrouter ?? (resolvedKeys?.orKey ? [...OPENROUTER_FREE_MODELS] : []),
     gemini: live?.gemini ?? (resolvedKeys?.geminiKey ? [...GEMINI_MODELS] : []),

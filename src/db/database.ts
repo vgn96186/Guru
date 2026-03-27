@@ -417,6 +417,8 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['transcription_provider', "TEXT NOT NULL DEFAULT 'auto'"],
       ['cloudflare_account_id', "TEXT NOT NULL DEFAULT ''"],
       ['cloudflare_api_token', "TEXT NOT NULL DEFAULT ''"],
+      ['fal_api_key', "TEXT NOT NULL DEFAULT ''"],
+      ['brave_search_api_key', "TEXT NOT NULL DEFAULT ''"],
       ['gemini_key', "TEXT NOT NULL DEFAULT ''"],
       ['guru_chat_default_model', "TEXT NOT NULL DEFAULT 'auto'"],
       ['guru_memory_notes', "TEXT NOT NULL DEFAULT ''"],
@@ -474,6 +476,10 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
     chat_history: [
       ['sources_json', 'TEXT'],
       ['model_used', 'TEXT'],
+      ['thread_id', 'INTEGER'],
+    ],
+    guru_chat_session_memory: [
+      ['thread_id', 'INTEGER'],
     ],
   };
 

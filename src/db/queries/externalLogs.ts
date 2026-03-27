@@ -6,7 +6,8 @@ export type TranscriptionStatus =
   | 'transcribing'
   | 'completed'
   | 'failed'
-  | 'no_audio';
+  | 'no_audio'
+  | 'dismissed';
 export type PipelineStageName = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export type NoteEnhancementStatus = 'pending' | 'completed' | 'failed';
 
@@ -275,12 +276,14 @@ export async function getFailedOrPendingTranscriptions(): Promise<ExternalAppLog
              FROM external_app_logs
              WHERE returned_at IS NOT NULL
                AND recording_path IS NOT NULL
+               AND launched_at > ?
                AND (
                     transcription_status IN ('failed', 'pending', 'recording', 'transcribing')
                     OR (transcription_status = 'completed' AND lecture_note_id IS NULL)
                )
              ORDER BY launched_at DESC
-             LIMIT 20`,
+             LIMIT 10`,
+      [Date.now() - 7 * 24 * 60 * 60 * 1000],
     );
     return rows.map((r) => ({
       id: r.id,

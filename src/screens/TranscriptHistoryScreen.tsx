@@ -18,9 +18,11 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import Clipboard from '@react-native-clipboard/clipboard';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
@@ -54,6 +56,7 @@ import {
   type LectureManagerFilter,
 } from '../services/lecture/lectureManager';
 import ScreenHeader from '../components/ScreenHeader';
+import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -583,7 +586,7 @@ export default function TranscriptHistoryScreen() {
               { backgroundColor: SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E' },
             ]}
           >
-            <Text style={styles.subjectText}>{subjectLabel}</Text>
+            <Text style={styles.subjectText} numberOfLines={1}>{subjectLabel}</Text>
           </View>
           <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
         </View>
@@ -621,12 +624,12 @@ export default function TranscriptHistoryScreen() {
             </View>
           )}
           <View style={styles.metaRow}>
-            {item.durationMinutes && (
+            {item.durationMinutes ? (
               <Text style={styles.metaText}>
                 <Ionicons name="time-outline" size={12} color="#888" />{' '}
                 {formatDuration(item.durationMinutes)}
               </Text>
-            )}
+            ) : null}
             <Text
               style={[
                 styles.confidenceBadge,
@@ -649,7 +652,7 @@ export default function TranscriptHistoryScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ScreenHeader
         title="Transcript Vault"
@@ -666,6 +669,8 @@ export default function TranscriptHistoryScreen() {
           </TouchableOpacity>
         </View>
       )}
+      <TranscriptionSettingsPanel />
+
       {/* Search bar */}
       <View style={styles.searchRow}>
         <Ionicons name="search" size={20} color="#888" />
@@ -1038,9 +1043,7 @@ export default function TranscriptHistoryScreen() {
             <TouchableOpacity
               onPress={() => {
                 if (readerContent) {
-                  void import('expo-clipboard').then((Clipboard) =>
-                    Clipboard.setStringAsync(readerContent),
-                  );
+                  Clipboard.setString(readerContent);
                   Haptics.selectionAsync();
                 }
               }}
@@ -1058,7 +1061,7 @@ export default function TranscriptHistoryScreen() {
           </ScrollView>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -1170,9 +1173,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    flexShrink: 1,
   },
   subjectText: { color: '#fff', fontWeight: '600', fontSize: 12 },
-  dateText: { color: '#888', fontSize: 12 },
+  dateText: { color: '#888', fontSize: 12, flexShrink: 0, marginLeft: 8, minWidth: 50 },
   appBadge: { color: '#666', fontSize: 11, marginBottom: 6 },
   summaryText: { color: '#ddd', fontSize: 14, lineHeight: 20, marginBottom: 10 },
   summaryPreviewText: { color: '#8f8fa8', fontSize: 12, lineHeight: 18, marginBottom: 10 },

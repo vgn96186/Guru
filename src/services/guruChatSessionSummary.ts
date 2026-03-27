@@ -9,13 +9,16 @@ export const GURU_SESSION_SUMMARY_INTERVAL = 8;
 const SUMMARY_SYSTEM = `You compress NEET-PG/INICET tutoring chats. Output 2–6 short bullet points.
 Focus on topics covered, mistakes or gaps, and what to revisit. Plain text bullets only, no preamble.`;
 
-export async function maybeSummarizeGuruSession(topicName: string): Promise<void> {
-  const count = await getChatMessageCount(topicName);
-  const row = await getSessionMemoryRow(topicName);
+export async function maybeSummarizeGuruSession(
+  threadId: number,
+  topicName: string,
+): Promise<void> {
+  const count = await getChatMessageCount(threadId);
+  const row = await getSessionMemoryRow(threadId);
   const lastAt = row?.messagesAtLastSummary ?? 0;
   if (count - lastAt < GURU_SESSION_SUMMARY_INTERVAL) return;
 
-  const history = await getChatHistory(topicName, 48);
+  const history = await getChatHistory(threadId, 48);
   if (history.length === 0) return;
 
   const slice = history.slice(-24);
@@ -37,7 +40,7 @@ export async function maybeSummarizeGuruSession(topicName: string): Promise<void
     const { text } = await generateTextWithRouting(messages);
     const summary = text.trim();
     if (!summary) return;
-    await upsertSessionMemory(topicName, summary, count);
+    await upsertSessionMemory(threadId, topicName, summary, count);
   } catch (e) {
     if (__DEV__) console.warn('[GuruChat] Session summary skipped:', e);
   }

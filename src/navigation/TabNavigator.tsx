@@ -31,6 +31,8 @@ import MockTestScreen from '../screens/MockTestScreen';
 import SyllabusScreen from '../screens/SyllabusScreen';
 import TopicDetailScreen from '../screens/TopicDetailScreen';
 import StatsScreen from '../screens/StatsScreen';
+import FlashcardsScreen from '../screens/FlashcardsScreen';
+import MindMapScreen from '../screens/MindMapScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import NotesHubScreen from '../screens/NotesHubScreen';
@@ -48,6 +50,9 @@ import GlobalTopicSearchScreen from '../screens/GlobalTopicSearchScreen';
 import DeviceLinkScreen from '../screens/DeviceLinkScreen';
 import ManualNoteCreationScreen from '../screens/ManualNoteCreationScreen';
 import RecordingVaultScreen from '../screens/RecordingVaultScreen';
+import ImageVaultScreen from '../screens/ImageVaultScreen';
+import NotesVaultScreen from '../screens/NotesVaultScreen';
+import TranscriptVaultScreen from '../screens/TranscriptVaultScreen';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
@@ -127,6 +132,8 @@ function MenuStackNav() {
       <MenuStack.Screen name="MenuHome" component={MenuScreen} />
       <MenuStack.Screen name="StudyPlan" component={StudyPlanScreen} />
       <MenuStack.Screen name="Stats" component={StatsScreen} />
+      <MenuStack.Screen name="Flashcards" component={FlashcardsScreen} />
+      <MenuStack.Screen name="MindMap" component={MindMapScreen} />
       <MenuStack.Screen name="Settings" component={SettingsScreen} />
       <MenuStack.Screen name="DeviceLink" component={DeviceLinkScreen} />
       <MenuStack.Screen name="NotesHub" component={NotesHubScreen} />
@@ -135,6 +142,9 @@ function MenuStackNav() {
       <MenuStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} />
       <MenuStack.Screen name="QuestionBank" component={QuestionBankScreen} />
       <MenuStack.Screen name="RecordingVault" component={RecordingVaultScreen} />
+      <MenuStack.Screen name="ImageVault" component={ImageVaultScreen} />
+      <MenuStack.Screen name="NotesVault" component={NotesVaultScreen} />
+      <MenuStack.Screen name="TranscriptVault" component={TranscriptVaultScreen} />
     </MenuStack.Navigator>
   );
 }
@@ -584,44 +594,41 @@ export default function TabNavigator() {
               <Pressable
                 style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 android_ripple={{ color: '#ffffff18' }}
-                onPress={() => openRoute('MenuTab', 'NotesHub')}
-                testID="action-hub-quick-note"
+                onPress={() => openRoute('MenuTab', 'NotesVault')}
+                testID="action-hub-notes-vault"
                 accessibilityRole="button"
-                accessibilityLabel="Quick note, open notes vault"
+                accessibilityLabel="Open notes vault"
               >
-                <Ionicons name="create-outline" size={22} color={theme.colors.accentAlt} />
-                <Text style={styles.topActionTitle}>Quick Note</Text>
+                <Ionicons name="library-outline" size={22} color={theme.colors.accentAlt} />
+                <Text style={styles.topActionTitle}>Notes Vault</Text>
               </Pressable>
             </View>
 
             <View style={styles.manualActionsContainer}>
               <Pressable
                 style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={handleAudioUpload}
-                disabled={isTranscribingUpload}
-                testID="action-hub-upload-audio"
+                onPress={() => openRoute('MenuTab', 'RecordingVault')}
+                testID="action-hub-recording-vault"
                 accessibilityRole="button"
-                accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
+                accessibilityLabel="Open recording vault"
               >
                 <Ionicons
-                  name="document-attach-outline"
+                  name="mic-outline"
                   size={18}
                   color={theme.colors.textSecondary}
                 />
-                <Text style={styles.manualActionText} numberOfLines={1}>
-                  {isTranscribingUpload ? (uploadProgressMsg || 'Transcribing...') : 'Upload Audio'}
-                </Text>
+                <Text style={styles.manualActionText}>Upload Audio</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
-                onPress={() => openRoute('MenuTab', 'ManualNoteCreation')}
-                testID="action-hub-paste-transcript"
+                onPress={() => openRoute('MenuTab', 'TranscriptVault')}
+                testID="action-hub-transcript-vault"
                 accessibilityRole="button"
-                accessibilityLabel="Paste transcript"
+                accessibilityLabel="Open transcript vault"
               >
                 <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
-                <Text style={styles.manualActionText}>Paste Transcript</Text>
+                <Text style={styles.manualActionText}>Transcript Tools</Text>
               </Pressable>
 
               <Pressable

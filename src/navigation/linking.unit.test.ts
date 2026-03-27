@@ -21,5 +21,8 @@ describe('linking', () => {
     expect((tabs.screens.MenuTab as { screens: Record<string, string> }).screens.Settings).toBe(
       'menu/settings',
     );
+    expect((tabs.screens.MenuTab as { screens: Record<string, string> }).screens.Flashcards).toBe(
+      'menu/flashcards',
+    );
   });
 });

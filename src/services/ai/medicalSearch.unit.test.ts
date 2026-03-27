@@ -265,6 +265,71 @@ describe('medicalSearch utilities', () => {
       expect(results.find((row) => row.source === 'DuckDuckGo')?.title).toContain('Hypertension');
     });
 
+    it('prefers stronger medical sources over DuckDuckGo when they exist', async () => {
+      const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
+      fetchMock.mockImplementation(async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url.includes('wikipedia.org')) {
+          return createJsonResponse({
+            pages: [
+              {
+                id: 1,
+                key: 'Diabetic_ketoacidosis',
+                title: 'Diabetic ketoacidosis',
+                excerpt: 'A serious complication of diabetes caused by insulin deficiency.',
+              },
+            ],
+          }) as unknown as Response;
+        }
+        if (url.includes('europepmc')) {
+          return createJsonResponse({
+            resultList: {
+              result: [
+                {
+                  id: '1',
+                  title: 'Diabetic ketoacidosis in adults',
+                  abstractText: 'Review of diagnosis and management of diabetic ketoacidosis.',
+                  journalTitle: 'BMJ',
+                  firstPublicationDate: '2025-01-15',
+                  doi: '10.1000/dka',
+                },
+              ],
+            },
+          }) as unknown as Response;
+        }
+        if (url.includes('esearch.fcgi')) {
+          return createJsonResponse({ esearchresult: { idlist: ['12345'] } }) as unknown as Response;
+        }
+        if (url.includes('esummary.fcgi')) {
+          return createJsonResponse({
+            result: {
+              uids: ['12345'],
+              '12345': {
+                title: 'Diabetic ketoacidosis update',
+                pubdate: '2024 Jan',
+                fulljournalname: 'Lancet',
+              },
+            },
+          }) as unknown as Response;
+        }
+        if (url.includes('api.duckduckgo.com')) {
+          return createJsonResponse({
+            AbstractText: 'A generic abstract that should not outrank better medical sources.',
+            AbstractURL: 'https://duckduckgo.com/Diabetes',
+            Heading: 'Diabetes',
+          }) as unknown as Response;
+        }
+        throw new Error(`Unexpected URL: ${url}`);
+      });
+
+      const results = await searchLatestMedicalSources('diabetic ketoacidosis management', 6);
+
+      expect(results.some((row) => row.source === 'EuropePMC')).toBe(true);
+      expect(results.some((row) => row.source === 'PubMed')).toBe(true);
+      expect(results.some((row) => row.source === 'Wikipedia')).toBe(true);
+      expect(results.some((row) => row.source === 'DuckDuckGo')).toBe(false);
+    });
+
     it('still returns other grounding sources when DuckDuckGo fails', async () => {
       const fetchMock = global.fetch as jest.MockedFunction<typeof fetch>;
       fetchMock.mockImplementation(async (input: string | URL | Request) => {

@@ -3,6 +3,7 @@
  * Falls back to curated lists in `appConfig` when a request fails or returns nothing.
  */
 import {
+  CHATGPT_MODELS,
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
   GEMINI_MODELS,
@@ -264,6 +265,7 @@ export function fetchAgentRouterModelIds(): { ids: string[] } & LiveModelFetchMe
 }
 
 export interface LiveGuruChatModelIds {
+  chatgpt: string[];
   groq: string[];
   openrouter: string[];
   gemini: string[];
@@ -274,10 +276,11 @@ export interface LiveGuruChatModelIds {
   /** True if any provider returned live data this refresh */
   anyLive: boolean;
   /** Last error strings per provider (debug) */
-  errors: Partial<Record<'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo' | 'deepseek' | 'agentrouter', string>>;
+  errors: Partial<Record<'chatgpt' | 'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo' | 'deepseek' | 'agentrouter', string>>;
 }
 
 export async function fetchAllLiveGuruChatModelIds(keys: {
+  chatgptConnected?: boolean;
   groqKey?: string;
   orKey?: string;
   geminiKey?: string;
@@ -312,6 +315,7 @@ export async function fetchAllLiveGuruChatModelIds(keys: {
     kiloR.source === 'live';
 
   return {
+    chatgpt: keys.chatgptConnected ? [...CHATGPT_MODELS] : [],
     groq: groqR.ids,
     openrouter: orR.ids,
     gemini: gemR.ids,

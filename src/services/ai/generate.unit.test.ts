@@ -55,6 +55,7 @@ describe('generateJSONWithRouting', () => {
       kiloApiKey: undefined,
       agentRouterKey: undefined,
       deepgramKey: undefined,
+      chatgptConnected: false,
     });
     jest.mocked(profileRepository.getProfile).mockResolvedValue(minimalProfile);
     jest.mocked(geminiGenerateStructuredJsonSdk).mockReset();

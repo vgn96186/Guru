@@ -246,3 +246,49 @@ export async function testKiloConnection(key: string): Promise<ProviderHealthRes
     };
   }
 }
+
+export async function testFalConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty key' };
+  }
+  try {
+    const res = await fetch('https://api.fal.ai/v1/models?limit=1', {
+      method: 'GET',
+      headers: {
+        Authorization: `Key ${trimmed}`,
+      },
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testBraveSearchConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) {
+    return { ok: false, status: 0, message: 'empty key' };
+  }
+  try {
+    const res = await fetch('https://api.search.brave.com/res/v1/images/search?q=medical+diagram&count=1', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Accept-Encoding': 'gzip',
+        'X-Subscription-Token': trimmed,
+      },
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}

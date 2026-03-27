@@ -14,6 +14,7 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import type {
   AIContent,
   KeyPointsContent,
@@ -470,6 +471,96 @@ function KeyPointsCard({
 
 // ── Quiz ──────────────────────────────────────────────────────────
 
+function formatQuizExplanation(rawExplanation: string, options: string[], correctIndex: number): string {
+  const decoded = rawExplanation
+    .replace(/\r\n/g, '\n')
+    .replace(/\\n/g, '\n')
+    // Repair common malformed option-label markdown like "**A\nLower trunk**"
+    .replace(/\*\*([A-D])\s*\n\s*/g, '**$1. ')
+    // Keep option labels on one line before sentence splitting
+    .replace(/\b([A-D])\.\s*\n\s*/g, '$1. ')
+    .trim();
+
+  if (!decoded) return 'No explanation available.';
+
+  // Keep already-structured markdown untouched.
+  if ((/^#{1,3}\s/m.test(decoded) || /^-\s/m.test(decoded)) && decoded.includes('\n')) {
+    return decoded;
+  }
+
+  const normalized = decoded
+    // Protect option prefixes from sentence splitting ("A. ...", "B. ...")
+    .replace(/\b([A-D])\.\s+/g, '$1) ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const withoutPrefix = normalized
+    .replace(/^Correct Answer\s*:\s*[A-D][.)]?\s*/i, '')
+    .trim();
+  const body = withoutPrefix || normalized;
+
+  const optionSplitPoints = body
+    .replace(/\sOption\s+([A-D])\b/gi, '\nOption $1')
+    .replace(/\s([A-D])\.\s+/g, '\n$1. ')
+    .replace(/\s([A-D])\)\s+/g, '\n$1. ');
+
+  const optionAnchoredLines = optionSplitPoints
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const explicitOptionLines = optionAnchoredLines.filter(
+    (line) => /^[A-D][.)]\s+/.test(line) || /^Option\s+[A-D]\b/i.test(line),
+  );
+
+  const sentences = body
+    .split(/(?<=[.!?])\s+(?=[A-Z])/)
+    .map((sentence) =>
+      sentence
+        .replace(/\b([A-D])\)\s+/g, '$1. ')
+        .trim(),
+    )
+    .filter(Boolean);
+
+  const whyCorrect = sentences.slice(0, 2);
+  const whyOthersWrong = explicitOptionLines.length > 0 ? explicitOptionLines : sentences.slice(2);
+  const fallbackPoint = sentences[0] ?? body;
+
+  const correctOption = options[correctIndex] ?? '';
+  const correctLetter =
+    Number.isInteger(correctIndex) && correctIndex >= 0 && correctIndex < options.length
+      ? String.fromCharCode(65 + correctIndex)
+      : 'N/A';
+
+  const whyCorrectSection = (whyCorrect.length > 0 ? whyCorrect : [fallbackPoint])
+    .map((point) => `- ${point}`)
+    .join('\n');
+
+  const wrongSection = (whyOthersWrong.length > 0
+    ? whyOthersWrong
+    : ['Eliminate distractors using the most specific vignette clues and pathophysiology.'])
+    .map((point) => {
+      const cleaned = point.replace(/^-\s*/, '').trim();
+      const optionWordMatch = cleaned.match(/^Option\s+([A-D])\s*(?:[:.)-])?\s*(.*)$/i);
+      if (optionWordMatch) {
+        const letter = optionWordMatch[1].toUpperCase();
+        const rest = optionWordMatch[2].trim();
+        return `- **${letter}.** ${rest}`;
+      }
+      if (/^[A-D][.)]\s+/.test(cleaned)) return `- **${cleaned.slice(0, 2).replace(')', '.')}** ${cleaned.slice(2).trim()}`;
+      return `- ${cleaned}`;
+    })
+    .join('\n');
+
+  return `### Correct answer
+**${correctLetter}. ${correctOption || 'See options above'}**
+
+### Why this is correct
+${whyCorrectSection}
+
+### Why other options are wrong
+${wrongSection}`;
+}
+
 function QuizCard({
   content,
   onDone,
@@ -502,6 +593,10 @@ function QuizCard({
   );
 
   const q = validQuestions[currentQ];
+  const formattedExplanation = useMemo(
+    () => formatQuizExplanation(q?.explanation ?? '', q?.options ?? [], q?.correctIndex ?? -1),
+    [q?.correctIndex, q?.explanation, q?.options],
+  );
   if (!q) return null;
 
   useEffect(() => {
@@ -515,12 +610,12 @@ function QuizCard({
           selectedOption
             ? `Student selected: ${selectedOption}`
             : 'Student has not selected an option yet.',
-          showExpl ? `Explanation shown: ${q.explanation}` : 'Explanation is not shown yet.',
+          showExpl ? `Explanation shown: ${formattedExplanation}` : 'Explanation is not shown yet.',
         ],
         5,
       ),
     );
-  }, [validQuestions.length, currentQ, onContextChange, q, selected, showExpl]);
+  }, [validQuestions.length, currentQ, onContextChange, q, selected, showExpl, formattedExplanation]);
 
   const scoreRef = React.useRef(score);
   scoreRef.current = score;
@@ -587,9 +682,12 @@ function QuizCard({
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
-      <Text style={s.cardType}>
-        🎯 QUIZ {currentQ + 1}/{validQuestions.length}
-      </Text>
+      <View style={s.inlineLabelRow}>
+        <Ionicons name="help-circle-outline" size={14} color="#6C63FF" />
+        <Text style={s.cardType}>
+          QUIZ {currentQ + 1}/{validQuestions.length}
+        </Text>
+      </View>
       <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
         {content.topicName}
       </Text>
@@ -636,13 +734,32 @@ function QuizCard({
       )}
       {showExpl && (
         <View style={s.explBox}>
-          <Text style={s.explLabel}>
-            {selected === q.correctIndex
-              ? '✅ Correct!'
-              : selected === -1
-                ? '💡 Here is the answer:'
-                : '❌ Incorrect'}
-          </Text>
+          <View style={s.inlineLabelRow}>
+            <Ionicons
+              name={
+                selected === q.correctIndex
+                  ? 'checkmark-circle'
+                  : selected === -1
+                    ? 'information-circle'
+                    : 'close-circle'
+              }
+              size={16}
+              color={
+                selected === q.correctIndex
+                  ? theme.colors.success
+                  : selected === -1
+                    ? theme.colors.primary
+                    : theme.colors.error
+              }
+            />
+            <Text style={s.explLabel}>
+              {selected === q.correctIndex
+                ? 'Correct'
+                : selected === -1
+                  ? 'Here is the answer'
+                  : 'Incorrect'}
+            </Text>
+          </View>
           {/* Show the correct answer prominently when user didn't know */}
           {selected !== q.correctIndex && (
             <View style={s.correctAnswerBox}>
@@ -651,8 +768,11 @@ function QuizCard({
             </View>
           )}
           <View style={s.explSection}>
-            <Text style={s.explSectionTitle}>Explanation</Text>
-            <MarkdownRender content={q.explanation} compact />
+            <View style={s.inlineLabelRow}>
+              <Ionicons name="reader-outline" size={14} color={theme.colors.primary} />
+              <Text style={s.explSectionTitle}>Explanation</Text>
+            </View>
+            <MarkdownRender content={formattedExplanation} />
           </View>
         </View>
       )}
@@ -663,7 +783,10 @@ function QuizCard({
           onPress={fetchDeepExplanation}
           activeOpacity={0.8}
         >
-          <Text style={s.explainDeeperText}>🧠 Explain the broader topic</Text>
+          <View style={s.inlineLabelRow}>
+            <Ionicons name="bulb-outline" size={14} color={theme.colors.primary} />
+            <Text style={s.explainDeeperText}>Explain the broader topic</Text>
+          </View>
         </TouchableOpacity>
       )}
       {isLoadingDeepExpl && (
@@ -674,7 +797,10 @@ function QuizCard({
       )}
       {deepExplanation && (
         <View style={[s.explBox, { borderLeftWidth: 3, borderLeftColor: theme.colors.primary }]}>
-          <Text style={s.explSectionTitle}>🧠 Deeper Explanation</Text>
+          <View style={s.inlineLabelRow}>
+            <Ionicons name="school-outline" size={14} color={theme.colors.primary} />
+            <Text style={s.explSectionTitle}>Deeper Explanation</Text>
+          </View>
           <MarkdownRender content={deepExplanation} compact />
         </View>
       )}
@@ -1336,6 +1462,11 @@ const s = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: 6,
   },
+  inlineLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   cardTitle: { color: '#fff', fontWeight: '800', fontSize: 22, marginBottom: 20, lineHeight: 28 },
   topicImage: {
     width: '100%',
@@ -1462,7 +1593,7 @@ const s = StyleSheet.create({
   explBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 12 },
   explLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 6,
   },

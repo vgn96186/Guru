@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { theme } from '../constants/theme';
+import { View, StyleSheet } from 'react-native';
+import AppRecoveryScreen from './AppRecoveryScreen';
 
 const Updates = (() => {
   try {
@@ -13,12 +13,13 @@ const Updates = (() => {
 interface State {
   hasError: boolean;
   remountKey: number;
+  errorMessage: string | null;
 }
 
 export default class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> {
   constructor(props: React.PropsWithChildren<{}>) {
     super(props);
-    this.state = { hasError: false, remountKey: 0 };
+    this.state = { hasError: false, remountKey: 0, errorMessage: null };
   }
 
   static getDerivedStateFromError(_error: Error): Partial<State> {
@@ -27,38 +28,45 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error', error, errorInfo);
+    this.setState({ errorMessage: error.message || 'Unknown rendering error' });
   }
+
+  private resetBoundary = () => {
+    this.setState({ hasError: false, remountKey: Date.now(), errorMessage: null });
+  };
+
+  private handleReload = () => {
+    try {
+      void Updates?.reloadAsync();
+    } catch {
+      this.resetBoundary();
+    }
+  };
 
   render() {
     if (this.state.hasError) {
       const canReload = !!Updates?.reloadAsync;
+      const errorPreview = this.state.errorMessage?.trim();
+
       return (
         <View style={styles.container}>
-          <Text style={styles.emoji}>💥</Text>
-          <Text style={styles.title}>Something went wrong</Text>
-          <Text style={styles.sub}>
-            A critical error occurred.{' '}
-            {canReload ? 'Reload the app.' : 'Reset will remount this screen.'} If it keeps
-            happening, try clearing app data.
-          </Text>
-          <TouchableOpacity
-            style={styles.retryBtn}
-            onPress={() => {
-              if (canReload) {
-                try {
-                  void Updates?.reloadAsync();
-                } catch {
-                  this.setState({ hasError: false, remountKey: Date.now() });
-                }
-              } else {
-                this.setState({ hasError: false, remountKey: Date.now() });
-              }
-            }}
-            accessibilityRole="button"
-            accessibilityLabel={canReload ? 'Reload app' : 'Reset view'}
-          >
-            <Text style={styles.retryText}>{canReload ? 'Reload App' : 'Reset View'}</Text>
-          </TouchableOpacity>
+          <AppRecoveryScreen
+            title="Something went wrong"
+            message="Guru hit an unexpected crash, but your progress, notes, and streak data are still safe on this device."
+            detail={errorPreview}
+            primaryLabel={canReload ? 'Reload App' : 'Reset View'}
+            primaryAccessibilityLabel={canReload ? 'Reload app' : 'Reset view'}
+            onPrimary={canReload ? this.handleReload : this.resetBoundary}
+            secondaryLabel={canReload ? 'Try This Screen Again' : undefined}
+            secondaryAccessibilityLabel="Reset view"
+            onSecondary={canReload ? this.resetBoundary : undefined}
+            tips={[
+              canReload
+                ? 'Reload the app for a clean restart, or retry only this view first.'
+                : 'Reset this view to remount the broken screen and try again.',
+              'If this keeps happening, reopen Guru and avoid the last action.',
+            ]}
+          />
         </View>
       );
     }
@@ -73,39 +81,5 @@ export default class ErrorBoundary extends React.Component<React.PropsWithChildr
 
 const styles = StyleSheet.create({
   childWrap: { flex: 1 },
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-  },
-  emoji: {
-    fontSize: 64,
-    marginBottom: 24,
-  },
-  title: {
-    color: theme.colors.error,
-    fontSize: 22,
-    fontWeight: '700',
-    marginBottom: 12,
-  },
-  sub: {
-    color: theme.colors.textMuted,
-    fontSize: 16,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  retryBtn: {
-    marginTop: 24,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryText: {
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  container: { flex: 1 },
 });

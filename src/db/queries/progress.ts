@@ -109,6 +109,10 @@ export async function getUserProfile(): Promise<UserProfile> {
     deepseek_key: string;
     agentrouter_key: string;
     provider_order: string;
+    api_validation_json: string;
+    chatgpt_connected: number;
+    fal_api_key: string;
+    brave_search_api_key: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -159,6 +163,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       pomodoroIntervalMinutes: 20,
       cloudflareAccountId: '',
       cloudflareApiToken: '',
+      falApiKey: '',
+      braveSearchApiKey: '',
       guruChatDefaultModel: 'auto',
       imageGenerationModel: DEFAULT_IMAGE_GENERATION_MODEL,
       guruMemoryNotes: '',
@@ -168,6 +174,8 @@ export async function getUserProfile(): Promise<UserProfile> {
       deepseekKey: '',
       agentRouterKey: '',
       providerOrder: [],
+      apiValidation: {},
+      chatgptConnected: false,
     };
   }
 
@@ -257,6 +265,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     pomodoroIntervalMinutes: r.pomodoro_interval_minutes ?? 20,
     cloudflareAccountId: r.cloudflare_account_id ?? '',
     cloudflareApiToken: r.cloudflare_api_token ?? '',
+    falApiKey: r.fal_api_key ?? '',
+    braveSearchApiKey: r.brave_search_api_key ?? '',
     guruChatDefaultModel: r.guru_chat_default_model ?? 'auto',
     imageGenerationModel: r.image_generation_model ?? DEFAULT_IMAGE_GENERATION_MODEL,
     guruMemoryNotes: r.guru_memory_notes ?? '',
@@ -272,6 +282,17 @@ export async function getUserProfile(): Promise<UserProfile> {
         return [];
       }
     })() as import('../../types').ProviderId[],
+    apiValidation: (() => {
+      try {
+        const parsed = JSON.parse(r.api_validation_json ?? '{}');
+        return parsed && typeof parsed === 'object'
+          ? (parsed as NonNullable<UserProfile['apiValidation']>)
+          : {};
+      } catch {
+        return {};
+      }
+    })(),
+    chatgptConnected: (r.chatgpt_connected ?? 0) === 1,
   };
 }
 
@@ -321,6 +342,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     pomodoroIntervalMinutes: 'pomodoro_interval_minutes',
     cloudflareAccountId: 'cloudflare_account_id',
     cloudflareApiToken: 'cloudflare_api_token',
+    falApiKey: 'fal_api_key',
+    braveSearchApiKey: 'brave_search_api_key',
     guruChatDefaultModel: 'guru_chat_default_model',
     imageGenerationModel: 'image_generation_model',
     guruMemoryNotes: 'guru_memory_notes',
@@ -330,6 +353,8 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     deepseekKey: 'deepseek_key',
     agentRouterKey: 'agentrouter_key',
     deepgramApiKey: 'deepgram_api_key',
+    apiValidation: 'api_validation_json',
+    chatgptConnected: 'chatgpt_connected',
   };
 
   const setClauses: string[] = [];
@@ -367,6 +392,10 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   if ('providerOrder' in updates) {
     setClauses.push('provider_order = ?');
     values.push(JSON.stringify(updates.providerOrder ?? []));
+  }
+  if ('apiValidation' in updates) {
+    setClauses.push('api_validation_json = ?');
+    values.push(JSON.stringify(updates.apiValidation ?? {}));
   }
 
   if (setClauses.length === 0) return;
@@ -694,11 +723,7 @@ export function getDaysToExam(examDateStr: string): number {
   const exam = new Date(examTime);
   exam.setHours(0, 0, 0, 0);
 
-  const days = Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / MS_PER_DAY));
-  if (days === 0 && __DEV__) {
-    console.warn(`[getDaysToExam] 0 days for "${examDateStr}" (exam=${exam.toISOString()}, now=${now.toISOString()})`);
-  }
-  return days;
+  return Math.max(0, Math.ceil((exam.getTime() - now.getTime()) / MS_PER_DAY));
 }
 
 /**

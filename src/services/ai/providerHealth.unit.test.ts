@@ -1,4 +1,6 @@
 import {
+  testBraveSearchConnection,
+  testFalConnection,
   testGroqConnection,
   testHuggingFaceConnection,
   testOpenRouterConnection,
@@ -148,5 +150,51 @@ describe('providerHealth', () => {
       status: 0,
       message: 'timeout',
     });
+  });
+
+  it('returns ok for fal when the probe succeeds', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch' as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => '',
+    } as Response);
+
+    await expect(testFalConnection('fal_test')).resolves.toEqual({
+      ok: true,
+      status: 200,
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://api.fal.ai/v1/models?limit=1',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          Authorization: 'Key fal_test',
+        }),
+      }),
+    );
+  });
+
+  it('returns ok for Brave Search when the probe succeeds', async () => {
+    const fetchSpy = jest.spyOn(global, 'fetch' as any).mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => '',
+    } as Response);
+
+    await expect(testBraveSearchConnection('brave_test')).resolves.toEqual({
+      ok: true,
+      status: 200,
+    });
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'https://api.search.brave.com/res/v1/images/search?q=medical+diagram&count=1',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          'X-Subscription-Token': 'brave_test',
+        }),
+      }),
+    );
   });
 });

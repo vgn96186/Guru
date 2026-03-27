@@ -52,12 +52,15 @@ export type SyllabusStackParamList = {
 export type ChatStackParamList = {
   GuruChat:
     | {
-        topicName?: string;
-        /** Syllabus leaf topic id when opened from Topic detail / content flows */
-        topicId?: number;
-        initialQuestion?: string;
-        autoFocusComposer?: boolean;
-      }
+      topicName?: string;
+      /** Syllabus leaf topic id when opened from Topic detail / content flows */
+      topicId?: number;
+      threadId?: number;
+      groundingTitle?: string;
+      groundingContext?: string;
+      initialQuestion?: string;
+      autoFocusComposer?: boolean;
+    }
     | undefined;
 };
 
@@ -65,6 +68,8 @@ export type MenuStackParamList = {
   MenuHome: undefined;
   StudyPlan: undefined;
   Stats: undefined;
+  Flashcards: undefined;
+  MindMap: undefined;
   Settings: undefined;
   DeviceLink: undefined;
   NotesHub: undefined;
@@ -72,6 +77,9 @@ export type MenuStackParamList = {
   ManualNoteCreation: undefined;
   TranscriptHistory: { noteId?: number } | undefined;
   RecordingVault: undefined;
+  ImageVault: undefined;
+  NotesVault: undefined;
+  TranscriptVault: undefined;
   QuestionBank: undefined;
 };
 

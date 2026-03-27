@@ -28,7 +28,9 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     );
     expect(getByText('Something went wrong')).toBeTruthy();
+    expect(getByText(/your progress, notes, and streak data are still safe/i)).toBeTruthy();
     expect(getByLabelText('Reload app')).toBeTruthy();
+    expect(getByLabelText('Reset view')).toBeTruthy();
     spy.mockRestore();
   });
 

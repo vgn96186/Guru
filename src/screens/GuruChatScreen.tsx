@@ -310,7 +310,11 @@ function TypingDots() {
 function normalizeGuruRenderableText(content: string): string {
   return (content ?? '')
     .replace(/\u00A0/g, ' ')
-    .replace(/[\u200B\u200C\u200D\u2060\uFEFF]/g, '')
+    .replace(/\u200B/g, '')
+    .replace(/\u200C/g, '')
+    .replace(/\u200D/g, '')
+    .replace(/\u2060/g, '')
+    .replace(/\uFEFF/g, '')
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n')
     .trim();

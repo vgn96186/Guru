@@ -2,7 +2,6 @@
  * ChatGPT Responses API caller.
  * Adapts the app's Message[] format to the OpenAI Responses API.
  */
-import { fetch as expoFetch } from 'expo/fetch';
 import type { Message } from '../types';
 import { getValidAccessToken, getAccountId } from './chatgptTokenStore';
 import { CHATGPT_MODELS } from '../../../config/appConfig';
@@ -22,6 +21,23 @@ interface ResponsesApiInput {
 
 const DEFAULT_CODEX_INSTRUCTIONS =
   'You are Codex, a careful coding assistant. Follow the user instructions exactly and return useful plain text.';
+
+function getChatGptFetch(): typeof fetch {
+  try {
+    const expoFetchModule = require('expo/fetch') as { fetch?: typeof fetch };
+    if (typeof expoFetchModule.fetch === 'function') {
+      return expoFetchModule.fetch.bind(expoFetchModule);
+    }
+  } catch {
+    // Fall through to the global fetch implementation when expo/fetch is unavailable in tests.
+  }
+
+  if (typeof globalThis.fetch === 'function') {
+    return globalThis.fetch.bind(globalThis) as typeof fetch;
+  }
+
+  throw new Error('No fetch implementation available for ChatGPT transport');
+}
 
 function extractTextFromResponsesData(data: any): string {
   const output = data?.output;
@@ -246,8 +262,9 @@ export async function callChatGpt(
   const accountId = await getAccountId();
   const selectedModel = model ?? CHATGPT_MODELS[0];
   const body = buildResponsesPayload(messages, selectedModel, true, jsonMode);
+  const transportFetch = getChatGptFetch();
 
-  const res = await expoFetch(RESPONSES_URL, {
+  const res = await transportFetch(RESPONSES_URL, {
     method: 'POST',
     headers: buildChatGptHeaders(accessToken, accountId, 'text/event-stream'),
     body: JSON.stringify(body),
@@ -271,8 +288,9 @@ export async function streamChatGpt(
   const accessToken = await getValidAccessToken();
   const accountId = await getAccountId();
   const body = buildResponsesPayload(messages, model, true, false);
+  const transportFetch = getChatGptFetch();
 
-  const res = await expoFetch(RESPONSES_URL, {
+  const res = await transportFetch(RESPONSES_URL, {
     method: 'POST',
     headers: buildChatGptHeaders(accessToken, accountId, 'text/event-stream'),
     body: JSON.stringify(body),

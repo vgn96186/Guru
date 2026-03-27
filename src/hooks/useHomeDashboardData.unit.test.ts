@@ -49,6 +49,7 @@ jest.mock('../db/queries/externalLogs', () => ({
 
 jest.mock('../services/studyPlanner', () => ({
   getTodaysAgendaWithTimes: jest.fn(),
+  invalidatePlanCache: jest.fn(),
 }));
 
 describe('useHomeDashboardData', () => {

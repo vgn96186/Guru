@@ -44,6 +44,7 @@ async function loadService() {
 
 describe('transcriptStorage', () => {
   beforeEach(() => {
+    profileMock.backupDirectoryUri = 'content://mock/uri';
     // Reset mocks
     (FileSystem.writeAsStringAsync as jest.Mock).mockClear();
     (FileSystem.readAsStringAsync as jest.Mock).mockClear();
@@ -81,7 +82,7 @@ describe('transcriptStorage', () => {
       // Check SAF Cloud Backup
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
-        expect.stringMatching(/^anatomy__upper-limb__note__\d+\.txt$/),
+        expect.stringMatching(/^anatomy_upper-limb_note_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/),
         'text/plain',
       );
 
@@ -100,7 +101,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         2,
         expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Notes\/anatomy__upper-limb__note__\d+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Notes\/anatomy_upper-limb_note_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/,
         ),
         'This is a note.',
         { encoding: 'utf8' },
@@ -126,7 +127,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledTimes(1);
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Notes\/physiology__cardiac-cycle__note__\d+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/backups\/Notes\/physiology_cardiac-cycle_note_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/,
         ),
         'Another note.',
         { encoding: 'utf8' },
@@ -172,7 +173,7 @@ describe('transcriptStorage', () => {
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
         1,
         expect.stringMatching(
-          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
+          /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy_upper-limb_transcript_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/,
         ),
         'lecture text',
         { encoding: 'utf8' },
@@ -181,7 +182,7 @@ describe('transcriptStorage', () => {
       // Cloud SAF backup
       expect(mockFileSystem.StorageAccessFramework.createFileAsync).toHaveBeenCalledWith(
         'content://mock/uri',
-        expect.stringMatching(/^anatomy__upper-limb__transcript__\d+\.txt$/),
+        expect.stringMatching(/^anatomy_upper-limb_transcript_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/),
         'text/plain',
       );
       expect(mockFileSystem.writeAsStringAsync).toHaveBeenNthCalledWith(
@@ -196,13 +197,13 @@ describe('transcriptStorage', () => {
       const appLauncher = await import('../../modules/app-launcher');
       expect(appLauncher.copyFileToPublicBackup).toHaveBeenCalledWith(
         expect.stringMatching(
-          /^\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
+          /^\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy_upper-limb_transcript_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/,
         ),
-        expect.stringMatching(/^anatomy__upper-limb__transcript__\d+\.txt$/),
+        expect.stringMatching(/^anatomy_upper-limb_transcript_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/),
       );
 
       expect(uri).toMatch(
-        /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy__upper-limb__transcript__\d+\.txt$/,
+        /^file:\/\/\/data\/user\/0\/com\.app\/files\/transcripts\/anatomy_upper-limb_transcript_\d{4}-\d{2}-\d{2}_\d{4}\.txt$/,
       );
     });
 
@@ -338,9 +339,13 @@ describe('transcriptStorage', () => {
 
       expect(mockFileSystem.moveAsync).toHaveBeenCalledWith({
         from: 'file:///tmp/recording.m4a',
-        to: expect.stringMatching(/^file:\/\/\/tmp\/anatomy__upper-limb__recording__\d+\.m4a$/),
+        to: expect.stringMatching(
+          /^file:\/\/\/tmp\/anatomy_upper-limb_recording_\d{4}-\d{2}-\d{2}_\d{4}\.m4a$/,
+        ),
       });
-      expect(result).toMatch(/^file:\/\/\/tmp\/anatomy__upper-limb__recording__\d+\.m4a$/);
+      expect(result).toMatch(
+        /^file:\/\/\/tmp\/anatomy_upper-limb_recording_\d{4}-\d{2}-\d{2}_\d{4}\.m4a$/,
+      );
     });
 
     it('preserves raw path format when input has no file:// prefix', async () => {
@@ -352,9 +357,13 @@ describe('transcriptStorage', () => {
 
       expect(mockFileSystem.moveAsync).toHaveBeenCalledWith({
         from: 'file:///tmp/recording.m4a',
-        to: expect.stringMatching(/^file:\/\/\/tmp\/pathology__inflammation__recording__\d+\.m4a$/),
+        to: expect.stringMatching(
+          /^file:\/\/\/tmp\/pathology_inflammation_recording_\d{4}-\d{2}-\d{2}_\d{4}\.m4a$/,
+        ),
       });
-      expect(result).toMatch(/^\/tmp\/pathology__inflammation__recording__\d+\.m4a$/);
+      expect(result).toMatch(
+        /^\/tmp\/pathology_inflammation_recording_\d{4}-\d{2}-\d{2}_\d{4}\.m4a$/,
+      );
     });
   });
 

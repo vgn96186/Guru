@@ -147,16 +147,16 @@ Detailed review of nephron transport and countercurrent mechanism.`;
 
     it('combines stem, kind, timestamp, and extension', () => {
       expect(buildLectureArtifactFileName('transcript', input, timestamp, 'txt')).toBe(
-        'bio__cells__transcript__1625097600000.txt',
+        'bio_cells_transcript_2021-07-01_0530.txt',
       );
     });
 
     it('handles extensions with or without leading dots', () => {
       expect(buildLectureArtifactFileName('note', input, timestamp, '.md')).toBe(
-        'bio__cells__note__1625097600000.md',
+        'bio_cells_note_2021-07-01_0530.md',
       );
       expect(buildLectureArtifactFileName('recording', input, timestamp, 'm4a')).toBe(
-        'bio__cells__recording__1625097600000.m4a',
+        'bio_cells_recording_2021-07-01_0530.m4a',
       );
     });
   });

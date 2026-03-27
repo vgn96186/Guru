@@ -177,16 +177,18 @@ describe('useLectureReturnRecovery', () => {
     expect(mockHideOverlay).toHaveBeenCalled();
   });
 
-  it('throttles periodic recovery calls and shows combined success toast', async () => {
+  it('throttles periodic note-recovery calls and shows success toast', async () => {
     let now = 1700000000000;
     jest.spyOn(Date, 'now').mockImplementation(() => now);
     mockGetIncompleteExternalSession.mockResolvedValue(null);
-    mockRetryFailedTranscriptions.mockResolvedValue(2);
     mockRetryPendingNoteEnhancements.mockResolvedValue(1);
 
     await act(async () => {
       renderer = TestRenderer.create(React.createElement(Harness));
     });
+    mockRetryFailedTranscriptions.mockClear();
+    mockRetryPendingNoteEnhancements.mockClear();
+    mockShowToast.mockClear();
 
     await act(async () => {
       await hookApi.recoverPendingTranscriptions(false);
@@ -199,10 +201,10 @@ describe('useLectureReturnRecovery', () => {
       await hookApi.recoverPendingTranscriptions(false);
     });
 
-    expect(mockRetryFailedTranscriptions).toHaveBeenCalledTimes(2);
-    expect(mockRetryPendingNoteEnhancements).toHaveBeenCalledTimes(2);
+    expect(mockRetryFailedTranscriptions).not.toHaveBeenCalled();
+    expect(mockRetryPendingNoteEnhancements).toHaveBeenCalledTimes(1);
     expect(mockShowToast).toHaveBeenCalledWith(
-      '2 lectures and 1 note finished processing. Check your notes.',
+      '1 note finished processing. Check your notes.',
       'success',
       undefined,
       4000,
@@ -253,41 +255,16 @@ describe('useLectureReturnRecovery', () => {
     expect(onRecovered).not.toHaveBeenCalled();
   });
 
-  it('shows correct toast message for only lectures or only notes', async () => {
+  it('shows correct toast message for only notes', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
     mockGetIncompleteExternalSession.mockResolvedValue(null);
 
-    // Only lectures
-    mockRetryFailedTranscriptions.mockResolvedValueOnce(1);
     mockRetryPendingNoteEnhancements.mockResolvedValueOnce(0);
     await act(async () => {
       renderer = TestRenderer.create(React.createElement(Harness));
     });
-    await act(async () => {
-      await hookApi.recoverPendingTranscriptions(true);
-    });
-    expect(mockShowToast).toHaveBeenCalledWith(
-      '1 lecture finished processing. Check your notes.',
-      'success',
-      undefined,
-      4000,
-    );
+    mockShowToast.mockClear();
 
-    // Multiple lectures
-    mockRetryFailedTranscriptions.mockResolvedValueOnce(2);
-    mockRetryPendingNoteEnhancements.mockResolvedValueOnce(0);
-    await act(async () => {
-      await hookApi.recoverPendingTranscriptions(true);
-    });
-    expect(mockShowToast).toHaveBeenCalledWith(
-      '2 lectures finished processing. Check your notes.',
-      'success',
-      undefined,
-      4000,
-    );
-
-    // Only notes
-    mockRetryFailedTranscriptions.mockResolvedValueOnce(0);
     mockRetryPendingNoteEnhancements.mockResolvedValueOnce(1);
     await act(async () => {
       await hookApi.recoverPendingTranscriptions(true);
@@ -300,7 +277,6 @@ describe('useLectureReturnRecovery', () => {
     );
 
     // Multiple notes
-    mockRetryFailedTranscriptions.mockResolvedValueOnce(0);
     mockRetryPendingNoteEnhancements.mockResolvedValueOnce(3);
     await act(async () => {
       await hookApi.recoverPendingTranscriptions(true);
@@ -315,7 +291,7 @@ describe('useLectureReturnRecovery', () => {
 
   it('handles errors in recoverPendingTranscriptions gracefully', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
-    mockRetryFailedTranscriptions.mockRejectedValue(new Error('Network error'));
+    mockRetryPendingNoteEnhancements.mockRejectedValue(new Error('Network error'));
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
 
     await act(async () => {

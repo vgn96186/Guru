@@ -1,6 +1,5 @@
 import { callChatGpt, streamChatGpt } from './chatgptApi';
 import { getAccountId, getValidAccessToken } from './chatgptTokenStore';
-import { fetch as expoFetch } from 'expo/fetch';
 
 jest.mock('./chatgptTokenStore', () => ({
   getValidAccessToken: jest.fn(),
@@ -10,6 +9,8 @@ jest.mock('./chatgptTokenStore', () => ({
 jest.mock('expo/fetch', () => ({
   fetch: jest.fn(),
 }));
+
+const { fetch: expoFetch } = jest.requireMock('expo/fetch') as { fetch: jest.Mock };
 
 describe('chatgptApi', () => {
   beforeEach(() => {

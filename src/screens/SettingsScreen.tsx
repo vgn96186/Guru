@@ -2782,7 +2782,7 @@ export default function SettingsScreen() {
               editable={pomodoroEnabled}
             />
             <View style={styles.modelChipRow}>
-              {['20', '25', '30', '40'].map((value) => (
+              {['5', '10', '20', '25', '30', '40'].map((value) => (
                 <TouchableOpacity
                   key={value}
                   style={[styles.freqBtn, pomodoroInterval === value && styles.freqBtnActive]}

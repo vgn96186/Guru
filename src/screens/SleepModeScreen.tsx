@@ -51,9 +51,9 @@ export default function SleepModeScreen() {
   const soundRef = useRef<Audio.Sound | null>(null);
   const vibrateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Update clock every minute
+  // Keep the nightstand clock accurate to the actual minute boundary.
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000 * 60);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -195,6 +195,28 @@ export default function SleepModeScreen() {
   }
 
   const timeString = currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateString = currentTime.toLocaleDateString([], {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  });
+  const hoursLabel = `${hoursToAdd} ${hoursToAdd === 1 ? 'hr' : 'hrs'}`;
+  const projectedAlarmTime = new Date(currentTime.getTime() + hoursToAdd * 60 * 60 * 1000);
+  const projectedAlarmLabel = projectedAlarmTime.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const activeAlarmLabel = alarmTime?.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  const remainingMs = alarmTime ? Math.max(0, alarmTime.getTime() - currentTime.getTime()) : 0;
+  const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
+  const remainingMinutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+  const remainingLabel =
+    alarmTime && isTracking
+      ? `${remainingHours > 0 ? `${remainingHours}h ` : ''}${remainingMinutes}m left`
+      : null;
 
   if (alarmRinging) {
     return (
@@ -220,52 +242,88 @@ export default function SleepModeScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.container}>
-        <Text style={styles.clock}>{timeString}</Text>
-
-        {isTracking ? (
-          <View style={styles.trackingInfo}>
-            <Text style={styles.trackingText}>Nightstand Mode Active</Text>
-            <Text style={styles.alarmText}>
-              Alarm set for{' '}
-              {alarmTime?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <View style={styles.topSection}>
+          <View style={styles.modeBadge}>
+            <View
+              style={[
+                styles.modeDot,
+                { backgroundColor: isTracking ? theme.colors.success : theme.colors.primaryLight },
+              ]}
+            />
+            <Text style={styles.modeBadgeText}>
+              {isTracking ? 'Nightstand Active' : 'Nightstand Mode'}
             </Text>
-            <Text style={styles.trackingSub}>Screen will stay on. Place face down.</Text>
           </View>
-        ) : (
-          <View style={styles.setupInfo}>
-            <Text style={styles.setupText}>Wake me up in</Text>
-            <View style={styles.timePickerRow}>
-              <TouchableOpacity
-                style={styles.timePickerBtn}
-                onPress={() => setHoursToAdd(Math.max(1, hoursToAdd - 1))}
-              >
-                <Text style={styles.timePickerText}>-</Text>
-              </TouchableOpacity>
-              <Text style={styles.timePickerVal}>{hoursToAdd} hrs</Text>
-              <TouchableOpacity
-                style={styles.timePickerBtn}
-                onPress={() => setHoursToAdd(Math.min(12, hoursToAdd + 1))}
-              >
-                <Text style={styles.timePickerText}>+</Text>
-              </TouchableOpacity>
+          <Text style={styles.dateText}>{dateString}</Text>
+          <Text style={styles.clock}>{timeString}</Text>
+        </View>
+
+        <View style={styles.bottomSection}>
+          {isTracking ? (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoEyebrow}>WAKE PLAN</Text>
+              <Text style={styles.infoTitle}>Alarm at {activeAlarmLabel}</Text>
+              <View style={styles.infoPillRow}>
+                {remainingLabel ? (
+                  <View style={styles.infoPill}>
+                    <Text style={styles.infoPillText}>{remainingLabel}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.infoPill}>
+                  <Text style={styles.infoPillText}>{movementCount} movements tracked</Text>
+                </View>
+              </View>
+              <Text style={styles.infoBody}>
+                Screen stays awake all night. Leave the phone on your nightstand or face down so
+                movement detection can catch a lighter sleep phase.
+              </Text>
             </View>
-          </View>
-        )}
+          ) : (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoEyebrow}>WAKE PLAN</Text>
+              <Text style={styles.infoTitle}>Wake me in</Text>
+              <View style={styles.timePickerRow}>
+                <TouchableOpacity
+                  style={styles.timePickerBtn}
+                  onPress={() => setHoursToAdd(Math.max(1, hoursToAdd - 1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease wake interval"
+                >
+                  <Text style={styles.timePickerText}>-</Text>
+                </TouchableOpacity>
+                <Text style={styles.timePickerVal}>{hoursLabel}</Text>
+                <TouchableOpacity
+                  style={styles.timePickerBtn}
+                  onPress={() => setHoursToAdd(Math.min(12, hoursToAdd + 1))}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase wake interval"
+                >
+                  <Text style={styles.timePickerText}>+</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.infoBody}>Alarm will ring at {projectedAlarmLabel}</Text>
+              <Text style={styles.infoHint}>
+                Best for bedside charging with the phone left still and visible.
+              </Text>
+            </View>
+          )}
 
-        <TouchableOpacity
-          style={[styles.toggleBtn, isTracking && styles.toggleBtnActive]}
-          onPress={toggleTracking}
-        >
-          <Text style={styles.toggleBtnText}>
-            {isTracking ? 'Cancel Alarm' : 'Start Sleep Tracking'}
-          </Text>
-        </TouchableOpacity>
-
-        {!isTracking && (
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>Exit</Text>
+          <TouchableOpacity
+            style={[styles.toggleBtn, isTracking && styles.toggleBtnActive]}
+            onPress={toggleTracking}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.toggleBtnText}>
+              {isTracking ? 'Cancel Alarm' : 'Start Sleep Tracking'}
+            </Text>
           </TouchableOpacity>
-        )}
+
+          {!isTracking && (
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Text style={styles.backBtnText}>Exit</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </ResponsiveContainer>
     </SafeAreaView>
   );
@@ -273,22 +331,121 @@ export default function SleepModeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#000' }, // Pure black for OLED screens
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  clock: {
-    color: theme.colors.textMuted,
-    fontSize: 80,
-    fontWeight: '900',
-    fontVariant: ['tabular-nums'],
-    marginBottom: 40,
+  container: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 28,
   },
-
-  setupInfo: { marginBottom: 40, alignItems: 'center' },
-  setupText: {
+  topSection: {
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#1F2130',
+    backgroundColor: '#101018',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 14,
+  },
+  modeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+  },
+  modeBadgeText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+  },
+  dateText: {
     color: theme.colors.textMuted,
-    textAlign: 'center',
     fontSize: 14,
     lineHeight: 20,
-    marginBottom: 12,
+    letterSpacing: 0.3,
+    marginBottom: 18,
+  },
+  clock: {
+    color: theme.colors.textPrimary,
+    fontSize: 88,
+    lineHeight: 94,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    letterSpacing: -3,
+  },
+  bottomSection: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  infoCard: {
+    width: '100%',
+    backgroundColor: '#0E1018',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#1D2130',
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  infoEyebrow: {
+    color: theme.colors.primaryLight,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  infoTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  infoPillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 14,
+    marginBottom: 14,
+  },
+  infoPill: {
+    borderRadius: 999,
+    backgroundColor: '#151928',
+    borderWidth: 1,
+    borderColor: '#23283A',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  infoPillText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  infoBody: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  infoHint: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginTop: 8,
   },
   timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   timePickerBtn: {
@@ -306,28 +463,34 @@ const styles = StyleSheet.create({
     color: '#6C63FF',
     fontSize: 20,
     fontWeight: '800',
-    width: 60,
+    lineHeight: 28,
+    minWidth: 88,
+    paddingHorizontal: 8,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
-
-  trackingInfo: { alignItems: 'center', marginBottom: 40 },
-  trackingText: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
-  alarmText: { color: theme.colors.textSecondary, fontSize: 14, marginBottom: 4 },
-  trackingSub: { color: theme.colors.textMuted, fontSize: 12 },
 
   toggleBtn: {
+    width: '100%',
     backgroundColor: '#1A1A24',
     paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
+    paddingVertical: 18,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    alignItems: 'center',
   },
   toggleBtnActive: { backgroundColor: '#2A0A0A', borderColor: '#F44336' },
-  toggleBtnText: { color: theme.colors.textSecondary, fontWeight: '800', fontSize: 16 },
+  toggleBtnText: {
+    color: theme.colors.textSecondary,
+    fontWeight: '800',
+    fontSize: 16,
+    lineHeight: 22,
+    letterSpacing: 0.2,
+  },
 
   backBtn: { marginTop: 20, padding: 12 },
-  backBtnText: { color: theme.colors.textSecondary, fontSize: 14 },
+  backBtnText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
 
   alarmContainer: {
     flex: 1,
@@ -338,10 +501,11 @@ const styles = StyleSheet.create({
   },
   alarmOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#6C63FF22' },
   alarmTime: { color: '#fff', fontSize: 64, fontWeight: '900', marginBottom: 16 },
-  alarmTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  alarmTitle: { color: '#fff', fontSize: 24, lineHeight: 30, fontWeight: '800', marginBottom: 8 },
   alarmSub: {
     color: theme.colors.textSecondary,
     fontSize: 16,
+    lineHeight: 22,
     textAlign: 'center',
     marginBottom: 60,
   },
@@ -358,7 +522,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     marginBottom: 20,
   },
-  stopBtnText: { color: '#fff', fontSize: 20, fontWeight: '900', letterSpacing: 2 },
+  stopBtnText: { color: '#fff', fontSize: 20, lineHeight: 26, fontWeight: '900', letterSpacing: 2 },
   snoozeBtn: {
     paddingHorizontal: 30,
     paddingVertical: 12,
@@ -367,5 +531,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  snoozeBtnText: { color: theme.colors.textSecondary, fontSize: 16, fontWeight: '700' },
+  snoozeBtnText: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
 });

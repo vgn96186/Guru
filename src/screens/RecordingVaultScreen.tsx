@@ -44,7 +44,7 @@ import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel
 const CUSTOM_FOLDERS_KEY = 'guru_recording_vault_custom_folders';
 
 interface SavedFolder {
-  uri: string;   // SAF content:// tree URI
+  uri: string; // SAF content:// tree URI
   label: string; // human-readable folder name
 }
 
@@ -58,15 +58,18 @@ interface RecordingFile {
 
 type ProcessingState = 'idle' | 'transcribing' | 'saving' | 'done' | 'error';
 
-function entriesToRecordingFiles(entries: { name: string; path: string; size: number }[]): RecordingFile[] {
+function entriesToRecordingFiles(
+  entries: { name: string; path: string; size: number }[],
+): RecordingFile[] {
   return entries.map((e) => {
     const tsMatch = e.name.match(/lecture_(\d+)/);
     const date = tsMatch ? new Date(parseInt(tsMatch[1], 10)) : null;
     const parts = e.path.replace(/\\/g, '/').split('/');
     const guruIdx = parts.indexOf('Guru');
-    const folder = guruIdx >= 0 && guruIdx < parts.length - 2
-      ? parts.slice(guruIdx + 1, -1).join('/')
-      : parts.slice(-2, -1)[0] ?? 'Unknown';
+    const folder =
+      guruIdx >= 0 && guruIdx < parts.length - 2
+        ? parts.slice(guruIdx + 1, -1).join('/')
+        : (parts.slice(-2, -1)[0] ?? 'Unknown');
     return {
       name: e.name,
       path: e.path,
@@ -93,7 +96,11 @@ export default function RecordingVaultScreen() {
   useEffect(() => {
     void AsyncStorage.getItem(CUSTOM_FOLDERS_KEY).then((raw) => {
       if (raw) {
-        try { setSavedFolders(JSON.parse(raw)); } catch { /* ignore */ }
+        try {
+          setSavedFolders(JSON.parse(raw));
+        } catch {
+          /* ignore */
+        }
       }
     });
   }, []);
@@ -160,84 +167,84 @@ export default function RecordingVaultScreen() {
     return () => sub.remove();
   }, [needsFileAccess, loadRecordings]);
 
-  const processRecording = useCallback(async (
-    item: Pick<RecordingFile, 'path' | 'name' | 'sizeMB'> & { appName?: string },
-  ) => {
-    setProcessingFile(item.path);
-    setProcessingState('transcribing');
-    setProcessingMsg('Preparing audio...');
-    try {
-      // SAF content:// URIs must be copied to cache for transcription APIs
-      let filePath = item.path;
-      if (item.path.startsWith('content://')) {
-        const cacheDir = FileSystem.cacheDirectory ?? '';
-        const dest = `${cacheDir}vault_${Date.now()}_${item.name}`;
-        await FileSystem.copyAsync({ from: item.path, to: dest });
-        filePath = dest;
-      }
+  const processRecording = useCallback(
+    async (item: Pick<RecordingFile, 'path' | 'name' | 'sizeMB'> & { appName?: string }) => {
+      setProcessingFile(item.path);
+      setProcessingState('transcribing');
+      setProcessingMsg('Preparing audio...');
+      try {
+        // SAF content:// URIs must be copied to cache for transcription APIs
+        let filePath = item.path;
+        if (item.path.startsWith('content://')) {
+          const cacheDir = FileSystem.cacheDirectory ?? '';
+          const dest = `${cacheDir}vault_${Date.now()}_${item.name}`;
+          await FileSystem.copyAsync({ from: item.path, to: dest });
+          filePath = dest;
+        }
 
-      setProcessingMsg('Transcribing audio...');
-      const profile = await profileRepository.getProfile();
-      const keys = getApiKeys(profile);
+        setProcessingMsg('Transcribing audio...');
+        const profile = await profileRepository.getProfile();
+        const keys = getApiKeys(profile);
 
-      const analysis = await transcribeAudio({
-        audioFilePath: filePath,
-        groqKey: keys.groqKey,
-        huggingFaceToken: keys.hfToken,
-        useLocalWhisper: profile.useLocalWhisper,
-        localWhisperPath: profile.localWhisperPath ?? undefined,
-      });
+        const analysis = await transcribeAudio({
+          audioFilePath: filePath,
+          groqKey: keys.groqKey,
+          huggingFaceToken: keys.hfToken,
+          useLocalWhisper: profile.useLocalWhisper,
+          localWhisperPath: profile.localWhisperPath ?? undefined,
+        });
 
-      if (!analysis.transcript?.trim()) {
+        if (!analysis.transcript?.trim()) {
+          setProcessingState('error');
+          setProcessingMsg('No speech detected in this recording.');
+          return;
+        }
+
+        setProcessingState('saving');
+        setProcessingMsg(`Found ${analysis.topics.length} topics — saving...`);
+
+        await saveLecturePersistence({
+          analysis,
+          appName: item.appName ?? 'Recording Vault',
+          durationMinutes: item.sizeMB > 0 ? Math.round(item.sizeMB * 30) : 0, // rough estimate
+          logId: 0,
+          quickNote: '',
+          recordingPath: item.path,
+        });
+
+        setProcessingState('done');
+        setProcessingMsg(`Saved! ${analysis.topics.length} topics from ${analysis.subject}`);
+      } catch (e: any) {
         setProcessingState('error');
-        setProcessingMsg('No speech detected in this recording.');
-        return;
+        setProcessingMsg(e?.message ?? 'Processing failed');
       }
+    },
+    [],
+  );
 
-      setProcessingState('saving');
-      setProcessingMsg(`Found ${analysis.topics.length} topics — saving...`);
-
-      await saveLecturePersistence({
-        analysis,
-        appName: item.appName ?? 'Recording Vault',
-        durationMinutes: item.sizeMB > 0 ? Math.round(item.sizeMB * 30) : 0, // rough estimate
-        logId: 0,
-        quickNote: '',
-        recordingPath: item.path,
-      });
-
-      setProcessingState('done');
-      setProcessingMsg(`Saved! ${analysis.topics.length} topics from ${analysis.subject}`);
-    } catch (e: any) {
-      setProcessingState('error');
-      setProcessingMsg(e?.message ?? 'Processing failed');
-    }
-  }, []);
-
-  const handleProcess = useCallback(async (item: RecordingFile) => {
-    await processRecording(item);
-  }, [processRecording]);
+  const handleProcess = useCallback(
+    async (item: RecordingFile) => {
+      await processRecording(item);
+    },
+    [processRecording],
+  );
 
   const handleDelete = useCallback((item: RecordingFile) => {
-    Alert.alert(
-      'Delete Recording',
-      `Delete "${item.name}"? This cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteRecording(item.path);
-              setRecordings((prev) => prev.filter((r) => r.path !== item.path));
-            } catch {
-              Alert.alert('Error', 'Could not delete the file.');
-            }
-          },
+    Alert.alert('Delete Recording', `Delete "${item.name}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteRecording(item.path);
+            setRecordings((prev) => prev.filter((r) => r.path !== item.path));
+          } catch {
+            Alert.alert('Error', 'Could not delete the file.');
+          }
         },
-      ],
-    );
+      },
+    ]);
   }, []);
 
   const resetProcessing = useCallback(() => {
@@ -272,30 +279,28 @@ export default function RecordingVaultScreen() {
 
   const handleBatchDelete = useCallback(() => {
     const count = selectedPaths.size;
-    Alert.alert(
-      `Delete ${count} recording${count !== 1 ? 's' : ''}?`,
-      'This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete All',
-          style: 'destructive',
-          onPress: async () => {
-            const paths = [...selectedPaths];
-            let deleted = 0;
-            for (const p of paths) {
-              try {
-                await deleteRecording(p);
-                deleted++;
-              } catch { /* skip failures */ }
+    Alert.alert(`Delete ${count} recording${count !== 1 ? 's' : ''}?`, 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete All',
+        style: 'destructive',
+        onPress: async () => {
+          const paths = [...selectedPaths];
+          let deleted = 0;
+          for (const p of paths) {
+            try {
+              await deleteRecording(p);
+              deleted++;
+            } catch {
+              /* skip failures */
             }
-            setRecordings((prev) => prev.filter((r) => !selectedPaths.has(r.path)));
-            setSelectedPaths(new Set());
-            Alert.alert('Done', `Deleted ${deleted} recording${deleted !== 1 ? 's' : ''}.`);
-          },
+          }
+          setRecordings((prev) => prev.filter((r) => !selectedPaths.has(r.path)));
+          setSelectedPaths(new Set());
+          Alert.alert('Done', `Deleted ${deleted} recording${deleted !== 1 ? 's' : ''}.`);
         },
-      ],
-    );
+      },
+    ]);
   }, [selectedPaths]);
 
   const formatDate = (d: Date | null) => {
@@ -350,7 +355,7 @@ export default function RecordingVaultScreen() {
           </View>
         )}
         <View style={styles.cardBody}>
-          <Text style={styles.cardName} numberOfLines={1} ellipsizeMode="middle">
+          <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="middle">
             {item.name}
           </Text>
           <Text style={styles.cardMeta}>
@@ -359,7 +364,11 @@ export default function RecordingVaultScreen() {
           {isProcessing && processingMsg ? (
             <View style={styles.statusRow}>
               {processingState === 'transcribing' || processingState === 'saving' ? (
-                <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginRight: 6 }} />
+                <ActivityIndicator
+                  size="small"
+                  color={theme.colors.primary}
+                  style={{ marginRight: 6 }}
+                />
               ) : null}
               <Text
                 style={[
@@ -425,7 +434,10 @@ export default function RecordingVaultScreen() {
       void loadRecordings();
 
       if (entries.length > 0) {
-        Alert.alert('Folder added', `Found ${entries.length} recording${entries.length !== 1 ? 's' : ''}.`);
+        Alert.alert(
+          'Folder added',
+          `Found ${entries.length} recording${entries.length !== 1 ? 's' : ''}.`,
+        );
       } else {
         Alert.alert('Folder added', 'No .m4a files found yet. It will be scanned on each refresh.');
       }
@@ -450,7 +462,7 @@ export default function RecordingVaultScreen() {
       await processRecording({
         name: asset.name ?? `upload-${Date.now()}.m4a`,
         path: asset.uri,
-        sizeMB: Math.round((((asset.size ?? 0) / (1024 * 1024)) || 0) * 10) / 10,
+        sizeMB: Math.round(((asset.size ?? 0) / (1024 * 1024) || 0) * 10) / 10,
         appName: 'Recording Vault Upload',
       });
     } catch (e: any) {
@@ -460,20 +472,23 @@ export default function RecordingVaultScreen() {
     }
   }, [processRecording]);
 
-  const handleRemoveFolder = useCallback((folder: SavedFolder) => {
-    Alert.alert('Remove folder?', folder.label, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          const updated = savedFolders.filter((f) => f.uri !== folder.uri);
-          await persistFolders(updated);
-          void loadRecordings();
+  const handleRemoveFolder = useCallback(
+    (folder: SavedFolder) => {
+      Alert.alert('Remove folder?', folder.label, [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            const updated = savedFolders.filter((f) => f.uri !== folder.uri);
+            await persistFolders(updated);
+            void loadRecordings();
+          },
         },
-      },
-    ]);
-  }, [savedFolders, persistFolders, loadRecordings]);
+      ]);
+    },
+    [savedFolders, persistFolders, loadRecordings],
+  );
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -528,9 +543,7 @@ export default function RecordingVaultScreen() {
         {/* Selection mode banner */}
         {isSelectionMode && (
           <View style={styles.selectionBanner}>
-            <Text style={styles.selectionText}>
-              {selectedPaths.size} selected
-            </Text>
+            <Text style={styles.selectionText}>{selectedPaths.size} selected</Text>
             <View style={styles.selectionActions}>
               <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
                 <Text style={styles.selectionCancelText}>Cancel</Text>
@@ -570,7 +583,7 @@ export default function RecordingVaultScreen() {
                 onLongPress={() => handleRemoveFolder(f)}
               >
                 <Ionicons name="folder-outline" size={14} color={theme.colors.primary} />
-                <Text style={styles.folderChipText} numberOfLines={1}>
+                <Text style={styles.folderChipText} numberOfLines={2}>
                   {f.label}
                 </Text>
                 <TouchableOpacity onPress={() => handleRemoveFolder(f)} hitSlop={8}>
@@ -623,7 +636,7 @@ const styles = StyleSheet.create({
   backBtn: { marginRight: 12, padding: 4 },
   headerTextWrap: { flex: 1 },
   headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
-  headerSub: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  headerSub: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 2 },
   refreshBtn: { padding: 8 },
   topActions: {
     flexDirection: 'row',
@@ -669,10 +682,10 @@ const styles = StyleSheet.create({
   cardSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '12' },
   cardIcon: { marginRight: 12 },
   cardBody: { flex: 1, minWidth: 0 },
-  cardName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  cardMeta: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  cardName: { color: theme.colors.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  cardMeta: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
   statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  statusText: { color: theme.colors.textSecondary, fontSize: 12, flex: 1 },
+  statusText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, flex: 1 },
   cardActions: { flexDirection: 'row', gap: 4, marginLeft: 8 },
   actionBtn: {
     width: 36,
@@ -718,6 +731,7 @@ const styles = StyleSheet.create({
   folderChipText: {
     color: theme.colors.textSecondary,
     fontSize: 12,
+    lineHeight: 18,
     maxWidth: 160,
   },
   selectionBanner: {
@@ -764,6 +778,6 @@ const styles = StyleSheet.create({
     flex: 1,
     color: theme.colors.textSecondary,
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 19,
   },
 });

@@ -58,6 +58,7 @@ const LECTURE_STATE_KEY = 'current_lecture_state';
 const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
 const PROOF_OF_LIFE_WARNING = 30; // warn 30s before trigger
+const AUTO_SCRIBE_CHUNK_MS = 3 * 60 * 1000;
 const MAX_RECORDING_RETRIES = 3;
 const RECORDING_RETRY_DELAY = 2000;
 const STATE_SAVE_DEBOUNCE = 2000;
@@ -97,6 +98,8 @@ export default function LectureModeScreen() {
   const [isRecordingEnabled, setIsRecordingEnabled] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [recordingRetryCount, setRecordingRetryCount] = useState(0);
+  const shouldContinueAutoScribeRef = useRef(false);
+  const previousRecordingEnabledRef = useRef(false);
 
   const [partnerDoomscrolling, setPartnerDoomscrolling] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -259,6 +262,10 @@ export default function LectureModeScreen() {
   useEffect(() => {
     if (!profile) refreshProfile();
   }, [profile]);
+
+  useEffect(() => {
+    shouldContinueAutoScribeRef.current = isRecordingEnabled && !onBreak;
+  }, [isRecordingEnabled, onBreak]);
 
   useEffect(() => {
     void getAllSubjects()
@@ -526,7 +533,7 @@ export default function LectureModeScreen() {
     })();
   }, []);
 
-  async function startRecording() {
+  const startRecording = useCallback(async () => {
     try {
       if (recordingRef.current) {
         try {
@@ -570,7 +577,7 @@ export default function LectureModeScreen() {
       if (__DEV__) console.error('[LectureMode] Failed to start recording:', err);
       Alert.alert('Recording Error', 'Could not start microphone. Check permissions.');
     }
-  }
+  }, []);
 
   const processRecording = useCallback(async () => {
     if (!recording) {
@@ -645,11 +652,44 @@ export default function LectureModeScreen() {
     } finally {
       setIsTranscribing(false);
       setRecordingRetryCount(0);
-      if (isRecordingEnabled && !onBreak && elapsed > 0) {
-        startRecording();
+      if (shouldContinueAutoScribeRef.current && elapsed > 0) {
+        void startRecording();
       }
     }
-  }, [recording, isRecordingEnabled, onBreak, elapsed, recordingRetryCount]);
+  }, [recording, elapsed, recordingRetryCount, startRecording]);
+
+  useEffect(() => {
+    if (!isRecordingEnabled || onBreak || isTranscribing) return;
+
+    if (!recording && !recordingRef.current) {
+      void startRecording();
+      return;
+    }
+
+    if (!recording) return;
+
+    const elapsedMs = Math.max(0, Date.now() - recordingStartTimeRef.current);
+    const remainingMs = Math.max(1000, AUTO_SCRIBE_CHUNK_MS - elapsedMs);
+    const timeout = setTimeout(() => {
+      void processRecording();
+    }, remainingMs);
+
+    return () => clearTimeout(timeout);
+  }, [isRecordingEnabled, onBreak, isTranscribing, recording, processRecording, startRecording]);
+
+  useEffect(() => {
+    const wasEnabled = previousRecordingEnabledRef.current;
+    previousRecordingEnabledRef.current = isRecordingEnabled;
+
+    if (wasEnabled && !isRecordingEnabled && recordingRef.current && !isTranscribing) {
+      void processRecording();
+    }
+  }, [isRecordingEnabled, isTranscribing, processRecording]);
+
+  useEffect(() => {
+    if (!onBreak || !recordingRef.current || isTranscribing) return;
+    void processRecording();
+  }, [onBreak, isTranscribing, processRecording]);
 
   async function applyLectureAnalysis(
     analysis: {
@@ -1345,7 +1385,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     backgroundColor: theme.colors.surface,
   },
-  subjectChipText: { fontWeight: '700', fontSize: 13 },
+  subjectChipText: { fontWeight: '700', fontSize: 13, lineHeight: 18 },
   selectedSubject: {
     flexDirection: 'row',
     justifyContent: 'space-between',

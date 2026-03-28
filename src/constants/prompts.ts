@@ -53,6 +53,7 @@ Return JSON:
 
 Style: Extended clinical vignettes, highly rigorous, INICET standard difficulty.
 Explanation formatting is mandatory: use markdown headings and bullet points exactly as shown so it renders cleanly in-app. Avoid a single paragraph block.
+Use markdown bolding (**text**) only for the 3-5 most testable clues, discriminators, mechanisms, or takeaways in each explanation.
 
 IMAGE-BASED QUESTIONS (optional):
 For topics involving visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology), include an "imageSearchQuery" field in 1-2 questions with a precise medical image search query (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma"). The question text should reference the image: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" for non-visual questions.`;
@@ -95,8 +96,8 @@ Return JSON:
   "type": "teach_back",
   "topicName": "${topicName}",
   "prompt": "Explain [topic] as if teaching a fellow intern. What are the 3 most important things they must know?",
-  "keyPointsToMention": ["point1", "point2", "point3"],
-  "guruReaction": "If they mention these points, say this encouraging response"
+  "keyPointsToMention": ["point1 with **critical term**", "point2", "point3"],
+  "guruReaction": "If they mention these points, say this encouraging response with markdown bolding only on the most critical terms"
 }`;
 }
 
@@ -205,7 +206,7 @@ Return JSON:
 {
   "selectedTopicIds": [id1, id2],
   "focusNote": "Today: [topic names] — [brief context]",
-  "guruMessage": "A short (1-2 sentence) personalized motivational message from Guru. Be specific to mood and topics.",
+  "guruMessage": "A short (1-2 sentence) personalized message from Guru. Be specific to mood and topics. You may use markdown bolding for 1-3 key topic names or exam anchors only.",
   "reasoning": "why these topics"
 }
 

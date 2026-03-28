@@ -213,6 +213,12 @@ jest.mock('../hooks/useAppStateTransition', () => ({
 }));
 
 jest.mock('../components/LoadingOrb', () => 'LoadingOrb');
+jest.mock('../components/MarkdownRender', () => ({
+  MarkdownRender: ({ content }: { content: string }) => {
+    const { Text } = require('react-native');
+    return <Text>{content}</Text>;
+  },
+}));
 let latestContentCardProps: unknown;
 const mockContentCard = jest.fn();
 jest.mock('./ContentCard', () => (props: unknown) => {
@@ -243,11 +249,21 @@ describe('SessionScreen', () => {
     mockBuildSession.mockResolvedValue({
       items: [
         {
-          topic: { id: 1, name: 'Topic 1', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          topic: {
+            id: 1,
+            name: 'Topic 1',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
           contentTypes: ['quiz'],
         },
         {
-          topic: { id: 2, name: 'Topic 2', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          topic: {
+            id: 2,
+            name: 'Topic 2',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
           contentTypes: ['keypoints'],
         },
       ],
@@ -277,11 +293,21 @@ describe('SessionScreen', () => {
     sessionStoreState.agenda = {
       items: [
         {
-          topic: { id: 1, name: 'Topic 1', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          topic: {
+            id: 1,
+            name: 'Topic 1',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
           contentTypes: ['quiz'],
         },
         {
-          topic: { id: 2, name: 'Topic 2', subjectName: 'Medicine', progress: { status: 'unseen' } },
+          topic: {
+            id: 2,
+            name: 'Topic 2',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
           contentTypes: ['keypoints'],
         },
       ],

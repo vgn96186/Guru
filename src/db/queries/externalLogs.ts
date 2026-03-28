@@ -10,11 +10,27 @@ export type TranscriptionStatus =
   | 'dismissed';
 export type PipelineStageName = 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
 export type NoteEnhancementStatus = 'pending' | 'completed' | 'failed';
+export type PipelineProviderName =
+  | 'groq'
+  | 'cloudflare'
+  | 'huggingface'
+  | 'deepgram'
+  | 'local'
+  | 'unknown';
 
 export interface PipelineStageTelemetry {
   startedAt?: number;
   completedAt?: number;
   durationMs?: number;
+}
+
+export interface SessionPipelineEvent {
+  at: number;
+  stage: PipelineStageName | 'system';
+  message: string;
+  detail?: string;
+  percent?: number;
+  provider?: PipelineProviderName;
 }
 
 export interface SessionPipelineTelemetry {
@@ -30,6 +46,14 @@ export interface SessionPipelineTelemetry {
   errorStage?: 'validation' | 'transcribing' | 'analyzing' | 'saving' | 'enhancing';
   totalForegroundMs?: number;
   enhancementSucceeded?: boolean;
+  currentStage?: PipelineStageName;
+  currentMessage?: string;
+  currentDetail?: string;
+  currentPercent?: number;
+  currentProvider?: PipelineProviderName;
+  lastUpdatedAt?: number;
+  providerAttempts?: Partial<Record<PipelineProviderName, number>>;
+  events?: SessionPipelineEvent[];
   stages?: Partial<Record<PipelineStageName, PipelineStageTelemetry>>;
 }
 
@@ -161,6 +185,11 @@ function mergeTelemetry(
   return {
     ...(current ?? {}),
     ...patch,
+    providerAttempts: {
+      ...(current?.providerAttempts ?? {}),
+      ...(patch.providerAttempts ?? {}),
+    },
+    events: patch.events ?? current?.events,
     stages: {
       ...(current?.stages ?? {}),
       ...(patch.stages ?? {}),
@@ -179,6 +208,38 @@ export async function updateSessionPipelineTelemetry(
       [logId],
     );
     const merged = mergeTelemetry(parseTelemetry(row?.pipeline_metrics_json), patch);
+    await db.runAsync('UPDATE external_app_logs SET pipeline_metrics_json = ? WHERE id = ?', [
+      JSON.stringify(merged),
+      logId,
+    ]);
+  } catch (err: any) {
+    const msg = err?.message ?? '';
+    if (msg.includes('no such column') || msg.includes('no column named')) {
+      if (__DEV__) console.warn('[externalLogs] Query failed, old schema:', msg);
+    } else {
+      throw err;
+    }
+  }
+}
+
+export async function appendSessionPipelineEvent(
+  logId: number,
+  event: SessionPipelineEvent,
+  patch?: Partial<SessionPipelineTelemetry>,
+): Promise<void> {
+  const db = getDb();
+  try {
+    const row = await db.getFirstAsync<{ pipeline_metrics_json: string | null }>(
+      'SELECT pipeline_metrics_json FROM external_app_logs WHERE id = ?',
+      [logId],
+    );
+    const current = parseTelemetry(row?.pipeline_metrics_json);
+    const nextEvents = [...(current?.events ?? []), event].slice(-20);
+    const merged = mergeTelemetry(current, {
+      ...(patch ?? {}),
+      lastUpdatedAt: event.at,
+      events: nextEvents,
+    });
     await db.runAsync('UPDATE external_app_logs SET pipeline_metrics_json = ? WHERE id = ?', [
       JSON.stringify(merged),
       logId,

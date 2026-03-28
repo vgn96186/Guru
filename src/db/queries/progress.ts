@@ -21,10 +21,13 @@ import { showToast } from '../../components/Toast';
 
 // ── Enum allow-lists (single source of truth — update here when adding values) ──
 const VALID_ENUMS: Record<string, { values: readonly string[]; fallback: string }> = {
-  transcriptionProvider: { values: ['auto', 'groq', 'huggingface', 'cloudflare', 'deepgram', 'local'], fallback: 'auto' },
-  guruFrequency:         { values: ['rare', 'normal', 'frequent', 'off'], fallback: 'normal' },
-  studyResourceMode:     { values: ['standard', 'btr', 'dbmci_live', 'hybrid'], fallback: 'hybrid' },
-  examType:              { values: ['INICET', 'NEET'], fallback: 'INICET' },
+  transcriptionProvider: {
+    values: ['auto', 'groq', 'huggingface', 'cloudflare', 'deepgram', 'local'],
+    fallback: 'auto',
+  },
+  guruFrequency: { values: ['rare', 'normal', 'frequent', 'off'], fallback: 'normal' },
+  studyResourceMode: { values: ['standard', 'btr', 'dbmci_live', 'hybrid'], fallback: 'hybrid' },
+  examType: { values: ['INICET', 'NEET'], fallback: 'INICET' },
 };
 
 /** Clamp an enum field to its allow-list; returns fallback if value is invalid. */
@@ -32,7 +35,8 @@ function sanitizeEnum(field: string, value: unknown): string {
   const spec = VALID_ENUMS[field];
   if (!spec) return String(value ?? '');
   if (typeof value === 'string' && spec.values.includes(value)) return value;
-  if (__DEV__) console.warn(`[DB] Invalid value "${value}" for ${field}, falling back to "${spec.fallback}"`);
+  if (__DEV__)
+    console.warn(`[DB] Invalid value "${value}" for ${field}, falling back to "${spec.fallback}"`);
   return spec.fallback;
 }
 
@@ -113,6 +117,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     chatgpt_connected: number;
     fal_api_key: string;
     brave_search_api_key: string;
+    deepgram_api_key: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -189,12 +194,14 @@ export async function getUserProfile(): Promise<UserProfile> {
     examType: (r.exam_type === 'NEET' ? 'NEET' : 'INICET') as 'INICET' | 'NEET',
     inicetDate: (() => {
       const v = sanitizeExamDateOrDefault(r.inicet_date, DEFAULT_INICET_DATE);
-      if (v !== r.inicet_date && __DEV__) console.warn(`[Profile] inicet_date sanitized: DB="${r.inicet_date}" → "${v}"`);
+      if (v !== r.inicet_date && __DEV__)
+        console.warn(`[Profile] inicet_date sanitized: DB="${r.inicet_date}" → "${v}"`);
       return v;
     })(),
     neetDate: (() => {
       const v = sanitizeExamDateOrDefault(r.neet_date, DEFAULT_NEET_DATE);
-      if (v !== r.neet_date && __DEV__) console.warn(`[Profile] neet_date sanitized: DB="${r.neet_date}" → "${v}"`);
+      if (v !== r.neet_date && __DEV__)
+        console.warn(`[Profile] neet_date sanitized: DB="${r.neet_date}" → "${v}"`);
       return v;
     })(),
     preferredSessionLength: r.preferred_session_length,
@@ -275,6 +282,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     kiloApiKey: r.kilo_api_key ?? '',
     deepseekKey: r.deepseek_key ?? '',
     agentRouterKey: r.agentrouter_key ?? '',
+    deepgramApiKey: r.deepgram_api_key ?? '',
     providerOrder: (() => {
       try {
         return JSON.parse(r.provider_order ?? '[]');

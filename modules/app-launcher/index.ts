@@ -57,8 +57,36 @@ export async function requestMediaProjection(): Promise<boolean> {
  *   Pass `''` to always use the microphone regardless of MediaProjection status.
  * @returns A promise that resolves when the service has started (does not wait for recording to finish).
  */
-export async function startRecording(targetPackage: string = ''): Promise<string> {
-  return withTimeout(GuruAppLauncher.startRecording(targetPackage), 15_000, 'startRecording');
+export async function startRecording(
+  targetPackage: string = '',
+  liveTranscriptionKey?: string,
+  insightGenerationKey?: string,
+): Promise<string> {
+  try {
+    return await withTimeout(
+      GuruAppLauncher.startRecording(
+        targetPackage,
+        liveTranscriptionKey || null,
+        insightGenerationKey || null,
+      ),
+      15_000,
+      'startRecording',
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isArgumentMismatch =
+      /received \d+ arguments?,? but \d+ (?:was|were) expected/i.test(message) ||
+      /expected \d+ arguments?,? got \d+/i.test(message) ||
+      /invalid args number/i.test(message);
+    if (!isArgumentMismatch) {
+      throw error;
+    }
+    console.warn(
+      '[GuruAppLauncher] startRecording with live extras failed, retrying legacy signature',
+      error,
+    );
+    return withTimeout(GuruAppLauncher.startRecording(targetPackage), 15_000, 'startRecording');
+  }
 }
 
 /**
@@ -103,6 +131,18 @@ export async function isOverlayActive(): Promise<boolean> {
 
 export async function consumeLectureReturnRequest(): Promise<boolean> {
   return GuruAppLauncher.consumeLectureReturnRequest();
+}
+
+export async function consumePomodoroBreakRequest(): Promise<boolean> {
+  return GuruAppLauncher.consumePomodoroBreakRequest();
+}
+
+export async function readLiveTranscript(recordingPath: string): Promise<string | null> {
+  return GuruAppLauncher.readLiveTranscript(recordingPath);
+}
+
+export async function readLectureInsights(recordingPath: string): Promise<string | null> {
+  return GuruAppLauncher.readLectureInsights(recordingPath);
 }
 
 /**

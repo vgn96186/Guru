@@ -35,6 +35,7 @@ import GuruChatOverlay from '../components/GuruChatOverlay';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { theme } from '../constants/theme';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 interface TopicImageProps {
   topicName: string;
@@ -70,7 +71,12 @@ const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }
         <Image source={{ uri: url }} style={s.questionImage} resizeMode="contain" />
         <Text style={s.tapToEnlarge}>Tap to enlarge</Text>
       </TouchableOpacity>
-      <Modal visible={lightboxOpen} transparent animationType="fade" onRequestClose={() => setLightboxOpen(false)}>
+      <Modal
+        visible={lightboxOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLightboxOpen(false)}
+      >
         <Pressable style={s.lightboxBackdrop} onPress={() => setLightboxOpen(false)}>
           <Image
             source={{ uri: url }}
@@ -422,7 +428,7 @@ function KeyPointsCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📌 KEY POINTS</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
@@ -431,7 +437,7 @@ function KeyPointsCard({
           <View key={i} style={s.pointRow}>
             <Text style={s.bullet}>→</Text>
             <View style={{ flex: 1 }}>
-              <MarkdownRender content={pt} compact />
+              <MarkdownRender content={emphasizeHighYieldMarkdown(pt)} compact />
             </View>
           </View>
         ))}
@@ -439,7 +445,7 @@ function KeyPointsCard({
       {isFullyRevealed && (
         <View style={s.hookBox}>
           <Text style={s.hookLabel}>💡 Memory Hook</Text>
-          <Text style={s.hookText}>{content.memoryHook}</Text>
+          <MarkdownRender content={emphasizeHighYieldMarkdown(content.memoryHook)} compact />
         </View>
       )}
       {!isFullyRevealed ? (
@@ -471,7 +477,11 @@ function KeyPointsCard({
 
 // ── Quiz ──────────────────────────────────────────────────────────
 
-function formatQuizExplanation(rawExplanation: string, options: string[], correctIndex: number): string {
+function formatQuizExplanation(
+  rawExplanation: string,
+  options: string[],
+  correctIndex: number,
+): string {
   const decoded = rawExplanation
     .replace(/\r\n/g, '\n')
     .replace(/\\n/g, '\n')
@@ -493,9 +503,7 @@ function formatQuizExplanation(rawExplanation: string, options: string[], correc
     .replace(/\b([A-D])\.\s+/g, '$1) ')
     .replace(/\s+/g, ' ')
     .trim();
-  const withoutPrefix = normalized
-    .replace(/^Correct Answer\s*:\s*[A-D][.)]?\s*/i, '')
-    .trim();
+  const withoutPrefix = normalized.replace(/^Correct Answer\s*:\s*[A-D][.)]?\s*/i, '').trim();
   const body = withoutPrefix || normalized;
 
   const optionSplitPoints = body
@@ -514,11 +522,7 @@ function formatQuizExplanation(rawExplanation: string, options: string[], correc
 
   const sentences = body
     .split(/(?<=[.!?])\s+(?=[A-Z])/)
-    .map((sentence) =>
-      sentence
-        .replace(/\b([A-D])\)\s+/g, '$1. ')
-        .trim(),
-    )
+    .map((sentence) => sentence.replace(/\b([A-D])\)\s+/g, '$1. ').trim())
     .filter(Boolean);
 
   const whyCorrect = sentences.slice(0, 2);
@@ -535,9 +539,11 @@ function formatQuizExplanation(rawExplanation: string, options: string[], correc
     .map((point) => `- ${point}`)
     .join('\n');
 
-  const wrongSection = (whyOthersWrong.length > 0
-    ? whyOthersWrong
-    : ['Eliminate distractors using the most specific vignette clues and pathophysiology.'])
+  const wrongSection = (
+    whyOthersWrong.length > 0
+      ? whyOthersWrong
+      : ['Eliminate distractors using the most specific vignette clues and pathophysiology.']
+  )
     .map((point) => {
       const cleaned = point.replace(/^-\s*/, '').trim();
       const optionWordMatch = cleaned.match(/^Option\s+([A-D])\s*(?:[:.)-])?\s*(.*)$/i);
@@ -546,7 +552,8 @@ function formatQuizExplanation(rawExplanation: string, options: string[], correc
         const rest = optionWordMatch[2].trim();
         return `- **${letter}.** ${rest}`;
       }
-      if (/^[A-D][.)]\s+/.test(cleaned)) return `- **${cleaned.slice(0, 2).replace(')', '.')}** ${cleaned.slice(2).trim()}`;
+      if (/^[A-D][.)]\s+/.test(cleaned))
+        return `- **${cleaned.slice(0, 2).replace(')', '.')}** ${cleaned.slice(2).trim()}`;
       return `- ${cleaned}`;
     })
     .join('\n');
@@ -615,7 +622,15 @@ function QuizCard({
         5,
       ),
     );
-  }, [validQuestions.length, currentQ, onContextChange, q, selected, showExpl, formattedExplanation]);
+  }, [
+    validQuestions.length,
+    currentQ,
+    onContextChange,
+    q,
+    selected,
+    showExpl,
+    formattedExplanation,
+  ]);
 
   const scoreRef = React.useRef(score);
   scoreRef.current = score;
@@ -658,7 +673,9 @@ function QuizCard({
       );
       setDeepExplanation(result);
     } catch {
-      setDeepExplanation('Could not generate explanation. Try the Guru chat button above for help.');
+      setDeepExplanation(
+        'Could not generate explanation. Try the Guru chat button above for help.',
+      );
     } finally {
       setIsLoadingDeepExpl(false);
     }
@@ -688,12 +705,10 @@ function QuizCard({
           QUIZ {currentQ + 1}/{validQuestions.length}
         </Text>
       </View>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
-      {q.imageUrl ? (
-        <QuestionImage url={q.imageUrl} />
-      ) : null}
+      {q.imageUrl ? <QuestionImage url={q.imageUrl} /> : null}
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
@@ -724,11 +739,7 @@ function QuizCard({
       </View>
       {/* "I don't know" button — shown before answering */}
       {selected === null && (
-        <TouchableOpacity
-          style={s.iDontKnowBtn}
-          onPress={handleIDontKnow}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={s.iDontKnowBtn} onPress={handleIDontKnow} activeOpacity={0.8}>
           <Text style={s.iDontKnowText}>I don't know — Explain this</Text>
         </TouchableOpacity>
       )}
@@ -772,7 +783,7 @@ function QuizCard({
               <Ionicons name="reader-outline" size={14} color={theme.colors.primary} />
               <Text style={s.explSectionTitle}>Explanation</Text>
             </View>
-            <MarkdownRender content={formattedExplanation} />
+            <MarkdownRender content={emphasizeHighYieldMarkdown(formattedExplanation)} />
           </View>
         </View>
       )}
@@ -801,7 +812,7 @@ function QuizCard({
             <Ionicons name="school-outline" size={14} color={theme.colors.primary} />
             <Text style={s.explSectionTitle}>Deeper Explanation</Text>
           </View>
-          <MarkdownRender content={deepExplanation} compact />
+          <MarkdownRender content={emphasizeHighYieldMarkdown(deepExplanation)} compact />
         </View>
       )}
       {showExpl && (
@@ -836,12 +847,12 @@ function StoryCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📖 CLINICAL STORY</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
       <View style={{ marginBottom: 20 }}>
-        <MarkdownRender content={content.story} />
+        <MarkdownRender content={emphasizeHighYieldMarkdown(content.story)} />
       </View>
       <View style={s.highlightsBox}>
         <Text style={s.highlightsLabel}>Key concepts in this story:</Text>
@@ -902,7 +913,7 @@ function MnemonicCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🧠 MNEMONIC</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
@@ -913,14 +924,14 @@ function MnemonicCard({
         {revealStep >= 1 &&
           content.expansion.map((line, i) => (
             <View key={i} style={{ paddingLeft: 8 }}>
-              <MarkdownRender content={line} compact />
+              <MarkdownRender content={emphasizeHighYieldMarkdown(line)} compact />
             </View>
           ))}
       </View>
       {revealStep >= 2 && (
         <View style={s.hookBox}>
           <Text style={s.hookLabel}>💡 Tip</Text>
-          <Text style={s.hookText}>{content.tip}</Text>
+          <MarkdownRender content={emphasizeHighYieldMarkdown(content.tip)} compact />
         </View>
       )}
       {revealStep < 2 ? (
@@ -1005,7 +1016,7 @@ function TeachBackCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🎤 TEACH BACK</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
@@ -1039,14 +1050,19 @@ function TeachBackCard({
             <Text style={s.explLabel}>
               Guru's Review (Score: {guruFeedback?.score ?? '?'} / 5):
             </Text>
-            <Text style={s.explText}>{guruFeedback?.feedback ?? content.guruReaction}</Text>
+            <View style={s.markdownBlock}>
+              <MarkdownRender
+                content={emphasizeHighYieldMarkdown(guruFeedback?.feedback ?? content.guruReaction)}
+                compact
+              />
+            </View>
             {guruFeedback?.missed && guruFeedback.missed.length > 0 && (
               <View style={s.missedBox}>
                 <Text style={s.missedLabel}>You missed:</Text>
                 {guruFeedback.missed.map((m, i) => (
-                  <Text key={i} style={s.missedText}>
-                    • {m}
-                  </Text>
+                  <View key={i} style={s.markdownListItem}>
+                    <MarkdownRender content={emphasizeHighYieldMarkdown(`- ${m}`)} compact />
+                  </View>
                 ))}
               </View>
             )}
@@ -1054,9 +1070,9 @@ function TeachBackCard({
           <View style={s.highlightsBox}>
             <Text style={s.highlightsLabel}>Expected key points:</Text>
             {content.keyPointsToMention.map((pt, i) => (
-              <Text key={i} style={s.pointText}>
-                ✓ {pt}
-              </Text>
+              <View key={i} style={s.markdownListItem}>
+                <MarkdownRender content={emphasizeHighYieldMarkdown(`- ${pt}`)} compact />
+              </View>
             ))}
           </View>
           <ConfidenceRating
@@ -1107,7 +1123,7 @@ function ErrorHuntCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🔍 ERROR HUNT</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
@@ -1127,7 +1143,7 @@ function ErrorHuntCard({
               <Text style={[s.explText, { color: '#F44336' }]}>❌ "{err.wrong}"</Text>
               <Text style={[s.explText, { color: '#4CAF50' }]}>✅ Should be: "{err.correct}"</Text>
               <View style={{ marginTop: 4 }}>
-                <MarkdownRender content={err.explanation} />
+                <MarkdownRender content={emphasizeHighYieldMarkdown(err.explanation)} />
               </View>
             </View>
           ))}
@@ -1173,7 +1189,7 @@ function DetectiveCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>🕵️ CLINICAL DETECTIVE</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
@@ -1206,7 +1222,7 @@ function DetectiveCard({
               {content.answer}
             </Text>
             <View style={{ marginTop: 4 }}>
-              <MarkdownRender content={content.explanation} />
+              <MarkdownRender content={emphasizeHighYieldMarkdown(content.explanation)} />
             </View>
           </View>
           <ConfidenceRating onRate={onDone} />
@@ -1235,7 +1251,7 @@ function ManualReviewCard({
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
       <Text style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</Text>
-      <Text style={s.cardTitle} numberOfLines={2} ellipsizeMode="tail">
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
       <TopicImage topicName={content.topicName} />
@@ -1380,7 +1396,7 @@ function SocraticCard({
                 borderColor: '#1E5C1E',
               }}
             >
-              <MarkdownRender content={question.answer} />
+              <MarkdownRender content={emphasizeHighYieldMarkdown(question.answer)} />
             </View>
             <Text
               style={{
@@ -1457,7 +1473,7 @@ const s = StyleSheet.create({
   container: { padding: 20, paddingBottom: 60 },
   cardType: {
     color: '#6C63FF',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.5,
     marginBottom: 6,
@@ -1484,7 +1500,8 @@ const s = StyleSheet.create({
   },
   tapToEnlarge: {
     color: '#888',
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 18,
     textAlign: 'center' as const,
     marginBottom: 14,
   },
@@ -1506,7 +1523,7 @@ const s = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: '#6C63FF',
   },
-  hookLabel: { color: '#6C63FF', fontSize: 11, fontWeight: '700', marginBottom: 6 },
+  hookLabel: { color: '#6C63FF', fontSize: 12, fontWeight: '700', marginBottom: 6 },
   hookText: { color: '#E0E0E0', fontSize: 14, fontStyle: 'italic' },
   doneBtn: {
     backgroundColor: '#6C63FF',
@@ -1560,7 +1577,12 @@ const s = StyleSheet.create({
     padding: 10,
     marginVertical: 8,
   },
-  correctAnswerLabel: { color: '#4CAF50', fontSize: 11, fontWeight: '700' as const, marginBottom: 4 },
+  correctAnswerLabel: {
+    color: '#4CAF50',
+    fontSize: 12,
+    fontWeight: '700' as const,
+    marginBottom: 4,
+  },
   correctAnswerText: { color: '#E0E0E0', fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
   explSection: { marginTop: 8 },
   explSectionTitle: {
@@ -1589,7 +1611,11 @@ const s = StyleSheet.create({
     marginBottom: 12,
     gap: 10,
   },
-  deepExplLoadingText: { color: theme.colors.textSecondary, fontSize: 13, fontStyle: 'italic' as const },
+  deepExplLoadingText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    fontStyle: 'italic' as const,
+  },
   explBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 12 },
   explLabel: {
     color: theme.colors.textSecondary,
@@ -1598,11 +1624,13 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   explText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
+  markdownBlock: { marginTop: 2 },
+  markdownListItem: { marginBottom: 4 },
   storyText: { color: '#E0E0E0', fontSize: 15, lineHeight: 26, marginBottom: 20 },
   highlightsBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 20 },
   highlightsLabel: {
     color: theme.colors.textSecondary,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     marginBottom: 8,
   },
@@ -1615,7 +1643,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#6C63FF44',
   },
-  chipText: { color: '#6C63FF', fontSize: 12, fontWeight: '600' },
+  chipText: { color: '#6C63FF', fontSize: 12, lineHeight: 18, fontWeight: '600' },
   mnemonicBox: {
     backgroundColor: '#1A1A2E',
     borderRadius: 16,
@@ -1650,13 +1678,12 @@ const s = StyleSheet.create({
   paragraphText: { color: '#E0E0E0', fontSize: 15, lineHeight: 24 },
   clueBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 8 },
   clueBoxNew: { borderColor: '#6C63FF', borderWidth: 1 },
-  clueNum: { color: '#6C63FF', fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  clueNum: { color: '#6C63FF', fontSize: 12, fontWeight: '700', marginBottom: 4 },
   clueText: { color: '#E0E0E0', fontSize: 15, lineHeight: 22 },
   detectiveActions: { gap: 8, marginTop: 8 },
   hintBtn: { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF' },
   missedBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2A2A38' },
-  missedLabel: { color: '#F44336', fontSize: 11, fontWeight: '700', marginBottom: 4 },
-  missedText: { color: theme.colors.textSecondary, fontSize: 13, fontStyle: 'italic' },
+  missedLabel: { color: '#F44336', fontSize: 12, fontWeight: '700', marginBottom: 4 },
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',

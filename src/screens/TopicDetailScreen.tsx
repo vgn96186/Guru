@@ -61,9 +61,9 @@ const STATUS_COLORS: Record<TopicStatus, string> = {
 };
 
 const STATUS_LABELS: Record<TopicStatus, string> = {
-  unseen: 'Not started',
+  unseen: 'Unseen',
   seen: 'Seen',
-  reviewed: 'Reviewed',
+  reviewed: 'Review',
   mastered: 'Mastered',
 };
 
@@ -609,7 +609,7 @@ export default function TopicDetailScreen() {
                       )}
                       <Text
                         style={[styles.topicName, isParent && styles.parentName]}
-                        numberOfLines={2}
+                        numberOfLines={3}
                         ellipsizeMode="tail"
                       >
                         {item.name}
@@ -667,7 +667,7 @@ export default function TopicDetailScreen() {
                       </View>
                     )}
                     {item.progress.userNotes ? (
-                      <Text style={styles.notePreview} numberOfLines={2}>
+                      <Text style={styles.notePreview} numberOfLines={3}>
                         📝 {item.progress.userNotes}
                       </Text>
                     ) : null}
@@ -916,14 +916,20 @@ const styles = StyleSheet.create({
   bulkHighYieldChip: { backgroundColor: '#4A3610' },
   bulkWeakChip: { backgroundColor: '#2E244C' },
   bulkChipText: { color: '#F3F4F8', fontSize: 12, fontWeight: '800' },
-  legend: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 8, gap: 12 },
-  legendItem: { flexDirection: 'row', alignItems: 'center' },
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    gap: 12,
+  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', minWidth: '42%', flexShrink: 1 },
   legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
-  legendText: { color: theme.colors.textMuted, fontSize: 12 },
+  legendText: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, flexShrink: 1 },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   topicRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#1A1A24',
     borderRadius: 12,
     marginBottom: 8,
@@ -935,15 +941,15 @@ const styles = StyleSheet.create({
   topicInfo: { flex: 1, minWidth: 0, padding: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
   folderIcon: { color: '#6C63FF', fontSize: 12, fontWeight: '900' },
-  topicName: { color: '#fff', fontWeight: '600', fontSize: 15, flex: 1 },
+  topicName: { color: '#fff', fontWeight: '600', fontSize: 15, lineHeight: 21, flex: 1 },
   parentName: { fontSize: 16, fontWeight: '800', color: '#6C63FF', flex: 1 },
   parentSummaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  parentSummaryText: { color: '#A3ACC2', fontSize: 11, fontWeight: '700' },
-  parentDueText: { color: '#FFB6BC', fontSize: 11, fontWeight: '800' },
-  parentHighYieldText: { color: '#FFD36C', fontSize: 11, fontWeight: '800' },
-  topicMeta: { flexDirection: 'row', marginTop: 4 },
-  topicMetaText: { color: theme.colors.textSecondary, fontSize: 11 },
-  studiedText: { color: '#6C63FF', fontSize: 11 },
+  parentSummaryText: { color: '#A3ACC2', fontSize: 12, fontWeight: '700' },
+  parentDueText: { color: '#FFB6BC', fontSize: 12, fontWeight: '800' },
+  parentHighYieldText: { color: '#FFD36C', fontSize: 12, fontWeight: '800' },
+  topicMeta: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
+  topicMetaText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  studiedText: { color: '#6C63FF', fontSize: 12, lineHeight: 18 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   highYieldBadge: {
     color: '#241600',
@@ -981,14 +987,33 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   reviewOverdue: { backgroundColor: '#2A1A1A' },
-  reviewText: { color: '#4CAF50', fontSize: 11, fontWeight: '600' },
+  reviewText: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },
   reviewTextOverdue: { color: '#F44336' },
-  topicRight: { padding: 12, alignItems: 'flex-end' },
+  topicRight: {
+    paddingTop: 12,
+    paddingRight: 14,
+    paddingBottom: 12,
+    paddingLeft: 8,
+    alignItems: 'flex-end',
+    minWidth: 96,
+  },
   confRow: { flexDirection: 'row', gap: 3, marginBottom: 4, alignItems: 'center' },
   confLabel: { color: theme.colors.textMuted, fontSize: 9, fontWeight: '700', marginRight: 2 },
   confDot: { width: 6, height: 6, borderRadius: 3 },
-  statusLabel: { fontSize: 11, fontWeight: '600' },
-  notePreview: { color: '#6C63FF', fontSize: 11, marginTop: 3, fontStyle: 'italic' },
+  statusLabel: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '600',
+    textAlign: 'right',
+    paddingRight: 1,
+  },
+  notePreview: {
+    color: '#6C63FF',
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 3,
+    fontStyle: 'italic',
+  },
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center' },
   notesExpanded: {

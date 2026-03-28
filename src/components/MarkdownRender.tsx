@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { theme } from '../constants/theme';
 
@@ -20,15 +20,50 @@ function normalizeRenderableMarkdown(content: string): string {
     .replace(/\r/g, '\n');
 }
 
-export const MarkdownRender = React.memo(function MarkdownRender({ content, compact }: MarkdownRenderProps) {
+export const MarkdownRender = React.memo(function MarkdownRender({
+  content,
+  compact,
+}: MarkdownRenderProps) {
   const normalizedContent = normalizeRenderableMarkdown(content);
   const mergedStyles = compact
-    ? { ...markdownStyles, paragraph: { marginBottom: 0, marginTop: 0 }, body: { ...markdownStyles.body, marginBottom: 0 } }
+    ? {
+        ...markdownStyles,
+        paragraph: { marginBottom: 0, marginTop: 0 },
+        body: { ...markdownStyles.body, marginBottom: 0 },
+      }
     : markdownStyles;
+  const rules = React.useMemo(
+    () => ({
+      strong: (node: any, children: React.ReactNode, _parent: any, styles: any) => (
+        <Text key={node.key} style={styles.strong}>
+          {children}
+        </Text>
+      ),
+      text: (
+        node: any,
+        _children: React.ReactNode,
+        parent: Array<{ type: string }>,
+        styles: any,
+        inheritedStyles: any = {},
+      ) => {
+        const isInsideStrong =
+          Array.isArray(parent) && parent.some((entry) => entry.type === 'strong');
+        return (
+          <Text
+            key={node.key}
+            style={[inheritedStyles, styles.text, isInsideStrong ? styles.strong : null]}
+          >
+            {node.content}
+          </Text>
+        );
+      },
+    }),
+    [],
+  );
 
   return (
     <View style={styles.container}>
-      <Markdown style={mergedStyles}>
+      <Markdown style={mergedStyles} rules={rules}>
         {normalizedContent}
       </Markdown>
     </View>
@@ -47,11 +82,10 @@ const markdownStyles: any = {
     fontSize: 17,
     lineHeight: 28,
     flexShrink: 1,
-    includeFontPadding: false,
   },
   strong: {
-    color: '#E2D27A',
-    fontWeight: '800',
+    color: '#F3DF84',
+    fontWeight: '900',
   },
   em: {
     fontStyle: 'italic',

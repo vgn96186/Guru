@@ -302,7 +302,7 @@ export default function StudyPlanScreen() {
             {item.topic.inicetPriority >= 8 && <Text style={styles.tagHighYield}>HY</Text>}
             <Text
               style={[styles.topicName, isCompleted && styles.topicNameCompleted]}
-              numberOfLines={2}
+              numberOfLines={3}
               ellipsizeMode="tail"
             >
               {item.topic.name}
@@ -513,7 +513,7 @@ export default function StudyPlanScreen() {
                 >
                   <View style={[styles.dot, { backgroundColor: topic.subjectColor }]} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
+                    <Text style={styles.topicName} numberOfLines={3} ellipsizeMode="tail">
                       {topic.name}
                     </Text>
                     <Text style={styles.topicSub}>{topic.subjectName}</Text>
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
   },
   forecastLabel: {
     color: '#7E8496',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
     marginBottom: 4,
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressBarFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 3 },
-  progressLabel: { color: theme.colors.textMuted, fontSize: 11 },
+  progressLabel: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18 },
 
   sectionTitle: {
     color: theme.colors.textSecondary,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
 
   topicRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#16161C',
     padding: 12,
     borderRadius: 10,
@@ -694,25 +694,25 @@ const styles = StyleSheet.create({
   rowDeep: { borderColor: '#F4433644', borderLeftWidth: 3, borderLeftColor: '#F44336' },
   rowCompleted: { opacity: 0.7, backgroundColor: '#132017', borderColor: '#2C5A36' },
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
-  topicName: { color: '#E0E0E0', fontSize: 14, fontWeight: '600' },
+  topicName: { color: '#E0E0E0', fontSize: 15, lineHeight: 21, fontWeight: '600' },
   topicNameCompleted: { textDecorationLine: 'line-through', color: '#A8D9B2' },
-  topicSub: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+  topicSub: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
   topicTime: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  startHint: { color: '#6C63FF', fontSize: 11, marginTop: 2 },
-  completedLabel: { color: '#63C27D', fontSize: 11, fontWeight: '800', marginTop: 4 },
+  startHint: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
+  completedLabel: { color: '#63C27D', fontSize: 12, fontWeight: '800', marginTop: 4 },
   reasonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   reasonPill: {
     color: '#CBD3E2',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: '#252734',
   },
 
   tagReview: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.success,
     fontWeight: '900',
     backgroundColor: theme.colors.successTintSoft,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   tagDeep: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.error,
     fontWeight: '900',
     backgroundColor: theme.colors.errorTintSoft,
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   tagNew: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.primary,
     fontWeight: '900',
     backgroundColor: theme.colors.primaryTintSoft,
@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   tagHighYield: {
-    fontSize: 11,
+    fontSize: 12,
     color: theme.colors.textInverse,
     fontWeight: '900',
     backgroundColor: theme.colors.accentAlt,
@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptySectionTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  emptySectionSub: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 6 },
+  emptySectionSub: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
 
   restBox: {
     padding: 12,

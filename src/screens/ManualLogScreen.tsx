@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   topicChip: { maxWidth: 200 },
-  subjectText: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '600' },
+  subjectText: { color: theme.colors.textPrimary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
   input: {
     backgroundColor: theme.colors.inputBg,
     borderRadius: 12,

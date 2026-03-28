@@ -25,8 +25,7 @@ describe('chatgptApi', () => {
       ok: true,
       body: null,
       text: async () =>
-        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
-        'data: [DONE]\n\n',
+        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' + 'data: [DONE]\n\n',
     });
 
     await expect(callChatGpt([{ role: 'user', content: 'hello' }], undefined, false)).resolves.toBe(
@@ -121,8 +120,7 @@ describe('chatgptApi', () => {
       ok: true,
       body: null,
       text: async () =>
-        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
-        'data: [DONE]\n\n',
+        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' + 'data: [DONE]\n\n',
     });
 
     await callChatGpt(
@@ -141,7 +139,41 @@ describe('chatgptApi', () => {
         {
           type: 'message',
           role: 'user',
-          content: [{ type: 'input_text', text: 'hello' }],
+          content: [{ type: 'input_text', text: 'hello\n\nRespond in JSON format.' }],
+        },
+      ],
+      store: false,
+      include: ['reasoning.encrypted_content'],
+      stream: true,
+      text: { format: { type: 'json_object' } },
+    });
+  });
+
+  it('does not append the JSON cue when input already mentions json', async () => {
+    (expoFetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      body: null,
+      text: async () =>
+        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' + 'data: [DONE]\n\n',
+    });
+
+    await callChatGpt(
+      [
+        { role: 'system', content: 'Be precise.' },
+        { role: 'user', content: 'Return valid JSON with keys a and b.' },
+      ],
+      'gpt-5.4',
+      true,
+    );
+
+    expect(JSON.parse((expoFetch as jest.Mock).mock.calls[0][1].body)).toEqual({
+      model: 'gpt-5.4',
+      instructions: 'Be precise.',
+      input: [
+        {
+          type: 'message',
+          role: 'user',
+          content: [{ type: 'input_text', text: 'Return valid JSON with keys a and b.' }],
         },
       ],
       store: false,
@@ -156,8 +188,7 @@ describe('chatgptApi', () => {
       ok: true,
       body: null,
       text: async () =>
-        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
-        'data: [DONE]\n\n',
+        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' + 'data: [DONE]\n\n',
     });
 
     await callChatGpt(

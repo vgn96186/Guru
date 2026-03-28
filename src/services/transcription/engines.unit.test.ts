@@ -90,6 +90,27 @@ describe('transcription engines (Groq / HF)', () => {
     await expect(transcribeRawWithGroq('file:///tmp/a.m4a', 'k')).rejects.toThrow(/429/);
   });
 
+  it('transcribeRawWithGroq converts aborted requests into timeout errors', async () => {
+    const abortError = new Error('aborted');
+    abortError.name = 'AbortError';
+    global.fetch = jest.fn().mockRejectedValue(abortError);
+
+    await expect(transcribeRawWithGroq('file:///tmp/a.m4a', 'k')).rejects.toThrow(/timed out/i);
+  });
+
+  it('transcribeRawWithGroq rejects oversized files before uploading them', async () => {
+    global.fetch = jest.fn();
+    mockGetInfoAsync.mockResolvedValueOnce({
+      exists: true,
+      size: 26 * 1024 * 1024,
+    });
+
+    await expect(transcribeRawWithGroq('/tmp/large.m4a', 'k')).rejects.toThrow(
+      /limited to 25 MB files/i,
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it('transcribeRawWithGroq returns empty string for classic hallucination patterns', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,

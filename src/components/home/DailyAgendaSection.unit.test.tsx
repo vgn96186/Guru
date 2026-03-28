@@ -75,14 +75,14 @@ describe('DailyAgendaSection', () => {
   it('renders list of tasks when todayTasks is not empty', () => {
     const { getByText } = render(<DailyAgendaSection {...defaultProps} todayTasks={mockTasks} />);
 
-    expect(getByText("📅 Today's Agenda")).toBeTruthy();
+    expect(getByText("Today's Agenda")).toBeTruthy();
 
     expect(getByText('Task 1')).toBeTruthy();
-    expect(getByText(/REL · Subject 1/i)).toBeTruthy();
+    expect(getByText(/REL - Subject 1/i)).toBeTruthy();
     expect(getByText('10:00 AM')).toBeTruthy();
 
     expect(getByText('Task 2')).toBeTruthy();
-    expect(getByText(/DEEP · Subject 2/i)).toBeTruthy();
+    expect(getByText(/DEEP - Subject 2/i)).toBeTruthy();
     expect(getByText('11:00 AM')).toBeTruthy();
 
     expect(getByText('Task 3')).toBeTruthy();

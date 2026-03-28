@@ -1,29 +1,66 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  View,
+  type StyleProp,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import AppText from './AppText';
 import { theme } from '../constants/theme';
 
 interface Props {
   topics: string[];
   /** If true, wraps onto multiple lines instead of horizontal scroll */
   wrap?: boolean;
+  truncate?: boolean;
+  maxVisible?: number;
+  rowStyle?: StyleProp<ViewStyle>;
+  pillStyle?: StyleProp<TextStyle>;
+  moreBadgeStyle?: StyleProp<TextStyle>;
 }
 
-export default React.memo(function TopicPillRow({ topics, wrap = false }: Props) {
+export default React.memo(function TopicPillRow({
+  topics,
+  wrap = false,
+  truncate = false,
+  maxVisible,
+  rowStyle,
+  pillStyle,
+  moreBadgeStyle,
+}: Props) {
   if (topics.length === 0) return null;
 
-  const pills = topics.map((t, i) => (
-    <View key={i} style={styles.pill}>
-      <Text style={styles.pillText}>{t}</Text>
-    </View>
+  const visibleTopics = typeof maxVisible === 'number' ? topics.slice(0, maxVisible) : topics;
+  const hiddenCount = topics.length - visibleTopics.length;
+
+  const pills = visibleTopics.map((topic, index) => (
+    <AppText
+      key={`${topic}-${index}`}
+      variant="chip"
+      truncate={truncate}
+      style={[styles.pill, pillStyle]}
+    >
+      {topic}
+    </AppText>
   ));
 
+  if (hiddenCount > 0) {
+    pills.push(
+      <AppText key="__more" variant="badge" tone="muted" style={[styles.moreBadge, moreBadgeStyle]}>
+        +{hiddenCount}
+      </AppText>,
+    );
+  }
+
   if (wrap) {
-    return <View style={styles.wrapRow}>{pills}</View>;
+    return <View style={[styles.wrapRow, rowStyle]}>{pills}</View>;
   }
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scroll}>
-      <View style={styles.scrollRow}>{pills}</View>
+      <View style={[styles.scrollRow, rowStyle]}>{pills}</View>
     </ScrollView>
   );
 });
@@ -39,6 +76,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    color: theme.colors.textPrimary,
   },
-  pillText: { color: theme.colors.textPrimary, fontSize: 13 },
+  moreBadge: {
+    alignSelf: 'center',
+    paddingHorizontal: 4,
+  },
 });

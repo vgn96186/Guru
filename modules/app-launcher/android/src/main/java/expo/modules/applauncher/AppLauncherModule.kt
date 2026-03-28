@@ -28,6 +28,8 @@ import java.nio.ByteOrder
 class AppLauncherModule : Module() {
     // Holds the current recording output path so JS can retrieve it after stopRecording
     private var currentRecordingPath: String? = null
+    private var currentLiveTranscriptPath: String? = null
+    private var currentLectureInsightPath: String? = null
 
     // MediaProjection request handling
     private var projectionDeferred: CompletableDeferred<Boolean>? = null
@@ -432,12 +434,17 @@ class AppLauncherModule : Module() {
             return@AsyncFunction granted
         }
 
-        AsyncFunction("startRecording") { targetPackage: String ->
+        AsyncFunction("startRecording") { targetPackage: String, deepgramKey: String?, groqKey: String? ->
             val context = appContext.reactContext ?: throw Exception("No context")
             // CRITICAL: Save to Public Documents/Guru so it SURVIVES reinstall
             val dir = getPublicGuruDir()
-            val path = File(dir, "lecture_${System.currentTimeMillis()}.m4a").absolutePath
+            val timestamp = System.currentTimeMillis()
+            val path = File(dir, "lecture_${timestamp}.m4a").absolutePath
+            val liveTranscriptPath = File(dir, "lecture_${timestamp}.live.txt").absolutePath
+            val lectureInsightPath = File(dir, "lecture_${timestamp}.quiz.json").absolutePath
             currentRecordingPath = path
+            currentLiveTranscriptPath = liveTranscriptPath
+            currentLectureInsightPath = lectureInsightPath
             // ...
 
             // Determine recording mode & target UID
@@ -458,6 +465,10 @@ class AppLauncherModule : Module() {
                 putExtra(RecordingService.EXTRA_OUTPUT_PATH, path)
                 putExtra(RecordingService.EXTRA_MODE, mode)
                 putExtra(RecordingService.EXTRA_TARGET_UID, targetUid)
+                putExtra(RecordingService.EXTRA_LIVE_TRANSCRIPTION_KEY, deepgramKey)
+                putExtra(RecordingService.EXTRA_LIVE_TRANSCRIPT_PATH, liveTranscriptPath)
+                putExtra(RecordingService.EXTRA_INSIGHT_GENERATION_KEY, groqKey)
+                putExtra(RecordingService.EXTRA_LECTURE_INSIGHT_PATH, lectureInsightPath)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -481,6 +492,8 @@ class AppLauncherModule : Module() {
             val context = appContext.reactContext ?: return@AsyncFunction null as String?
             val path = currentRecordingPath
             currentRecordingPath = null
+            currentLiveTranscriptPath = null
+            currentLectureInsightPath = null
 
             Log.i(TAG, "stopRecording: path=$path")
 
@@ -523,6 +536,37 @@ class AppLauncherModule : Module() {
             val file = File(path)
             Log.w(TAG, "stopRecording: after ${waitedMs}ms — exists=${file.exists()}, size=${file.length()}")
             return@AsyncFunction if (file.exists() && file.length() > 0L) path else null
+        }
+
+        AsyncFunction("readLiveTranscript") { recordingPath: String ->
+            return@AsyncFunction try {
+                val transcriptPath =
+                    recordingPath.replace(Regex("\\.[^.]+$"), ".live.txt")
+                val transcriptFile = File(transcriptPath)
+                if (!transcriptFile.exists()) {
+                    null
+                } else {
+                    transcriptFile.readText().trim().ifBlank { null }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "readLiveTranscript failed for $recordingPath", e)
+                null
+            }
+        }
+
+        AsyncFunction("readLectureInsights") { recordingPath: String ->
+            return@AsyncFunction try {
+                val insightPath = recordingPath.replace(Regex("\\.[^.]+$"), ".quiz.json")
+                val insightFile = File(insightPath)
+                if (!insightFile.exists()) {
+                    null
+                } else {
+                    insightFile.readText().trim().ifBlank { null }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "readLectureInsights failed for $recordingPath", e)
+                null
+            }
         }
 
         AsyncFunction("pauseRecording") { ->
@@ -661,6 +705,16 @@ class AppLauncherModule : Module() {
             val requested = prefs.getBoolean(OverlayService.PREF_RETURN_REQUESTED, false)
             if (requested) {
                 prefs.edit().putBoolean(OverlayService.PREF_RETURN_REQUESTED, false).apply()
+            }
+            return@AsyncFunction requested
+        }
+
+        AsyncFunction("consumePomodoroBreakRequest") { ->
+            val context = appContext.reactContext ?: return@AsyncFunction false
+            val prefs = context.getSharedPreferences(OverlayService.PREFS_NAME, Context.MODE_PRIVATE)
+            val requested = prefs.getBoolean(OverlayService.PREF_POMODORO_BREAK_REQUESTED, false)
+            if (requested) {
+                prefs.edit().putBoolean(OverlayService.PREF_POMODORO_BREAK_REQUESTED, false).apply()
             }
             return@AsyncFunction requested
         }

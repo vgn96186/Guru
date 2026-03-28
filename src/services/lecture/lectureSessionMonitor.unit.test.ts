@@ -72,6 +72,7 @@ jest.mock('../../db/queries/externalLogs', () => ({
   updateSessionNoteEnhancementStatus: jest.fn(),
   getSessionsNeedingNoteEnhancement: jest.fn(),
   updateSessionPipelineTelemetry: jest.fn(),
+  appendSessionPipelineEvent: jest.fn(),
 }));
 
 jest.mock('../notificationService', () => ({
@@ -99,6 +100,14 @@ jest.mock('../ai/embeddingService', () => ({
   generateEmbedding: jest.fn(),
 }));
 
+const readLiveTranscriptMock = jest.fn<(recordingPath: string) => Promise<string | null>>();
+const readLectureInsightsMock = jest.fn<(recordingPath: string) => Promise<string | null>>();
+
+jest.mock('../../../modules/app-launcher', () => ({
+  readLiveTranscript: (recordingPath: string) => readLiveTranscriptMock(recordingPath),
+  readLectureInsights: (recordingPath: string) => readLectureInsightsMock(recordingPath),
+}));
+
 describe('retryFailedTranscriptions', () => {
   let lectureSessionMonitor: typeof import('./lectureSessionMonitor');
   let externalLogsMock: any;
@@ -115,6 +124,8 @@ describe('retryFailedTranscriptions', () => {
     persistenceMock.saveLecturePersistence.mockResolvedValue(999);
     transcriptionServiceMock.generateADHDNote.mockResolvedValue('');
     aiCacheMock.getLectureNoteById.mockResolvedValue({ id: 999, note: 'Saved quick note' });
+    readLiveTranscriptMock.mockReset();
+    readLectureInsightsMock.mockReset();
     lectureSessionMonitor = require('./lectureSessionMonitor');
   });
 
@@ -216,6 +227,142 @@ describe('retryFailedTranscriptions', () => {
 
     expect(result).toBe(1); // Only 2nd succeeded
     expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('transcribeLectureWithRecovery', () => {
+  let lectureSessionMonitor: typeof import('./lectureSessionMonitor');
+  let transcriptionServiceMock: any;
+  let externalLogsMock: any;
+
+  beforeEach(async () => {
+    jest.resetModules();
+    transcriptionServiceMock = require('../transcriptionService');
+    externalLogsMock = require('../../db/queries/externalLogs');
+    lectureSessionMonitor = require('./lectureSessionMonitor');
+    readLiveTranscriptMock.mockReset();
+    readLectureInsightsMock.mockReset();
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('prefers precomputed background insights when quiz and keypoints are already ready', async () => {
+    const liveTranscript =
+      'Medicine lecture covering acute coronary syndrome, troponin patterns, STEMI ECG findings, ' +
+      'aspirin loading, anticoagulation, and immediate reperfusion strategy in the emergency room.';
+
+    readLiveTranscriptMock.mockResolvedValue(liveTranscript);
+    readLectureInsightsMock.mockResolvedValue(
+      JSON.stringify({
+        subject: 'Medicine',
+        topics: ['Acute coronary syndrome', 'STEMI'],
+        summary: 'ACS recognition and first-line emergency treatment.',
+        keyConcepts: ['Troponin rise', 'ST elevation', 'Primary PCI timing'],
+        quiz: {
+          questions: [
+            {
+              question: 'Which treatment should not be delayed in STEMI?',
+              options: ['Vitamin K', 'Primary PCI', 'Insulin', 'Thyroxine'],
+              correctIndex: 1,
+              explanation: 'Urgent reperfusion is the key life-saving step.',
+            },
+            {
+              question: 'Which biomarker rises in myocardial injury?',
+              options: ['Troponin', 'Lipase', 'TSH', 'Creatinine'],
+              correctIndex: 0,
+              explanation: 'Troponin is the key cardiac biomarker here.',
+            },
+            {
+              question: 'What ECG change is classic for STEMI?',
+              options: ['Low voltage', 'ST elevation', 'Short PR', 'Delta wave'],
+              correctIndex: 1,
+              explanation: 'Persistent ST elevation is the defining acute ECG clue.',
+            },
+          ],
+        },
+      }),
+    );
+    transcriptionServiceMock.transcribeAudio.mockResolvedValue({
+      transcript: 'Full batch transcript from saved recording',
+      subject: 'Medicine',
+      topics: ['Acute coronary syndrome', 'STEMI'],
+      keyConcepts: ['Troponin rise', 'ST elevation', 'Primary PCI timing'],
+      highYieldPoints: ['Immediate reperfusion'],
+      lectureSummary: 'Comprehensive ACS lecture note.',
+      estimatedConfidence: 3,
+    });
+
+    const result = await lectureSessionMonitor.transcribeLectureWithRecovery({
+      recordingPath: '/mock/path/live-ready.m4a',
+      logId: 78,
+      includeEmbedding: false,
+    });
+
+    expect(readLectureInsightsMock).toHaveBeenCalledWith('/mock/path/live-ready.m4a');
+    expect(transcriptionServiceMock.analyzeTranscript).not.toHaveBeenCalled();
+    expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audioFilePath: '/mock/path/live-ready.m4a',
+      }),
+    );
+    expect(result.subject).toBe('Medicine');
+    expect(result.keyConcepts).toEqual(['Troponin rise', 'ST elevation', 'Primary PCI timing']);
+    expect(result.precomputedQuiz).toHaveLength(3);
+    expect(externalLogsMock.appendSessionPipelineEvent).toHaveBeenCalledWith(
+      78,
+      expect.objectContaining({
+        message: 'Attached background quiz payload',
+        provider: 'groq',
+      }),
+      expect.objectContaining({
+        topicsDetected: 2,
+      }),
+    );
+  });
+
+  it('uses the live transcript sidecar as a fallback when full audio transcription fails', async () => {
+    const liveTranscript =
+      'Cardiology lecture on acute coronary syndrome. ' +
+      'The professor discussed STEMI diagnosis, ECG changes, troponin rise, ' +
+      'early aspirin, anticoagulation, and urgent reperfusion workflow.';
+
+    readLectureInsightsMock.mockResolvedValue(null);
+    readLiveTranscriptMock.mockResolvedValue(liveTranscript);
+    transcriptionServiceMock.transcribeAudio.mockRejectedValue(new Error('groq failed'));
+    transcriptionServiceMock.analyzeTranscript.mockResolvedValue({
+      subject: 'Medicine',
+      topics: ['Acute coronary syndrome'],
+      keyConcepts: ['ST elevation', 'Troponin'],
+      highYieldPoints: ['Primary PCI timing'],
+      lectureSummary: 'Focused ACS lecture.',
+      estimatedConfidence: 3,
+    });
+
+    const result = await lectureSessionMonitor.transcribeLectureWithRecovery({
+      recordingPath: '/mock/path/live.m4a',
+      logId: 77,
+      includeEmbedding: false,
+    });
+
+    expect(readLiveTranscriptMock).toHaveBeenCalledWith('/mock/path/live.m4a');
+    expect(transcriptionServiceMock.transcribeAudio).toHaveBeenCalled();
+    expect(transcriptionServiceMock.analyzeTranscript).toHaveBeenCalledWith(
+      liveTranscript,
+      expect.any(Function),
+    );
+    expect(result.transcript).toBe(liveTranscript);
+    expect(externalLogsMock.appendSessionPipelineEvent).toHaveBeenCalledWith(
+      77,
+      expect.objectContaining({
+        message: 'Recovered lecture from live transcript sidecar',
+        provider: 'deepgram',
+      }),
+      expect.objectContaining({
+        transcriptChars: liveTranscript.length,
+      }),
+    );
   });
 });
 

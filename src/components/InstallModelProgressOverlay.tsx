@@ -288,11 +288,7 @@ export function InstallModelProgressOverlay() {
                   onPress={() => setDownloadMinimized(true)}
                   hitSlop={12}
                 >
-                  <Ionicons
-                    name="chevron-up"
-                    size={16}
-                    color={theme.colors.textSecondary}
-                  />
+                  <Ionicons name="chevron-up" size={16} color={theme.colors.textSecondary} />
                 </Pressable>
               </>
             ) : null}
@@ -380,11 +376,13 @@ const styles = StyleSheet.create({
   pillText: {
     color: theme.colors.textPrimary,
     fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
   },
   percent: {
     color: theme.colors.textSecondary,
     fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
     letterSpacing: 0.4,
   },

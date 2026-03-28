@@ -27,10 +27,7 @@ const GURU_ADHD_FORMATTING_RULES = `Formatting rules:
 - Do not turn the whole reply into a long list unless the content truly needs a list.
 - If you ask the student anything, put it alone on the final line prefixed exactly with "Question:".`;
 
-function buildGuruSystemPrompt(options: {
-  grounded?: boolean;
-  includeStudyContext?: boolean;
-}) {
+function buildGuruSystemPrompt(options: { grounded?: boolean; includeStudyContext?: boolean }) {
   const promptLines = [
     'You are Guru, a Socratic medical tutor for NEET-PG/INICET. Guide the student to discover answers - never lecture.',
     'Rules:',
@@ -51,9 +48,9 @@ function buildGuruSystemPrompt(options: {
       ? '8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.'
       : options.includeStudyContext
         ? '8) Never output JSON.'
-        : '8) Output only Guru\'s next single turn. Never write Student:/User:/Guru: role labels and never invent the student\'s reply.',
+        : "8) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
     options.grounded || options.includeStudyContext
-      ? '9) Output only Guru\'s next single turn. Never write Student:/User:/Guru: role labels and never invent the student\'s reply.'
+      ? "9) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply."
       : '9) If you ask a question, that question must be the final line in your reply. Never answer your own question.',
     options.grounded || options.includeStudyContext
       ? '10) Never ask the same or nearly the same question again if it was already asked in recent turns. Build on the conversation state instead.'
@@ -64,7 +61,9 @@ function buildGuruSystemPrompt(options: {
     options.grounded || options.includeStudyContext
       ? '12) If you ask a question, that question must be the final line in your reply. Never answer your own question.'
       : '10) Follow these output constraints exactly:',
-    options.grounded || options.includeStudyContext ? '13) Follow these output constraints exactly:' : null,
+    options.grounded || options.includeStudyContext
+      ? '13) Follow these output constraints exactly:'
+      : null,
     GURU_ADHD_FORMATTING_RULES,
   ];
 
@@ -188,6 +187,13 @@ function buildImageSearchSeed(
   return null;
 }
 
+function isRenderableReferenceImageUrl(url: string | undefined): boolean {
+  const trimmed = url?.trim();
+  if (!trimmed) return false;
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+  return !/\.(pdf|svg|djvu?|tiff?)(?:[?#]|$)/i.test(trimmed);
+}
+
 function sanitizeSingleGuruTurn(raw: string): string {
   let text = (raw ?? '').replace(/\r/g, '').trim();
   if (!text) return '';
@@ -209,6 +215,139 @@ function sanitizeSingleGuruTurn(raw: string): string {
   return text;
 }
 
+const QUESTION_PREFIX_RE = /^question:\s*/i;
+const QUESTION_STOPWORDS = new Set([
+  'a',
+  'an',
+  'are',
+  'be',
+  'called',
+  'can',
+  'do',
+  'does',
+  'for',
+  'how',
+  'if',
+  'in',
+  'is',
+  'it',
+  'its',
+  'of',
+  'on',
+  'or',
+  'the',
+  'their',
+  'this',
+  'to',
+  'what',
+  'when',
+  'where',
+  'which',
+  'who',
+  'why',
+  'your',
+]);
+
+function splitReplyAndFinalQuestion(text: string): { body: string; question: string | null } {
+  const trimmed = text.trim();
+  if (!trimmed) return { body: '', question: null };
+
+  const explicitQuestionMatch = trimmed.match(/(?:^|[\n\r])\s*question:\s*([\s\S]+?)\s*$/i);
+  if (explicitQuestionMatch) {
+    const fullMatch = explicitQuestionMatch[0] ?? '';
+    return {
+      body: trimmed.slice(0, trimmed.length - fullMatch.length).trim(),
+      question: explicitQuestionMatch[1]?.trim() || null,
+    };
+  }
+
+  const finalQuestionIndex = trimmed.lastIndexOf('?');
+  if (finalQuestionIndex === -1) {
+    return { body: trimmed, question: null };
+  }
+
+  const questionPrefixIndex = trimmed.toLowerCase().lastIndexOf('question:', finalQuestionIndex);
+  if (questionPrefixIndex >= 0) {
+    return {
+      body: trimmed.slice(0, questionPrefixIndex).trim(),
+      question: trimmed.slice(questionPrefixIndex).replace(QUESTION_PREFIX_RE, '').trim(),
+    };
+  }
+
+  const boundaryIndex = Math.max(
+    trimmed.lastIndexOf('\n', finalQuestionIndex),
+    trimmed.lastIndexOf('. ', finalQuestionIndex),
+    trimmed.lastIndexOf('! ', finalQuestionIndex),
+  );
+
+  if (boundaryIndex === -1) {
+    return { body: '', question: trimmed };
+  }
+
+  const question = trimmed.slice(boundaryIndex + 1).trim();
+  if (!question.endsWith('?')) {
+    return { body: trimmed, question: null };
+  }
+
+  return {
+    body: trimmed.slice(0, boundaryIndex + 1).trim(),
+    question,
+  };
+}
+
+function normalizeQuestionText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(QUESTION_PREFIX_RE, '')
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractKeyTerms(text: string): string[] {
+  return Array.from(
+    new Set(
+      normalizeQuestionText(text)
+        .split(' ')
+        .map((term) => term.trim())
+        .filter((term) => term.length >= 3 && !QUESTION_STOPWORDS.has(term)),
+    ),
+  );
+}
+
+function shouldDropFinalQuestion(reply: string, recentQuestions: string[] = []): boolean {
+  const { body, question } = splitReplyAndFinalQuestion(reply);
+  if (!question || !body) return false;
+
+  const normalizedQuestion = normalizeQuestionText(question);
+  if (!normalizedQuestion) return false;
+
+  if (recentQuestions.some((asked) => normalizeQuestionText(asked) === normalizedQuestion)) {
+    return true;
+  }
+
+  const bodyTerms = new Set(extractKeyTerms(body));
+  const questionTerms = extractKeyTerms(question);
+  if (questionTerms.length === 0) return false;
+
+  const overlapCount = questionTerms.filter((term) => bodyTerms.has(term)).length;
+  const overlapRatio = overlapCount / questionTerms.length;
+
+  const directAnswerCue =
+    /\b(is|are|means|refers to|called|supplied by|innervated by|causes|because|therefore|so)\b/i.test(
+      body,
+    ) || /[.!]\s*$/.test(body);
+
+  return overlapRatio >= 0.6 && directAnswerCue;
+}
+
+function finalizeGuruReply(reply: string, recentQuestions: string[] = []): string {
+  const sanitized = sanitizeSingleGuruTurn(reply);
+  if (!sanitized) return sanitized;
+  if (!shouldDropFinalQuestion(sanitized, recentQuestions)) return sanitized;
+  return splitReplyAndFinalQuestion(sanitized).body.trim();
+}
+
 function truncateAfterAskedQuestion(text: string): string {
   const firstQuestionIndex = text.indexOf('?');
   if (firstQuestionIndex === -1) return text;
@@ -217,7 +356,10 @@ function truncateAfterAskedQuestion(text: string): string {
 
   const hasAnotherQuestion = trailing.includes('?');
   const startsLikeContinuationAnswer =
-    /^[A-Z0-9*_(["']/.test(trailing) || /^(the|it|they|this|that|these|those|because|so|therefore|plasma|interstitial|answer)\b/i.test(trailing);
+    /^[A-Z0-9*_(["']/.test(trailing) ||
+    /^(the|it|they|this|that|these|those|because|so|therefore|plasma|interstitial|answer)\b/i.test(
+      trailing,
+    );
 
   if (hasAnotherQuestion || startsLikeContinuationAnswer) {
     return text.slice(0, firstQuestionIndex + 1).trim();
@@ -334,7 +476,12 @@ function extractRecentGuruQuestions(
 
     const fallbackQuestion =
       explicitQuestions.length === 0 && /\?\s*$/.test(entry.text.trim())
-        ? entry.text.trim().split('\n').pop()?.trim().replace(/^question:\s*/i, '') ?? ''
+        ? (entry.text
+            .trim()
+            .split('\n')
+            .pop()
+            ?.trim()
+            .replace(/^question:\s*/i, '') ?? '')
         : '';
 
     for (const candidate of [...explicitQuestions, fallbackQuestion].filter(Boolean)) {
@@ -377,6 +524,7 @@ export async function chatWithGuru(
   chosenModel?: string,
   studyContext?: string,
 ): Promise<{ reply: string }> {
+  const recentGuruQuestions = extractRecentGuruQuestions(history);
   const contextPrompt = `Topic: ${topicName}${
     studyContext ? `\n\nStudy context:\n${studyContext}` : ''
   }`;
@@ -390,7 +538,7 @@ export async function chatWithGuru(
     ],
     { chosenModel },
   );
-  return { reply: sanitizeSingleGuruTurn(text) };
+  return { reply: finalizeGuruReply(text, recentGuruQuestions) };
 }
 
 export async function chatWithGuruGrounded(
@@ -425,7 +573,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
 
   try {
     const response = await generateTextWithRouting(msgs, { chosenModel });
-    let finalReply = sanitizeSingleGuruTurn(response.text);
+    let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
     let modelUsed = response.modelUsed;
     for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
       if (!looksTruncatedReply(finalReply)) break;
@@ -440,7 +588,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
         buildContinuationMessages(msgs, finalReply),
         { chosenModel },
       );
-      const continuationText = sanitizeSingleGuruTurn(continuation.text);
+      const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
       const appended = appendContinuation(finalReply, continuationText);
       if (appended.length <= finalReply.length) break;
@@ -490,7 +638,9 @@ export async function chatWithGuruGroundedStreaming(
   // Image search helps future visual features, but should not pollute the citation/source panel.
   const [textResult, imageQueryResult] = await Promise.allSettled([
     searchLatestMedicalSources(searchQuery, 5),
-    imageSeed ? generateImageSearchQuery(imageSeed.topic, imageSeed.context) : Promise.resolve(null),
+    imageSeed
+      ? generateImageSearchQuery(imageSeed.topic, imageSeed.context)
+      : Promise.resolve(null),
   ]);
   const imageQuery =
     imageQueryResult.status === 'fulfilled' ? imageQueryResult.value?.trim() || null : null;
@@ -498,13 +648,11 @@ export async function chatWithGuruGroundedStreaming(
     ? await Promise.allSettled([searchMedicalImages(imageQuery, 3)]).then(([result]) => result)
     : ({ status: 'fulfilled', value: [] } as PromiseFulfilledResult<MedicalGroundingSource[]>);
   const sources =
-    textResult.status === 'fulfilled'
-      ? dedupeGroundingSources(textResult.value).slice(0, 8)
-      : [];
+    textResult.status === 'fulfilled' ? dedupeGroundingSources(textResult.value).slice(0, 8) : [];
   const referenceImages =
     imageResult.status === 'fulfilled'
       ? dedupeGroundingSources(imageResult.value)
-          .filter((image) => !!image.imageUrl)
+          .filter((image) => isRenderableReferenceImageUrl(image.imageUrl))
           .slice(0, 3)
       : [];
 
@@ -517,8 +665,7 @@ export async function chatWithGuruGroundedStreaming(
     imageSeedTopic: imageSeed?.topic ?? '',
     imageSeedContext: imageSeed?.context ? previewText(imageSeed.context, 180) : '',
     imageQueryGenerationStatus: imageQueryResult.status,
-    imageCandidates:
-      imageResult.status === 'fulfilled' ? imageResult.value.length : 0,
+    imageCandidates: imageResult.status === 'fulfilled' ? imageResult.value.length : 0,
     usableReferenceImages: referenceImages.length,
     sampleReferenceTitles: referenceImages.slice(0, 3).map((image) => previewText(image.title, 80)),
     sampleReferenceUrls: referenceImages
@@ -583,7 +730,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
     };
 
     const response = await generateTextWithRoutingStream(msgs, { chosenModel }, safeEmitDelta);
-    let finalReply = sanitizeSingleGuruTurn(response.text);
+    let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
     if (finalReply.length > emittedReply.length) {
       const remaining = finalReply.slice(emittedReply.length);
       if (remaining) {
@@ -606,7 +753,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
         { chosenModel },
         safeEmitDelta,
       );
-      const continuationText = sanitizeSingleGuruTurn(continuation.text);
+      const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
       const appended = appendContinuation(finalReply, continuationText);
       if (appended.length <= finalReply.length) break;
@@ -637,7 +784,15 @@ export async function askGuru(question: string, context: string): Promise<string
   const messages: Message[] = [
     {
       role: 'system',
-      content: `${SYSTEM_PROMPT}\nRespond as Guru evaluating a student's answer. Output JSON: { "feedback": "...", "score": 0-5, "missed": ["key point missed"] }`,
+      content: `${SYSTEM_PROMPT}
+Respond as Guru evaluating a student's answer.
+Output JSON only: { "feedback": "...", "score": 0-5, "missed": ["key point missed"] }
+
+Formatting rules:
+- Write "feedback" as concise markdown-friendly teaching text.
+- Use markdown bolding (**term**) only for the 3 or 4 most important medical terms, mechanisms, or mistakes.
+- Keep normal text plain.
+- "missed" items may also include brief markdown bolding for the core term.`,
     },
     { role: 'user', content: `Context: ${context}\n\nStudent answer: ${question}` },
   ];
@@ -686,4 +841,3 @@ Only bold the most important 3 or 4 terms in the whole answer.`,
   const { text } = await generateTextWithRouting(messages);
   return text.trim();
 }
-

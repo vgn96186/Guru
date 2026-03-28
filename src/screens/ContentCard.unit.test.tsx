@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import ContentCard from './ContentCard';
-import type { QuizContent } from '../types';
+import type { KeyPointsContent, QuizContent } from '../types';
 
 jest.mock('../services/aiService', () => ({
   askGuru: jest.fn(),
@@ -70,6 +70,47 @@ describe('ContentCard Ask Guru context', () => {
     await waitFor(() => {
       expect(getByTestId('guru-context').props.children).toContain('Second question stem');
       expect(getByTestId('guru-context').props.children).not.toContain('First question stem');
+    });
+  });
+
+  it('adds fallback markdown emphasis to legacy key points content', () => {
+    const keypointsContent: KeyPointsContent = {
+      type: 'keypoints',
+      topicName: 'Hypertension',
+      points: ['Blood pressure above 140 mmHg increases cardiovascular risk'],
+      memoryHook: 'Remember target organ damage and urgent blood pressure control',
+    };
+
+    const { getByText } = render(
+      <ContentCard content={keypointsContent} onDone={jest.fn()} onSkip={jest.fn()} />,
+    );
+
+    expect(getByText(/\*\*140 mmHg\*\*/)).toBeTruthy();
+  });
+
+  it('adds fallback markdown emphasis to legacy quiz explanations', async () => {
+    const legacyQuiz: QuizContent = {
+      type: 'quiz',
+      topicName: 'ACS',
+      questions: [
+        {
+          question: 'A patient with ST elevation and chest pain presents to the ED',
+          options: ['Aspirin', 'Heparin', 'Primary PCI', 'Observation'],
+          correctIndex: 2,
+          explanation:
+            'Primary PCI is preferred because STEMI requires urgent reperfusion within 90 minutes.',
+        },
+      ],
+    };
+
+    const { getByText } = render(
+      <ContentCard content={legacyQuiz} onDone={jest.fn()} onSkip={jest.fn()} />,
+    );
+
+    fireEvent.press(getByText('Primary PCI'));
+
+    await waitFor(() => {
+      expect(getByText(/\*\*STEMI\*\*/)).toBeTruthy();
     });
   });
 });

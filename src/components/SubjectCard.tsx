@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Animated, Easing } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import type { Subject } from '../types';
 import { theme } from '../constants/theme';
+import AppText from './AppText';
 
 interface Props {
   subject: Subject;
@@ -29,6 +30,7 @@ export default React.memo(function SubjectCard({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onPress();
   }
+
   const pct = coverage.total > 0 ? Math.round((coverage.seen / coverage.total) * 100) : 0;
   const progressAnim = useRef(new Animated.Value(pct)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -76,7 +78,6 @@ export default React.memo(function SubjectCard({
     extrapolate: 'clamp',
   });
 
-  // Color intensity based on progress
   const bgOpacity = pct > 0 ? 0.1 + (pct / 100) * 0.15 : 0;
 
   return (
@@ -89,7 +90,6 @@ export default React.memo(function SubjectCard({
         accessibilityLabel={`${subject.name} subject`}
         accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
       >
-        {/* Subtle background fill based on progress */}
         <View
           style={[styles.backgroundFill, { backgroundColor: subject.colorHex, opacity: bgOpacity }]}
         />
@@ -98,20 +98,24 @@ export default React.memo(function SubjectCard({
         <View style={styles.content}>
           <View style={styles.topRow}>
             <View style={styles.nameWrap}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={styles.code}>{subject.shortCode}</Text>
-                {matchingTopicsCount !== undefined && matchingTopicsCount > 0 && (
+              <View style={styles.metaRow}>
+                <AppText style={styles.code} variant="caption" tone="secondary">
+                  {subject.shortCode}
+                </AppText>
+                {matchingTopicsCount !== undefined && matchingTopicsCount > 0 ? (
                   <View style={styles.matchBadge}>
-                    <Text style={styles.matchBadgeText}>{matchingTopicsCount} matching topics</Text>
+                    <AppText style={styles.matchBadgeText} variant="caption">
+                      {matchingTopicsCount} matching topics
+                    </AppText>
                   </View>
-                )}
+                ) : null}
               </View>
-              <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+              <AppText style={styles.name} numberOfLines={3} ellipsizeMode="tail" variant="body">
                 {subject.name}
-              </Text>
+              </AppText>
             </View>
             <View style={styles.pctContainer}>
-              <Text
+              <AppText
                 style={[
                   styles.pct,
                   {
@@ -123,16 +127,16 @@ export default React.memo(function SubjectCard({
                           : theme.colors.textPrimary,
                   },
                 ]}
+                variant="title"
               >
                 {pct}%
-              </Text>
-              <Text style={styles.pctLabel}>
+              </AppText>
+              <AppText style={styles.pctLabel} variant="caption" tone="muted">
                 {coverage.seen}/{coverage.total} micro
-              </Text>
+              </AppText>
             </View>
           </View>
 
-          {/* Progress bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
               <Animated.View
@@ -146,19 +150,34 @@ export default React.memo(function SubjectCard({
 
           <View style={styles.weightRow}>
             <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
-            <Text style={styles.weight}>INICET ×{subject.inicetWeight}</Text>
-            {pct === 100 && <Text style={styles.completeBadge}>✓ Complete</Text>}
+            <AppText style={styles.weight} variant="caption" tone="muted">
+              INICET x{subject.inicetWeight}
+            </AppText>
+            {pct === 100 ? (
+              <AppText style={styles.completeBadge} variant="caption" tone="success">
+                Complete
+              </AppText>
+            ) : null}
           </View>
-          {metrics && (
+          {metrics ? (
             <View style={styles.metricsRow}>
-              <Text style={[styles.metricBadge, metrics.due > 0 && styles.metricBadgeUrgent]}>
+              <AppText
+                style={[styles.metricBadge, metrics.due > 0 && styles.metricBadgeUrgent]}
+                variant="caption"
+              >
                 Due {metrics.due}
-              </Text>
-              <Text style={styles.metricBadge}>HY {metrics.highYield}</Text>
-              <Text style={styles.metricBadge}>Unseen {metrics.unseen}</Text>
-              <Text style={styles.metricBadge}>Notes {metrics.withNotes}</Text>
+              </AppText>
+              <AppText style={styles.metricBadge} variant="caption">
+                HY {metrics.highYield}
+              </AppText>
+              <AppText style={styles.metricBadge} variant="caption">
+                Unseen {metrics.unseen}
+              </AppText>
+              <AppText style={styles.metricBadge} variant="caption">
+                Notes {metrics.withNotes}
+              </AppText>
             </View>
-          )}
+          ) : null}
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -186,8 +205,9 @@ const styles = StyleSheet.create({
   },
   colorBar: { width: 5 },
   content: { flex: 1, padding: 12 },
-  topRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  code: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '600', marginBottom: 2 },
+  topRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
+  code: { marginBottom: 2, letterSpacing: 0.2 },
   matchBadge: {
     backgroundColor: '#6C63FF22',
     paddingHorizontal: 6,
@@ -200,20 +220,15 @@ const styles = StyleSheet.create({
   },
   matchBadgeText: {
     color: '#E7E4FF',
-    fontSize: 11,
-    fontWeight: '700',
   },
   nameWrap: { flex: 1, minWidth: 0 },
   name: {
-    color: theme.colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 15,
     marginBottom: 6,
-    lineHeight: 20,
+    fontWeight: '700',
   },
-  pctContainer: { alignItems: 'flex-end', marginLeft: 12 },
-  pct: { fontWeight: '900', fontSize: 20 },
-  pctLabel: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+  pctContainer: { alignItems: 'flex-end', marginLeft: 'auto', flexShrink: 0 },
+  pct: { fontWeight: '900' },
+  pctLabel: { marginTop: 2 },
   progressContainer: { marginVertical: 8 },
   progressTrack: {
     height: 4,
@@ -225,9 +240,9 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 2,
   },
-  weightRow: { flexDirection: 'row', alignItems: 'center' },
+  weightRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
-  weight: { color: theme.colors.textMuted, fontSize: 11 },
+  weight: {},
   metricsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -236,8 +251,6 @@ const styles = StyleSheet.create({
   },
   metricBadge: {
     color: theme.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
     paddingHorizontal: 7,
     paddingVertical: 4,
     borderRadius: 999,
@@ -249,8 +262,6 @@ const styles = StyleSheet.create({
   },
   completeBadge: {
     marginLeft: 'auto',
-    color: theme.colors.success,
-    fontSize: 11,
     fontWeight: '700',
   },
 });

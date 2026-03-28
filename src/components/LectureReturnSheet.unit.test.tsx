@@ -33,6 +33,15 @@ function basePipelineReturn() {
     setIsExpanded: jest.fn(),
     activeStage: null,
     stageMessage: '',
+    stageDetail: '',
+    progressPercent: 0,
+    progressStep: null,
+    progressTotalSteps: null,
+    progressAttempt: null,
+    progressMaxAttempts: null,
+    progressProvider: null,
+    stageStartedAt: null,
+    progressHistory: [],
     transcriptionCompleted: false,
     sessionSaved: false,
     isSaving: false,
@@ -84,7 +93,7 @@ describe('LectureReturnSheet', () => {
   it('shows compact processing card when visible (intro)', () => {
     const { getByText } = render(<LectureReturnSheet {...baseProps} />);
     expect(getByText('LECTURE PROCESSING')).toBeTruthy();
-    expect(getByText(/Marrow/)).toBeTruthy();
+    expect(getByText('Analyzing your lecture')).toBeTruthy();
   });
 
   it('shows a subject-required prompt in results when the detected subject is unusable', async () => {
@@ -109,5 +118,29 @@ describe('LectureReturnSheet', () => {
     expect(
       getByText('Choose the lecture subject before saving so topics get filed correctly.'),
     ).toBeTruthy();
+  });
+
+  it('shows useful lecture details in the compact ready pill', () => {
+    mockUseLecturePipeline.mockReturnValue({
+      ...basePipelineReturn(),
+      phase: 'results',
+      isExpanded: false,
+      analysis: {
+        subject: 'Medicine',
+        topics: ['ECG'],
+        lectureSummary: 'Focused review of arrhythmias.',
+        keyConcepts: [],
+        highYieldPoints: [],
+        estimatedConfidence: 3,
+      },
+    } as any);
+
+    const { getByText } = render(<LectureReturnSheet {...baseProps} appName="YouTube" />);
+
+    expect(getByText('LECTURE READY')).toBeTruthy();
+    expect(getByText('Lecture summary is ready')).toBeTruthy();
+    expect(getByText('Medicine • 1 topic detected')).toBeTruthy();
+    expect(getByText('YOUTUBE')).toBeTruthy();
+    expect(getByText('47 MIN')).toBeTruthy();
   });
 });

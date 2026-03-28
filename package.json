@@ -10,7 +10,7 @@
     "dev:metro": "bash ./scripts/start-metro-logs.sh",
     "stop:metro": "bash ./scripts/stop-metro.sh",
     "logs:android": "adb logcat '*:S' 'ReactNative:V' 'ReactNativeJS:V' 'AndroidRuntime:E'",
-    "android": "npm run generate:bundled-env && cross-env NODE_ENV=development expo run:android",
+    "android": "npm run generate:bundled-env && cross-env NODE_ENV=development node ./scripts/run-android-dev.js",
     "android:dev": "bash ./scripts/android-dev.sh",
     "android:apk:device": "npm run generate:bundled-env && cd android && NODE_BINARY=\"${NODE_BINARY:-$(command -v node)}\" ./gradlew assembleDebug --console=plain --no-daemon -PreactNativeArchitectures=arm64-v8a",
     "android:apk:release:device": "npm run generate:bundled-env && cd android && NODE_BINARY=\"${NODE_BINARY:-$(command -v node)}\" ./gradlew assembleRelease --console=plain --no-daemon -PreactNativeArchitectures=arm64-v8a",

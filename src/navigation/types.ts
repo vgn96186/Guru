@@ -1,6 +1,23 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { Mood, SessionMode } from '../types';
 
+export interface PomodoroBreakQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export interface PomodoroBreakPayload {
+  source: 'external_lecture';
+  appName: string;
+  subject?: string;
+  topics?: string[];
+  summary?: string;
+  keyConcepts?: string[];
+  questions?: PomodoroBreakQuestion[];
+}
+
 export type RootStackParamList = {
   PunishmentMode: undefined;
   BedLock: undefined;
@@ -14,7 +31,7 @@ export type RootStackParamList = {
   SleepMode: undefined;
   WakeUp: undefined;
   LocalModel: undefined;
-  PomodoroQuiz: undefined;
+  PomodoroQuiz: { breakPayload?: PomodoroBreakPayload } | undefined;
 };
 
 export type HomeStackParamList = {
@@ -52,15 +69,15 @@ export type SyllabusStackParamList = {
 export type ChatStackParamList = {
   GuruChat:
     | {
-      topicName?: string;
-      /** Syllabus leaf topic id when opened from Topic detail / content flows */
-      topicId?: number;
-      threadId?: number;
-      groundingTitle?: string;
-      groundingContext?: string;
-      initialQuestion?: string;
-      autoFocusComposer?: boolean;
-    }
+        topicName?: string;
+        /** Syllabus leaf topic id when opened from Topic detail / content flows */
+        topicId?: number;
+        threadId?: number;
+        groundingTitle?: string;
+        groundingContext?: string;
+        initialQuestion?: string;
+        autoFocusComposer?: boolean;
+      }
     | undefined;
 };
 

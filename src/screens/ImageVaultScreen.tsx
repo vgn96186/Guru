@@ -128,6 +128,18 @@ export default function ImageVaultScreen() {
     () => images.filter((image) => image.style === 'chart').length,
     [images],
   );
+  const hasActiveFilters = styleFilter !== 'all' || contextFilter !== 'all';
+  const hasActiveSearch = searchQuery.trim().length > 0;
+  const activeFilterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (styleFilter !== 'all') {
+      parts.push(STYLE_LABELS[styleFilter]);
+    }
+    if (contextFilter !== 'all') {
+      parts.push(CONTEXT_LABELS[contextFilter]);
+    }
+    return parts.length > 0 ? parts.join(' / ') : 'All styles / all sources';
+  }, [contextFilter, styleFilter]);
 
   const copyPrompt = useCallback((prompt: string) => {
     Clipboard.setString(prompt);
@@ -183,121 +195,155 @@ export default function ImageVaultScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer style={styles.flex}>
-        <ScreenHeader
-          title="Image Vault"
-          subtitle={`${images.length} AI-generated image${images.length !== 1 ? 's' : ''} saved`}
-        />
-
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{images.length}</Text>
-            <Text style={styles.summaryLabel}>Total</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{illustrationCount}</Text>
-            <Text style={styles.summaryLabel}>Illustrations</Text>
-          </View>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryValue}>{chartCount}</Text>
-            <Text style={styles.summaryLabel}>Charts</Text>
-          </View>
-        </View>
-
-        <View style={styles.searchRow}>
-          <Ionicons name="search" size={18} color={theme.colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search topic, prompt, provider..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-        >
-          {STYLE_FILTERS.map((filter) => (
-            <TouchableOpacity
-              key={filter.id}
-              style={[styles.filterBtn, styleFilter === filter.id && styles.filterBtnActive]}
-              onPress={() => setStyleFilter(filter.id)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[styles.filterBtnText, styleFilter === filter.id && styles.filterBtnTextActive]}
-              >
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.filterRow, styles.filterRowTight]}
-        >
-          {CONTEXT_FILTERS.map((filter) => (
-            <TouchableOpacity
-              key={filter.id}
-              style={[styles.filterBtn, contextFilter === filter.id && styles.filterBtnActive]}
-              onPress={() => setContextFilter(filter.id)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.filterBtnText,
-                  contextFilter === filter.id && styles.filterBtnTextActive,
-                ]}
-              >
-                {filter.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {visibleImages.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="images-outline" size={48} color={theme.colors.textMuted} />
-            <Text style={styles.emptyTitle}>
-              {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
-                ? 'No matching images'
-                : 'No images yet'}
-            </Text>
-            <Text style={styles.emptySubtitle}>
-              {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
-                ? 'Try a different search or filter.'
-                : 'Generate illustrations or charts from Guru Chat or topic notes and they will appear here.'}
-            </Text>
-          </View>
-        ) : (
-          <FlatList
-            data={visibleImages}
-            keyExtractor={(item) => item.id.toString()}
-            numColumns={2}
-            renderItem={renderImageCard}
-            columnWrapperStyle={styles.columnWrap}
-            contentContainerStyle={styles.list}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={theme.colors.textPrimary}
+        <FlatList
+          data={visibleImages}
+          keyExtractor={(item) => item.id.toString()}
+          numColumns={2}
+          renderItem={renderImageCard}
+          columnWrapperStyle={styles.columnWrap}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <>
+              <ScreenHeader
+                title="Image Vault"
+                subtitle={`${images.length} AI-generated image${images.length !== 1 ? 's' : ''} saved`}
+                containerStyle={styles.headerCompact}
+                titleStyle={styles.headerTitleCompact}
+                subtitleStyle={styles.headerSubtitleCompact}
               />
-            }
-          />
-        )}
+
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryValue}>{images.length}</Text>
+                  <Text style={styles.summaryLabel}>Total</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryValue}>{illustrationCount}</Text>
+                  <Text style={styles.summaryLabel}>Illustrations</Text>
+                </View>
+                <View style={styles.summaryCard}>
+                  <Text style={styles.summaryValue}>{chartCount}</Text>
+                  <Text style={styles.summaryLabel}>Charts</Text>
+                </View>
+              </View>
+
+              <View style={styles.searchRow}>
+                <Ionicons name="search" size={18} color={theme.colors.textMuted} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search topic, prompt, provider..."
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {searchQuery ? (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              <View style={styles.resultsRow}>
+                <View style={styles.resultsCopy}>
+                  <Text style={styles.resultsTitle}>
+                    {visibleImages.length} result{visibleImages.length !== 1 ? 's' : ''}
+                  </Text>
+                  <Text style={styles.resultsSubtitle} numberOfLines={1}>
+                    {activeFilterSummary}
+                  </Text>
+                </View>
+                {hasActiveFilters || hasActiveSearch ? (
+                  <TouchableOpacity
+                    style={styles.clearFiltersBtn}
+                    onPress={() => {
+                      setSearchQuery('');
+                      setStyleFilter('all');
+                      setContextFilter('all');
+                    }}
+                  >
+                    <Text style={styles.clearFiltersText}>Clear</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterRow}
+              >
+                {STYLE_FILTERS.map((filter) => (
+                  <TouchableOpacity
+                    key={filter.id}
+                    style={[styles.filterBtn, styleFilter === filter.id && styles.filterBtnActive]}
+                    onPress={() => setStyleFilter(filter.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        styleFilter === filter.id && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      {filter.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[styles.filterRow, styles.filterRowTight]}
+              >
+                {CONTEXT_FILTERS.map((filter) => (
+                  <TouchableOpacity
+                    key={filter.id}
+                    style={[
+                      styles.filterBtn,
+                      contextFilter === filter.id && styles.filterBtnActive,
+                    ]}
+                    onPress={() => setContextFilter(filter.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.filterBtnText,
+                        contextFilter === filter.id && styles.filterBtnTextActive,
+                      ]}
+                    >
+                      {filter.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="images-outline" size={48} color={theme.colors.textMuted} />
+              <Text style={styles.emptyTitle}>
+                {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
+                  ? 'No matching images'
+                  : 'No images yet'}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
+                  ? 'Try a different search or filter.'
+                  : 'Generate illustrations or charts from Guru Chat or topic notes and they will appear here.'}
+              </Text>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={theme.colors.textPrimary}
+            />
+          }
+        />
 
         <Modal
           visible={!!selectedImage}
@@ -369,7 +415,11 @@ export default function ImageVaultScreen() {
                           accessibilityRole="button"
                           accessibilityLabel="Copy prompt"
                         >
-                          <Ionicons name="copy-outline" size={15} color={theme.colors.textSecondary} />
+                          <Ionicons
+                            name="copy-outline"
+                            size={15}
+                            color={theme.colors.textSecondary}
+                          />
                           <Text style={styles.promptCopyText}>Copy</Text>
                         </TouchableOpacity>
                       </View>
@@ -400,11 +450,22 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
+  headerCompact: {
+    marginBottom: 12,
+  },
+  headerTitleCompact: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  headerSubtitleCompact: {
+    marginTop: 2,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   summaryRow: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: 16,
-    marginBottom: 14,
+    marginBottom: 12,
   },
   summaryCard: {
     flex: 1,
@@ -412,27 +473,28 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingVertical: 14,
+    paddingVertical: 10,
     alignItems: 'center',
   },
   summaryValue: {
     color: theme.colors.textPrimary,
-    fontSize: 20,
+    fontSize: 18,
+    lineHeight: 24,
     fontWeight: '800',
   },
   summaryLabel: {
     color: theme.colors.textSecondary,
     fontSize: 12,
+    lineHeight: 16,
     marginTop: 2,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
-    marginHorizontal: 16,
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 8,
@@ -441,21 +503,59 @@ const styles = StyleSheet.create({
     flex: 1,
     color: theme.colors.textPrimary,
     fontSize: 14,
+    lineHeight: 20,
     padding: 0,
   },
+  resultsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  resultsCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  resultsTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+  },
+  resultsSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  clearFiltersBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary + '14',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '32',
+  },
+  clearFiltersText: {
+    color: theme.colors.primaryLight,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '700',
+  },
   filterRow: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 6,
     paddingBottom: 4,
     gap: 8,
   },
   filterRowTight: {
-    paddingTop: 4,
+    paddingTop: 2,
     paddingBottom: 12,
   },
   filterBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
@@ -468,6 +568,7 @@ const styles = StyleSheet.create({
   filterBtnText: {
     color: theme.colors.textSecondary,
     fontSize: 12,
+    lineHeight: 16,
     fontWeight: '700',
   },
   filterBtnTextActive: {
@@ -478,11 +579,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   columnWrap: {
+    justifyContent: 'space-between',
     gap: 12,
   },
   card: {
-    flex: 1,
-    maxWidth: '48%',
+    flexBasis: '48%',
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
@@ -527,6 +628,7 @@ const styles = StyleSheet.create({
   metaChipText: {
     color: theme.colors.textSecondary,
     fontSize: 10,
+    lineHeight: 14,
     fontWeight: '700',
   },
   cardTitle: {
@@ -538,6 +640,7 @@ const styles = StyleSheet.create({
   cardMeta: {
     color: theme.colors.textSecondary,
     fontSize: 11,
+    lineHeight: 16,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -547,6 +650,7 @@ const styles = StyleSheet.create({
   cardDate: {
     color: theme.colors.textMuted,
     fontSize: 11,
+    lineHeight: 16,
   },
   inlineIconBtn: {
     width: 28,
@@ -643,6 +747,7 @@ const styles = StyleSheet.create({
   detailChipText: {
     color: theme.colors.textSecondary,
     fontSize: 11,
+    lineHeight: 16,
     fontWeight: '700',
   },
   detailInfoCard: {
@@ -656,6 +761,7 @@ const styles = StyleSheet.create({
   detailInfoLabel: {
     color: theme.colors.textMuted,
     fontSize: 11,
+    lineHeight: 16,
     fontWeight: '700',
     letterSpacing: 0.6,
   },
@@ -691,6 +797,7 @@ const styles = StyleSheet.create({
   promptCopyText: {
     color: theme.colors.textSecondary,
     fontSize: 12,
+    lineHeight: 16,
     fontWeight: '700',
   },
   promptText: {

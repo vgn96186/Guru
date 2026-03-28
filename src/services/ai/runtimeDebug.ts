@@ -7,10 +7,15 @@ const MAX_REPLY_LOG_CHARS = 8000;
 const REPLY_LOG_CHUNK_CHARS = 1200;
 
 function sanitizePreview(text: string, maxLen = 160): string {
-  return text.replace(/\s+/g, ' ').trim().slice(0, maxLen);
+  const normalized = text.replace(/\s+/g, ' ').trim();
+  if (normalized.length <= maxLen) return normalized;
+  return `${normalized.slice(0, Math.max(0, maxLen - 1)).trimEnd()}…`;
 }
 
-function clipReplyText(text: string, maxLen = MAX_REPLY_LOG_CHARS): {
+function clipReplyText(
+  text: string,
+  maxLen = MAX_REPLY_LOG_CHARS,
+): {
   text: string;
   wasTruncated: boolean;
 } {

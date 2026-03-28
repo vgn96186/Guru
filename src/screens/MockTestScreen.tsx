@@ -15,9 +15,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getCachedQuestionCount, getMockQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { saveBulkQuestions } from '../db/queries/questionBank';
+import { MarkdownRender } from '../components/MarkdownRender';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'MockTest'>;
 
@@ -172,7 +174,9 @@ export default function MockTestScreen() {
           <Text style={styles.reviewCorrect}>
             Correct: {item.options[item.correctIndex] ?? '—'}
           </Text>
-          <Text style={styles.reviewExplain}>{item.explanation}</Text>
+          <View style={styles.reviewExplainWrap}>
+            <MarkdownRender content={emphasizeHighYieldMarkdown(item.explanation)} compact />
+          </View>
         </View>
       );
     },
@@ -524,7 +528,7 @@ const styles = StyleSheet.create({
   reviewTopic: { color: '#6C63FF', fontSize: 12, marginBottom: 6 },
   reviewAns: { fontSize: 12, marginBottom: 2 },
   reviewCorrect: { color: '#4CAF50', fontSize: 12, marginBottom: 4 },
-  reviewExplain: { color: '#9E9E9E', fontSize: 12, lineHeight: 18 },
+  reviewExplainWrap: { marginTop: 6 },
   doneBtn: {
     backgroundColor: '#6C63FF',
     borderRadius: 14,

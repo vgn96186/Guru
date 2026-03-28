@@ -12,6 +12,7 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   Modal,
   ScrollView,
@@ -28,6 +29,8 @@ import { z } from 'zod';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ScreenHeader from '../components/ScreenHeader';
+import SubjectChip from '../components/SubjectChip';
+import TopicPillRow from '../components/TopicPillRow';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
 import {
@@ -43,12 +46,20 @@ import { CONFIDENCE_LABELS } from '../constants/gamification';
 import type { TabParamList } from '../navigation/types';
 
 const NoteLabelSchema = z.object({
-  subject: z.string().describe('NEET-PG medical subject (e.g. "Anatomy", "Pharmacology", "Pathology")'),
-  title: z.string().describe('Short note title — noun phrase only, no verbs (e.g. "Cardiac Valves & Murmurs", "Beta Blockers — MOA & Side Effects")'),
+  subject: z
+    .string()
+    .describe('NEET-PG medical subject (e.g. "Anatomy", "Pharmacology", "Pathology")'),
+  title: z
+    .string()
+    .describe(
+      'Short note title — noun phrase only, no verbs (e.g. "Cardiac Valves & Murmurs", "Beta Blockers — MOA & Side Effects")',
+    ),
   topics: z.array(z.string()).describe('2-5 specific medical topics covered'),
 });
 
-async function aiRelabelNote(noteText: string): Promise<{ subject: string; title: string; topics: string[] } | null> {
+async function aiRelabelNote(
+  noteText: string,
+): Promise<{ subject: string; title: string; topics: string[] } | null> {
   try {
     const snippet = noteText.split(/\s+/).slice(0, 800).join(' ');
     const messages: Message[] = [
@@ -90,7 +101,7 @@ const SUBJECT_COLORS: Record<string, string> = {
   'Community Medicine': '#8BC34A',
   Surgery: '#E91E63',
   Medicine: '#009688',
-  'OBG': '#FF5722',
+  OBG: '#FF5722',
   Pediatrics: '#CDDC39',
   Orthopedics: '#FFC107',
   Dermatology: '#673AB7',
@@ -100,9 +111,23 @@ const SUBJECT_COLORS: Record<string, string> = {
 };
 
 type NoteItem = LectureHistoryItem;
+type SortOption = 'date' | 'subject' | 'words';
+
+const SORT_OPTIONS: Array<{ value: SortOption; label: string }> = [
+  { value: 'date', label: 'Newest' },
+  { value: 'subject', label: 'Subject' },
+  { value: 'words', label: 'Words' },
+];
 
 function getTitle(item: NoteItem): string {
-  if (item.summary) return item.summary;
+  const summary = item.summary?.trim();
+  if (
+    summary &&
+    !/^lecture content recorded(\.|\. review transcript for details\.)?$/i.test(summary) &&
+    !/^lecture summary captured\.?$/i.test(summary)
+  ) {
+    return summary;
+  }
   if (item.topics.length > 0) return item.topics.slice(0, 3).join(', ');
   return item.note?.slice(0, 60) || 'Untitled Note';
 }
@@ -133,7 +158,9 @@ export default function NotesVaultScreen() {
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [sortBy, setSortBy] = useState<'date' | 'subject' | 'words'>('date');
+  const [sortBy, setSortBy] = useState<SortOption>('date');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [subjectFilter, setSubjectFilter] = useState<string>('all');
   const [topicFilter, setTopicFilter] = useState<string>('all');
 
@@ -202,8 +229,12 @@ export default function NotesVaultScreen() {
   );
 
   const topicOptions = useMemo(() => {
+    const topicSourceNotes =
+      subjectFilter === 'all'
+        ? notes
+        : notes.filter((note) => (note.subjectName || 'Unknown') === subjectFilter);
     const counts = new Map<string, number>();
-    for (const note of notes) {
+    for (const note of topicSourceNotes) {
       for (const topic of note.topics) {
         counts.set(topic, (counts.get(topic) ?? 0) + 1);
       }
@@ -212,7 +243,18 @@ export default function NotesVaultScreen() {
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .slice(0, 12)
       .map(([topic]) => topic);
-  }, [notes]);
+  }, [notes, subjectFilter]);
+
+  const activeFilterSummary = useMemo(() => {
+    const parts: string[] = [];
+    if (subjectFilter !== 'all') {
+      parts.push(subjectFilter);
+    }
+    if (topicFilter !== 'all') {
+      parts.push(topicFilter);
+    }
+    return parts.length > 0 ? parts.join(' • ') : 'All notes';
+  }, [subjectFilter, topicFilter]);
 
   useEffect(() => {
     if (subjectFilter !== 'all' && !subjectOptions.includes(subjectFilter)) {
@@ -304,11 +346,18 @@ export default function NotesVaultScreen() {
 
   // Notes needing relabeling: no subject or generic labels
   const unlabeledNotes = useMemo(
-    () => notes.filter((n) => {
-      if (countWords(n.note) < 80) return false;
-      const subj = (n.subjectName ?? '').toLowerCase();
-      return !subj || subj === 'general' || subj === 'unknown' || subj === 'lecture' || (!n.summary && n.topics.length === 0);
-    }),
+    () =>
+      notes.filter((n) => {
+        if (countWords(n.note) < 80) return false;
+        const subj = (n.subjectName ?? '').toLowerCase();
+        return (
+          !subj ||
+          subj === 'general' ||
+          subj === 'unknown' ||
+          subj === 'lecture' ||
+          (!n.summary && n.topics.length === 0)
+        );
+      }),
     [notes],
   );
 
@@ -316,52 +365,65 @@ export default function NotesVaultScreen() {
 
   // Bad title patterns from previous AI runs
   const badTitleNotes = useMemo(
-    () => notes.filter((n) => {
-      const s = (n.summary ?? '').toLowerCase();
-      return s && (/\b(covers?|focuses?|discusses?|overview of|about the|this note)\b/.test(s));
-    }),
+    () =>
+      notes.filter((n) => {
+        const s = (n.summary ?? '').toLowerCase();
+        return (
+          !!s &&
+          (/\b(covers?|focuses?|discusses?|overview of|about the|this note)\b/.test(s) ||
+            /^lecture content recorded(\. review transcript for details\.)?$/.test(s) ||
+            /^lecture summary captured\.?$/.test(s))
+        );
+      }),
     [notes],
   );
 
-  const runRelabel = useCallback(async (targets: NoteItem[]) => {
-    let fixed = 0;
-    let failed = 0;
-    for (let i = 0; i < targets.length; i++) {
-      const n = targets[i];
-      setRelabelProgress(`${i + 1}/${targets.length}`);
-      try {
-        const label = await aiRelabelNote(n.note ?? '');
-        if (!label) { failed++; continue; }
+  const runRelabel = useCallback(
+    async (targets: NoteItem[]) => {
+      let fixed = 0;
+      let failed = 0;
+      for (let i = 0; i < targets.length; i++) {
+        const n = targets[i];
+        setRelabelProgress(`${i + 1}/${targets.length}`);
+        try {
+          const label = await aiRelabelNote(n.note ?? '');
+          if (!label) {
+            failed++;
+            continue;
+          }
 
-        let subjectId: number | null = null;
-        if (label.subject) {
-          const subj = await getSubjectByName(label.subject);
-          if (subj) subjectId = subj.id;
+          let subjectId: number | null = null;
+          if (label.subject) {
+            const subj = await getSubjectByName(label.subject);
+            if (subj) subjectId = subj.id;
+          }
+
+          await updateLectureAnalysisMetadata(n.id, {
+            subjectId,
+            summary: label.title || null,
+            topics: label.topics?.length ? label.topics : undefined,
+          });
+          fixed++;
+        } catch {
+          failed++;
         }
-
-        await updateLectureAnalysisMetadata(n.id, {
-          subjectId,
-          summary: label.title || null,
-          topics: label.topics?.length ? label.topics : undefined,
-        });
-        fixed++;
-      } catch { failed++; }
-    }
-    setRelabelProgress(null);
-    void loadNotes();
-    Alert.alert('Done', `Labeled ${fixed} note${fixed !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`);
-  }, [loadNotes]);
+      }
+      setRelabelProgress(null);
+      void loadNotes();
+      Alert.alert(
+        'Done',
+        `Labeled ${fixed} note${fixed !== 1 ? 's' : ''}${failed > 0 ? ` (${failed} failed)` : ''}.`,
+      );
+    },
+    [loadNotes],
+  );
 
   const handleRelabel = useCallback(() => {
     const count = unlabeledNotes.length;
-    Alert.alert(
-      `AI-label ${count} note${count !== 1 ? 's' : ''}?`,
-      '1 quick API call per note.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Label', onPress: () => void runRelabel(unlabeledNotes) },
-      ],
-    );
+    Alert.alert(`AI-label ${count} note${count !== 1 ? 's' : ''}?`, '1 quick API call per note.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Label', onPress: () => void runRelabel(unlabeledNotes) },
+    ]);
   }, [unlabeledNotes, runRelabel]);
 
   const handleFixBadTitles = useCallback(() => {
@@ -387,7 +449,11 @@ export default function NotesVaultScreen() {
           style: 'destructive',
           onPress: async () => {
             for (const n of junkNotes) {
-              try { await deleteLectureNote(n.id); } catch { /* skip */ }
+              try {
+                await deleteLectureNote(n.id);
+              } catch {
+                /* skip */
+              }
             }
             void loadNotes();
           },
@@ -407,7 +473,11 @@ export default function NotesVaultScreen() {
           style: 'destructive',
           onPress: async () => {
             for (const id of duplicateIds) {
-              try { await deleteLectureNote(id); } catch { /* skip */ }
+              try {
+                await deleteLectureNote(id);
+              } catch {
+                /* skip */
+              }
             }
             void loadNotes();
           },
@@ -426,7 +496,10 @@ export default function NotesVaultScreen() {
         topicName: 'Notes Vault',
         groundingTitle:
           subjectFilter !== 'all' || topicFilter !== 'all'
-            ? [subjectFilter !== 'all' ? subjectFilter : null, topicFilter !== 'all' ? topicFilter : null]
+            ? [
+                subjectFilter !== 'all' ? subjectFilter : null,
+                topicFilter !== 'all' ? topicFilter : null,
+              ]
                 .filter(Boolean)
                 .join(' / ')
             : 'Saved notes',
@@ -495,51 +568,65 @@ export default function NotesVaultScreen() {
           </View>
         )}
         <View style={styles.cardHeader}>
-          <View
-            style={[
-              styles.subjectChip,
-              { backgroundColor: SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E' },
-            ]}
-          >
-            <Text style={styles.subjectText}>{subjectLabel}</Text>
-          </View>
+          <SubjectChip
+            subject={subjectLabel}
+            color="#fff"
+            backgroundColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+            borderColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+            style={styles.subjectChip}
+          />
+        </View>
+        <View style={styles.dateRow}>
           <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
         </View>
-        <Text style={styles.titleText} numberOfLines={2}>
+        <Text style={styles.titleText} numberOfLines={3}>
           {getTitle(item)}
         </Text>
         {item.topics.length > 0 && (
-          <View style={styles.topicsRow}>
-            {item.topics.slice(0, 4).map((t, i) => (
-              <Text key={i} style={styles.topicPill}>{t}</Text>
-            ))}
-            {item.topics.length > 4 && (
-              <Text style={styles.moreBadge}>+{item.topics.length - 4}</Text>
-            )}
-          </View>
+          <TopicPillRow
+            topics={item.topics}
+            wrap
+            maxVisible={4}
+            rowStyle={styles.topicsRow}
+            pillStyle={styles.topicPill}
+            moreBadgeStyle={styles.moreBadge}
+          />
         )}
         <View style={styles.cardFooter}>
           {item.confidence > 0 && (
             <Text
               style={[
                 styles.confidenceBadge,
-                {
-                  backgroundColor:
-                    item.confidence === 3 ? '#4CAF50' : item.confidence === 2 ? '#FF9800' : '#F44336',
-                },
+                item.confidence === 3
+                  ? styles.confidenceBadgeStrong
+                  : item.confidence === 2
+                    ? styles.confidenceBadgeMid
+                    : styles.confidenceBadgeLight,
               ]}
             >
               {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
             </Text>
           )}
           <Text style={styles.wordCount}>{countWords(item.note).toLocaleString()} words</Text>
-          {item.appName ? (
-            <Text style={styles.appBadge}>via {item.appName}</Text>
-          ) : null}
+          {item.appName ? <Text style={styles.appBadge}>via {item.appName}</Text> : null}
         </View>
       </TouchableOpacity>
     );
   };
+
+  const currentSortLabel =
+    SORT_OPTIONS.find((option) => option.value === sortBy)?.label ?? 'Newest';
+  const hasQuickActions =
+    !isSelectionMode &&
+    (visibleNotes.length > 0 ||
+      (notes.length > 0 && !searchQuery) ||
+      subjectOptions.length > 0 ||
+      topicOptions.length > 0 ||
+      junkNotes.length > 0 ||
+      duplicateIds.size > 0 ||
+      unlabeledNotes.length > 0 ||
+      badTitleNotes.length > 0 ||
+      !!relabelProgress);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -548,26 +635,10 @@ export default function NotesVaultScreen() {
         <ScreenHeader
           title="Notes Vault"
           subtitle={`${notes.length} processed study note${notes.length !== 1 ? 's' : ''}`}
+          containerStyle={styles.headerCompact}
+          titleStyle={styles.headerTitleCompact}
+          subtitleStyle={styles.headerSubtitleCompact}
         />
-
-        {!isSelectionMode && visibleNotes.length > 0 && (
-          <TouchableOpacity
-            style={styles.askGuruBanner}
-            onPress={handleAskGuruFromNotes}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Ask Guru using current notes"
-          >
-            <Ionicons name="sparkles-outline" size={18} color={theme.colors.primaryLight} />
-            <View style={styles.askGuruBannerCopy}>
-              <Text style={styles.askGuruBannerTitle}>Ask Guru</Text>
-              <Text style={styles.askGuruBannerSubtitle}>
-                Ground answers in your current notes view instead of generic chat memory.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
-          </TouchableOpacity>
-        )}
 
         {/* Selection banner */}
         {isSelectionMode && (
@@ -582,58 +653,6 @@ export default function NotesVaultScreen() {
                 <Text style={styles.selectionDeleteText}>Delete</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        )}
-
-        {/* Junk cleanup banner */}
-        {!isSelectionMode && junkNotes.length > 0 && (
-          <TouchableOpacity style={styles.cleanupBanner} onPress={handleDeleteJunk}>
-            <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
-            <Text style={styles.bannerText}>
-              {junkNotes.length} junk note{junkNotes.length !== 1 ? 's' : ''} ({'<'}80 words)
-            </Text>
-            <Text style={styles.bannerActionError}>Clean up</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Duplicate cleanup banner */}
-        {!isSelectionMode && duplicateIds.size > 0 && (
-          <TouchableOpacity style={styles.dupeBanner} onPress={handleDeleteDuplicates}>
-            <Ionicons name="copy-outline" size={16} color={theme.colors.warning} />
-            <Text style={styles.bannerText}>
-              {duplicateIds.size} duplicate{duplicateIds.size !== 1 ? 's' : ''} found
-            </Text>
-            <Text style={styles.bannerActionWarning}>Remove</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* AI relabel banner */}
-        {!isSelectionMode && unlabeledNotes.length > 0 && !relabelProgress && (
-          <TouchableOpacity style={styles.relabelBanner} onPress={handleRelabel}>
-            <Ionicons name="sparkles-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.bannerText}>
-              {unlabeledNotes.length} note{unlabeledNotes.length !== 1 ? 's' : ''} with unclear labels
-            </Text>
-            <Text style={styles.bannerActionPrimary}>AI Label</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Fix bad titles banner */}
-        {!isSelectionMode && badTitleNotes.length > 0 && !relabelProgress && (
-          <TouchableOpacity style={styles.relabelBanner} onPress={handleFixBadTitles}>
-            <Ionicons name="pencil-outline" size={16} color={theme.colors.primary} />
-            <Text style={styles.bannerText}>
-              {badTitleNotes.length} note{badTitleNotes.length !== 1 ? 's' : ''} with bad titles
-            </Text>
-            <Text style={styles.bannerActionPrimary}>Fix Titles</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Relabel progress */}
-        {relabelProgress && (
-          <View style={styles.relabelBanner}>
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-            <Text style={styles.bannerText}>Labeling note {relabelProgress}...</Text>
           </View>
         )}
 
@@ -656,97 +675,174 @@ export default function NotesVaultScreen() {
           ) : null}
         </View>
 
-        {/* Sort */}
-        {notes.length > 0 && !searchQuery && (
-          <View style={styles.sortBar}>
-            {(['date', 'subject', 'words'] as const).map((opt) => (
-              <TouchableOpacity
-                key={opt}
-                style={[styles.sortBtn, sortBy === opt && styles.sortBtnActive]}
-                onPress={() => setSortBy(opt)}
-              >
-                <Text style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}>
-                  {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Words'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        {hasQuickActions && (
+          <View style={styles.quickActionsSection}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.quickActionsContent}
+            >
+              {visibleNotes.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                  onPress={handleAskGuruFromNotes}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Ask Guru using current notes"
+                >
+                  <Ionicons name="sparkles-outline" size={15} color={theme.colors.primaryLight} />
+                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                    Ask Guru
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {notes.length > 0 && !searchQuery && (
+                <TouchableOpacity
+                  style={[styles.quickActionChip, isSortMenuOpen && styles.quickActionChipPrimary]}
+                  onPress={() => setIsSortMenuOpen((prev) => !prev)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Sort notes"
+                >
+                  <Ionicons
+                    name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
+                    size={15}
+                    color={isSortMenuOpen ? theme.colors.primaryLight : theme.colors.textSecondary}
+                  />
+                  <Text style={styles.quickActionText}>
+                    Sort <Text style={styles.quickActionValue}>{currentSortLabel}</Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {(subjectOptions.length > 0 || topicOptions.length > 0) && (
+                <TouchableOpacity
+                  style={[
+                    styles.quickActionChip,
+                    (subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen) &&
+                      styles.quickActionChipPrimary,
+                  ]}
+                  onPress={() => setIsFilterMenuOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Filter notes"
+                >
+                  <Ionicons
+                    name="options-outline"
+                    size={15}
+                    color={
+                      subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen
+                        ? theme.colors.primaryLight
+                        : theme.colors.textSecondary
+                    }
+                  />
+                  <Text style={styles.quickActionText}>
+                    <Text
+                      style={[
+                        styles.quickActionText,
+                        (subjectFilter !== 'all' || topicFilter !== 'all') &&
+                          styles.quickActionTextPrimary,
+                      ]}
+                    >
+                      {activeFilterSummary}
+                    </Text>
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {junkNotes.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.quickActionChip, styles.quickActionChipError]}
+                  onPress={handleDeleteJunk}
+                >
+                  <Ionicons name="trash-outline" size={15} color={theme.colors.error} />
+                  <Text style={[styles.quickActionText, styles.quickActionTextError]}>
+                    Clean {junkNotes.length}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {duplicateIds.size > 0 && (
+                <TouchableOpacity
+                  style={[styles.quickActionChip, styles.quickActionChipWarning]}
+                  onPress={handleDeleteDuplicates}
+                >
+                  <Ionicons name="copy-outline" size={15} color={theme.colors.warning} />
+                  <Text style={[styles.quickActionText, styles.quickActionTextWarning]}>
+                    Duplicates {duplicateIds.size}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {!relabelProgress && unlabeledNotes.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                  onPress={handleRelabel}
+                >
+                  <Ionicons name="sparkles-outline" size={15} color={theme.colors.primaryLight} />
+                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                    Label {unlabeledNotes.length}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {!relabelProgress && badTitleNotes.length > 0 && (
+                <TouchableOpacity
+                  style={[styles.quickActionChip, styles.quickActionChipPrimary]}
+                  onPress={handleFixBadTitles}
+                >
+                  <Ionicons name="create-outline" size={15} color={theme.colors.primaryLight} />
+                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                    Fix Titles {badTitleNotes.length}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {relabelProgress && (
+                <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
+                  <ActivityIndicator size="small" color={theme.colors.primaryLight} />
+                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                    Labeling {relabelProgress}
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
           </View>
         )}
 
-        {subjectOptions.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-          >
-            <TouchableOpacity
-              style={[styles.filterChip, subjectFilter === 'all' && styles.filterChipActive]}
-              onPress={() => setSubjectFilter('all')}
-            >
-              <Text
-                style={[styles.filterChipText, subjectFilter === 'all' && styles.filterChipTextActive]}
-              >
-                All subjects
-              </Text>
-            </TouchableOpacity>
-            {subjectOptions.map((subject) => (
-              <TouchableOpacity
-                key={subject}
-                style={[styles.filterChip, subjectFilter === subject && styles.filterChipActive]}
-                onPress={() => setSubjectFilter(subject)}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    subjectFilter === subject && styles.filterChipTextActive,
-                  ]}
+        {notes.length > 0 && !searchQuery && isSortMenuOpen && (
+          <View style={styles.sortSection}>
+            <View style={styles.sortMenu}>
+              {SORT_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.sortOption, sortBy === option.value && styles.sortOptionActive]}
+                  onPress={() => {
+                    setSortBy(option.value);
+                    setIsSortMenuOpen(false);
+                  }}
                 >
-                  {subject}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {topicOptions.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.filterRow, styles.filterRowCompact]}
-          >
-            <TouchableOpacity
-              style={[styles.filterChip, topicFilter === 'all' && styles.filterChipActive]}
-              onPress={() => setTopicFilter('all')}
-            >
-              <Text
-                style={[styles.filterChipText, topicFilter === 'all' && styles.filterChipTextActive]}
-              >
-                All topics
-              </Text>
-            </TouchableOpacity>
-            {topicOptions.map((topic) => (
-              <TouchableOpacity
-                key={topic}
-                style={[styles.filterChip, topicFilter === topic && styles.filterChipActive]}
-                onPress={() => setTopicFilter(topic)}
-              >
-                <Text
-                  style={[styles.filterChipText, topicFilter === topic && styles.filterChipTextActive]}
-                >
-                  {topic}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+                  <Text
+                    style={[
+                      styles.sortOptionText,
+                      sortBy === option.value && styles.sortOptionTextActive,
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  {sortBy === option.value ? (
+                    <Ionicons name="checkmark" size={16} color={theme.colors.primaryLight} />
+                  ) : null}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         )}
 
         {/* List */}
         {visibleNotes.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="document-text-outline" size={48} color={theme.colors.textMuted} />
-            <Text style={styles.emptyTitle}>
-              {searchQuery ? 'No Results' : 'No Notes Yet'}
-            </Text>
+            <Text style={styles.emptyTitle}>{searchQuery ? 'No Results' : 'No Notes Yet'}</Text>
             <Text style={styles.emptySubtitle}>
               {searchQuery
                 ? `Nothing matches "${searchQuery}"`
@@ -769,6 +865,182 @@ export default function NotesVaultScreen() {
           />
         )}
 
+        <Modal
+          visible={isFilterMenuOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsFilterMenuOpen(false)}
+        >
+          <View style={styles.sheetOverlay}>
+            <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
+            <View style={styles.sheetCard}>
+              <View style={styles.sheetHeader}>
+                <View style={styles.sheetHeaderCopy}>
+                  <Text style={styles.sheetTitle}>Filter Notes</Text>
+                  <Text style={styles.sheetSubtitle}>Narrow the vault by subject and topic.</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.sheetCloseBtn}
+                  onPress={() => setIsFilterMenuOpen(false)}
+                >
+                  <Ionicons name="close" size={18} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.clearFiltersBtn}
+                onPress={() => {
+                  setSubjectFilter('all');
+                  setTopicFilter('all');
+                  setIsFilterMenuOpen(false);
+                }}
+              >
+                <Text style={styles.clearFiltersText}>Clear filters</Text>
+              </TouchableOpacity>
+
+              <ScrollView
+                style={styles.sheetScroll}
+                contentContainerStyle={styles.sheetScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.sheetSection}>
+                  <Text style={styles.sheetSectionTitle}>Subject</Text>
+                  <View style={styles.sheetOptions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.sheetOption,
+                        subjectFilter === 'all' && styles.sheetOptionActive,
+                      ]}
+                      onPress={() => setSubjectFilter('all')}
+                    >
+                      <Text
+                        style={[
+                          styles.sheetOptionText,
+                          subjectFilter === 'all' && styles.sheetOptionTextActive,
+                        ]}
+                      >
+                        All subjects
+                      </Text>
+                      {subjectFilter === 'all' ? (
+                        <Ionicons
+                          name="radio-button-on"
+                          size={18}
+                          color={theme.colors.primaryLight}
+                        />
+                      ) : (
+                        <Ionicons
+                          name="radio-button-off"
+                          size={18}
+                          color={theme.colors.textMuted}
+                        />
+                      )}
+                    </TouchableOpacity>
+                    {subjectOptions.map((subject) => (
+                      <TouchableOpacity
+                        key={subject}
+                        style={[
+                          styles.sheetOption,
+                          subjectFilter === subject && styles.sheetOptionActive,
+                        ]}
+                        onPress={() => setSubjectFilter(subject)}
+                      >
+                        <Text
+                          style={[
+                            styles.sheetOptionText,
+                            subjectFilter === subject && styles.sheetOptionTextActive,
+                          ]}
+                        >
+                          {subject}
+                        </Text>
+                        {subjectFilter === subject ? (
+                          <Ionicons
+                            name="radio-button-on"
+                            size={18}
+                            color={theme.colors.primaryLight}
+                          />
+                        ) : (
+                          <Ionicons
+                            name="radio-button-off"
+                            size={18}
+                            color={theme.colors.textMuted}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={styles.sheetSection}>
+                  <Text style={styles.sheetSectionTitle}>Topic</Text>
+                  <View style={styles.sheetOptions}>
+                    <TouchableOpacity
+                      style={[
+                        styles.sheetOption,
+                        topicFilter === 'all' && styles.sheetOptionActive,
+                      ]}
+                      onPress={() => setTopicFilter('all')}
+                    >
+                      <Text
+                        style={[
+                          styles.sheetOptionText,
+                          topicFilter === 'all' && styles.sheetOptionTextActive,
+                        ]}
+                      >
+                        All topics
+                      </Text>
+                      {topicFilter === 'all' ? (
+                        <Ionicons
+                          name="radio-button-on"
+                          size={18}
+                          color={theme.colors.primaryLight}
+                        />
+                      ) : (
+                        <Ionicons
+                          name="radio-button-off"
+                          size={18}
+                          color={theme.colors.textMuted}
+                        />
+                      )}
+                    </TouchableOpacity>
+                    {topicOptions.map((topic) => (
+                      <TouchableOpacity
+                        key={topic}
+                        style={[
+                          styles.sheetOption,
+                          topicFilter === topic && styles.sheetOptionActive,
+                        ]}
+                        onPress={() => setTopicFilter(topic)}
+                      >
+                        <Text
+                          style={[
+                            styles.sheetOptionText,
+                            topicFilter === topic && styles.sheetOptionTextActive,
+                          ]}
+                        >
+                          {topic}
+                        </Text>
+                        {topicFilter === topic ? (
+                          <Ionicons
+                            name="radio-button-on"
+                            size={18}
+                            color={theme.colors.primaryLight}
+                          />
+                        ) : (
+                          <Ionicons
+                            name="radio-button-off"
+                            size={18}
+                            color={theme.colors.textMuted}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
         {/* Full-screen reader */}
         <Modal
           visible={!!readerContent}
@@ -789,7 +1061,7 @@ export default function NotesVaultScreen() {
               >
                 <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
               </TouchableOpacity>
-              <Text style={styles.readerHeaderTitle} numberOfLines={1}>
+              <Text style={styles.readerHeaderTitle} numberOfLines={3}>
                 {readerTitle}
               </Text>
               <TouchableOpacity
@@ -834,6 +1106,18 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   flex: { flex: 1 },
   list: { padding: 16, paddingBottom: 40 },
+  headerCompact: {
+    marginBottom: 12,
+  },
+  headerTitleCompact: {
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  headerSubtitleCompact: {
+    marginTop: 2,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   askGuruBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -853,81 +1137,197 @@ const styles = StyleSheet.create({
   askGuruBannerTitle: {
     color: theme.colors.textPrimary,
     fontSize: 15,
+    lineHeight: 20,
     fontWeight: '800',
   },
   askGuruBannerSubtitle: {
     color: theme.colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: 2,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: theme.colors.surface,
-    margin: 16,
+    marginHorizontal: 16,
     marginTop: 0,
+    marginBottom: 10,
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    minHeight: 44,
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 8,
   },
-  filterRow: {
+  quickActionsSection: {
     paddingHorizontal: 16,
-    paddingBottom: 8,
+    marginBottom: 10,
+  },
+  quickActionsContent: {
     gap: 8,
+    paddingRight: 16,
   },
-  filterRowCompact: {
-    paddingBottom: 12,
-  },
-  filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+  quickActionChip: {
+    minHeight: 34,
     borderRadius: 999,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  filterChipActive: {
-    backgroundColor: theme.colors.primary + '18',
-    borderColor: theme.colors.primary + '45',
+  quickActionChipPrimary: {
+    backgroundColor: theme.colors.primary + '10',
+    borderColor: theme.colors.primary + '35',
   },
-  filterChipText: {
+  quickActionChipWarning: {
+    backgroundColor: theme.colors.warning + '10',
+    borderColor: theme.colors.warning + '30',
+  },
+  quickActionChipError: {
+    backgroundColor: theme.colors.error + '10',
+    borderColor: theme.colors.error + '30',
+  },
+  quickActionText: {
     color: theme.colors.textSecondary,
     fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
   },
-  filterChipTextActive: {
+  quickActionTextPrimary: {
     color: theme.colors.primaryLight,
+  },
+  quickActionTextWarning: {
+    color: theme.colors.warning,
+  },
+  quickActionTextError: {
+    color: theme.colors.error,
+  },
+  quickActionValue: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '800',
+  },
+  filterSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  filterTrigger: {
+    minHeight: 48,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  filterTriggerActive: {
+    borderColor: theme.colors.primary + '55',
+    backgroundColor: theme.colors.primary + '10',
+  },
+  filterTriggerCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  filterTriggerLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  filterTriggerValue: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+    marginTop: 2,
   },
   searchInput: {
     flex: 1,
     color: theme.colors.textPrimary,
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 20,
+    minWidth: 0,
     padding: 0,
   },
-  sortBar: {
-    flexDirection: 'row',
+  sortSection: {
     paddingHorizontal: 16,
-    marginBottom: 8,
-    gap: 8,
+    marginBottom: 10,
   },
-  sortBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
+  sortTrigger: {
+    minHeight: 44,
+    borderRadius: theme.borderRadius.md,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
-  sortBtnActive: {
-    backgroundColor: theme.colors.primary + '22',
-    borderColor: theme.colors.primary,
+  sortTriggerActive: {
+    borderColor: theme.colors.primary + '55',
+    backgroundColor: theme.colors.primary + '10',
   },
-  sortBtnText: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  sortBtnTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  sortTriggerLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  sortTriggerValueWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 0,
+  },
+  sortTriggerValue: {
+    color: theme.colors.primaryLight,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  sortMenu: {
+    marginTop: 8,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+  },
+  sortOption: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sortOptionActive: {
+    backgroundColor: theme.colors.primary + '12',
+  },
+  sortOptionText: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  sortOptionTextActive: {
+    color: theme.colors.primaryLight,
+    fontWeight: '700',
+  },
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.md,
@@ -943,21 +1343,31 @@ const styles = StyleSheet.create({
   selectIcon: { position: 'absolute', top: 10, right: 10, zIndex: 2 },
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subjectChip: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 12,
     flexShrink: 1,
+    overflow: 'visible',
   },
-  subjectText: { color: '#fff', fontWeight: '600', fontSize: 12 },
-  dateText: { color: '#888', fontSize: 12, flexShrink: 0, marginLeft: 8 },
+  dateRow: {
+    width: '100%',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  dateText: {
+    color: '#888',
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: 'right',
+    minWidth: 72,
+  },
   titleText: {
     color: theme.colors.textPrimary,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
     marginBottom: 8,
@@ -965,40 +1375,61 @@ const styles = StyleSheet.create({
   topicsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'flex-start',
     gap: 4,
     marginBottom: 8,
   },
   topicPill: {
-    color: theme.colors.textSecondary,
-    fontSize: 11,
-    backgroundColor: theme.colors.card,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    backgroundColor: theme.colors.surfaceAlt,
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     overflow: 'hidden',
   },
   moreBadge: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     paddingHorizontal: 6,
-    paddingVertical: 3,
+    paddingVertical: 4,
   },
   cardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
   },
   confidenceBadge: {
-    color: '#fff',
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
     overflow: 'hidden',
   },
-  wordCount: { color: theme.colors.textMuted, fontSize: 11 },
-  appBadge: { color: '#666', fontSize: 11 },
+  confidenceBadgeLight: {
+    color: theme.colors.error,
+    backgroundColor: theme.colors.errorTintSoft,
+    borderColor: theme.colors.error + '55',
+  },
+  confidenceBadgeMid: {
+    color: theme.colors.warning,
+    backgroundColor: theme.colors.warningTintSoft,
+    borderColor: theme.colors.warning + '55',
+  },
+  confidenceBadgeStrong: {
+    color: theme.colors.success,
+    backgroundColor: theme.colors.successTintSoft,
+    borderColor: theme.colors.success + '55',
+  },
+  wordCount: { color: theme.colors.textMuted, fontSize: 12 },
+  appBadge: { color: '#666', fontSize: 12 },
   empty: {
     flex: 1,
     justifyContent: 'center',
@@ -1019,30 +1450,69 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   cleanupBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: theme.colors.error + '12', marginHorizontal: 16,
-    marginBottom: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.error + '30',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: theme.colors.error + '12',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.error + '30',
   },
   dupeBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: theme.colors.warning + '12', marginHorizontal: 16,
-    marginBottom: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.warning + '30',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: theme.colors.warning + '12',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.warning + '30',
   },
   relabelBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: theme.colors.primary + '12', marginHorizontal: 16,
-    marginBottom: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.primary + '30',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: theme.colors.primary + '12',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '30',
   },
-  bannerText: { flex: 1, color: theme.colors.textSecondary, fontSize: 13, fontWeight: '600' },
-  bannerActionError: { color: theme.colors.error, fontSize: 13, fontWeight: '800' },
-  bannerActionWarning: { color: theme.colors.warning, fontSize: 13, fontWeight: '800' },
-  bannerActionPrimary: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
+  bannerText: {
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+    minWidth: 0,
+  },
+  bannerActionError: { color: theme.colors.error, fontSize: 13, lineHeight: 18, fontWeight: '800' },
+  bannerActionWarning: {
+    color: theme.colors.warning,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+  },
+  bannerActionPrimary: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+  },
   selectionBanner: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     backgroundColor: theme.colors.primary + '18',
     marginHorizontal: 16,
@@ -1053,10 +1523,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.primary + '40',
   },
-  selectionText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
-  selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  selectionText: { color: theme.colors.primary, fontSize: 14, lineHeight: 20, fontWeight: '700' },
+  selectionActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginLeft: 'auto',
+  },
   selectionCancelBtn: { paddingHorizontal: 12, paddingVertical: 6 },
-  selectionCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '700' },
+  selectionCancelText: {
+    color: theme.colors.primary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
   selectionDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1066,7 +1547,123 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
   },
-  selectionDeleteText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  selectionDeleteText: { color: '#fff', fontSize: 13, lineHeight: 18, fontWeight: '700' },
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetCard: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderBottomWidth: 0,
+    maxHeight: '82%',
+    paddingTop: 12,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  sheetHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  sheetTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+  },
+  sheetSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
+  },
+  sheetCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+  },
+  clearFiltersBtn: {
+    alignSelf: 'flex-start',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary + '14',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '32',
+  },
+  clearFiltersText: {
+    color: theme.colors.primaryLight,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  sheetScroll: {
+    flexGrow: 0,
+  },
+  sheetScrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    gap: 20,
+  },
+  sheetSection: {
+    gap: 10,
+  },
+  sheetSectionTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  sheetOptions: {
+    gap: 8,
+  },
+  sheetOption: {
+    minHeight: 46,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sheetOptionActive: {
+    borderColor: theme.colors.primary + '50',
+    backgroundColor: theme.colors.primary + '12',
+  },
+  sheetOptionText: {
+    flex: 1,
+    minWidth: 0,
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  sheetOptionTextActive: {
+    color: theme.colors.primaryLight,
+    fontWeight: '700',
+  },
   readerContainer: { flex: 1, backgroundColor: theme.colors.background },
   readerHeader: {
     flexDirection: 'row',
@@ -1082,7 +1679,9 @@ const styles = StyleSheet.create({
     flex: 1,
     color: theme.colors.textPrimary,
     fontSize: 16,
+    lineHeight: 22,
     fontWeight: '700',
+    minWidth: 0,
   },
   readerCopyBtn: { padding: 6 },
   readerScroll: { flex: 1 },

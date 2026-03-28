@@ -19,6 +19,7 @@ interface RunTranscriptionProvidersOptions<T> {
   fallbackOnError?: boolean;
   onProviderStart?: (provider: RunnableTranscriptionProvider) => void;
   onProviderError?: (provider: RunnableTranscriptionProvider, error: unknown) => void;
+  onProviderResult?: (provider: RunnableTranscriptionProvider, result: T, usable: boolean) => void;
 }
 
 export function buildTranscriptionProviderOrder(
@@ -52,6 +53,7 @@ export async function runTranscriptionProviders<T>({
   fallbackOnError = true,
   onProviderStart,
   onProviderError,
+  onProviderResult,
 }: RunTranscriptionProvidersOptions<T>): Promise<{
   result: T | null;
   provider: RunnableTranscriptionProvider | null;
@@ -67,7 +69,9 @@ export async function runTranscriptionProviders<T>({
     try {
       onProviderStart?.(provider);
       const result = await runner();
-      if (isUsableResult(result)) {
+      const usable = isUsableResult(result);
+      onProviderResult?.(provider, result, usable);
+      if (usable) {
         return { result, provider, lastError };
       }
     } catch (error) {

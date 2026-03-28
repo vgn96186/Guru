@@ -42,6 +42,7 @@ import { getCachedUnseenQuestionsForSessionFallback } from '../db/queries/questi
 import { profileRepository, dailyLogRepository } from '../db/repositories';
 import { calculateAndAwardSessionXp } from '../services/xpService';
 import LoadingOrb from '../components/LoadingOrb';
+import { MarkdownRender } from '../components/MarkdownRender';
 import ContentCard from './ContentCard';
 import ErrorBoundary from '../components/ErrorBoundary';
 import BreakScreen from './BreakScreen';
@@ -54,7 +55,6 @@ import { useGuruPresence } from '../hooks/useGuruPresence';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
-
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
@@ -110,7 +110,10 @@ function formatSessionModelLabel(modelUsed?: string | null): string {
   return `AI · ${m}`;
 }
 
-function buildCachedQuestionFallbackContent(topicName: string, questions: QuestionBankItem[]): AIContent {
+function buildCachedQuestionFallbackContent(
+  topicName: string,
+  questions: QuestionBankItem[],
+): AIContent {
   return {
     type: 'quiz',
     topicName,
@@ -362,7 +365,11 @@ export default function SessionScreen() {
         setSessionId(sessId);
         // Eagerly prefetch first item with Groq (fastest) before state transitions
         if (agendaResult.items.length > 0) {
-          void prefetchTopicContent(agendaResult.items[0].topic, agendaResult.items[0].contentTypes, 'groq');
+          void prefetchTopicContent(
+            agendaResult.items[0].topic,
+            agendaResult.items[0].contentTypes,
+            'groq',
+          );
         }
         setAgenda(agendaResult);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -490,7 +497,11 @@ export default function SessionScreen() {
 
   const tryUseCachedQuestionFallback = useCallback(
     async (topic: AgendaItem['topic']): Promise<boolean> => {
-      const fallbackQuestions = await getCachedUnseenQuestionsForSessionFallback(topic.id, topic.subjectName, 3);
+      const fallbackQuestions = await getCachedUnseenQuestionsForSessionFallback(
+        topic.id,
+        topic.subjectName,
+        3,
+      );
       if (!fallbackQuestions.length) return false;
 
       if (__DEV__) {
@@ -509,7 +520,8 @@ export default function SessionScreen() {
   );
 
   useEffect(() => {
-    if ((sessionState !== 'studying' && sessionState !== 'agenda_reveal') || isOnBreak || isPaused) return;
+    if ((sessionState !== 'studying' && sessionState !== 'agenda_reveal') || isOnBreak || isPaused)
+      return;
     if (contentRetryPending) return;
     if (currentContent || isLoadingContent) return;
 
@@ -522,7 +534,8 @@ export default function SessionScreen() {
     if (aiError) return;
 
     // Force Groq (fastest provider) for the very first content card
-    const forceGroq = currentItemIndex === 0 && currentContentIndex === 0 ? 'groq' as const : undefined;
+    const forceGroq =
+      currentItemIndex === 0 && currentContentIndex === 0 ? ('groq' as const) : undefined;
     setLoadingContent(true);
     fetchContent(item.topic, cType, forceGroq)
       .then((content) => {
@@ -603,15 +616,18 @@ export default function SessionScreen() {
     }
   }, [currentItemIndex, currentContentIndex]);
 
-  const prefetchAgendaWindow = useCallback((startIndex: number) => {
-    if (!agenda) return;
-    const items = agenda.items.slice(startIndex, startIndex + SESSION_PREFETCH_LOOKAHEAD);
-    items.forEach((item, i) => {
-      // Force Groq (fastest) for the very first agenda item so content appears instantly
-      const useGroqFast = startIndex === 0 && i === 0 ? 'groq' as const : undefined;
-      void prefetchTopicContent(item.topic, item.contentTypes, useGroqFast);
-    });
-  }, [agenda]);
+  const prefetchAgendaWindow = useCallback(
+    (startIndex: number) => {
+      if (!agenda) return;
+      const items = agenda.items.slice(startIndex, startIndex + SESSION_PREFETCH_LOOKAHEAD);
+      items.forEach((item, i) => {
+        // Force Groq (fastest) for the very first agenda item so content appears instantly
+        const useGroqFast = startIndex === 0 && i === 0 ? ('groq' as const) : undefined;
+        void prefetchTopicContent(item.topic, item.contentTypes, useGroqFast);
+      });
+    },
+    [agenda],
+  );
 
   // Prefetch Effect
   useEffect(() => {
@@ -718,7 +734,10 @@ export default function SessionScreen() {
                   })
                   .catch((fallbackError) => {
                     if (__DEV__) {
-                      console.warn('[Session] Cached question fallback failed after downgrade:', fallbackError);
+                      console.warn(
+                        '[Session] Cached question fallback failed after downgrade:',
+                        fallbackError,
+                      );
                     }
                     setAiError(e?.message ?? 'AI content failed');
                   })
@@ -838,13 +857,25 @@ export default function SessionScreen() {
           <IconCircle name="flag" color={theme.colors.primary} size={56} />
           <Text style={styles.revealFocus}>{agenda.focusNote}</Text>
           <View style={styles.revealGuruCard}>
-            <Text style={styles.revealGuru}>"{agenda.guruMessage}"</Text>
+            <View style={styles.revealGuru}>
+              <MarkdownRender content={agenda.guruMessage} compact />
+            </View>
           </View>
           <View style={styles.revealTopicList}>
             {agenda.items.map((i) => (
               <View key={i.topic.id} style={styles.revealTopic}>
-                <View style={[styles.revealInitial, { backgroundColor: (i.topic.subjectColor || theme.colors.primary) + '33' }]}>
-                  <Text style={[styles.revealInitialText, { color: i.topic.subjectColor || theme.colors.primary }]}>
+                <View
+                  style={[
+                    styles.revealInitial,
+                    { backgroundColor: (i.topic.subjectColor || theme.colors.primary) + '33' },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.revealInitialText,
+                      { color: i.topic.subjectColor || theme.colors.primary },
+                    ]}
+                  >
                     {(i.topic.subjectCode || i.topic.name)[0]}
                   </Text>
                 </View>
@@ -943,11 +974,7 @@ export default function SessionScreen() {
           <Text style={styles.topicDoneSub}>
             Topic complete! Taking a {profile?.breakDurationMinutes ?? 5}-min break...
           </Text>
-          {nextItem && (
-            <Text style={styles.topicDoneNext}>
-              Up next: {nextItem.topic.name}
-            </Text>
-          )}
+          {nextItem && <Text style={styles.topicDoneNext}>Up next: {nextItem.topic.name}</Text>}
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -989,32 +1016,58 @@ export default function SessionScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.phaseRow}>
-              <View style={[
-                styles.phaseBadge,
-                isPaused ? styles.phaseBadgeWarn
-                  : isOnBreak ? styles.phaseBadgeAccent
-                  : sessionState === 'studying' ? null
-                  : styles.phaseBadgeSuccess,
-              ]}>
+              <View
+                style={[
+                  styles.phaseBadge,
+                  isPaused
+                    ? styles.phaseBadgeWarn
+                    : isOnBreak
+                      ? styles.phaseBadgeAccent
+                      : sessionState === 'studying'
+                        ? null
+                        : styles.phaseBadgeSuccess,
+                ]}
+              >
                 <Ionicons
                   name={
-                    isPaused ? 'pause' : isOnBreak ? 'cafe-outline'
-                      : sessionState === 'studying' ? 'book-outline' : 'checkmark-circle'
+                    isPaused
+                      ? 'pause'
+                      : isOnBreak
+                        ? 'cafe-outline'
+                        : sessionState === 'studying'
+                          ? 'book-outline'
+                          : 'checkmark-circle'
                   }
                   size={11}
                   color={
-                    isPaused ? theme.colors.warning : isOnBreak ? theme.colors.accent
-                      : sessionState === 'studying' ? theme.colors.primary : theme.colors.success
+                    isPaused
+                      ? theme.colors.warning
+                      : isOnBreak
+                        ? theme.colors.accent
+                        : sessionState === 'studying'
+                          ? theme.colors.primary
+                          : theme.colors.success
                   }
                 />
-                <Text style={[
-                  styles.phaseBadgeText,
-                  isPaused ? { color: theme.colors.warning }
-                    : isOnBreak ? { color: theme.colors.accent }
-                    : sessionState !== 'studying' ? { color: theme.colors.success }
-                    : null,
-                ]}>
-                  {isPaused ? 'Paused' : isOnBreak ? 'Break' : sessionState === 'studying' ? 'Studying' : 'Done'}
+                <Text
+                  style={[
+                    styles.phaseBadgeText,
+                    isPaused
+                      ? { color: theme.colors.warning }
+                      : isOnBreak
+                        ? { color: theme.colors.accent }
+                        : sessionState !== 'studying'
+                          ? { color: theme.colors.success }
+                          : null,
+                  ]}
+                >
+                  {isPaused
+                    ? 'Paused'
+                    : isOnBreak
+                      ? 'Break'
+                      : sessionState === 'studying'
+                        ? 'Studying'
+                        : 'Done'}
                 </Text>
               </View>
               <Text style={styles.topicProgress}>
@@ -1047,11 +1100,7 @@ export default function SessionScreen() {
               accessibilityRole="button"
               accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
             >
-              <Ionicons
-                name={isPaused ? 'play' : 'pause'}
-                size={16}
-                color={theme.colors.primary}
-              />
+              <Ionicons name={isPaused ? 'play' : 'pause'} size={16} color={theme.colors.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setMenuVisible(true)}
@@ -1059,11 +1108,7 @@ export default function SessionScreen() {
               accessibilityRole="button"
               accessibilityLabel="Session menu"
             >
-              <Ionicons
-                name="ellipsis-horizontal"
-                size={18}
-                color={theme.colors.textSecondary}
-              />
+              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -1226,18 +1271,25 @@ function WarmUpMomentumScreen({
 }) {
   const { fade, slide } = useEntranceAnimation();
   const pct = answeredTotal > 0 ? Math.round((correctTotal / answeredTotal) * 100) : 0;
-  const scoreColor = pct >= 70 ? theme.colors.success : pct >= 40 ? theme.colors.warning : theme.colors.error;
-  useEffect(() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }, []);
+  const scoreColor =
+    pct >= 70 ? theme.colors.success : pct >= 40 ? theme.colors.warning : theme.colors.error;
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <Animated.View style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}>
+      <Animated.View
+        style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}
+      >
         <IconCircle name="flash" color={theme.colors.accentAlt} size={64} />
         <Text style={styles.doneTitle}>Nice work, Doctor.</Text>
         {answeredTotal > 0 ? (
           <View style={styles.warmupScoreCard}>
             <Text style={[styles.warmupScoreNumber, { color: scoreColor }]}>{pct}%</Text>
-            <Text style={styles.warmupScoreFraction}>{correctTotal}/{answeredTotal} correct</Text>
+            <Text style={styles.warmupScoreFraction}>
+              {correctTotal}/{answeredTotal} correct
+            </Text>
           </View>
         ) : (
           <Text style={styles.doneStat}>Session complete</Text>
@@ -1285,30 +1337,52 @@ function SessionDoneScreen({
 }) {
   const { fade, slide } = useEntranceAnimation();
   const mins = Math.round(elapsedSeconds / 60);
-  useEffect(() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); }, []);
+  useEffect(() => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, []);
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-      <Animated.View style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]} testID="session-done">
+      <Animated.View
+        style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}
+        testID="session-done"
+      >
         <IconCircle name="trophy" color={theme.colors.accentAlt} size={64} />
         <Text style={styles.doneTitle}>Session Complete!</Text>
         <View style={styles.summaryCard}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
-              <Ionicons name="book-outline" size={18} color={theme.colors.textMuted} style={{ marginBottom: 4 }} />
+              <Ionicons
+                name="book-outline"
+                size={18}
+                color={theme.colors.textMuted}
+                style={{ marginBottom: 4 }}
+              />
               <Text style={styles.summaryValue}>{completedCount}</Text>
               <Text style={styles.summaryLabel}>Topics</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Ionicons name="time-outline" size={18} color={theme.colors.textMuted} style={{ marginBottom: 4 }} />
+              <Ionicons
+                name="time-outline"
+                size={18}
+                color={theme.colors.textMuted}
+                style={{ marginBottom: 4 }}
+              />
               <Text style={styles.summaryValue}>{mins}</Text>
               <Text style={styles.summaryLabel}>Minutes</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
-              <Ionicons name="star-outline" size={18} color={theme.colors.accentAlt} style={{ marginBottom: 4 }} />
-              <Text style={[styles.summaryValue, { color: theme.colors.accentAlt }]}>+{xpTotal}</Text>
+              <Ionicons
+                name="star-outline"
+                size={18}
+                color={theme.colors.accentAlt}
+                style={{ marginBottom: 4 }}
+              />
+              <Text style={[styles.summaryValue, { color: theme.colors.accentAlt }]}>
+                +{xpTotal}
+              </Text>
               <Text style={styles.summaryLabel}>XP</Text>
             </View>
           </View>
@@ -1472,9 +1546,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   revealGuru: {
-    color: theme.colors.textSecondary,
-    fontSize: 15,
-    fontStyle: 'italic',
+    alignSelf: 'stretch',
   },
   revealTopicList: { width: '100%', marginBottom: 20 },
   revealTopic: {
@@ -1511,7 +1583,12 @@ const styles = StyleSheet.create({
     ...theme.shadows.glow(theme.colors.success),
   },
   revealSub: { color: theme.colors.textSecondary, fontSize: 13 },
-  topicDoneContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xxl },
+  topicDoneContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: theme.spacing.xxl,
+  },
   topicDoneName: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
@@ -1554,8 +1631,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontWeight: '900',
     fontSize: 28,
+    lineHeight: 36,
+    includeFontPadding: false,
     marginTop: theme.spacing.lg,
     marginBottom: theme.spacing.xl,
+    textAlign: 'center',
   },
   summaryCard: {
     backgroundColor: theme.colors.surface,
@@ -1572,14 +1652,27 @@ const styles = StyleSheet.create({
   summaryValue: { color: theme.colors.textPrimary, fontSize: 28, fontWeight: '900' },
   summaryLabel: { color: theme.colors.textSecondary, fontSize: 12, marginTop: 4 },
   summaryDivider: { width: 1, height: 40, backgroundColor: theme.colors.border },
-  doneStat: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: theme.spacing.xxl },
+  doneStat: {
+    color: theme.colors.textSecondary,
+    fontSize: 16,
+    lineHeight: 24,
+    includeFontPadding: false,
+    marginBottom: theme.spacing.xxl,
+    textAlign: 'center',
+  },
   doneBtn: {
     backgroundColor: theme.colors.primary,
     borderRadius: 16,
     paddingHorizontal: 40,
     paddingVertical: theme.spacing.lg,
   },
-  doneBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  doneBtnText: {
+    color: theme.colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 18,
+    lineHeight: 24,
+    includeFontPadding: false,
+  },
   doneSecondaryBtn: {
     backgroundColor: theme.colors.surface,
     borderRadius: 16,
@@ -1591,7 +1684,13 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
   },
-  doneSecondaryBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 16 },
+  doneSecondaryBtnText: {
+    color: theme.colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 16,
+    lineHeight: 22,
+    includeFontPadding: false,
+  },
   btnRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   warmupScoreCard: {
     alignItems: 'center',
@@ -1602,7 +1701,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   warmupScoreNumber: { fontSize: 42, fontWeight: '900' },
-  warmupScoreFraction: { color: theme.colors.textSecondary, fontSize: 14, marginTop: 4 },
+  warmupScoreFraction: {
+    color: theme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    includeFontPadding: false,
+    marginTop: 4,
+  },
   planningContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   planningSubtext: { color: theme.colors.textMuted, fontSize: 12, marginTop: 8 },
   errorContainer: {
@@ -1611,7 +1716,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: theme.spacing.xxl,
   },
-  errorTitle: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 22, marginTop: 16, marginBottom: 8 },
+  errorTitle: {
+    color: theme.colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 22,
+    marginTop: 16,
+    marginBottom: 8,
+  },
   errorMsgCard: {
     backgroundColor: theme.colors.errorSurface,
     borderRadius: theme.borderRadius.md,

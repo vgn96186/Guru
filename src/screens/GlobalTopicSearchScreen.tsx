@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   TextInput,
   FlatList,
   TouchableOpacity,
@@ -18,6 +17,7 @@ import { HomeStackParamList } from '../navigation/types';
 import { getDb } from '../db/database';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import AppText from '../components/AppText';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'GlobalTopicSearch'>;
 
@@ -113,8 +113,12 @@ export default function GlobalTopicSearchScreen() {
             ListEmptyComponent={
               query.length >= 2 ? (
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyTitle}>No topics found</Text>
-                  <Text style={styles.emptySub}>Try a different keyword.</Text>
+                  <AppText style={styles.emptyTitle} variant="sectionTitle">
+                    No topics found
+                  </AppText>
+                  <AppText style={styles.emptySub} variant="bodySmall" tone="muted">
+                    Try a different keyword.
+                  </AppText>
                 </View>
               ) : (
                 <View style={styles.emptyState}>
@@ -124,9 +128,9 @@ export default function GlobalTopicSearchScreen() {
                     color={theme.colors.border}
                     style={{ marginBottom: 16 }}
                   />
-                  <Text style={styles.emptySub}>
+                  <AppText style={styles.emptySub} variant="bodySmall" tone="muted">
                     Type at least 2 characters to search across all subjects.
-                  </Text>
+                  </AppText>
                 </View>
               )
             }
@@ -140,10 +144,12 @@ export default function GlobalTopicSearchScreen() {
               >
                 <View style={[styles.dot, { backgroundColor: item.color_hex }]} />
                 <View style={styles.resultTextContainer}>
-                  <Text style={styles.resultName} numberOfLines={2}>
+                  <AppText style={styles.resultName} numberOfLines={3} variant="body">
                     {item.name}
-                  </Text>
-                  <Text style={styles.resultSubject}>{item.subject_name}</Text>
+                  </AppText>
+                  <AppText style={styles.resultSubject} variant="caption" tone="secondary">
+                    {item.subject_name}
+                  </AppText>
                 </View>
                 <Ionicons name="play-circle-outline" size={24} color={theme.colors.primary} />
               </TouchableOpacity>
@@ -173,12 +179,19 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceAlt,
     borderRadius: theme.borderRadius.md,
     paddingHorizontal: 12,
-    height: 44,
+    minHeight: 48,
+    paddingVertical: 6,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, color: theme.colors.textPrimary, fontSize: 16, height: '100%' },
+  searchInput: {
+    flex: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    minHeight: 24,
+    paddingVertical: 0,
+  },
   clearBtn: { padding: 4 },
   listContent: { padding: 16 },
   resultItem: {
@@ -192,10 +205,10 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   dot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
-  resultTextContainer: { flex: 1, marginRight: 12 },
-  resultName: { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: 4 },
-  resultSubject: { color: theme.colors.textSecondary, fontSize: 12 },
+  resultTextContainer: { flex: 1, minWidth: 0, marginRight: 12 },
+  resultName: { fontWeight: '700', marginBottom: 4 },
+  resultSubject: {},
   emptyState: { alignItems: 'center', marginTop: 60, paddingHorizontal: 32 },
-  emptyTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  emptySub: { color: theme.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  emptyTitle: { marginBottom: 8, textAlign: 'center' },
+  emptySub: { textAlign: 'center' },
 });

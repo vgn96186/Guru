@@ -68,6 +68,13 @@ function formatDate(timestamp: number): string {
   return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
+function formatTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleTimeString('en-IN', {
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 import {
   transcribeAudio,
   generateADHDNote,
@@ -346,8 +353,33 @@ export default function NotesHubScreen() {
                           {session.transcriptionStatus?.toUpperCase()}
                         </Text>
                       </Text>
+                      {session.pipelineTelemetry?.currentMessage ? (
+                        <Text style={styles.pendingStage}>
+                          {session.pipelineTelemetry.currentMessage}
+                          {typeof session.pipelineTelemetry.currentPercent === 'number'
+                            ? ` (${Math.round(session.pipelineTelemetry.currentPercent)}%)`
+                            : ''}
+                        </Text>
+                      ) : null}
+                      {session.pipelineTelemetry?.currentDetail ? (
+                        <Text style={styles.pendingDetail} numberOfLines={3}>
+                          {session.pipelineTelemetry.currentDetail}
+                        </Text>
+                      ) : null}
+                      {session.pipelineTelemetry?.events?.length ? (
+                        <View style={styles.pendingEvents}>
+                          {session.pipelineTelemetry.events
+                            .slice(-2)
+                            .reverse()
+                            .map((event, index) => (
+                              <Text key={`${event.at}-${index}`} style={styles.pendingEventText}>
+                                {formatTime(event.at)} - {event.message}
+                              </Text>
+                            ))}
+                        </View>
+                      ) : null}
                       {session.transcriptionError && (
-                        <Text style={styles.pendingError} numberOfLines={1}>
+                        <Text style={styles.pendingError} numberOfLines={2}>
                           {session.transcriptionError}
                         </Text>
                       )}
@@ -527,12 +559,14 @@ export default function NotesHubScreen() {
                     accessibilityLabel={`Open lecture note: ${getLectureTitle(lecture)}`}
                   >
                     <View style={styles.lectureMetaRow}>
-                      <Text style={styles.lectureSubject} numberOfLines={1} ellipsizeMode="tail">
+                      <Text style={styles.lectureSubject} numberOfLines={2} ellipsizeMode="tail">
                         {getLectureTitle(lecture)}
                       </Text>
-                      <Text style={styles.lectureDate}>{formatDate(lecture.createdAt)}</Text>
+                      <View style={styles.lectureDateBadge}>
+                        <Text style={styles.lectureDate}>{formatDate(lecture.createdAt)}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.lecturePreview} numberOfLines={4}>
+                    <Text style={styles.lecturePreview} numberOfLines={5}>
                       {extractPreview(lecture.summary || lecture.note)}
                     </Text>
                     <View style={styles.inlineMetaRow}>
@@ -572,10 +606,10 @@ export default function NotesHubScreen() {
                     accessibilityLabel={`Topic note: ${topic.topicName}`}
                   >
                     <Text style={styles.topicSubject}>{topic.subjectName}</Text>
-                    <Text style={styles.topicTitle} numberOfLines={2} ellipsizeMode="tail">
+                    <Text style={styles.topicTitle} numberOfLines={3} ellipsizeMode="tail">
                       {topic.topicName}
                     </Text>
-                    <Text style={styles.topicPreview} numberOfLines={3}>
+                    <Text style={styles.topicPreview} numberOfLines={4}>
                       {extractPreview(topic.userNotes)}
                     </Text>
                   </TouchableOpacity>
@@ -608,7 +642,7 @@ export default function NotesHubScreen() {
                 ) : (
                   <SubjectChip subject={selectedUploadSubjectName ?? uploadResult.subject} />
                 )}
-                <Text style={styles.modalSummary} numberOfLines={4}>
+                <Text style={styles.modalSummary} numberOfLines={5}>
                   {uploadResult.lectureSummary}
                 </Text>
                 <Text style={styles.modalSectionLabel}>TOPICS DETECTED</Text>
@@ -674,14 +708,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4A2A2A',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
   },
-  pendingInfo: { flex: 1, gap: 2 },
+  pendingInfo: { flex: 1, minWidth: 0, gap: 2 },
   pendingAppName: { color: '#fff', fontSize: 15, fontWeight: '700' },
   pendingDate: { color: '#9A9AAC', fontSize: 12 },
-  pendingStatus: { color: '#FFB74D', fontSize: 11, marginTop: 2 },
-  pendingError: { color: '#EF5350', fontSize: 11, fontStyle: 'italic' },
+  pendingStatus: { color: '#FFB74D', fontSize: 12, marginTop: 2 },
+  pendingStage: { color: '#E8E8F0', fontSize: 12, marginTop: 4, fontWeight: '600' },
+  pendingDetail: { color: '#B7B7C7', fontSize: 12, lineHeight: 18 },
+  pendingEvents: { marginTop: 6, gap: 2 },
+  pendingEventText: { color: '#8F8FA7', fontSize: 11, lineHeight: 16 },
+  pendingError: { color: '#EF5350', fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
   pendingActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   miniActionBtn: {
     width: 36,
@@ -802,18 +840,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  lectureSubject: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
-  lectureDate: { color: '#7A7A91', fontSize: 12, fontWeight: '600' },
-  lecturePreview: { color: '#C9C9D3', fontSize: 14, lineHeight: 21 },
+  lectureSubject: { color: '#fff', fontSize: 16, lineHeight: 22, fontWeight: '700', flex: 1 },
+  lectureDateBadge: {
+    marginLeft: 'auto',
+    minHeight: 28,
+    minWidth: 78,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: '#1B1B27',
+    borderWidth: 1,
+    borderColor: '#2B2B3C',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lectureDate: {
+    color: '#9A9AAC',
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  lecturePreview: { color: '#C9C9D3', fontSize: 14, lineHeight: 22 },
   inlineMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
   },
-  inlineMeta: { color: '#8C8CA1', fontSize: 12 },
+  inlineMeta: { color: '#8C8CA1', fontSize: 12, lineHeight: 18 },
   topicCard: {
     backgroundColor: '#13131B',
     borderRadius: 16,
@@ -822,9 +880,15 @@ const styles = StyleSheet.create({
     borderColor: '#232333',
     gap: 6,
   },
-  topicSubject: { color: '#8B86FF', fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
-  topicTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  topicPreview: { color: '#B5B5C2', fontSize: 13, lineHeight: 19 },
+  topicSubject: {
+    color: '#8B86FF',
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  topicTitle: { color: '#fff', fontSize: 16, lineHeight: 22, fontWeight: '700' },
+  topicPreview: { color: '#B5B5C2', fontSize: 14, lineHeight: 20 },
   // Upload review modal
   modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'flex-end' },
   modalSheet: {
@@ -836,10 +900,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  modalSummary: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 20 },
+  modalSummary: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 21 },
   modalSectionLabel: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
     marginTop: 4,

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   type StyleProp,
@@ -11,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../constants/theme';
+import AppText from './AppText';
 
 interface ScreenHeaderProps {
   title: string;
@@ -59,10 +59,18 @@ export default function ScreenHeader({
           <View style={styles.backSpacer} />
         )}
         <View style={styles.copy}>
-          <Text style={[styles.title, titleStyle]} numberOfLines={titleNumberOfLines}>
+          <AppText
+            style={[styles.title, titleStyle]}
+            numberOfLines={titleNumberOfLines}
+            variant="display"
+          >
             {title}
-          </Text>
-          {subtitle ? <Text style={[styles.subtitle, subtitleStyle]}>{subtitle}</Text> : null}
+          </AppText>
+          {subtitle ? (
+            <AppText style={[styles.subtitle, subtitleStyle]} variant="bodySmall" tone="secondary">
+              {subtitle}
+            </AppText>
+          ) : null}
           {children}
         </View>
       </View>
@@ -97,15 +105,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    color: theme.colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '900',
     letterSpacing: 0.3,
   },
   subtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
     marginTop: 4,
   },
 });

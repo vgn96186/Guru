@@ -1,10 +1,13 @@
-import {
-  buildTranscriptionProviderOrder,
-  runTranscriptionProviders,
-} from './providerFallback';
+import { buildTranscriptionProviderOrder, runTranscriptionProviders } from './providerFallback';
 
 describe('buildTranscriptionProviderOrder', () => {
-  const allAvailable = { groq: true, huggingface: true, cloudflare: true, deepgram: true, local: true };
+  const allAvailable = {
+    groq: true,
+    huggingface: true,
+    cloudflare: true,
+    deepgram: true,
+    local: true,
+  };
 
   it('should default to groq-first order for auto provider', () => {
     const order = buildTranscriptionProviderOrder('auto', allAvailable);
@@ -54,7 +57,13 @@ describe('runTranscriptionProviders', () => {
   it('should return result from first successful provider', async () => {
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: false, cloudflare: false, deepgram: false, local: false },
+      availability: {
+        groq: true,
+        huggingface: false,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
       runners: {
         groq: async () => 'transcript from groq',
       },
@@ -69,7 +78,13 @@ describe('runTranscriptionProviders', () => {
     const onError = jest.fn();
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
+      availability: {
+        groq: true,
+        huggingface: true,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
       runners: {
         groq: async () => {
           throw new Error('Groq API down');
@@ -89,7 +104,13 @@ describe('runTranscriptionProviders', () => {
   it('should fall back when result is not usable (empty string)', async () => {
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
+      availability: {
+        groq: true,
+        huggingface: true,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
       runners: {
         groq: async () => '',
         huggingface: async () => 'fallback transcript',
@@ -104,7 +125,13 @@ describe('runTranscriptionProviders', () => {
   it('should return null when all providers fail', async () => {
     const { result, provider, lastError } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: false, cloudflare: false, deepgram: false, local: false },
+      availability: {
+        groq: true,
+        huggingface: false,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
       runners: {
         groq: async () => {
           throw new Error('fail');
@@ -122,7 +149,13 @@ describe('runTranscriptionProviders', () => {
     await expect(
       runTranscriptionProviders<string>({
         preferredProvider: 'auto',
-        availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
+        availability: {
+          groq: true,
+          huggingface: true,
+          cloudflare: false,
+          deepgram: false,
+          local: false,
+        },
         runners: {
           groq: async () => {
             throw new Error('fatal');
@@ -138,7 +171,13 @@ describe('runTranscriptionProviders', () => {
     const onStart = jest.fn();
     await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
+      availability: {
+        groq: true,
+        huggingface: true,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
       runners: {
         groq: async () => '',
         huggingface: async () => 'ok',
@@ -152,10 +191,39 @@ describe('runTranscriptionProviders', () => {
     expect(onStart).toHaveBeenCalledTimes(2);
   });
 
+  it('should report provider results for usable and empty transcripts', async () => {
+    const onResult = jest.fn();
+    await runTranscriptionProviders<string>({
+      preferredProvider: 'auto',
+      availability: {
+        groq: true,
+        huggingface: true,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
+      runners: {
+        groq: async () => '',
+        huggingface: async () => 'ok',
+      },
+      isUsableResult: (r) => r.trim().length > 0,
+      onProviderResult: onResult,
+    });
+
+    expect(onResult).toHaveBeenNthCalledWith(1, 'groq', '', false);
+    expect(onResult).toHaveBeenNthCalledWith(2, 'huggingface', 'ok', true);
+  });
+
   it('should skip providers without a runner', async () => {
     const { result, provider } = await runTranscriptionProviders<string>({
       preferredProvider: 'auto',
-      availability: { groq: true, huggingface: true, cloudflare: false, deepgram: false, local: false },
+      availability: {
+        groq: true,
+        huggingface: true,
+        cloudflare: false,
+        deepgram: false,
+        local: false,
+      },
       runners: {
         huggingface: async () => 'hf only',
       },

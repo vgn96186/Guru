@@ -162,13 +162,13 @@ describe('sessionPlanner', () => {
       focusTopicIds: [1, 2],
     });
 
-    // Interleaved: Topic 1 gets [keypoints, quiz], Topic 2 (overdue) gets [quiz] = 3 items
+    // Interleaved: Topic 1 gets [keypoints, quiz], Topic 2 (overdue) gets [keypoints, quiz] = 4 items
     expect(agenda.items.length).toBeGreaterThanOrEqual(2);
-    const topicIds = agenda.items.map(i => i.topic.id);
+    const topicIds = agenda.items.map((i) => i.topic.id);
     expect(topicIds).toContain(1);
     expect(topicIds).toContain(2);
     // Each item should have exactly one content type (interleaved)
-    agenda.items.forEach(item => expect(item.contentTypes.length).toBe(1));
+    agenda.items.forEach((item) => expect(item.contentTypes.length).toBe(1));
   });
 
   it('should respect blocked content types', async () => {
@@ -242,17 +242,18 @@ describe('sessionPlanner', () => {
   it('should handle preferredActionType: review', async () => {
     const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
       focusTopicId: 1,
-      preferredActionType: 'review'
+      preferredActionType: 'review',
     });
 
     expect(agenda.focusNote).toContain('Focused review');
+    expect(agenda.items[0].contentTypes).toContain('keypoints');
     expect(agenda.items[0].contentTypes).toContain('quiz');
   });
 
   it('should handle preferredActionType: deep_dive', async () => {
     const agenda = await buildSession('okay', 30, 'key', undefined, undefined, {
       focusTopicId: 1,
-      preferredActionType: 'deep_dive'
+      preferredActionType: 'deep_dive',
     });
 
     expect(agenda.focusNote).toContain('Focused deep_dive');
@@ -280,7 +281,7 @@ describe('sessionPlanner', () => {
     expect(agenda.items[0].contentTypes).toEqual(['quiz']);
   });
 
-  it('should force quiz for overdue topics', async () => {
+  it('should include keypoints and quiz for overdue topics', async () => {
     const overdueTopic = {
       ...mockTopics[1],
       progress: {
@@ -297,7 +298,7 @@ describe('sessionPlanner', () => {
 
     const agenda = await buildSession('okay', 30, 'key');
 
-    expect(agenda.items[0].contentTypes).toEqual(['quiz']);
+    expect(agenda.items[0].contentTypes).toEqual(['keypoints', 'quiz']);
   });
 
   it('should filter by focusSubjectIds from profile', async () => {
@@ -313,7 +314,7 @@ describe('sessionPlanner', () => {
 
     const agenda = await buildSession('okay', 30, 'key');
 
-    expect(agenda.items.every(i => i.topic.subjectId === 102)).toBe(true);
+    expect(agenda.items.every((i) => i.topic.subjectId === 102)).toBe(true);
   });
 
   it('should use local model fallback when no keys and useLocalModel is true', async () => {
@@ -352,10 +353,10 @@ describe('sessionPlanner', () => {
       ...mockProfile,
       blockedContentTypes: ['keypoints', 'quiz', 'socratic', 'story', 'detective', 'error_hunt'],
     });
-    
+
     const agenda = await buildSession('okay', 30, 'key');
-    
-    // Should fallback to 'keypoints' as per code: 
+
+    // Should fallback to 'keypoints' as per code:
     // const safeContentTypes = contentTypes.length > 0 ? contentTypes : ['keypoints' as ContentType];
     expect(agenda.items[0].contentTypes).toEqual(['keypoints']);
   });
@@ -378,7 +379,7 @@ describe('sessionPlanner', () => {
     // Topic 2: Overdue learning (+10 plus 10) -> ~20
     // Topic 3: Mastered but studied 2 hours ago (-20 penalty)
     // Topic 2 should be top candidate.
-    
+
     (planSessionWithAI as jest.Mock).mockImplementation((candidates) => {
       return {
         selectedTopicIds: [candidates[0].id],
@@ -400,7 +401,11 @@ describe('sessionPlanner', () => {
         isNemesis: true,
       },
     };
-    (getAllTopicsWithProgress as jest.Mock).mockResolvedValue([nemesisTopic, mockTopics[1], mockTopics[2]]);
+    (getAllTopicsWithProgress as jest.Mock).mockResolvedValue([
+      nemesisTopic,
+      mockTopics[1],
+      mockTopics[2],
+    ]);
 
     (planSessionWithAI as jest.Mock).mockImplementation((candidates) => {
       return {

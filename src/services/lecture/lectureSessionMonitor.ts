@@ -20,6 +20,7 @@ import {
   updateSessionNoteEnhancementStatus,
   getFailedOrPendingTranscriptions,
   getSessionsNeedingNoteEnhancement,
+  appendSessionPipelineEvent,
   updateSessionPipelineTelemetry,
 } from '../../db/queries/externalLogs';
 import { startRecordingHealthCheck, stopRecordingHealthCheck } from './health';
@@ -30,6 +31,7 @@ import { getTranscriptText, backupNoteToPublic } from '../transcriptStorage';
 import { generateEmbedding } from '../ai/embeddingService';
 import { profileRepository } from '../../db/repositories';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
+import { readLectureInsights, readLiveTranscript } from '../../../modules/app-launcher';
 import * as FileSystem from 'expo-file-system/legacy';
 import { toFileUri } from '../fileUri';
 
@@ -37,9 +39,63 @@ export type LecturePipelineStage = 'transcribing' | 'analyzing' | 'saving' | 'en
 export interface LecturePipelineProgress {
   stage: LecturePipelineStage;
   message: string;
+  detail?: string;
+  percent?: number;
+  provider?: 'groq' | 'cloudflare' | 'huggingface' | 'deepgram' | 'local';
+  step?: number;
+  totalSteps?: number;
+  attempt?: number;
+  maxAttempts?: number;
+}
+
+export interface PrecomputedQuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
 }
 
 export { startRecordingHealthCheck, stopRecordingHealthCheck, getRecordingInfo };
+
+interface PrecomputedLectureInsights {
+  subject?: string;
+  topics?: string[];
+  summary?: string;
+  keyConcepts?: string[];
+  quiz?: {
+    questions?: PrecomputedQuizQuestion[];
+  };
+}
+
+type LecturePipelineResult = LectureAnalysis & {
+  embedding?: number[];
+  precomputedQuiz?: PrecomputedQuizQuestion[];
+};
+
+function parsePrecomputedLectureInsights(raw: string | null): PrecomputedLectureInsights | null {
+  if (!raw?.trim()) return null;
+  try {
+    return JSON.parse(raw) as PrecomputedLectureInsights;
+  } catch (error) {
+    console.warn('[LecturePipeline] Failed to parse lecture insight sidecar', error);
+    return null;
+  }
+}
+
+function normalizePrecomputedQuiz(
+  questions: PrecomputedQuizQuestion[] | undefined,
+): PrecomputedQuizQuestion[] {
+  if (!Array.isArray(questions)) return [];
+  return questions.filter(
+    (q) =>
+      !!q &&
+      typeof q.question === 'string' &&
+      Array.isArray(q.options) &&
+      q.options.length === 4 &&
+      typeof q.correctIndex === 'number' &&
+      typeof q.explanation === 'string',
+  );
+}
 
 const inFlightLecturePipelines = new Set<number>();
 
@@ -66,22 +122,369 @@ export async function transcribeLectureWithRecovery(opts: {
   groqKey?: string;
   useLocalWhisper?: boolean;
   localWhisperPath?: string;
+  includeEmbedding?: boolean;
   maxRetries?: number;
   logId?: number;
   onProgress?: (progress: LecturePipelineProgress) => void;
-}): Promise<LectureAnalysis & { embedding?: number[] }> {
-  return transcribeAudio({
-    audioFilePath: opts.recordingPath,
-    groqKey: opts.groqKey,
-    useLocalWhisper: opts.useLocalWhisper,
-    localWhisperPath: opts.localWhisperPath,
-    maxRetries: opts.maxRetries,
-    onProgress: (p) => {
-      // Map transcriptionService stages to pipeline stages
-      const stage = p.stage === 'transcribing' ? 'transcribing' : 'analyzing';
-      opts.onProgress?.({ stage, message: p.message });
-    },
-  });
+}): Promise<LecturePipelineResult> {
+  const stageStartTimes: Partial<Record<LecturePipelineStage, number>> = {};
+  let currentStage: LecturePipelineStage | null = null;
+  let lastProgressSignature = '';
+  let completionProvider: LecturePipelineProgress['provider'] | 'unknown' = 'unknown';
+
+  const completeStage = async (stage: LecturePipelineStage | null) => {
+    if (!opts.logId || !stage) return;
+    const startedAt = stageStartTimes[stage];
+    if (!startedAt) return;
+    const completedAt = Date.now();
+    await updateSessionPipelineTelemetry(opts.logId, {
+      stages: {
+        [stage]: {
+          startedAt,
+          completedAt,
+          durationMs: completedAt - startedAt,
+        },
+      },
+    });
+  };
+
+  const persistProgress = async (progress: LecturePipelineProgress) => {
+    if (!opts.logId) return;
+    const now = Date.now();
+    if (!stageStartTimes[progress.stage]) {
+      stageStartTimes[progress.stage] = now;
+    }
+    if (currentStage && currentStage !== progress.stage) {
+      await completeStage(currentStage);
+    }
+    currentStage = progress.stage;
+
+    const signature = [
+      progress.stage,
+      progress.message,
+      progress.detail ?? '',
+      progress.percent ?? '',
+      progress.provider ?? '',
+      progress.step ?? '',
+      progress.totalSteps ?? '',
+      progress.attempt ?? '',
+      progress.maxAttempts ?? '',
+    ].join('|');
+
+    await updateSessionPipelineTelemetry(opts.logId, {
+      currentStage: progress.stage,
+      currentMessage: progress.message,
+      currentDetail: progress.detail,
+      currentPercent: progress.percent,
+      currentProvider: progress.provider ?? 'unknown',
+      lastUpdatedAt: now,
+      providerAttempts:
+        progress.provider && progress.attempt
+          ? { [progress.provider]: progress.attempt }
+          : undefined,
+      stages: {
+        [progress.stage]: {
+          startedAt: stageStartTimes[progress.stage],
+        },
+      },
+    });
+
+    if (signature !== lastProgressSignature) {
+      lastProgressSignature = signature;
+      await appendSessionPipelineEvent(
+        opts.logId,
+        {
+          at: now,
+          stage: progress.stage,
+          message: progress.message,
+          detail: progress.detail,
+          percent: progress.percent,
+          provider: progress.provider ?? 'unknown',
+        },
+        progress.provider === 'groq'
+          ? {
+              engine: 'groq',
+            }
+          : undefined,
+      );
+      console.log('[LecturePipeline]', {
+        logId: opts.logId,
+        stage: progress.stage,
+        message: progress.message,
+        detail: progress.detail,
+        percent: progress.percent,
+        provider: progress.provider,
+        step: progress.step,
+        totalSteps: progress.totalSteps,
+        attempt: progress.attempt,
+        maxAttempts: progress.maxAttempts,
+      });
+    }
+  };
+
+  try {
+    let result: LecturePipelineResult;
+    let usedLiveTranscript = false;
+    let usedBackgroundInsights = false;
+    let liveTranscript = '';
+    let precomputedQuiz: PrecomputedQuizQuestion[] = [];
+    let precomputedInsights: PrecomputedLectureInsights | null = null;
+
+    try {
+      precomputedInsights = parsePrecomputedLectureInsights(
+        (await readLectureInsights(opts.recordingPath)) ?? null,
+      );
+    } catch (error) {
+      console.warn('[LecturePipeline] Failed to read lecture insight sidecar', {
+        recordingPath: opts.recordingPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    try {
+      liveTranscript = (await readLiveTranscript(opts.recordingPath))?.trim() ?? '';
+    } catch (error) {
+      console.warn('[LecturePipeline] Failed to read live transcript sidecar', {
+        recordingPath: opts.recordingPath,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
+    precomputedQuiz = normalizePrecomputedQuiz(precomputedInsights?.quiz?.questions);
+    if (precomputedQuiz.length > 0 && precomputedInsights?.summary?.trim()) {
+      usedBackgroundInsights = true;
+      const backgroundReadyProgress: LecturePipelineProgress = {
+        stage: 'analyzing',
+        message: 'Break quiz and key concepts were prepared during recording',
+        detail: `Loaded ${precomputedQuiz.length} quiz questions while the full lecture transcript is still processing`,
+        percent: 18,
+        provider: 'groq',
+      };
+      await persistProgress(backgroundReadyProgress);
+      opts.onProgress?.(backgroundReadyProgress);
+
+      if (__DEV__) {
+        console.log('[LecturePipeline] Background lecture insights ready', {
+          logId: opts.logId ?? null,
+          recordingPath: opts.recordingPath,
+          quizQuestions: precomputedQuiz.length,
+          subject: precomputedInsights.subject ?? 'Unknown',
+        });
+      }
+    }
+
+    try {
+      result = await transcribeAudio({
+        audioFilePath: opts.recordingPath,
+        groqKey: opts.groqKey,
+        useLocalWhisper: opts.useLocalWhisper,
+        localWhisperPath: opts.localWhisperPath,
+        includeEmbedding: opts.includeEmbedding,
+        maxRetries: opts.maxRetries,
+        logId: opts.logId,
+        onProgress: (p) => {
+          // Map transcriptionService stages to pipeline stages
+          const stage = p.stage === 'transcribing' ? 'transcribing' : 'analyzing';
+          const mapped: LecturePipelineProgress = {
+            stage,
+            message: p.message,
+            detail: p.detail,
+            percent: p.percent,
+            provider: p.provider,
+            step: p.step,
+            totalSteps: p.totalSteps,
+            attempt: p.attempt,
+            maxAttempts: p.maxAttempts,
+          };
+          completionProvider = p.provider ?? completionProvider;
+          void persistProgress(mapped);
+          opts.onProgress?.(mapped);
+        },
+      });
+      if (result.modelUsed?.toLowerCase().includes('groq')) {
+        completionProvider = 'groq';
+      } else if (result.modelUsed?.toLowerCase().includes('deepgram')) {
+        completionProvider = 'deepgram';
+      }
+    } catch (error) {
+      if (liveTranscript.length < 120) {
+        throw error;
+      }
+
+      usedLiveTranscript = true;
+      completionProvider = 'deepgram';
+
+      const liveReadyProgress: LecturePipelineProgress = {
+        stage: 'transcribing',
+        message: 'Full lecture transcription failed, falling back to live transcript',
+        detail: `Recovered ${liveTranscript.length} transcript characters from the Deepgram sidecar`,
+        percent: 62,
+        provider: 'deepgram',
+      };
+      await persistProgress(liveReadyProgress);
+      opts.onProgress?.(liveReadyProgress);
+
+      const analyzeStartProgress: LecturePipelineProgress = {
+        stage: 'analyzing',
+        message: 'Analyzing recovered live transcript',
+        detail: 'Using the live transcript as a backup so lecture content is not lost',
+        percent: 72,
+        provider: 'deepgram',
+      };
+      await persistProgress(analyzeStartProgress);
+      opts.onProgress?.(analyzeStartProgress);
+
+      const analysis = await analyzeTranscript(liveTranscript, (progress) => {
+        const mapped: LecturePipelineProgress = {
+          stage: 'analyzing',
+          message: progress.message,
+          detail: progress.detail,
+          percent: Math.max(72, progress.percent),
+          provider: 'deepgram',
+          step: progress.currentStep,
+          totalSteps: progress.totalSteps,
+        };
+        void persistProgress(mapped);
+        opts.onProgress?.(mapped);
+      });
+
+      let embedding: number[] | undefined;
+      if (opts.includeEmbedding && analysis.lectureSummary?.trim()) {
+        try {
+          embedding = (await generateEmbedding(analysis.lectureSummary)) ?? undefined;
+        } catch (embeddingError) {
+          console.warn(
+            '[LecturePipeline] Failed to generate embedding from fallback live transcript',
+            {
+              recordingPath: opts.recordingPath,
+              error:
+                embeddingError instanceof Error ? embeddingError.message : String(embeddingError),
+            },
+          );
+        }
+      }
+
+      result = {
+        ...analysis,
+        transcript: liveTranscript,
+        embedding,
+      };
+
+      if (opts.logId) {
+        await appendSessionPipelineEvent(
+          opts.logId,
+          {
+            at: Date.now(),
+            stage: 'transcribing',
+            message: 'Recovered lecture from live transcript sidecar',
+            detail: `${liveTranscript.length} transcript characters were captured before lecture return`,
+            provider: 'deepgram',
+          },
+          {
+            transcriptChars: liveTranscript.length,
+          },
+        );
+      }
+
+      if (__DEV__) {
+        console.log('[LecturePipeline] Using live Deepgram transcript fallback', {
+          logId: opts.logId ?? null,
+          recordingPath: opts.recordingPath,
+          transcriptChars: liveTranscript.length,
+          transcriptPreview: liveTranscript.replace(/\s+/g, ' ').slice(0, 300),
+        });
+      }
+    }
+
+    if (precomputedQuiz.length > 0) {
+      result = {
+        ...result,
+        precomputedQuiz,
+      };
+
+      if (opts.logId) {
+        await appendSessionPipelineEvent(
+          opts.logId,
+          {
+            at: Date.now(),
+            stage: 'analyzing',
+            message: 'Attached background quiz payload',
+            detail: `${precomputedQuiz.length} quiz questions are ready for the return sheet`,
+            provider: 'groq',
+          },
+          {
+            topicsDetected: result.topics.length,
+            keyConceptsDetected: result.keyConcepts.length,
+          },
+        );
+      }
+    }
+
+    if (opts.logId) {
+      await completeStage(currentStage);
+      await appendSessionPipelineEvent(
+        opts.logId,
+        {
+          at: Date.now(),
+          stage: currentStage ?? 'system',
+          message: 'Transcript and analysis completed',
+          detail: result.transcript
+            ? `${result.transcript.length} transcript characters captured`
+            : 'No transcript text returned',
+          provider: completionProvider,
+        },
+        {
+          transcriptChars: result.transcript?.length ?? 0,
+          topicsDetected: result.topics.length,
+          keyConceptsDetected: result.keyConcepts.length,
+        },
+      );
+    }
+
+    if (__DEV__) {
+      console.log('[LecturePipeline] External lecture transcription ready', {
+        logId: opts.logId ?? null,
+        recordingPath: opts.recordingPath,
+        transcriptChars: result.transcript?.length ?? 0,
+        transcriptPreview: result.transcript
+          ? result.transcript.replace(/\s+/g, ' ').trim().slice(0, 500)
+          : '',
+        subject: result.subject,
+        topics: result.topics,
+        summary: result.lectureSummary,
+      });
+    }
+
+    return result;
+  } catch (error) {
+    if (opts.logId) {
+      const stage = currentStage ?? 'transcribing';
+      await completeStage(stage);
+      await appendSessionPipelineEvent(
+        opts.logId,
+        {
+          at: Date.now(),
+          stage,
+          message: 'Lecture pipeline failed',
+          detail: error instanceof Error ? error.message : String(error),
+          provider: 'unknown',
+        },
+        {
+          errorStage: stage,
+          currentStage: stage,
+          currentMessage: 'Lecture pipeline failed',
+          currentDetail: error instanceof Error ? error.message : String(error),
+          lastUpdatedAt: Date.now(),
+        },
+      );
+      console.warn('[LecturePipeline] failed', {
+        logId: opts.logId,
+        stage,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+    throw error;
+  }
 }
 
 export async function retryFailedTranscriptions(groqKey?: string): Promise<number> {
@@ -106,7 +509,9 @@ export async function retryFailedTranscriptions(groqKey?: string): Promise<numbe
         await updateSessionTranscriptionStatus(session.id!, 'dismissed', 'Recording file deleted');
         continue;
       }
-    } catch { /* proceed if check fails */ }
+    } catch {
+      /* proceed if check fails */
+    }
 
     // Dismiss duplicate recordings (same filename already has a completed note)
     try {
@@ -121,11 +526,17 @@ export async function retryFailedTranscriptions(groqKey?: string): Promise<numbe
           [`%${fileName}`],
         );
         if (existing) {
-          await updateSessionTranscriptionStatus(session.id!, 'dismissed', 'Duplicate of existing note');
+          await updateSessionTranscriptionStatus(
+            session.id!,
+            'dismissed',
+            'Duplicate of existing note',
+          );
           continue;
         }
       }
-    } catch { /* proceed if check fails */ }
+    } catch {
+      /* proceed if check fails */
+    }
 
     attempted++;
     try {
@@ -197,6 +608,14 @@ export async function runFullTranscriptionPipeline(opts: {
     return { success: false, error: 'Transcription already in progress for this lecture' };
   }
   inFlightLecturePipelines.add(logId);
+  if (__DEV__) {
+    console.log('[LecturePipeline] runFullTranscriptionPipeline starting', {
+      logId,
+      appName,
+      durationMinutes,
+      recordingPath,
+    });
+  }
 
   try {
     const profile = await profileRepository.getProfile();
@@ -206,11 +625,18 @@ export async function runFullTranscriptionPipeline(opts: {
       groqKey: opts.groqKey,
       useLocalWhisper: !!(profile.useLocalWhisper && profile.localWhisperPath),
       localWhisperPath: profile.localWhisperPath || undefined,
+      includeEmbedding: false,
       logId,
       onProgress,
     });
 
     if (!analysis.transcript?.trim()) {
+      if (__DEV__) {
+        console.log('[LecturePipeline] No speech detected for lecture', {
+          logId,
+          recordingPath,
+        });
+      }
       await updateSessionTranscriptionStatus(logId, 'no_audio');
       return { success: false, error: 'No speech detected' };
     }
@@ -233,8 +659,22 @@ export async function runFullTranscriptionPipeline(opts: {
       embedding,
       recordingPath,
     });
+    if (__DEV__) {
+      console.log('[LecturePipeline] Lecture note saved', {
+        logId,
+        lectureNoteId: noteId,
+        subject: analysis.subject,
+        topicCount: analysis.topics.length,
+      });
+    }
 
     void enhanceNoteInBackground(noteId as number, logId, analysis);
+    if (__DEV__) {
+      console.log('[LecturePipeline] Background note enhancement queued', {
+        logId,
+        lectureNoteId: noteId,
+      });
+    }
     return { success: true, analysis, adhdNote: quickNote, lectureNoteId: noteId };
   } catch (e: unknown) {
     const errMsg = e instanceof Error ? e.message : String(e);

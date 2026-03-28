@@ -22,6 +22,14 @@ export type LectureAnalysis = {
   embedding?: number[] | null;
 };
 
+export interface TranscriptAnalysisProgress {
+  message: string;
+  detail?: string;
+  currentStep: number;
+  totalSteps: number;
+  percent: number;
+}
+
 const NON_MEANINGFUL_SUMMARIES = new Set([
   'No audio recorded (empty file)',
   'No speech detected (silent audio)',
@@ -29,11 +37,65 @@ const NON_MEANINGFUL_SUMMARIES = new Set([
   'Lecture content recorded',
   'No medical content detected',
   'Lecture content recorded. Review transcript for details.',
+  'Lecture summary captured.',
 ]);
 const isDev = typeof __DEV__ !== 'undefined' && __DEV__;
 
 const MEDICAL_EXTRACT_PROMPT = `You are a medical scribe. Extract key clinical facts, subject, and topics from the following transcript segment.`;
 const META_SUMMARIZE_PROMPT = `Combine the following medical transcript segment analyses into a single coherent lecture analysis.`;
+const ANALYSIS_COMPLEXITY = 'low' as const;
+
+function normalizeSummary(summary: string | null | undefined): string {
+  return summary?.trim().replace(/[.]+$/, '') ?? '';
+}
+
+function hasMeaningfulSummary(summary: string | null | undefined): boolean {
+  const normalized = normalizeSummary(summary);
+  return (
+    !!normalized &&
+    !NON_MEANINGFUL_SUMMARIES.has(normalized) &&
+    !NON_MEANINGFUL_SUMMARIES.has(`${normalized}.`)
+  );
+}
+
+function cleanTopicLabel(topic: string): string {
+  return topic.replace(/\s+/g, ' ').trim();
+}
+
+function buildLectureFallbackTitle(parsed: ParsedAnalysis): string {
+  const subject = parsed.subject?.trim();
+  const topics = (Array.isArray(parsed.topics) ? parsed.topics : [])
+    .map(cleanTopicLabel)
+    .filter(Boolean)
+    .slice(0, 2);
+  const keyConcepts = (Array.isArray(parsed.key_concepts) ? parsed.key_concepts : [])
+    .map(cleanTopicLabel)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  if (topics.length >= 2) {
+    return `${topics[0]} & ${topics[1]}`;
+  }
+  if (topics.length === 1) {
+    return topics[0];
+  }
+  if (subject && subject !== 'Unknown' && keyConcepts.length >= 2) {
+    return `${subject}: ${keyConcepts[0]} & ${keyConcepts[1]}`;
+  }
+  if (subject && subject !== 'Unknown' && keyConcepts.length === 1) {
+    return `${subject}: ${keyConcepts[0]}`;
+  }
+  if (subject && subject !== 'Unknown') {
+    return `${subject} Lecture Highlights`;
+  }
+  if (keyConcepts.length >= 2) {
+    return `${keyConcepts[0]} & ${keyConcepts[1]}`;
+  }
+  if (keyConcepts.length === 1) {
+    return keyConcepts[0];
+  }
+  return 'Lecture Review Notes';
+}
 
 /**
  * Split transcript into manageable segments for hierarchical analysis.
@@ -48,11 +110,28 @@ function splitTranscript(transcript: string, maxChars = 12000): string[] {
   return segments;
 }
 
-export async function analyzeTranscript(transcript: string): Promise<LectureAnalysis> {
+export async function analyzeTranscript(
+  transcript: string,
+  onProgress?: (progress: TranscriptAnalysisProgress) => void,
+): Promise<LectureAnalysis> {
   const segments = splitTranscript(transcript);
   const segmentAnalyses: LectureAnalysis[] = [];
+  const totalSteps = segments.length + (segments.length > 1 ? 1 : 0);
 
   for (let i = 0; i < segments.length; i++) {
+    onProgress?.({
+      message:
+        segments.length === 1
+          ? 'Extracting subject, topics, and key concepts'
+          : `Analyzing transcript segment ${i + 1} of ${segments.length}`,
+      detail:
+        segments.length === 1
+          ? 'Identifying the lecture subject and high-yield points'
+          : 'Summarizing this transcript slice before combining the full lecture',
+      currentStep: i + 1,
+      totalSteps,
+      percent: Math.round(((i + 1) / totalSteps) * 100),
+    });
     if (isDev) console.log(`[Analysis] Analyzing segment ${i + 1}/${segments.length}`);
     try {
       const analysis = await runSingleAnalysisPass(segments[i]);
@@ -69,7 +148,7 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
       topics: [],
       keyConcepts: [],
       highYieldPoints: [],
-      lectureSummary: 'Lecture content recorded. Review transcript for details.',
+      lectureSummary: 'Lecture Review Notes',
       estimatedConfidence: 1,
     };
   }
@@ -77,6 +156,14 @@ export async function analyzeTranscript(transcript: string): Promise<LectureAnal
   if (segmentAnalyses.length === 1) {
     return segmentAnalyses[0];
   }
+
+  onProgress?.({
+    message: 'Combining segment analyses into one lecture summary',
+    detail: 'Merging subject guesses, topics, and high-yield takeaways',
+    currentStep: totalSteps,
+    totalSteps,
+    percent: 100,
+  });
 
   return metaSummarize(segmentAnalyses);
 }
@@ -99,7 +186,7 @@ async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
   const { parsed, modelUsed } = await generateJSONWithRouting(
     [{ role: 'user', content: extractPrompt }],
     LectureAnalysisSchema,
-    'high',
+    ANALYSIS_COMPLEXITY,
   );
   return { ...mapParsedAnalysis(parsed), modelUsed };
 }
@@ -125,7 +212,7 @@ Segment ${i + 1}:
     const { parsed, modelUsed } = await generateJSONWithRouting(
       [{ role: 'user', content: extractPrompt }],
       LectureAnalysisSchema,
-      'high',
+      ANALYSIS_COMPLEXITY,
     );
     return { ...mapParsedAnalysis(parsed), modelUsed };
   } catch (_err) {
@@ -161,6 +248,9 @@ interface ParsedAnalysis {
 }
 
 function mapParsedAnalysis(parsed: ParsedAnalysis): LectureAnalysis {
+  const lectureSummary = hasMeaningfulSummary(parsed.lecture_summary)
+    ? parsed.lecture_summary!.trim()
+    : buildLectureFallbackTitle(parsed);
   return {
     subject: parsed.subject ?? 'Unknown',
     topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 5) : [],
@@ -168,7 +258,7 @@ function mapParsedAnalysis(parsed: ParsedAnalysis): LectureAnalysis {
     highYieldPoints: Array.isArray(parsed.high_yield_highlights)
       ? parsed.high_yield_highlights.slice(0, 5)
       : [],
-    lectureSummary: parsed.lecture_summary ?? 'Lecture summary captured.',
+    lectureSummary,
     estimatedConfidence: (parsed.estimated_confidence ?? 2) as 1 | 2 | 3,
   };
 }

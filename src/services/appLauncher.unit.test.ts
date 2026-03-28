@@ -95,11 +95,15 @@ describe('appLauncher mock external lecture flow', () => {
       mockEnabled: true,
       mockUrl: 'https://example.com/lecture.mp3',
     });
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const ok = await appLauncher.launchMedicalApp('marrow', false, { groqKey: 'gk' });
+    const ok = await appLauncher.launchMedicalApp('marrow', false, {
+      groqKey: 'gk',
+      deepgramKey: 'dgk',
+    });
 
     expect(ok).toBe(true);
-    expect(startRecordingMock).toHaveBeenCalledWith('');
+    expect(startRecordingMock).toHaveBeenCalledWith('', 'dgk', 'gk');
     expect(startExternalAppSessionMock).toHaveBeenCalledWith(
       'Marrow (Mock Audio)',
       'file:///tmp/mock-recording.m4a',
@@ -108,6 +112,7 @@ describe('appLauncher mock external lecture flow', () => {
     expect(showOverlayMock).toHaveBeenCalledWith('Marrow Mock', false, true, 20);
     expect(openURLMock).toHaveBeenCalledWith('https://example.com/lecture.mp3');
     expect(launchAppMock).not.toHaveBeenCalled();
+    consoleWarnSpy.mockRestore();
   });
 
   it('falls back safely when mock URL launch fails', async () => {
@@ -138,8 +143,49 @@ describe('appLauncher mock external lecture flow', () => {
     const ok = await appLauncher.launchMedicalApp('marrow');
 
     expect(ok).toBe(true);
+    expect(startRecordingMock).toHaveBeenCalledWith('');
     expect(isAppInstalledMock).toHaveBeenCalledWith('com.marrow');
     expect(launchAppMock).toHaveBeenCalledWith('com.marrow');
     expect(openURLMock).not.toHaveBeenCalled();
+  });
+
+  it('enables the live quiz sidecar for installed-app launch when both deepgram and groq keys exist', async () => {
+    const appLauncher = await loadAppLauncher({ mockEnabled: false });
+
+    const ok = await appLauncher.launchMedicalApp('marrow', false, {
+      groqKey: 'gk',
+      deepgramKey: 'dgk',
+    });
+
+    expect(ok).toBe(true);
+    expect(startRecordingMock).toHaveBeenCalledTimes(1);
+    expect(startRecordingMock).toHaveBeenCalledWith('', 'dgk', 'gk');
+    expect(startExternalAppSessionMock).toHaveBeenCalledWith(
+      'Marrow',
+      'file:///tmp/mock-recording.m4a',
+    );
+    expect(launchAppMock).toHaveBeenCalledWith('com.marrow');
+  });
+
+  it('falls back to audio-only recording when live quiz sidecar startup fails', async () => {
+    const appLauncher = await loadAppLauncher({ mockEnabled: false });
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    (startRecordingMock as any)
+      .mockRejectedValueOnce(new Error('sidecar startup failed'))
+      .mockResolvedValueOnce('file:///tmp/mock-recording.m4a');
+
+    const ok = await appLauncher.launchMedicalApp('marrow', false, {
+      groqKey: 'gk',
+      deepgramKey: 'dgk',
+    });
+
+    expect(ok).toBe(true);
+    expect(startRecordingMock).toHaveBeenNthCalledWith(1, '', 'dgk', 'gk');
+    expect(startRecordingMock).toHaveBeenNthCalledWith(2, '');
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      '[AppLauncher] Live quiz sidecar startup failed; falling back to audio-only recording',
+      expect.any(Error),
+    );
+    consoleWarnSpy.mockRestore();
   });
 });

@@ -48,7 +48,7 @@ import { saveTranscriptToFile } from '../services/transcriptStorage';
 
 interface TranscriptFile {
   name: string;
-  path: string;      // full file:// URI
+  path: string; // full file:// URI
   sizeMB: number;
   folder: string;
   wordCount: number;
@@ -70,7 +70,10 @@ async function deleteFile(path: string): Promise<void> {
 
 /** Extract a meaningful title from transcript content (Subject/Topic lines or first non-empty line) */
 function extractTitle(text: string): string {
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   for (const line of lines.slice(0, 10)) {
     // Match "Subject: X" or "**Subject:** X"
     const subjectMatch = line.match(/^\*{0,2}subject\*{0,2}\s*:\s*(.+)/i);
@@ -87,7 +90,10 @@ function extractTitle(text: string): string {
   }
   // Fallback: first meaningful line (skip markdown headers like "#")
   for (const line of lines.slice(0, 5)) {
-    const clean = line.replace(/^#+\s*/, '').replace(/\*+/g, '').trim();
+    const clean = line
+      .replace(/^#+\s*/, '')
+      .replace(/\*+/g, '')
+      .trim();
     if (clean.length >= 8 && !/^(subject|topics?)\s*:/i.test(clean)) return clean;
   }
   return '';
@@ -99,7 +105,11 @@ function countWords(text: string): number {
 
 const TranscriptLabelSchema = z.object({
   subject: z.string().describe('Medical subject (e.g. "Anatomy", "Pharmacology", "Pathology")'),
-  topic: z.string().describe('Specific topic — short noun phrase, no verbs (e.g. "Cardiac Valves", "Beta Blockers", "Iron Deficiency Anemia")'),
+  topic: z
+    .string()
+    .describe(
+      'Specific topic — short noun phrase, no verbs (e.g. "Cardiac Valves", "Beta Blockers", "Iron Deficiency Anemia")',
+    ),
 });
 
 /** Use AI to extract a clean subject + topic label from transcript text */
@@ -131,11 +141,13 @@ If unclear, make your best guess from the content.`,
 }
 
 function slugifyLabel(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40) || 'unknown';
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'unknown'
+  );
 }
 
 function buildNewFileName(subject: string, topic: string, timestamp: number): string {
@@ -179,7 +191,10 @@ function displayName(fileName: string, extractedTitle?: string): string {
   if (!datePart) {
     const oldMatch = base.match(/^(.+)__transcript__(\d{10,})$/);
     if (oldMatch) {
-      label = oldMatch[1].replace(/__/g, ' - ').replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      label = oldMatch[1]
+        .replace(/__/g, ' - ')
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
       const ts = parseInt(oldMatch[2], 10);
       const d = new Date(ts);
       datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -227,7 +242,8 @@ export default function TranscriptVaultScreen() {
         if (dirInfo.exists) {
           const names = await FileSystem.readDirectoryAsync(internalDir);
           for (const name of names) {
-            if (!name.endsWith('.txt') || name.includes('__note__') || name.includes('_note_')) continue;
+            if (!name.endsWith('.txt') || name.includes('__note__') || name.includes('_note_'))
+              continue;
             const uri = internalDir + name;
             const info = await FileSystem.getInfoAsync(uri);
             if (info.exists) {
@@ -239,11 +255,13 @@ export default function TranscriptVaultScreen() {
                 wc = countWords(txt);
                 hash = txt.trim().slice(0, 200);
                 title = extractTitle(txt);
-              } catch { /* skip */ }
+              } catch {
+                /* skip */
+              }
               allFiles.push({
                 name,
                 path: uri,
-                sizeMB: Math.round(((info as any).size ?? 0) / 1024 * 10) / 10,
+                sizeMB: Math.round((((info as any).size ?? 0) / 1024) * 10) / 10,
                 folder: 'Internal',
                 wordCount: wc,
                 contentHash: hash,
@@ -252,7 +270,9 @@ export default function TranscriptVaultScreen() {
             }
           }
         }
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
 
       // 2. Internal backups dir
       const backupDir = FileSystem.documentDirectory + 'backups/Transcripts/';
@@ -261,7 +281,8 @@ export default function TranscriptVaultScreen() {
         if (dirInfo.exists) {
           const names = await FileSystem.readDirectoryAsync(backupDir);
           for (const name of names) {
-            if (!name.endsWith('.txt') || name.includes('__note__') || name.includes('_note_')) continue;
+            if (!name.endsWith('.txt') || name.includes('__note__') || name.includes('_note_'))
+              continue;
             const uri = backupDir + name;
             const info = await FileSystem.getInfoAsync(uri);
             if (info.exists) {
@@ -273,11 +294,13 @@ export default function TranscriptVaultScreen() {
                 wc = countWords(txt);
                 hash = txt.trim().slice(0, 200);
                 title = extractTitle(txt);
-              } catch { /* skip */ }
+              } catch {
+                /* skip */
+              }
               allFiles.push({
                 name,
                 path: uri,
-                sizeMB: Math.round(((info as any).size ?? 0) / 1024 * 10) / 10,
+                sizeMB: Math.round((((info as any).size ?? 0) / 1024) * 10) / 10,
                 folder: 'Backups',
                 wordCount: wc,
                 contentHash: hash,
@@ -286,7 +309,9 @@ export default function TranscriptVaultScreen() {
             }
           }
         }
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
 
       // 3. Public Documents/Guru/Backups via native module
       try {
@@ -294,7 +319,8 @@ export default function TranscriptVaultScreen() {
         const publicDir = await getPublicBackupDir();
         const publicUri = 'file://' + publicDir;
         for (const name of publicFiles) {
-          if (!name.endsWith('.txt') || name.includes('__note__') || name.includes('_note_')) continue;
+          if (!name.endsWith('.txt') || name.includes('__note__') || name.includes('_note_'))
+            continue;
           const uri = (publicUri.endsWith('/') ? publicUri : publicUri + '/') + name;
           // Avoid duplicates by filename
           if (allFiles.some((f) => f.name === name)) continue;
@@ -306,7 +332,9 @@ export default function TranscriptVaultScreen() {
             wc = countWords(txt);
             hash = txt.trim().slice(0, 200);
             title = extractTitle(txt);
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
           allFiles.push({
             name,
             path: uri,
@@ -317,7 +345,9 @@ export default function TranscriptVaultScreen() {
             extractedTitle: title,
           });
         }
-      } catch { /* skip if native not available */ }
+      } catch {
+        /* skip if native not available */
+      }
 
       // Deduplicate by filename
       const seen = new Set<string>();
@@ -337,7 +367,9 @@ export default function TranscriptVaultScreen() {
     }
   }, []);
 
-  useEffect(() => { void loadFiles(); }, [loadFiles]);
+  useEffect(() => {
+    void loadFiles();
+  }, [loadFiles]);
 
   // Re-scan on return from settings
   const appStateRef = useRef(AppState.currentState);
@@ -382,7 +414,11 @@ export default function TranscriptVaultScreen() {
         style: 'destructive',
         onPress: async () => {
           for (const p of selectedPaths) {
-            try { await deleteFile(p); } catch { /* skip */ }
+            try {
+              await deleteFile(p);
+            } catch {
+              /* skip */
+            }
           }
           setFiles((prev) => prev.filter((f) => !selectedPaths.has(f.path)));
           setSelectedPaths(new Set());
@@ -450,7 +486,10 @@ export default function TranscriptVaultScreen() {
   const processTranscript = useCallback(async (item: TranscriptFile): Promise<boolean> => {
     const content = await FileSystem.readAsStringAsync(item.path);
     if (countWords(content) < 10) {
-      Alert.alert('Too short', 'This transcript has fewer than 10 words — not enough to generate a note.');
+      Alert.alert(
+        'Too short',
+        'This transcript has fewer than 10 words — not enough to generate a note.',
+      );
       return false;
     }
 
@@ -478,29 +517,32 @@ export default function TranscriptVaultScreen() {
     return true;
   }, []);
 
-  const handleProcess = useCallback((item: TranscriptFile) => {
-    Alert.alert(
-      'Process to Notes?',
-      `AI will analyze this transcript and create a study note.\n\n${displayName(item.name, item.extractedTitle)}`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Process',
-          onPress: async () => {
-            setProcessProgress('Analyzing...');
-            try {
-              await processTranscript(item);
-              setProcessProgress(null);
-              Alert.alert('Done', 'Note created in Notes Vault.');
-            } catch (e: any) {
-              setProcessProgress(null);
-              Alert.alert('Failed', e?.message ?? 'Could not process transcript.');
-            }
+  const handleProcess = useCallback(
+    (item: TranscriptFile) => {
+      Alert.alert(
+        'Process to Notes?',
+        `AI will analyze this transcript and create a study note.\n\n${displayName(item.name, item.extractedTitle)}`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Process',
+            onPress: async () => {
+              setProcessProgress('Analyzing...');
+              try {
+                await processTranscript(item);
+                setProcessProgress(null);
+                Alert.alert('Done', 'Note created in Notes Vault.');
+              } catch (e: any) {
+                setProcessProgress(null);
+                Alert.alert('Failed', e?.message ?? 'Could not process transcript.');
+              }
+            },
           },
-        },
-      ],
-    );
-  }, [processTranscript]);
+        ],
+      );
+    },
+    [processTranscript],
+  );
 
   const handleBatchProcess = useCallback(() => {
     const targets = [...selectedPaths];
@@ -524,7 +566,9 @@ export default function TranscriptVaultScreen() {
               try {
                 await processTranscript(items[i]);
                 done++;
-              } catch { failed++; }
+              } catch {
+                failed++;
+              }
             }
             setProcessProgress(null);
             setSelectedPaths(new Set());
@@ -540,14 +584,15 @@ export default function TranscriptVaultScreen() {
 
   // Files that need renaming: old format OR generic/unknown labels
   const renamableFiles = React.useMemo(
-    () => files.filter((f) => {
-      if (f.wordCount < 5) return false; // junk, not worth renaming
-      // Old double-underscore format
-      if (/__transcript__\d+\.txt$/.test(f.name)) return true;
-      // Generic subject in filename
-      const base = f.name.replace(/\.txt$/, '').toLowerCase();
-      return /^(general|unknown|lecture)[_-]/.test(base);
-    }),
+    () =>
+      files.filter((f) => {
+        if (f.wordCount < 5) return false; // junk, not worth renaming
+        // Old double-underscore format
+        if (/__transcript__\d+\.txt$/.test(f.name)) return true;
+        // Generic subject in filename
+        const base = f.name.replace(/\.txt$/, '').toLowerCase();
+        return /^(general|unknown|lecture)[_-]/.test(base);
+      }),
     [files],
   );
 
@@ -567,13 +612,18 @@ export default function TranscriptVaultScreen() {
             let failed = 0;
             for (let i = 0; i < renamableFiles.length; i++) {
               const f = renamableFiles[i];
-              setRenameProgress(`${i + 1}/${count}: ${displayName(f.name, f.extractedTitle).slice(0, 30)}...`);
+              setRenameProgress(
+                `${i + 1}/${count}: ${displayName(f.name, f.extractedTitle).slice(0, 30)}...`,
+              );
               try {
                 const content = await FileSystem.readAsStringAsync(f.path);
                 if (countWords(content) < 5) continue;
 
                 const label = await aiExtractLabel(content);
-                if (!label) { failed++; continue; }
+                if (!label) {
+                  failed++;
+                  continue;
+                }
 
                 const ts = extractTimestamp(f.name);
                 const newName = buildNewFileName(label.subject, label.topic, ts);
@@ -600,7 +650,9 @@ export default function TranscriptVaultScreen() {
                   }
                 }
                 renamed++;
-              } catch { failed++; }
+              } catch {
+                failed++;
+              }
             }
             setRenameProgress(null);
             void loadFiles();
@@ -671,11 +723,12 @@ export default function TranscriptVaultScreen() {
           </View>
         )}
         <View style={styles.cardBody}>
-          <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
+          <Text style={styles.cardName} numberOfLines={3} ellipsizeMode="tail">
             {displayName(item.name, item.extractedTitle)}
           </Text>
           <Text style={styles.cardMeta}>
-            {item.wordCount.toLocaleString()} words · {item.folder}{item.sizeMB > 0 ? ` · ${item.sizeMB} KB` : ''}
+            {item.wordCount.toLocaleString()} words · {item.folder}
+            {item.sizeMB > 0 ? ` · ${item.sizeMB} KB` : ''}
           </Text>
         </View>
         {!isSelectionMode && (
@@ -710,7 +763,7 @@ export default function TranscriptVaultScreen() {
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => setSortBy((s) => s === 'name' ? 'words' : 'name')}
+            onPress={() => setSortBy((s) => (s === 'name' ? 'words' : 'name'))}
             style={styles.sortBtn}
           >
             <Ionicons
@@ -767,7 +820,11 @@ export default function TranscriptVaultScreen() {
                     style: 'destructive',
                     onPress: async () => {
                       for (const f of junk) {
-                        try { await deleteFile(f.path); } catch { /* skip */ }
+                        try {
+                          await deleteFile(f.path);
+                        } catch {
+                          /* skip */
+                        }
                       }
                       const junkPaths = new Set(junk.map((f) => f.path));
                       setFiles((prev) => prev.filter((f) => !junkPaths.has(f.path)));
@@ -779,7 +836,8 @@ export default function TranscriptVaultScreen() {
           >
             <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
             <Text style={styles.cleanupText}>
-              {files.filter((f) => f.wordCount < 10).length} junk transcript{files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
+              {files.filter((f) => f.wordCount < 10).length} junk transcript
+              {files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
             </Text>
             <Text style={styles.cleanupAction}>Clean up</Text>
           </TouchableOpacity>
@@ -800,7 +858,11 @@ export default function TranscriptVaultScreen() {
                     style: 'destructive',
                     onPress: async () => {
                       for (const p of duplicatePaths) {
-                        try { await deleteFile(p); } catch { /* skip */ }
+                        try {
+                          await deleteFile(p);
+                        } catch {
+                          /* skip */
+                        }
                       }
                       setFiles((prev) => prev.filter((f) => !duplicatePaths.has(f.path)));
                     },
@@ -822,7 +884,8 @@ export default function TranscriptVaultScreen() {
           <TouchableOpacity style={styles.renameBanner} onPress={handleSmartRename}>
             <Ionicons name="sparkles-outline" size={16} color={theme.colors.primary} />
             <Text style={styles.cleanupText}>
-              {renamableFiles.length} file{renamableFiles.length !== 1 ? 's' : ''} with unclear names
+              {renamableFiles.length} file{renamableFiles.length !== 1 ? 's' : ''} with unclear
+              names
             </Text>
             <Text style={styles.renameAction}>AI Rename</Text>
           </TouchableOpacity>
@@ -832,7 +895,9 @@ export default function TranscriptVaultScreen() {
         {renameProgress && (
           <View style={styles.renameBanner}>
             <ActivityIndicator size="small" color={theme.colors.primary} />
-            <Text style={styles.cleanupText} numberOfLines={1}>{renameProgress}</Text>
+            <Text style={styles.cleanupText} numberOfLines={2}>
+              {renameProgress}
+            </Text>
           </View>
         )}
 
@@ -868,7 +933,9 @@ export default function TranscriptVaultScreen() {
         {needsFileAccess && (
           <TouchableOpacity
             style={styles.permBanner}
-            onPress={async () => { await requestAllFilesAccess(); }}
+            onPress={async () => {
+              await requestAllFilesAccess();
+            }}
           >
             <Ionicons name="lock-open-outline" size={18} color={theme.colors.warning} />
             <Text style={styles.permBannerText}>
@@ -888,7 +955,8 @@ export default function TranscriptVaultScreen() {
             <Ionicons name="document-text-outline" size={48} color={theme.colors.textMuted} />
             <Text style={styles.emptyTitle}>No transcripts found</Text>
             <Text style={styles.emptyText}>
-              Transcript files (.txt) appear here from your Documents/Guru folder and internal backups.
+              Transcript files (.txt) appear here from your Documents/Guru folder and internal
+              backups.
             </Text>
           </View>
         ) : (
@@ -909,10 +977,15 @@ export default function TranscriptVaultScreen() {
         >
           <View style={styles.readerContainer}>
             <View style={styles.readerHeader}>
-              <TouchableOpacity onPress={() => setReaderContent(null)} style={styles.readerCloseBtn}>
+              <TouchableOpacity
+                onPress={() => setReaderContent(null)}
+                style={styles.readerCloseBtn}
+              >
                 <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
               </TouchableOpacity>
-              <Text style={styles.readerHeaderTitle} numberOfLines={1}>{readerTitle}</Text>
+              <Text style={styles.readerHeaderTitle} numberOfLines={2}>
+                {readerTitle}
+              </Text>
               <TouchableOpacity
                 onPress={() => {
                   if (readerContent) {
@@ -952,7 +1025,7 @@ const styles = StyleSheet.create({
   backBtn: { marginRight: 12, padding: 4 },
   headerTextWrap: { flex: 1 },
   headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
-  headerSub: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  headerSub: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 2 },
   topActions: {
     flexDirection: 'row',
     gap: 10,
@@ -982,9 +1055,13 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   sortBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: 10, paddingVertical: 6,
-    borderRadius: 14, backgroundColor: theme.colors.primary + '18',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primary + '18',
   },
   sortLabel: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
   refreshBtn: { padding: 8, marginLeft: 4 },
@@ -1002,8 +1079,8 @@ const styles = StyleSheet.create({
   cardSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '12' },
   cardIcon: { marginRight: 12 },
   cardBody: { flex: 1, minWidth: 0 },
-  cardName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  cardMeta: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  cardName: { color: theme.colors.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  cardMeta: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
   cardActions: { flexDirection: 'row', gap: 4, marginLeft: 8 },
   actionBtn: {
     width: 36,
@@ -1014,69 +1091,150 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
-  emptyTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '700', marginTop: 16, marginBottom: 8 },
-  emptyText: { color: theme.colors.textMuted, fontSize: 14, textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  emptyTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 20,
+  },
   selectionBanner: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: theme.colors.primary + '18', marginHorizontal: theme.spacing.lg,
-    marginTop: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.primary + '40',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: theme.colors.primary + '18',
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '40',
   },
   selectionText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
   selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   selectionCancelBtn: { paddingHorizontal: 12, paddingVertical: 6 },
   selectionCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '700' },
   selectionDeleteBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: theme.colors.error, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.error,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
   selectionDeleteText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   cleanupBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: theme.colors.error + '12', marginHorizontal: theme.spacing.lg,
-    marginTop: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.error + '30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.error + '12',
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.error + '30',
   },
-  cleanupText: { flex: 1, color: theme.colors.textSecondary, fontSize: 13, fontWeight: '600' },
+  cleanupText: {
+    flex: 1,
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
   cleanupAction: { color: theme.colors.error, fontSize: 13, fontWeight: '800' },
   dupeBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: theme.colors.warning + '12', marginHorizontal: theme.spacing.lg,
-    marginTop: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.warning + '30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.warning + '12',
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.warning + '30',
   },
   dupeAction: { color: theme.colors.warning, fontSize: 13, fontWeight: '800' },
   renameBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: theme.colors.primary + '12', marginHorizontal: theme.spacing.lg,
-    marginTop: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: theme.colors.primary + '30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: theme.colors.primary + '12',
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '30',
   },
   renameAction: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
   processBanner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    backgroundColor: '#4CAF5012', marginHorizontal: theme.spacing.lg,
-    marginTop: 8, paddingHorizontal: 14, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: '#4CAF5030',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#4CAF5012',
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#4CAF5030',
   },
   selectionProcessBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: theme.colors.success ?? '#4CAF50', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.success ?? '#4CAF50',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
   },
   permBanner: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: `${theme.colors.warning}15`, marginHorizontal: theme.spacing.lg,
-    marginTop: 8, paddingHorizontal: 12, paddingVertical: 10,
-    borderRadius: theme.borderRadius.md, borderWidth: 1, borderColor: `${theme.colors.warning}40`, gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: `${theme.colors.warning}15`,
+    marginHorizontal: theme.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: `${theme.colors.warning}40`,
+    gap: 8,
   },
   permBannerText: { flex: 1, color: theme.colors.textSecondary, fontSize: 13, lineHeight: 18 },
   readerContainer: { flex: 1, backgroundColor: theme.colors.background },
   readerHeader: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10,
-    borderBottomWidth: 1, borderBottomColor: theme.colors.border, gap: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+    gap: 10,
   },
   readerCloseBtn: { padding: 6 },
-  readerHeaderTitle: { flex: 1, color: theme.colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  readerHeaderTitle: {
+    flex: 1,
+    color: theme.colors.textPrimary,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '700',
+  },
   readerCopyBtn: { padding: 6 },
   readerScroll: { flex: 1 },
   readerScrollContent: { padding: 20, paddingBottom: 60 },

@@ -21,6 +21,7 @@ interface ResponsesApiInput {
 
 const DEFAULT_CODEX_INSTRUCTIONS =
   'You are Codex, a careful coding assistant. Follow the user instructions exactly and return useful plain text.';
+const JSON_FORMAT_CUE = 'Respond in JSON format.';
 
 function getChatGptFetch(): typeof fetch {
   try {
@@ -55,10 +56,28 @@ function extractTextFromResponsesData(data: any): string {
   throw new Error('ChatGPT returned no text output');
 }
 
-function parseBufferedChatGptResponseText(
-  raw: string,
-  onDelta?: (delta: string) => void,
-): string {
+function ensureJsonWordInResponsesInput(messages: Message[]): Message[] {
+  if (messages.length === 0) return messages;
+
+  const hasJsonWord = messages.some((message) => /\bjson\b/i.test(message.content));
+  if (hasJsonWord) return messages;
+
+  const lastUserIndex = messages.map((message) => message.role).lastIndexOf('user');
+  const targetIndex = lastUserIndex >= 0 ? lastUserIndex : messages.length - 1;
+  const targetMessage = messages[targetIndex];
+  const separator = targetMessage.content.trimEnd().length > 0 ? '\n\n' : '';
+
+  return messages.map((message, index) =>
+    index === targetIndex
+      ? {
+          ...message,
+          content: `${targetMessage.content.trimEnd()}${separator}${JSON_FORMAT_CUE}`,
+        }
+      : message,
+  );
+}
+
+function parseBufferedChatGptResponseText(raw: string, onDelta?: (delta: string) => void): string {
   const trimmed = raw.trim();
   if (!trimmed) throw new Error('ChatGPT stream returned no text');
 
@@ -115,7 +134,10 @@ function splitForPseudoStream(text: string, targetChunkChars = 34): string[] {
   return chunks.length > 0 ? chunks : [text];
 }
 
-async function emitPseudoStreamFallback(text: string, onDelta: (delta: string) => void): Promise<string> {
+async function emitPseudoStreamFallback(
+  text: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
   for (const chunk of splitForPseudoStream(text)) {
     onDelta(chunk);
   }
@@ -190,18 +212,23 @@ function buildResponsesPayload(
     .map((m) => m.content.trim())
     .filter(Boolean);
 
-  const input = messages
-    .filter((m) => m.role !== 'system')
-    .map((m) => ({
-      type: 'message' as const,
-      role: m.role,
-      content: [
-        {
-          type: (m.role === 'assistant' ? 'output_text' : 'input_text') as 'input_text' | 'output_text',
-          text: m.content,
-        },
-      ],
-    }));
+  const inputMessages = messages.filter((m) => m.role !== 'system');
+  const normalizedInputMessages = jsonMode
+    ? ensureJsonWordInResponsesInput(inputMessages)
+    : inputMessages;
+
+  const input = normalizedInputMessages.map((m) => ({
+    type: 'message' as const,
+    role: m.role,
+    content: [
+      {
+        type: (m.role === 'assistant' ? 'output_text' : 'input_text') as
+          | 'input_text'
+          | 'output_text',
+        text: m.content,
+      },
+    ],
+  }));
 
   const body: Record<string, unknown> = {
     model,

@@ -9,10 +9,12 @@ const mockShowToast = jest.fn();
 const mockStopRecording = jest.fn();
 const mockHideOverlay = jest.fn();
 const mockConsumeLectureReturnRequest = jest.fn();
+const mockConsumePomodoroBreakRequest = jest.fn();
 const mockIsRecordingActive = jest.fn();
 const mockIsOverlayActive = jest.fn();
 const mockValidateRecordingFile = jest.fn();
 const mockCopyFileToPublicBackup = jest.fn();
+const mockReadLectureInsights = jest.fn();
 const mockGetIncompleteExternalSession = jest.fn();
 const mockFinishExternalAppSession = jest.fn();
 const mockUpdateSessionPipelineTelemetry = jest.fn();
@@ -43,10 +45,12 @@ jest.mock('../../modules/app-launcher', () => ({
   stopRecording: mockStopRecording,
   hideOverlay: mockHideOverlay,
   consumeLectureReturnRequest: mockConsumeLectureReturnRequest,
+  consumePomodoroBreakRequest: mockConsumePomodoroBreakRequest,
   isRecordingActive: mockIsRecordingActive,
   isOverlayActive: mockIsOverlayActive,
   validateRecordingFile: mockValidateRecordingFile,
   copyFileToPublicBackup: mockCopyFileToPublicBackup,
+  readLectureInsights: mockReadLectureInsights,
 }));
 
 jest.mock('../db/queries/externalLogs', () => ({
@@ -72,12 +76,13 @@ jest.mock('../services/recordingValidation', () => ({
 describe('useLectureReturnRecovery', () => {
   let hookApi: any;
   let onRecovered: jest.Mock;
+  let onPomodoroBreak: jest.Mock;
   let appStateHandler: AppStateChangeHandler | null = null;
   let renderer: any = null;
 
   function Harness() {
     const { useLectureReturnRecovery } = require('./useLectureReturnRecovery');
-    hookApi = useLectureReturnRecovery({ onRecovered });
+    hookApi = useLectureReturnRecovery({ onRecovered, onPomodoroBreak });
     return null;
   }
 
@@ -86,6 +91,7 @@ describe('useLectureReturnRecovery', () => {
     (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
     hookApi = null;
     onRecovered = jest.fn();
+    onPomodoroBreak = jest.fn();
     appStateHandler = null;
     mockAddEventListener.mockImplementation((_event: string, handler: AppStateChangeHandler) => {
       appStateHandler = handler;
@@ -97,9 +103,11 @@ describe('useLectureReturnRecovery', () => {
     mockHideOverlay.mockResolvedValue(undefined);
     mockStopRecording.mockResolvedValue(null);
     mockConsumeLectureReturnRequest.mockResolvedValue(false);
+    mockConsumePomodoroBreakRequest.mockResolvedValue(false);
     mockIsRecordingActive.mockResolvedValue(false);
     mockIsOverlayActive.mockResolvedValue(false);
     mockCopyFileToPublicBackup.mockResolvedValue(true);
+    mockReadLectureInsights.mockResolvedValue(null);
     mockValidateRecordingWithBackoff.mockResolvedValue({ validated: true, attemptsUsed: 1 });
     mockValidateRecordingFile.mockResolvedValue({ exists: true, size: 1024 });
     mockCreateAsync.mockResolvedValue({
@@ -119,12 +127,15 @@ describe('useLectureReturnRecovery', () => {
   it('recovers returned session and finalizes with audio-header duration', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
     mockConsumeLectureReturnRequest.mockResolvedValue(true);
-    mockGetIncompleteExternalSession.mockResolvedValueOnce(null).mockResolvedValueOnce({
-      id: 42,
-      appName: 'Marrow',
-      launchedAt: 1699999400000,
-      recordingPath: 'file:///data/user/0/com.app/files/recordings/a.m4a',
-    });
+    mockGetIncompleteExternalSession
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 42,
+        appName: 'Marrow',
+        launchedAt: 1699999400000,
+        recordingPath: 'file:///data/user/0/com.app/files/recordings/a.m4a',
+      });
     mockStopRecording.mockResolvedValue('file:///data/user/0/com.app/files/recordings/a.m4a');
 
     await act(async () => {
@@ -142,7 +153,7 @@ describe('useLectureReturnRecovery', () => {
     expect(mockUpdateSessionPipelineTelemetry).toHaveBeenCalledWith(42, {
       validationAttempts: 1,
     });
-    expect(mockFinishExternalAppSession).toHaveBeenCalledWith(42, 3);
+    expect(mockFinishExternalAppSession).toHaveBeenCalledWith(42, 3, undefined);
     expect(mockStopRecordingHealthCheck).toHaveBeenCalled();
     expect(mockHideOverlay).toHaveBeenCalled();
     expect(onRecovered).toHaveBeenCalledWith({
@@ -156,12 +167,15 @@ describe('useLectureReturnRecovery', () => {
   it('silently finishes session when no recording exists after stop', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
     mockConsumeLectureReturnRequest.mockResolvedValue(true);
-    mockGetIncompleteExternalSession.mockResolvedValueOnce(null).mockResolvedValueOnce({
-      id: 77,
-      appName: 'PrepLadder',
-      launchedAt: 1699999700000,
-      recordingPath: null,
-    });
+    mockGetIncompleteExternalSession
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 77,
+        appName: 'PrepLadder',
+        launchedAt: 1699999700000,
+        recordingPath: null,
+      });
     mockStopRecording.mockResolvedValue(null);
 
     await act(async () => {
@@ -221,14 +235,14 @@ describe('useLectureReturnRecovery', () => {
     });
 
     expect(appStateHandler).toBeTruthy();
-    expect(mockGetIncompleteExternalSession).toHaveBeenCalledTimes(1);
+    expect(mockGetIncompleteExternalSession).toHaveBeenCalledTimes(2);
 
     await act(async () => {
       appStateHandler?.('background');
       appStateHandler?.('active');
     });
 
-    expect(mockGetIncompleteExternalSession).toHaveBeenCalledTimes(2);
+    expect(mockGetIncompleteExternalSession).toHaveBeenCalledTimes(4);
   });
 
   it('does not finalize an active lecture just because the app returned to foreground', async () => {
@@ -253,6 +267,64 @@ describe('useLectureReturnRecovery', () => {
     expect(mockStopRecording).not.toHaveBeenCalled();
     expect(mockFinishExternalAppSession).not.toHaveBeenCalled();
     expect(onRecovered).not.toHaveBeenCalled();
+  });
+
+  it('opens an external lecture pomodoro quiz without finalizing the lecture session', async () => {
+    mockGetIncompleteExternalSession
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 99,
+        appName: 'YouTube',
+        launchedAt: 1699999400000,
+        recordingPath: '/mock/live-session.m4a',
+      });
+    mockConsumePomodoroBreakRequest.mockResolvedValueOnce(false).mockResolvedValue(true);
+    mockReadLectureInsights.mockResolvedValue(
+      JSON.stringify({
+        subject: 'Medicine',
+        topics: ['Acute coronary syndrome'],
+        summary: 'Emergency ACS recognition and first response.',
+        keyConcepts: ['ST elevation', 'Troponin rise'],
+        quiz: {
+          questions: [
+            {
+              question: 'Which ECG change matters here?',
+              options: ['Delta wave', 'ST elevation', 'Short PR', 'Tall P'],
+              correctIndex: 1,
+              explanation: 'ST elevation is the classic acute clue.',
+            },
+          ],
+        },
+      }),
+    );
+
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    await act(async () => {
+      await hookApi.checkForPomodoroBreakRequest();
+    });
+
+    expect(onPomodoroBreak).toHaveBeenCalledWith({
+      source: 'external_lecture',
+      appName: 'YouTube',
+      subject: 'Medicine',
+      topics: ['Acute coronary syndrome'],
+      summary: 'Emergency ACS recognition and first response.',
+      keyConcepts: ['ST elevation', 'Troponin rise'],
+      questions: [
+        {
+          question: 'Which ECG change matters here?',
+          options: ['Delta wave', 'ST elevation', 'Short PR', 'Tall P'],
+          correctIndex: 1,
+          explanation: 'ST elevation is the classic acute clue.',
+        },
+      ],
+    });
+    expect(mockStopRecording).not.toHaveBeenCalled();
+    expect(mockFinishExternalAppSession).not.toHaveBeenCalled();
   });
 
   it('shows correct toast message for only notes', async () => {
@@ -308,7 +380,7 @@ describe('useLectureReturnRecovery', () => {
     consoleWarnSpy.mockRestore();
   });
 
-  it('finishes session silently on cold launch (showPrompt=false)', async () => {
+  it('recovers the session on cold launch instead of silently discarding transcription', async () => {
     jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
     mockGetIncompleteExternalSession.mockResolvedValue({
       id: 88,
@@ -324,9 +396,14 @@ describe('useLectureReturnRecovery', () => {
     expect(mockFinishExternalAppSession).toHaveBeenCalledWith(
       88,
       expect.any(Number),
-      'Stale session cleaned on cold launch',
+      'Recovered after app restart',
     );
-    expect(onRecovered).not.toHaveBeenCalled();
+    expect(onRecovered).toHaveBeenCalledWith({
+      appName: 'StaleApp',
+      durationMinutes: expect.any(Number),
+      recordingPath: 'some/path',
+      logId: 88,
+    });
   });
 
   it('handles stopRecording timeout/error and uses fallback path', async () => {
@@ -401,7 +478,7 @@ describe('useLectureReturnRecovery', () => {
       await hookApi.checkForReturnedSession(true);
     });
 
-    expect(mockFinishExternalAppSession).toHaveBeenCalledWith(102, 10);
+    expect(mockFinishExternalAppSession).toHaveBeenCalledWith(102, 10, undefined);
     expect(onRecovered).toHaveBeenCalledWith(
       expect.objectContaining({
         durationMinutes: 10,

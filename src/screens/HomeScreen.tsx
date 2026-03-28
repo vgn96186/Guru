@@ -30,7 +30,12 @@ import { connectToRoom } from '../services/deviceSyncService';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import { theme } from '../constants/theme';
-import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
+import {
+  BUNDLED_GROQ_KEY,
+  BUNDLED_HF_TOKEN,
+  DEFAULT_INICET_DATE,
+  DEFAULT_NEET_DATE,
+} from '../config/appConfig';
 import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood, UserProfile } from '../types';
 import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
@@ -42,7 +47,13 @@ function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): bo
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
 /** Inline header countdown: pulse highlight on day digits (always on). */
-function ExamCountdownChips({ daysToInicet, daysToNeetPg }: { daysToInicet: number; daysToNeetPg: number }) {
+function ExamCountdownChips({
+  daysToInicet,
+  daysToNeetPg,
+}: {
+  daysToInicet: number;
+  daysToNeetPg: number;
+}) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -78,17 +89,21 @@ function ExamCountdownChips({ daysToInicet, daysToNeetPg }: { daysToInicet: numb
     >
       <View style={styles.examPill}>
         <Text style={styles.examPillLabel}>INICET</Text>
-        <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
-          {daysToInicet}
-        </Animated.Text>
-        <Text style={styles.examPillUnit}>days</Text>
+        <View style={styles.examPillValueRow}>
+          <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
+            {daysToInicet}
+          </Animated.Text>
+          <Text style={styles.examPillUnit}>days</Text>
+        </View>
       </View>
       <View style={styles.examPill}>
         <Text style={styles.examPillLabel}>NEET-PG</Text>
-        <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
-          {daysToNeetPg}
-        </Animated.Text>
-        <Text style={styles.examPillUnit}>days</Text>
+        <View style={styles.examPillValueRow}>
+          <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
+            {daysToNeetPg}
+          </Animated.Text>
+          <Text style={styles.examPillUnit}>days</Text>
+        </View>
       </View>
     </View>
   );
@@ -247,7 +262,6 @@ export default function HomeScreen() {
     };
   })();
 
-
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
 
@@ -337,25 +351,24 @@ export default function HomeScreen() {
                     </Text>
                   </TouchableOpacity>
                 ) : (
-                  weakTopics
-                    .slice(0, 1)
-                    .map((t) => (
-                      <AgendaItem
-                        key={t.id}
-                        time="Now"
-                        title={t.name}
-                        type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
-                        subjectName={t.subjectName}
-                        priority={t.inicetPriority}
-                        onPress={() =>
-                          navigation.navigate('Session', {
-                            mood,
-                            focusTopicId: t.id,
-                            preferredActionType: t.progress.status === 'unseen' ? 'study' : 'deep_dive',
-                          })
-                        }
-                      />
-                    ))
+                  weakTopics.slice(0, 1).map((t) => (
+                    <AgendaItem
+                      key={t.id}
+                      time="Now"
+                      title={t.name}
+                      type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
+                      subjectName={t.subjectName}
+                      priority={t.inicetPriority}
+                      onPress={() =>
+                        navigation.navigate('Session', {
+                          mood,
+                          focusTopicId: t.id,
+                          preferredActionType:
+                            t.progress.status === 'unseen' ? 'study' : 'deep_dive',
+                        })
+                      }
+                    />
+                  ))
                 )}
               </Section>
               <Section label="UP NEXT" accessibilityLabel="Up next">
@@ -372,11 +385,7 @@ export default function HomeScreen() {
                     </Text>
                     <View style={styles.seeAllButton}>
                       <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={14}
-                        color={theme.colors.primary}
-                      />
+                      <Ionicons name="chevron-forward" size={14} color={theme.colors.primary} />
                     </View>
                   </TouchableOpacity>
                 ) : (
@@ -410,11 +419,7 @@ export default function HomeScreen() {
                       >
                         <View style={styles.seeAllButton}>
                           <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                          <Ionicons
-                            name="chevron-forward"
-                            size={14}
-                            color={theme.colors.primary}
-                          />
+                          <Ionicons name="chevron-forward" size={14} color={theme.colors.primary} />
                         </View>
                       </TouchableOpacity>
                     )}
@@ -559,7 +564,10 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
   }, [isActive, pulseAnim]);
 
   useEffect(() => {
-    if (!isActive) { setElapsed(0); return; }
+    if (!isActive) {
+      setElapsed(0);
+      return;
+    }
     const start = runtime.active[0]?.startedAt ?? Date.now();
     setElapsed(Math.floor((Date.now() - start) / 1000));
     const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
@@ -577,8 +585,9 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
     { name: 'Local', on: isLocalLlmUsable(profile) },
   ];
   const onlineProviders = providers.filter((p) => p.on);
-  const hasAnyStt = !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN)
-    || !!(profile.useLocalWhisper && profile.localWhisperPath);
+  const hasAnyStt =
+    !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN) ||
+    !!(profile.useLocalWhisper && profile.localWhisperPath);
 
   // Active request banner
   const activeReq = runtime.active[0];
@@ -597,7 +606,9 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
       {activeBanner && (
         <View style={[aiStyles.banner, { borderColor: bannerColor }]}>
           {isActive && (
-            <Animated.View style={[aiStyles.bannerGlow, { backgroundColor: bannerColor, opacity: glowOpacity }]} />
+            <Animated.View
+              style={[aiStyles.bannerGlow, { backgroundColor: bannerColor, opacity: glowOpacity }]}
+            />
           )}
           <View style={[aiStyles.bannerDot, { backgroundColor: bannerColor }]} />
           <Text style={[aiStyles.bannerText, { color: bannerColor }]} numberOfLines={1}>
@@ -616,7 +627,12 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
           ))
         ) : (
           <View style={aiStyles.tag}>
-            <View style={[aiStyles.tagDot, { backgroundColor: hasAnyStt ? theme.colors.warning : theme.colors.error }]} />
+            <View
+              style={[
+                aiStyles.tagDot,
+                { backgroundColor: hasAnyStt ? theme.colors.warning : theme.colors.error },
+              ]}
+            />
             <Text style={[aiStyles.tagText, { color: theme.colors.error }]}>
               {hasAnyStt ? 'STT only' : 'No AI'}
             </Text>
@@ -718,58 +734,64 @@ const SECTION_GAP = theme.spacing.xl; // 24 — gap between sections
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   scrollContent: { paddingBottom: 40 },
-  content: { paddingHorizontal: HP, paddingTop: theme.spacing.lg },
+  content: { paddingHorizontal: HP, paddingTop: theme.spacing.md },
 
   // ── Header ──
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.sm,
+    marginBottom: 0,
   },
   headerLeft: { flex: 1 },
   greetingText: {
     color: theme.colors.textMuted,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '600',
+    lineHeight: 18,
   },
   greetingName: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
   },
   examCountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    gap: 8,
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginTop: 2,
+    gap: 3,
   },
   examPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
     backgroundColor: theme.colors.surfaceAlt,
+    alignSelf: 'flex-start',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
   },
   examPillLabel: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    marginBottom: 0,
+  },
+  examPillValueRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
   },
   examPillDays: {
-    fontSize: 18,
+    fontSize: 24,
+    lineHeight: 26,
     fontWeight: '900',
-    letterSpacing: -0.3,
+    letterSpacing: -0.7,
   },
   examPillUnit: {
     color: theme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
+    paddingBottom: 3,
   },
 
   // AI Status styles moved to aiStyles (inline with AiStatusIndicator)
@@ -777,8 +799,10 @@ const styles = StyleSheet.create({
   // ── Hero section ──
   heroSection: {
     alignItems: 'center',
-    paddingVertical: SECTION_GAP,
-    gap: theme.spacing.lg,
+    marginTop: -18,
+    paddingTop: 0,
+    paddingBottom: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
   heroStats: {
     flexDirection: 'row',
@@ -878,7 +902,6 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   moreLinkText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '500' },
-
 
   // ── See all link ──
   seeAllButtonStandalone: {

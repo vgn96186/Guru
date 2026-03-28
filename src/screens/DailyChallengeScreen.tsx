@@ -18,8 +18,10 @@ import { createSession, endSession } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
 import type { QuizContent, TopicWithProgress } from '../types';
+import { MarkdownRender } from '../components/MarkdownRender';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyChallenge'>;
 
@@ -372,7 +374,9 @@ export default function DailyChallengeScreen() {
                   Tap to continue ➔
                 </Text>
               </Text>
-              <Text style={styles.feedbackExpl}>{q.explanation}</Text>
+              <View style={{ marginTop: 8 }}>
+                <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
+              </View>
             </TouchableOpacity>
           </Animated.View>
         )}

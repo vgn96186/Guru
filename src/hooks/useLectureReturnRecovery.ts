@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
 import { Audio } from 'expo-av';
 import {
   stopRecording,
   hideOverlay,
   consumeLectureReturnRequest,
+  consumePomodoroBreakRequest,
   isOverlayActive,
   isRecordingActive,
   validateRecordingFile,
   copyFileToPublicBackup,
+  readLectureInsights,
 } from '../../modules/app-launcher';
 import {
   getIncompleteExternalSession,
@@ -16,7 +17,6 @@ import {
   updateSessionPipelineTelemetry,
 } from '../db/queries/externalLogs';
 import {
-  retryFailedTranscriptions,
   retryPendingNoteEnhancements,
   stopRecordingHealthCheck,
 } from '../services/lecture/lectureSessionMonitor';
@@ -24,6 +24,7 @@ import { showToast } from '../components/Toast';
 import { stripFileUri } from '../services/fileUri';
 import { validateRecordingWithBackoff } from '../services/recordingValidation';
 import { useAppStateTransition } from './useAppStateTransition';
+import type { PomodoroBreakPayload, PomodoroBreakQuestion } from '../navigation/types';
 
 export interface LectureReturnSheetData {
   appName: string;
@@ -34,6 +35,17 @@ export interface LectureReturnSheetData {
 
 interface UseLectureReturnRecoveryParams {
   onRecovered: (payload: LectureReturnSheetData) => void;
+  onPomodoroBreak?: (payload?: PomodoroBreakPayload) => void;
+}
+
+interface PrecomputedLectureInsights {
+  subject?: string;
+  topics?: string[];
+  summary?: string;
+  keyConcepts?: string[];
+  quiz?: {
+    questions?: PomodoroBreakQuestion[];
+  };
 }
 
 /** Read actual audio duration from file headers using expo-av. Fast — does not decode audio. */
@@ -66,9 +78,36 @@ async function stopHealthAndHideOverlay(): Promise<void> {
   }
 }
 
-export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecoveryParams) {
+function parseLectureInsights(raw: string | null): PrecomputedLectureInsights | null {
+  if (!raw?.trim()) return null;
+  try {
+    return JSON.parse(raw) as PrecomputedLectureInsights;
+  } catch (error) {
+    console.warn('[LectureReturnRecovery] Failed to parse lecture insights sidecar:', error);
+    return null;
+  }
+}
+
+function normalizeQuestions(raw: PomodoroBreakQuestion[] | undefined): PomodoroBreakQuestion[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (q) =>
+      !!q &&
+      typeof q.question === 'string' &&
+      Array.isArray(q.options) &&
+      q.options.length === 4 &&
+      typeof q.correctIndex === 'number' &&
+      typeof q.explanation === 'string',
+  );
+}
+
+export function useLectureReturnRecovery({
+  onRecovered,
+  onPomodoroBreak,
+}: UseLectureReturnRecoveryParams) {
   const handledReturnLogRef = useRef<number | null>(null);
   const lastRecoveryAttemptRef = useRef(0);
+  const lastPomodoroBreakLogRef = useRef<number | null>(null);
 
   const recoverPendingTranscriptions = useCallback(async (force = false) => {
     const now = Date.now();
@@ -115,13 +154,44 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
           isOverlayActive().catch(() => false),
         ]);
 
+        if (__DEV__) {
+          console.log('[LectureReturnRecovery] Return gate evaluated', {
+            logId: session.id,
+            appName: session.appName,
+            showPrompt,
+            returnRequested,
+            recordingActive,
+            overlayActive,
+          });
+        }
+
         if (!returnRequested && (recordingActive || overlayActive)) {
+          if (__DEV__) {
+            console.log(
+              '[LectureReturnRecovery] Recovery delayed because native session is still active',
+              {
+                logId: session.id,
+                recordingActive,
+                overlayActive,
+              },
+            );
+          }
           return;
         }
 
         const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
         const logId = session.id!;
         handledReturnLogRef.current = logId;
+        if (__DEV__) {
+          console.log('[LectureReturnRecovery] Session detected', {
+            logId,
+            appName: session.appName,
+            launchedAt: session.launchedAt,
+            wallClockMinutes: durationMinutes,
+            showPrompt,
+            dbRecordingPath: session.recordingPath ?? null,
+          });
+        }
 
         let recordingPath = session.recordingPath ?? null;
 
@@ -136,6 +206,12 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
               const fileName = recordingPath.split('/').pop() || `backup_rec_${Date.now()}.m4a`;
               copyFileToPublicBackup(stripFileUri(recordingPath), fileName).catch(() => {});
             }
+            if (__DEV__) {
+              console.log('[LectureReturnRecovery] Native recorder stopped', {
+                logId,
+                recordingPath,
+              });
+            }
           }
         } catch (err) {
           console.warn('[Home] stopRecording failed:', err);
@@ -143,6 +219,12 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
 
         // If after stopping we still have no path, finish silently.
         if (!recordingPath) {
+          if (__DEV__) {
+            console.log('[LectureReturnRecovery] No recording path recovered after stop', {
+              logId,
+              showPrompt,
+            });
+          }
           await finishExternalAppSession(
             logId,
             durationMinutes,
@@ -152,26 +234,33 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
           return;
         }
 
-        if (!showPrompt) {
-          await finishExternalAppSession(
-            logId,
-            durationMinutes,
-            'Stale session cleaned on cold launch',
-          );
-          return;
-        }
-
         if (recordingPath) {
           const validation = await validateRecordingWithBackoff(
             recordingPath,
             validateRecordingFile,
           );
+          if (__DEV__) {
+            console.log('[LectureReturnRecovery] Recording validation finished', {
+              logId,
+              recordingPath,
+              validated: validation.validated,
+              attemptsUsed: validation.attemptsUsed,
+              lastInfo: validation.lastInfo,
+            });
+          }
           await updateSessionPipelineTelemetry(logId, {
             validationAttempts: validation.attemptsUsed,
           });
           if (!validation.validated) {
             try {
               const finalInfo = await validateRecordingFile(recordingPath);
+              if (__DEV__) {
+                console.log('[LectureReturnRecovery] Final validation info', {
+                  logId,
+                  recordingPath,
+                  finalInfo,
+                });
+              }
               if (!finalInfo?.exists || finalInfo.size <= 100) {
                 await updateSessionPipelineTelemetry(logId, { errorStage: 'validation' });
                 showToast(
@@ -191,10 +280,31 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
         let finalDurationMinutes = durationMinutes;
         if (recordingPath) {
           const audioDuration = await getAudioDurationMinutes(recordingPath);
+          if (__DEV__) {
+            console.log('[LectureReturnRecovery] Audio duration check', {
+              logId,
+              recordingPath,
+              wallClockMinutes: durationMinutes,
+              audioDurationMinutes: audioDuration,
+            });
+          }
           if (audioDuration !== null) finalDurationMinutes = audioDuration;
         }
+        if (__DEV__) {
+          console.log('[LectureReturnRecovery] Finalized recovered session', {
+            logId,
+            appName: session.appName,
+            recordingPath,
+            finalDurationMinutes,
+            showPrompt,
+          });
+        }
 
-        await finishExternalAppSession(logId, finalDurationMinutes);
+        await finishExternalAppSession(
+          logId,
+          finalDurationMinutes,
+          showPrompt ? undefined : 'Recovered after app restart',
+        );
         onRecovered({
           appName: session.appName,
           durationMinutes: finalDurationMinutes,
@@ -209,17 +319,65 @@ export function useLectureReturnRecovery({ onRecovered }: UseLectureReturnRecove
     [onRecovered],
   );
 
+  const checkForPomodoroBreakRequest = useCallback(async () => {
+    if (!onPomodoroBreak) return;
+    try {
+      const [breakRequested, session] = await Promise.all([
+        consumePomodoroBreakRequest().catch(() => false),
+        getIncompleteExternalSession(),
+      ]);
+      if (!breakRequested || !session?.id || !session.recordingPath) return;
+      if (lastPomodoroBreakLogRef.current === session.id) return;
+      lastPomodoroBreakLogRef.current = session.id;
+
+      const insights = parseLectureInsights(
+        await readLectureInsights(session.recordingPath).catch(() => null),
+      );
+      const questions = normalizeQuestions(insights?.quiz?.questions);
+
+      if (__DEV__) {
+        console.log('[LectureReturnRecovery] Pomodoro break requested', {
+          logId: session.id,
+          appName: session.appName,
+          recordingPath: session.recordingPath,
+          questionCount: questions.length,
+          subject: insights?.subject ?? null,
+        });
+      }
+
+      if (questions.length > 0 || insights?.summary?.trim() || insights?.keyConcepts?.length) {
+        onPomodoroBreak({
+          source: 'external_lecture',
+          appName: session.appName,
+          subject: insights?.subject,
+          topics: Array.isArray(insights?.topics) ? insights?.topics.slice(0, 5) : [],
+          summary: insights?.summary,
+          keyConcepts: Array.isArray(insights?.keyConcepts)
+            ? insights?.keyConcepts.slice(0, 5)
+            : [],
+          questions,
+        });
+      } else {
+        onPomodoroBreak(undefined);
+      }
+    } catch (err) {
+      console.warn('[LectureReturnRecovery] Failed to handle pomodoro break request:', err);
+    }
+  }, [onPomodoroBreak]);
+
   useAppStateTransition({
     onForeground: () => {
+      checkForPomodoroBreakRequest();
       checkForReturnedSession(true);
       recoverPendingTranscriptions();
     },
   });
 
   useEffect(() => {
+    checkForPomodoroBreakRequest();
     checkForReturnedSession(false);
     recoverPendingTranscriptions(true);
-  }, [checkForReturnedSession, recoverPendingTranscriptions]);
+  }, [checkForPomodoroBreakRequest, checkForReturnedSession, recoverPendingTranscriptions]);
 
-  return { recoverPendingTranscriptions, checkForReturnedSession };
+  return { recoverPendingTranscriptions, checkForReturnedSession, checkForPomodoroBreakRequest };
 }

@@ -18,9 +18,11 @@ import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
 import { fetchContent } from '../services/aiService';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
+import { MarkdownRender } from '../components/MarkdownRender';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 const BOSS_HP = 100;
 const PLAYER_HP = 3;
@@ -287,7 +289,9 @@ export default function BossBattleScreen() {
                 {!lastAnswer.correct && (
                   <>
                     <Text style={styles.correctAnswer}>Answer: {q.options[q.correctIndex]}</Text>
-                    <Text style={styles.explanation}>{q.explanation}</Text>
+                    <View style={{ marginBottom: 24, paddingHorizontal: 20 }}>
+                      <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
+                    </View>
                   </>
                 )}
                 <TouchableOpacity style={styles.continueBtn} onPress={handleContinueAfterFeedback}>

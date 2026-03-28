@@ -74,6 +74,8 @@ export interface LaunchMedicalAppOptions {
   onMicUsed?: () => void;
   /** If set, an early transcription check runs ~45s after start and notifies if capture + API work. */
   groqKey?: string;
+  /** If set, native recording streams PCM to Deepgram and writes a live transcript sidecar. */
+  deepgramKey?: string;
   /** If set, used for the early transcription check when Groq is not available. */
   huggingFaceToken?: string;
   huggingFaceModel?: string;
@@ -83,6 +85,39 @@ export interface LaunchMedicalAppOptions {
 
 function alertRecordingStartFailed(): void {
   Alert.alert('Recording Failed', 'Could not start background recording. Please try again.');
+}
+
+async function startExternalRecordingWithFallback(
+  deepgramKey?: string,
+  groqKey?: string,
+): Promise<string | null> {
+  const trimmedDeepgramKey = deepgramKey?.trim();
+  const trimmedGroqKey = groqKey?.trim();
+
+  // Keep saved audio recording as the source of truth. The Deepgram/Groq sidecar is
+  // strictly best-effort and exists only to prepare pomodoro-break quiz payloads.
+  if (trimmedDeepgramKey && trimmedGroqKey) {
+    try {
+      console.log('[AppLauncher] Starting recording with live quiz sidecar enabled', {
+        hasDeepgramKey: true,
+        hasGroqKey: true,
+      });
+      return await startRecording('', trimmedDeepgramKey, trimmedGroqKey);
+    } catch (error) {
+      console.warn(
+        '[AppLauncher] Live quiz sidecar startup failed; falling back to audio-only recording',
+        error,
+      );
+    }
+  }
+
+  if (trimmedDeepgramKey || trimmedGroqKey) {
+    console.log('[AppLauncher] External launch is using audio-only recording', {
+      hasDeepgramKey: !!trimmedDeepgramKey,
+      hasGroqKey: !!trimmedGroqKey,
+    });
+  }
+  return startRecording('');
 }
 
 async function cleanupAbortedLaunch(
@@ -165,7 +200,7 @@ async function _launchMedicalAppInner(
 
   if (installed) {
     try {
-      let recordingPath: string | undefined;
+      let recordingPath: string | null = null;
 
       const micGranted = await requestRecordingPermissions();
       if (!micGranted) {
@@ -184,12 +219,16 @@ async function _launchMedicalAppInner(
 
       options?.onMicUsed?.();
       try {
-        recordingPath = await startRecording('');
+        const deepgramKey = options?.deepgramKey?.trim();
+        const groqKey = options?.groqKey?.trim();
+        recordingPath = await startExternalRecordingWithFallback(
+          deepgramKey || undefined,
+          groqKey || undefined,
+        );
         if (!recordingPath) {
           alertRecordingStartFailed();
           return false;
         }
-        const groqKey = options?.groqKey?.trim();
         const huggingFaceToken = options?.huggingFaceToken?.trim();
         const localWhisperPath = options?.localWhisperPath?.trim();
         startRecordingHealthCheck(
@@ -197,10 +236,10 @@ async function _launchMedicalAppInner(
           app.name,
           groqKey || huggingFaceToken || localWhisperPath
             ? {
-                groqKey,
-                huggingFaceToken,
+                groqKey: groqKey || undefined,
+                huggingFaceToken: huggingFaceToken || undefined,
                 huggingFaceModel: options?.huggingFaceModel,
-                localWhisperPath,
+                localWhisperPath: localWhisperPath || undefined,
               }
             : undefined,
         );
@@ -279,13 +318,17 @@ async function launchMockLectureAudio(
     if (!hasOverlay) return false;
 
     options?.onMicUsed?.();
-    const recordingPath = await startRecording('');
+    const deepgramKey = options?.deepgramKey?.trim();
+    const groqKey = options?.groqKey?.trim();
+    const recordingPath = await startExternalRecordingWithFallback(
+      deepgramKey || undefined,
+      groqKey || undefined,
+    );
     if (!recordingPath) {
       alertRecordingStartFailed();
       return false;
     }
 
-    const groqKey = options?.groqKey?.trim();
     const huggingFaceToken = options?.huggingFaceToken?.trim();
     const localWhisperPath = options?.localWhisperPath?.trim();
     startRecordingHealthCheck(
@@ -293,10 +336,10 @@ async function launchMockLectureAudio(
       `${appName} (Mock Audio)`,
       groqKey || huggingFaceToken || localWhisperPath
         ? {
-            groqKey,
-            huggingFaceToken,
+            groqKey: groqKey || undefined,
+            huggingFaceToken: huggingFaceToken || undefined,
             huggingFaceModel: options?.huggingFaceModel,
-            localWhisperPath,
+            localWhisperPath: localWhisperPath || undefined,
           }
         : undefined,
     );

@@ -87,6 +87,7 @@ const styles = StyleSheet.create({
   title: {
     color: theme.colors.textPrimary,
     fontSize: 18,
+    lineHeight: 24,
     fontWeight: '800',
   },
   body: {
@@ -97,6 +98,7 @@ const styles = StyleSheet.create({
   detectedText: {
     color: theme.colors.textMuted,
     fontSize: 12,
+    lineHeight: 18,
     fontWeight: '600',
   },
   loadingRow: {
@@ -107,6 +109,7 @@ const styles = StyleSheet.create({
   loadingText: {
     color: theme.colors.textSecondary,
     fontSize: 13,
+    lineHeight: 18,
   },
   chipGrid: {
     flexDirection: 'row',
@@ -128,6 +131,7 @@ const styles = StyleSheet.create({
   chipText: {
     color: theme.colors.textPrimary,
     fontSize: 13,
+    lineHeight: 18,
     fontWeight: '700',
   },
   chipTextSelected: {

@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import type { TodayTask } from '../../services/studyPlanner';
 import { theme } from '../../constants/theme';
+import AppText from '../AppText';
 
 interface Props {
   todayTasks: TodayTask[];
@@ -17,11 +18,15 @@ export default React.memo(function DailyAgendaSection({
   if (todayTasks.length > 0) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>📅 Today's Agenda</Text>
+        <AppText style={styles.sectionTitle} variant="label" tone="muted">
+          Today's Agenda
+        </AppText>
         {todayTasks.map((task, i) => (
           <View key={i} style={styles.taskRow}>
             <View style={styles.timeBox}>
-              <Text style={styles.timeText}>{task.timeLabel.split(' - ')[0]}</Text>
+              <AppText style={styles.timeText} variant="caption" tone="muted">
+                {task.timeLabel.split(' - ')[0]}
+              </AppText>
             </View>
             <View
               style={[
@@ -30,13 +35,13 @@ export default React.memo(function DailyAgendaSection({
                 task.type === 'deep_dive' && styles.taskDeep,
               ]}
             >
-              <Text style={styles.taskTitle} numberOfLines={2}>
+              <AppText style={styles.taskTitle} variant="bodySmall">
                 {task.topic.name}
-              </Text>
-              <Text style={styles.taskSub}>
-                {task.type === 'review' ? 'REL' : task.type === 'deep_dive' ? 'DEEP' : 'NEW'} ·{' '}
+              </AppText>
+              <AppText style={styles.taskSub} variant="caption" tone="muted">
+                {task.type === 'review' ? 'REL' : task.type === 'deep_dive' ? 'DEEP' : 'NEW'} -{' '}
                 {task.topic.subjectName}
-              </Text>
+              </AppText>
             </View>
           </View>
         ))}
@@ -46,18 +51,22 @@ export default React.memo(function DailyAgendaSection({
 
   return (
     <View style={styles.emptyStateCard}>
-      <Text style={styles.emptyEmoji}>✨</Text>
-      <Text style={styles.emptyTitle}>
+      <AppText style={styles.emptyEyebrow} variant="label" tone="accent">
+        Next Move
+      </AppText>
+      <AppText style={styles.emptyTitle} variant="sectionTitle">
         {hasNewTopics ? 'Ready to learn something new!' : 'All caught up!'}
-      </Text>
-      <Text style={styles.emptySub}>
+      </AppText>
+      <AppText style={styles.emptySub} variant="bodySmall" tone="muted">
         {hasNewTopics
           ? 'You have new topics to explore. Start a session to begin learning!'
           : "Great work! You've covered your due reviews. Keep the momentum going!"}
-      </Text>
+      </AppText>
       {hasNewTopics && (
         <TouchableOpacity style={styles.emptyBtn} onPress={onStartSession}>
-          <Text style={styles.emptyBtnText}>Start New Topic</Text>
+          <AppText style={styles.emptyBtnText} variant="bodySmall">
+            Start New Topic
+          </AppText>
         </TouchableOpacity>
       )}
     </View>
@@ -67,16 +76,13 @@ export default React.memo(function DailyAgendaSection({
 const styles = StyleSheet.create({
   section: { paddingHorizontal: 16 },
   sectionTitle: {
-    color: theme.colors.textMuted,
-    fontWeight: '700',
-    fontSize: 13,
     marginBottom: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
-  taskRow: { flexDirection: 'row', marginBottom: 10, alignItems: 'center' },
-  timeBox: { width: 50, alignItems: 'flex-end', marginRight: 12 },
-  timeText: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '700' },
+  taskRow: { flexDirection: 'row', marginBottom: 10, alignItems: 'flex-start' },
+  timeBox: { width: 58, alignItems: 'flex-end', marginRight: 12, paddingTop: 12 },
+  timeText: { textAlign: 'right' },
   taskCard: {
     flex: 1,
     backgroundColor: theme.colors.surface,
@@ -87,12 +93,10 @@ const styles = StyleSheet.create({
   },
   taskReview: { borderLeftColor: theme.colors.success },
   taskDeep: { borderLeftColor: theme.colors.error },
-  taskTitle: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  taskTitle: { marginBottom: 4, fontWeight: '600' },
   taskSub: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    marginTop: 2,
     textTransform: 'uppercase',
+    letterSpacing: 0.2,
   },
   emptyStateCard: {
     backgroundColor: theme.colors.surface,
@@ -102,19 +106,13 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     alignItems: 'center',
   },
-  emptyEmoji: { fontSize: 40, marginBottom: 12 },
+  emptyEyebrow: { marginBottom: 12, letterSpacing: 0.6, textTransform: 'uppercase' },
   emptyTitle: {
-    color: theme.colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 18,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySub: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
     marginBottom: 16,
   },
   emptyBtn: {
@@ -123,5 +121,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 12,
   },
-  emptyBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
+  emptyBtnText: { textAlign: 'center', fontWeight: '700' },
 });

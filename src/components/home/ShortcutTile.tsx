@@ -1,8 +1,9 @@
 import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { theme } from '../../constants/theme';
+import AppText from '../AppText';
 
 interface ShortcutTileProps {
   title: string;
@@ -36,9 +37,15 @@ export default React.memo(function ShortcutTile({
       <View style={[styles.iconWrap, { backgroundColor: `${accent}18` }]}>
         <Ionicons name={icon} size={22} color={accent} />
       </View>
-      <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+      <AppText
+        style={styles.title}
+        numberOfLines={2}
+        ellipsizeMode="tail"
+        variant="caption"
+        tone="secondary"
+      >
         {title}
-      </Text>
+      </AppText>
     </TouchableOpacity>
   );
 });
@@ -47,6 +54,7 @@ const styles = StyleSheet.create({
   tile: {
     flex: 1,
     minWidth: '22%',
+    minHeight: 104,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.md,
     borderWidth: 1,
@@ -54,6 +62,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     paddingHorizontal: theme.spacing.sm,
     alignItems: 'center',
+    justifyContent: 'flex-start',
     gap: 8,
   },
   iconWrap: {
@@ -64,10 +73,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    color: theme.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
     textAlign: 'center',
     letterSpacing: 0.2,
+    width: '100%',
   },
 });

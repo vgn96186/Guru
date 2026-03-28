@@ -20,6 +20,7 @@ import type {
   ChatStackParamList,
   HomeStackParamList,
   MenuStackParamList,
+  PomodoroBreakPayload,
   SyllabusStackParamList,
   TabParamList,
 } from './types';
@@ -78,6 +79,7 @@ import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
+import { navigationRef } from './navigationRef';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -169,6 +171,7 @@ export default function TabNavigator() {
   const refreshProfile = useAppStore((state) => state.refreshProfile);
   const faceTrackingEnabled = profile?.faceTrackingEnabled ?? false;
   const groqKey = (profile?.groqApiKey || BUNDLED_GROQ_KEY || '').trim();
+  const deepgramKey = (profile?.deepgramApiKey || '').trim();
   const huggingFaceToken = (profile?.huggingFaceToken || BUNDLED_HF_TOKEN || '').trim();
   const huggingFaceModel = profile?.huggingFaceTranscriptionModel?.trim();
   const localWhisperPath =
@@ -230,6 +233,7 @@ export default function TabNavigator() {
     try {
       await launchMedicalApp(appId, faceTrackingEnabled, {
         groqKey: groqKey || undefined,
+        deepgramKey: deepgramKey || undefined,
         huggingFaceToken: huggingFaceToken || undefined,
         huggingFaceModel: huggingFaceModel || undefined,
         localWhisperPath,
@@ -270,8 +274,7 @@ export default function TabNavigator() {
         sheetDragY.setValue(Math.max(0, gs.dy));
       },
       onPanResponderRelease: (_, gs) => {
-        const shouldDismiss =
-          gs.dy > dismissThreshold || gs.vy > dismissVelocity;
+        const shouldDismiss = gs.dy > dismissThreshold || gs.vy > dismissVelocity;
         if (shouldDismiss) {
           Animated.parallel([
             Animated.spring(sheetDragY, {
@@ -312,6 +315,13 @@ export default function TabNavigator() {
 
   useLectureReturnRecovery({
     onRecovered: setReturnSheet,
+    onPomodoroBreak: (payload?: PomodoroBreakPayload) => {
+      if (!navigationRef.isReady()) return;
+      (navigationRef as any).navigate(
+        'PomodoroQuiz',
+        payload ? { breakPayload: payload } : undefined,
+      );
+    },
   });
 
   const handleAudioUpload = async () => {
@@ -561,7 +571,9 @@ export default function TabNavigator() {
             bounces={false}
             overScrollMode="never"
             nestedScrollEnabled
-            onScroll={(e) => { sheetScrollYRef.current = e.nativeEvent.contentOffset.y; }}
+            onScroll={(e) => {
+              sheetScrollYRef.current = e.nativeEvent.contentOffset.y;
+            }}
             scrollEventThrottle={16}
           >
             <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
@@ -612,11 +624,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open recording vault"
               >
-                <Ionicons
-                  name="mic-outline"
-                  size={18}
-                  color={theme.colors.textSecondary}
-                />
+                <Ionicons name="mic-outline" size={18} color={theme.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Upload Audio</Text>
               </Pressable>
 
@@ -660,7 +668,12 @@ export default function TabNavigator() {
                   accessibilityRole="button"
                   accessibilityLabel={`Open ${app.name}`}
                 >
-                  <View style={[styles.externalIconCircle, { backgroundColor: `${app.color}1E`, borderColor: `${app.color}4A` }]}>
+                  <View
+                    style={[
+                      styles.externalIconCircle,
+                      { backgroundColor: `${app.color}1E`, borderColor: `${app.color}4A` },
+                    ]}
+                  >
                     <Ionicons
                       name={EXTERNAL_APP_ICON_MAP[app.id] ?? 'apps-outline'}
                       size={26}
@@ -683,6 +696,7 @@ export default function TabNavigator() {
           recordingPath={returnSheet.recordingPath}
           logId={returnSheet.logId}
           groqKey={groqKey}
+          bottomOffset={66 + bottomInset + 12}
           onDone={() => setReturnSheet(null)}
         />
       ) : null}

@@ -57,6 +57,8 @@ import {
 } from '../services/lecture/lectureManager';
 import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
+import SubjectChip from '../components/SubjectChip';
+import TopicPillRow from '../components/TopicPillRow';
 
 const SUBJECT_COLORS: Record<string, string> = {
   Physiology: '#4CAF50',
@@ -580,23 +582,22 @@ export default function TranscriptHistoryScreen() {
           </View>
         )}
         <View style={styles.noteHeader}>
-          <View
-            style={[
-              styles.subjectChip,
-              { backgroundColor: SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E' },
-            ]}
-          >
-            <Text style={styles.subjectText} numberOfLines={1}>{subjectLabel}</Text>
-          </View>
+          <SubjectChip
+            subject={subjectLabel}
+            color="#fff"
+            backgroundColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+            borderColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+            style={styles.subjectChip}
+          />
           <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
         </View>
 
         {item.appName && <Text style={styles.appBadge}>via {item.appName}</Text>}
 
-        <Text style={styles.summaryText} numberOfLines={2}>
+        <Text style={styles.summaryText} numberOfLines={3}>
           {getLectureTitle(item)}
         </Text>
-        <Text style={styles.summaryPreviewText} numberOfLines={2}>
+        <Text style={styles.summaryPreviewText} numberOfLines={3}>
           {item.summary || extractFirstLine(item.note)}
         </Text>
         <View style={styles.statusRow}>
@@ -612,16 +613,14 @@ export default function TranscriptHistoryScreen() {
 
         <View style={styles.noteFooter}>
           {item.topics.length > 0 && (
-            <View style={styles.topicsRow}>
-              {item.topics.slice(0, 3).map((t, i) => (
-                <Text key={i} style={styles.topicPill}>
-                  {t}
-                </Text>
-              ))}
-              {item.topics.length > 3 && (
-                <Text style={styles.moreBadge}>+{item.topics.length - 3}</Text>
-              )}
-            </View>
+            <TopicPillRow
+              topics={item.topics}
+              wrap
+              maxVisible={3}
+              rowStyle={styles.topicsRow}
+              pillStyle={styles.topicPill}
+              moreBadgeStyle={styles.moreBadge}
+            />
           )}
           <View style={styles.metaRow}>
             {item.durationMinutes ? (
@@ -809,7 +808,7 @@ export default function TranscriptHistoryScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={1}>
+              <Text style={styles.modalTitle} numberOfLines={2}>
                 {selectedNote ? resolveLectureSubjectLabel(selectedNote) : 'Lecture'} Transcript
               </Text>
               <View style={styles.modalHeaderActions}>
@@ -979,7 +978,13 @@ export default function TranscriptHistoryScreen() {
               {/* ADHD-formatted study note */}
               {selectedNote?.note && (
                 <View style={styles.modalSection}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
                     <Text style={styles.modalSectionTitle}>Study Note</Text>
                     <TouchableOpacity
                       style={styles.readerOpenBtn}
@@ -1001,7 +1006,14 @@ export default function TranscriptHistoryScreen() {
               {/* Full transcript (collapsible) */}
               {selectedNote?.transcript && (
                 <View style={{ marginBottom: 12 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 4,
+                    }}
+                  >
                     <View />
                     <TouchableOpacity
                       style={styles.readerOpenBtn}
@@ -1031,13 +1043,10 @@ export default function TranscriptHistoryScreen() {
       >
         <View style={styles.readerContainer}>
           <View style={styles.readerHeader}>
-            <TouchableOpacity
-              onPress={() => setReaderContent(null)}
-              style={styles.readerCloseBtn}
-            >
+            <TouchableOpacity onPress={() => setReaderContent(null)} style={styles.readerCloseBtn}>
               <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.readerHeaderTitle} numberOfLines={1}>
+            <Text style={styles.readerHeaderTitle} numberOfLines={2}>
               {readerTitle}
             </Text>
             <TouchableOpacity
@@ -1075,13 +1084,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 12,
     paddingHorizontal: 14,
-    height: 48,
+    minHeight: 52,
+    paddingVertical: 8,
   },
   searchInput: {
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
     color: '#fff',
+    minHeight: 24,
+    paddingVertical: 0,
   },
   statsBar: {
     paddingHorizontal: 16,
@@ -1166,38 +1178,49 @@ const styles = StyleSheet.create({
   noteHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 8,
   },
   subjectChip: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 12,
     flexShrink: 1,
   },
-  subjectText: { color: '#fff', fontWeight: '600', fontSize: 12 },
-  dateText: { color: '#888', fontSize: 12, flexShrink: 0, marginLeft: 8, minWidth: 50 },
+  dateText: {
+    color: '#888',
+    fontSize: 12,
+    lineHeight: 16,
+    flexShrink: 1,
+    marginLeft: 'auto',
+    textAlign: 'right',
+    minWidth: 72,
+  },
   appBadge: { color: '#666', fontSize: 11, marginBottom: 6 },
-  summaryText: { color: '#ddd', fontSize: 14, lineHeight: 20, marginBottom: 10 },
-  summaryPreviewText: { color: '#8f8fa8', fontSize: 12, lineHeight: 18, marginBottom: 10 },
+  summaryText: { color: '#ddd', fontSize: 15, lineHeight: 22, marginBottom: 10 },
+  summaryPreviewText: { color: '#8f8fa8', fontSize: 13, lineHeight: 20, marginBottom: 10 },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   statusBadge: {
     backgroundColor: '#263145',
     color: '#C7D4F5',
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 10,
     overflow: 'hidden',
   },
   statusBadgeWarn: {
     backgroundColor: '#453118',
     color: '#FFD18A',
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -1206,9 +1229,9 @@ const styles = StyleSheet.create({
   topicPill: {
     backgroundColor: '#333',
     color: '#aaa',
-    fontSize: 11,
+    fontSize: 12,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 10,
     marginRight: 6,
     marginBottom: 4,
@@ -1216,13 +1239,14 @@ const styles = StyleSheet.create({
   },
   moreBadge: { color: '#666', fontSize: 11, marginLeft: 4, alignSelf: 'center' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  metaText: { color: '#888', fontSize: 12 },
+  metaText: { color: '#888', fontSize: 12, lineHeight: 18 },
   confidenceBadge: {
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: '600',
     color: '#fff',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 8,
     overflow: 'hidden',
   },
@@ -1258,7 +1282,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '600', flex: 1 },
+  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '600', flex: 1, lineHeight: 24 },
   modalHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 10 },
   headerActionBtn: {
     flexDirection: 'row',
@@ -1293,7 +1317,7 @@ const styles = StyleSheet.create({
     borderColor: '#3A3A3A',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 12,
     color: '#fff',
     fontSize: 15,
   },
@@ -1405,7 +1429,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
   },
   readerCloseBtn: { padding: 6, marginRight: 8 },
-  readerHeaderTitle: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '700' },
+  readerHeaderTitle: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '700', lineHeight: 22 },
   readerCopyBtn: { padding: 8 },
   readerScroll: { flex: 1 },
   readerScrollContent: { padding: 20, paddingBottom: 60 },

@@ -33,6 +33,9 @@ const HALLUCINATION_PATTERNS = [
 
 const HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES = 20 * 1024 * 1024;
 const LOCAL_WHISPER_BATCH_THRESHOLD_BYTES = 24 * 1024 * 1024;
+const GROQ_MAX_SAFE_UPLOAD_BYTES = 25 * 1024 * 1024;
+const TRANSCRIPTION_BASE_TIMEOUT_MS = 45_000;
+const TRANSCRIPTION_UPLOAD_BYTES_PER_SECOND = 500_000;
 
 // Keep local Whisper transcriptions serialized.
 // whisper.rn contexts are native resources and should not be shared concurrently.
@@ -83,6 +86,42 @@ function formatMegabytes(bytes: number): string {
   return `${Math.round(bytes / (1024 * 1024))} MB`;
 }
 
+function computeTranscriptionTimeoutMs(fileSizeBytes?: number | null): number {
+  if (!fileSizeBytes || fileSizeBytes <= 0) {
+    return TRANSCRIPTION_BASE_TIMEOUT_MS;
+  }
+  const uploadEstimateMs = Math.ceil(
+    (fileSizeBytes / TRANSCRIPTION_UPLOAD_BYTES_PER_SECOND) * 1000,
+  );
+  return Math.max(TRANSCRIPTION_BASE_TIMEOUT_MS, uploadEstimateMs + 15_000);
+}
+
+async function fetchWithTimeout(
+  input: Parameters<typeof fetch>[0],
+  init: Parameters<typeof fetch>[1],
+  timeoutMs: number,
+  label: string,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`${label} timed out after ${Math.round(timeoutMs / 1000)}s`, {
+        cause: error,
+      });
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /** Cloud fallback: Groq Whisper transcription */
 export async function transcribeRawWithGroq(
   audioFilePath: string,
@@ -92,6 +131,16 @@ export async function transcribeRawWithGroq(
     throw new Error('Groq API key missing. Add one in Settings or enable Local Whisper.');
   }
   const fileUri = toFileUri(audioFilePath);
+  const fileInfo = await FileSystem.getInfoAsync(fileUri);
+  if (!fileInfo?.exists || fileInfo.size === 0) {
+    throw new Error(`Audio file is missing or empty: ${audioFilePath}`);
+  }
+  if (fileInfo.size > GROQ_MAX_SAFE_UPLOAD_BYTES) {
+    throw new Error(
+      `Groq transcription is limited to ${formatMegabytes(GROQ_MAX_SAFE_UPLOAD_BYTES)} files in Guru. Use chunked transcription for larger recordings.`,
+    );
+  }
+  const timeoutMs = computeTranscriptionTimeoutMs(fileInfo.size);
 
   const formData = new FormData();
   formData.append('file', {
@@ -103,19 +152,40 @@ export async function transcribeRawWithGroq(
   formData.append('temperature', '0');
   formData.append('prompt', WHISPER_MEDICAL_PROMPT);
 
-  const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${groqKey}` },
-    body: formData,
+  console.log('[LecturePipeline] Groq transcription request starting', {
+    audioFilePath,
+    model: 'whisper-large-v3-turbo',
+    fileSizeBytes: fileInfo.size,
+    timeoutMs,
   });
+
+  const res = await fetchWithTimeout(
+    'https://api.groq.com/openai/v1/audio/transcriptions',
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${groqKey}` },
+      body: formData,
+    },
+    timeoutMs,
+    'Groq transcription',
+  );
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.status.toString());
+    console.warn('[LecturePipeline] Groq transcription request failed', {
+      audioFilePath,
+      status: res.status,
+      error: err,
+    });
     throw new Error(`Groq transcription error ${res.status}: ${err}`);
   }
 
   const data = await res.json();
   const transcript = sanitizeTranscript(String(data?.text ?? '').trim());
+  console.log('[LecturePipeline] Groq transcription response received', {
+    audioFilePath,
+    transcriptChars: transcript.length,
+  });
   // Reject single short sentences that are classic Whisper hallucinations on silence
   if (isLikelyHallucination(transcript)) return '';
   return transcript;
@@ -141,6 +211,7 @@ export async function transcribeRawWithHuggingFace(
       `Hugging Face transcription is limited to ${formatMegabytes(HUGGINGFACE_MAX_SAFE_UPLOAD_BYTES)} files in Guru to avoid memory crashes. Use Groq or Local Whisper for larger recordings.`,
     );
   }
+  const timeoutMs = computeTranscriptionTimeoutMs(fileInfo.size);
 
   const response = await fetch(fileUri);
   if (!response.ok) {
@@ -148,7 +219,7 @@ export async function transcribeRawWithHuggingFace(
   }
 
   const audioBlob = await response.blob();
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://router.huggingface.co/hf-inference/models/${encodeURIComponent(modelId)}`,
     {
       method: 'POST',
@@ -158,6 +229,8 @@ export async function transcribeRawWithHuggingFace(
       },
       body: audioBlob,
     },
+    timeoutMs,
+    'Hugging Face transcription',
   );
 
   if (!res.ok) {
@@ -194,13 +267,14 @@ export async function transcribeRawWithCloudflare(
   if (!fileInfo?.exists || fileInfo.size === 0) {
     throw new Error(`Audio file is missing or empty: ${audioFilePath}`);
   }
+  const timeoutMs = computeTranscriptionTimeoutMs(fileInfo.size);
 
   // Read audio as base64 for Cloudflare's JSON endpoint
   const audioBase64 = await FileSystem.readAsStringAsync(fileUri, {
     encoding: FileSystem.EncodingType.Base64,
   });
 
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/openai/whisper-large-v3-turbo`,
     {
       method: 'POST',
@@ -215,6 +289,8 @@ export async function transcribeRawWithCloudflare(
         condition_on_previous_text: false,
       }),
     },
+    timeoutMs,
+    'Cloudflare transcription',
   );
 
   if (!res.ok) {
@@ -243,6 +319,7 @@ export async function transcribeRawWithDeepgram(
   if (!fileInfo?.exists || fileInfo.size === 0) {
     throw new Error(`Audio file is missing or empty: ${audioFilePath}`);
   }
+  const timeoutMs = computeTranscriptionTimeoutMs(fileInfo.size);
 
   const response = await fetch(fileUri);
   if (!response.ok) {
@@ -251,7 +328,7 @@ export async function transcribeRawWithDeepgram(
 
   const audioBlob = await response.blob();
   const mimeType = getAudioMimeType(audioFilePath);
-  const res = await fetch(
+  const res = await fetchWithTimeout(
     'https://api.deepgram.com/v1/listen?model=nova-2-medical&language=en&smart_format=true&punctuate=true&diarize=false',
     {
       method: 'POST',
@@ -261,6 +338,8 @@ export async function transcribeRawWithDeepgram(
       },
       body: audioBlob,
     },
+    timeoutMs,
+    'Deepgram transcription',
   );
 
   if (!res.ok) {
@@ -269,9 +348,7 @@ export async function transcribeRawWithDeepgram(
   }
 
   const data = await res.json();
-  const rawText = String(
-    data?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '',
-  ).trim();
+  const rawText = String(data?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '').trim();
   const transcript = sanitizeTranscript(rawText);
   if (isLikelyHallucination(transcript)) return '';
   return transcript;

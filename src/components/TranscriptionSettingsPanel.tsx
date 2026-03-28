@@ -31,9 +31,15 @@ import {
 type TranscriptionProvider = 'auto' | 'groq' | 'huggingface' | 'cloudflare' | 'deepgram' | 'local';
 type TestResult = 'ok' | 'fail' | null;
 
-export default function TranscriptionSettingsPanel() {
+interface TranscriptionSettingsPanelProps {
+  embedded?: boolean;
+}
+
+export default function TranscriptionSettingsPanel({
+  embedded = false,
+}: TranscriptionSettingsPanelProps) {
   const refreshProfile = useAppStore((s) => s.refreshProfile);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(embedded);
   const heightAnim = useRef(new Animated.Value(0)).current;
 
   // Field state
@@ -95,10 +101,16 @@ export default function TranscriptionSettingsPanel() {
     if (!token) return;
     setTestingHf(true);
     try {
-      const r = await testHuggingFaceConnection(token, hfModel.trim() || DEFAULT_HF_TRANSCRIPTION_MODEL);
+      const r = await testHuggingFaceConnection(
+        token,
+        hfModel.trim() || DEFAULT_HF_TRANSCRIPTION_MODEL,
+      );
       setHfResult(r.ok ? 'ok' : 'fail');
-    } catch { setHfResult('fail'); }
-    finally { setTestingHf(false); }
+    } catch {
+      setHfResult('fail');
+    } finally {
+      setTestingHf(false);
+    }
   };
 
   const testDg = async () => {
@@ -108,8 +120,11 @@ export default function TranscriptionSettingsPanel() {
     try {
       const r = await testDeepgramConnection(key);
       setDgResult(r.ok ? 'ok' : 'fail');
-    } catch { setDgResult('fail'); }
-    finally { setTestingDg(false); }
+    } catch {
+      setDgResult('fail');
+    } finally {
+      setTestingDg(false);
+    }
   };
 
   const testGroq = async () => {
@@ -119,8 +134,11 @@ export default function TranscriptionSettingsPanel() {
     try {
       const r = await testGroqConnection(key);
       setGroqResult(r.ok ? 'ok' : 'fail');
-    } catch { setGroqResult('fail'); }
-    finally { setTestingGroq(false); }
+    } catch {
+      setGroqResult('fail');
+    } finally {
+      setTestingGroq(false);
+    }
   };
 
   const PROVIDERS: [TranscriptionProvider, string][] = [
@@ -133,23 +151,28 @@ export default function TranscriptionSettingsPanel() {
   ];
 
   return (
-    <View style={s.wrapper}>
-      <TouchableOpacity style={s.toggleRow} onPress={toggleExpanded} activeOpacity={0.7}>
-        <Ionicons name="settings-outline" size={16} color={theme.colors.textMuted} />
-        <Text style={s.toggleText}>Transcription Settings</Text>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={16}
-          color={theme.colors.textMuted}
-        />
-      </TouchableOpacity>
+    <View style={[s.wrapper, embedded && s.wrapperEmbedded]}>
+      {!embedded ? (
+        <TouchableOpacity style={s.toggleRow} onPress={toggleExpanded} activeOpacity={0.7}>
+          <Ionicons name="settings-outline" size={16} color={theme.colors.textMuted} />
+          <Text style={s.toggleText}>Transcription Settings</Text>
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={16}
+            color={theme.colors.textMuted}
+          />
+        </TouchableOpacity>
+      ) : null}
 
       <Animated.View
         style={[
           s.body,
+          embedded && s.bodyEmbedded,
           {
-            maxHeight: heightAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 600] }),
-            opacity: heightAnim,
+            maxHeight: embedded
+              ? undefined
+              : heightAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 600] }),
+            opacity: embedded ? 1 : heightAnim,
           },
         ]}
       >
@@ -178,7 +201,11 @@ export default function TranscriptionSettingsPanel() {
             placeholder="gsk_..."
             placeholderTextColor={theme.colors.textMuted}
             value={groqKey}
-            onChangeText={(v) => { setGroqKey(v); setGroqResult(null); autoSave({ groqApiKey: v.trim() }); }}
+            onChangeText={(v) => {
+              setGroqKey(v);
+              setGroqResult(null);
+              autoSave({ groqApiKey: v.trim() });
+            }}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -194,7 +221,11 @@ export default function TranscriptionSettingsPanel() {
             placeholder="hf_..."
             placeholderTextColor={theme.colors.textMuted}
             value={hfToken}
-            onChangeText={(v) => { setHfToken(v); setHfResult(null); autoSave({ huggingFaceToken: v.trim() }); }}
+            onChangeText={(v) => {
+              setHfToken(v);
+              setHfResult(null);
+              autoSave({ huggingFaceToken: v.trim() });
+            }}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -207,7 +238,10 @@ export default function TranscriptionSettingsPanel() {
           placeholder={DEFAULT_HF_TRANSCRIPTION_MODEL}
           placeholderTextColor={theme.colors.textMuted}
           value={hfModel}
-          onChangeText={(v) => { setHfModel(v); autoSave({ huggingFaceTranscriptionModel: v.trim() }); }}
+          onChangeText={(v) => {
+            setHfModel(v);
+            autoSave({ huggingFaceTranscriptionModel: v.trim() });
+          }}
           autoCapitalize="none"
           autoCorrect={false}
         />
@@ -220,7 +254,11 @@ export default function TranscriptionSettingsPanel() {
             placeholder="dg_..."
             placeholderTextColor={theme.colors.textMuted}
             value={deepgramKey}
-            onChangeText={(v) => { setDeepgramKey(v); setDgResult(null); autoSave({ deepgramApiKey: v.trim() }); }}
+            onChangeText={(v) => {
+              setDeepgramKey(v);
+              setDgResult(null);
+              autoSave({ deepgramApiKey: v.trim() });
+            }}
             secureTextEntry
             autoCapitalize="none"
             autoCorrect={false}
@@ -244,11 +282,7 @@ function TestButton({
 }) {
   return (
     <TouchableOpacity
-      style={[
-        s.testBtn,
-        result === 'ok' && s.testBtnOk,
-        result === 'fail' && s.testBtnFail,
-      ]}
+      style={[s.testBtn, result === 'ok' && s.testBtnOk, result === 'fail' && s.testBtnFail]}
       onPress={onPress}
       disabled={testing}
     >
@@ -256,9 +290,21 @@ function TestButton({
         <ActivityIndicator size="small" color={theme.colors.primary} />
       ) : (
         <Ionicons
-          name={result === 'ok' ? 'checkmark-circle' : result === 'fail' ? 'close-circle' : 'flash-outline'}
+          name={
+            result === 'ok'
+              ? 'checkmark-circle'
+              : result === 'fail'
+                ? 'close-circle'
+                : 'flash-outline'
+          }
           size={18}
-          color={result === 'ok' ? theme.colors.success : result === 'fail' ? theme.colors.error : theme.colors.primary}
+          color={
+            result === 'ok'
+              ? theme.colors.success
+              : result === 'fail'
+                ? theme.colors.error
+                : theme.colors.primary
+          }
         />
       )}
     </TouchableOpacity>
@@ -275,6 +321,15 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     overflow: 'hidden',
+  },
+  wrapperEmbedded: {
+    marginHorizontal: 0,
+    marginTop: 0,
+    marginBottom: 0,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    borderWidth: 0,
+    overflow: 'visible',
   },
   toggleRow: {
     flexDirection: 'row',
@@ -293,6 +348,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 14,
     paddingBottom: 14,
     overflow: 'hidden',
+  },
+  bodyEmbedded: {
+    paddingHorizontal: 0,
+    paddingBottom: 0,
+    overflow: 'visible',
   },
   label: {
     color: theme.colors.textMuted,
@@ -354,6 +414,12 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  testBtnOk: { borderColor: theme.colors.success + '66', backgroundColor: theme.colors.success + '15' },
-  testBtnFail: { borderColor: theme.colors.error + '66', backgroundColor: theme.colors.error + '15' },
+  testBtnOk: {
+    borderColor: theme.colors.success + '66',
+    backgroundColor: theme.colors.success + '15',
+  },
+  testBtnFail: {
+    borderColor: theme.colors.error + '66',
+    backgroundColor: theme.colors.error + '15',
+  },
 });

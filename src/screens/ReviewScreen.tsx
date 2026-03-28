@@ -22,8 +22,10 @@ import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, AIContent, ContentType } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
+import { MarkdownRender } from '../components/MarkdownRender';
 import { theme } from '../constants/theme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 // Spaced Repetition Ratings
 const RATINGS = [
@@ -459,9 +461,9 @@ function renderBackContent(content: AIContent | null) {
         ))}
         <Text style={styles.hook}>✓ {q.options[q.correctIndex]}</Text>
         {q.explanation ? (
-          <Text style={[styles.point, { color: theme.colors.textSecondary, marginTop: 8 }]}>
-            {q.explanation}
-          </Text>
+          <View style={{ marginTop: 8 }}>
+            <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
+          </View>
         ) : null}
       </View>
     );
@@ -528,11 +530,12 @@ const styles = StyleSheet.create({
   },
   chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
   chipDisabled: { opacity: 0.4 },
-  chipText: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700' },
+  chipText: { color: theme.colors.textMuted, fontSize: 11, lineHeight: 16, fontWeight: '700' },
   chipTextActive: { color: theme.colors.primary },
   autoBadge: {
     color: theme.colors.primary,
     fontSize: 8,
+    lineHeight: 12,
     fontWeight: '900',
     marginTop: 2,
     letterSpacing: 0.5,

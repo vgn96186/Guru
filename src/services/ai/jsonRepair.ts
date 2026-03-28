@@ -166,6 +166,17 @@ function repairTruncatedJson(raw: string): string {
   return raw + suffix;
 }
 
+function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>): unknown {
+  if (!(schema instanceof z.ZodArray)) return value;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length !== 1) return value;
+
+  const [, wrappedValue] = entries[0];
+  return Array.isArray(wrappedValue) ? wrappedValue : value;
+}
+
 /**
  * Parse structured JSON with timeout protection.
  * Wraps the parsing logic in a timeout to prevent ReDoS hangs.
@@ -210,7 +221,8 @@ async function parseStructuredJsonWithTimeout<T>(
       let lastError: Error | null = null;
       for (const [candidateIndex, candidate] of candidates.entries()) {
         try {
-          const parsed = schema.parse(JSON.parse(candidate));
+          const json = JSON.parse(candidate);
+          const parsed = schema.parse(normalizeRootForSchema(json, schema));
           logJsonParseSuccess({ candidateIndex, candidateLength: candidate.length });
           return parsed;
         } catch (err) {

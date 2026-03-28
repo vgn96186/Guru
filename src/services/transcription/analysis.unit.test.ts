@@ -43,6 +43,36 @@ describe('analyzeTranscript', () => {
     expect(r.modelUsed).toBe('test-model');
   });
 
+  it('replaces generic placeholder summaries with a topic-based fallback title', async () => {
+    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
+      parsed: {
+        ...okParsed,
+        lecture_summary: 'Lecture content recorded.',
+        topics: ['Acute coronary syndrome', 'ECG changes'],
+      },
+      modelUsed: 'test-model',
+    });
+
+    const r = await analyzeTranscript('short segment');
+    expect(r.lectureSummary).toBe('Acute coronary syndrome & ECG changes');
+  });
+
+  it('falls back to a subject-based title when no meaningful summary or topics exist', async () => {
+    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
+      parsed: {
+        ...okParsed,
+        subject: 'Medicine',
+        topics: [],
+        key_concepts: [],
+        lecture_summary: 'Lecture summary captured.',
+      },
+      modelUsed: 'test-model',
+    });
+
+    const r = await analyzeTranscript('short segment');
+    expect(r.lectureSummary).toBe('Medicine Lecture Highlights');
+  });
+
   it('splits long transcripts into multiple segments and meta-summarizes', async () => {
     const longText = 'x'.repeat(13000);
     (generateJSONWithRouting as jest.Mock)

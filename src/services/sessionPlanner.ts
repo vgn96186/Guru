@@ -98,6 +98,15 @@ function getSessionLength(mood: Mood, preferred: number): number {
   return preferred;
 }
 
+function withKeypointsFirst(
+  contentTypes: ContentType[],
+  blockedContentTypes: Set<ContentType>,
+): ContentType[] {
+  const deduped = Array.from(new Set(contentTypes));
+  if (blockedContentTypes.has('keypoints')) return deduped;
+  return ['keypoints' as ContentType, ...deduped.filter((ct) => ct !== 'keypoints')];
+}
+
 function resolveFocusedContentTypes(
   topic: TopicWithProgress,
   safeContentTypes: ContentType[],
@@ -108,7 +117,7 @@ function resolveFocusedContentTypes(
 
   if (preferredActionType === 'review') {
     focusedTypes = !blockedContentTypes.has('quiz')
-      ? ['quiz' as ContentType]
+      ? ['keypoints' as ContentType, 'quiz' as ContentType]
       : ['keypoints' as ContentType];
   } else if (preferredActionType === 'deep_dive') {
     focusedTypes = (['keypoints', 'teach_back', 'quiz'] as ContentType[]).filter(
@@ -119,10 +128,10 @@ function resolveFocusedContentTypes(
 
   const today = new Date().toISOString().slice(0, 10);
   if (topicDueDate(topic) && topicDueDate(topic)! <= today && !blockedContentTypes.has('quiz')) {
-    focusedTypes = ['quiz' as ContentType];
+    focusedTypes = withKeypointsFirst(['quiz' as ContentType], blockedContentTypes);
   }
 
-  return focusedTypes;
+  return withKeypointsFirst(focusedTypes, blockedContentTypes);
 }
 
 /**
@@ -375,7 +384,7 @@ export async function buildSession(
       if (dueDate && dueDate <= today && !blockedContentTypes.has('quiz')) {
         return {
           topic: topic!,
-          contentTypes: ['quiz' as ContentType],
+          contentTypes: withKeypointsFirst(['quiz' as ContentType], blockedContentTypes),
           estimatedMinutes: topic!.estimatedMinutes,
         };
       }

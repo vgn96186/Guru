@@ -34,12 +34,13 @@ interface Props {
   recordingPath: string | null;
   logId: number;
   groqKey: string;
+  bottomOffset?: number;
   onDone: () => void;
   onStudyNow?: () => void;
 }
 
 export default function LectureReturnSheet(props: Props) {
-  const { visible, appName, durationMinutes, logId } = props;
+  const { visible, appName, durationMinutes, bottomOffset = 92 } = props;
   const {
     phase,
     analysis,
@@ -49,6 +50,15 @@ export default function LectureReturnSheet(props: Props) {
     setIsExpanded,
     activeStage,
     stageMessage,
+    stageDetail,
+    progressPercent,
+    progressStep,
+    progressTotalSteps,
+    progressAttempt,
+    progressMaxAttempts,
+    progressProvider,
+    stageStartedAt,
+    progressHistory,
     transcriptionCompleted,
     sessionSaved,
     isSaving,
@@ -74,6 +84,21 @@ export default function LectureReturnSheet(props: Props) {
     handleSkip,
     cleanupAndClose,
   } = useLecturePipeline(props);
+  const [nowTick, setNowTick] = React.useState(() => Date.now());
+
+  React.useEffect(() => {
+    if (!activeStage || !stageStartedAt) return;
+    setNowTick(Date.now());
+    const id = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [activeStage, stageStartedAt]);
+
+  function formatElapsed(ms: number) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
 
   function getCompactTitle() {
     if (activeStage === 'transcribing') return 'Transcribing lecture audio';
@@ -87,12 +112,25 @@ export default function LectureReturnSheet(props: Props) {
   }
 
   function getCompactSubtitle() {
-    if (activeStage) return stageMessage || 'Processing lecture pipeline';
-    if (phase === 'error') return 'Tap to retry or review the failure.';
-    if (phase === 'results') return 'Tap to review topics and save the session.';
-    if (phase === 'quiz') return 'Tap to answer the quiz and finish the session.';
-    if (phase === 'quiz_done') return 'Tap to close this lecture session.';
-    return `${durationMinutes > 0 ? `${durationMinutes} min` : 'Recent'} session from ${appName}. You can keep using Guru while this runs.`;
+    if (activeStage) {
+      return (
+        stageDetail ||
+        `${durationMinutes > 0 ? `${durationMinutes} min` : 'Recent'} lecture from ${appName}`
+      );
+    }
+    if (phase === 'error') return errorMsg || 'Tap to retry or review the failure.';
+    if (phase === 'results') {
+      const subject = selectedSubjectName ?? analysis?.subject ?? 'Lecture';
+      const topicCount = analysis?.topics.length ?? 0;
+      return `${subject}${topicCount > 0 ? ` • ${topicCount} topic${topicCount === 1 ? '' : 's'} detected` : ''}`;
+    }
+    if (phase === 'quiz') {
+      return `${quizQuestions.length} quick question${quizQuestions.length === 1 ? '' : 's'} ready`;
+    }
+    if (phase === 'quiz_done') {
+      return `${score} / ${quizQuestions.length} correct`;
+    }
+    return `${durationMinutes > 0 ? `${durationMinutes} min` : 'Recent'} lecture from ${appName}. Guru is processing it in the background.`;
   }
 
   const SUBJECT_COLORS: Record<string, string> = {
@@ -121,6 +159,29 @@ export default function LectureReturnSheet(props: Props) {
     SUBJECT_COLORS[selectedSubjectName ?? analysis?.subject ?? ''] ?? theme.colors.primary;
   const isProcessingPhase = phase === 'intro' || phase === 'transcribing' || activeStage !== null;
   const showCompactCard = !isExpanded;
+  const elapsedLabel =
+    activeStage && stageStartedAt ? formatElapsed(nowTick - stageStartedAt) : null;
+  const progressLabel =
+    progressPercent > 0 ? `${Math.max(1, Math.min(100, Math.round(progressPercent)))}%` : null;
+  const progressFacts = [
+    progressProvider ? progressProvider.toUpperCase() : null,
+    progressStep && progressTotalSteps ? `STEP ${progressStep}/${progressTotalSteps}` : null,
+    progressAttempt && progressMaxAttempts
+      ? `ATTEMPT ${progressAttempt}/${progressMaxAttempts}`
+      : null,
+    elapsedLabel ? `ELAPSED ${elapsedLabel}` : null,
+  ].filter(Boolean);
+  const compactFacts = [
+    appName.toUpperCase(),
+    durationMinutes > 0 ? `${durationMinutes} MIN` : null,
+    phase === 'results' && analysis?.topics?.length
+      ? `${analysis.topics.length} TOPIC${analysis.topics.length === 1 ? '' : 'S'}`
+      : null,
+    phase === 'results' && analysis
+      ? CONFIDENCE_LABELS[userConfidence ?? analysis.estimatedConfidence].toUpperCase()
+      : null,
+    phase === 'quiz' && quizQuestions.length > 0 ? `${quizQuestions.length} QUESTIONS` : null,
+  ].filter(Boolean);
 
   const q = quizQuestions[currentQ];
 
@@ -132,47 +193,73 @@ export default function LectureReturnSheet(props: Props) {
     <View pointerEvents="box-none" style={styles.layer}>
       {showCompactCard ? (
         <View pointerEvents="box-none" style={styles.compactDock}>
-          <TouchableOpacity
-            style={[
-              styles.compactCard,
-              phase === 'error' && styles.compactCardError,
-              phase === 'results' && styles.compactCardReady,
-            ]}
-            onPress={() => setIsExpanded(true)}
-            activeOpacity={0.9}
-          >
-            <View style={styles.compactTextWrap}>
-              <Text style={styles.compactEyebrow} numberOfLines={1}>
-                {isProcessingPhase
-                  ? 'LECTURE PROCESSING'
-                  : phase === 'error'
-                    ? 'ACTION NEEDED'
-                    : 'LECTURE READY'}
-              </Text>
-              <Text style={styles.compactTitle} numberOfLines={1} ellipsizeMode="tail">
-                {getCompactTitle()}
-              </Text>
-              <Text style={styles.compactSubtitle} numberOfLines={1} ellipsizeMode="tail">
-                {getCompactSubtitle()}
-              </Text>
-            </View>
-            <View style={styles.compactMeta}>
+          <View style={[styles.compactPositioner, { paddingBottom: bottomOffset }]}>
+            <TouchableOpacity
+              style={[
+                styles.compactCard,
+                phase === 'error' && styles.compactCardError,
+                phase === 'results' && styles.compactCardReady,
+              ]}
+              onPress={() => setIsExpanded(true)}
+              activeOpacity={0.9}
+            >
+              <View style={styles.compactTextWrap}>
+                <Text style={styles.compactEyebrow} numberOfLines={1}>
+                  {isProcessingPhase
+                    ? 'LECTURE PROCESSING'
+                    : phase === 'error'
+                      ? 'ACTION NEEDED'
+                      : 'LECTURE READY'}
+                </Text>
+                <Text style={styles.compactTitle} numberOfLines={1} ellipsizeMode="tail">
+                  {isProcessingPhase ? stageMessage || getCompactTitle() : getCompactTitle()}
+                </Text>
+                <Text style={styles.compactSubtitle} numberOfLines={2} ellipsizeMode="tail">
+                  {getCompactSubtitle()}
+                </Text>
+                {compactFacts.length > 0 ? (
+                  <View style={styles.compactFactsRow}>
+                    {compactFacts.map((fact) => (
+                      <View key={fact} style={styles.compactFactPill}>
+                        <Text style={styles.compactFactText}>{fact}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+              </View>
+              <View style={styles.compactMeta}>
+                {isProcessingPhase ? (
+                  <>
+                    {progressLabel ? (
+                      <Text style={styles.compactPercent}>{progressLabel}</Text>
+                    ) : null}
+                    <ActivityIndicator color={theme.colors.primary} size="small" />
+                  </>
+                ) : (
+                  <Text style={styles.compactChevron}>Open</Text>
+                )}
+              </View>
               {isProcessingPhase ? (
-                <ActivityIndicator color={theme.colors.primary} size="small" />
-              ) : (
-                <Text style={styles.compactChevron}>Open</Text>
+                <View style={styles.compactProgressTrack}>
+                  <View
+                    style={[
+                      styles.compactProgressFill,
+                      { width: `${Math.max(8, Math.min(100, progressPercent || 12))}%` },
+                    ]}
+                  />
+                </View>
+              ) : null}
+              {!isProcessingPhase && (
+                <TouchableOpacity
+                  style={styles.compactDismiss}
+                  onPress={() => void cleanupAndClose()}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text style={styles.compactDismissText}>X</Text>
+                </TouchableOpacity>
               )}
-            </View>
-            {!isProcessingPhase && (
-              <TouchableOpacity
-                style={styles.compactDismiss}
-                onPress={() => void cleanupAndClose()}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Text style={styles.compactDismissText}>X</Text>
-              </TouchableOpacity>
-            )}
-          </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
         </View>
       ) : (
         <View pointerEvents="box-none" style={styles.overlay}>
@@ -184,9 +271,7 @@ export default function LectureReturnSheet(props: Props) {
                 onPress={() => setIsExpanded(false)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.minimizeBtnText}>
-                  {isProcessingPhase ? 'Keep browsing' : 'Minimize'}
-                </Text>
+                <Text style={styles.minimizeBtnText}>Minimize</Text>
               </TouchableOpacity>
             </View>
 
@@ -200,8 +285,20 @@ export default function LectureReturnSheet(props: Props) {
                 </Text>
                 {phase === 'transcribing' && (
                   <View style={styles.processingCard}>
-                    <ActivityIndicator color={theme.colors.primary} size="small" />
-                    <Text style={styles.processingTitle}>{getCompactTitle()}</Text>
+                    <View style={styles.progressHeaderRow}>
+                      <Text style={styles.processingTitle}>{getCompactTitle()}</Text>
+                      {progressLabel ? (
+                        <Text style={styles.progressPercentText}>{progressLabel}</Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.progressBarTrack}>
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          { width: `${Math.max(8, Math.min(100, progressPercent || 10))}%` },
+                        ]}
+                      />
+                    </View>
                     <View style={styles.stageRow}>
                       {(['transcribing', 'analyzing', 'saving'] as LecturePipelineStage[]).map(
                         (stage) => {
@@ -248,6 +345,35 @@ export default function LectureReturnSheet(props: Props) {
                       {stageMessage ||
                         'This can take a few minutes for long recordings. You can keep using Guru while this runs.'}
                     </Text>
+                    {stageDetail ? <Text style={styles.processingMeta}>{stageDetail}</Text> : null}
+                    {progressFacts.length > 0 ? (
+                      <View style={styles.progressFactsRow}>
+                        {progressFacts.map((fact) => (
+                          <View key={fact} style={styles.progressFactPill}>
+                            <Text style={styles.progressFactText}>{fact}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                    {progressHistory.length > 0 ? (
+                      <View style={styles.timelineCard}>
+                        <Text style={styles.timelineLabel}>LIVE ACTIVITY</Text>
+                        {progressHistory
+                          .slice()
+                          .reverse()
+                          .map((event) => (
+                            <View key={event.id} style={styles.timelineRow}>
+                              <View style={styles.timelineDot} />
+                              <View style={styles.timelineTextWrap}>
+                                <Text style={styles.timelineTitle}>{event.message}</Text>
+                                {event.detail ? (
+                                  <Text style={styles.timelineDetail}>{event.detail}</Text>
+                                ) : null}
+                              </View>
+                            </View>
+                          ))}
+                      </View>
+                    ) : null}
                     <TouchableOpacity
                       style={styles.cancelProcessingBtn}
                       onPress={handleCancelTranscription}
@@ -306,7 +432,7 @@ export default function LectureReturnSheet(props: Props) {
                       {analysis.topics.map((t: string, i: number) => (
                         <TouchableOpacity
                           key={`${t}-${i}`}
-                          style={[styles.topicPillEditable, { maxWidth: '85%' }]}
+                          style={styles.topicPillEditable}
                           onPress={() => {
                             // Toggle topic removal/addition
                             if (!analysis) return;
@@ -319,9 +445,7 @@ export default function LectureReturnSheet(props: Props) {
                           accessibilityRole="button"
                           accessibilityLabel={`Remove topic: ${t}`}
                         >
-                          <Text style={styles.topicPillText} numberOfLines={1} ellipsizeMode="tail">
-                            {t}
-                          </Text>
+                          <Text style={styles.topicPillText}>{t}</Text>
                           <Text style={styles.topicRemoveIcon}>×</Text>
                         </TouchableOpacity>
                       ))}
@@ -615,7 +739,7 @@ export default function LectureReturnSheet(props: Props) {
               )}
 
               {/* Dismiss / Skip always available (except quiz_done which has its own Done) */}
-              {phase !== 'quiz_done' && (
+              {phase !== 'quiz_done' && !isProcessingPhase && (
                 <TouchableOpacity
                   style={styles.secondaryBtn}
                   onPress={handleSkip}
@@ -624,13 +748,7 @@ export default function LectureReturnSheet(props: Props) {
                   accessibilityLabel="Skip and dismiss"
                 >
                   <Text style={styles.secondaryBtnText}>
-                    {phase === 'results'
-                      ? 'Skip'
-                      : phase === 'quiz'
-                        ? 'End Quiz'
-                        : isProcessingPhase
-                          ? 'Keep Browsing'
-                          : 'Dismiss'}
+                    {phase === 'results' ? 'Skip' : phase === 'quiz' ? 'End Quiz' : 'Dismiss'}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -645,7 +763,7 @@ export default function LectureReturnSheet(props: Props) {
 const styles = StyleSheet.create({
   layer: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-start',
+    justifyContent: 'flex-end',
   },
   overlay: {
     flex: 1,
@@ -655,7 +773,10 @@ const styles = StyleSheet.create({
   },
   compactDock: {
     paddingHorizontal: 12,
-    paddingTop: 12,
+    alignItems: 'flex-end',
+  },
+  compactPositioner: {
+    alignItems: 'flex-end',
   },
   compactCard: {
     flexDirection: 'row',
@@ -664,14 +785,32 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 18,
+    alignSelf: 'flex-end',
+    minWidth: 168,
+    maxWidth: 250,
+    borderRadius: 20,
     paddingHorizontal: 14,
-    paddingVertical: 14,
+    paddingVertical: 11,
     elevation: 8,
     shadowColor: '#000',
     shadowOpacity: 0.24,
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 6 },
+  },
+  compactProgressTrack: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    bottom: 8,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: theme.colors.panel,
+    overflow: 'hidden',
+  },
+  compactProgressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary,
   },
   compactCardReady: {
     borderColor: theme.colors.success + '88',
@@ -684,29 +823,55 @@ const styles = StyleSheet.create({
   compactTextWrap: { flex: 1, minWidth: 0 },
   compactEyebrow: {
     color: theme.colors.textMuted,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
     letterSpacing: 0.8,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   compactTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
-    marginBottom: 3,
+    marginBottom: 1,
   },
   compactSubtitle: {
     color: theme.colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 17,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 1,
+  },
+  compactFactsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  compactFactPill: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: theme.colors.panel,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  compactFactText: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    fontWeight: '700',
   },
   compactMeta: {
     alignItems: 'flex-end',
     justifyContent: 'center',
+    gap: 6,
+  },
+  compactPercent: {
+    color: theme.colors.primaryLight,
+    fontSize: 11,
+    fontWeight: '800',
   },
   compactChevron: {
     color: theme.colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
   },
   compactDismiss: {
@@ -786,11 +951,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
+  progressHeaderRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 12,
+  },
   processingTitle: {
     color: theme.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
-    textAlign: 'center',
+    flex: 1,
+  },
+  progressPercentText: {
+    color: theme.colors.primaryLight,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  progressBarTrack: {
+    width: '100%',
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.panel,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary,
   },
   stageRow: {
     width: '100%',
@@ -831,6 +1020,74 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
+  },
+  processingMeta: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  progressFactsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+  },
+  progressFactPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: theme.colors.panel,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+  },
+  progressFactText: {
+    color: theme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  timelineCard: {
+    width: '100%',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: theme.colors.borderLight,
+    backgroundColor: theme.colors.panel,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  timelineLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  timelineRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  timelineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 5,
+    backgroundColor: theme.colors.primary,
+  },
+  timelineTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  timelineTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  timelineDetail: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 17,
   },
   cancelProcessingBtn: {
     marginTop: 10,
@@ -878,7 +1135,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginBottom: 8,
   },
-  subjectChipText: { fontSize: 13, fontWeight: '800' },
+  subjectChipText: { fontSize: 13, lineHeight: 18, fontWeight: '800' },
   summaryText: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
   section: { marginBottom: 14 },
   sectionLabel: {
@@ -907,11 +1164,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    maxWidth: '85%',
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    minHeight: 34,
   },
   topicRemoveIcon: { color: theme.colors.primary, fontSize: 16, fontWeight: '700' },
   topicHint: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6, fontStyle: 'italic' },
-  topicPillText: { color: theme.colors.primaryLight, fontSize: 13, fontWeight: '600', flex: 1 },
+  topicPillText: {
+    color: theme.colors.primaryLight,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    flexShrink: 1,
+  },
   conceptItem: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 20 },
   confidenceBadgeRow: {
     flexDirection: 'row',

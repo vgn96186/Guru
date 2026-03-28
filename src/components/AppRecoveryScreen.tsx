@@ -164,6 +164,7 @@ const styles = StyleSheet.create({
   badgeText: {
     color: theme.colors.primaryLight,
     fontSize: 12,
+    lineHeight: 18,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.6,

@@ -14,23 +14,33 @@ interface ContentPreferencesSectionProps {
 }
 
 function ContentPreferencesSection({
-  subjects, focusSubjectIds, onFocusSubjectToggle, onClearFocus,
-  allContentTypes, blockedTypes, onContentTypeToggle
+  subjects,
+  focusSubjectIds,
+  onFocusSubjectToggle,
+  onClearFocus,
+  allContentTypes,
+  blockedTypes,
+  onContentTypeToggle,
 }: ContentPreferencesSectionProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.subTitle}>Focus Subjects</Text>
       <Text style={styles.hint}>Pin subjects to limit sessions to those areas only.</Text>
       <View style={styles.chipGrid}>
-        {subjects.map(s => {
+        {subjects.map((s) => {
           const isFocused = focusSubjectIds.includes(s.id);
           return (
             <TouchableOpacity
               key={s.id}
-              style={[styles.chip, isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex }]}
+              style={[
+                styles.chip,
+                isFocused && { backgroundColor: s.colorHex + '33', borderColor: s.colorHex },
+              ]}
               onPress={() => onFocusSubjectToggle(s.id)}
             >
-              <Text style={[styles.chipText, isFocused && { color: s.colorHex }]}>{s.shortCode}</Text>
+              <Text style={[styles.chipText, isFocused && { color: s.colorHex }]}>
+                {s.shortCode}
+              </Text>
             </TouchableOpacity>
           );
         })}
@@ -70,8 +80,14 @@ export default React.memo(ContentPreferencesSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-  subTitle: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', marginTop: 4 },
-  hint: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 4 },
+  subTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  hint: { color: theme.colors.textSecondary, fontSize: 11, lineHeight: 16, marginBottom: 4 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
     backgroundColor: theme.colors.surface,
@@ -83,12 +99,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  chipText: { color: theme.colors.textSecondary, fontSize: 12, fontWeight: '600' },
+  chipText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
   chipBlocked: { backgroundColor: `${theme.colors.error}22`, borderColor: theme.colors.error },
   chipTextBlocked: { color: theme.colors.error },
   chipLocked: { opacity: 0.5 },
-  chipX: { color: theme.colors.error, fontSize: 10, marginLeft: 4 },
+  chipX: { color: theme.colors.error, fontSize: 10, lineHeight: 14, marginLeft: 4 },
   clearBtn: { padding: 8, alignItems: 'center' },
-  clearBtnText: { color: theme.colors.primary, fontSize: 12, fontWeight: '600' },
+  clearBtnText: { color: theme.colors.primary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
   divider: { height: 1, backgroundColor: theme.colors.divider, marginVertical: 8 },
 });

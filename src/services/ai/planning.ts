@@ -26,6 +26,26 @@ const FALLBACK_MESSAGES: GuruPresenceMessage[] = [
   },
 ];
 
+const GuruTriggerSchema = z.enum([
+  'periodic',
+  'card_done',
+  'quiz_correct',
+  'quiz_wrong',
+  'again_rated',
+]);
+
+const GuruPresenceMessageSchema = z.object({
+  text: z.string(),
+  trigger: GuruTriggerSchema,
+});
+
+const GuruPresenceMessagesArraySchema = z.array(GuruPresenceMessageSchema);
+
+const GuruPresenceMessagesResponseSchema = z.union([
+  GuruPresenceMessagesArraySchema,
+  z.object({ messages: GuruPresenceMessagesArraySchema }),
+]);
+
 export async function planSessionWithAI(
   candidates: TopicWithProgress[],
   sessionMinutes: number,
@@ -92,18 +112,22 @@ export async function generateGuruPresenceMessages(
     allTopicNames[Math.floor(Math.random() * allTopicNames.length)] ?? 'Biochemistry';
   const systemPrompt = `You are Guru, a study companion working alongside a medical student. You are currently studying ${guruTopic}. Be brief, warm, and grounding.`;
   const userPrompt = `The student is studying: ${topicNames.join(', ')}.
-Generate exactly 6 ambient presence messages as a JSON array. Each has "text" (1-2 short sentences) and "trigger" (one of: periodic, card_done, quiz_correct, quiz_wrong, again_rated).
+Generate exactly 6 ambient presence messages as JSON.
+Return one object with a "messages" array. Each item has "text" (1-2 short sentences) and "trigger" (one of: periodic, card_done, quiz_correct, quiz_wrong, again_rated).
 Include 2 "periodic" messages and 1 each of the other 4. Reference their topics or yours naturally.
-Return only valid JSON: [{"text":"...","trigger":"..."},...]`;
+Return only valid JSON: {"messages":[{"text":"...","trigger":"..."},...]}`;
   try {
     const messages: Message[] = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt },
     ];
-    const GuruMsgSchema = z.array(z.object({ text: z.string(), trigger: z.string() }));
-
-    const { parsed } = await generateJSONWithRouting(messages, GuruMsgSchema, 'high');
-    if (parsed.length > 0) return parsed as GuruPresenceMessage[];
+    const { parsed } = await generateJSONWithRouting(
+      messages,
+      GuruPresenceMessagesResponseSchema,
+      'high',
+    );
+    const normalized = Array.isArray(parsed) ? parsed : parsed.messages;
+    if (normalized.length > 0) return normalized as GuruPresenceMessage[];
     return FALLBACK_MESSAGES;
   } catch {
     return FALLBACK_MESSAGES;

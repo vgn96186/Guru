@@ -82,7 +82,10 @@ describe('transcribeAudio', () => {
     const result = await transcribeAudio({ audioFilePath: '/test/audio.m4a' });
 
     expect(mockTranscribeRawWithGroq).toHaveBeenCalledWith('/test/audio.m4a', 'test-groq-key');
-    expect(mockAnalyzeTranscript).toHaveBeenCalledWith('This is the transcript text');
+    expect(mockAnalyzeTranscript).toHaveBeenCalledWith(
+      'This is the transcript text',
+      expect.any(Function),
+    );
     expect(result.subject).toBe('Anatomy');
     expect(result.topics).toEqual(['Upper Limb', 'Brachial Plexus']);
     expect(result.transcript).toBe('This is the transcript text');
@@ -147,7 +150,7 @@ describe('transcribeAudio', () => {
     });
 
     expect(result.transcript).toBe('HF transcript');
-    expect(mockAnalyzeTranscript).toHaveBeenCalledWith('HF transcript');
+    expect(mockAnalyzeTranscript).toHaveBeenCalledWith('HF transcript', expect.any(Function));
   });
 
   it('should include embedding when generation succeeds', async () => {
@@ -167,17 +170,24 @@ describe('transcribeAudio', () => {
     expect(result.embedding).toBeUndefined();
   });
 
+  it('should skip embedding generation when includeEmbedding is false', async () => {
+    const result = await transcribeAudio({
+      audioFilePath: '/test.m4a',
+      includeEmbedding: false,
+    });
+
+    expect(result.subject).toBe('Anatomy');
+    expect(result.embedding).toBeUndefined();
+    expect(mockGenerateEmbedding).not.toHaveBeenCalled();
+  });
+
   it('should call onProgress callbacks', async () => {
     const onProgress = jest.fn();
 
     await transcribeAudio({ audioFilePath: '/test.m4a', onProgress });
 
-    expect(onProgress).toHaveBeenCalledWith(
-      expect.objectContaining({ stage: 'transcribing' }),
-    );
-    expect(onProgress).toHaveBeenCalledWith(
-      expect.objectContaining({ stage: 'analyzing' }),
-    );
+    expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ stage: 'transcribing' }));
+    expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ stage: 'analyzing' }));
   });
 
   it('should retry groq transcription on failure', async () => {

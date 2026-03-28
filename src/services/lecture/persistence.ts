@@ -4,7 +4,11 @@ import { renameRecordingToLectureIdentity, saveTranscriptToFile } from '../trans
 import { embeddingToBlob, generateEmbedding } from '../ai/embeddingService';
 import { runAutoPublicBackup } from '../backgroundBackupService';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../databaseEvents';
-import { updateSessionRecordingPath } from '../../db/queries/externalLogs';
+import {
+  appendSessionPipelineEvent,
+  updateSessionPipelineTelemetry,
+  updateSessionRecordingPath,
+} from '../../db/queries/externalLogs';
 import { addXpInTx } from '../../db/queries/progress';
 
 /** Dictionary for fuzzy subject name mapping */
@@ -88,6 +92,7 @@ export async function saveLecturePersistence(opts: {
 }) {
   const db = getDb();
   const { analysis } = opts;
+  const saveStageStartedAt = Date.now();
   const lectureIdentity = {
     subjectName: analysis.subject,
     topics: analysis.topics,
@@ -107,6 +112,27 @@ export async function saveLecturePersistence(opts: {
   }
 
   try {
+    await updateSessionPipelineTelemetry(opts.logId, {
+      currentStage: 'saving',
+      currentMessage: 'Saving lecture summary',
+      currentDetail: 'Writing lecture note, topic matches, and XP updates',
+      currentPercent: 98,
+      lastUpdatedAt: saveStageStartedAt,
+      stages: {
+        saving: {
+          startedAt: saveStageStartedAt,
+        },
+      },
+    });
+    await appendSessionPipelineEvent(opts.logId, {
+      at: saveStageStartedAt,
+      stage: 'saving',
+      message: 'Saving lecture summary',
+      detail: 'Persisting the note and applying topic progress updates',
+      percent: 98,
+      provider: 'unknown',
+    });
+
     const subjectId = await findSubjectId(analysis.subject);
 
     // Use runInTransaction instead of manual BEGIN/COMMIT to avoid
@@ -177,6 +203,30 @@ export async function saveLecturePersistence(opts: {
     // Notify UI to refresh stats and progress
     notifyDbUpdate(DB_EVENT_KEYS.LECTURE_SAVED);
 
+    const saveCompletedAt = Date.now();
+    await updateSessionPipelineTelemetry(opts.logId, {
+      currentStage: 'saving',
+      currentMessage: 'Lecture note saved',
+      currentDetail: 'The recording is now linked to a saved lecture note',
+      currentPercent: 100,
+      lastUpdatedAt: saveCompletedAt,
+      stages: {
+        saving: {
+          startedAt: saveStageStartedAt,
+          completedAt: saveCompletedAt,
+          durationMs: saveCompletedAt - saveStageStartedAt,
+        },
+      },
+    });
+    await appendSessionPipelineEvent(opts.logId, {
+      at: saveCompletedAt,
+      stage: 'saving',
+      message: 'Lecture note saved',
+      detail: 'Topic progress, note text, and recording link were stored successfully',
+      percent: 100,
+      provider: 'unknown',
+    });
+
     // Silent background backup to public storage after every successful lecture save
     runAutoPublicBackup().catch((e) => console.warn('[AutoBackup] Trigger failed:', e));
 
@@ -184,6 +234,24 @@ export async function saveLecturePersistence(opts: {
   } catch (e: unknown) {
     const { showToast } = require('../../components/Toast');
     const msg = e instanceof Error ? e.message : 'Unknown error';
+    try {
+      await appendSessionPipelineEvent(opts.logId, {
+        at: Date.now(),
+        stage: 'saving',
+        message: 'Lecture save failed',
+        detail: msg,
+        provider: 'unknown',
+      });
+      await updateSessionPipelineTelemetry(opts.logId, {
+        errorStage: 'saving',
+        currentStage: 'saving',
+        currentMessage: 'Lecture save failed',
+        currentDetail: msg,
+        lastUpdatedAt: Date.now(),
+      });
+    } catch {
+      // best effort only
+    }
     showToast(`Failed to save lecture: ${msg}`, 'error');
     throw e;
   }

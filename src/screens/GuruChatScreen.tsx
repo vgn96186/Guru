@@ -90,15 +90,15 @@ type ModelOption = {
   id: string;
   name: string;
   group:
-  | 'Local'
-  | 'ChatGPT Codex'
-  | 'Groq'
-  | 'OpenRouter'
-  | 'Gemini'
-  | 'Cloudflare'
-  | 'GitHub Models'
-  | 'Kilo'
-  | 'AgentRouter';
+    | 'Local'
+    | 'ChatGPT Codex'
+    | 'Groq'
+    | 'OpenRouter'
+    | 'Gemini'
+    | 'Cloudflare'
+    | 'GitHub Models'
+    | 'Kilo'
+    | 'AgentRouter';
 };
 
 type ChatItem =
@@ -206,6 +206,61 @@ const QUICK_REPLY_OPTIONS = [
   },
 ] as const;
 
+function isExplicitImageRequest(text: string): boolean {
+  const normalized = text.trim().toLowerCase();
+  if (!normalized) return false;
+  const directVisualNouns =
+    /(image|diagram|figure|illustration|chart|flowchart|picture|visual|graphic|sketch|schema|schematic)/i;
+  const visualActionVerbs =
+    /(show|give|create|generate|make|draw|need|want|send|visuali[sz]e|depict|map|outline)/i;
+  const seePhrases =
+    /\b(can i see|let me see|show me|help me see|visuali[sz]e this|visuali[sz]e it|draw this|draw it)\b/i;
+  const anatomyStylePhrases =
+    /\b(show|draw|depict|visuali[sz]e|map|outline)\s+(me\s+)?(the\s+)?([a-z][a-z\s-]{2,80})\b/i;
+
+  if (directVisualNouns.test(normalized) && visualActionVerbs.test(normalized)) {
+    return true;
+  }
+
+  if (seePhrases.test(normalized)) {
+    return true;
+  }
+
+  if (anatomyStylePhrases.test(normalized)) {
+    return true;
+  }
+
+  return /\bwhat does (it|this|that|[a-z][a-z\s-]{2,60}) look like\b/i.test(normalized);
+}
+
+function inferRequestedImageStyle(text: string): GeneratedStudyImageStyle {
+  return /(chart|flowchart|pathway|algorithm|mechanism|map|table|compare|comparison)/i.test(text)
+    ? 'chart'
+    : 'illustration';
+}
+
+function canAutoGenerateStudyImage(
+  profile?: {
+    geminiKey?: string;
+    cloudflareAccountId?: string;
+    cloudflareApiToken?: string;
+    openrouterKey?: string;
+    falApiKey?: string;
+    groqApiKey?: string;
+    huggingFaceToken?: string;
+    braveSearchApiKey?: string;
+    deepseekKey?: string;
+    githubModelsPat?: string;
+    kiloApiKey?: string;
+    agentRouterKey?: string;
+    deepgramApiKey?: string;
+    chatgptConnected?: boolean;
+  } | null,
+): boolean {
+  const { geminiKey, cfAccountId, cfApiToken, falKey, orKey } = getApiKeys(profile ?? undefined);
+  return Boolean(geminiKey || (cfAccountId && cfApiToken) || falKey || orKey);
+}
+
 function getLastUserPrompt(messages: ChatMessage[]): string | null {
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
@@ -229,12 +284,7 @@ async function getDynamicStarters(): Promise<{ icon: string; text: string }[]> {
        LIMIT 4`,
     );
     if (rows.length === 0) return FALLBACK_STARTERS;
-    const icons = [
-      'help-circle-outline',
-      'bulb-outline',
-      'alert-circle-outline',
-      'medkit-outline',
-    ];
+    const icons = ['help-circle-outline', 'bulb-outline', 'alert-circle-outline', 'medkit-outline'];
     const templates = [
       (n: string) => `Quiz me on ${n}`,
       (n: string) => `Explain ${n} step by step`,
@@ -359,7 +409,10 @@ function FormattedGuruMessage({ text }: { text: string }) {
                 <Text key={`line-${paragraphIndex}-${lineIndex}`} style={styles.guruFormattedText}>
                   {segments.map((segment, segmentIndex) =>
                     segment.bold ? (
-                      <Text key={`seg-${paragraphIndex}-${lineIndex}-${segmentIndex}`} style={styles.guruStrongText}>
+                      <Text
+                        key={`seg-${paragraphIndex}-${lineIndex}-${segmentIndex}`}
+                        style={styles.guruStrongText}
+                      >
                         {segment.text}
                       </Text>
                     ) : (
@@ -403,14 +456,16 @@ function ChatImagePreview({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
     >
-      <Image
-        source={{ uri }}
-        style={style}
-        resizeMode="cover"
-        onError={() => setFailed(true)}
-      />
+      <Image source={{ uri }} style={style} resizeMode="cover" onError={() => setFailed(true)} />
     </Pressable>
   );
+}
+
+function isDisplayableReferenceImage(source: MedicalGroundingSource): boolean {
+  const uri = source.imageUrl?.trim();
+  if (!uri) return false;
+  if (!/^https?:\/\//i.test(uri)) return false;
+  return !/\.(pdf|svg|djvu?|tiff?)(?:[?#]|$)/i.test(uri);
 }
 
 function MessageSources({
@@ -435,43 +490,43 @@ function MessageSources({
         <Text style={styles.sourcesLabel}>Sources ({sources.length})</Text>
       </View>
       {sources.map((source, index) => (
-          <View key={`${messageId}-${source.id}`} style={styles.sourceCard}>
-            <View style={styles.sourceNumBadge}>
-              <Text style={styles.sourceNum}>{index + 1}</Text>
-            </View>
-            {source.imageUrl ? (
-              <Pressable
-                onPress={() => setLightboxUri(source.imageUrl!)}
-                hitSlop={6}
-                accessibilityRole="button"
-                accessibilityLabel="Enlarge source thumbnail"
-              >
-                <Image source={{ uri: source.imageUrl }} style={styles.sourceImage} />
-              </Pressable>
-            ) : null}
-            <Pressable
-              style={({ pressed }) => [styles.sourceBodyPress, pressed && styles.pressed]}
-              onPress={() => openSource(source.url)}
-              android_ripple={{ color: `${theme.colors.primary}22` }}
-            >
-              <Text style={styles.sourceTitle} numberOfLines={2}>
-                {source.title}
-              </Text>
-              <Text style={styles.sourceMeta}>
-                {source.source}
-                {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
-              </Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [pressed && styles.pressed]}
-              onPress={() => openSource(source.url)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Open source in browser"
-            >
-              <Ionicons name="open-outline" size={13} color={theme.colors.textMuted} />
-            </Pressable>
+        <View key={`${messageId}-${source.id}`} style={styles.sourceCard}>
+          <View style={styles.sourceNumBadge}>
+            <Text style={styles.sourceNum}>{index + 1}</Text>
           </View>
+          {source.imageUrl ? (
+            <Pressable
+              onPress={() => setLightboxUri(source.imageUrl!)}
+              hitSlop={6}
+              accessibilityRole="button"
+              accessibilityLabel="Enlarge source thumbnail"
+            >
+              <Image source={{ uri: source.imageUrl }} style={styles.sourceImage} />
+            </Pressable>
+          ) : null}
+          <Pressable
+            style={({ pressed }) => [styles.sourceBodyPress, pressed && styles.pressed]}
+            onPress={() => openSource(source.url)}
+            android_ripple={{ color: `${theme.colors.primary}22` }}
+          >
+            <Text style={styles.sourceTitle} numberOfLines={2}>
+              {source.title}
+            </Text>
+            <Text style={styles.sourceMeta}>
+              {source.source}
+              {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [pressed && styles.pressed]}
+            onPress={() => openSource(source.url)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel="Open source in browser"
+          >
+            <Ionicons name="open-outline" size={13} color={theme.colors.textMuted} />
+          </Pressable>
+        </View>
       ))}
     </View>
   );
@@ -633,7 +688,9 @@ export default function GuruChatScreen() {
             modelUsed: entry.modelUsed,
             images:
               entry.role === 'guru'
-                ? (imagesByKey.get(buildChatImageContextKey(currentThread.topicName, entry.timestamp)) ?? [])
+                ? (imagesByKey.get(
+                    buildChatImageContextKey(currentThread.topicName, entry.timestamp),
+                  ) ?? [])
                 : [],
           })),
         );
@@ -657,8 +714,17 @@ export default function GuruChatScreen() {
   } = useLiveGuruChatModels(profile);
 
   const availableModels = useMemo(() => {
-    const { orKey, groqKey, geminiKey, cfAccountId, cfApiToken, githubModelsPat, kiloApiKey, agentRouterKey, chatgptConnected } =
-      getApiKeys(profile ?? undefined);
+    const {
+      orKey,
+      groqKey,
+      geminiKey,
+      cfAccountId,
+      cfApiToken,
+      githubModelsPat,
+      kiloApiKey,
+      agentRouterKey,
+      chatgptConnected,
+    } = getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
     if (profile?.useLocalModel && profile?.localModelPath && isLocalLlmAllowedOnThisDevice()) {
@@ -746,7 +812,17 @@ export default function GuruChatScreen() {
     }
 
     return list;
-  }, [profile, chatgptModelIds, groqModelIds, orModelIds, geminiModelIds, cfModelIds, githubModelIds, kiloModelIds, arModelIds]);
+  }, [
+    profile,
+    chatgptModelIds,
+    groqModelIds,
+    orModelIds,
+    geminiModelIds,
+    cfModelIds,
+    githubModelIds,
+    kiloModelIds,
+    arModelIds,
+  ]);
 
   useEffect(() => {
     if (!profile) return;
@@ -869,7 +945,10 @@ export default function GuruChatScreen() {
 
   const openThread = useCallback(
     async (thread: GuruChatThread) => {
-      if (thread.topicName !== topicName || (thread.syllabusTopicId ?? undefined) !== syllabusTopicId) {
+      if (
+        thread.topicName !== topicName ||
+        (thread.syllabusTopicId ?? undefined) !== syllabusTopicId
+      ) {
         navigation.replace('GuruChat', {
           topicName: thread.topicName,
           topicId: thread.syllabusTopicId ?? undefined,
@@ -950,7 +1029,10 @@ export default function GuruChatScreen() {
       try {
         const image = await generateStudyImage({
           contextType: 'chat',
-          contextKey: buildChatImageContextKey(currentThread?.topicName ?? topicName, message.timestamp),
+          contextKey: buildChatImageContextKey(
+            currentThread?.topicName ?? topicName,
+            message.timestamp,
+          ),
           topicName: currentThread?.topicName ?? topicName,
           sourceText: message.text,
           style,
@@ -979,6 +1061,9 @@ export default function GuruChatScreen() {
   async function handleSend(questionOverride?: string) {
     const question = (questionOverride ?? input).trim();
     if (!question || loading || !currentThreadId) return;
+    const wantsImage = isExplicitImageRequest(question);
+    const requestedImageStyle = inferRequestedImageStyle(question);
+    const canGenerateImage = canAutoGenerateStudyImage(profile);
 
     const userMessage: ChatMessage = {
       id: `u-${Date.now()}`,
@@ -1025,7 +1110,7 @@ export default function GuruChatScreen() {
           },
           timestamp: Date.now(),
         }),
-      }).catch(() => { });
+      }).catch(() => {});
       // #endregion
       const grounded = await chatWithGuruGroundedStreaming(
         question,
@@ -1066,6 +1151,7 @@ export default function GuruChatScreen() {
           groundingContext,
         },
       );
+      let finalGuruText = grounded.reply;
       setMessages((current) => {
         const idx = current.findIndex((m) => m.id === guruId);
         if (idx === -1) {
@@ -1095,12 +1181,64 @@ export default function GuruChatScreen() {
         };
         return next;
       });
+
+      if (wantsImage && canGenerateImage && !imageJobKey) {
+        try {
+          setImageJobKey(`${guruId}:${requestedImageStyle}`);
+          const image = await generateStudyImage({
+            contextType: 'chat',
+            contextKey: buildChatImageContextKey(currentThread?.topicName ?? topicName, guruTs),
+            topicName: currentThread?.topicName ?? topicName,
+            sourceText: grounded.reply,
+            style: requestedImageStyle,
+          });
+          setMessages((current) =>
+            current.map((entry) =>
+              entry.id === guruId ? { ...entry, images: [image, ...(entry.images ?? [])] } : entry,
+            ),
+          );
+          scrollToLatest(0);
+        } catch (imageError) {
+          const imageFailureMessage =
+            imageError instanceof Error ? imageError.message : 'Image generation failed.';
+          finalGuruText = `${finalGuruText}\n\nNote: I couldn't generate a study image automatically. ${imageFailureMessage}`;
+          setMessages((current) =>
+            current.map((entry) =>
+              entry.id === guruId
+                ? {
+                    ...entry,
+                    text: finalGuruText,
+                  }
+                : entry,
+            ),
+          );
+        } finally {
+          setImageJobKey(null);
+        }
+      } else if (
+        wantsImage &&
+        !canGenerateImage &&
+        (!grounded.referenceImages || grounded.referenceImages.length === 0)
+      ) {
+        finalGuruText = `${finalGuruText}\n\nNote: No image backend is configured right now. Add a fal, Gemini, Cloudflare, or OpenRouter image key in Settings to let Guru generate diagrams automatically.`;
+        setMessages((current) =>
+          current.map((entry) =>
+            entry.id === guruId
+              ? {
+                  ...entry,
+                  text: finalGuruText,
+                }
+              : entry,
+          ),
+        );
+      }
+
       try {
         await saveChatMessage(
           currentThreadId,
           topicName,
           'guru',
-          grounded.reply,
+          finalGuruText,
           guruTs,
           grounded.sources && grounded.sources.length > 0
             ? JSON.stringify(grounded.sources)
@@ -1178,16 +1316,16 @@ export default function GuruChatScreen() {
             </View>
             <View style={[styles.msgContent, styles.msgContentGuru]}>
               <View style={[styles.messageStack, styles.messageStackGuru]}>
-              <View style={styles.msgMetaRow}>
-                <Text style={styles.msgAuthor}>Guru</Text>
-                <Text style={styles.msgMetaDivider}>•</Text>
-                <Text style={styles.msgMetaText}>Thinking...</Text>
-              </View>
-              <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
-                <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
-                  <TypingDots />
+                <View style={styles.msgMetaRow}>
+                  <Text style={styles.msgAuthor}>Guru</Text>
+                  <Text style={styles.msgMetaDivider}>•</Text>
+                  <Text style={styles.msgMetaText}>Thinking...</Text>
                 </View>
-              </View>
+                <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
+                  <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
+                    <TypingDots />
+                  </View>
+                </View>
               </View>
             </View>
           </View>
@@ -1199,12 +1337,11 @@ export default function GuruChatScreen() {
       const hasSources = !!message.sources?.length;
       const sourcesExpanded = expandedSourcesMessageId === message.id;
       const isLatestGuruMessage = message.id === latestGuruMessageId;
-      const guruGeneratedImages = message.role === 'guru' ? message.images ?? [] : [];
+      const guruGeneratedImages = message.role === 'guru' ? (message.images ?? []) : [];
       const guruReferenceImages =
         message.role === 'guru'
-          ? (message.referenceImages ?? []).filter((image) => !!image.imageUrl)
+          ? (message.referenceImages ?? []).filter(isDisplayableReferenceImage)
           : [];
-      const primaryGuruReferenceImage = guruReferenceImages[0];
       const hasGuruImages = guruGeneratedImages.length > 0 || guruReferenceImages.length > 0;
       const showInlineGuruImages = hasGuruImages && isLandscape;
       return (
@@ -1229,209 +1366,216 @@ export default function GuruChatScreen() {
                 message.role === 'user' ? styles.messageStackUser : styles.messageStackGuru,
               ]}
             >
-            <View
-              style={[
-                styles.msgMetaRow,
-                message.role === 'user' ? styles.msgMetaRowUser : styles.msgMetaRowGuru,
-              ]}
-            >
-              <Text style={styles.msgAuthor}>{message.role === 'user' ? 'You' : 'Guru'}</Text>
-              <Text style={styles.msgMetaDivider}>•</Text>
-              <Text style={styles.msgMetaText}>{formatTime(message.timestamp)}</Text>
-              {message.role === 'guru' && modelTag ? (
-                <View style={styles.msgModelPill}>
-                  <Text style={styles.msgModelPillText}>{modelTag}</Text>
+              <View
+                style={[
+                  styles.msgMetaRow,
+                  message.role === 'user' ? styles.msgMetaRowUser : styles.msgMetaRowGuru,
+                ]}
+              >
+                <Text style={styles.msgAuthor}>{message.role === 'user' ? 'You' : 'Guru'}</Text>
+                <Text style={styles.msgMetaDivider}>•</Text>
+                <Text style={styles.msgMetaText}>{formatTime(message.timestamp)}</Text>
+                {message.role === 'guru' && modelTag ? (
+                  <View style={styles.msgModelPill}>
+                    <Text style={styles.msgModelPillText}>{modelTag}</Text>
+                  </View>
+                ) : null}
+              </View>
+              {showInlineGuruImages ? (
+                <View style={styles.guruBubbleMediaRow}>
+                  <Pressable
+                    style={[styles.bubbleWrap, styles.bubbleWrapGuru]}
+                    onLongPress={() => copyMessage(message.text)}
+                    delayLongPress={400}
+                  >
+                    <View style={[styles.bubble, styles.guruBubble]}>
+                      <FormattedGuruMessage text={message.text} />
+                    </View>
+                  </Pressable>
+                  <View style={styles.generatedImagesInlineWrap}>
+                    {guruReferenceImages.map((image) => (
+                      <ChatImagePreview
+                        key={`${message.id}-reference-${image.id}`}
+                        uri={image.imageUrl!}
+                        style={[styles.generatedImage, styles.generatedImageInline]}
+                        onPress={() => setLightboxUri(image.imageUrl!)}
+                        onLongPress={() => openSource(image.url)}
+                        accessibilityLabel="View reference image"
+                      />
+                    ))}
+                    {guruGeneratedImages.map((image) => (
+                      <ChatImagePreview
+                        key={`${message.id}-image-${image.id}`}
+                        uri={image.localUri}
+                        style={[styles.generatedImage, styles.generatedImageInline]}
+                        onPress={() => setLightboxUri(image.localUri)}
+                        accessibilityLabel="View enlarged image"
+                      />
+                    ))}
+                  </View>
                 </View>
-              ) : null}
-            </View>
-            {showInlineGuruImages ? (
-              <View style={styles.guruBubbleMediaRow}>
+              ) : (
                 <Pressable
-                  style={[styles.bubbleWrap, styles.bubbleWrapGuru]}
+                  style={[
+                    styles.bubbleWrap,
+                    message.role === 'user' ? styles.bubbleWrapUser : styles.bubbleWrapGuru,
+                  ]}
                   onLongPress={() => copyMessage(message.text)}
                   delayLongPress={400}
                 >
-                  <View style={[styles.bubble, styles.guruBubble]}>
-                    <FormattedGuruMessage text={message.text} />
+                  <View
+                    style={[
+                      styles.bubble,
+                      message.role === 'user' ? styles.userBubble : styles.guruBubble,
+                    ]}
+                  >
+                    {message.role === 'guru' ? (
+                      <FormattedGuruMessage text={message.text} />
+                    ) : (
+                      <Text style={[styles.bubbleText, styles.userBubbleText]}>{message.text}</Text>
+                    )}
                   </View>
                 </Pressable>
-                <View style={styles.generatedImagesInlineWrap}>
-                  {primaryGuruReferenceImage ? (
+              )}
+
+              <Text style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}>
+                {formatTime(message.timestamp)}
+                {message.role === 'guru' && message.modelUsed
+                  ? `  ·  ${message.modelUsed.split('/').pop()}`
+                  : ''}
+              </Text>
+
+              {message.role === 'guru' && hasGuruImages && !showInlineGuruImages ? (
+                <View style={styles.generatedImagesWrap}>
+                  {guruReferenceImages.map((image) => (
                     <ChatImagePreview
-                      uri={primaryGuruReferenceImage.imageUrl!}
-                      style={[styles.generatedImage, styles.generatedImageInline]}
-                      onPress={() => setLightboxUri(primaryGuruReferenceImage.imageUrl!)}
-                      onLongPress={() => openSource(primaryGuruReferenceImage.url)}
+                      key={`${message.id}-reference-${image.id}`}
+                      uri={image.imageUrl!}
+                      style={[styles.generatedImage, styles.generatedImagePortrait]}
+                      onPress={() => setLightboxUri(image.imageUrl!)}
+                      onLongPress={() => openSource(image.url)}
                       accessibilityLabel="View reference image"
                     />
-                  ) : null}
+                  ))}
                   {guruGeneratedImages.map((image) => (
                     <ChatImagePreview
                       key={`${message.id}-image-${image.id}`}
                       uri={image.localUri}
-                      style={[styles.generatedImage, styles.generatedImageInline]}
+                      style={[styles.generatedImage, styles.generatedImagePortrait]}
                       onPress={() => setLightboxUri(image.localUri)}
                       accessibilityLabel="View enlarged image"
                     />
                   ))}
                 </View>
-              </View>
-            ) : (
-              <Pressable
-                style={[
-                  styles.bubbleWrap,
-                  message.role === 'user' ? styles.bubbleWrapUser : styles.bubbleWrapGuru,
-                ]}
-                onLongPress={() => copyMessage(message.text)}
-                delayLongPress={400}
-              >
-                <View
-                  style={[
-                    styles.bubble,
-                    message.role === 'user' ? styles.userBubble : styles.guruBubble,
-                  ]}
-                >
-                  {message.role === 'guru' ? (
-                    <FormattedGuruMessage text={message.text} />
-                  ) : (
-                    <Text style={[styles.bubbleText, styles.userBubbleText]}>{message.text}</Text>
-                  )}
-                </View>
-              </Pressable>
-            )}
+              ) : null}
 
-            <Text style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}>
-              {formatTime(message.timestamp)}
-              {message.role === 'guru' && message.modelUsed
-                ? `  ·  ${message.modelUsed.split('/').pop()}`
-                : ''}
-            </Text>
+              {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
+                <MessageSources
+                  sources={message.sources}
+                  messageId={message.id}
+                  expanded={sourcesExpanded}
+                  setLightboxUri={setLightboxUri}
+                  openSource={openSource}
+                />
+              ) : null}
 
-            {message.role === 'guru' && hasGuruImages && !showInlineGuruImages ? (
-              <View style={styles.generatedImagesWrap}>
-                {primaryGuruReferenceImage ? (
-                  <ChatImagePreview
-                    uri={primaryGuruReferenceImage.imageUrl!}
-                    style={[styles.generatedImage, styles.generatedImagePortrait]}
-                    onPress={() => setLightboxUri(primaryGuruReferenceImage.imageUrl!)}
-                    onLongPress={() => openSource(primaryGuruReferenceImage.url)}
-                    accessibilityLabel="View reference image"
-                  />
-                ) : null}
-                {guruGeneratedImages.map((image) => (
-                  <ChatImagePreview
-                    key={`${message.id}-image-${image.id}`}
-                    uri={image.localUri}
-                    style={[styles.generatedImage, styles.generatedImagePortrait]}
-                    onPress={() => setLightboxUri(image.localUri)}
-                    accessibilityLabel="View enlarged image"
-                  />
-                ))}
-              </View>
-            ) : null}
-
-            {message.role === 'guru' && message.sources && message.sources.length > 0 ? (
-              <MessageSources
-                sources={message.sources}
-                messageId={message.id}
-                expanded={sourcesExpanded}
-                setLightboxUri={setLightboxUri}
-                openSource={openSource}
-              />
-            ) : null}
-
-            {message.role === 'guru' ? (
-              <>
-                <View style={styles.responseActionsRow}>
-                  {isLatestGuruMessage && !loading ? (
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.responseActionBtn,
-                        styles.responseActionBtnActive,
-                        pressed && styles.pressed,
-                      ]}
-                      onPress={() => handleRegenerateReply()}
-                      accessibilityRole="button"
-                      accessibilityLabel="Regenerate response"
-                    >
-                      <Ionicons name="refresh-outline" size={15} color={theme.colors.textPrimary} />
-                    </Pressable>
-                  ) : null}
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.responseActionBtn,
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={() => copyMessage(message.text)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Copy response"
-                  >
-                    <Ionicons name="copy-outline" size={15} color={theme.colors.primaryLight} />
-                  </Pressable>
-                  {hasSources ? (
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.responseActionBtn,
-                        sourcesExpanded && styles.responseActionBtnActive,
-                        pressed && styles.pressed,
-                      ]}
-                      onPress={() =>
-                        setExpandedSourcesMessageId((current) =>
-                          current === message.id ? null : message.id
-                        )
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel={sourcesExpanded ? 'Hide sources' : 'Show sources'}
-                    >
-                      <Ionicons
-                        name="link-outline"
-                        size={15}
-                        color={sourcesExpanded ? theme.colors.textPrimary : theme.colors.primaryLight}
-                      />
-                    </Pressable>
-                  ) : null}
-                  {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
-                    const isGenerating = imageJobKey === `${message.id}:${style}`;
-                    return (
+              {message.role === 'guru' ? (
+                <>
+                  <View style={styles.responseActionsRow}>
+                    {isLatestGuruMessage && !loading ? (
                       <Pressable
-                        key={`${message.id}-${style}`}
                         style={({ pressed }) => [
                           styles.responseActionBtn,
-                          isGenerating && styles.responseActionBtnActive,
+                          styles.responseActionBtnActive,
                           pressed && styles.pressed,
                         ]}
-                        onPress={() => handleGenerateMessageImage(message, style)}
-                        disabled={!!imageJobKey}
+                        onPress={() => handleRegenerateReply()}
                         accessibilityRole="button"
-                        accessibilityLabel={
-                          style === 'illustration' ? 'Generate illustration' : 'Generate chart'
-                        }
+                        accessibilityLabel="Regenerate response"
                       >
-                        {isGenerating ? (
-                          <ActivityIndicator size="small" color={theme.colors.textPrimary} />
-                        ) : (
-                          <Ionicons
-                            name={style === 'illustration' ? 'image-outline' : 'git-network-outline'}
-                            size={15}
-                            color={theme.colors.primaryLight}
-                          />
-                        )}
+                        <Ionicons
+                          name="refresh-outline"
+                          size={15}
+                          color={theme.colors.textPrimary}
+                        />
                       </Pressable>
-                    );
-                  })}
-                </View>
-                {imageJobKey?.startsWith(`${message.id}:`) ? (
-                  <View style={styles.responseStatusRow}>
-                    <ActivityIndicator size="small" color={theme.colors.primaryLight} />
-                    <Text style={styles.responseStatusText}>
-                      {imageJobKey.endsWith(':chart')
-                        ? 'Generating chart...'
-                        : 'Generating illustration...'}
-                    </Text>
+                    ) : null}
+                    <Pressable
+                      style={({ pressed }) => [styles.responseActionBtn, pressed && styles.pressed]}
+                      onPress={() => copyMessage(message.text)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Copy response"
+                    >
+                      <Ionicons name="copy-outline" size={15} color={theme.colors.primaryLight} />
+                    </Pressable>
+                    {hasSources ? (
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.responseActionBtn,
+                          sourcesExpanded && styles.responseActionBtnActive,
+                          pressed && styles.pressed,
+                        ]}
+                        onPress={() =>
+                          setExpandedSourcesMessageId((current) =>
+                            current === message.id ? null : message.id,
+                          )
+                        }
+                        accessibilityRole="button"
+                        accessibilityLabel={sourcesExpanded ? 'Hide sources' : 'Show sources'}
+                      >
+                        <Ionicons
+                          name="link-outline"
+                          size={15}
+                          color={
+                            sourcesExpanded ? theme.colors.textPrimary : theme.colors.primaryLight
+                          }
+                        />
+                      </Pressable>
+                    ) : null}
+                    {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
+                      const isGenerating = imageJobKey === `${message.id}:${style}`;
+                      return (
+                        <Pressable
+                          key={`${message.id}-${style}`}
+                          style={({ pressed }) => [
+                            styles.responseActionBtn,
+                            isGenerating && styles.responseActionBtnActive,
+                            pressed && styles.pressed,
+                          ]}
+                          onPress={() => handleGenerateMessageImage(message, style)}
+                          disabled={!!imageJobKey}
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            style === 'illustration' ? 'Generate illustration' : 'Generate chart'
+                          }
+                        >
+                          {isGenerating ? (
+                            <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                          ) : (
+                            <Ionicons
+                              name={
+                                style === 'illustration' ? 'image-outline' : 'git-network-outline'
+                              }
+                              size={15}
+                              color={theme.colors.primaryLight}
+                            />
+                          )}
+                        </Pressable>
+                      );
+                    })}
                   </View>
-                ) : null}
-              </>
-            ) : null}
+                  {imageJobKey?.startsWith(`${message.id}:`) ? (
+                    <View style={styles.responseStatusRow}>
+                      <ActivityIndicator size="small" color={theme.colors.primaryLight} />
+                      <Text style={styles.responseStatusText}>
+                        {imageJobKey.endsWith(':chart')
+                          ? 'Generating chart...'
+                          : 'Generating illustration...'}
+                      </Text>
+                    </View>
+                  ) : null}
+                </>
+              ) : null}
             </View>
           </View>
         </View>
@@ -1478,7 +1622,7 @@ export default function GuruChatScreen() {
 
               <View style={styles.headerCenter}>
                 <Text style={styles.title}>Guru Chat</Text>
-                <Text style={styles.headerSubtitle} numberOfLines={1}>
+                <Text style={styles.headerSubtitle} numberOfLines={2}>
                   {currentThread && currentThread.title !== topicName
                     ? currentThread.title
                     : isGeneralChat
@@ -1495,7 +1639,11 @@ export default function GuruChatScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Open chat history"
                 >
-                  <Ionicons name="reorder-three-outline" size={18} color={theme.colors.primaryLight} />
+                  <Ionicons
+                    name="reorder-three-outline"
+                    size={18}
+                    color={theme.colors.primaryLight}
+                  />
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.newChatBtn, pressed && styles.pressed]}
@@ -1512,7 +1660,10 @@ export default function GuruChatScreen() {
 
           {showHistoryDrawer ? (
             <View style={styles.historyOverlay} pointerEvents="box-none">
-              <Pressable style={styles.historyBackdrop} onPress={() => setShowHistoryDrawer(false)} />
+              <Pressable
+                style={styles.historyBackdrop}
+                onPress={() => setShowHistoryDrawer(false)}
+              />
               <View style={styles.historyDrawer}>
                 <View style={styles.historyHeader}>
                   <Text style={styles.historyTitle}>Chat History</Text>
@@ -1553,13 +1704,13 @@ export default function GuruChatScreen() {
                         }}
                       >
                         <View style={styles.historyItemMain}>
-                          <Text style={styles.historyItemTitle} numberOfLines={1}>
+                          <Text style={styles.historyItemTitle} numberOfLines={2}>
                             {item.title}
                           </Text>
-                          <Text style={styles.historyItemTopic} numberOfLines={1}>
+                          <Text style={styles.historyItemTopic} numberOfLines={2}>
                             {item.topicName}
                           </Text>
-                          <Text style={styles.historyItemPreview} numberOfLines={2}>
+                          <Text style={styles.historyItemPreview} numberOfLines={3}>
                             {item.lastMessagePreview || 'No messages yet'}
                           </Text>
                         </View>
@@ -1569,7 +1720,10 @@ export default function GuruChatScreen() {
                           </Text>
                           <View style={styles.historyItemActions}>
                             <Pressable
-                              style={({ pressed }) => [styles.historyActionBtn, pressed && styles.pressed]}
+                              style={({ pressed }) => [
+                                styles.historyActionBtn,
+                                pressed && styles.pressed,
+                              ]}
                               onPress={() => {
                                 setRenameThreadId(item.id);
                                 setRenameDraft(item.title);
@@ -1577,16 +1731,27 @@ export default function GuruChatScreen() {
                               }}
                               hitSlop={6}
                             >
-                              <Ionicons name="pencil-outline" size={14} color={theme.colors.primaryLight} />
+                              <Ionicons
+                                name="pencil-outline"
+                                size={14}
+                                color={theme.colors.primaryLight}
+                              />
                             </Pressable>
                             <Pressable
-                              style={({ pressed }) => [styles.historyActionBtn, pressed && styles.pressed]}
+                              style={({ pressed }) => [
+                                styles.historyActionBtn,
+                                pressed && styles.pressed,
+                              ]}
                               onPress={() => {
                                 void handleDeleteThread(item);
                               }}
                               hitSlop={6}
                             >
-                              <Ionicons name="trash-outline" size={14} color={theme.colors.textMuted} />
+                              <Ionicons
+                                name="trash-outline"
+                                size={14}
+                                color={theme.colors.textMuted}
+                              />
                             </Pressable>
                           </View>
                         </View>
@@ -1634,7 +1799,11 @@ export default function GuruChatScreen() {
                     <Text style={styles.renameBtnText}>Cancel</Text>
                   </Pressable>
                   <Pressable
-                    style={({ pressed }) => [styles.renameBtn, styles.renameBtnPrimary, pressed && styles.pressed]}
+                    style={({ pressed }) => [
+                      styles.renameBtn,
+                      styles.renameBtnPrimary,
+                      pressed && styles.pressed,
+                    ]}
                     onPress={() => {
                       void handleRenameThread();
                     }}
@@ -1761,7 +1930,7 @@ export default function GuruChatScreen() {
 
                     {sessionSummary ? (
                       <View style={styles.sessionSummaryInline}>
-                        <Text style={styles.sessionSummaryInlineText} numberOfLines={2}>
+                        <Text style={styles.sessionSummaryInlineText} numberOfLines={3}>
                           {sessionSummary}
                         </Text>
                       </View>
@@ -1783,7 +1952,7 @@ export default function GuruChatScreen() {
                               color={theme.colors.primary}
                             />
                           </View>
-                          <Text style={styles.starterChipText} numberOfLines={2}>
+                          <Text style={styles.starterChipText} numberOfLines={3}>
                             {starter.text}
                           </Text>
                         </Pressable>
@@ -1827,7 +1996,9 @@ export default function GuruChatScreen() {
               </View>
             </View>
 
-            <View style={[styles.composerWrap, keyboardInset > 0 && { marginBottom: keyboardInset }]}>
+            <View
+              style={[styles.composerWrap, keyboardInset > 0 && { marginBottom: keyboardInset }]}
+            >
               <View style={styles.inputRow}>
                 <Pressable
                   style={({ pressed }) => [styles.gearBtn, pressed && styles.pressed]}
@@ -1936,8 +2107,8 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     color: theme.colors.textMuted,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 18,
     marginTop: 1,
   },
   newChatBtn: {
@@ -2037,18 +2208,20 @@ const styles = StyleSheet.create({
   },
   historyItemTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
+    lineHeight: 20,
   },
   historyItemTopic: {
     color: '#8E99B1',
-    fontSize: 11,
+    fontSize: 12,
+    lineHeight: 18,
     marginTop: 2,
   },
   historyItemPreview: {
     color: '#6F7A93',
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 19,
     marginTop: 6,
   },
   historyItemSide: {
@@ -2233,8 +2406,8 @@ const styles = StyleSheet.create({
   },
   infoText: {
     color: theme.colors.textMuted,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 18,
     flex: 1,
   },
   chatSurface: {
@@ -2620,8 +2793,8 @@ const styles = StyleSheet.create({
   },
   emptyHint: {
     color: theme.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 21,
     marginTop: 6,
   },
   sessionSummaryInline: {
@@ -2634,8 +2807,8 @@ const styles = StyleSheet.create({
   },
   sessionSummaryInlineText: {
     color: '#99A4BA',
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 20,
   },
   starterGrid: {
     flexDirection: 'row',
@@ -2665,9 +2838,9 @@ const styles = StyleSheet.create({
   },
   starterChipText: {
     color: '#9EA8BE',
-    fontSize: 12,
+    fontSize: 13,
     flex: 1,
-    lineHeight: 17,
+    lineHeight: 20,
   },
   composerWrap: {
     gap: 0,
@@ -2697,14 +2870,14 @@ const styles = StyleSheet.create({
     borderColor: '#20283A',
     backgroundColor: '#141B27',
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
   },
   quickActionChipDisabled: {
     opacity: 0.5,
   },
   quickActionText: {
     color: '#A1ABC1',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
   },
   inputRow: {
@@ -2733,13 +2906,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   input: {
-    minHeight: 42,
-    maxHeight: 42,
+    minHeight: 44,
     color: theme.colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
     paddingHorizontal: 0,
-    paddingVertical: 0,
+    paddingVertical: 10,
     textAlignVertical: 'center',
   },
   sendBtn: {

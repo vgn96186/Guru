@@ -13,9 +13,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/types';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
+import { MarkdownRender } from '../components/MarkdownRender';
 import { theme } from '../constants/theme';
 import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 function renderPreview(item: FlaggedItem) {
   const c = item.content;
@@ -33,7 +35,9 @@ function renderPreview(item: FlaggedItem) {
         <>
           <Text style={styles.previewLine}>Q: {q.question}</Text>
           <Text style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</Text>
-          <Text style={styles.previewExplain}>{q.explanation}</Text>
+          <View style={{ marginTop: 6 }}>
+            <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
+          </View>
         </>
       );
     }

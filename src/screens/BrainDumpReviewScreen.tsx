@@ -5,7 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { theme } from '../constants/theme';
-import { getBrainDumps, clearBrainDumps, BrainDumpLog } from '../db/queries/brainDumps';
+import {
+  getBrainDumps,
+  clearBrainDumps,
+  deleteBrainDump,
+  BrainDumpLog,
+} from '../db/queries/brainDumps';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BrainDumpReview'>;
@@ -40,6 +45,20 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
     navigation.goBack();
   };
 
+  const handleDeleteOne = (dump: BrainDumpLog) => {
+    Alert.alert('Delete Thought?', 'This parked thought will be permanently removed.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteBrainDump(dump.id);
+          setDumps((prev) => prev.filter((item) => item.id !== dump.id));
+        },
+      },
+    ]);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
@@ -61,13 +80,23 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
             contentContainerStyle={styles.listContent}
             renderItem={({ item }) => (
               <View style={styles.card}>
-                <Ionicons
-                  name="chatbubble-ellipses-outline"
-                  size={24}
-                  color="#6C63FF"
-                  style={styles.icon}
-                />
-                <Text style={styles.cardText}>{item.note}</Text>
+                <View style={styles.cardContent}>
+                  <Ionicons
+                    name="chatbubble-ellipses-outline"
+                    size={24}
+                    color="#6C63FF"
+                    style={styles.icon}
+                  />
+                  <Text style={styles.cardText}>{item.note}</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.deleteOneBtn}
+                  onPress={() => handleDeleteOne(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete parked thought: ${item.note}`}
+                >
+                  <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
+                </TouchableOpacity>
               </View>
             )}
           />
@@ -142,6 +171,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#333344',
   },
+  cardContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   icon: {
     marginRight: 16,
   },
@@ -150,6 +184,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     flex: 1,
     lineHeight: 24,
+  },
+  deleteOneBtn: {
+    marginLeft: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2A1A1D',
   },
   actions: {
     flexDirection: 'row',

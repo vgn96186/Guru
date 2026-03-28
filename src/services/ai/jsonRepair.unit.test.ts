@@ -123,11 +123,16 @@ describe('jsonRepair', () => {
       expect(result).toEqual(['a', 'b', 'c']);
     });
 
+    it('unwraps a single array property when the schema expects an array root', async () => {
+      const ArraySchema = z.array(z.object({ text: z.string(), trigger: z.string() }));
+      const raw = '{"messages":[{"text":"keep going","trigger":"periodic"}]}';
+      const result = await parseStructuredJson(raw, ArraySchema);
+      expect(result).toEqual([{ text: 'keep going', trigger: 'periodic' }]);
+    });
+
     it('throws error when input size exceeds MAX_INPUT_SIZE', async () => {
       const largeRaw = '{"name":"' + 'a'.repeat(100_001) + '","count":1,"items":[]}';
-      await expect(parseStructuredJson(largeRaw, SimpleSchema)).rejects.toThrow(
-        /Input too large/i,
-      );
+      await expect(parseStructuredJson(largeRaw, SimpleSchema)).rejects.toThrow(/Input too large/i);
     });
   });
 });

@@ -61,9 +61,37 @@ function describeMedicalSearchError(error: unknown): string {
 }
 
 const IMAGE_QUERY_STOPWORDS = new Set([
-  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'clinical', 'context', 'diagram', 'exam',
-  'examination', 'find', 'for', 'image', 'in', 'is', 'medical', 'movement', 'of', 'or', 'question',
-  'relevant', 'showing', 'student', 'the', 'this', 'to', 'what', 'with',
+  'a',
+  'an',
+  'and',
+  'are',
+  'as',
+  'at',
+  'be',
+  'by',
+  'clinical',
+  'context',
+  'diagram',
+  'exam',
+  'examination',
+  'find',
+  'for',
+  'image',
+  'in',
+  'is',
+  'medical',
+  'movement',
+  'of',
+  'or',
+  'question',
+  'relevant',
+  'showing',
+  'student',
+  'the',
+  'this',
+  'to',
+  'what',
+  'with',
 ]);
 
 function compactImageSearchQuery(raw: string, maxTerms = 8): string {
@@ -79,6 +107,49 @@ function compactImageSearchQuery(raw: string, maxTerms = 8): string {
     .filter((term) => term.length > 2 && !IMAGE_QUERY_STOPWORDS.has(term));
 
   return Array.from(new Set(prioritized)).slice(0, maxTerms).join(' ').trim();
+}
+
+function normalizeImageQuery(raw: string): string {
+  return compactWhitespace(raw).toLowerCase();
+}
+
+function dedupeImageQueries(queries: Array<string | null | undefined>): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const query of queries) {
+    const trimmed = compactWhitespace(query ?? '');
+    if (!trimmed) continue;
+    const normalized = normalizeImageQuery(trimmed);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    unique.push(trimmed);
+  }
+  return unique;
+}
+
+function buildConceptFamilyImageQueries(query: string): string[] {
+  const normalized = normalizeImageQuery(query);
+  const familyQueries: string[] = [];
+
+  const extraocularPattern =
+    /\b(superior|inferior|medial|lateral)\s+(oblique|rectus)\b|\b(extraocular|extra-ocular|ocular muscles?)\b/;
+  if (extraocularPattern.test(normalized)) {
+    familyQueries.push('extraocular muscles', 'orbit anatomy');
+  }
+
+  const eyeAnatomyPattern =
+    /\b(iris|cornea|lens|retina|choroid|ciliary body|sclera|optic disc|optic nerve head)\b/;
+  if (eyeAnatomyPattern.test(normalized)) {
+    familyQueries.push('eye anatomy');
+  }
+
+  return dedupeImageQueries(familyQueries);
+}
+
+function buildImageSearchQueryLadder(query: string): string[] {
+  const compacted = compactImageSearchQuery(query);
+  const familyQueries = buildConceptFamilyImageQueries(compacted || query);
+  return dedupeImageQueries([...familyQueries, compacted, query]);
 }
 
 /** Deduplicates sources by title+url (case-insensitive). Exported for unit testing. */
@@ -97,11 +168,52 @@ export function dedupeGroundingSources(
 }
 
 const QUERY_STOPWORDS = new Set([
-  'a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'how', 'in', 'into', 'is',
-  'it', 'of', 'on', 'or', 'the', 'to', 'with', 'what', 'which', 'when', 'why',
-  'india', 'indian', 'icmr', 'aiims', 'who', 'guidelines', 'guideline', 'protocol', 'protocols',
-  'diagnosis', 'diagnostic', 'treatment', 'clinical', 'presentation', 'management', 'approach',
-  'overview', 'medicine', 'medical', 'disease', 'disorder',
+  'a',
+  'an',
+  'and',
+  'are',
+  'as',
+  'at',
+  'be',
+  'by',
+  'for',
+  'from',
+  'how',
+  'in',
+  'into',
+  'is',
+  'it',
+  'of',
+  'on',
+  'or',
+  'the',
+  'to',
+  'with',
+  'what',
+  'which',
+  'when',
+  'why',
+  'india',
+  'indian',
+  'icmr',
+  'aiims',
+  'who',
+  'guidelines',
+  'guideline',
+  'protocol',
+  'protocols',
+  'diagnosis',
+  'diagnostic',
+  'treatment',
+  'clinical',
+  'presentation',
+  'management',
+  'approach',
+  'overview',
+  'medicine',
+  'medical',
+  'disease',
+  'disorder',
 ]);
 
 function extractQueryTerms(query: string): string[] {
@@ -200,28 +312,93 @@ function rankGroundingSources(
 // ─── MEDICAL IMAGE SEARCH ─────────────────────────────────────────────────────
 
 const MEDICAL_TERMS = [
-  'medical', 'anatomy', 'disease', 'pathology', 'histology', 'radiology',
-  'x-ray', 'xray', 'ct scan', 'mri', 'ultrasound', 'ecg', 'ekg',
-  'microscopy', 'biopsy', 'clinical', 'surgical', 'dermato', 'ophthalm',
-  'cardio', 'neuro', 'hepat', 'renal', 'pulmon', 'gastro', 'hematol',
-  'oncol', 'endocrin', 'immunol', 'infect', 'pharma', 'symptom',
-  'diagnosis', 'treatment', 'syndrome', 'carcinoma', 'tumor', 'tumour',
-  'fracture', 'lesion', 'abscess', 'edema', 'oedema', 'fibrosis',
-  'necrosis', 'inflammation', 'hemorrhage', 'haemorrhage',
-  'virus', 'bacteria', 'fungal', 'parasite', 'organ', 'tissue', 'cell',
-  'specimen', 'stain', 'gram stain', 'h&e', 'slide',
+  'medical',
+  'anatomy',
+  'disease',
+  'pathology',
+  'histology',
+  'radiology',
+  'x-ray',
+  'xray',
+  'ct scan',
+  'mri',
+  'ultrasound',
+  'ecg',
+  'ekg',
+  'microscopy',
+  'biopsy',
+  'clinical',
+  'surgical',
+  'dermato',
+  'ophthalm',
+  'cardio',
+  'neuro',
+  'hepat',
+  'renal',
+  'pulmon',
+  'gastro',
+  'hematol',
+  'oncol',
+  'endocrin',
+  'immunol',
+  'infect',
+  'pharma',
+  'symptom',
+  'diagnosis',
+  'treatment',
+  'syndrome',
+  'carcinoma',
+  'tumor',
+  'tumour',
+  'fracture',
+  'lesion',
+  'abscess',
+  'edema',
+  'oedema',
+  'fibrosis',
+  'necrosis',
+  'inflammation',
+  'hemorrhage',
+  'haemorrhage',
+  'virus',
+  'bacteria',
+  'fungal',
+  'parasite',
+  'organ',
+  'tissue',
+  'cell',
+  'specimen',
+  'stain',
+  'gram stain',
+  'h&e',
+  'slide',
 ];
 
 const NOISE_TERMS = [
-  'logo', 'icon', 'flag', 'map', 'coat of arms', 'screenshot',
-  'photo of building', 'portrait', 'headshot', 'selfie',
+  'logo',
+  'icon',
+  'flag',
+  'map',
+  'coat of arms',
+  'screenshot',
+  'photo of building',
+  'portrait',
+  'headshot',
+  'selfie',
 ];
 
-function scoreWikimediaRelevance(title: string, description: string, originalQuery: string): number {
+function scoreWikimediaRelevance(
+  title: string,
+  description: string,
+  originalQuery: string,
+): number {
   const titleLower = title.toLowerCase();
   const descLower = description.toLowerCase();
   const combined = `${titleLower} ${descLower}`;
-  const queryTerms = originalQuery.toLowerCase().split(/\s+/).filter((t) => t.length > 3);
+  const queryTerms = originalQuery
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((t) => t.length > 3);
   let score = 0;
 
   for (const term of queryTerms) {
@@ -230,11 +407,17 @@ function scoreWikimediaRelevance(title: string, description: string, originalQue
   }
 
   for (const term of MEDICAL_TERMS) {
-    if (combined.includes(term)) { score += 1; break; }
+    if (combined.includes(term)) {
+      score += 1;
+      break;
+    }
   }
 
   for (const term of NOISE_TERMS) {
-    if (combined.includes(term)) { score -= 5; break; }
+    if (combined.includes(term)) {
+      score -= 5;
+      break;
+    }
   }
 
   return score;
@@ -273,7 +456,10 @@ async function searchWikimediaCommons(
 
       const metadata = info.extmetadata || {};
       const description = metadata.ImageDescription?.value || metadata.ObjectName?.value || '';
-      const cleanDesc = description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const cleanDesc = description
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
       const score = scoreWikimediaRelevance(title, cleanDesc, query);
       if (score < 1) continue;
@@ -301,10 +487,7 @@ async function searchWikimediaCommons(
       .map((s) => s.source);
   } catch (err) {
     if (__DEV__) {
-      console.warn(
-        '[MedicalSearch] Wikimedia Commons failed:',
-        describeMedicalSearchError(err),
-      );
+      console.warn('[MedicalSearch] Wikimedia Commons failed:', describeMedicalSearchError(err));
     }
     return [];
   }
@@ -363,15 +546,13 @@ async function searchOpenI(
           snippet: clipText(cleanDesc, 420),
           source: sourceLabel,
           author: r.owner || r.authors || 'NIH',
-          license: collection === 'mpx' ? 'Public Domain (MedPix/NIH)' : 'Public Domain (U.S. Government)',
+          license:
+            collection === 'mpx' ? 'Public Domain (MedPix/NIH)' : 'Public Domain (U.S. Government)',
         };
       });
   } catch (err) {
     if (__DEV__) {
-      console.warn(
-        `[MedicalSearch] ${sourceLabel} failed:`,
-        describeMedicalSearchError(err),
-      );
+      console.warn(`[MedicalSearch] ${sourceLabel} failed:`, describeMedicalSearchError(err));
     }
     return [];
   }
@@ -423,23 +604,22 @@ async function searchBraveImages(
     return rows
       .filter((row) => row?.title && (row?.thumbnail?.src || row?.properties?.url || row?.url))
       .slice(0, maxResults)
-      .map((row, index): MedicalGroundingSource => ({
-        id: `brave-${index}-${row.url ?? row.properties?.url ?? row.thumbnail?.src ?? ''}`,
-        title: clipText(String(row.title), 220),
-        url: String(row.url ?? row.page_fetched ?? row.properties?.url ?? '').trim(),
-        imageUrl: String(row.thumbnail?.src ?? row.properties?.url ?? '').trim() || undefined,
-        snippet: clipText(
-          String(row.description ?? row.source ?? row.page_fetched ?? row.title ?? ''),
-          420,
-        ),
-        source: 'Brave Search',
-      }));
+      .map(
+        (row, index): MedicalGroundingSource => ({
+          id: `brave-${index}-${row.url ?? row.properties?.url ?? row.thumbnail?.src ?? ''}`,
+          title: clipText(String(row.title), 220),
+          url: String(row.url ?? row.page_fetched ?? row.properties?.url ?? '').trim(),
+          imageUrl: String(row.thumbnail?.src ?? row.properties?.url ?? '').trim() || undefined,
+          snippet: clipText(
+            String(row.description ?? row.source ?? row.page_fetched ?? row.title ?? ''),
+            420,
+          ),
+          source: 'Brave Search',
+        }),
+      );
   } catch (err) {
     if (__DEV__) {
-      console.warn(
-        '[MedicalSearch] Brave Search failed:',
-        describeMedicalSearchError(err),
-      );
+      console.warn('[MedicalSearch] Brave Search failed:', describeMedicalSearchError(err));
     }
     return [];
   } finally {
@@ -484,23 +664,50 @@ export async function searchMedicalImages(
     };
   }
 
-  let effectiveQuery = query;
-  let { collected, commons, medpix, openi, brave } = await runImageSearch(effectiveQuery);
+  const queryLadder = buildImageSearchQueryLadder(query);
+  let effectiveQuery = queryLadder[0] ?? query;
+  let collected: MedicalGroundingSource[] = [];
+  let commons: PromiseSettledResult<MedicalGroundingSource[]> = {
+    status: 'fulfilled',
+    value: [],
+  };
+  let medpix: PromiseSettledResult<MedicalGroundingSource[]> = {
+    status: 'fulfilled',
+    value: [],
+  };
+  let openi: PromiseSettledResult<MedicalGroundingSource[]> = {
+    status: 'fulfilled',
+    value: [],
+  };
+  let brave: PromiseSettledResult<MedicalGroundingSource[]> = {
+    status: 'fulfilled',
+    value: [],
+  };
 
-  if (collected.length === 0) {
-    const compacted = compactImageSearchQuery(query);
-    if (compacted && compacted !== query.trim().toLowerCase()) {
-      logGroundingEvent('image_search_retry', {
-        originalQuery: previewText(query, 140),
-        retryQuery: previewText(compacted, 140),
-      });
-      effectiveQuery = compacted;
-      ({ collected, commons, medpix, openi, brave } = await runImageSearch(effectiveQuery));
+  if (queryLadder.length > 1) {
+    logGroundingEvent('image_search_broadened', {
+      originalQuery: previewText(query, 140),
+      queryLadder: queryLadder.map((entry) => previewText(entry, 140)),
+    });
+  }
+
+  for (const candidateQuery of queryLadder) {
+    effectiveQuery = candidateQuery;
+    const result = await runImageSearch(candidateQuery);
+    commons = result.commons;
+    medpix = result.medpix;
+    openi = result.openi;
+    brave = result.brave;
+    collected = dedupeGroundingSources([...collected, ...result.collected]);
+    if (collected.length >= maxResults) {
+      break;
     }
   }
 
   logGroundingEvent('image_search_complete', {
     query: previewText(effectiveQuery, 140),
+    originalQuery: previewText(query, 140),
+    queryLadder: queryLadder.map((entry) => previewText(entry, 140)),
     totalCollected: collected.length,
     providerBreakdown: {
       medpix: medpix.status === 'fulfilled' ? medpix.value.length : 'failed',
@@ -512,7 +719,10 @@ export async function searchMedicalImages(
     sampleUrls: collected.slice(0, 3).map((row) => previewText(row.imageUrl ?? row.url, 120)),
   });
 
-  if (__DEV__) console.log(`[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`);
+  if (__DEV__)
+    console.log(
+      `[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`,
+    );
 
   if (collected.length === 0) {
     if (__DEV__)
@@ -535,7 +745,7 @@ export async function generateImageSearchQuery(
     {
       role: 'system',
       content:
-        'You generate concise medical image search queries for medical reference images. Output ONLY the search query string, nothing else. Use precise medical terminology. Keep it to 3-8 words. Prefer the core anatomical structure, pathology, or imaging finding over long explanatory phrases. Include imaging modality only when clearly relevant (e.g., histology, x-ray, MRI, gross pathology, microscopy, fundus photo).',
+        'You generate concise medical image search queries for medical reference images. Output ONLY the search query string, nothing else. Keep it to 2-6 words. Prefer the broader core anatomical structure, pathology, or imaging finding over narrow exam phrasing. Drop filler words like anatomy, clinical presentation, management, mechanism, question, symptom, diagnosis, treatment, or why/how unless they are essential to the image itself. Include modality only when clearly necessary, such as histology, x-ray, MRI, CT, microscopy, gross pathology, or fundus photo.',
     },
     {
       role: 'user',
@@ -546,7 +756,10 @@ export async function generateImageSearchQuery(
   ];
   try {
     const { text } = await generateTextWithRouting(msgs);
-    const candidate = text.replace(/^["']|["']$/g, '').trim().slice(0, 120);
+    const candidate = text
+      .replace(/^["']|["']$/g, '')
+      .trim()
+      .slice(0, 120);
     return compactImageSearchQuery(candidate) || compactImageSearchQuery(topicName) || topicName;
   } catch {
     return compactImageSearchQuery(topicName) || topicName;
@@ -680,10 +893,7 @@ async function searchPubMedFallback(
  * DuckDuckGo Instant Answer API — free, no API key.
  * Returns abstract text and related topics for medical terms.
  */
-async function searchDuckDuckGo(
-  query: string,
-  maxResults = 4,
-): Promise<MedicalGroundingSource[]> {
+async function searchDuckDuckGo(query: string, maxResults = 4): Promise<MedicalGroundingSource[]> {
   const medicalQuery = query.replace(/\(India.*?\)/g, '').trim();
   const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(medicalQuery)}&format=json&no_html=1&skip_disambig=1`;
   const data = await fetchJsonWithTimeout<{

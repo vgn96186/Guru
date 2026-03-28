@@ -106,6 +106,7 @@ class OverlayService : Service(), LifecycleOwner {
         const val ABSENT_NOTIF_ID = 9003
         const val PREFS_NAME = "guru_overlay_prefs"
         const val PREF_RETURN_REQUESTED = "lecture_return_requested"
+        const val PREF_POMODORO_BREAK_REQUESTED = "pomodoro_break_requested"
         @JvmStatic
         @Volatile
         var isServiceRunning = false
@@ -434,7 +435,7 @@ class OverlayService : Service(), LifecycleOwner {
             orientation = android.widget.LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             layoutParams = android.widget.LinearLayout.LayoutParams(
-                dpToPx(72, context), // sleek consistent pill width
+                dpToPx(88, context), // keep status labels on one line in expanded mode
                 LayoutParams.WRAP_CONTENT
             )
             setPadding(0, dpToPx(24, context), 0, dpToPx(24, context))
@@ -479,6 +480,8 @@ class OverlayService : Service(), LifecycleOwner {
             setTypeface(android.graphics.Typeface.create("sans-serif-bold", android.graphics.Typeface.BOLD))
             letterSpacing = 0.1f
             gravity = Gravity.CENTER
+            maxLines = 1
+            isSingleLine = true
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
                 topMargin = dpToPx(16, context)
             }
@@ -561,10 +564,15 @@ class OverlayService : Service(), LifecycleOwner {
             addView(mainContainer, mainLp)
 
             bubbleView.onPomodoroSuggest = {
+                context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    .edit()
+                    .putBoolean(PREF_POMODORO_BREAK_REQUESTED, true)
+                    .apply()
                 if (!isExpanded) {
                     isPomodoroMode = true
                     toggleExpanded()
                 }
+                onReturnClick()
             }
             
             bubbleView.onBreathe = { breathe ->

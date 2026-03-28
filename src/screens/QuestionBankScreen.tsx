@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
+import { MarkdownRender } from '../components/MarkdownRender';
 import ScreenHeader from '../components/ScreenHeader';
 import {
   getQuestions,
@@ -26,6 +27,7 @@ import {
   recordAttempt,
 } from '../db/queries/questionBank';
 import type { QuestionBankItem, QuestionFilters } from '../types';
+import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 type FilterMode = 'all' | 'due' | 'bookmarked' | 'mastered';
 
@@ -151,7 +153,14 @@ export default function QuestionBankScreen() {
     }
     setPracticeIndex((i) => i + 1);
     setPracticeAnswer(null);
-  }, [practiceIndex, practiceQuestions.length, practiceScore, practiceAnswer, currentPracticeQ, loadData]);
+  }, [
+    practiceIndex,
+    practiceQuestions.length,
+    practiceScore,
+    practiceAnswer,
+    currentPracticeQ,
+    loadData,
+  ]);
 
   // ── Render ──────────────────────────────────────────────────────────────────
   const renderItem = useCallback(
@@ -188,26 +197,20 @@ export default function QuestionBankScreen() {
               {item.options.map((opt, i) => (
                 <View
                   key={i}
-                  style={[
-                    styles.optionRow,
-                    i === item.correctIndex && styles.correctOption,
-                  ]}
+                  style={[styles.optionRow, i === item.correctIndex && styles.correctOption]}
                 >
-                  <Text style={styles.optionLetter}>
-                    {String.fromCharCode(65 + i)}.
-                  </Text>
+                  <Text style={styles.optionLetter}>{String.fromCharCode(65 + i)}.</Text>
                   <Text
-                    style={[
-                      styles.optionText,
-                      i === item.correctIndex && styles.correctOptionText,
-                    ]}
+                    style={[styles.optionText, i === item.correctIndex && styles.correctOptionText]}
                   >
                     {opt}
                   </Text>
                 </View>
               ))}
               {item.explanation ? (
-                <Text style={styles.explanation}>{item.explanation}</Text>
+                <View style={styles.explanationWrap}>
+                  <MarkdownRender content={emphasizeHighYieldMarkdown(item.explanation)} compact />
+                </View>
               ) : null}
             </View>
           )}
@@ -327,15 +330,15 @@ export default function QuestionBankScreen() {
             <Text style={styles.practiceProgress}>
               {practiceIndex + 1} / {practiceQuestions.length}
             </Text>
-            <Text style={styles.practiceScoreText}>
-              {practiceScore} correct
-            </Text>
+            <Text style={styles.practiceScoreText}>{practiceScore} correct</Text>
           </View>
 
           {currentPracticeQ && (
             <View style={styles.practiceBody}>
               {currentPracticeQ.subjectName ? (
-                <View style={[styles.subjectChip, { backgroundColor: '#E040FB22', marginBottom: 8 }]}>
+                <View
+                  style={[styles.subjectChip, { backgroundColor: '#E040FB22', marginBottom: 8 }]}
+                >
                   <Text style={styles.subjectChipText}>{currentPracticeQ.subjectName}</Text>
                 </View>
               ) : null}
@@ -372,7 +375,12 @@ export default function QuestionBankScreen() {
               </View>
 
               {practiceAnswer !== null && currentPracticeQ.explanation ? (
-                <Text style={styles.practiceExplanation}>{currentPracticeQ.explanation}</Text>
+                <View style={styles.practiceExplanationWrap}>
+                  <MarkdownRender
+                    content={emphasizeHighYieldMarkdown(currentPracticeQ.explanation)}
+                    compact
+                  />
+                </View>
               ) : null}
 
               {practiceAnswer !== null && (
@@ -464,11 +472,13 @@ const styles = StyleSheet.create({
   },
   subjectChipText: {
     fontSize: 11,
+    lineHeight: 16,
     fontWeight: '700',
     color: '#E040FB',
   },
   topicLabel: {
     fontSize: 11,
+    lineHeight: 16,
     color: theme.colors.textMuted,
     flex: 1,
   },
@@ -503,13 +513,7 @@ const styles = StyleSheet.create({
     color: theme.colors.success,
     fontWeight: '600',
   },
-  explanation: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontStyle: 'italic',
-    marginTop: 8,
-    lineHeight: 18,
-  },
+  explanationWrap: { marginTop: 8 },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -591,13 +595,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
   },
-  practiceExplanation: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-    fontStyle: 'italic',
-    marginTop: 16,
-    lineHeight: 20,
-  },
+  practiceExplanationWrap: { marginTop: 16 },
   nextBtn: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -28,6 +28,14 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+export interface LecturePipelineHistoryEvent {
+  id: number;
+  stage: LecturePipelineStage;
+  message: string;
+  detail?: string;
+  createdAt: number;
+}
+
 export type Phase = 'intro' | 'transcribing' | 'results' | 'quiz' | 'quiz_done' | 'error';
 
 interface UseLecturePipelineProps {
@@ -56,6 +64,15 @@ export function useLecturePipeline({
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeStage, setActiveStage] = useState<LecturePipelineStage | null>(null);
   const [stageMessage, setStageMessage] = useState('');
+  const [stageDetail, setStageDetail] = useState('');
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [progressStep, setProgressStep] = useState<number | null>(null);
+  const [progressTotalSteps, setProgressTotalSteps] = useState<number | null>(null);
+  const [progressAttempt, setProgressAttempt] = useState<number | null>(null);
+  const [progressMaxAttempts, setProgressMaxAttempts] = useState<number | null>(null);
+  const [progressProvider, setProgressProvider] = useState<string | null>(null);
+  const [stageStartedAt, setStageStartedAt] = useState<number | null>(null);
+  const [progressHistory, setProgressHistory] = useState<LecturePipelineHistoryEvent[]>([]);
   const [transcriptionCompleted, setTranscriptionCompleted] = useState(false);
   const [sessionSaved, setSessionSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -77,6 +94,7 @@ export function useLecturePipeline({
   const transcriptionStartedRef = useRef(false);
   const cancelRequestedRef = useRef(false);
   const transcriptionRunIdRef = useRef(0);
+  const lastProgressSignatureRef = useRef('');
 
   const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
   const hasHuggingFace = !!(profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
@@ -113,8 +131,50 @@ Summary: ${result.lectureSummary}`;
     if (progress.stage === 'enhancing') {
       return;
     }
-    setActiveStage(progress.stage);
+    const now = Date.now();
+    setActiveStage((current) => {
+      if (current !== progress.stage) {
+        setStageStartedAt(now);
+      }
+      return progress.stage;
+    });
     setStageMessage(progress.message);
+    setStageDetail(progress.detail ?? '');
+    setProgressPercent(progress.percent ?? 0);
+    setProgressStep(progress.step ?? null);
+    setProgressTotalSteps(progress.totalSteps ?? null);
+    setProgressAttempt(progress.attempt ?? null);
+    setProgressMaxAttempts(progress.maxAttempts ?? null);
+    setProgressProvider(progress.provider ?? null);
+
+    const signature = [
+      progress.stage,
+      progress.message,
+      progress.detail ?? '',
+      progress.percent ?? '',
+      progress.step ?? '',
+      progress.totalSteps ?? '',
+      progress.attempt ?? '',
+      progress.maxAttempts ?? '',
+      progress.provider ?? '',
+    ].join('|');
+    if (lastProgressSignatureRef.current === signature) {
+      return;
+    }
+    lastProgressSignatureRef.current = signature;
+    setProgressHistory((current) => {
+      const next = [
+        ...current,
+        {
+          id: now,
+          stage: progress.stage,
+          message: progress.message,
+          detail: progress.detail,
+          createdAt: now,
+        },
+      ];
+      return next.slice(-5);
+    });
   }, []);
 
   useEffect(() => {
@@ -149,8 +209,14 @@ Summary: ${result.lectureSummary}`;
     cancelRequestedRef.current = false;
     setPhase('transcribing');
     setIsExpanded(false);
-    setActiveStage('transcribing');
-    setStageMessage('Transcribing lecture audio');
+    setQuizQuestions([]);
+    setQuizLoading(false);
+    handlePipelineProgress({
+      stage: 'transcribing',
+      message: 'Preparing lecture transcription',
+      detail: 'Checking the recording and selecting the transcription path',
+      percent: 4,
+    });
     try {
       await updateSessionTranscriptionStatus(logId, 'transcribing');
       const result = await transcribeLectureWithRecovery({
@@ -158,6 +224,7 @@ Summary: ${result.lectureSummary}`;
         groqKey: groqKey || undefined,
         useLocalWhisper: !!(profile?.useLocalWhisper && profile?.localWhisperPath),
         localWhisperPath: profile?.localWhisperPath || undefined,
+        includeEmbedding: false,
         maxRetries: 1,
         logId,
         onProgress: handlePipelineProgress,
@@ -172,6 +239,7 @@ Summary: ${result.lectureSummary}`;
       if (!result.transcript?.trim()) {
         setActiveStage(null);
         setStageMessage('');
+        setStageDetail('');
         await updateSessionTranscriptionStatus(
           logId,
           'no_audio',
@@ -186,9 +254,18 @@ Summary: ${result.lectureSummary}`;
       setSessionSaved(false);
       setActiveStage(null);
       setStageMessage('');
+      setStageDetail('');
+      setProgressPercent(100);
+      setProgressStep(null);
+      setProgressTotalSteps(null);
+      setProgressAttempt(null);
+      setProgressMaxAttempts(null);
+      setProgressProvider(null);
       await updateSessionTranscriptionStatus(logId, 'pending');
       setPhase('results');
-      if (result.topics.length > 0) {
+      if (Array.isArray(result.precomputedQuiz) && result.precomputedQuiz.length > 0) {
+        setQuizQuestions(result.precomputedQuiz);
+      } else if (result.topics.length > 0) {
         generateQuiz(result);
       }
     } catch (e: any) {
@@ -199,6 +276,7 @@ Summary: ${result.lectureSummary}`;
       const message = e?.message ?? 'Transcription failed';
       setActiveStage(null);
       setStageMessage('');
+      setStageDetail('');
       setErrorMsg(`${message}. Audio has been preserved for auto-retry on next launch.`);
       await updateSessionTranscriptionStatus(logId, 'failed', message);
       setPhase('error');
@@ -214,8 +292,12 @@ Summary: ${result.lectureSummary}`;
 
     try {
       setIsSaving(true);
-      setActiveStage('saving');
-      setStageMessage('Building your note...');
+      handlePipelineProgress({
+        stage: 'saving',
+        message: 'Generating lecture note',
+        detail: 'Turning the transcript into an ADHD-friendly study note',
+        percent: 94,
+      });
       const finalConfidence = userConfidence ?? analysis.estimatedConfidence;
       const analysisWithConfidence =
         finalConfidence === analysis.estimatedConfidence
@@ -235,6 +317,12 @@ Summary: ${result.lectureSummary}`;
         noteToSave = buildQuickLectureNote(analysisToSave);
       }
 
+      handlePipelineProgress({
+        stage: 'saving',
+        message: 'Saving lecture summary',
+        detail: 'Marking topics, updating XP, and storing the note',
+        percent: 98,
+      });
       await saveLectureAnalysisQuick({
         analysis: analysisToSave,
         appName,
@@ -250,11 +338,14 @@ Summary: ${result.lectureSummary}`;
       setSessionSaved(true);
       setActiveStage(null);
       setStageMessage('');
+      setStageDetail('');
+      setProgressPercent(100);
       return true;
     } catch (e: unknown) {
       console.warn('[LectureReturn] save error:', e);
       setActiveStage(null);
       setStageMessage('');
+      setStageDetail('');
       const errMsg = e instanceof Error ? e.message : 'Failed while saving lecture note';
       setErrorMsg(`${errMsg}. Audio has been preserved for retry.`);
       setPhase('error');
@@ -338,6 +429,7 @@ Summary: ${result.lectureSummary}`;
             cancelRequestedRef.current = true;
             setActiveStage(null);
             setStageMessage('');
+            setStageDetail('');
             setPhase('intro');
             void updateSessionTranscriptionStatus(
               logId,
@@ -397,6 +489,15 @@ Summary: ${result.lectureSummary}`;
       setIsExpanded(false);
       setActiveStage(null);
       setStageMessage('');
+      setStageDetail('');
+      setProgressPercent(0);
+      setProgressStep(null);
+      setProgressTotalSteps(null);
+      setProgressAttempt(null);
+      setProgressMaxAttempts(null);
+      setProgressProvider(null);
+      setStageStartedAt(null);
+      setProgressHistory([]);
       setTranscriptionCompleted(false);
       setSessionSaved(false);
       setIsSaving(false);
@@ -407,6 +508,7 @@ Summary: ${result.lectureSummary}`;
       setSelected(null);
       setShowExpl(false);
       setScore(0);
+      lastProgressSignatureRef.current = '';
       transcriptionStartedRef.current = false;
       cancelRequestedRef.current = false;
     }
@@ -414,7 +516,7 @@ Summary: ${result.lectureSummary}`;
 
   useEffect(() => {
     if (!visible) return;
-    if (phase === 'results' || phase === 'quiz' || phase === 'quiz_done' || phase === 'error') {
+    if (phase === 'quiz' || phase === 'quiz_done') {
       setIsExpanded(true);
     }
   }, [phase, visible]);
@@ -428,6 +530,15 @@ Summary: ${result.lectureSummary}`;
     setIsExpanded,
     activeStage,
     stageMessage,
+    stageDetail,
+    progressPercent,
+    progressStep,
+    progressTotalSteps,
+    progressAttempt,
+    progressMaxAttempts,
+    progressProvider,
+    stageStartedAt,
+    progressHistory,
     transcriptionCompleted,
     sessionSaved,
     isSaving,

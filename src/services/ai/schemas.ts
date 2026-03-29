@@ -6,12 +6,24 @@ const KeyPointsSchema = z.object({
   points: z.array(z.string()).describe('3–8 short bullet facts; exam-relevant only'),
   memoryHook: z.string().describe('One memorable hook or analogy'),
 });
+const MustKnowSchema = z.object({
+  type: z.literal('must_know').describe('Discriminator for must-know card'),
+  topicName: z.string().describe('Topic title aligned with the in-app syllabus'),
+  mustKnow: z.array(z.string()).describe('Short must-recall exam facts'),
+  mostTested: z.array(z.string()).describe('Short repeatedly tested exam facts'),
+  examTip: z.string().describe('One tactical exam-day tip for this topic'),
+});
 const QuizQuestionSchema = z.object({
   question: z.string().describe('Single best-answer stem'),
-  options: z.tuple([z.string(), z.string(), z.string(), z.string()]).describe('Exactly four options'),
+  options: z
+    .tuple([z.string(), z.string(), z.string(), z.string()])
+    .describe('Exactly four options'),
   correctIndex: z.number().describe('0–3 index into options'),
   explanation: z.string().describe('Why the correct option is right'),
-  imageSearchQuery: z.string().optional().describe('Search query to fetch a relevant medical image for this question'),
+  imageSearchQuery: z
+    .string()
+    .optional()
+    .describe('Search query to fetch a relevant medical image for this question'),
 });
 const QuizSchema = z.object({
   type: z.literal('quiz').describe('Discriminator for quiz card'),
@@ -68,6 +80,7 @@ const SocraticSchema = z.object({
 
 export const AIContentSchema = z.union([
   KeyPointsSchema,
+  MustKnowSchema,
   QuizSchema,
   StorySchema,
   MnemonicSchema,

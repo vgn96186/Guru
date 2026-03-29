@@ -153,6 +153,12 @@ export default React.memo(function SubjectCard({
             <AppText style={styles.weight} variant="caption" tone="muted">
               INICET x{subject.inicetWeight}
             </AppText>
+            <AppText style={styles.weightDivider} variant="caption" tone="muted">
+              •
+            </AppText>
+            <AppText style={styles.weight} variant="caption" tone="muted">
+              NEET x{subject.neetWeight}
+            </AppText>
             {pct === 100 ? (
               <AppText style={styles.completeBadge} variant="caption" tone="success">
                 Complete
@@ -243,6 +249,7 @@ const styles = StyleSheet.create({
   weightRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, marginRight: 5 },
   weight: {},
+  weightDivider: { marginHorizontal: 2, opacity: 0.5 },
   metricsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

@@ -97,7 +97,8 @@ const toneStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   base: {
-    includeFontPadding: true,
+    includeFontPadding: false,
+    paddingRight: 2,
   },
   centered: {
     textAlign: 'center',
@@ -115,10 +116,11 @@ export default function AppText({
 }: AppTextProps) {
   return (
     <Text
+      textBreakStrategy="simple"
       {...props}
       allowFontScaling={allowFontScaling}
       numberOfLines={truncate ? 1 : props.numberOfLines}
-      ellipsizeMode={truncate ? 'tail' : props.ellipsizeMode}
+      ellipsizeMode={truncate ? 'clip' : props.ellipsizeMode}
       style={[
         styles.base,
         variantStyles[variant],

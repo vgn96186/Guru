@@ -169,9 +169,11 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
 
   if (topicCount === 0 || forceSeed) {
     if (forceSeed) {
+      await db.execAsync('PRAGMA foreign_keys = OFF');
       await db.execAsync('DELETE FROM topic_progress');
       await db.execAsync('DELETE FROM topics');
       await db.execAsync('DELETE FROM subjects');
+      await db.execAsync('PRAGMA foreign_keys = ON');
       await seedSubjects(db);
     }
     await seedTopics(db);
@@ -478,9 +480,7 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['model_used', 'TEXT'],
       ['thread_id', 'INTEGER'],
     ],
-    guru_chat_session_memory: [
-      ['thread_id', 'INTEGER'],
-    ],
+    guru_chat_session_memory: [['thread_id', 'INTEGER']],
   };
 
   let totalAdded = 0;

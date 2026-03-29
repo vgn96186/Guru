@@ -406,7 +406,11 @@ function FormattedGuruMessage({ text }: { text: string }) {
             {lines.map((line, lineIndex) => {
               const segments = splitGuruBoldSegments(line);
               return (
-                <Text key={`line-${paragraphIndex}-${lineIndex}`} style={styles.guruFormattedText}>
+                <Text
+                  key={`line-${paragraphIndex}-${lineIndex}`}
+                  style={styles.guruFormattedText}
+                  textBreakStrategy="simple"
+                >
                   {segments.map((segment, segmentIndex) =>
                     segment.bold ? (
                       <Text
@@ -1432,7 +1436,12 @@ export default function GuruChatScreen() {
                     {message.role === 'guru' ? (
                       <FormattedGuruMessage text={message.text} />
                     ) : (
-                      <Text style={[styles.bubbleText, styles.userBubbleText]}>{message.text}</Text>
+                      <Text
+                        style={[styles.bubbleText, styles.userBubbleText]}
+                        textBreakStrategy="simple"
+                      >
+                        {message.text}
+                      </Text>
                     )}
                   </View>
                 </Pressable>
@@ -1653,6 +1662,17 @@ export default function GuruChatScreen() {
                   accessibilityLabel="New chat"
                 >
                   <Ionicons name="create-outline" size={18} color={theme.colors.primaryLight} />
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.newChatBtn, pressed && styles.pressed]}
+                  android_ripple={{ color: '#ffffff14', radius: 22 }}
+                  onPress={() =>
+                    navigation.getParent()?.navigate('MenuTab', { screen: 'Settings' })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel="Open settings"
+                >
+                  <Ionicons name="settings-sharp" size={18} color={theme.colors.textSecondary} />
                 </Pressable>
               </View>
             </View>
@@ -1962,6 +1982,7 @@ export default function GuruChatScreen() {
                 </View>
               ) : (
                 <FlatList
+                  key={`chat-list-${viewportWidth}`}
                   ref={flatListRef}
                   data={chatItems}
                   renderItem={renderMessage}
@@ -2476,13 +2497,14 @@ const styles = StyleSheet.create({
   bubbleWrap: {
     maxWidth: '100%',
     minWidth: 0,
+    flexShrink: 1,
   },
   bubbleWrapUser: {
     maxWidth: '60%',
     alignSelf: 'flex-end',
   },
   bubbleWrapGuru: {
-    maxWidth: '60%',
+    maxWidth: '88%',
     minWidth: 0,
     alignSelf: 'flex-start',
   },
@@ -2553,6 +2575,9 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 28,
     fontWeight: '400',
+    includeFontPadding: false,
+    flexShrink: 1,
+    paddingRight: 4,
   },
   guruFormattedWrap: {
     width: '100%',
@@ -2568,6 +2593,8 @@ const styles = StyleSheet.create({
     lineHeight: 28,
     fontWeight: '400',
     minWidth: 0,
+    includeFontPadding: false,
+    paddingRight: 4,
   },
   guruStrongText: {
     color: '#E2D27A',
@@ -2576,6 +2603,7 @@ const styles = StyleSheet.create({
   userBubbleText: {
     color: theme.colors.textPrimary,
     fontWeight: '600',
+    paddingRight: 4,
   },
   timestamp: {
     display: 'none',

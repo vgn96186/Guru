@@ -467,14 +467,15 @@ export const MIGRATIONS: Migration[] = [
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       topic_id INTEGER NOT NULL,
       content_type TEXT NOT NULL
-        CHECK(content_type IN ('keypoints','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
+        CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
       content_json TEXT NOT NULL,
       model_used TEXT NOT NULL,
       created_at INTEGER NOT NULL,
       is_flagged INTEGER NOT NULL DEFAULT 0,
       UNIQUE(topic_id, content_type)
     ); CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
-    description: 'Recreate ai_cache with updated CHECK constraint (add manual, socratic content types)',
+    description:
+      'Recreate ai_cache with updated CHECK constraint (add manual, socratic content types)',
   },
   {
     version: 104,
@@ -831,7 +832,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_ch
     sql: `ALTER TABLE user_profile ADD COLUMN brave_search_api_key TEXT NOT NULL DEFAULT ''`,
     description: 'Add Brave Search API key for image search fallback',
   },
+  {
+    version: 131,
+    sql: `DROP TABLE IF EXISTS ai_cache; CREATE TABLE IF NOT EXISTS ai_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      topic_id INTEGER NOT NULL,
+      content_type TEXT NOT NULL
+        CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
+      content_json TEXT NOT NULL,
+      model_used TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      is_flagged INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(topic_id, content_type)
+    ); CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
+    description: 'Recreate ai_cache CHECK constraint to include must_know content',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 130;
+export const LATEST_VERSION = 131;

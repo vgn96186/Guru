@@ -283,7 +283,17 @@ export default function HomeScreen() {
               </Text>
               <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} />
             </View>
-            <AiStatusIndicator profile={profile} />
+            <View style={styles.headerRight}>
+              <AiStatusIndicator profile={profile} />
+              <TouchableOpacity
+                style={styles.settingsBtn}
+                onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'Settings' })}
+                accessibilityRole="button"
+                accessibilityLabel="Open settings"
+              >
+                <Ionicons name="settings-sharp" size={22} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* ── Hero: Start button + inline stats ── */}
@@ -311,16 +321,21 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <TodayPlanCard />
-
-          <QuickStatsCard
-            progressPercent={progressClamped}
-            todayMinutes={todayMinutes}
-            dailyGoal={profile.dailyGoalMinutes || 120}
-            streak={profile.streakCurrent}
-            level={levelInfo.level}
-            completedSessions={completedSessions}
-          />
+          <View style={styles.dualCardRow}>
+            <View style={styles.dualCardSlot}>
+              <TodayPlanCard />
+            </View>
+            <View style={styles.dualCardSlot}>
+              <QuickStatsCard
+                progressPercent={progressClamped}
+                todayMinutes={todayMinutes}
+                dailyGoal={profile.dailyGoalMinutes || 120}
+                streak={profile.streakCurrent}
+                level={levelInfo.level}
+                completedSessions={completedSessions}
+              />
+            </View>
+          </View>
 
           {loadError && (
             <View style={styles.loadErrorRow}>
@@ -744,6 +759,17 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   headerLeft: { flex: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  settingsBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   greetingText: {
     color: theme.colors.textMuted,
     fontSize: 14,
@@ -755,26 +781,24 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   examCountRow: {
-    flexDirection: 'column',
+    flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: 2,
-    gap: 3,
+    marginTop: 4,
+    gap: 6,
   },
   examPill: {
     backgroundColor: theme.colors.surfaceAlt,
-    alignSelf: 'flex-start',
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   examPillLabel: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 0,
+    letterSpacing: 0.6,
   },
   examPillValueRow: {
     flexDirection: 'row',
@@ -782,24 +806,33 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   examPillDays: {
-    fontSize: 24,
-    lineHeight: 26,
+    fontSize: 36,
+    lineHeight: 38,
     fontWeight: '900',
-    letterSpacing: -0.7,
+    letterSpacing: -1,
   },
   examPillUnit: {
     color: theme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '700',
-    paddingBottom: 3,
+    paddingBottom: 5,
   },
 
   // AI Status styles moved to aiStyles (inline with AiStatusIndicator)
 
+  // ── Dual card row ──
+  dualCardRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  dualCardSlot: {
+    flex: 1,
+  },
+
   // ── Hero section ──
   heroSection: {
     alignItems: 'center',
-    marginTop: -18,
+    marginTop: -8,
     paddingTop: 0,
     paddingBottom: theme.spacing.sm,
     gap: theme.spacing.sm,

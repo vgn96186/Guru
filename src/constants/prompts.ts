@@ -19,15 +19,46 @@ Be concise, vivid, and memorable. Prefer clinical correlates and real-world anch
 export function buildKeyPointsPrompt(topicName: string, subjectName: string): string {
   return `Generate 6 high-yield NEET-PG key points for: "${topicName}" (${subjectName}).
 
+ADHD-friendly rules — the student has short attention span:
+- Each point must be ONE short sentence (max 20 words). No long paragraphs.
+- Start each point with the **most important keyword** in bold, then the fact.
+- Use simple, punchy language. Avoid filler words.
+- If there's a classic number/value, put it in bold.
+- Think "flashcard back" not "textbook paragraph".
+
 Return JSON:
 {
   "type": "keypoints",
   "topicName": "${topicName}",
-  "points": ["fact1 with **critical keyword** highlighted", "fact2", "fact3", "fact4", "fact5", "fact6"],
-  "memoryHook": "one catchy sentence to anchor this topic"
+  "points": ["**Keyword** — short punchy fact", "**Keyword** — short punchy fact", ...6 total],
+  "memoryHook": "one catchy mnemonic or analogy to remember this topic"
 }
 
-Focus on: frequently tested numbers, classic associations, clinical correlates. Use markdown bolding (**text**) to highlight the most high-yield keywords and concepts.`;
+Focus on: frequently tested numbers, classic associations, clinical correlates.`;
+}
+
+export function buildMustKnowPrompt(topicName: string, subjectName: string): string {
+  return `For NEET-PG/INICET exam on "${topicName}" (${subjectName}), generate two focused lists.
+
+ADHD-friendly rules:
+- Each item is ONE short sentence, max 15 words.
+- Bold the **single most important word or number** in each item.
+- No filler, no explanations. Just the bare fact a student MUST recall in the exam hall.
+
+Return JSON:
+{
+  "type": "must_know",
+  "topicName": "${topicName}",
+  "mustKnow": [
+    "**Bold fact** — bare minimum you cannot afford to forget",
+    ...4 total items
+  ],
+  "mostTested": [
+    "**Bold fact** — appears repeatedly in NEET-PG/INICET papers",
+    ...4 total items
+  ],
+  "examTip": "One tactical exam-day tip for this topic (when to pick which option, common trap, etc.)"
+}`;
 }
 
 export function buildQuizPrompt(topicName: string, subjectName: string): string {
@@ -389,6 +420,7 @@ Be firm but adaptive. Guru's note should reflect the "recovery" nature of this p
 
 export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: string) => string> = {
   keypoints: buildKeyPointsPrompt,
+  must_know: buildMustKnowPrompt,
   quiz: buildQuizPrompt,
   story: buildStoryPrompt,
   mnemonic: buildMnemonicPrompt,
@@ -402,18 +434,18 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
 export function getMoodContentTypes(mood: Mood): ContentType[] {
   switch (mood) {
     case 'energetic':
-      return ['quiz', 'error_hunt', 'detective', 'keypoints'];
+      return ['quiz', 'error_hunt', 'detective', 'keypoints', 'must_know'];
     case 'good':
-      return ['socratic', 'keypoints', 'quiz', 'detective'];
+      return ['socratic', 'keypoints', 'must_know', 'quiz', 'detective'];
     case 'okay':
-      return ['socratic', 'keypoints', 'detective', 'quiz'];
+      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz'];
     case 'tired':
-      return ['socratic', 'story', 'keypoints'];
+      return ['socratic', 'story', 'keypoints', 'must_know'];
     case 'stressed':
-      return ['socratic', 'story', 'keypoints'];
+      return ['socratic', 'story', 'keypoints', 'must_know'];
     case 'distracted':
-      return ['socratic', 'keypoints'];
+      return ['socratic', 'keypoints', 'must_know'];
     default:
-      return ['socratic', 'keypoints', 'detective', 'quiz'];
+      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz'];
   }
 }

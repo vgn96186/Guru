@@ -3,6 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
   StyleSheet,
   StatusBar,
   BackHandler,
@@ -853,46 +854,74 @@ export default function SessionScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-        <ResponsiveContainer style={styles.revealContainer} testID="session-agenda-reveal">
-          <IconCircle name="flag" color={theme.colors.primary} size={56} />
-          <Text style={styles.revealFocus}>{agenda.focusNote}</Text>
-          <View style={styles.revealGuruCard}>
-            <View style={styles.revealGuru}>
-              <MarkdownRender content={agenda.guruMessage} compact />
-            </View>
-          </View>
-          <View style={styles.revealTopicList}>
-            {agenda.items.map((i) => (
-              <View key={i.topic.id} style={styles.revealTopic}>
-                <View
-                  style={[
-                    styles.revealInitial,
-                    { backgroundColor: (i.topic.subjectColor || theme.colors.primary) + '33' },
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.revealInitialText,
-                      { color: i.topic.subjectColor || theme.colors.primary },
-                    ]}
-                  >
-                    {(i.topic.subjectCode || i.topic.name)[0]}
-                  </Text>
-                </View>
-                <View style={styles.revealTopicInfo}>
-                  <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
-                    {i.topic.name}
-                  </Text>
-                  <Text style={styles.revealTopicSub}>{i.topic.subjectCode}</Text>
-                </View>
+        <ScrollView
+          contentContainerStyle={styles.revealScroll}
+          showsVerticalScrollIndicator={false}
+        >
+          <ResponsiveContainer style={styles.revealContainer} testID="session-agenda-reveal">
+            {/* Header */}
+            <View style={styles.revealHeader}>
+              <IconCircle name="flag" color={theme.colors.primary} size={48} />
+              <View style={styles.revealHeaderText}>
+                <Text style={styles.revealFocus} numberOfLines={3} ellipsizeMode="tail">
+                  {agenda.focusNote}
+                </Text>
+                <Text style={styles.revealMeta}>
+                  {agenda.items.length} topic{agenda.items.length !== 1 ? 's' : ''}
+                  {forcedMinutes ? ` · ${forcedMinutes} min` : ''}
+                </Text>
               </View>
-            ))}
-          </View>
-          <View style={styles.revealLiveRow}>
-            <View style={styles.revealLiveDot} />
-            <Text style={styles.revealSub}>Starting in a moment...</Text>
-          </View>
-        </ResponsiveContainer>
+            </View>
+
+            {/* Guru message */}
+            <View style={styles.revealGuruCard}>
+              <View style={styles.revealGuru}>
+                <MarkdownRender content={agenda.guruMessage} compact />
+              </View>
+            </View>
+
+            {/* Topic list */}
+            <Text style={styles.revealSectionLabel}>TOPICS</Text>
+            <View style={styles.revealTopicList}>
+              {agenda.items.map((i, idx) => {
+                const topicColor = i.topic.subjectColor || theme.colors.primary;
+                return (
+                  <View
+                    key={i.topic.id}
+                    style={[styles.revealTopic, { borderLeftColor: topicColor }]}
+                  >
+                    <View style={styles.revealTopicRow}>
+                      <View style={[styles.revealInitial, { backgroundColor: topicColor + '22' }]}>
+                        <Text style={[styles.revealInitialText, { color: topicColor }]}>
+                          {idx + 1}
+                        </Text>
+                      </View>
+                      <View style={styles.revealTopicInfo}>
+                        <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
+                          {i.topic.name}
+                        </Text>
+                        <View style={styles.revealTopicMeta}>
+                          <Text style={styles.revealTopicSub}>{i.topic.subjectCode}</Text>
+                          {i.contentTypes?.length > 0 && (
+                            <Text style={styles.revealTopicCards}>
+                              {i.contentTypes.length} card{i.contentTypes.length !== 1 ? 's' : ''}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+
+            {/* Footer */}
+            <View style={styles.revealLiveRow}>
+              <View style={styles.revealLiveDot} />
+              <Text style={styles.revealSub}>Starting in a moment</Text>
+            </View>
+          </ResponsiveContainer>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -929,7 +958,11 @@ export default function SessionScreen() {
           }}
           onLecture={() => {
             resetSession();
-            navigation.navigate('LectureMode', {});
+            try {
+              navigation.popToTop();
+            } catch {
+              navigation.navigate('Home');
+            }
           }}
           onDone={() => {
             resetSession();
@@ -1006,7 +1039,7 @@ export default function SessionScreen() {
   const showPausedOverlay = isPaused && sessionState === 'studying' && !isOnBreak;
 
   return (
-    <SafeAreaView style={styles.safe} {...panHandlers} testID="session-studying">
+    <SafeAreaView style={styles.safe} testID="session-studying">
       <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       <ResponsiveContainer>
         <View style={styles.storyBarContainer}>
@@ -1080,7 +1113,7 @@ export default function SessionScreen() {
             <Text style={styles.subjectTag}>{curItem.topic.subjectCode}</Text>
             <Text style={styles.aiSourceLine}>
               {isLoadingContent
-                ? 'AI · fetching card…'
+                ? 'AI · fetching card'
                 : formatSessionModelLabel(currentContent?.modelUsed)}
             </Text>
           </View>
@@ -1088,28 +1121,27 @@ export default function SessionScreen() {
             {isStudying && (
               <Animated.View style={[styles.guruDot, { transform: [{ scale: presencePulse }] }]} />
             )}
-            <TouchableOpacity
+            <Pressable
               onPress={() => {
                 const next = !isPaused;
                 isManuallyPausedRef.current = next;
                 setPaused(next);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }}
-              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
               style={styles.pauseBtn}
               accessibilityRole="button"
               accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
             >
-              <Ionicons name={isPaused ? 'play' : 'pause'} size={16} color={theme.colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity
+              <Ionicons name={isPaused ? 'play' : 'pause'} size={18} color={theme.colors.primary} />
+            </Pressable>
+            <Pressable
               onPress={() => setMenuVisible(true)}
               style={styles.menuBtn}
               accessibilityRole="button"
               accessibilityLabel="Session menu"
             >
-              <Ionicons name="ellipsis-horizontal" size={18} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
+              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
+            </Pressable>
           </View>
         </View>
 
@@ -1188,48 +1220,50 @@ export default function SessionScreen() {
           </Text>
         </View>
 
-        {isLoadingContent ? (
-          <LoadingOrb message="Fetching content..." />
-        ) : currentContent ? (
-          <ErrorBoundary>
-            <ContentCard
-              key={`${curItem.topic.id}-${currentContentIndex}-${curContentType}`}
-              content={currentContent}
-              topicId={curItem.topic.id}
-              onDone={handleConfidenceRating}
-              onSkip={handleContentDone}
-              onQuizAnswered={(c) => {
-                triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
-                if (!c && curItem.topic.id) {
-                  void Promise.allSettled([
-                    incrementWrongCount(curItem.topic.id),
-                    markTopicNeedsAttention(curItem.topic.id),
-                    setContentFlagged(curItem.topic.id, 'quiz', true),
-                  ]);
+        <View style={styles.contentArea} {...panHandlers}>
+          {isLoadingContent ? (
+            <LoadingOrb message="Fetching content..." />
+          ) : currentContent ? (
+            <ErrorBoundary>
+              <ContentCard
+                key={`${curItem.topic.id}-${currentContentIndex}-${curContentType}`}
+                content={currentContent}
+                topicId={curItem.topic.id}
+                onDone={handleConfidenceRating}
+                onSkip={handleContentDone}
+                onQuizAnswered={(c) => {
+                  triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
+                  if (!c && curItem.topic.id) {
+                    void Promise.allSettled([
+                      incrementWrongCount(curItem.topic.id),
+                      markTopicNeedsAttention(curItem.topic.id),
+                      setContentFlagged(curItem.topic.id, 'quiz', true),
+                    ]);
+                  }
+                }}
+                onQuizComplete={(correct, total) =>
+                  addQuizResult({ topicId: curItem.topic.id, correct, total })
                 }
-              }}
-              onQuizComplete={(correct, total) =>
-                addQuizResult({ topicId: curItem.topic.id, correct, total })
-              }
-            />
-          </ErrorBoundary>
-        ) : (
-          <LoadingOrb message="Loading..." />
-        )}
+              />
+            </ErrorBoundary>
+          ) : (
+            <LoadingOrb message="Loading..." />
+          )}
 
-        <Animated.View
-          style={[
-            styles.xpPop,
-            {
-              opacity: xpAnim,
-              transform: [
-                { translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) },
-              ],
-            },
-          ]}
-        >
-          <Text style={styles.xpPopText}>+{showXp} XP</Text>
-        </Animated.View>
+          <Animated.View
+            style={[
+              styles.xpPop,
+              {
+                opacity: xpAnim,
+                transform: [
+                  { translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) },
+                ],
+              },
+            ]}
+          >
+            <Text style={styles.xpPopText}>+{showXp} XP</Text>
+          </Animated.View>
+        </View>
 
         {showPausedOverlay && (
           <View style={styles.pausedOverlay}>
@@ -1397,6 +1431,7 @@ function SessionDoneScreen({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
+  contentArea: { flex: 1 },
   storyBarContainer: { height: 3, backgroundColor: theme.colors.border },
   storyBarFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 0 },
   topicProgressSection: { paddingHorizontal: theme.spacing.lg, marginBottom: 8 },
@@ -1416,13 +1451,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: 10,
     backgroundColor: theme.colors.surface,
   },
-  headerLeft: { flex: 1, minWidth: 0 },
-  headerRight: { flexDirection: 'row', alignItems: 'center' },
+  headerLeft: { flex: 1, minWidth: 0, marginRight: 12 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', paddingTop: 4 },
   topicProgress: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 2 },
   phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   phaseBadge: {
@@ -1442,7 +1477,7 @@ const styles = StyleSheet.create({
   phaseBadgeWarn: { backgroundColor: theme.colors.warningTintSoft },
   phaseBadgeAccent: { backgroundColor: theme.colors.primaryTintSoft },
   phaseBadgeSuccess: { backgroundColor: theme.colors.successTintSoft },
-  topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18, flex: 1 },
+  topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18, lineHeight: 24 },
   subjectTag: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
   aiSourceLine: {
     color: theme.colors.textMuted,
@@ -1453,23 +1488,19 @@ const styles = StyleSheet.create({
   },
   pauseBtn: {
     backgroundColor: theme.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginLeft: 8,
-    minWidth: 38,
-    minHeight: 34,
+    borderRadius: 10,
+    marginLeft: 6,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuBtn: {
     backgroundColor: theme.colors.border,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginLeft: 8,
-    minWidth: 38,
-    minHeight: 34,
+    borderRadius: 10,
+    marginLeft: 6,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1522,19 +1553,33 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.successTintSoft,
   },
   contentTabText: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '600' },
-  revealContainer: {
-    flex: 1,
+  revealScroll: {
+    flexGrow: 1,
     justifyContent: 'center',
+  },
+  revealContainer: {
+    padding: theme.spacing.xl,
+  },
+  revealHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: theme.spacing.xxl,
+    gap: 14,
+    marginBottom: 20,
+  },
+  revealHeaderText: {
+    flex: 1,
   },
   revealFocus: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
-    fontSize: 20,
-    textAlign: 'center',
-    marginTop: theme.spacing.lg,
-    marginBottom: 12,
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  revealMeta: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
   },
   revealGuruCard: {
     backgroundColor: theme.colors.surface,
@@ -1543,25 +1588,35 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: theme.colors.primary,
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   revealGuru: {
     alignSelf: 'stretch',
   },
+  revealSectionLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 10,
+  },
   revealTopicList: { width: '100%', marginBottom: 20 },
   revealTopic: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.sm,
+    borderLeftWidth: 3,
     marginBottom: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  revealTopicRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   revealInitial: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -1571,10 +1626,18 @@ const styles = StyleSheet.create({
   revealTopicName: {
     color: theme.colors.textPrimary,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '700',
+    lineHeight: 21,
   },
-  revealTopicSub: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
-  revealLiveRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  revealTopicMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 3,
+  },
+  revealTopicSub: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' },
+  revealTopicCards: { color: theme.colors.textMuted, fontSize: 11 },
+  revealLiveRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   revealLiveDot: {
     width: 8,
     height: 8,
@@ -1593,9 +1656,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 20,
+    lineHeight: 26,
     marginTop: theme.spacing.lg,
     marginBottom: 12,
     textAlign: 'center',
+    paddingHorizontal: theme.spacing.md,
   },
   topicDoneDivider: {
     width: 40,

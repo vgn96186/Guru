@@ -7,6 +7,7 @@ import {
   consumePomodoroBreakRequest,
   isOverlayActive,
   isRecordingActive,
+  getRecordingElapsedSeconds,
   validateRecordingFile,
   copyFileToPublicBackup,
   readLectureInsights,
@@ -179,7 +180,11 @@ export function useLectureReturnRecovery({
           return;
         }
 
-        const durationMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
+        const wallClockMinutes = Math.max(1, Math.round((Date.now() - session.launchedAt) / 60000));
+        const recordedElapsedSeconds = await getRecordingElapsedSeconds().catch(() => 0);
+        const recordedElapsedMinutes =
+          recordedElapsedSeconds > 0 ? Math.max(1, Math.round(recordedElapsedSeconds / 60)) : null;
+        const durationMinutes = recordedElapsedMinutes ?? wallClockMinutes;
         const logId = session.id!;
         handledReturnLogRef.current = logId;
         if (__DEV__) {
@@ -187,7 +192,9 @@ export function useLectureReturnRecovery({
             logId,
             appName: session.appName,
             launchedAt: session.launchedAt,
-            wallClockMinutes: durationMinutes,
+            wallClockMinutes,
+            recordedElapsedSeconds,
+            recordedElapsedMinutes,
             showPrompt,
             dbRecordingPath: session.recordingPath ?? null,
           });
@@ -284,11 +291,17 @@ export function useLectureReturnRecovery({
             console.log('[LectureReturnRecovery] Audio duration check', {
               logId,
               recordingPath,
-              wallClockMinutes: durationMinutes,
+              wallClockMinutes,
+              recordedElapsedMinutes,
               audioDurationMinutes: audioDuration,
             });
           }
-          if (audioDuration !== null) finalDurationMinutes = audioDuration;
+          if (audioDuration !== null) {
+            finalDurationMinutes =
+              recordedElapsedMinutes !== null
+                ? Math.min(recordedElapsedMinutes, audioDuration)
+                : audioDuration;
+          }
         }
         if (__DEV__) {
           console.log('[LectureReturnRecovery] Finalized recovered session', {

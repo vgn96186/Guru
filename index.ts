@@ -1,11 +1,30 @@
 import { registerRootComponent } from 'expo';
-import { LogBox } from 'react-native';
+import { LogBox, Text, TextInput, Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';
 
 // Polyfill for Web Crypto API (required for sync and unique ID generation)
 if (typeof globalThis.crypto === 'undefined') {
   (globalThis as any).crypto = Crypto;
 }
+
+// Fix for Android text truncation bug (missing last words)
+interface ComponentWithDefaultProps extends React.ComponentClass {
+  defaultProps?: any;
+}
+const CustomText = Text as unknown as ComponentWithDefaultProps;
+if (!CustomText.defaultProps) {
+  CustomText.defaultProps = {};
+}
+if (Platform.OS === 'android') {
+  CustomText.defaultProps.textBreakStrategy = 'simple';
+}
+CustomText.defaultProps.includeFontPadding = false;
+
+const CustomTextInput = TextInput as unknown as ComponentWithDefaultProps;
+if (!CustomTextInput.defaultProps) {
+  CustomTextInput.defaultProps = {};
+}
+CustomTextInput.defaultProps.includeFontPadding = false;
 
 import App from './App';
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, DevSettings } from 'react-native';
+import { View, StyleSheet, DevSettings, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -21,6 +21,15 @@ import { theme } from './src/constants/theme';
 installDevConsoleInterceptors();
 enableScreens(true);
 enableFreeze(true);
+
+const textComponent = Text as typeof Text & {
+  defaultProps?: React.ComponentProps<typeof Text>;
+};
+
+textComponent.defaultProps = {
+  ...textComponent.defaultProps,
+  ellipsizeMode: 'clip',
+};
 
 export { navigationRef };
 

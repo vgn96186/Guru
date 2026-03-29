@@ -39,6 +39,8 @@ class LectureInsightGenerator(
         private const val MIN_CHAR_GROWTH = 140
         private const val MIN_REQUEST_GAP_MS = 45_000L
         private const val MODEL = "llama-3.1-8b-instant"
+        private const val TRANSCRIPT_EXCERPT_CHARS = 8000
+        private const val TARGET_QUESTION_COUNT = 8
     }
 
     fun scheduleIfNeeded(force: Boolean = false) {
@@ -88,8 +90,8 @@ class LectureInsightGenerator(
     }
 
     private fun generateInsights(transcript: String): JSONObject {
-        val transcriptExcerpt = if (transcript.length > 5000) {
-            transcript.takeLast(5000)
+        val transcriptExcerpt = if (transcript.length > TRANSCRIPT_EXCERPT_CHARS) {
+            transcript.takeLast(TRANSCRIPT_EXCERPT_CHARS)
         } else {
             transcript
         }
@@ -116,8 +118,13 @@ Return only valid JSON with this shape:
 
 Requirements:
 - Subject and topics must match the lecture content.
-- Keep keyConcepts to 3-5 concise high-yield bullets.
-- Generate exactly 3 MCQs.
+- Keep keyConcepts to 6-10 concise high-yield bullets covering the main exam focus points.
+- Generate exactly $TARGET_QUESTION_COUNT MCQs.
+- Every MCQ must test a different high-yield exam point from the transcript.
+- Prefer discriminating NEET-PG/INICET style questions: management priorities, gold standards, next best step, classic differentials, most likely association, contraindications, complications, and high-yield investigations.
+- Avoid easy textbook-definition recall unless the transcript contains nothing more examinable.
+- Use plausible distractors from the same topic area, not random wrong answers.
+- Each explanation must briefly state why the correct answer is right and what exam trap the distractors represent.
 - Use only transcript-supported medical facts.
 
 TRANSCRIPT:
@@ -125,7 +132,15 @@ $transcriptExcerpt
 """.trimIndent()
 
         val messages = JSONArray()
-            .put(JSONObject().put("role", "system").put("content", "You extract medical lecture insights quickly and accurately."))
+            .put(
+                JSONObject().put(
+                    "role",
+                    "system",
+                ).put(
+                    "content",
+                    "You extract medical lecture insights quickly and accurately. Return dense, exam-focused medical revision content in JSON.",
+                ),
+            )
             .put(JSONObject().put("role", "user").put("content", prompt))
 
         val body = JSONObject()

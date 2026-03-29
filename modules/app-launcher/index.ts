@@ -125,6 +125,14 @@ export async function isRecordingActive(): Promise<boolean> {
   return GuruAppLauncher.isRecordingActive();
 }
 
+export async function getRecordingElapsedSeconds(): Promise<number> {
+  return withTimeout(
+    GuruAppLauncher.getRecordingElapsedSeconds(),
+    5_000,
+    'getRecordingElapsedSeconds',
+  );
+}
+
 export async function isOverlayActive(): Promise<boolean> {
   return GuruAppLauncher.isOverlayActive();
 }

@@ -75,13 +75,13 @@ const markdownStyles: any = {
     color: '#A9B2C6',
     fontSize: 17,
     lineHeight: 28,
-    flexShrink: 1,
+    paddingRight: 2,
   },
   text: {
     color: '#A9B2C6',
     fontSize: 17,
     lineHeight: 28,
-    flexShrink: 1,
+    paddingRight: 2,
   },
   strong: {
     color: '#F3DF84',
@@ -96,7 +96,6 @@ const markdownStyles: any = {
   },
   paragraph: {
     marginBottom: 10,
-    flexShrink: 1,
   },
   bullet_list: {
     marginBottom: 10,

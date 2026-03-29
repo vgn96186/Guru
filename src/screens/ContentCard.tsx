@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type {
   AIContent,
   KeyPointsContent,
+  MustKnowContent,
   QuizContent,
   StoryContent,
   MnemonicContent,
@@ -126,6 +127,13 @@ function buildGuruContext(content: AIContent): string | undefined {
           .map((point, index) => `${index + 1}. ${point}`)
           .join('\n')}`,
         `Memory hook: ${content.memoryHook}`,
+      ]);
+    case 'must_know':
+      return compactLines([
+        'Card type: Must Know & Most Tested',
+        `Must know: ${content.mustKnow.join(' | ')}`,
+        `Most tested: ${content.mostTested.join(' | ')}`,
+        `Exam tip: ${content.examTip}`,
       ]);
     case 'quiz':
       return compactLines([
@@ -272,6 +280,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
             onContextChange={setLiveGuruContext}
           />
         );
+      case 'must_know':
+        return <MustKnowCard content={content} onDone={onDone} onSkip={onSkip} />;
       case 'quiz':
         return (
           <QuizCard
@@ -425,26 +435,43 @@ function KeyPointsCard({
     );
   }, [content, revealIndex, isFullyRevealed, onContextChange]);
 
+  const POINT_COLORS = [
+    theme.colors.primary,
+    theme.colors.accent,
+    theme.colors.warning,
+    theme.colors.success,
+    theme.colors.error,
+    theme.colors.info,
+  ];
+
   return (
     <ScrollView style={s.scroll} contentContainerStyle={s.container}>
-      <Text style={s.cardType}>📌 KEY POINTS</Text>
+      <Text style={s.cardType}>KEY POINTS</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
+      <Text style={s.kpProgress}>
+        {Math.min(revealIndex + 1, content.points.length)} / {content.points.length}
+      </Text>
       <TopicImage topicName={content.topicName} />
       <View style={s.pointsContainer}>
-        {content.points.slice(0, revealIndex + 1).map((pt, i) => (
-          <View key={i} style={s.pointRow}>
-            <Text style={s.bullet}>→</Text>
-            <View style={{ flex: 1 }}>
-              <MarkdownRender content={emphasizeHighYieldMarkdown(pt)} compact />
+        {content.points.slice(0, revealIndex + 1).map((pt, i) => {
+          const color = POINT_COLORS[i % POINT_COLORS.length];
+          return (
+            <View key={i} style={[s.kpCard, { borderLeftColor: color }]}>
+              <View style={[s.kpNumber, { backgroundColor: color + '22' }]}>
+                <Text style={[s.kpNumberText, { color }]}>{i + 1}</Text>
+              </View>
+              <View style={s.kpContent}>
+                <MarkdownRender content={emphasizeHighYieldMarkdown(pt)} compact />
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </View>
       {isFullyRevealed && (
         <View style={s.hookBox}>
-          <Text style={s.hookLabel}>💡 Memory Hook</Text>
+          <Text style={s.hookLabel}>Memory Hook</Text>
           <MarkdownRender content={emphasizeHighYieldMarkdown(content.memoryHook)} compact />
         </View>
       )}
@@ -454,11 +481,78 @@ function KeyPointsCard({
           onPress={() => setRevealIndex((i) => i + 1)}
           activeOpacity={0.8}
         >
-          <Text style={s.doneBtnText}>Next Point →</Text>
+          <Text style={s.doneBtnText}>
+            Next ({revealIndex + 1}/{content.points.length})
+          </Text>
         </TouchableOpacity>
       ) : !showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>Got it →</Text>
+          <Text style={s.doneBtnText}>Got it</Text>
+        </TouchableOpacity>
+      ) : (
+        <ConfidenceRating onRate={onDone} />
+      )}
+      <TouchableOpacity
+        onPress={onSkip}
+        style={s.skipBtn}
+        accessibilityRole="button"
+        accessibilityLabel="Skip content type"
+      >
+        <Text style={s.skipText}>Skip content type</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+// ── Must Know & Most Tested ──────────────────────────────────────
+
+function MustKnowCard({
+  content,
+  onDone,
+  onSkip,
+}: { content: MustKnowContent } & Omit<Props, 'content'>) {
+  const [showRating, setShowRating] = useState(false);
+
+  return (
+    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+      <Text style={s.cardType}>MUST KNOW</Text>
+      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+        {content.topicName}
+      </Text>
+      <TopicImage topicName={content.topicName} />
+
+      <Text style={s.mkSectionLabel}>
+        <Ionicons name="alert-circle" size={13} color={theme.colors.error} />
+        {'  '}CANNOT FORGET
+      </Text>
+      <View style={s.mkList}>
+        {content.mustKnow.map((item, i) => (
+          <View key={i} style={[s.mkItem, { borderLeftColor: theme.colors.error }]}>
+            <MarkdownRender content={emphasizeHighYieldMarkdown(item)} compact />
+          </View>
+        ))}
+      </View>
+
+      <Text style={s.mkSectionLabel}>
+        <Ionicons name="flame" size={13} color={theme.colors.warning} />
+        {'  '}MOST TESTED
+      </Text>
+      <View style={s.mkList}>
+        {content.mostTested.map((item, i) => (
+          <View key={i} style={[s.mkItem, { borderLeftColor: theme.colors.warning }]}>
+            <MarkdownRender content={emphasizeHighYieldMarkdown(item)} compact />
+          </View>
+        ))}
+      </View>
+
+      <View style={s.mkTipBox}>
+        <Text style={s.mkTipLabel}>EXAM TIP</Text>
+        <Text style={s.mkTipText}>{content.examTip}</Text>
+      </View>
+
+      {!showRating ? (
+        <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
+          <Text style={s.doneBtnText}>Got it</Text>
         </TouchableOpacity>
       ) : (
         <ConfidenceRating onRate={onDone} />
@@ -1511,20 +1605,55 @@ const s = StyleSheet.create({
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  pointsContainer: { marginBottom: 16 },
-  pointRow: { flexDirection: 'row', marginBottom: 12 },
-  bullet: { color: '#6C63FF', fontSize: 16, marginRight: 10, marginTop: 1 },
-  pointText: { color: '#E0E0E0', fontSize: 15, flex: 1, lineHeight: 22 },
-  hookBox: {
-    backgroundColor: '#1A1A2E',
+  pointsContainer: { marginBottom: 16, gap: 10 },
+  pointRow: { flexDirection: 'row' as const, marginBottom: 12 },
+  bullet: { color: theme.colors.primary, fontSize: 16, marginRight: 10, marginTop: 1 },
+  pointText: { color: theme.colors.textPrimary, fontSize: 15, flex: 1, lineHeight: 22 },
+  kpCard: {
+    flexDirection: 'row' as const,
+    alignItems: 'flex-start' as const,
+    backgroundColor: theme.colors.surface,
     borderRadius: 12,
-    padding: 14,
-    marginBottom: 20,
     borderLeftWidth: 3,
-    borderLeftColor: '#6C63FF',
+    padding: 12,
+    gap: 10,
   },
-  hookLabel: { color: '#6C63FF', fontSize: 12, fontWeight: '700', marginBottom: 6 },
-  hookText: { color: '#E0E0E0', fontSize: 14, fontStyle: 'italic' },
+  kpNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  kpNumberText: {
+    fontSize: 13,
+    fontWeight: '800' as const,
+  },
+  kpContent: {
+    flex: 1,
+  },
+  kpProgress: {
+    color: theme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '600' as const,
+    marginBottom: 12,
+  },
+  hookBox: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '44',
+  },
+  hookLabel: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '800' as const,
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  hookText: { color: theme.colors.textPrimary, fontSize: 14, fontStyle: 'italic' as const },
   doneBtn: {
     backgroundColor: '#6C63FF',
     borderRadius: 14,
@@ -1734,5 +1863,43 @@ const s = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     marginBottom: 32,
+  },
+  mkSectionLabel: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '800' as const,
+    letterSpacing: 1,
+    marginTop: 20,
+    marginBottom: 10,
+    textTransform: 'uppercase' as const,
+  },
+  mkList: { gap: 10, marginBottom: 10 },
+  mkItem: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    borderLeftWidth: 4,
+  },
+  mkTipBox: {
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 20,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '33',
+  },
+  mkTipLabel: {
+    color: theme.colors.primary,
+    fontSize: 11,
+    fontWeight: '900' as const,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  mkTipText: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontStyle: 'italic' as const,
   },
 });

@@ -12,6 +12,7 @@ const mockConsumeLectureReturnRequest = jest.fn();
 const mockConsumePomodoroBreakRequest = jest.fn();
 const mockIsRecordingActive = jest.fn();
 const mockIsOverlayActive = jest.fn();
+const mockGetRecordingElapsedSeconds = jest.fn();
 const mockValidateRecordingFile = jest.fn();
 const mockCopyFileToPublicBackup = jest.fn();
 const mockReadLectureInsights = jest.fn();
@@ -48,6 +49,7 @@ jest.mock('../../modules/app-launcher', () => ({
   consumePomodoroBreakRequest: mockConsumePomodoroBreakRequest,
   isRecordingActive: mockIsRecordingActive,
   isOverlayActive: mockIsOverlayActive,
+  getRecordingElapsedSeconds: mockGetRecordingElapsedSeconds,
   validateRecordingFile: mockValidateRecordingFile,
   copyFileToPublicBackup: mockCopyFileToPublicBackup,
   readLectureInsights: mockReadLectureInsights,
@@ -106,6 +108,7 @@ describe('useLectureReturnRecovery', () => {
     mockConsumePomodoroBreakRequest.mockResolvedValue(false);
     mockIsRecordingActive.mockResolvedValue(false);
     mockIsOverlayActive.mockResolvedValue(false);
+    mockGetRecordingElapsedSeconds.mockResolvedValue(0);
     mockCopyFileToPublicBackup.mockResolvedValue(true);
     mockReadLectureInsights.mockResolvedValue(null);
     mockValidateRecordingWithBackoff.mockResolvedValue({ validated: true, attemptsUsed: 1 });
@@ -482,6 +485,37 @@ describe('useLectureReturnRecovery', () => {
     expect(onRecovered).toHaveBeenCalledWith(
       expect.objectContaining({
         durationMinutes: 10,
+      }),
+    );
+  });
+
+  it('prefers recorder elapsed time over wall clock so pomodoro pause time is excluded', async () => {
+    jest.spyOn(Date, 'now').mockReturnValue(1700000000000);
+
+    await act(async () => {
+      renderer = TestRenderer.create(React.createElement(Harness));
+    });
+
+    mockGetIncompleteExternalSession.mockResolvedValue({
+      id: 104,
+      appName: 'PauseAwareApp',
+      launchedAt: 1700000000000 - 9 * 60000,
+      recordingPath: 'path/to/audio',
+    });
+    mockGetRecordingElapsedSeconds.mockResolvedValue(6 * 60);
+    mockCreateAsync.mockResolvedValue({
+      sound: { unloadAsync: mockUnloadAsync },
+      status: { isLoaded: true, durationMillis: 6 * 60000 },
+    });
+
+    await act(async () => {
+      await hookApi.checkForReturnedSession(true);
+    });
+
+    expect(mockFinishExternalAppSession).toHaveBeenCalledWith(104, 6, undefined);
+    expect(onRecovered).toHaveBeenCalledWith(
+      expect.objectContaining({
+        durationMinutes: 6,
       }),
     );
   });

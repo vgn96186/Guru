@@ -92,22 +92,43 @@ describe('ai content prefetching', () => {
           topicName: 'Hypertension',
           questions: [
             {
-              question: 'A patient with severe hypertension presents with papilledema. What is the next best step?',
-              options: ['A. Oral labetalol', 'B. IV nitroprusside', 'C. Observation', 'D. Repeat BP later'],
+              question:
+                'A patient with severe hypertension presents with papilledema. What is the next best step?',
+              options: [
+                'A. Oral labetalol',
+                'B. IV nitroprusside',
+                'C. Observation',
+                'D. Repeat BP later',
+              ],
               correctIndex: 1,
-              explanation: 'Hypertensive emergency with end-organ damage requires immediate IV therapy; the other options are inappropriate because they delay definitive control.',
+              explanation:
+                'Hypertensive emergency with end-organ damage requires immediate IV therapy; the other options are inappropriate because they delay definitive control.',
             },
             {
-              question: 'A pregnant patient at 34 weeks has severe hypertension and visual symptoms. Which drug is preferred first?',
-              options: ['A. Enalapril', 'B. Sodium nitroprusside', 'C. Labetalol', 'D. Hydrochlorothiazide'],
+              question:
+                'A pregnant patient at 34 weeks has severe hypertension and visual symptoms. Which drug is preferred first?',
+              options: [
+                'A. Enalapril',
+                'B. Sodium nitroprusside',
+                'C. Labetalol',
+                'D. Hydrochlorothiazide',
+              ],
               correctIndex: 2,
-              explanation: 'Labetalol is preferred in pregnancy-related severe hypertension; the others are contraindicated or less appropriate here.',
+              explanation:
+                'Labetalol is preferred in pregnancy-related severe hypertension; the others are contraindicated or less appropriate here.',
             },
             {
-              question: 'A patient with pheochromocytoma-related hypertensive crisis needs acute control. Which sequence is correct?',
-              options: ['A. Beta then alpha blockade', 'B. Alpha then beta blockade', 'C. Diuretic alone', 'D. ACE inhibitor only'],
+              question:
+                'A patient with pheochromocytoma-related hypertensive crisis needs acute control. Which sequence is correct?',
+              options: [
+                'A. Beta then alpha blockade',
+                'B. Alpha then beta blockade',
+                'C. Diuretic alone',
+                'D. ACE inhibitor only',
+              ],
               correctIndex: 1,
-              explanation: 'Alpha blockade must come before beta blockade to avoid unopposed alpha stimulation; the remaining choices miss the pathophysiology.',
+              explanation:
+                'Alpha blockade must come before beta blockade to avoid unopposed alpha stimulation; the remaining choices miss the pathophysiology.',
             },
           ],
         },
@@ -119,5 +140,44 @@ describe('ai content prefetching', () => {
     expect(generateJSONWithRouting).toHaveBeenCalledTimes(2);
     expect(result.type).toBe('quiz');
     expect((result as any).questions).toHaveLength(3);
+  });
+
+  it('accepts and caches must_know content', async () => {
+    (getCachedContent as jest.Mock).mockResolvedValue(null);
+    (setCachedContent as jest.Mock).mockResolvedValue(undefined);
+    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
+      parsed: {
+        type: 'must_know',
+        topicName: 'Hypertension',
+        mustKnow: [
+          '**Emergency** - Severe BP with end-organ damage needs urgent treatment.',
+          '**Pregnancy** - Labetalol is commonly preferred in severe hypertension.',
+          '**Retina** - Papilledema suggests hypertensive emergency.',
+          '**Pheochromocytoma** - Alpha blockade precedes beta blockade.',
+        ],
+        mostTested: [
+          '**MAP** - Reduce gradually, not abruptly, in hypertensive emergency.',
+          '**Nitroprusside** - Classic IV option for acute BP control.',
+          '**ACE inhibitors** - Contraindicated in pregnancy.',
+          '**End-organ damage** - Defines emergency over urgency.',
+        ],
+        examTip: 'First decide urgency versus emergency before choosing the drug.',
+      },
+      modelUsed: 'groq/test-model',
+    });
+
+    const result = await fetchContent(topic, 'must_know');
+
+    expect(generateJSONWithRouting).toHaveBeenCalledTimes(1);
+    expect(result.type).toBe('must_know');
+    expect(setCachedContent).toHaveBeenCalledWith(
+      topic.id,
+      'must_know',
+      expect.objectContaining({
+        type: 'must_know',
+        topicName: 'Hypertension',
+      }),
+      'groq/test-model',
+    );
   });
 });

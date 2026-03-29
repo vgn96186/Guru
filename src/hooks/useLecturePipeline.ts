@@ -38,6 +38,9 @@ export interface LecturePipelineHistoryEvent {
 
 export type Phase = 'intro' | 'transcribing' | 'results' | 'quiz' | 'quiz_done' | 'error';
 
+const TRANSCRIPTION_STALL_TIMEOUT_MS = 90_000;
+const TRANSCRIPTION_STALL_CHECK_INTERVAL_MS = 5_000;
+
 interface UseLecturePipelineProps {
   visible: boolean;
   appName: string;
@@ -95,6 +98,7 @@ export function useLecturePipeline({
   const cancelRequestedRef = useRef(false);
   const transcriptionRunIdRef = useRef(0);
   const lastProgressSignatureRef = useRef('');
+  const progressHeartbeatAtRef = useRef(0);
 
   const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
   const hasHuggingFace = !!(profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
@@ -207,6 +211,7 @@ Summary: ${result.lectureSummary}`;
   const runTranscription = useCallback(async () => {
     const runId = ++transcriptionRunIdRef.current;
     cancelRequestedRef.current = false;
+    progressHeartbeatAtRef.current = Date.now();
     setPhase('transcribing');
     setIsExpanded(false);
     setQuizQuestions([]);
@@ -217,7 +222,48 @@ Summary: ${result.lectureSummary}`;
       detail: 'Checking the recording and selecting the transcription path',
       percent: 4,
     });
+    const stallCheckId = setInterval(() => {
+      if (runId !== transcriptionRunIdRef.current || cancelRequestedRef.current) {
+        clearInterval(stallCheckId);
+        return;
+      }
+      if (Date.now() - progressHeartbeatAtRef.current < TRANSCRIPTION_STALL_TIMEOUT_MS) {
+        return;
+      }
+
+      clearInterval(stallCheckId);
+      transcriptionRunIdRef.current += 1;
+      setActiveStage(null);
+      setStageMessage('');
+      setStageDetail('');
+      setProgressPercent(0);
+      setProgressStep(null);
+      setProgressTotalSteps(null);
+      setProgressAttempt(null);
+      setProgressMaxAttempts(null);
+      setProgressProvider(null);
+      setIsExpanded(true);
+      setErrorMsg(
+        'Lecture transcription stalled before any usable result came back. Audio is still saved, so retry once or reopen Guru.',
+      );
+      void updateSessionTranscriptionStatus(logId, 'failed', 'Lecture transcription stalled');
+      setPhase('error');
+      console.warn('[LectureReturn] Transcription watchdog timed out', {
+        logId,
+        appName,
+        recordingPath,
+        timeoutMs: TRANSCRIPTION_STALL_TIMEOUT_MS,
+      });
+    }, TRANSCRIPTION_STALL_CHECK_INTERVAL_MS);
     try {
+      if (__DEV__) {
+        console.log('[LectureReturn] Starting lecture transcription', {
+          logId,
+          appName,
+          recordingPath,
+          durationMinutes,
+        });
+      }
       await updateSessionTranscriptionStatus(logId, 'transcribing');
       const result = await transcribeLectureWithRecovery({
         recordingPath: recordingPath!,
@@ -227,8 +273,13 @@ Summary: ${result.lectureSummary}`;
         includeEmbedding: false,
         maxRetries: 1,
         logId,
-        onProgress: handlePipelineProgress,
+        onProgress: (progress) => {
+          if (runId !== transcriptionRunIdRef.current || cancelRequestedRef.current) return;
+          progressHeartbeatAtRef.current = Date.now();
+          handlePipelineProgress(progress);
+        },
       });
+      clearInterval(stallCheckId);
 
       if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
         if (!visible)
@@ -269,6 +320,7 @@ Summary: ${result.lectureSummary}`;
         generateQuiz(result);
       }
     } catch (e: any) {
+      clearInterval(stallCheckId);
       if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
         return;
       }
@@ -281,7 +333,17 @@ Summary: ${result.lectureSummary}`;
       await updateSessionTranscriptionStatus(logId, 'failed', message);
       setPhase('error');
     }
-  }, [logId, recordingPath, groqKey, profile, visible, handlePipelineProgress, generateQuiz]);
+  }, [
+    appName,
+    durationMinutes,
+    logId,
+    recordingPath,
+    groqKey,
+    profile,
+    visible,
+    handlePipelineProgress,
+    generateQuiz,
+  ]);
 
   const saveSessionQuickly = useCallback(async (): Promise<boolean> => {
     if (!analysis) return false;
@@ -454,6 +516,13 @@ Summary: ${result.lectureSummary}`;
   // Effects
   useEffect(() => {
     if (visible && canTranscribe && !transcriptionStartedRef.current) {
+      if (__DEV__) {
+        console.log('[LectureReturn] Scheduling auto transcription', {
+          logId,
+          appName,
+          recordingPath,
+        });
+      }
       transcriptionStartedRef.current = true;
       setIsExpanded(false);
       const delay = setTimeout(() => runTranscription(), 150);

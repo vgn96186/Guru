@@ -73,13 +73,6 @@ const PRIMARY_DESTINATIONS: Array<{
     icon: 'help-circle-outline',
     tint: '#E040FB',
   },
-  {
-    route: 'Settings',
-    title: 'Preferences',
-    subtitle: 'Notifications, backups, sync, and study settings.',
-    icon: 'settings-outline',
-    tint: '#8EC5FF',
-  },
 ];
 
 export default function MenuScreen() {
@@ -91,7 +84,17 @@ export default function MenuScreen() {
       <ResponsiveContainer style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.hero}>
-            <Text style={styles.kicker}>MENU</Text>
+            <View style={styles.heroHeaderRow}>
+              <Text style={styles.kicker}>MENU</Text>
+              <Pressable
+                style={({ pressed }) => [styles.settingsBtn, pressed && styles.cardPressed]}
+                onPress={() => navigation.navigate('Settings' as never)}
+                accessibilityRole="button"
+                accessibilityLabel="Open settings"
+              >
+                <Ionicons name="settings-sharp" size={24} color={theme.colors.textSecondary} />
+              </Pressable>
+            </View>
             <Text style={styles.title}>Everything important in one place.</Text>
             <Text style={styles.subtitle}>
               Use this hub for planning, stats, notes, and deeper configuration. Fast actions live
@@ -174,12 +177,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  heroHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing.sm,
+  },
+  settingsBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
   kicker: {
     color: theme.colors.primaryLight,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.6,
-    marginBottom: theme.spacing.sm,
   },
   title: {
     color: theme.colors.textPrimary,

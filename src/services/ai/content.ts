@@ -1,4 +1,10 @@
-import type { AIContent, ContentType, TopicWithProgress, QuizContent, SaveQuestionInput } from '../../types';
+import type {
+  AIContent,
+  ContentType,
+  TopicWithProgress,
+  QuizContent,
+  SaveQuestionInput,
+} from '../../types';
 import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP } from '../../constants/prompts';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
@@ -16,7 +22,8 @@ function getContentRequestKey(topicId: number, contentType: ContentType): string
 function hasObviousCutOff(text: string, requireSentenceEnd = false): boolean {
   const t = text.trim();
   if (!t) return true;
-  if (/\*\*[^*]*$/.test(t)) return true;
+  const boldMarkerCount = (t.match(/\*\*/g) ?? []).length;
+  if (boldMarkerCount % 2 !== 0) return true;
   if (/[A-Za-z0-9]+-$/.test(t)) return true;
   if (/[([{"'`]$/.test(t)) return true;
   const openParens = (t.match(/\(/g) ?? []).length;
@@ -34,6 +41,15 @@ function isLikelyIncompleteAiContent(content: AIContent): boolean {
         content.points.some((point) => hasObviousCutOff(point, false)) ||
         content.memoryHook.trim().length < 8 ||
         hasObviousCutOff(content.memoryHook, true)
+      );
+    case 'must_know':
+      return (
+        content.mustKnow.length < 2 ||
+        content.mostTested.length < 2 ||
+        content.mustKnow.some((item) => hasObviousCutOff(item, false)) ||
+        content.mostTested.some((item) => hasObviousCutOff(item, false)) ||
+        content.examTip.trim().length < 10 ||
+        hasObviousCutOff(content.examTip, true)
       );
     case 'quiz':
       return (
@@ -130,13 +146,19 @@ export async function fetchContent(
     const maxAttempts = 3;
     let lastContent: AIContent | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      const generated = await generateJSONWithRouting(messages, AIContentSchema, 'low', true, forceProvider);
+      const generated = await generateJSONWithRouting(
+        messages,
+        AIContentSchema,
+        'low',
+        true,
+        forceProvider,
+      );
       modelUsed = generated.modelUsed;
       contentWithMeta = { ...generated.parsed, modelUsed } as AIContent;
       if (contentWithMeta.type === 'quiz') {
-        contentWithMeta = await resolveQuizImages(
+        contentWithMeta = (await resolveQuizImages(
           contentWithMeta as QuizContent & { modelUsed?: string },
-        ) as AIContent;
+        )) as AIContent;
       }
       lastContent = contentWithMeta;
       if (!isLikelyIncompleteAiContent(contentWithMeta)) {
@@ -145,11 +167,14 @@ export async function fetchContent(
       if (attempt >= maxAttempts) {
         // Use last attempt even if incomplete — better than showing nothing
         if (__DEV__) {
-          console.warn('[AIContent] Using potentially incomplete content after all retries exhausted', {
-            topicId: topic.id,
-            contentType,
-            modelUsed,
-          });
+          console.warn(
+            '[AIContent] Using potentially incomplete content after all retries exhausted',
+            {
+              topicId: topic.id,
+              contentType,
+              modelUsed,
+            },
+          );
         }
         contentWithMeta = lastContent;
         break;
@@ -232,8 +257,14 @@ async function resolveQuizImages<T extends QuizContent>(quiz: T): Promise<T> {
         ...q,
         imageSearchQuery: undefined,
         question: q.question
-          .replace(/\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi, '')
-          .replace(/The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi, '')
+          .replace(
+            /\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi,
+            '',
+          )
+          .replace(
+            /The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi,
+            '',
+          )
           .replace(/^\s*[.,]\s*/, ''),
       };
     }

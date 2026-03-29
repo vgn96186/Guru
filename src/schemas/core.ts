@@ -11,6 +11,7 @@ export type Mood = z.infer<typeof MoodSchema>;
 
 export const ContentTypeSchema = z.enum([
   'keypoints',
+  'must_know',
   'quiz',
   'story',
   'mnemonic',

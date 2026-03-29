@@ -65,6 +65,56 @@ class RecordingService : Service() {
 
         @JvmStatic
         var mediaProjection: MediaProjection? = null
+
+        @JvmStatic
+        @Volatile
+        private var elapsedRecordingStartedAtMs = 0L
+
+        @JvmStatic
+        @Volatile
+        private var elapsedPauseStartedAtMs = 0L
+
+        @JvmStatic
+        @Volatile
+        private var elapsedAccumulatedPausedMs = 0L
+
+        @JvmStatic
+        fun getElapsedRecordingSeconds(): Int {
+            val startedAt = elapsedRecordingStartedAtMs
+            if (startedAt <= 0L) return 0
+
+            val now = System.currentTimeMillis()
+            val currentPausedMs =
+                if (elapsedPauseStartedAtMs > 0L) now - elapsedPauseStartedAtMs else 0L
+            val activeMs =
+                (now - startedAt - elapsedAccumulatedPausedMs - currentPausedMs).coerceAtLeast(0L)
+            return (activeMs / 1000L).toInt()
+        }
+    }
+
+    private fun resetElapsedTracking() {
+        elapsedRecordingStartedAtMs = System.currentTimeMillis()
+        elapsedPauseStartedAtMs = 0L
+        elapsedAccumulatedPausedMs = 0L
+    }
+
+    private fun markElapsedPauseStarted() {
+        if (elapsedPauseStartedAtMs <= 0L) {
+            elapsedPauseStartedAtMs = System.currentTimeMillis()
+        }
+    }
+
+    private fun markElapsedPauseEnded() {
+        if (elapsedPauseStartedAtMs > 0L) {
+            elapsedAccumulatedPausedMs += System.currentTimeMillis() - elapsedPauseStartedAtMs
+            elapsedPauseStartedAtMs = 0L
+        }
+    }
+
+    private fun clearElapsedTracking() {
+        elapsedRecordingStartedAtMs = 0L
+        elapsedPauseStartedAtMs = 0L
+        elapsedAccumulatedPausedMs = 0L
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -73,6 +123,7 @@ class RecordingService : Service() {
         when (intent?.action) {
             ACTION_START -> {
                 isServiceRunning = true
+                resetElapsedTracking()
                 val path = intent.getStringExtra(EXTRA_OUTPUT_PATH) ?: return START_NOT_STICKY
                 val mode = intent.getStringExtra(EXTRA_MODE) ?: "mic"
                 val targetUid = intent.getIntExtra(EXTRA_TARGET_UID, -1)
@@ -105,7 +156,10 @@ class RecordingService : Service() {
             }
 
             ACTION_PAUSE -> {
-                isPaused = true
+                if (!isPaused) {
+                    isPaused = true
+                    markElapsedPauseStarted()
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     try {
                         mediaRecorder?.pause()
@@ -114,7 +168,10 @@ class RecordingService : Service() {
             }
 
             ACTION_RESUME -> {
-                isPaused = false
+                if (isPaused) {
+                    isPaused = false
+                    markElapsedPauseEnded()
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                     try {
                         mediaRecorder?.resume()
@@ -554,6 +611,7 @@ class RecordingService : Service() {
         stopMicRecorder()
         closeLiveTranscriptionSession()
         closeLectureInsightGenerator()
+        clearElapsedTracking()
         Log.i(TAG, "stopAllRecording: done")
     }
 

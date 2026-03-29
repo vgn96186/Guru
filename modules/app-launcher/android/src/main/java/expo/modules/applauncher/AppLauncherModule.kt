@@ -695,6 +695,10 @@ class AppLauncherModule : Module() {
             return@AsyncFunction RecordingService.isServiceRunning
         }
 
+        AsyncFunction("getRecordingElapsedSeconds") { ->
+            return@AsyncFunction RecordingService.getElapsedRecordingSeconds()
+        }
+
         AsyncFunction("isOverlayActive") { ->
             return@AsyncFunction OverlayService.isServiceRunning && OverlayService.isOverlayVisible
         }

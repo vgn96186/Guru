@@ -20,6 +20,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
 import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
 import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
@@ -101,22 +102,22 @@ export default function LectureReturnSheet(props: Props) {
   }
 
   function getCompactTitle() {
-    if (activeStage === 'transcribing') return 'Transcribing lecture audio';
-    if (activeStage === 'analyzing') return 'Analyzing transcript';
-    if (activeStage === 'saving') return 'Saving lecture summary';
-    if (phase === 'error') return 'Lecture processing needs attention';
-    if (phase === 'results') return 'Lecture summary is ready';
-    if (phase === 'quiz') return 'Quick quiz is ready';
-    if (phase === 'quiz_done') return 'Lecture recap completed';
-    return 'Analyzing your lecture';
+    if (activeStage === 'transcribing') return 'Transcribing';
+    if (activeStage === 'analyzing') return 'Analyzing';
+    if (activeStage === 'saving') return 'Saving';
+    if (phase === 'error') return 'Needs attention';
+    if (phase === 'results') return 'Summary ready';
+    if (phase === 'quiz') return 'Quiz ready';
+    if (phase === 'quiz_done') return 'Recap done';
+    return appName;
   }
 
   function getCompactSubtitle() {
     if (activeStage) {
-      return (
-        stageDetail ||
-        `${durationMinutes > 0 ? `${durationMinutes} min` : 'Recent'} lecture from ${appName}`
-      );
+      if (progressLabel) {
+        return progressProvider ? `${progressLabel} via ${progressProvider}` : progressLabel;
+      }
+      return durationMinutes > 0 ? `${durationMinutes} min recorded` : 'Lecture in progress';
     }
     if (phase === 'error') return errorMsg || 'Tap to retry or review the failure.';
     if (phase === 'results') {
@@ -125,12 +126,12 @@ export default function LectureReturnSheet(props: Props) {
       return `${subject}${topicCount > 0 ? ` • ${topicCount} topic${topicCount === 1 ? '' : 's'} detected` : ''}`;
     }
     if (phase === 'quiz') {
-      return `${quizQuestions.length} quick question${quizQuestions.length === 1 ? '' : 's'} ready`;
+      return `${quizQuestions.length} question${quizQuestions.length === 1 ? '' : 's'} ready`;
     }
     if (phase === 'quiz_done') {
       return `${score} / ${quizQuestions.length} correct`;
     }
-    return `${durationMinutes > 0 ? `${durationMinutes} min` : 'Recent'} lecture from ${appName}. Guru is processing it in the background.`;
+    return durationMinutes > 0 ? `${durationMinutes} min recorded` : 'Lecture captured';
   }
 
   const SUBJECT_COLORS: Record<string, string> = {
@@ -157,7 +158,8 @@ export default function LectureReturnSheet(props: Props) {
   };
   const subjectColor =
     SUBJECT_COLORS[selectedSubjectName ?? analysis?.subject ?? ''] ?? theme.colors.primary;
-  const isProcessingPhase = phase === 'intro' || phase === 'transcribing' || activeStage !== null;
+  const isWorkingPhase = phase === 'transcribing' || activeStage !== null;
+  const isIntroPhase = phase === 'intro';
   const showCompactCard = !isExpanded;
   const elapsedLabel =
     activeStage && stageStartedAt ? formatElapsed(nowTick - stageStartedAt) : null;
@@ -171,17 +173,6 @@ export default function LectureReturnSheet(props: Props) {
       : null,
     elapsedLabel ? `ELAPSED ${elapsedLabel}` : null,
   ].filter(Boolean);
-  const compactFacts = [
-    appName.toUpperCase(),
-    durationMinutes > 0 ? `${durationMinutes} MIN` : null,
-    phase === 'results' && analysis?.topics?.length
-      ? `${analysis.topics.length} TOPIC${analysis.topics.length === 1 ? '' : 'S'}`
-      : null,
-    phase === 'results' && analysis
-      ? CONFIDENCE_LABELS[userConfidence ?? analysis.estimatedConfidence].toUpperCase()
-      : null,
-    phase === 'quiz' && quizQuestions.length > 0 ? `${quizQuestions.length} QUESTIONS` : null,
-  ].filter(Boolean);
 
   const q = quizQuestions[currentQ];
 
@@ -192,70 +183,62 @@ export default function LectureReturnSheet(props: Props) {
   return (
     <View pointerEvents="box-none" style={styles.layer}>
       {showCompactCard ? (
-        <View pointerEvents="box-none" style={styles.compactDock}>
-          <View style={[styles.compactPositioner, { paddingBottom: bottomOffset }]}>
+        <View pointerEvents="box-none" style={styles.bubbleDock}>
+          <View style={[styles.bubblePositioner, { paddingBottom: bottomOffset }]}>
             <TouchableOpacity
               style={[
-                styles.compactCard,
-                phase === 'error' && styles.compactCardError,
-                phase === 'results' && styles.compactCardReady,
+                styles.bubbleRow,
+                phase === 'error' && styles.bubbleError,
+                phase === 'results' && styles.bubbleReady,
               ]}
               onPress={() => setIsExpanded(true)}
-              activeOpacity={0.9}
+              activeOpacity={0.85}
             >
-              <View style={styles.compactTextWrap}>
-                <Text style={styles.compactEyebrow} numberOfLines={1}>
-                  {isProcessingPhase
-                    ? 'LECTURE PROCESSING'
-                    : phase === 'error'
-                      ? 'ACTION NEEDED'
-                      : 'LECTURE READY'}
-                </Text>
-                <Text style={styles.compactTitle} numberOfLines={1} ellipsizeMode="tail">
-                  {isProcessingPhase ? stageMessage || getCompactTitle() : getCompactTitle()}
-                </Text>
-                <Text style={styles.compactSubtitle} numberOfLines={2} ellipsizeMode="tail">
-                  {getCompactSubtitle()}
-                </Text>
-                {compactFacts.length > 0 ? (
-                  <View style={styles.compactFactsRow}>
-                    {compactFacts.map((fact) => (
-                      <View key={fact} style={styles.compactFactPill}>
-                        <Text style={styles.compactFactText}>{fact}</Text>
-                      </View>
-                    ))}
-                  </View>
+              <View style={styles.bubbleIconWrap}>
+                <Ionicons
+                  name={
+                    phase === 'error'
+                      ? 'alert-circle'
+                      : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
+                        ? 'checkmark-circle'
+                        : 'mic'
+                  }
+                  size={18}
+                  color={
+                    phase === 'error'
+                      ? theme.colors.error
+                      : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
+                        ? theme.colors.success
+                        : theme.colors.primary
+                  }
+                />
+                {isWorkingPhase ? (
+                  <ActivityIndicator
+                    style={styles.bubbleSpinner}
+                    color={theme.colors.primary}
+                    size="small"
+                  />
                 ) : null}
               </View>
-              <View style={styles.compactMeta}>
-                {isProcessingPhase ? (
-                  <>
-                    {progressLabel ? (
-                      <Text style={styles.compactPercent}>{progressLabel}</Text>
-                    ) : null}
-                    <ActivityIndicator color={theme.colors.primary} size="small" />
-                  </>
-                ) : (
-                  <Text style={styles.compactChevron}>Open</Text>
-                )}
+              <View style={styles.bubbleTextWrap}>
+                <Text style={styles.bubbleTitle}>
+                  {isWorkingPhase ? stageMessage || getCompactTitle() : getCompactTitle()}
+                </Text>
+                <Text style={styles.bubbleSub}>
+                  {isWorkingPhase && progressLabel
+                    ? `${progressLabel}${progressProvider ? ` · ${progressProvider}` : ''}`
+                    : isIntroPhase
+                      ? 'Tap to start transcription'
+                      : getCompactSubtitle()}
+                </Text>
               </View>
-              {isProcessingPhase ? (
-                <View style={styles.compactProgressTrack}>
-                  <View
-                    style={[
-                      styles.compactProgressFill,
-                      { width: `${Math.max(8, Math.min(100, progressPercent || 12))}%` },
-                    ]}
-                  />
-                </View>
-              ) : null}
-              {!isProcessingPhase && (
+              {!isWorkingPhase && (
                 <TouchableOpacity
-                  style={styles.compactDismiss}
+                  style={styles.bubbleDismiss}
                   onPress={() => void cleanupAndClose()}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={styles.compactDismissText}>X</Text>
+                  <Text style={styles.bubbleDismissText}>{'×'}</Text>
                 </TouchableOpacity>
               )}
             </TouchableOpacity>
@@ -278,11 +261,27 @@ export default function LectureReturnSheet(props: Props) {
             {/* Phase: intro / transcribing */}
             {(phase === 'intro' || phase === 'transcribing') && (
               <View style={styles.centeredBlock}>
-                <Text style={styles.returnEmoji}>🎧</Text>
+                <Ionicons
+                  name="mic-outline"
+                  size={40}
+                  color={theme.colors.primary}
+                  style={styles.returnIcon}
+                />
                 <Text style={styles.returnTitle}>Back from {appName}!</Text>
                 <Text style={styles.returnSub}>
                   {durationMinutes > 0 ? `${durationMinutes} min recorded` : 'Session logged'}
                 </Text>
+                {phase === 'intro' && canTranscribe && (
+                  <TouchableOpacity
+                    style={styles.retryBtn}
+                    onPress={runTranscription}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                    accessibilityLabel="Start lecture transcription"
+                  >
+                    <Text style={styles.retryBtnText}>Start transcription</Text>
+                  </TouchableOpacity>
+                )}
                 {phase === 'transcribing' && (
                   <View style={styles.processingCard}>
                     <View style={styles.progressHeaderRow}>
@@ -530,7 +529,7 @@ export default function LectureReturnSheet(props: Props) {
                 {quizLoading && !q ? (
                   <View style={styles.centeredBlock}>
                     <ActivityIndicator color={theme.colors.primary} size="large" />
-                    <Text style={[styles.spinnerText, { marginTop: 12 }]}>Generating quiz…</Text>
+                    <Text style={[styles.spinnerText, { marginTop: 12 }]}>Generating quiz</Text>
                   </View>
                 ) : q ? (
                   <View>
@@ -595,7 +594,12 @@ export default function LectureReturnSheet(props: Props) {
                   </View>
                 ) : (
                   <View style={styles.centeredBlock}>
-                    <Text style={styles.returnEmoji}>😅</Text>
+                    <Ionicons
+                      name="help-circle-outline"
+                      size={40}
+                      color={theme.colors.textMuted}
+                      style={styles.returnIcon}
+                    />
                     <Text style={styles.returnTitle}>No quiz available</Text>
                     <Text style={styles.returnSub}>Not enough content to generate questions.</Text>
                   </View>
@@ -606,13 +610,24 @@ export default function LectureReturnSheet(props: Props) {
             {/* Phase: quiz_done */}
             {phase === 'quiz_done' && (
               <View style={styles.centeredBlock}>
-                <Text style={styles.returnEmoji}>
-                  {score === quizQuestions.length
-                    ? '🏆'
-                    : score >= quizQuestions.length / 2
-                      ? '🎯'
-                      : '📚'}
-                </Text>
+                <Ionicons
+                  name={
+                    score === quizQuestions.length
+                      ? 'trophy'
+                      : score >= quizQuestions.length / 2
+                        ? 'ribbon'
+                        : 'book-outline'
+                  }
+                  size={40}
+                  color={
+                    score === quizQuestions.length
+                      ? theme.colors.warning
+                      : score >= quizQuestions.length / 2
+                        ? theme.colors.success
+                        : theme.colors.primary
+                  }
+                  style={styles.returnIcon}
+                />
                 <Text style={styles.returnTitle}>
                   {score} / {quizQuestions.length} correct
                 </Text>
@@ -634,7 +649,12 @@ export default function LectureReturnSheet(props: Props) {
             {/* Phase: error */}
             {phase === 'error' && (
               <View style={styles.centeredBlock}>
-                <Text style={styles.returnEmoji}>⚠️</Text>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={40}
+                  color={theme.colors.error}
+                  style={styles.returnIcon}
+                />
                 <Text style={styles.returnTitle}>Transcription failed</Text>
                 <Text style={styles.errorDetail}>{errorMsg}</Text>
                 {canTranscribe ? (
@@ -670,9 +690,9 @@ export default function LectureReturnSheet(props: Props) {
                   >
                     <Text style={styles.primaryBtnText}>
                       {isSaving
-                        ? 'Saving lecture summary…'
+                        ? 'Saving lecture summary'
                         : quizLoading
-                          ? '⏳ Loading Quiz…'
+                          ? 'Loading Quiz'
                           : '🧠 Mark as Studied + Quick Quiz'}
                     </Text>
                   </TouchableOpacity>
@@ -739,7 +759,7 @@ export default function LectureReturnSheet(props: Props) {
               )}
 
               {/* Dismiss / Skip always available (except quiz_done which has its own Done) */}
-              {phase !== 'quiz_done' && !isProcessingPhase && (
+              {phase !== 'quiz_done' && !isWorkingPhase && !isIntroPhase && (
                 <TouchableOpacity
                   style={styles.secondaryBtn}
                   onPress={handleSkip}
@@ -771,122 +791,83 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
-  compactDock: {
-    paddingHorizontal: 12,
+  bubbleDock: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    left: 0,
+    alignItems: 'flex-end',
+    paddingHorizontal: 14,
+  },
+  bubblePositioner: {
     alignItems: 'flex-end',
   },
-  compactPositioner: {
-    alignItems: 'flex-end',
-  },
-  compactCard: {
+  bubbleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    alignItems: 'flex-start',
+    gap: 10,
     backgroundColor: theme.colors.surfaceAlt,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    alignSelf: 'flex-end',
-    minWidth: 168,
-    maxWidth: 250,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    elevation: 8,
+    borderRadius: 28,
+    paddingLeft: 6,
+    paddingRight: 14,
+    paddingVertical: 6,
+    maxWidth: 288,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOpacity: 0.24,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
-  compactProgressTrack: {
-    position: 'absolute',
-    left: 14,
-    right: 14,
-    bottom: 8,
-    height: 4,
-    borderRadius: 999,
+  bubbleReady: {
+    borderColor: theme.colors.success + '66',
+  },
+  bubbleError: {
+    borderColor: theme.colors.error + '66',
+  },
+  bubbleIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: theme.colors.panel,
-    overflow: 'hidden',
-  },
-  compactProgressFill: {
-    height: '100%',
-    borderRadius: 999,
-    backgroundColor: theme.colors.primary,
-  },
-  compactCardReady: {
-    borderColor: theme.colors.success + '88',
-    backgroundColor: theme.colors.successSurface,
-  },
-  compactCardError: {
-    borderColor: theme.colors.error + '88',
-    backgroundColor: theme.colors.errorSurface,
-  },
-  compactTextWrap: { flex: 1, minWidth: 0 },
-  compactEyebrow: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginBottom: 2,
-  },
-  compactTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '800',
-    marginBottom: 1,
-  },
-  compactSubtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
-    marginTop: 1,
-  },
-  compactFactsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  compactFactPill: {
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: theme.colors.panel,
-    borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-  },
-  compactFactText: {
-    color: theme.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  compactMeta: {
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
   },
-  compactPercent: {
-    color: theme.colors.primaryLight,
-    fontSize: 11,
-    fontWeight: '800',
+  bubbleSpinner: {
+    position: 'absolute',
   },
-  compactChevron: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
+  bubbleTextWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  bubbleTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 12,
     fontWeight: '700',
+    flexShrink: 1,
   },
-  compactDismiss: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  bubbleSub: {
+    color: theme.colors.textMuted,
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 1,
+    flexShrink: 1,
+  },
+  bubbleDismiss: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: theme.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: 2,
   },
-  compactDismissText: {
+  bubbleDismissText: {
     color: theme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '800',
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: -1,
   },
   sheet: {
     backgroundColor: theme.colors.surface,
@@ -930,7 +911,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   centeredBlock: { alignItems: 'center', paddingVertical: 12 },
-  returnEmoji: { fontSize: 44, marginBottom: 10 },
+  returnIcon: { marginBottom: 10 },
   returnTitle: {
     color: theme.colors.textPrimary,
     fontSize: 20,

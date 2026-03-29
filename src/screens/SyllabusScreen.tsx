@@ -345,7 +345,17 @@ export default function SyllabusScreen() {
       <ResponsiveContainer>
         <View style={styles.header}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.title}>Syllabus</Text>
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.title}>Syllabus</Text>
+              <TouchableOpacity
+                style={styles.settingsBtn}
+                onPress={() => navigation.navigate('Settings' as never)}
+                accessibilityRole="button"
+                accessibilityLabel="Open settings"
+              >
+                <Ionicons name="settings-sharp" size={22} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.subtitle}>
               Track exam prep through micro-topics, due reviews, and high-yield coverage.
             </Text>
@@ -566,7 +576,23 @@ const styles = StyleSheet.create({
     padding: theme.spacing.lg,
     paddingTop: 20,
   },
-  title: { color: theme.colors.textPrimary, fontSize: 26, fontWeight: '900', marginBottom: 8 },
+  headerTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  settingsBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  title: { color: theme.colors.textPrimary, fontSize: 26, fontWeight: '900' },
   subtitle: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19, marginBottom: 10 },
   emptySummaryCard: {
     backgroundColor: theme.colors.surface,

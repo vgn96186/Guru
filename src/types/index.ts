@@ -175,7 +175,12 @@ export interface UserProfile {
   /** Deepgram API key for batch + live WebSocket transcription. */
   deepgramApiKey?: string;
   /** Persisted provider validation metadata used by Settings key status indicators. */
-  apiValidation?: Partial<Record<ProviderId | 'deepgram' | 'fal' | 'brave', { verified: boolean; verifiedAt: number; fingerprint: string }>>;
+  apiValidation?: Partial<
+    Record<
+      ProviderId | 'deepgram' | 'fal' | 'brave',
+      { verified: boolean; verifiedAt: number; fingerprint: string }
+    >
+  >;
   /** True when ChatGPT OAuth tokens are stored in secure store. */
   chatgptConnected?: boolean;
 }
@@ -226,6 +231,14 @@ export interface KeyPointsContent {
   memoryHook: string;
 }
 
+export interface MustKnowContent {
+  type: 'must_know';
+  topicName: string;
+  mustKnow: string[];
+  mostTested: string[];
+  examTip: string;
+}
+
 export interface QuizQuestion {
   question: string;
   options: [string, string, string, string];
@@ -241,7 +254,12 @@ export interface QuizContent {
   questions: QuizQuestion[];
 }
 
-export type QuestionBankSource = 'content_card' | 'lecture_quiz' | 'mock_test' | 'live_lecture' | 'manual';
+export type QuestionBankSource =
+  | 'content_card'
+  | 'lecture_quiz'
+  | 'mock_test'
+  | 'live_lecture'
+  | 'manual';
 
 export interface QuestionBankItem {
   id: number;
@@ -344,6 +362,7 @@ export interface SocraticContent {
 
 export type AIContent = (
   | KeyPointsContent
+  | MustKnowContent
   | QuizContent
   | StoryContent
   | MnemonicContent

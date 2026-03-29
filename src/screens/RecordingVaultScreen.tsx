@@ -355,7 +355,7 @@ export default function RecordingVaultScreen() {
           </View>
         )}
         <View style={styles.cardBody}>
-          <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="middle">
+          <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
             {item.name}
           </Text>
           <Text style={styles.cardMeta}>

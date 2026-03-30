@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import type { MedicalGroundingSource, Message } from './types';
 import {
   generateJSONWithRouting,
@@ -536,7 +537,7 @@ export async function chatWithGuru(
       ...buildHistoryMessages(history, 4),
       { role: 'user', content: question },
     ],
-    { chosenModel },
+    { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
   );
   return { reply: finalizeGuruReply(text, recentGuruQuestions) };
 }
@@ -572,7 +573,10 @@ Respond using your medical knowledge. Reference the sources only if they are dir
   ];
 
   try {
-    const response = await generateTextWithRouting(msgs, { chosenModel });
+    const response = await generateTextWithRouting(msgs, {
+      chosenModel,
+      providerOrderOverride: DEFAULT_PROVIDER_ORDER,
+    });
     let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
     let modelUsed = response.modelUsed;
     for (let attempt = 1; attempt <= MAX_CONTINUATION_ATTEMPTS; attempt += 1) {
@@ -586,7 +590,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
       }
       const continuation = await generateTextWithRouting(
         buildContinuationMessages(msgs, finalReply),
-        { chosenModel },
+        { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
       );
       const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
@@ -729,7 +733,11 @@ Respond using your medical knowledge. Reference the sources only if they are dir
       if (cleanDelta) onReplyDelta(cleanDelta);
     };
 
-    const response = await generateTextWithRoutingStream(msgs, { chosenModel }, safeEmitDelta);
+    const response = await generateTextWithRoutingStream(
+      msgs,
+      { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
+      safeEmitDelta,
+    );
     let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
     if (finalReply.length > emittedReply.length) {
       const remaining = finalReply.slice(emittedReply.length);
@@ -750,7 +758,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
       }
       const continuation = await generateTextWithRoutingStream(
         buildContinuationMessages(msgs, finalReply),
-        { chosenModel },
+        { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
         safeEmitDelta,
       );
       const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
@@ -796,7 +804,14 @@ Formatting rules:
     },
     { role: 'user', content: `Context: ${context}\n\nStudent answer: ${question}` },
   ];
-  const { parsed } = await generateJSONWithRouting(messages, schema, 'low');
+  const { parsed } = await generateJSONWithRouting(
+    messages,
+    schema,
+    'low',
+    true,
+    undefined,
+    DEFAULT_PROVIDER_ORDER,
+  );
   return JSON.stringify(parsed);
 }
 
@@ -838,6 +853,8 @@ Explain using this structure:
 Only bold the most important 3 or 4 terms in the whole answer.`,
     },
   ];
-  const { text } = await generateTextWithRouting(messages);
+  const { text } = await generateTextWithRouting(messages, {
+    providerOrderOverride: DEFAULT_PROVIDER_ORDER,
+  });
   return text.trim();
 }

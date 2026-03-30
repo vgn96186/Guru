@@ -19,7 +19,7 @@ import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
-import type { ProviderId } from '../../types';
+import type { ChatGptAccountSlot, ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { logStreamEvent } from './runtimeDebug';
 
@@ -123,7 +123,12 @@ function isLikelyFreeKiloModel(row: Record<string, unknown>): boolean {
     const p = pricing as Record<string, unknown>;
     const prompt = Number(p.prompt ?? p.input ?? p.prompt_tokens ?? NaN);
     const completion = Number(p.completion ?? p.output ?? p.completion_tokens ?? NaN);
-    if (Number.isFinite(prompt) && Number.isFinite(completion) && prompt === 0 && completion === 0) {
+    if (
+      Number.isFinite(prompt) &&
+      Number.isFinite(completion) &&
+      prompt === 0 &&
+      completion === 0
+    ) {
       return true;
     }
   }
@@ -1109,18 +1114,33 @@ async function callAgentRouter(
     if (!hasJsonWord) {
       const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
       if (systemIdx !== -1) {
-        clonedMessages[systemIdx] = { ...clonedMessages[systemIdx], content: clonedMessages[systemIdx].content + '\nRespond in JSON format.' };
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
       } else {
-        clonedMessages[0] = { ...clonedMessages[0], content: clonedMessages[0].content + '\nRespond in JSON format.' };
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
       }
     }
   }
-  const body: Record<string, unknown> = { model, messages: clonedMessages, temperature: 0.7, max_tokens: 4096 };
+  const body: Record<string, unknown> = {
+    model,
+    messages: clonedMessages,
+    temperature: 0.7,
+    max_tokens: 4096,
+  };
   if (jsonMode) body.response_format = { type: 'json_object' };
   if (__DEV__) console.log(`[AI] callAgentRouter: model=${model} json=${jsonMode}`);
   const res = await fetch('https://agentrouter.org/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, ...AGENTROUTER_HEADERS },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      ...AGENTROUTER_HEADERS,
+    },
     body: JSON.stringify(body),
   });
   if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
@@ -1142,7 +1162,11 @@ async function streamAgentRouterChat(
 ): Promise<string> {
   const res = await fetch('https://agentrouter.org/v1/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}`, ...AGENTROUTER_HEADERS },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      ...AGENTROUTER_HEADERS,
+    },
     body: JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 4096, stream: true }),
   });
   if (res.status === 429) throw new RateLimitError(`AgentRouter rate limit on ${model}`);
@@ -1178,10 +1202,18 @@ async function streamAgentRouterChat(
 
 /** Keys bag shared by the provider loop helpers. */
 interface ProviderKeys {
-  groqKey?: string; githubModelsPat?: string; kiloApiKey?: string;
-  deepseekKey?: string; agentRouterKey?: string; geminiKey?: string;
-  geminiFallbackKey?: string; orKey?: string; cfAccountId?: string; cfApiToken?: string;
+  groqKey?: string;
+  githubModelsPat?: string;
+  kiloApiKey?: string;
+  deepseekKey?: string;
+  agentRouterKey?: string;
+  geminiKey?: string;
+  geminiFallbackKey?: string;
+  orKey?: string;
+  cfAccountId?: string;
+  cfApiToken?: string;
   chatgptConnected?: boolean;
+  chatgptSlots?: ChatGptAccountSlot[];
 }
 
 /** Ensure chatgpt is in the provider order (old saved orders won't have it). */
@@ -1193,18 +1225,114 @@ function ensureChatGptInOrder(order: ProviderId[]): ProviderId[] {
 /** Check if a provider has a usable key configured. */
 function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
   switch (provider) {
-    case 'chatgpt': return !!keys.chatgptConnected;
-    case 'groq': return !!keys.groqKey;
-    case 'github': return !!keys.githubModelsPat;
-    case 'kilo': return !!keys.kiloApiKey;
-    case 'deepseek': return !!keys.deepseekKey;
-    case 'agentrouter': return !!keys.agentRouterKey;
-    case 'gemini': return !!keys.geminiKey;
-    case 'gemini_fallback': return !!keys.geminiFallbackKey;
-    case 'openrouter': return !!keys.orKey;
-    case 'cloudflare': return !!(keys.cfAccountId && keys.cfApiToken);
-    default: return false;
+    case 'chatgpt':
+      return !!keys.chatgptConnected;
+    case 'groq':
+      return !!keys.groqKey;
+    case 'github':
+      return !!keys.githubModelsPat;
+    case 'kilo':
+      return !!keys.kiloApiKey;
+    case 'deepseek':
+      return !!keys.deepseekKey;
+    case 'agentrouter':
+      return !!keys.agentRouterKey;
+    case 'gemini':
+      return !!keys.geminiKey;
+    case 'gemini_fallback':
+      return !!keys.geminiFallbackKey;
+    case 'openrouter':
+      return !!keys.orKey;
+    case 'cloudflare':
+      return !!(keys.cfAccountId && keys.cfApiToken);
+    default:
+      return false;
   }
+}
+
+function getChatGptFallbackSlots(keys: ProviderKeys): ChatGptAccountSlot[] {
+  if (keys.chatgptSlots?.length) return keys.chatgptSlots;
+  return keys.chatgptConnected ? ['primary'] : [];
+}
+
+function shouldRetryChatGptOnBackup(error: Error): boolean {
+  if (error instanceof RateLimitError) return true;
+  const message = error.message.toLowerCase();
+  if (
+    message.includes('timeout') ||
+    message.includes('timed out') ||
+    message.includes('network') ||
+    message.includes('fetch') ||
+    message.includes('failed to fetch') ||
+    message.includes('no refresh token') ||
+    message.includes('token refresh failed') ||
+    message.includes('chatgpt request error (401)') ||
+    message.includes('chatgpt stream error (401)') ||
+    message.includes('chatgpt request error (429)') ||
+    message.includes('chatgpt stream error (429)') ||
+    message.includes('chatgpt request error (500)') ||
+    message.includes('chatgpt request error (502)') ||
+    message.includes('chatgpt request error (503)') ||
+    message.includes('chatgpt request error (504)') ||
+    message.includes('chatgpt stream error (500)') ||
+    message.includes('chatgpt stream error (502)') ||
+    message.includes('chatgpt stream error (503)') ||
+    message.includes('chatgpt stream error (504)')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function callChatGptWithFallback(
+  messages: Message[],
+  model: string,
+  jsonMode: boolean,
+  slots: ChatGptAccountSlot[],
+): Promise<string> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < slots.length; i += 1) {
+    const slot = slots[i];
+    try {
+      return await callChatGpt(messages, model, jsonMode, slot);
+    } catch (err) {
+      lastError = err as Error;
+      if (i === slots.length - 1 || !shouldRetryChatGptOnBackup(lastError)) {
+        throw lastError;
+      }
+    }
+  }
+  throw lastError ?? new Error('ChatGPT failed for all configured accounts');
+}
+
+async function streamChatGptWithFallback(
+  messages: Message[],
+  model: string,
+  onDelta: (delta: string) => void,
+  slots: ChatGptAccountSlot[],
+): Promise<string> {
+  let lastError: Error | null = null;
+  for (let i = 0; i < slots.length; i += 1) {
+    const slot = slots[i];
+    let emitted = false;
+    try {
+      return await streamChatGpt(
+        messages,
+        model,
+        (delta) => {
+          emitted = true;
+          onDelta(delta);
+        },
+        slot,
+      );
+    } catch (err) {
+      lastError = err as Error;
+      if (emitted || i === slots.length - 1 || !shouldRetryChatGptOnBackup(lastError)) {
+        throw lastError;
+      }
+    }
+  }
+  throw lastError ?? new Error('ChatGPT failed for all configured accounts');
 }
 
 /** Try all models for a single provider (streaming). Returns result, or null if none succeeded. */
@@ -1228,7 +1356,8 @@ async function tryStreamProvider(
         const text = await fn(model);
         return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
       } catch (err) {
-        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
+        if (__DEV__)
+          console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
         lastErr = err as Error;
         continue;
       }
@@ -1239,34 +1368,74 @@ async function tryStreamProvider(
   switch (provider) {
     case 'chatgpt':
       if (!keys.chatgptConnected) return null;
-      return tryModels(CHATGPT_MODELS, (m) => streamChatGpt(messages, m, onDelta), 'chatgpt');
+      return tryModels(
+        CHATGPT_MODELS,
+        (m) => streamChatGptWithFallback(messages, m, onDelta, getChatGptFallbackSlots(keys)),
+        'chatgpt',
+      );
     case 'groq':
       if (!keys.groqKey) return null;
-      return tryModels(GROQ_MODELS, (m) => streamGroqChat(messages, keys.groqKey!, m, onDelta), 'groq');
+      return tryModels(
+        GROQ_MODELS,
+        (m) => streamGroqChat(messages, keys.groqKey!, m, onDelta),
+        'groq',
+      );
     case 'github':
       if (!keys.githubModelsPat) return null;
-      return tryModels(GITHUB_MODELS_CHAT_MODELS, (m) => streamGitHubModelsChat(messages, keys.githubModelsPat!, m, onDelta), 'github');
+      return tryModels(
+        GITHUB_MODELS_CHAT_MODELS,
+        (m) => streamGitHubModelsChat(messages, keys.githubModelsPat!, m, onDelta),
+        'github',
+      );
     case 'kilo':
       if (!keys.kiloApiKey) return null;
-      return tryModels(await getKiloPreferredModels(keys.kiloApiKey), (m) => streamKiloChat(messages, keys.kiloApiKey!, m, onDelta), 'kilo');
+      return tryModels(
+        await getKiloPreferredModels(keys.kiloApiKey),
+        (m) => streamKiloChat(messages, keys.kiloApiKey!, m, onDelta),
+        'kilo',
+      );
     case 'deepseek':
       if (!keys.deepseekKey) return null;
-      return tryModels(DEEPSEEK_MODELS, (m) => streamDeepSeekChat(messages, keys.deepseekKey!, m, onDelta), 'deepseek');
+      return tryModels(
+        DEEPSEEK_MODELS,
+        (m) => streamDeepSeekChat(messages, keys.deepseekKey!, m, onDelta),
+        'deepseek',
+      );
     case 'agentrouter':
       if (!keys.agentRouterKey) return null;
-      return tryModels(AGENTROUTER_MODELS, (m) => streamAgentRouterChat(messages, keys.agentRouterKey!, m, onDelta), 'ar');
+      return tryModels(
+        AGENTROUTER_MODELS,
+        (m) => streamAgentRouterChat(messages, keys.agentRouterKey!, m, onDelta),
+        'ar',
+      );
     case 'gemini':
       if (!keys.geminiKey) return null;
-      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentStreamSdk(messages, keys.geminiKey!, m, onDelta), 'gemini');
+      return tryModels(
+        GEMINI_MODELS,
+        (m) => geminiGenerateContentStreamSdk(messages, keys.geminiKey!, m, onDelta),
+        'gemini',
+      );
     case 'gemini_fallback':
       if (!keys.geminiFallbackKey) return null;
-      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentStreamSdk(messages, keys.geminiFallbackKey!, m, onDelta), 'gemini');
+      return tryModels(
+        GEMINI_MODELS,
+        (m) => geminiGenerateContentStreamSdk(messages, keys.geminiFallbackKey!, m, onDelta),
+        'gemini',
+      );
     case 'openrouter':
       if (!keys.orKey) return null;
-      return tryModels(OPENROUTER_FREE_MODELS, (m) => streamOpenRouterChat(messages, keys.orKey!, m, onDelta), '');
+      return tryModels(
+        OPENROUTER_FREE_MODELS,
+        (m) => streamOpenRouterChat(messages, keys.orKey!, m, onDelta),
+        '',
+      );
     case 'cloudflare':
       if (!keys.cfAccountId || !keys.cfApiToken) return null;
-      return tryModels(CLOUDFLARE_MODELS, (m) => streamCloudflareChat(messages, keys.cfAccountId!, keys.cfApiToken!, m, onDelta), 'cf');
+      return tryModels(
+        CLOUDFLARE_MODELS,
+        (m) => streamCloudflareChat(messages, keys.cfAccountId!, keys.cfApiToken!, m, onDelta),
+        'cf',
+      );
     default:
       return null;
   }
@@ -1292,7 +1461,8 @@ async function tryProvider(
         const text = await fn(model);
         return { text, modelUsed: prefix ? `${prefix}/${model}` : model };
       } catch (err) {
-        if (__DEV__) console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
+        if (__DEV__)
+          console.warn(`[AI] ${prefix || 'or'}/${model} failed:`, (err as Error).message);
         continue;
       }
     }
@@ -1303,34 +1473,66 @@ async function tryProvider(
   switch (provider) {
     case 'chatgpt':
       if (!keys.chatgptConnected) return null;
-      return tryModels(CHATGPT_MODELS, (m) => callChatGpt(messages, m, json), 'chatgpt');
+      return tryModels(
+        CHATGPT_MODELS,
+        (m) => callChatGptWithFallback(messages, m, json, getChatGptFallbackSlots(keys)),
+        'chatgpt',
+      );
     case 'groq':
       if (!keys.groqKey) return null;
       return tryModels(GROQ_MODELS, (m) => callGroq(messages, keys.groqKey!, m, json), 'groq');
     case 'github':
       if (!keys.githubModelsPat) return null;
-      return tryModels(GITHUB_MODELS_CHAT_MODELS, (m) => callGitHubModels(messages, keys.githubModelsPat!, m, json), 'github');
+      return tryModels(
+        GITHUB_MODELS_CHAT_MODELS,
+        (m) => callGitHubModels(messages, keys.githubModelsPat!, m, json),
+        'github',
+      );
     case 'kilo':
       if (!keys.kiloApiKey) return null;
-      return tryModels(await getKiloPreferredModels(keys.kiloApiKey), (m) => callKilo(messages, keys.kiloApiKey!, m, json), 'kilo');
+      return tryModels(
+        await getKiloPreferredModels(keys.kiloApiKey),
+        (m) => callKilo(messages, keys.kiloApiKey!, m, json),
+        'kilo',
+      );
     case 'deepseek':
       if (!keys.deepseekKey) return null;
-      return tryModels(DEEPSEEK_MODELS, (m) => callDeepSeek(messages, keys.deepseekKey!, m, json), 'deepseek');
+      return tryModels(
+        DEEPSEEK_MODELS,
+        (m) => callDeepSeek(messages, keys.deepseekKey!, m, json),
+        'deepseek',
+      );
     case 'agentrouter':
       if (!keys.agentRouterKey) return null;
-      return tryModels(AGENTROUTER_MODELS, (m) => callAgentRouter(messages, keys.agentRouterKey!, m, json), 'ar');
+      return tryModels(
+        AGENTROUTER_MODELS,
+        (m) => callAgentRouter(messages, keys.agentRouterKey!, m, json),
+        'ar',
+      );
     case 'gemini':
       if (!keys.geminiKey) return null;
-      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentSdk(messages, keys.geminiKey!, m), 'gemini');
+      return tryModels(
+        GEMINI_MODELS,
+        (m) => geminiGenerateContentSdk(messages, keys.geminiKey!, m),
+        'gemini',
+      );
     case 'gemini_fallback':
       if (!keys.geminiFallbackKey) return null;
-      return tryModels(GEMINI_MODELS, (m) => geminiGenerateContentSdk(messages, keys.geminiFallbackKey!, m), 'gemini');
+      return tryModels(
+        GEMINI_MODELS,
+        (m) => geminiGenerateContentSdk(messages, keys.geminiFallbackKey!, m),
+        'gemini',
+      );
     case 'openrouter':
       if (!keys.orKey) return null;
       return tryModels(OPENROUTER_FREE_MODELS, (m) => callOpenRouter(messages, keys.orKey!, m), '');
     case 'cloudflare':
       if (!keys.cfAccountId || !keys.cfApiToken) return null;
-      return tryModels(CLOUDFLARE_MODELS, (m) => callCloudflare(messages, keys.cfAccountId!, keys.cfApiToken!, m), 'cf');
+      return tryModels(
+        CLOUDFLARE_MODELS,
+        (m) => callCloudflare(messages, keys.cfAccountId!, keys.cfApiToken!, m),
+        'cf',
+      );
     default:
       return null;
   }
@@ -1356,6 +1558,7 @@ export async function attemptCloudLLMStream(
   agentRouterKey?: string | undefined,
   providerOrder?: ProviderId[],
   chatgptConnected?: boolean,
+  chatgptSlots?: ChatGptAccountSlot[],
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1500,7 +1703,12 @@ export async function attemptCloudLLMStream(
 
   if (preferredAgentRouterModel && agentRouterKey) {
     try {
-      const text = await streamAgentRouterChat(messages, agentRouterKey, preferredAgentRouterModel, onDelta);
+      const text = await streamAgentRouterChat(
+        messages,
+        agentRouterKey,
+        preferredAgentRouterModel,
+        onDelta,
+      );
       return { text, modelUsed: `ar/${preferredAgentRouterModel}` };
     } catch (err) {
       lastCloudError = err as Error;
@@ -1509,7 +1717,12 @@ export async function attemptCloudLLMStream(
 
   if (preferredChatGptModel && chatgptConnected) {
     try {
-      const text = await streamChatGpt(messages, preferredChatGptModel, onDelta);
+      const text = await streamChatGptWithFallback(
+        messages,
+        preferredChatGptModel,
+        onDelta,
+        chatgptSlots?.length ? chatgptSlots : ['primary'],
+      );
       return { text, modelUsed: `chatgpt/${preferredChatGptModel}` };
     } catch (err) {
       lastCloudError = err as Error;
@@ -1543,21 +1756,41 @@ export async function attemptCloudLLMStream(
   }
 
   // 2. Default Routing — iterate providers in user-defined (or default) order
-  const order = ensureChatGptInOrder(providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER);
+  const order = ensureChatGptInOrder(
+    providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER,
+  );
   const keys: ProviderKeys = {
-    groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey,
-    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken, chatgptConnected,
+    groqKey,
+    githubModelsPat,
+    kiloApiKey,
+    deepseekKey,
+    agentRouterKey,
+    geminiKey,
+    geminiFallbackKey,
+    orKey,
+    cfAccountId,
+    cfApiToken,
+    chatgptConnected,
+    chatgptSlots,
   };
   const skipModels: Record<string, string | undefined> = {
-    chatgpt: preferredChatGptModel, groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
-    deepseek: preferredDeepseekModel, agentrouter: preferredAgentRouterModel,
-    gemini: preferredGeminiModel, gemini_fallback: preferredGeminiModel,
-    openrouter: preferredOpenRouterModel, cloudflare: preferredCfModel,
+    chatgpt: preferredChatGptModel,
+    groq: preferredGroqModel,
+    github: preferredGithubModel,
+    kilo: preferredKiloModel,
+    deepseek: preferredDeepseekModel,
+    agentrouter: preferredAgentRouterModel,
+    gemini: preferredGeminiModel,
+    gemini_fallback: preferredGeminiModel,
+    openrouter: preferredOpenRouterModel,
+    cloudflare: preferredCfModel,
   };
 
   if (__DEV__) {
     const available = order.filter((p) => providerHasKey(p, keys));
-    console.log(`[AI] stream routing order: [${order.join(' → ')}] (available: ${available.join(', ')})`);
+    console.log(
+      `[AI] stream routing order: [${order.join(' → ')}] (available: ${available.join(', ')})`,
+    );
   }
 
   for (const provider of order) {
@@ -1642,6 +1875,7 @@ export async function attemptCloudLLM(
   agentRouterKey?: string | undefined,
   providerOrder?: ProviderId[],
   chatgptConnected?: boolean,
+  chatgptSlots?: ChatGptAccountSlot[],
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1687,7 +1921,12 @@ export async function attemptCloudLLM(
   // 1. Explicit UI Selections
   if (preferredChatGptModel && chatgptConnected) {
     try {
-      const text = await callChatGpt(messages, preferredChatGptModel, !textMode);
+      const text = await callChatGptWithFallback(
+        messages,
+        preferredChatGptModel,
+        !textMode,
+        chatgptSlots?.length ? chatgptSlots : ['primary'],
+      );
       return { text, modelUsed: `chatgpt/${preferredChatGptModel}` };
     } catch (err) {
       lastCloudError = err as Error;
@@ -1777,21 +2016,41 @@ export async function attemptCloudLLM(
   }
 
   // 2. Default Routing — iterate providers in user-defined (or default) order
-  const order = ensureChatGptInOrder(providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER);
+  const order = ensureChatGptInOrder(
+    providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER,
+  );
   const keys2: ProviderKeys = {
-    groqKey, githubModelsPat, kiloApiKey, deepseekKey, agentRouterKey,
-    geminiKey, geminiFallbackKey, orKey, cfAccountId, cfApiToken, chatgptConnected,
+    groqKey,
+    githubModelsPat,
+    kiloApiKey,
+    deepseekKey,
+    agentRouterKey,
+    geminiKey,
+    geminiFallbackKey,
+    orKey,
+    cfAccountId,
+    cfApiToken,
+    chatgptConnected,
+    chatgptSlots,
   };
   const skipModels: Record<string, string | undefined> = {
-    chatgpt: preferredChatGptModel, groq: preferredGroqModel, github: preferredGithubModel, kilo: preferredKiloModel,
-    deepseek: preferredDeepseekModel, agentrouter: preferredAgentRouterModel,
-    gemini: preferredGeminiModel, gemini_fallback: preferredGeminiModel,
-    openrouter: preferredOpenRouterModel, cloudflare: preferredCfModel,
+    chatgpt: preferredChatGptModel,
+    groq: preferredGroqModel,
+    github: preferredGithubModel,
+    kilo: preferredKiloModel,
+    deepseek: preferredDeepseekModel,
+    agentrouter: preferredAgentRouterModel,
+    gemini: preferredGeminiModel,
+    gemini_fallback: preferredGeminiModel,
+    openrouter: preferredOpenRouterModel,
+    cloudflare: preferredCfModel,
   };
 
   if (__DEV__) {
     const available = order.filter((p) => providerHasKey(p, keys2));
-    console.log(`[AI] routing order: [${order.join(' → ')}] (available: ${available.join(', ')}) textMode=${textMode}`);
+    console.log(
+      `[AI] routing order: [${order.join(' → ')}] (available: ${available.join(', ')}) textMode=${textMode}`,
+    );
   }
 
   for (const provider of order) {

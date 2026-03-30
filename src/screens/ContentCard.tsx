@@ -13,6 +13,7 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type {
@@ -33,8 +34,9 @@ import { askGuru, explainTopicDeeper } from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
-import { MarkdownRender } from '../components/MarkdownRender';
 import ErrorBoundary from '../components/ErrorBoundary';
+import AppText from '../components/AppText';
+import StudyMarkdown from '../components/StudyMarkdown';
 import { theme } from '../constants/theme';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
@@ -392,18 +394,26 @@ function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
       <View style={s.ratingRow}>
         <TouchableOpacity
           style={[s.ratingBtn, { flex: 1, borderColor: '#F44336' }]}
-          onPress={() => onRate(2)}
+          onPress={() => onRate(0)}
           activeOpacity={0.8}
         >
-          <Text style={[s.ratingNum, { color: '#F44336' }]}>Not yet</Text>
+          <Text style={[s.ratingNum, { color: '#F44336', fontSize: 15 }]}>Not yet</Text>
           <Text style={s.ratingLabel}>😕</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[s.ratingBtn, { flex: 1, borderColor: '#4CAF50' }]}
-          onPress={() => onRate(4)}
+          style={[s.ratingBtn, { flex: 1, borderColor: '#FF9800' }]}
+          onPress={() => onRate(1)}
           activeOpacity={0.8}
         >
-          <Text style={[s.ratingNum, { color: '#4CAF50' }]}>Got it!</Text>
+          <Text style={[s.ratingNum, { color: '#FF9800', fontSize: 15 }]}>Will forget</Text>
+          <Text style={s.ratingLabel}>🤔</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[s.ratingBtn, { flex: 1, borderColor: '#4CAF50' }]}
+          onPress={() => onRate(3)}
+          activeOpacity={0.8}
+        >
+          <Text style={[s.ratingNum, { color: '#4CAF50', fontSize: 15 }]}>Got it!</Text>
           <Text style={s.ratingLabel}>🔥</Text>
         </TouchableOpacity>
       </View>
@@ -419,6 +429,7 @@ function KeyPointsCard({
   onSkip,
   onContextChange,
 }: { content: KeyPointsContent; onContextChange?: ContextUpdater } & Omit<Props, 'content'>) {
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const [revealIndex, setRevealIndex] = useState(0);
   const [showRating, setShowRating] = useState(false);
 
@@ -445,11 +456,15 @@ function KeyPointsCard({
   ];
 
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView
+      key={`${viewportWidth}x${viewportHeight}`}
+      style={s.scroll}
+      contentContainerStyle={s.container}
+    >
       <Text style={s.cardType}>KEY POINTS</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <AppText style={s.cardTitle} numberOfLines={3} variant="title">
         {content.topicName}
-      </Text>
+      </AppText>
       <Text style={s.kpProgress}>
         {Math.min(revealIndex + 1, content.points.length)} / {content.points.length}
       </Text>
@@ -463,7 +478,7 @@ function KeyPointsCard({
                 <Text style={[s.kpNumberText, { color }]}>{i + 1}</Text>
               </View>
               <View style={s.kpContent}>
-                <MarkdownRender content={emphasizeHighYieldMarkdown(pt)} compact />
+                <StudyMarkdown content={emphasizeHighYieldMarkdown(pt)} compact />
               </View>
             </View>
           );
@@ -472,7 +487,7 @@ function KeyPointsCard({
       {isFullyRevealed && (
         <View style={s.hookBox}>
           <Text style={s.hookLabel}>Memory Hook</Text>
-          <MarkdownRender content={emphasizeHighYieldMarkdown(content.memoryHook)} compact />
+          <StudyMarkdown content={emphasizeHighYieldMarkdown(content.memoryHook)} compact />
         </View>
       )}
       {!isFullyRevealed ? (
@@ -506,6 +521,59 @@ function KeyPointsCard({
 
 // ── Must Know & Most Tested ──────────────────────────────────────
 
+function ExplainablePoint({
+  item,
+  topicName,
+  color,
+}: {
+  item: string;
+  topicName: string;
+  color: string;
+}) {
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleExplain() {
+    if (explanation) return;
+    setLoading(true);
+    try {
+      const resp = await askGuru(
+        `Briefly explain why this is most tested/high yield (under 3 sentences):\n\n${item}`,
+        `Topic: ${topicName}`,
+      );
+      setExplanation(resp);
+    } catch (err) {
+      setExplanation('Could not load explanation. Try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <View style={[s.mkItem, { borderLeftColor: color }]}>
+      <StudyMarkdown content={emphasizeHighYieldMarkdown(item)} compact />
+      {explanation ? (
+        <View style={s.explSection}>
+          <Text style={s.explSectionTitle}>GURU'S EXPLANATION</Text>
+          <Text style={s.explText}>{explanation}</Text>
+        </View>
+      ) : loading ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <Text style={{ color: theme.colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
+            Explaining...
+          </Text>
+        </View>
+      ) : (
+        <TouchableOpacity style={s.smallExplainBtn} onPress={handleExplain} activeOpacity={0.8}>
+          <Ionicons name="sparkles" size={14} color={theme.colors.primary} />
+          <Text style={s.smallExplainText}>Explain this</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
 function MustKnowCard({
   content,
   onDone,
@@ -528,7 +596,7 @@ function MustKnowCard({
       <View style={s.mkList}>
         {content.mustKnow.map((item, i) => (
           <View key={i} style={[s.mkItem, { borderLeftColor: theme.colors.error }]}>
-            <MarkdownRender content={emphasizeHighYieldMarkdown(item)} compact />
+            <StudyMarkdown content={emphasizeHighYieldMarkdown(item)} compact />
           </View>
         ))}
       </View>
@@ -539,9 +607,12 @@ function MustKnowCard({
       </Text>
       <View style={s.mkList}>
         {content.mostTested.map((item, i) => (
-          <View key={i} style={[s.mkItem, { borderLeftColor: theme.colors.warning }]}>
-            <MarkdownRender content={emphasizeHighYieldMarkdown(item)} compact />
-          </View>
+          <ExplainablePoint
+            key={i}
+            item={item}
+            topicName={content.topicName}
+            color={theme.colors.warning}
+          />
         ))}
       </View>
 
@@ -877,7 +948,7 @@ function QuizCard({
               <Ionicons name="reader-outline" size={14} color={theme.colors.primary} />
               <Text style={s.explSectionTitle}>Explanation</Text>
             </View>
-            <MarkdownRender content={emphasizeHighYieldMarkdown(formattedExplanation)} />
+            <StudyMarkdown content={emphasizeHighYieldMarkdown(formattedExplanation)} />
           </View>
         </View>
       )}
@@ -906,7 +977,7 @@ function QuizCard({
             <Ionicons name="school-outline" size={14} color={theme.colors.primary} />
             <Text style={s.explSectionTitle}>Deeper Explanation</Text>
           </View>
-          <MarkdownRender content={emphasizeHighYieldMarkdown(deepExplanation)} compact />
+          <StudyMarkdown content={emphasizeHighYieldMarkdown(deepExplanation)} compact />
         </View>
       )}
       {showExpl && (
@@ -946,7 +1017,7 @@ function StoryCard({
       </Text>
       <TopicImage topicName={content.topicName} />
       <View style={{ marginBottom: 20 }}>
-        <MarkdownRender content={emphasizeHighYieldMarkdown(content.story)} />
+        <StudyMarkdown content={emphasizeHighYieldMarkdown(content.story)} />
       </View>
       <View style={s.highlightsBox}>
         <Text style={s.highlightsLabel}>Key concepts in this story:</Text>
@@ -1018,14 +1089,14 @@ function MnemonicCard({
         {revealStep >= 1 &&
           content.expansion.map((line, i) => (
             <View key={i} style={{ paddingLeft: 8 }}>
-              <MarkdownRender content={emphasizeHighYieldMarkdown(line)} compact />
+              <StudyMarkdown content={emphasizeHighYieldMarkdown(line)} compact />
             </View>
           ))}
       </View>
       {revealStep >= 2 && (
         <View style={s.hookBox}>
           <Text style={s.hookLabel}>💡 Tip</Text>
-          <MarkdownRender content={emphasizeHighYieldMarkdown(content.tip)} compact />
+          <StudyMarkdown content={emphasizeHighYieldMarkdown(content.tip)} compact />
         </View>
       )}
       {revealStep < 2 ? (
@@ -1145,7 +1216,7 @@ function TeachBackCard({
               Guru's Review (Score: {guruFeedback?.score ?? '?'} / 5):
             </Text>
             <View style={s.markdownBlock}>
-              <MarkdownRender
+              <StudyMarkdown
                 content={emphasizeHighYieldMarkdown(guruFeedback?.feedback ?? content.guruReaction)}
                 compact
               />
@@ -1155,7 +1226,7 @@ function TeachBackCard({
                 <Text style={s.missedLabel}>You missed:</Text>
                 {guruFeedback.missed.map((m, i) => (
                   <View key={i} style={s.markdownListItem}>
-                    <MarkdownRender content={emphasizeHighYieldMarkdown(`- ${m}`)} compact />
+                    <StudyMarkdown content={emphasizeHighYieldMarkdown(`- ${m}`)} compact />
                   </View>
                 ))}
               </View>
@@ -1165,7 +1236,7 @@ function TeachBackCard({
             <Text style={s.highlightsLabel}>Expected key points:</Text>
             {content.keyPointsToMention.map((pt, i) => (
               <View key={i} style={s.markdownListItem}>
-                <MarkdownRender content={emphasizeHighYieldMarkdown(`- ${pt}`)} compact />
+                <StudyMarkdown content={emphasizeHighYieldMarkdown(`- ${pt}`)} compact />
               </View>
             ))}
           </View>
@@ -1237,7 +1308,7 @@ function ErrorHuntCard({
               <Text style={[s.explText, { color: '#F44336' }]}>❌ "{err.wrong}"</Text>
               <Text style={[s.explText, { color: '#4CAF50' }]}>✅ Should be: "{err.correct}"</Text>
               <View style={{ marginTop: 4 }}>
-                <MarkdownRender content={emphasizeHighYieldMarkdown(err.explanation)} />
+                <StudyMarkdown content={emphasizeHighYieldMarkdown(err.explanation)} />
               </View>
             </View>
           ))}
@@ -1316,7 +1387,7 @@ function DetectiveCard({
               {content.answer}
             </Text>
             <View style={{ marginTop: 4 }}>
-              <MarkdownRender content={emphasizeHighYieldMarkdown(content.explanation)} />
+              <StudyMarkdown content={emphasizeHighYieldMarkdown(content.explanation)} />
             </View>
           </View>
           <ConfidenceRating onRate={onDone} />
@@ -1490,7 +1561,7 @@ function SocraticCard({
                 borderColor: '#1E5C1E',
               }}
             >
-              <MarkdownRender content={emphasizeHighYieldMarkdown(question.answer)} />
+              <StudyMarkdown content={emphasizeHighYieldMarkdown(question.answer)} />
             </View>
             <Text
               style={{
@@ -1564,7 +1635,9 @@ function SocraticCard({
 
 const s = StyleSheet.create({
   scroll: { flex: 1 },
-  container: { padding: 20, paddingBottom: 60 },
+  // stretch: default flex-start shrink-wraps children; markdown rows then mis-measure width
+  // (last words clipped on Android, esp. landscape with plenty of horizontal space).
+  container: { padding: 20, paddingBottom: 60, alignItems: 'stretch' as const },
   cardType: {
     color: '#6C63FF',
     fontSize: 12,
@@ -1577,7 +1650,15 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  cardTitle: { color: '#fff', fontWeight: '800', fontSize: 22, marginBottom: 20, lineHeight: 28 },
+  cardTitle: {
+    color: '#fff',
+    fontWeight: '800',
+    fontSize: 22,
+    marginBottom: 20,
+    lineHeight: 28,
+    minWidth: 0,
+    width: '100%',
+  },
   topicImage: {
     width: '100%',
     height: 200,
@@ -1612,6 +1693,8 @@ const s = StyleSheet.create({
   kpCard: {
     flexDirection: 'row' as const,
     alignItems: 'flex-start' as const,
+    alignSelf: 'stretch' as const,
+    minWidth: 0,
     backgroundColor: theme.colors.surface,
     borderRadius: 12,
     borderLeftWidth: 3,
@@ -1631,6 +1714,7 @@ const s = StyleSheet.create({
   },
   kpContent: {
     flex: 1,
+    minWidth: 0,
   },
   kpProgress: {
     color: theme.colors.textMuted,
@@ -1732,6 +1816,24 @@ const s = StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   explainDeeperText: { color: theme.colors.primary, fontWeight: '700' as const, fontSize: 14 },
+  smallExplainBtn: {
+    alignSelf: 'flex-start' as const,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    marginTop: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    gap: 4,
+  },
+  smallExplainText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '700' as const,
+  },
   deepExplLoading: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,

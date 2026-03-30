@@ -1,5 +1,17 @@
 # TODO
 
+## Session Progression / FSRS
+
+- [ ] Define `mastered` from FSRS history, not a single Study Session rating
+  - Study Session now caps normal promotion at `reviewed`
+  - Decide the promotion rule for `mastered` using FSRS signals such as `fsrs_reps`, `fsrs_stability`, due-history consistency, and repeat high-confidence reviews
+  - Audit every place that reads `status = 'mastered'` to ensure it still matches the intended spaced-repetition semantics
+- [ ] Add a behavioral cooldown for `DO THIS NOW` deep dives
+  - A just-completed `deep_dive` topic should not immediately reappear in `DO THIS NOW`
+  - Allow an exception only when the topic is still severely weak by an explicit rule
+  - Apply this in the weakest-topic recommendation path, not by hiding the topic globally from review/planning
+  - Recheck Home refresh behavior after progress updates so the recommendation updates immediately
+
 ## Inline Alert Migration
 
 Goal: Replace non-critical `Alert.alert(...)` usage with inline toasts/banners, while keeping critical confirmations as modals.
@@ -23,11 +35,13 @@ Goal: Replace non-critical `Alert.alert(...)` usage with inline toasts/banners, 
 ### Convert To Inline First (Phase 1)
 
 Convert passive/non-blocking alerts first:
+
 - `Copied`, `Done`, `Success`, and FYI info
 - Recoverable non-blocking errors
 - "No items" informational notices
 
 Primary files (highest impact):
+
 - [ ] `src/screens/SettingsScreen.tsx` (28)
 - [ ] `src/screens/RecordingVaultScreen.tsx` (9)
 - [ ] `src/screens/LectureModeScreen.tsx` (8) - only non-blocking ones
@@ -41,6 +55,7 @@ Primary files (highest impact):
 ### Convert With UX Decision (Phase 2)
 
 These may currently block a flow; decide case-by-case:
+
 - [ ] Validation alerts (`No key`, `No token`, `Subject required`)
   - Option A: inline error + disabled CTA
   - Option B: inline banner near the field

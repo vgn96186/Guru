@@ -20,6 +20,18 @@ export type {
   DailyLog,
 };
 
+export type ChatGptAccountSlot = 'primary' | 'secondary';
+
+export interface ChatGptAccountState {
+  enabled: boolean;
+  connected: boolean;
+}
+
+export interface ChatGptAccountsConfig {
+  primary: ChatGptAccountState;
+  secondary: ChatGptAccountState;
+}
+
 export interface Subject {
   id: number;
   name: string;
@@ -181,6 +193,8 @@ export interface UserProfile {
       { verified: boolean; verifiedAt: number; fingerprint: string }
     >
   >;
+  /** ChatGPT account connection/enabled state for primary and backup slots. */
+  chatgptAccounts?: ChatGptAccountsConfig;
   /** True when ChatGPT OAuth tokens are stored in secure store. */
   chatgptConnected?: boolean;
 }
@@ -204,6 +218,18 @@ export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'kilo',
   'deepseek',
   'agentrouter',
+  'gemini',
+  'gemini_fallback',
+  'openrouter',
+  'cloudflare',
+];
+
+export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
+  'groq',
+  'agentrouter',
+  'github',
+  'kilo',
+  'deepseek',
   'gemini',
   'gemini_fallback',
   'openrouter',

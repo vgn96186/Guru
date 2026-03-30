@@ -16,8 +16,9 @@ jest.mock('../db/queries/aiCache', () => ({
   setContentFlagged: jest.fn(),
 }));
 
-jest.mock('../components/MarkdownRender', () => ({
-  MarkdownRender: ({ content }: { content: string }) => {
+jest.mock('../components/StudyMarkdown', () => ({
+  __esModule: true,
+  default: ({ content }: { content: string }) => {
     const { Text } = require('react-native');
     return <Text>{content}</Text>;
   },

@@ -58,7 +58,7 @@ import {
   testKiloConnection,
   testDeepgramConnection,
 } from '../services/ai/providerHealth';
-import type { ContentType, ProviderId, Subject, UserProfile } from '../types';
+import type { ChatGptAccountSlot, ContentType, ProviderId, Subject, UserProfile } from '../types';
 import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
 import {
   requestDeviceCode,
@@ -114,6 +114,44 @@ interface AppBackup {
 type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave';
 type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
 type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
+type ChatGptAccountSettings = {
+  primary: { enabled: boolean; connected: boolean };
+  secondary: { enabled: boolean; connected: boolean };
+};
+
+function defaultChatGptAccountSettings(): ChatGptAccountSettings {
+  return {
+    primary: { enabled: true, connected: false },
+    secondary: { enabled: false, connected: false },
+  };
+}
+
+function sanitizeChatGptAccountSettings(value: unknown): ChatGptAccountSettings {
+  const fallback = defaultChatGptAccountSettings();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback;
+  const root = value as Record<string, unknown>;
+  const readSlot = (slot: ChatGptAccountSlot) => {
+    const raw = root[slot];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return fallback[slot];
+    const record = raw as Record<string, unknown>;
+    return {
+      enabled: typeof record.enabled === 'boolean' ? record.enabled : fallback[slot].enabled,
+      connected:
+        typeof record.connected === 'boolean' ? record.connected : fallback[slot].connected,
+    };
+  };
+  return {
+    primary: readSlot('primary'),
+    secondary: readSlot('secondary'),
+  };
+}
+
+function isChatGptEnabled(settings: ChatGptAccountSettings): boolean {
+  return (
+    (settings.primary.enabled && settings.primary.connected) ||
+    (settings.secondary.enabled && settings.secondary.connected)
+  );
+}
 
 function fingerprintSecret(secret: string): string {
   // Lightweight stable fingerprint so we never persist raw secret copies.
@@ -489,8 +527,12 @@ export default function SettingsScreen() {
   const [testingDeepgramKey, setTestingDeepgramKey] = useState(false);
   const [deepgramKeyTestResult, setDeepgramKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [apiValidation, setApiValidation] = useState<ApiValidationState>({});
-  const [chatgptConnected, setChatgptConnected] = useState(false);
-  const [chatgptConnecting, setChatgptConnecting] = useState(false);
+  const [chatgptAccounts, setChatgptAccounts] = useState<ChatGptAccountSettings>(
+    defaultChatGptAccountSettings(),
+  );
+  const [chatgptConnectingSlot, setChatgptConnectingSlot] = useState<ChatGptAccountSlot | null>(
+    null,
+  );
   const [chatgptDeviceCode, setChatgptDeviceCode] = useState<DeviceCodeResponse | null>(null);
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
@@ -550,7 +592,7 @@ export default function SettingsScreen() {
     kiloApiKey,
     deepseekKey,
     agentRouterKey,
-    chatgptConnected,
+    chatgptConnected: isChatGptEnabled(chatgptAccounts),
   });
 
   useEffect(() => {
@@ -711,8 +753,8 @@ export default function SettingsScreen() {
     setTestingDeepgramKey(false);
   }
 
-  async function connectChatGpt() {
-    setChatgptConnecting(true);
+  async function connectChatGpt(slot: ChatGptAccountSlot) {
+    setChatgptConnectingSlot(slot);
     try {
       const dc = await requestDeviceCode();
       setChatgptDeviceCode(dc);
@@ -733,33 +775,46 @@ export default function SettingsScreen() {
           authResult.authorization_code,
           authResult.code_verifier,
         );
-        await saveTokens(tokens);
-        await updateUserProfile({ chatgptConnected: true });
-        setChatgptConnected(true);
+        await saveTokens(tokens, slot);
+        const nextAccounts = sanitizeChatGptAccountSettings(chatgptAccounts);
+        nextAccounts[slot] = { enabled: true, connected: true };
+        await updateUserProfile({
+          chatgptAccounts: nextAccounts,
+          chatgptConnected: isChatGptEnabled(nextAccounts),
+        });
+        setChatgptAccounts(nextAccounts);
         setChatgptDeviceCode(null);
-        setChatgptConnecting(false);
+        setChatgptConnectingSlot(null);
         refreshProfile();
-        Alert.alert('Connected', 'ChatGPT is now linked to Guru.');
+        Alert.alert(
+          'Connected',
+          `ChatGPT ${slot === 'primary' ? 'primary' : 'secondary'} account is now linked to Guru.`,
+        );
         return;
       }
       throw new Error('Device code expired. Please try again.');
     } catch (err: any) {
       Alert.alert('Connection failed', err.message ?? 'Unknown error');
       setChatgptDeviceCode(null);
-      setChatgptConnecting(false);
+      setChatgptConnectingSlot(null);
     }
   }
 
-  async function disconnectChatGpt() {
-    Alert.alert('Disconnect ChatGPT?', 'This will remove stored tokens.', [
+  async function disconnectChatGpt(slot: ChatGptAccountSlot) {
+    Alert.alert('Disconnect ChatGPT?', 'This will remove stored tokens for this account slot.', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Disconnect',
         style: 'destructive',
         onPress: async () => {
-          await clearTokens();
-          await updateUserProfile({ chatgptConnected: false });
-          setChatgptConnected(false);
+          await clearTokens(slot);
+          const nextAccounts = sanitizeChatGptAccountSettings(chatgptAccounts);
+          nextAccounts[slot] = { ...nextAccounts[slot], connected: false };
+          await updateUserProfile({
+            chatgptAccounts: nextAccounts,
+            chatgptConnected: isChatGptEnabled(nextAccounts),
+          });
+          setChatgptAccounts(nextAccounts);
           refreshProfile();
         },
       },
@@ -895,6 +950,7 @@ export default function SettingsScreen() {
         falApiKey: currentProfile.falApiKey ?? '',
         braveSearchApiKey: currentProfile.braveSearchApiKey ?? '',
         apiValidation: sanitizeApiValidationState(currentProfile.apiValidation),
+        chatgptAccounts: sanitizeChatGptAccountSettings(currentProfile.chatgptAccounts),
         guruChatDefaultModel: currentProfile.guruChatDefaultModel ?? 'auto',
         imageGenerationModel: currentProfile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL,
         guruMemoryNotes: currentProfile.guruMemoryNotes ?? '',
@@ -961,7 +1017,17 @@ export default function SettingsScreen() {
       setHuggingFaceToken(profile.huggingFaceToken ?? '');
       setHuggingFaceModel(profile.huggingFaceTranscriptionModel ?? DEFAULT_HF_TRANSCRIPTION_MODEL);
       setDeepgramApiKey((profile as any).deepgramApiKey ?? '');
-      setChatgptConnected(!!profile.chatgptConnected);
+      setChatgptAccounts(
+        sanitizeChatGptAccountSettings(
+          profile.chatgptAccounts ??
+            (profile.chatgptConnected
+              ? {
+                  primary: { enabled: true, connected: true },
+                  secondary: { enabled: false, connected: false },
+                }
+              : undefined),
+        ),
+      );
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
@@ -1005,6 +1071,8 @@ export default function SettingsScreen() {
         falApiKey: falApiKey.trim(),
         braveSearchApiKey: braveSearchApiKey.trim(),
         apiValidation: sanitizeApiValidationState(apiValidation),
+        chatgptAccounts: sanitizeChatGptAccountSettings(chatgptAccounts),
+        chatgptConnected: isChatGptEnabled(chatgptAccounts),
         guruChatDefaultModel: guruChatDefaultModel.trim() || 'auto',
         imageGenerationModel: normalizeImageGenerationModel(imageGenerationModel),
         guruMemoryNotes: guruMemoryNotes.trim(),
@@ -1061,6 +1129,7 @@ export default function SettingsScreen() {
     imageGenerationModel,
     guruMemoryNotes,
     preferGeminiStructuredJson,
+    chatgptAccounts,
     huggingFaceToken,
     huggingFaceModel,
     deepgramApiKey,
@@ -1394,26 +1463,11 @@ export default function SettingsScreen() {
                 Codex models page and currently starts with GPT-5.4, then GPT-5.4-mini, before older
                 Codex alternatives.
               </Text>
-              {chatgptConnected ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 8 }}>
-                  <Ionicons name="checkmark-circle" size={22} color={theme.colors.success} />
-                  <Text style={[styles.label, { color: theme.colors.success, flex: 1 }]}>
-                    Connected
-                  </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.validateBtn,
-                      { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
-                    ]}
-                    onPress={disconnectChatGpt}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}>
-                      Disconnect
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              ) : chatgptConnecting && chatgptDeviceCode ? (
+              <Text style={styles.hint}>
+                Primary is tried first. Secondary is only tried if primary fails before producing a
+                response. Disable either slot here to skip it entirely.
+              </Text>
+              {chatgptConnectingSlot && chatgptDeviceCode ? (
                 <View style={{ marginTop: 8 }}>
                   <Text style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
                     Enter this code at openai.com:
@@ -1443,7 +1497,8 @@ export default function SettingsScreen() {
                   >
                     <ActivityIndicator size="small" color={theme.colors.primary} />
                     <Text style={[styles.hint, { marginTop: 0 }]}>
-                      Waiting for authorization...
+                      Waiting for authorization for the{' '}
+                      {chatgptConnectingSlot === 'primary' ? 'primary' : 'secondary'} account...
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -1462,31 +1517,135 @@ export default function SettingsScreen() {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.validateBtn,
-                    {
-                      marginTop: 8,
-                      paddingHorizontal: 24,
-                      paddingVertical: 10,
-                      alignSelf: 'flex-start',
-                      backgroundColor: theme.colors.primary + '22',
-                    },
-                  ]}
-                  onPress={connectChatGpt}
-                  disabled={chatgptConnecting}
-                  activeOpacity={0.8}
-                >
-                  {chatgptConnecting ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                  ) : (
-                    <Text style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 14 }}>
-                      Connect ChatGPT
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              )}
+              ) : null}
+              {(['primary', 'secondary'] as ChatGptAccountSlot[]).map((slot) => {
+                const slotState = chatgptAccounts[slot];
+                const isPrimary = slot === 'primary';
+                const isConnecting = chatgptConnectingSlot === slot;
+                return (
+                  <View
+                    key={slot}
+                    style={{
+                      marginTop: 12,
+                      padding: 12,
+                      borderWidth: 1,
+                      borderColor: theme.colors.border,
+                      borderRadius: 12,
+                      backgroundColor: theme.colors.background,
+                    }}
+                  >
+                    <View style={styles.switchRow}>
+                      <View style={{ flex: 1, paddingRight: 12 }}>
+                        <Text style={styles.switchLabel}>
+                          {isPrimary ? 'Primary account' : 'Secondary account'}
+                        </Text>
+                        <Text style={styles.hint}>
+                          {isPrimary
+                            ? 'Tried first whenever ChatGPT is selected in routing.'
+                            : 'Backup account used only if primary fails early.'}
+                        </Text>
+                      </View>
+                      <Switch
+                        value={slotState.enabled}
+                        onValueChange={(value) =>
+                          setChatgptAccounts((prev) => ({
+                            ...prev,
+                            [slot]: { ...prev[slot], enabled: value },
+                          }))
+                        }
+                        trackColor={{
+                          false: theme.colors.border,
+                          true: theme.colors.primaryTintMedium,
+                        }}
+                        thumbColor={
+                          slotState.enabled ? theme.colors.primary : theme.colors.textMuted
+                        }
+                      />
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 12,
+                        marginTop: 8,
+                      }}
+                    >
+                      <Ionicons
+                        name={slotState.connected ? 'checkmark-circle' : 'ellipse-outline'}
+                        size={20}
+                        color={slotState.connected ? theme.colors.success : theme.colors.textMuted}
+                      />
+                      <Text
+                        style={[
+                          styles.label,
+                          {
+                            flex: 1,
+                            color: slotState.connected
+                              ? theme.colors.success
+                              : theme.colors.textMuted,
+                          },
+                        ]}
+                      >
+                        {slotState.connected ? 'Connected' : 'Not connected'}
+                      </Text>
+                      {slotState.connected ? (
+                        <TouchableOpacity
+                          style={[
+                            styles.validateBtn,
+                            { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                          ]}
+                          onPress={() => disconnectChatGpt(slot)}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}
+                          >
+                            Disconnect
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          style={[
+                            styles.validateBtn,
+                            {
+                              paddingHorizontal: 16,
+                              backgroundColor: theme.colors.primary + '22',
+                            },
+                          ]}
+                          onPress={() => connectChatGpt(slot)}
+                          disabled={chatgptConnectingSlot !== null}
+                          activeOpacity={0.8}
+                        >
+                          {isConnecting ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                          ) : (
+                            <Text
+                              style={{
+                                color: theme.colors.primary,
+                                fontWeight: '600',
+                                fontSize: 13,
+                              }}
+                            >
+                              Connect
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    {!slotState.enabled && slotState.connected ? (
+                      <Text style={[styles.hint, { marginTop: 8 }]}>
+                        Disabled. This connected account will be skipped by routing until
+                        re-enabled.
+                      </Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+              {!isChatGptEnabled(chatgptAccounts) ? (
+                <Text style={[styles.hint, { marginTop: 10 }]}>
+                  ChatGPT is currently excluded from provider routing.
+                </Text>
+              ) : null}
             </SubSectionToggle>
 
             {/* ── API Keys ─────────────────────────────── */}
@@ -2024,7 +2183,7 @@ export default function SettingsScreen() {
                 const hasKey = (() => {
                   switch (id) {
                     case 'chatgpt':
-                      return chatgptConnected || !!profile?.chatgptConnected;
+                      return isChatGptEnabled(chatgptAccounts) || !!profile?.chatgptConnected;
                     case 'groq':
                       return !!(groqKey.trim() || profile?.groqApiKey);
                     case 'github':

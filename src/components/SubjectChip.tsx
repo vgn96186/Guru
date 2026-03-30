@@ -52,8 +52,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     minWidth: 0,
+    maxWidth: '100%',
   },
   text: {
     fontSize: 13,
+    flexShrink: 1,
   },
 });

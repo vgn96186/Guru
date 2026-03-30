@@ -1,6 +1,10 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
-import { incrementWrongCount, markTopicNeedsAttention } from '../db/queries/topics';
+import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import {
+  incrementWrongCount,
+  markTopicNeedsAttention,
+  updateTopicProgress,
+} from '../db/queries/topics';
 import { setContentFlagged } from '../db/queries/aiCache';
 
 const mockNavigate = jest.fn();
@@ -17,6 +21,8 @@ jest.mock('react-native', () => {
     React.createElement('Text', props, children);
   const ScrollView = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
     React.createElement('ScrollView', props, children);
+  const Pressable = ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) =>
+    React.createElement('Pressable', props, children);
   const TouchableOpacity = ({
     children,
     ...props
@@ -27,6 +33,7 @@ jest.mock('react-native', () => {
     View,
     Text,
     ScrollView,
+    Pressable,
     TouchableOpacity,
     StatusBar,
     Alert: { alert: jest.fn() },
@@ -46,6 +53,7 @@ jest.mock('react-native', () => {
     },
     StyleSheet: {
       create: (styles: unknown) => styles,
+      flatten: (style: unknown) => style,
     },
   };
 });
@@ -63,6 +71,7 @@ const sessionStoreState: any = {
   agenda: null,
   currentItemIndex: 0,
   currentContentIndex: 0,
+  maxUnlockedContentIndex: 0,
   currentContent: null,
   isLoadingContent: false,
   completedTopicIds: [],
@@ -84,6 +93,7 @@ const sessionStoreState: any = {
   }),
   setCurrentContent: jest.fn(),
   setLoadingContent: jest.fn(),
+  jumpToContent: jest.fn(),
   setPaused: jest.fn(),
   nextContent: jest.fn(),
   nextTopic: jest.fn(),
@@ -246,6 +256,9 @@ describe('SessionScreen', () => {
     sessionStoreState.sessionId = null;
     sessionStoreState.sessionState = 'planning';
     sessionStoreState.agenda = null;
+    sessionStoreState.currentItemIndex = 0;
+    sessionStoreState.currentContentIndex = 0;
+    sessionStoreState.maxUnlockedContentIndex = 0;
     mockBuildSession.mockResolvedValue({
       items: [
         {
@@ -379,5 +392,84 @@ describe('SessionScreen', () => {
       expect(markTopicNeedsAttention).toHaveBeenCalledWith(77);
       expect(setContentFlagged).toHaveBeenCalledWith(77, 'quiz', true);
     });
+  });
+
+  it('allows jumping back to an already unlocked earlier content tab', async () => {
+    sessionStoreState.sessionState = 'studying';
+    sessionStoreState.currentContentIndex = 2;
+    sessionStoreState.maxUnlockedContentIndex = 2;
+    sessionStoreState.agenda = {
+      items: [
+        {
+          topic: {
+            id: 11,
+            name: 'Cardiology',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
+          contentTypes: ['keypoints', 'socratic', 'must_know'],
+        },
+      ],
+      mode: 'normal',
+      focusNote: '',
+    };
+    sessionStoreState.currentContent = {
+      type: 'must_know',
+      topicName: 'Cardiology',
+      mustKnow: ['A'],
+      mostTested: ['B'],
+      examTip: 'C',
+    };
+
+    const SessionScreen = require('./SessionScreen').default;
+    const { getByText } = render(<SessionScreen />);
+
+    fireEvent.press(getByText('Key Points'));
+
+    expect(sessionStoreState.jumpToContent).toHaveBeenCalledWith(0);
+  });
+
+  it('does not mark a topic as mastered from a single high-confidence session card', async () => {
+    const { getCurrentAgendaItem } = jest.requireMock('../store/useSessionStore');
+    getCurrentAgendaItem.mockReturnValue({
+      topic: {
+        id: 88,
+        name: 'Renal Physiology',
+        progress: { status: 'reviewed' },
+      },
+      contentTypes: ['keypoints'],
+    });
+    sessionStoreState.sessionState = 'studying';
+    sessionStoreState.agenda = {
+      items: [
+        {
+          topic: { id: 88, name: 'Renal Physiology', progress: { status: 'reviewed' } },
+          contentTypes: ['keypoints'],
+        },
+      ],
+      mode: 'normal',
+      focusNote: '',
+    };
+    sessionStoreState.currentContent = {
+      type: 'keypoints',
+      topicName: 'Renal Physiology',
+      points: ['Countercurrent multiplication'],
+      memoryHook: 'Loop of Henle gradient',
+    };
+
+    const SessionScreen = require('./SessionScreen').default;
+    render(<SessionScreen />);
+
+    await waitFor(() => {
+      expect(mockContentCard).toHaveBeenCalled();
+    });
+
+    const latestProps = latestContentCardProps as {
+      onDone: (confidence: number) => Promise<void>;
+    };
+
+    await latestProps.onDone(4);
+
+    expect(updateTopicProgress).toHaveBeenCalledWith(88, 'reviewed', 4, expect.any(Number));
   });
 });

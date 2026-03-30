@@ -1,6 +1,7 @@
 import { getChatHistory, getChatMessageCount } from '../db/queries/aiCache';
 import { getSessionMemoryRow, upsertSessionMemory } from '../db/queries/guruChatMemory';
 import { generateTextWithRouting } from './ai/generate';
+import { NON_STUDY_PROVIDER_ORDER } from '../types';
 import type { Message } from './ai/types';
 
 /** Regenerate rolling summary after this many new chat_history rows since last summary. */
@@ -22,11 +23,15 @@ export async function maybeSummarizeGuruSession(
   if (history.length === 0) return;
 
   const slice = history.slice(-24);
-  const transcript = slice.map((m) => `${m.role === 'user' ? 'Student' : 'Guru'}: ${m.message}`).join('\n');
+  const transcript = slice
+    .map((m) => `${m.role === 'user' ? 'Student' : 'Guru'}: ${m.message}`)
+    .join('\n');
   const prev = (row?.summaryText ?? '').trim();
 
   const userContent = [
-    prev ? `Previous summary (update and merge, do not repeat verbatim if outdated):\n${prev}\n` : '',
+    prev
+      ? `Previous summary (update and merge, do not repeat verbatim if outdated):\n${prev}\n`
+      : '',
     `Recent messages:\n${transcript}`,
     '\nUpdated summary:',
   ].join('\n');
@@ -37,7 +42,9 @@ export async function maybeSummarizeGuruSession(
   ];
 
   try {
-    const { text } = await generateTextWithRouting(messages);
+    const { text } = await generateTextWithRouting(messages, {
+      providerOrderOverride: NON_STUDY_PROVIDER_ORDER,
+    });
     const summary = text.trim();
     if (!summary) return;
     await upsertSessionMemory(threadId, topicName, summary, count);

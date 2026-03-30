@@ -1,4 +1,5 @@
 import { generateTextWithRouting } from '../aiService';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import type { LectureAnalysis } from './analysis';
 
 const ADHD_NOTE_SYSTEM_PROMPT = `You create elite medical study notes for a NEET-PG student with ADHD.
@@ -77,10 +78,13 @@ Transcript:
 ${transcriptExcerpt || '(No transcript available)'}`;
 
   try {
-    const { text } = await generateTextWithRouting([
-      { role: 'system', content: ADHD_NOTE_SYSTEM_PROMPT },
-      { role: 'user', content: input },
-    ]);
+    const { text } = await generateTextWithRouting(
+      [
+        { role: 'system', content: ADHD_NOTE_SYSTEM_PROMPT },
+        { role: 'user', content: input },
+      ],
+      { providerOrderOverride: DEFAULT_PROVIDER_ORDER },
+    );
     return text.trim();
   } catch {
     console.warn('[NoteGen] ADHD note generation failed, using fallback.');

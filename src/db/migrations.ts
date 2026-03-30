@@ -847,7 +847,24 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_ch
     ); CREATE INDEX IF NOT EXISTS idx_ai_cache_lookup ON ai_cache(topic_id, content_type)`,
     description: 'Recreate ai_cache CHECK constraint to include must_know content',
   },
+  {
+    version: 132,
+    sql: `ALTER TABLE user_profile ADD COLUMN chatgpt_accounts_json TEXT NOT NULL DEFAULT '{"primary":{"enabled":true,"connected":false},"secondary":{"enabled":false,"connected":false}}'`,
+    description: 'Add per-slot ChatGPT account config for primary and backup account fallback',
+  },
+  {
+    version: 133,
+    sql: `UPDATE user_profile
+          SET chatgpt_accounts_json = CASE
+            WHEN chatgpt_connected = 1
+            THEN '{"primary":{"enabled":true,"connected":true},"secondary":{"enabled":false,"connected":false}}'
+            ELSE '{"primary":{"enabled":true,"connected":false},"secondary":{"enabled":false,"connected":false}}'
+          END
+          WHERE chatgpt_accounts_json IS NULL
+             OR trim(chatgpt_accounts_json) = ''`,
+    description: 'Backfill ChatGPT primary slot from legacy chatgpt_connected flag',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 131;
+export const LATEST_VERSION = 133;

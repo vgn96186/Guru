@@ -6,6 +6,8 @@
     "generate:bundled-env": "node ./scripts/generate-bundled-env.js",
     "start": "npm run generate:bundled-env && cross-env NODE_ENV=development expo start",
     "start:fresh": "npm run generate:bundled-env && cross-env NODE_ENV=development expo start --clear",
+    "android:metro": "npm run generate:bundled-env && cross-env NODE_ENV=development expo start --dev-client --localhost --port 8081 -c",
+    "android:open": "node ./scripts/open-android-dev-client.js",
     "start:tee": "npm run generate:bundled-env && cross-env NODE_ENV=development expo start --clear 2>&1 | tee metro.log",
     "dev:metro": "bash ./scripts/start-metro-logs.sh",
     "stop:metro": "bash ./scripts/stop-metro.sh",

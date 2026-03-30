@@ -432,6 +432,13 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['deepseek_key', "TEXT NOT NULL DEFAULT ''"],
       ['agentrouter_key', "TEXT NOT NULL DEFAULT ''"],
       ['provider_order', "TEXT NOT NULL DEFAULT '[]'"],
+      ['deepgram_api_key', "TEXT NOT NULL DEFAULT ''"],
+      ['api_validation_json', "TEXT NOT NULL DEFAULT '{}'"],
+      ['chatgpt_connected', 'INTEGER NOT NULL DEFAULT 0'],
+      [
+        'chatgpt_accounts_json',
+        `TEXT NOT NULL DEFAULT '{"primary":{"enabled":true,"connected":false},"secondary":{"enabled":false,"connected":false}}'`,
+      ],
     ],
     topics: [
       ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],

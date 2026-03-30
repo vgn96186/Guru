@@ -11,8 +11,13 @@ import {
   Animated,
   Easing,
   Image,
+  Platform,
+  Pressable,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import {
   useRoute,
   useNavigation,
@@ -60,14 +65,8 @@ const STATUS_COLORS: Record<TopicStatus, string> = {
   mastered: theme.colors.mastered,
 };
 
-const STATUS_LABELS: Record<TopicStatus, string> = {
-  unseen: 'Unseen',
-  seen: 'Seen',
-  reviewed: 'Review',
-  mastered: 'Mastered',
-};
-
 type TopicFilter = 'all' | 'due' | 'unseen' | 'weak' | 'high_yield' | 'notes';
+type TopicSortOption = 'default' | 'name' | 'priority' | 'status';
 
 const FILTER_OPTIONS: Array<{ key: TopicFilter; label: string }> = [
   { key: 'all', label: 'All' },
@@ -77,6 +76,20 @@ const FILTER_OPTIONS: Array<{ key: TopicFilter; label: string }> = [
   { key: 'high_yield', label: 'High Yield' },
   { key: 'notes', label: 'Notes' },
 ];
+
+const SORT_OPTIONS: Array<{ value: TopicSortOption; label: string }> = [
+  { value: 'default', label: 'Default' },
+  { value: 'name', label: 'Name' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'status', label: 'Status' },
+];
+
+const STATUS_SORT_ORDER: Record<TopicStatus, number> = {
+  unseen: 0,
+  seen: 1,
+  reviewed: 2,
+  mastered: 3,
+};
 
 export default function TopicDetailScreen() {
   const route = useRoute<Route>();
@@ -91,10 +104,52 @@ export default function TopicDetailScreen() {
   const [noteText, setNoteText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<TopicFilter>('all');
+  const [sortBy, setSortBy] = useState<TopicSortOption>('default');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const [milestoneText, setMilestoneText] = useState('');
   const [noteImages, setNoteImages] = useState<Record<number, GeneratedStudyImageRecord[]>>({});
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchWidthAnim = useRef(new Animated.Value(170)).current;
   const today = new Date().toISOString().slice(0, 10);
+  const isSingleTopicView = initialTopicId != null;
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<number | null, TopicWithProgress[]>();
+    for (const topic of allTopics) {
+      const key = topic.parentTopicId ?? null;
+      const existing = map.get(key);
+      if (existing) {
+        existing.push(topic);
+      } else {
+        map.set(key, [topic]);
+      }
+    }
+    return map;
+  }, [allTopics]);
+  const topicDepthMap = useMemo(() => {
+    const byId = new Map(allTopics.map((topic) => [topic.id, topic]));
+    const memo = new Map<number, number>();
+
+    const getDepth = (topic: TopicWithProgress): number => {
+      const cached = memo.get(topic.id);
+      if (cached != null) return cached;
+      if (!topic.parentTopicId) {
+        memo.set(topic.id, 0);
+        return 0;
+      }
+      const parent = byId.get(topic.parentTopicId);
+      const depth = parent ? getDepth(parent) + 1 : 0;
+      memo.set(topic.id, depth);
+      return depth;
+    };
+
+    for (const topic of allTopics) {
+      getDepth(topic);
+    }
+
+    return memo;
+  }, [allTopics]);
 
   useEffect(() => {
     if (isFocused) {
@@ -104,10 +159,10 @@ export default function TopicDetailScreen() {
 
   useEffect(() => {
     if (!isFocused) return;
-    if (initialSearchQuery) {
+    if (initialSearchQuery && !isSingleTopicView) {
       setSearchQuery(initialSearchQuery);
     }
-  }, [initialSearchQuery, isFocused]);
+  }, [initialSearchQuery, isFocused, isSingleTopicView]);
 
   useEffect(() => {
     if (!isFocused || !initialTopicId || allTopics.length === 0) return;
@@ -128,9 +183,19 @@ export default function TopicDetailScreen() {
   }, [allTopics, initialTopicId, isFocused]);
 
   useEffect(() => {
+    if (isSingleTopicView) {
+      const topic = allTopics.find((item) => item.id === initialTopicId);
+      setDisplayTopics(topic ? [topic] : []);
+      return;
+    }
+
     // Re-calculate display list whenever allTopics or collapsedParents change
     const list: TopicWithProgress[] = [];
-    const topLevel = allTopics.filter((t) => !t.parentTopicId);
+    const rootTopics = allTopics.filter(
+      (topic) =>
+        !topic.parentTopicId ||
+        !allTopics.some((candidate) => candidate.id === topic.parentTopicId),
+    );
 
     const normalizedQuery = searchQuery.trim().toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
@@ -167,40 +232,78 @@ export default function TopicDetailScreen() {
       }
     };
 
-    for (const parent of topLevel) {
-      const children = allTopics.filter((t) => t.parentTopicId === parent.id);
-      const parentMatches = matchesTopic(parent);
-      const visibleChildren = children.filter(matchesTopic);
+    const compareTopics = (left: TopicWithProgress, right: TopicWithProgress): number => {
+      if (sortBy === 'default') {
+        return 0;
+      }
+      if (sortBy === 'name') {
+        return left.name.localeCompare(right.name);
+      }
+      if (sortBy === 'priority') {
+        return right.inicetPriority - left.inicetPriority || left.name.localeCompare(right.name);
+      }
+      return (
+        STATUS_SORT_ORDER[left.progress.status] - STATUS_SORT_ORDER[right.progress.status] ||
+        left.name.localeCompare(right.name)
+      );
+    };
 
-      if (!parentMatches && visibleChildren.length === 0) {
-        continue;
+    const sortTopicGroup = (topics: TopicWithProgress[]): TopicWithProgress[] =>
+      sortBy === 'default' ? topics : [...topics].sort(compareTopics);
+
+    const flattenVisible = (topic: TopicWithProgress): TopicWithProgress[] => {
+      const children = sortTopicGroup(childrenByParentId.get(topic.id) ?? []);
+      const flattenedChildren: TopicWithProgress[] = [];
+      let hasVisibleDescendant = false;
+
+      for (const child of children) {
+        const flattenedChildBranch = flattenVisible(child);
+        if (flattenedChildBranch.length > 0) {
+          hasVisibleDescendant = true;
+          flattenedChildren.push(...flattenedChildBranch);
+        }
       }
 
-      list.push(parent);
-      if (!collapsedParents.has(parent.id)) {
-        list.push(...visibleChildren);
-      }
-    }
+      const shouldShow = matchesTopic(topic) || hasVisibleDescendant;
+      if (!shouldShow) return [];
 
-    // Subjects without parent grouping
-    const standaloneLeaves = allTopics.filter(
-      (t) => !t.parentTopicId && !allTopics.some((candidate) => candidate.parentTopicId === t.id),
-    );
-    const standaloneVisible = standaloneLeaves.filter(matchesTopic);
-    for (const leaf of standaloneVisible) {
-      if (!list.some((existing) => existing.id === leaf.id)) {
-        list.push(leaf);
+      if (collapsedParents.has(topic.id)) {
+        return [topic];
       }
+
+      return [topic, ...flattenedChildren];
+    };
+
+    for (const rootTopic of sortTopicGroup(rootTopics)) {
+      list.push(...flattenVisible(rootTopic));
     }
 
     setDisplayTopics(list);
-  }, [activeFilter, allTopics, collapsedParents, searchQuery]);
+  }, [
+    activeFilter,
+    allTopics,
+    childrenByParentId,
+    collapsedParents,
+    initialTopicId,
+    isSingleTopicView,
+    searchQuery,
+    sortBy,
+  ]);
 
   function confirmDiscardUnsavedNotes(onDiscard: () => void) {
     Alert.alert('Discard changes?', 'You have unsaved notes.', [
       { text: 'Keep editing', style: 'cancel' },
       { text: 'Discard', style: 'destructive', onPress: onDiscard },
     ]);
+  }
+
+  function openTopicPage(topic: TopicWithProgress) {
+    navigation.push('TopicDetail', {
+      subjectId,
+      subjectName,
+      initialTopicId: topic.id,
+      initialSearchQuery: topic.name,
+    });
   }
 
   function handleTopicPress(t: TopicWithProgress) {
@@ -224,9 +327,7 @@ export default function TopicDetailScreen() {
           setExpandedId(null);
         }
       } else {
-        setExpandedId(t.id);
-        setNoteText(t.progress.userNotes);
-        void loadTopicImages(t.id);
+        openTopicPage(t);
       }
     }
   }
@@ -340,6 +441,15 @@ export default function TopicDetailScreen() {
       notes: leafTopics.filter((t) => t.progress.userNotes.trim().length > 0).length,
     } as Record<TopicFilter, number>;
   }, [leafTopics, dueTopics.length, highYieldTopics.length, weakTopics.length]);
+  const activeFilterSummary = useMemo(() => {
+    if (activeFilter === 'all') {
+      return 'Filter All topics';
+    }
+    const label = FILTER_OPTIONS.find((option) => option.key === activeFilter)?.label ?? 'Filter';
+    return `${label} ${filterCounts[activeFilter]}`;
+  }, [activeFilter, filterCounts]);
+  const currentSortLabel =
+    SORT_OPTIONS.find((option) => option.value === sortBy)?.label ?? 'Default';
 
   const prevDoneRef = useRef(0);
   useEffect(() => {
@@ -377,6 +487,15 @@ export default function TopicDetailScreen() {
   const countAnim = useRef(new Animated.Value(0)).current;
   const [displayCount, setDisplayCount] = useState(done);
   const prevPct = useRef(0);
+
+  useEffect(() => {
+    Animated.timing(searchWidthAnim, {
+      toValue: isSearchFocused || searchQuery.length > 0 ? 280 : 170, // Expands to approx 3 inches
+      duration: 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [isSearchFocused, searchQuery.length, searchWidthAnim]);
 
   useEffect(() => {
     const increased = pct > prevPct.current;
@@ -434,6 +553,43 @@ export default function TopicDetailScreen() {
           titleNumberOfLines={1}
           containerStyle={styles.screenHeader}
           titleStyle={styles.screenHeaderTitle}
+          rightElement={
+            !isSingleTopicView ? (
+              <Animated.View
+                style={[
+                  styles.headerSearchContainer,
+                  {
+                    width: searchWidthAnim,
+                    backgroundColor:
+                      isSearchFocused || searchQuery.length > 0
+                        ? theme.colors.surface
+                        : theme.colors.surfaceAlt,
+                  },
+                ]}
+              >
+                <Ionicons name="search" size={16} color={theme.colors.textMuted} />
+                <TextInput
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                  placeholder="Search..."
+                  placeholderTextColor={theme.colors.textMuted}
+                  style={styles.headerSearchInputNative}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </Animated.View>
+            ) : undefined
+          }
         >
           <View style={styles.headerCenter}>
             <View style={styles.progressRow}>
@@ -466,73 +622,137 @@ export default function TopicDetailScreen() {
         </ScreenHeader>
 
         <View style={styles.controls}>
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search topics in this subject..."
-            placeholderTextColor={theme.colors.textMuted}
-            style={styles.searchInput}
-          />
-          <View style={styles.filterRow}>
-            {FILTER_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.key}
-                style={[styles.filterChip, activeFilter === option.key && styles.filterChipActive]}
-                onPress={() => setActiveFilter(option.key)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={`Filter: ${option.label} ${filterCounts[option.key]}`}
-                accessibilityState={{ selected: activeFilter === option.key }}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    activeFilter === option.key && styles.filterChipTextActive,
-                  ]}
-                >
-                  {option.label} {filterCounts[option.key]}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.bulkRow}>
-            <TouchableOpacity
-              style={[styles.bulkChip, styles.bulkDueChip]}
-              onPress={() => launchBatch(dueTopics, 'review')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Review all due topics"
-            >
-              <Text style={styles.bulkChipText}>Review all due</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.bulkChip, styles.bulkHighYieldChip]}
-              onPress={() => launchBatch(highYieldTopics, 'study')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Study high yield topics"
-            >
-              <Text style={styles.bulkChipText}>Study high yield</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.bulkChip, styles.bulkWeakChip]}
-              onPress={() => launchBatch(weakTopics, 'deep_dive')}
-              activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel="Review weak topics only"
-            >
-              <Text style={styles.bulkChipText}>Review weak only</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.legend}>
-          {(Object.keys(STATUS_COLORS) as TopicStatus[]).map((s) => (
-            <View key={s} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: STATUS_COLORS[s] }]} />
-              <Text style={styles.legendText}>{STATUS_LABELS[s]}</Text>
+          {isSingleTopicView ? (
+            <View style={styles.singleTopicBanner}>
+              <Text style={styles.singleTopicBannerTitle}>Topic page</Text>
+              <Text style={styles.singleTopicBannerText}>
+                Start a focused session for this topic or add notes below.
+              </Text>
             </View>
-          ))}
+          ) : (
+            <>
+              <View style={styles.quickActionsSection}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.quickActionsContent}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.quickActionChip,
+                      isSortMenuOpen && styles.quickActionChipPrimary,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Sort topics"
+                    onPress={() => setIsSortMenuOpen((prev) => !prev)}
+                  >
+                    <Ionicons
+                      name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
+                      size={15}
+                      color={
+                        isSortMenuOpen ? theme.colors.primaryLight : theme.colors.textSecondary
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.quickActionText,
+                        isSortMenuOpen && styles.quickActionTextPrimary,
+                      ]}
+                    >
+                      Sort <Text style={styles.quickActionValue}>{currentSortLabel}</Text>
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.quickActionChip,
+                      (activeFilter !== 'all' || isFilterMenuOpen) && styles.quickActionChipPrimary,
+                    ]}
+                    onPress={() => setIsFilterMenuOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Filter topics"
+                  >
+                    <Ionicons
+                      name="options-outline"
+                      size={15}
+                      color={
+                        activeFilter !== 'all' || isFilterMenuOpen
+                          ? theme.colors.primaryLight
+                          : theme.colors.textSecondary
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.quickActionText,
+                        activeFilter !== 'all' && styles.quickActionTextPrimary,
+                      ]}
+                    >
+                      {activeFilterSummary}
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+              {isSortMenuOpen ? (
+                <View style={styles.sortSection}>
+                  <View style={styles.sortMenu}>
+                    {SORT_OPTIONS.map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[
+                          styles.sortOption,
+                          sortBy === option.value && styles.sortOptionActive,
+                        ]}
+                        onPress={() => {
+                          setSortBy(option.value);
+                          setIsSortMenuOpen(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.sortOptionText,
+                            sortBy === option.value && styles.sortOptionTextActive,
+                          ]}
+                        >
+                          {option.label}
+                        </Text>
+                        {sortBy === option.value ? (
+                          <Ionicons name="checkmark" size={16} color={theme.colors.primaryLight} />
+                        ) : null}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ) : null}
+              <View style={styles.bulkRow}>
+                <TouchableOpacity
+                  style={[styles.bulkChip, styles.bulkDueChip]}
+                  onPress={() => launchBatch(dueTopics, 'review')}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Review all due topics"
+                >
+                  <Text style={styles.bulkChipText}>Review all due</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.bulkChip, styles.bulkHighYieldChip]}
+                  onPress={() => launchBatch(highYieldTopics, 'study')}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Study high yield topics"
+                >
+                  <Text style={styles.bulkChipText}>Study high yield</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.bulkChip, styles.bulkWeakChip]}
+                  onPress={() => launchBatch(weakTopics, 'deep_dive')}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel="Review weak topics only"
+                >
+                  <Text style={styles.bulkChipText}>Review weak only</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
         </View>
 
         <FlatList
@@ -552,8 +772,8 @@ export default function TopicDetailScreen() {
             </View>
           }
           renderItem={({ item }) => {
-            const isParent = allTopics.some((t) => t.parentTopicId === item.id);
-            const isChild = !!item.parentTopicId;
+            const isParent = (childrenByParentId.get(item.id)?.length ?? 0) > 0;
+            const depth = topicDepthMap.get(item.id) ?? 0;
             const isCollapsed = collapsedParents.has(item.id);
             const isHighYield = item.inicetPriority >= 8;
             const isDue =
@@ -564,9 +784,7 @@ export default function TopicDetailScreen() {
               item.progress.timesStudied > 0 &&
               item.progress.confidence > 0 &&
               item.progress.confidence < 3;
-            const parentChildren = isParent
-              ? allTopics.filter((t) => t.parentTopicId === item.id)
-              : [];
+            const parentChildren = childrenByParentId.get(item.id) ?? [];
             const parentCompleted = parentChildren.filter(
               (child) => child.progress.status !== 'unseen',
             ).length;
@@ -586,7 +804,7 @@ export default function TopicDetailScreen() {
                   style={[
                     styles.topicRow,
                     isParent && styles.parentRow,
-                    isChild && styles.childRow,
+                    depth > 0 && { marginLeft: Math.min(depth * 12, 48) },
                   ]}
                   onPress={() => handleTopicPress(item)}
                   activeOpacity={0.8}
@@ -696,11 +914,6 @@ export default function TopicDetailScreen() {
                         ))}
                       </View>
                     )}
-                    <Text
-                      style={[styles.statusLabel, { color: STATUS_COLORS[item.progress.status] }]}
-                    >
-                      {STATUS_LABELS[item.progress.status]}
-                    </Text>
                   </View>
                 </TouchableOpacity>
                 {expandedId === item.id && (
@@ -848,6 +1061,87 @@ export default function TopicDetailScreen() {
             );
           }}
         />
+        <Modal
+          visible={isFilterMenuOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setIsFilterMenuOpen(false)}
+        >
+          <View style={styles.sheetOverlay}>
+            <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
+            <View style={styles.sheetCard}>
+              <View style={styles.sheetHeader}>
+                <View style={styles.sheetHeaderCopy}>
+                  <Text style={styles.sheetTitle}>Filter Topics</Text>
+                  <Text style={styles.sheetSubtitle}>
+                    Keep the current syllabus filters in one place.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.sheetCloseBtn}
+                  onPress={() => setIsFilterMenuOpen(false)}
+                >
+                  <Ionicons name="close" size={18} color={theme.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.clearFiltersBtn}
+                onPress={() => {
+                  setActiveFilter('all');
+                  setIsFilterMenuOpen(false);
+                }}
+              >
+                <Text style={styles.clearFiltersText}>Clear filters</Text>
+              </TouchableOpacity>
+
+              <ScrollView
+                style={styles.sheetScroll}
+                contentContainerStyle={styles.sheetScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.sheetSection}>
+                  <Text style={styles.sheetSectionTitle}>Topic focus</Text>
+                  <View style={styles.sheetOptions}>
+                    {FILTER_OPTIONS.map((option) => (
+                      <TouchableOpacity
+                        key={option.key}
+                        style={[
+                          styles.sheetOption,
+                          activeFilter === option.key && styles.sheetOptionActive,
+                        ]}
+                        onPress={() => {
+                          setActiveFilter(option.key);
+                          setIsFilterMenuOpen(false);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.sheetOptionText,
+                            activeFilter === option.key && styles.sheetOptionTextActive,
+                          ]}
+                        >
+                          {option.label} {filterCounts[option.key]}
+                        </Text>
+                        <Ionicons
+                          name={
+                            activeFilter === option.key ? 'radio-button-on' : 'radio-button-off'
+                          }
+                          size={18}
+                          color={
+                            activeFilter === option.key
+                              ? theme.colors.primaryLight
+                              : theme.colors.textMuted
+                          }
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </ResponsiveContainer>
     </SafeAreaView>
   );
@@ -881,31 +1175,111 @@ const styles = StyleSheet.create({
   progressTrack: { height: 4, backgroundColor: '#2A2A38', borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 2 },
   controls: { paddingHorizontal: 16, gap: 10, marginBottom: 10 },
-  searchInput: {
+  headerSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 12,
+    minHeight: 36,
+  },
+  headerSearchInputNative: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 14,
+    marginLeft: 8,
+    paddingVertical: 0,
+    minHeight: 26,
+  },
+  singleTopicBanner: {
     backgroundColor: '#171722',
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#2A2A38',
     paddingHorizontal: 14,
     paddingVertical: 12,
-    color: '#fff',
+  },
+  singleTopicBannerTitle: {
+    color: '#ECE9FF',
     fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
   },
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  filterChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+  singleTopicBannerText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  quickActionsSection: {},
+  quickActionsContent: {
+    gap: 10,
+    paddingRight: 4,
+  },
+  quickActionChip: {
+    minHeight: 38,
     borderRadius: 999,
-    backgroundColor: '#171722',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: theme.colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  filterChipActive: {
-    backgroundColor: '#262145',
-    borderColor: '#6C63FF66',
+  quickActionChipPrimary: {
+    backgroundColor: theme.colors.primary + '14',
+    borderColor: theme.colors.primary + '38',
   },
-  filterChipText: { color: '#9DA4B7', fontSize: 12, fontWeight: '700' },
-  filterChipTextActive: { color: '#ECE9FF' },
+  quickActionText: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  quickActionTextPrimary: {
+    color: theme.colors.primaryLight,
+  },
+  quickActionValue: {
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '800',
+  },
+  sortSection: {
+    marginTop: -2,
+  },
+  sortMenu: {
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: 'hidden',
+  },
+  sortOption: {
+    minHeight: 44,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sortOptionActive: {
+    backgroundColor: theme.colors.primary + '12',
+  },
+  sortOptionText: {
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  sortOptionTextActive: {
+    color: theme.colors.primaryLight,
+    fontWeight: '700',
+  },
   bulkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   bulkChip: {
     borderRadius: 12,
@@ -916,16 +1290,7 @@ const styles = StyleSheet.create({
   bulkHighYieldChip: { backgroundColor: '#4A3610' },
   bulkWeakChip: { backgroundColor: '#2E244C' },
   bulkChipText: { color: '#F3F4F8', fontSize: 12, fontWeight: '800' },
-  legend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 12,
-  },
-  legendItem: { flexDirection: 'row', alignItems: 'center', minWidth: '42%', flexShrink: 1 },
-  legendDot: { width: 8, height: 8, borderRadius: 4, marginRight: 4 },
-  legendText: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, flexShrink: 1 },
+
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   topicRow: {
     flexDirection: 'row',
@@ -994,19 +1359,14 @@ const styles = StyleSheet.create({
     paddingRight: 14,
     paddingBottom: 12,
     paddingLeft: 8,
-    alignItems: 'flex-end',
-    minWidth: 96,
+    alignItems: 'stretch',
+    minWidth: 104,
+    flexShrink: 0,
   },
   confRow: { flexDirection: 'row', gap: 3, marginBottom: 4, alignItems: 'center' },
   confLabel: { color: theme.colors.textMuted, fontSize: 9, fontWeight: '700', marginRight: 2 },
   confDot: { width: 6, height: 6, borderRadius: 3 },
-  statusLabel: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: '600',
-    textAlign: 'right',
-    paddingRight: 1,
-  },
+
   notePreview: {
     color: '#6C63FF',
     fontSize: 12,
@@ -1016,6 +1376,122 @@ const styles = StyleSheet.create({
   },
   emptyContainer: { padding: 40, alignItems: 'center' },
   emptyText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  sheetOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetCard: {
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderBottomWidth: 0,
+    maxHeight: '78%',
+    paddingTop: 12,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+  },
+  sheetHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  sheetTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '800',
+  },
+  sheetSubtitle: {
+    color: theme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 4,
+  },
+  sheetCloseBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+  },
+  clearFiltersBtn: {
+    alignSelf: 'flex-start',
+    marginHorizontal: 20,
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: theme.colors.primary + '14',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '32',
+  },
+  clearFiltersText: {
+    color: theme.colors.primaryLight,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
+  sheetScroll: {
+    flexGrow: 0,
+  },
+  sheetScrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    gap: 20,
+  },
+  sheetSection: {
+    gap: 10,
+  },
+  sheetSectionTitle: {
+    color: theme.colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: '800',
+  },
+  sheetOptions: {
+    gap: 8,
+  },
+  sheetOption: {
+    minHeight: 46,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  sheetOptionActive: {
+    borderColor: theme.colors.primary + '50',
+    backgroundColor: theme.colors.primary + '12',
+  },
+  sheetOptionText: {
+    flex: 1,
+    minWidth: 0,
+    color: theme.colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '600',
+  },
+  sheetOptionTextActive: {
+    color: theme.colors.primaryLight,
+    fontWeight: '700',
+  },
   notesExpanded: {
     backgroundColor: '#0F0F1E',
     padding: 12,

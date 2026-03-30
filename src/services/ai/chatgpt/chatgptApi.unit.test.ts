@@ -96,6 +96,22 @@ describe('chatgptApi', () => {
     );
   });
 
+  it('uses the requested ChatGPT account slot for auth lookups', async () => {
+    (expoFetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      body: null,
+      text: async () =>
+        'data: {"type":"response.output_text.delta","delta":"ok"}\n\n' + 'data: [DONE]\n\n',
+    });
+
+    await expect(
+      callChatGpt([{ role: 'user', content: 'hello' }], 'gpt-5.4', false, 'secondary'),
+    ).resolves.toBe('ok');
+
+    expect(getValidAccessToken).toHaveBeenCalledWith('secondary');
+    expect(getAccountId).toHaveBeenCalledWith('secondary');
+  });
+
   it('parses buffered SSE text when the runtime provides no readable body', async () => {
     (expoFetch as jest.Mock).mockResolvedValueOnce({
       ok: true,

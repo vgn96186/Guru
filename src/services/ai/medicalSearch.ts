@@ -3,6 +3,7 @@ import { generateTextWithRouting } from './generate';
 import { logGroundingEvent, previewText } from './runtimeDebug';
 import { profileRepository } from '../../db/repositories';
 import { getApiKeys } from './config';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
 
 function compactWhitespace(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim();
@@ -755,7 +756,9 @@ export async function generateImageSearchQuery(
     },
   ];
   try {
-    const { text } = await generateTextWithRouting(msgs);
+    const { text } = await generateTextWithRouting(msgs, {
+      providerOrderOverride: DEFAULT_PROVIDER_ORDER,
+    });
     const candidate = text
       .replace(/^["']|["']$/g, '')
       .trim()

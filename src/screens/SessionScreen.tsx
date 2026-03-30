@@ -129,6 +129,15 @@ function buildCachedQuestionFallbackContent(
   };
 }
 
+function deriveSessionProgressStatus(
+  previousStatus: AgendaItem['topic']['progress']['status'],
+  confidence: number,
+): 'seen' | 'reviewed' {
+  if (confidence <= 1) return 'seen';
+  if (previousStatus === 'unseen') return 'seen';
+  return 'reviewed';
+}
+
 export default function SessionScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<Route>();
@@ -156,6 +165,7 @@ export default function SessionScreen() {
   const agenda = useSessionStore((s) => s.agenda);
   const currentItemIndex = useSessionStore((s) => s.currentItemIndex);
   const currentContentIndex = useSessionStore((s) => s.currentContentIndex);
+  const maxUnlockedContentIndex = useSessionStore((s) => s.maxUnlockedContentIndex);
   const currentContent = useSessionStore((s) => s.currentContent);
   const isLoadingContent = useSessionStore((s) => s.isLoadingContent);
   const completedTopicIds = useSessionStore((s) => s.completedTopicIds);
@@ -172,6 +182,7 @@ export default function SessionScreen() {
   const setAgenda = useSessionStore((s) => s.setAgenda);
   const setCurrentContent = useSessionStore((s) => s.setCurrentContent);
   const setLoadingContent = useSessionStore((s) => s.setLoadingContent);
+  const jumpToContent = useSessionStore((s) => s.jumpToContent);
   const setPaused = useSessionStore((s) => s.setPaused);
   const nextContent = useSessionStore((s) => s.nextContent);
   const nextTopic = useSessionStore((s) => s.nextTopic);
@@ -674,7 +685,7 @@ export default function SessionScreen() {
       }
 
       try {
-        const status = confidence >= 4 ? 'mastered' : confidence >= 2 ? 'reviewed' : 'seen';
+        const status = deriveSessionProgressStatus(item.topic.progress.status, confidence);
         const xp =
           item.topic.progress.status === 'unseen'
             ? XP_REWARDS.TOPIC_UNSEEN
@@ -1201,18 +1212,30 @@ export default function SessionScreen() {
         <View style={styles.tabRowWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
             <View style={styles.contentTypeTabs}>
-              {curItem.contentTypes.map((ct, idx) => (
-                <View
-                  key={ct}
-                  style={[
-                    styles.contentTab,
-                    idx === currentContentIndex && styles.contentTabActive,
-                    idx < currentContentIndex && styles.contentTabDone,
-                  ]}
-                >
-                  <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
-                </View>
-              ))}
+              {curItem.contentTypes.map((ct, idx) => {
+                const isActive = idx === currentContentIndex;
+                const isUnlocked = idx <= maxUnlockedContentIndex;
+                return (
+                  <TouchableOpacity
+                    key={ct}
+                    onPress={() => {
+                      if (!isUnlocked || isActive) return;
+                      jumpToContent(idx);
+                    }}
+                    disabled={!isUnlocked || isActive}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: !isUnlocked, selected: isActive }}
+                    style={[
+                      styles.contentTab,
+                      isActive && styles.contentTabActive,
+                      !isActive && isUnlocked && styles.contentTabDone,
+                      !isUnlocked && styles.contentTabLocked,
+                    ]}
+                  >
+                    <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </ScrollView>
           <Text style={styles.cardCountText}>
@@ -1551,6 +1574,9 @@ const styles = StyleSheet.create({
   contentTabDone: {
     backgroundColor: theme.colors.successSurface,
     borderColor: theme.colors.successTintSoft,
+  },
+  contentTabLocked: {
+    opacity: 0.55,
   },
   contentTabText: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '600' },
   revealScroll: {

@@ -20,6 +20,7 @@ import {
   Modal,
   ScrollView,
   AppState,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -132,7 +133,13 @@ If unclear, make your best guess from the content.`,
       },
       { role: 'user', content: snippet },
     ];
-    const { parsed } = await generateJSONWithRouting(messages, TranscriptLabelSchema, 'low', false);
+    const { parsed } = await generateJSONWithRouting(
+      messages,
+      TranscriptLabelSchema,
+      'low',
+      false,
+      'groq',
+    );
     if (parsed.subject && parsed.topic) return parsed;
     return null;
   } catch {
@@ -215,6 +222,7 @@ function displayName(fileName: string, extractedTitle?: string): string {
 }
 
 export default function TranscriptVaultScreen() {
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const navigation = useNavigation();
   const [files, setFiles] = useState<TranscriptFile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -226,6 +234,7 @@ export default function TranscriptVaultScreen() {
   const [readerContent, setReaderContent] = useState<string | null>(null);
   const [readerTitle, setReaderTitle] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'words'>('name');
+  const listLayoutKey = `${viewportWidth}x${viewportHeight}`;
 
   const loadFiles = useCallback(async () => {
     setLoading(true);
@@ -962,8 +971,10 @@ export default function TranscriptVaultScreen() {
         ) : (
           <FlatList
             data={sortedFiles}
+            key={listLayoutKey}
             keyExtractor={(item) => item.path}
             renderItem={renderItem}
+            extraData={listLayoutKey}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
           />

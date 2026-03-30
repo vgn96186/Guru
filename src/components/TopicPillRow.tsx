@@ -66,9 +66,9 @@ export default React.memo(function TopicPillRow({
 });
 
 const styles = StyleSheet.create({
-  scroll: { maxHeight: 44 },
-  scrollRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap' },
-  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  scroll: { maxHeight: 44, minWidth: 0 },
+  scrollRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap', minWidth: 0 },
+  wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, minWidth: 0 },
   pill: {
     backgroundColor: theme.colors.surface,
     borderRadius: 16,
@@ -77,6 +77,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     color: theme.colors.textPrimary,
+    alignSelf: 'flex-start',
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   moreBadge: {
     alignSelf: 'center',

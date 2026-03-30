@@ -5,49 +5,68 @@
  */
 import * as SecureStore from 'expo-secure-store';
 import { refreshAccessToken, extractAccountIdFromJwt, type TokenResponse } from './chatgptAuth';
+import type { ChatGptAccountSlot } from '../../../types';
 
-const KEY_ACCESS = 'chatgpt_access_token';
-const KEY_REFRESH = 'chatgpt_refresh_token';
-const KEY_EXPIRES_AT = 'chatgpt_expires_at';
-const KEY_ACCOUNT_ID = 'chatgpt_account_id';
+const PRIMARY_KEYS = {
+  access: 'chatgpt_access_token',
+  refresh: 'chatgpt_refresh_token',
+  expiresAt: 'chatgpt_expires_at',
+  accountId: 'chatgpt_account_id',
+} as const;
 
-let refreshMutex: Promise<string> | null = null;
+const SECONDARY_KEYS = {
+  access: 'chatgpt_secondary_access_token',
+  refresh: 'chatgpt_secondary_refresh_token',
+  expiresAt: 'chatgpt_secondary_expires_at',
+  accountId: 'chatgpt_secondary_account_id',
+} as const;
 
-export async function saveTokens(tokens: TokenResponse): Promise<void> {
+const refreshMutex: Partial<Record<ChatGptAccountSlot, Promise<string>>> = {};
+
+function getSlotKeys(slot: ChatGptAccountSlot) {
+  return slot === 'secondary' ? SECONDARY_KEYS : PRIMARY_KEYS;
+}
+
+export async function saveTokens(
+  tokens: TokenResponse,
+  slot: ChatGptAccountSlot = 'primary',
+): Promise<void> {
+  const keys = getSlotKeys(slot);
   const expiresAt = String(Date.now() + tokens.expires_in * 1000);
   const accountId = extractAccountIdFromJwt(tokens.access_token);
   await Promise.all([
-    SecureStore.setItemAsync(KEY_ACCESS, tokens.access_token),
-    SecureStore.setItemAsync(KEY_REFRESH, tokens.refresh_token),
-    SecureStore.setItemAsync(KEY_EXPIRES_AT, expiresAt),
-    SecureStore.setItemAsync(KEY_ACCOUNT_ID, accountId),
+    SecureStore.setItemAsync(keys.access, tokens.access_token),
+    SecureStore.setItemAsync(keys.refresh, tokens.refresh_token),
+    SecureStore.setItemAsync(keys.expiresAt, expiresAt),
+    SecureStore.setItemAsync(keys.accountId, accountId),
   ]);
 }
 
-export async function getAccessToken(): Promise<string | null> {
-  return SecureStore.getItemAsync(KEY_ACCESS);
+export async function getAccessToken(slot: ChatGptAccountSlot = 'primary'): Promise<string | null> {
+  return SecureStore.getItemAsync(getSlotKeys(slot).access);
 }
 
-export async function getAccountId(): Promise<string> {
-  return (await SecureStore.getItemAsync(KEY_ACCOUNT_ID)) ?? '';
+export async function getAccountId(slot: ChatGptAccountSlot = 'primary'): Promise<string> {
+  return (await SecureStore.getItemAsync(getSlotKeys(slot).accountId)) ?? '';
 }
 
-export async function isConnected(): Promise<boolean> {
-  const token = await SecureStore.getItemAsync(KEY_REFRESH);
+export async function isConnected(slot: ChatGptAccountSlot = 'primary'): Promise<boolean> {
+  const token = await SecureStore.getItemAsync(getSlotKeys(slot).refresh);
   return !!token;
 }
 
-export async function clearTokens(): Promise<void> {
+export async function clearTokens(slot: ChatGptAccountSlot = 'primary'): Promise<void> {
+  const keys = getSlotKeys(slot);
   await Promise.all([
-    SecureStore.deleteItemAsync(KEY_ACCESS),
-    SecureStore.deleteItemAsync(KEY_REFRESH),
-    SecureStore.deleteItemAsync(KEY_EXPIRES_AT),
-    SecureStore.deleteItemAsync(KEY_ACCOUNT_ID),
+    SecureStore.deleteItemAsync(keys.access),
+    SecureStore.deleteItemAsync(keys.refresh),
+    SecureStore.deleteItemAsync(keys.expiresAt),
+    SecureStore.deleteItemAsync(keys.accountId),
   ]);
 }
 
-function isExpiringSoon(): Promise<boolean> {
-  return SecureStore.getItemAsync(KEY_EXPIRES_AT).then((raw) => {
+function isExpiringSoon(slot: ChatGptAccountSlot): Promise<boolean> {
+  return SecureStore.getItemAsync(getSlotKeys(slot).expiresAt).then((raw) => {
     if (!raw) return true;
     // Refresh if within 60s of expiry
     return Date.now() > Number(raw) - 60_000;
@@ -58,28 +77,28 @@ function isExpiringSoon(): Promise<boolean> {
  * Returns a valid access token, refreshing if needed.
  * The mutex prevents concurrent refreshes (single-use refresh token safety).
  */
-export async function getValidAccessToken(): Promise<string> {
-  const expiring = await isExpiringSoon();
+export async function getValidAccessToken(slot: ChatGptAccountSlot = 'primary'): Promise<string> {
+  const expiring = await isExpiringSoon(slot);
   if (!expiring) {
-    const token = await getAccessToken();
+    const token = await getAccessToken(slot);
     if (token) return token;
   }
 
   // If a refresh is already in flight, wait for it
-  if (refreshMutex) return refreshMutex;
+  if (refreshMutex[slot]) return refreshMutex[slot]!;
 
-  refreshMutex = (async () => {
+  refreshMutex[slot] = (async () => {
     try {
-      const refreshToken = await SecureStore.getItemAsync(KEY_REFRESH);
+      const refreshToken = await SecureStore.getItemAsync(getSlotKeys(slot).refresh);
       if (!refreshToken) throw new Error('ChatGPT not connected — no refresh token');
 
       const tokens = await refreshAccessToken(refreshToken);
-      await saveTokens(tokens);
+      await saveTokens(tokens, slot);
       return tokens.access_token;
     } finally {
-      refreshMutex = null;
+      delete refreshMutex[slot];
     }
   })();
 
-  return refreshMutex;
+  return refreshMutex[slot]!;
 }

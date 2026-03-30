@@ -95,6 +95,8 @@ export function useLecturePipeline({
 
   // Refs for transcription lifecycle
   const transcriptionStartedRef = useRef(false);
+  const autoStartTimeoutFiredRef = useRef(false);
+  const runTranscriptionRef = useRef<(() => Promise<void>) | null>(null);
   const cancelRequestedRef = useRef(false);
   const transcriptionRunIdRef = useRef(0);
   const lastProgressSignatureRef = useRef('');
@@ -345,6 +347,8 @@ Summary: ${result.lectureSummary}`;
     generateQuiz,
   ]);
 
+  runTranscriptionRef.current = runTranscription;
+
   const saveSessionQuickly = useCallback(async (): Promise<boolean> => {
     if (!analysis) return false;
     if (subjectSelectionRequired && !selectedSubjectName) {
@@ -523,10 +527,19 @@ Summary: ${result.lectureSummary}`;
           recordingPath,
         });
       }
+      autoStartTimeoutFiredRef.current = false;
       transcriptionStartedRef.current = true;
       setIsExpanded(false);
-      const delay = setTimeout(() => runTranscription(), 150);
-      return () => clearTimeout(delay);
+      const delay = setTimeout(() => {
+        autoStartTimeoutFiredRef.current = true;
+        void runTranscriptionRef.current?.();
+      }, 150);
+      return () => {
+        clearTimeout(delay);
+        if (!autoStartTimeoutFiredRef.current) {
+          transcriptionStartedRef.current = false;
+        }
+      };
     } else if (visible && !recordingPath) {
       void updateSessionTranscriptionStatus(logId, 'no_audio', 'No recording file captured');
       // Auto-dismiss — nothing to process
@@ -539,16 +552,7 @@ Summary: ${result.lectureSummary}`;
       void updateSessionTranscriptionStatus(logId, 'failed', 'No transcription engine configured');
       setPhase('error');
     }
-  }, [
-    visible,
-    recordingPath,
-    groqKey,
-    hasHuggingFace,
-    hasLocalWhisper,
-    canTranscribe,
-    logId,
-    runTranscription,
-  ]);
+  }, [visible, recordingPath, groqKey, hasHuggingFace, hasLocalWhisper, canTranscribe, logId]);
 
   useEffect(() => {
     if (!visible) {
@@ -579,6 +583,7 @@ Summary: ${result.lectureSummary}`;
       setScore(0);
       lastProgressSignatureRef.current = '';
       transcriptionStartedRef.current = false;
+      autoStartTimeoutFiredRef.current = false;
       cancelRequestedRef.current = false;
     }
   }, [visible]);

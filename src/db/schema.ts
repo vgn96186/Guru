@@ -201,6 +201,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , deepgram_api_key TEXT NOT NULL DEFAULT ''
   , api_validation_json TEXT NOT NULL DEFAULT '{}'
   , chatgpt_connected INTEGER NOT NULL DEFAULT 0
+  , chatgpt_accounts_json TEXT NOT NULL DEFAULT '{"primary":{"enabled":true,"connected":false},"secondary":{"enabled":false,"connected":false}}'
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

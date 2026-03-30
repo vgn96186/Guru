@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { theme } from '../constants/theme';
 
@@ -24,18 +24,19 @@ export const MarkdownRender = React.memo(function MarkdownRender({
   content,
   compact,
 }: MarkdownRenderProps) {
+  const { width, height } = useWindowDimensions();
   const normalizedContent = normalizeRenderableMarkdown(content);
   const mergedStyles = compact
     ? {
         ...markdownStyles,
-        paragraph: { marginBottom: 0, marginTop: 0 },
+        paragraph: { ...markdownStyles.paragraph, marginBottom: 0, marginTop: 0 },
         body: { ...markdownStyles.body, marginBottom: 0 },
       }
     : markdownStyles;
   const rules = React.useMemo(
     () => ({
       strong: (node: any, children: React.ReactNode, _parent: any, styles: any) => (
-        <Text key={node.key} style={styles.strong}>
+        <Text key={node.key} textBreakStrategy="simple" style={[baseTextStyle.text, styles.strong]}>
           {children}
         </Text>
       ),
@@ -51,7 +52,13 @@ export const MarkdownRender = React.memo(function MarkdownRender({
         return (
           <Text
             key={node.key}
-            style={[inheritedStyles, styles.text, isInsideStrong ? styles.strong : null]}
+            textBreakStrategy="simple"
+            style={[
+              baseTextStyle.text,
+              inheritedStyles,
+              styles.text,
+              isInsideStrong ? styles.strong : null,
+            ]}
           >
             {node.content}
           </Text>
@@ -62,12 +69,19 @@ export const MarkdownRender = React.memo(function MarkdownRender({
   );
 
   return (
-    <View style={styles.container}>
-      <Markdown style={mergedStyles} rules={rules}>
+    <View style={[styles.container, compact && styles.containerCompact]}>
+      <Markdown key={`${width}x${height}`} style={mergedStyles} rules={rules}>
         {normalizedContent}
       </Markdown>
     </View>
   );
+});
+
+const baseTextStyle = StyleSheet.create({
+  text: {
+    includeFontPadding: false,
+    paddingRight: 2,
+  },
 });
 
 const markdownStyles: any = {
@@ -76,12 +90,18 @@ const markdownStyles: any = {
     fontSize: 17,
     lineHeight: 28,
     paddingRight: 2,
+    minWidth: 0,
+    flexShrink: 1,
+    width: '100%',
+    alignSelf: 'stretch',
   },
   text: {
     color: '#A9B2C6',
     fontSize: 17,
     lineHeight: 28,
     paddingRight: 2,
+    minWidth: 0,
+    flexShrink: 1,
   },
   strong: {
     color: '#F3DF84',
@@ -96,12 +116,20 @@ const markdownStyles: any = {
   },
   paragraph: {
     marginBottom: 10,
+    minWidth: 0,
+    flexShrink: 1,
+    width: '100%',
+    alignSelf: 'stretch',
   },
   bullet_list: {
     marginBottom: 10,
+    minWidth: 0,
+    width: '100%',
   },
   ordered_list: {
     marginBottom: 10,
+    minWidth: 0,
+    width: '100%',
   },
   bullet_list_icon: {
     marginLeft: 0,
@@ -118,6 +146,16 @@ const markdownStyles: any = {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: theme.spacing.xs,
+    minWidth: 0,
+    width: '100%',
+  },
+  bullet_list_content: {
+    flex: 1,
+    minWidth: 0,
+  },
+  ordered_list_content: {
+    flex: 1,
+    minWidth: 0,
   },
   heading1: {
     color: theme.colors.textPrimary,
@@ -171,5 +209,9 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     minWidth: 0,
     flexShrink: 1,
+  },
+  /** Fills the keypoint row column so markdown text measures to full usable width. */
+  containerCompact: {
+    width: '100%',
   },
 });

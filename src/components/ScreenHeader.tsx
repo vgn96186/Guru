@@ -16,6 +16,7 @@ interface ScreenHeaderProps {
   title: string;
   subtitle?: string;
   children?: React.ReactNode;
+  rightElement?: React.ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
   titleStyle?: StyleProp<TextStyle>;
   subtitleStyle?: StyleProp<TextStyle>;
@@ -27,6 +28,7 @@ export default function ScreenHeader({
   title,
   subtitle,
   children,
+  rightElement,
   containerStyle,
   titleStyle,
   subtitleStyle,
@@ -73,6 +75,7 @@ export default function ScreenHeader({
           ) : null}
           {children}
         </View>
+        {rightElement}
       </View>
     </View>
   );

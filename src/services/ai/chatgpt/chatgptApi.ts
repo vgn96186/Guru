@@ -3,6 +3,7 @@
  * Adapts the app's Message[] format to the OpenAI Responses API.
  */
 import type { Message } from '../types';
+import type { ChatGptAccountSlot } from '../../../types';
 import { getValidAccessToken, getAccountId } from './chatgptTokenStore';
 import { CHATGPT_MODELS } from '../../../config/appConfig';
 
@@ -284,9 +285,10 @@ export async function callChatGpt(
   messages: Message[],
   model?: string,
   jsonMode?: boolean,
+  slot: ChatGptAccountSlot = 'primary',
 ): Promise<string> {
-  const accessToken = await getValidAccessToken();
-  const accountId = await getAccountId();
+  const accessToken = await getValidAccessToken(slot);
+  const accountId = await getAccountId(slot);
   const selectedModel = model ?? CHATGPT_MODELS[0];
   const body = buildResponsesPayload(messages, selectedModel, true, jsonMode);
   const transportFetch = getChatGptFetch();
@@ -311,9 +313,10 @@ export async function streamChatGpt(
   messages: Message[],
   model: string,
   onDelta: (delta: string) => void,
+  slot: ChatGptAccountSlot = 'primary',
 ): Promise<string> {
-  const accessToken = await getValidAccessToken();
-  const accountId = await getAccountId();
+  const accessToken = await getValidAccessToken(slot);
+  const accountId = await getAccountId(slot);
   const body = buildResponsesPayload(messages, model, true, false);
   const transportFetch = getChatGptFetch();
 

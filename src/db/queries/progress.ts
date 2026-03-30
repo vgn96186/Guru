@@ -9,6 +9,7 @@ import type {
   ContentType,
   StudyResourceMode,
   HarassmentTone,
+  ChatGptAccountsConfig,
 } from '../../types';
 import { LEVELS } from '../../constants/gamification';
 import {
@@ -52,6 +53,47 @@ function isValidFutureDate(dateStr: string | null): boolean {
 
 function sanitizeExamDateOrDefault(dateStr: unknown, fallback: string): string {
   return typeof dateStr === 'string' && isValidFutureDate(dateStr) ? dateStr : fallback;
+}
+
+function defaultChatGptAccountsConfig(): ChatGptAccountsConfig {
+  return {
+    primary: { enabled: true, connected: false },
+    secondary: { enabled: false, connected: false },
+  };
+}
+
+function sanitizeChatGptAccountsConfig(
+  value: unknown,
+  legacyConnected = false,
+): ChatGptAccountsConfig {
+  const fallback = defaultChatGptAccountsConfig();
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    if (legacyConnected) fallback.primary.connected = true;
+    return fallback;
+  }
+
+  const root = value as Record<string, unknown>;
+  const readSlot = (slot: 'primary' | 'secondary') => {
+    const raw = root[slot];
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return fallback[slot];
+    }
+    const record = raw as Record<string, unknown>;
+    return {
+      enabled: typeof record.enabled === 'boolean' ? record.enabled : fallback[slot].enabled,
+      connected:
+        typeof record.connected === 'boolean' ? record.connected : fallback[slot].connected,
+    };
+  };
+
+  const next: ChatGptAccountsConfig = {
+    primary: readSlot('primary'),
+    secondary: readSlot('secondary'),
+  };
+  if (legacyConnected && !next.primary.connected && !next.secondary.connected) {
+    next.primary.connected = true;
+  }
+  return next;
 }
 
 export async function getUserProfile(): Promise<UserProfile> {
@@ -115,6 +157,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     provider_order: string;
     api_validation_json: string;
     chatgpt_connected: number;
+    chatgpt_accounts_json: string;
     fal_api_key: string;
     brave_search_api_key: string;
     deepgram_api_key: string;
@@ -180,9 +223,26 @@ export async function getUserProfile(): Promise<UserProfile> {
       agentRouterKey: '',
       providerOrder: [],
       apiValidation: {},
+      chatgptAccounts: defaultChatGptAccountsConfig(),
       chatgptConnected: false,
     };
   }
+
+  const legacyChatGptConnected = (r.chatgpt_connected ?? 0) === 1;
+  const chatgptAccounts = (() => {
+    try {
+      return sanitizeChatGptAccountsConfig(
+        JSON.parse(r.chatgpt_accounts_json ?? ''),
+        legacyChatGptConnected,
+      );
+    } catch {
+      return sanitizeChatGptAccountsConfig(null, legacyChatGptConnected);
+    }
+  })();
+  const chatgptConnected =
+    chatgptAccounts.primary.enabled && chatgptAccounts.primary.connected
+      ? true
+      : chatgptAccounts.secondary.enabled && chatgptAccounts.secondary.connected;
 
   return {
     displayName: r.display_name,
@@ -300,7 +360,8 @@ export async function getUserProfile(): Promise<UserProfile> {
         return {};
       }
     })(),
-    chatgptConnected: (r.chatgpt_connected ?? 0) === 1,
+    chatgptAccounts,
+    chatgptConnected,
   };
 }
 
@@ -363,6 +424,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     deepgramApiKey: 'deepgram_api_key',
     apiValidation: 'api_validation_json',
     chatgptConnected: 'chatgpt_connected',
+    chatgptAccounts: 'chatgpt_accounts_json',
   };
 
   const setClauses: string[] = [];
@@ -404,6 +466,10 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   if ('apiValidation' in updates) {
     setClauses.push('api_validation_json = ?');
     values.push(JSON.stringify(updates.apiValidation ?? {}));
+  }
+  if ('chatgptAccounts' in updates) {
+    setClauses.push('chatgpt_accounts_json = ?');
+    values.push(JSON.stringify(sanitizeChatGptAccountsConfig(updates.chatgptAccounts, false)));
   }
 
   if (setClauses.length === 0) return;

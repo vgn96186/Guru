@@ -187,6 +187,8 @@ async function runSingleAnalysisPass(text: string): Promise<LectureAnalysis> {
     [{ role: 'user', content: extractPrompt }],
     LectureAnalysisSchema,
     ANALYSIS_COMPLEXITY,
+    true,
+    'groq',
   );
   return { ...mapParsedAnalysis(parsed), modelUsed };
 }
@@ -213,6 +215,8 @@ Segment ${i + 1}:
       [{ role: 'user', content: extractPrompt }],
       LectureAnalysisSchema,
       ANALYSIS_COMPLEXITY,
+      true,
+      'groq',
     );
     return { ...mapParsedAnalysis(parsed), modelUsed };
   } catch (_err) {

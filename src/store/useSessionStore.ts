@@ -15,6 +15,8 @@ interface SessionStoreState {
   agenda: Agenda | null;
   currentItemIndex: number;
   currentContentIndex: number;
+  maxUnlockedContentIndex: number;
+  contentCacheBySlot: Record<string, AIContent>;
   currentContent: AIContent | null;
   isLoadingContent: boolean;
   completedTopicIds: number[];
@@ -30,6 +32,7 @@ interface SessionStoreState {
   setAgenda: (agenda: Agenda) => void;
   setCurrentContent: (content: AIContent | null) => void;
   setLoadingContent: (loading: boolean) => void;
+  jumpToContent: (index: number) => void;
   // Pausing
   isPaused: boolean;
   setPaused: (paused: boolean) => void;
@@ -46,6 +49,10 @@ interface SessionStoreState {
   resetSession: () => void;
 }
 
+function getContentSlotKey(topicId: number, contentIndex: number): string {
+  return `${topicId}:${contentIndex}`;
+}
+
 export const useSessionStore = create<SessionStoreState>()(
   persist(
     (set, get) => ({
@@ -54,6 +61,8 @@ export const useSessionStore = create<SessionStoreState>()(
       agenda: null,
       currentItemIndex: 0,
       currentContentIndex: 0,
+      maxUnlockedContentIndex: 0,
+      contentCacheBySlot: {},
       currentContent: null,
       isLoadingContent: false,
       completedTopicIds: [],
@@ -67,8 +76,36 @@ export const useSessionStore = create<SessionStoreState>()(
       setSessionId: (id) => set({ sessionId: id, startedAt: Date.now() }),
       setSessionState: (state) => set({ sessionState: state }),
       setAgenda: (agenda) => set({ agenda }),
-      setCurrentContent: (content) => set({ currentContent: content }),
+      setCurrentContent: (content) => {
+        const { agenda, currentItemIndex, currentContentIndex, contentCacheBySlot } = get();
+        const item = agenda?.items[currentItemIndex];
+        if (!item || !content) {
+          set({ currentContent: content });
+          return;
+        }
+        const slotKey = getContentSlotKey(item.topic.id, currentContentIndex);
+        set({
+          currentContent: content,
+          contentCacheBySlot: {
+            ...contentCacheBySlot,
+            [slotKey]: content,
+          },
+        });
+      },
       setLoadingContent: (loading) => set({ isLoadingContent: loading }),
+      jumpToContent: (index) => {
+        const { agenda, currentItemIndex, maxUnlockedContentIndex, contentCacheBySlot } = get();
+        if (!agenda) return;
+        const item = agenda.items[currentItemIndex];
+        if (!item) return;
+        if (index < 0 || index >= item.contentTypes.length) return;
+        if (index > maxUnlockedContentIndex) return;
+        const slotKey = getContentSlotKey(item.topic.id, index);
+        set({
+          currentContentIndex: index,
+          currentContent: contentCacheBySlot[slotKey] ?? null,
+        });
+      },
       setPaused: (paused) => set({ isPaused: paused }),
 
       nextContent: () => {
@@ -77,7 +114,12 @@ export const useSessionStore = create<SessionStoreState>()(
         const item = agenda.items[currentItemIndex];
         if (!item) return;
         if (currentContentIndex < item.contentTypes.length - 1) {
-          set({ currentContentIndex: currentContentIndex + 1, currentContent: null });
+          const nextIndex = currentContentIndex + 1;
+          set({
+            currentContentIndex: nextIndex,
+            maxUnlockedContentIndex: Math.max(get().maxUnlockedContentIndex, nextIndex),
+            currentContent: null,
+          });
         }
         // If last content type, caller should call nextTopic
       },
@@ -95,6 +137,7 @@ export const useSessionStore = create<SessionStoreState>()(
           set({
             currentItemIndex: currentItemIndex + 1,
             currentContentIndex: 0,
+            maxUnlockedContentIndex: 0,
             currentContent: null,
             completedTopicIds: newCompleted,
             sessionState: 'topic_done',
@@ -128,6 +171,7 @@ export const useSessionStore = create<SessionStoreState>()(
           set({
             currentItemIndex: currentItemIndex + 1,
             currentContentIndex: 0,
+            maxUnlockedContentIndex: 0,
             currentContent: null,
             completedTopicIds: newCompleted,
             sessionState: 'studying',
@@ -197,6 +241,8 @@ export const useSessionStore = create<SessionStoreState>()(
           agenda: null,
           currentItemIndex: 0,
           currentContentIndex: 0,
+          maxUnlockedContentIndex: 0,
+          contentCacheBySlot: {},
           currentContent: null,
           isLoadingContent: false,
           completedTopicIds: [],
@@ -217,7 +263,8 @@ export const useSessionStore = create<SessionStoreState>()(
         agenda: state.agenda,
         currentItemIndex: state.currentItemIndex,
         currentContentIndex: state.currentContentIndex,
-        currentContent: state.currentContent,
+        maxUnlockedContentIndex: state.maxUnlockedContentIndex,
+        // Omit currentContent — large AI payloads; SessionScreen refetches via fetchContent when null
         completedTopicIds: state.completedTopicIds,
         quizResults: state.quizResults,
         startedAt: state.startedAt,

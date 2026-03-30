@@ -3,6 +3,7 @@ import { SYSTEM_PROMPT } from '../../constants/prompts';
 import { CatalystSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import type { SaveQuestionInput } from '../../types';
 
 export async function catalyzeTranscript(
@@ -39,7 +40,14 @@ Return ONLY a JSON object matching this structure:
     { role: 'user' as const, content: userPrompt },
   ];
 
-  const { parsed } = await generateJSONWithRouting(messages, CatalystSchema, 'high');
+  const { parsed } = await generateJSONWithRouting(
+    messages,
+    CatalystSchema,
+    'high',
+    true,
+    undefined,
+    DEFAULT_PROVIDER_ORDER,
+  );
 
   // Auto-save quiz questions to Question Bank
   if (parsed.quiz?.questions?.length) {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { generateJSONWithRouting, generateTextWithRouting } from './generate';
+import { NON_STUDY_PROVIDER_ORDER } from '../../types';
 
 const FALLBACK_BREAK_MESSAGES = [
   '🚨 BREAK IS OVER. Return to the tablet now.',
@@ -49,7 +50,7 @@ Mention INI-CET/NEET-PG pressure. Be blunt. No JSON, just one message per line.`
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      { preferCloud: true },
+      { preferCloud: true, providerOrderOverride: NON_STUDY_PROVIDER_ORDER },
     );
     const lines = text
       .split('\n')

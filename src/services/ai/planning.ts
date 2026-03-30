@@ -66,7 +66,7 @@ export async function planSessionWithAI(
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'user', content: userPrompt },
   ];
-  const { parsed } = await generateJSONWithRouting(messages, AgendaSchema, 'high');
+  const { parsed } = await generateJSONWithRouting(messages, AgendaSchema, 'high', true, 'groq');
   return parsed;
 }
 
@@ -125,6 +125,8 @@ Return only valid JSON: {"messages":[{"text":"...","trigger":"..."},...]}`;
       messages,
       GuruPresenceMessagesResponseSchema,
       'high',
+      true,
+      'groq',
     );
     const normalized = Array.isArray(parsed) ? parsed : parsed.messages;
     if (normalized.length > 0) return normalized as GuruPresenceMessage[];
@@ -154,7 +156,13 @@ export async function generateDailyAgendaWithRouting(
   ];
 
   try {
-    const { parsed } = await generateJSONWithRouting(messages, DailyAgendaSchema, 'high');
+    const { parsed } = await generateJSONWithRouting(
+      messages,
+      DailyAgendaSchema,
+      'high',
+      true,
+      'groq',
+    );
     return isLowSignalAgenda(parsed)
       ? buildFallbackDailyAgenda(displayName, stats, availableMinutes)
       : parsed;
@@ -291,6 +299,12 @@ export async function replanDayWithRouting(
     { role: 'user', content: userPrompt },
   ];
 
-  const { parsed } = await generateJSONWithRouting(messages, DailyAgendaSchema, 'high');
+  const { parsed } = await generateJSONWithRouting(
+    messages,
+    DailyAgendaSchema,
+    'high',
+    true,
+    'groq',
+  );
   return parsed;
 }

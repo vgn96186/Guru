@@ -58,6 +58,32 @@ export {
   getGitHubModelsChatCompletionsUrl,
 };
 
+function isChatGptSlotEnabledAndConnected(
+  slot?: { enabled?: boolean; connected?: boolean } | null,
+): boolean {
+  return !!slot?.enabled && !!slot?.connected;
+}
+
+function resolveChatGptConnected(
+  profile?: {
+    chatgptConnected?: boolean;
+    chatgptAccounts?: {
+      primary?: { enabled?: boolean; connected?: boolean };
+      secondary?: { enabled?: boolean; connected?: boolean };
+    };
+  } | null,
+): boolean {
+  if (!profile) return false;
+  const accounts = profile.chatgptAccounts;
+  if (accounts) {
+    return (
+      isChatGptSlotEnabledAndConnected(accounts.primary) ||
+      isChatGptSlotEnabledAndConnected(accounts.secondary)
+    );
+  }
+  return !!profile.chatgptConnected;
+}
+
 /** Read API keys from the user profile. When profile is omitted, returns empty keys (no DB access). */
 export function getApiKeys(
   profile?: {
@@ -74,6 +100,10 @@ export function getApiKeys(
     kiloApiKey?: string;
     agentRouterKey?: string;
     deepgramApiKey?: string;
+    chatgptAccounts?: {
+      primary?: { enabled?: boolean; connected?: boolean };
+      secondary?: { enabled?: boolean; connected?: boolean };
+    };
     chatgptConnected?: boolean;
   } | null,
 ): {
@@ -127,6 +157,6 @@ export function getApiKeys(
     kiloApiKey: profile.kiloApiKey?.trim() || undefined,
     agentRouterKey: profile.agentRouterKey?.trim() || undefined,
     deepgramKey: profile.deepgramApiKey?.trim() || undefined,
-    chatgptConnected: !!profile.chatgptConnected,
+    chatgptConnected: resolveChatGptConnected(profile),
   };
 }

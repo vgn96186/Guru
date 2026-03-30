@@ -6,6 +6,7 @@ import type {
   SaveQuestionInput,
 } from '../../types';
 import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP } from '../../constants/prompts';
+import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
@@ -152,6 +153,7 @@ export async function fetchContent(
         'low',
         true,
         forceProvider,
+        DEFAULT_PROVIDER_ORDER,
       );
       modelUsed = generated.modelUsed;
       contentWithMeta = { ...generated.parsed, modelUsed } as AIContent;

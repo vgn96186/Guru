@@ -10,10 +10,7 @@ import type { ContentType, TopicWithProgress } from '../types';
 const PREFETCH_TASK = 'PREFETCH_AI_CONTENT';
 const DEFAULT_PREFETCH_TOPIC_LIMIT = 3;
 
-function selectPrefetchCandidates(
-  topics: TopicWithProgress[],
-  limit: number,
-): TopicWithProgress[] {
+function selectPrefetchCandidates(topics: TopicWithProgress[], limit: number): TopicWithProgress[] {
   return topics
     .filter(
       (t: TopicWithProgress) =>
@@ -47,7 +44,9 @@ export async function warmAiContentCache(options?: {
   }
 
   const typesToFetch = resolvePrefetchContentTypes(profile.blockedContentTypes ?? []);
-  await Promise.allSettled(candidates.map((topic) => prefetchTopicContent(topic, typesToFetch)));
+  await Promise.allSettled(
+    candidates.map((topic) => prefetchTopicContent(topic, typesToFetch, 'groq')),
+  );
 
   if (options?.refreshNotifications ?? false) {
     await refreshAccountabilityNotificationsSafely((e) =>

@@ -20,6 +20,7 @@ import {
   Alert,
   StatusBar,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -77,7 +78,13 @@ Subject must be one of: Anatomy, Physiology, Biochemistry, Pathology, Pharmacolo
       },
       { role: 'user', content: snippet },
     ];
-    const { parsed } = await generateJSONWithRouting(messages, NoteLabelSchema, 'low', false);
+    const { parsed } = await generateJSONWithRouting(
+      messages,
+      NoteLabelSchema,
+      'low',
+      false,
+      'groq',
+    );
     return parsed;
   } catch {
     return null;
@@ -153,6 +160,7 @@ function buildVaultGroundingContext(notes: NoteItem[]): string {
 }
 
 export default function NotesVaultScreen() {
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
   const navigation = useNavigation();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
   const [notes, setNotes] = useState<NoteItem[]>([]);
@@ -255,6 +263,8 @@ export default function NotesVaultScreen() {
     }
     return parts.length > 0 ? parts.join(' • ') : 'All notes';
   }, [subjectFilter, topicFilter]);
+
+  const listLayoutKey = `${viewportWidth}x${viewportHeight}`;
 
   useEffect(() => {
     if (subjectFilter !== 'all' && !subjectOptions.includes(subjectFilter)) {
@@ -852,8 +862,10 @@ export default function NotesVaultScreen() {
         ) : (
           <FlatList
             data={visibleNotes}
+            key={listLayoutKey}
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderNote}
+            extraData={listLayoutKey}
             contentContainerStyle={styles.list}
             refreshControl={
               <RefreshControl

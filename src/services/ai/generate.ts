@@ -6,7 +6,8 @@ import { parseStructuredJson } from './jsonRepair';
 import { attemptLocalLLM, attemptCloudLLM, attemptCloudLLMStream } from './llmRouting';
 import { isTransientNetworkError } from '../offlineQueueErrors';
 import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
-import type { UserProfile } from '../../types';
+import type { ProviderId, UserProfile } from '../../types';
+import type { ChatGptAccountSlot } from '../../types';
 import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
 import { RateLimitError } from './schemas';
 import { createAiRequestTrace, logStreamEvent, previewText } from './runtimeDebug';
@@ -40,6 +41,16 @@ function getBackendAttemptOrder(profile: UserProfile) {
     chatgptConnected;
 
   const attempts: ('local' | 'cloud')[] = [];
+  const chatgptSlots: ChatGptAccountSlot[] = [];
+  if (profile.chatgptAccounts?.primary?.enabled && profile.chatgptAccounts?.primary?.connected) {
+    chatgptSlots.push('primary');
+  }
+  if (
+    profile.chatgptAccounts?.secondary?.enabled &&
+    profile.chatgptAccounts?.secondary?.connected
+  ) {
+    chatgptSlots.push('secondary');
+  }
   if (hasCloud) attempts.push('cloud');
   if (hasLocal) attempts.push('local');
 
@@ -61,6 +72,7 @@ function getBackendAttemptOrder(profile: UserProfile) {
     kiloApiKey,
     agentRouterKey,
     chatgptConnected,
+    chatgptSlots,
     providerOrder: profile.providerOrder,
   };
 }
@@ -69,17 +81,23 @@ function isExplicitCloudModel(chosenModel?: string): boolean {
   return !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
 }
 
+function resolveProviderOrderOverride(override?: ProviderId[]): ProviderId[] | undefined {
+  return override?.length ? override : undefined;
+}
+
 export async function generateJSONWithRouting<T>(
   messages: Message[],
   schema: z.ZodType<T>,
   taskComplexity: 'low' | 'high' = 'low',
   queueOnFailure = true,
   forceProvider?: 'groq' | 'gemini',
+  providerOrderOverride?: ProviderId[],
 ): Promise<{ parsed: T; modelUsed: string }> {
   const trace = createAiRequestTrace('json', messages, {
     taskComplexity,
     queueOnFailure,
     forceProvider: forceProvider ?? 'auto',
+    providerOrderOverride: providerOrderOverride?.join(' -> ') ?? 'default',
   });
   const profile = await profileRepository.getProfile();
   let {
@@ -95,8 +113,10 @@ export async function generateJSONWithRouting<T>(
     kiloApiKey,
     agentRouterKey,
     chatgptConnected,
-    providerOrder,
+    chatgptSlots,
+    providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
+  let providerOrder = resolveProviderOrderOverride(providerOrderOverride) ?? profileProviderOrder;
 
   if (forceProvider === 'groq') {
     attempts = ['cloud'];
@@ -155,6 +175,7 @@ export async function generateJSONWithRouting<T>(
         agentRouterKey,
         providerOrder,
         chatgptConnected,
+        chatgptSlots,
       );
       const parsed = await parseStructuredJson(text, schema);
       trace.success({
@@ -191,12 +212,13 @@ export async function generateJSONWithRouting<T>(
 
 export async function generateTextWithRouting(
   messages: Message[],
-  options?: { preferCloud?: boolean; chosenModel?: string },
+  options?: { preferCloud?: boolean; chosenModel?: string; providerOrderOverride?: ProviderId[] },
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
   const trace = createAiRequestTrace('text', messages, {
     chosenModel: options?.chosenModel ?? 'auto',
     preferCloud: options?.preferCloud ?? false,
+    providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
     queueOnFailure,
   });
   const profile = await profileRepository.getProfile();
@@ -233,9 +255,14 @@ export async function generateTextWithRouting(
     kiloApiKey,
     agentRouterKey,
     chatgptConnected,
-    providerOrder: textProviderOrder,
+    chatgptSlots,
+    providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
-  const attempts = isExplicitCloudModel(options?.chosenModel) ? ['cloud' as const] : initialAttempts;
+  const textProviderOrder =
+    resolveProviderOrderOverride(options?.providerOrderOverride) ?? profileProviderOrder;
+  const attempts = isExplicitCloudModel(options?.chosenModel)
+    ? ['cloud' as const]
+    : initialAttempts;
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -259,6 +286,7 @@ export async function generateTextWithRouting(
               agentRouterKey,
               textProviderOrder,
               chatgptConnected,
+              chatgptSlots,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       trace.success({
@@ -297,12 +325,13 @@ export async function generateTextWithRouting(
  */
 export async function generateTextWithRoutingStream(
   messages: Message[],
-  options: { chosenModel?: string } | undefined,
+  options: { chosenModel?: string; providerOrderOverride?: ProviderId[] } | undefined,
   onDelta: (delta: string) => void,
   queueOnFailure = true,
 ): Promise<{ text: string; modelUsed: string }> {
   const trace = createAiRequestTrace('stream', messages, {
     chosenModel: options?.chosenModel ?? 'auto',
+    providerOrderOverride: options?.providerOrderOverride?.join(' -> ') ?? 'default',
     queueOnFailure,
   });
   const profile = await profileRepository.getProfile();
@@ -344,10 +373,14 @@ export async function generateTextWithRoutingStream(
     kiloApiKey,
     agentRouterKey,
     chatgptConnected,
-    providerOrder: streamProviderOrder,
+    chatgptSlots,
+    providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
-  const attempts =
-    isExplicitCloudModel(options?.chosenModel) ? ['cloud' as const] : initialAttempts;
+  const streamProviderOrder =
+    resolveProviderOrderOverride(options?.providerOrderOverride) ?? profileProviderOrder;
+  const attempts = isExplicitCloudModel(options?.chosenModel)
+    ? ['cloud' as const]
+    : initialAttempts;
 
   let lastError: Error | null = null;
   for (const backend of attempts) {
@@ -385,6 +418,7 @@ export async function generateTextWithRoutingStream(
         agentRouterKey,
         streamProviderOrder,
         chatgptConnected,
+        chatgptSlots,
       );
       trace.success({
         backend,

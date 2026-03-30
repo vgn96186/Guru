@@ -27,9 +27,9 @@ const PRIMARY_DESTINATIONS: Array<{
   {
     route: 'Flashcards',
     title: 'Flashcards',
-    subtitle: 'Stub route for your future recall and spaced repetition flow.',
+    subtitle: 'Spaced repetition: High-yield recall for due topics.',
     icon: 'albums-outline',
-    tint: '#81C784',
+    tint: theme.colors.primary,
   },
   {
     route: 'MindMap',

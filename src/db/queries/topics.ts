@@ -258,7 +258,8 @@ const TOPIC_SELECT = `SELECT
   p.user_notes,
   p.fsrs_due, p.fsrs_stability, p.fsrs_difficulty, p.fsrs_elapsed_days, p.fsrs_scheduled_days, p.fsrs_reps, p.fsrs_lapses, p.fsrs_state, p.fsrs_last_review,
   p.wrong_count, p.is_nemesis,
-  s.name as subject_name, s.short_code, s.color_hex`;
+  s.name as subject_name, s.short_code, s.color_hex,
+  (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) as child_count`;
 
 export async function getTopicsBySubject(subjectId: number | string): Promise<TopicWithProgress[]> {
   const db = getDb();
@@ -516,9 +517,9 @@ export async function getTopicsDueForReview(limit = 10): Promise<TopicWithProgre
      FROM topics t
      JOIN subjects s ON t.subject_id = s.id
      JOIN topic_progress p ON t.id = p.topic_id
-     WHERE p.status != 'unseen'
+     WHERE p.status IN ('reviewed', 'mastered')
        AND (p.fsrs_due IS NULL OR DATE(p.fsrs_due) <= DATE(?))
-       AND NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
+       AND (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) = 0
      ORDER BY p.fsrs_due ASC, p.confidence ASC
      LIMIT ?`,
     [today, limit],
@@ -594,8 +595,7 @@ export async function getWeakestTopics(limit = 5): Promise<TopicWithProgress[]> 
      JOIN subjects s ON t.subject_id = s.id
      LEFT JOIN topic_progress p ON t.id = p.topic_id
       WHERE p.times_studied > 0 AND p.confidence < 3
-       AND t.parent_topic_id IS NOT NULL
-       AND NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
+       AND (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) = 0
      ORDER BY p.confidence ASC, p.times_studied DESC
      LIMIT ?`,
     [limit],
@@ -612,8 +612,7 @@ export async function getHighPriorityUnseenTopics(limit = 3): Promise<TopicWithP
      JOIN subjects s ON t.subject_id = s.id
      LEFT JOIN topic_progress p ON t.id = p.topic_id
      WHERE COALESCE(p.status, 'unseen') = 'unseen'
-       AND t.parent_topic_id IS NOT NULL
-       AND NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
+       AND (SELECT COUNT(*) FROM topics c WHERE c.parent_topic_id = t.id) = 0
      ORDER BY t.inicet_priority DESC, RANDOM()
      LIMIT ?`,
     [limit],
@@ -636,6 +635,7 @@ function mapTopicRow(r: any): TopicWithProgress {
     subtopics: [],
     estimatedMinutes: r.estimated_minutes ?? 35,
     inicetPriority: r.inicet_priority ?? 5,
+    childCount: r.child_count ?? 0,
     subjectName: sname,
     subjectCode: scode,
     subjectColor: scolor,

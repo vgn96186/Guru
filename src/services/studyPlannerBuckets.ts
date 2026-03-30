@@ -60,7 +60,40 @@ export const DBMCI_SUBJECT_ORDER = [
 
 /** Parent/container topics (e.g. "Head and Neck") should not be scheduled as study items. */
 function isParentTopic(topic: TopicWithProgress): boolean {
-  return !topic.parentTopicId;
+  // DB-based check: has explicit children in common schema
+  if ((topic.childCount ?? 0) > 0) return true;
+
+  // Broad subject-level containers - fallback for unlinked data
+  const broadContainerNames = [
+    'Cardiology',
+    'Rheumatology',
+    'Neurology',
+    'Gastroenterology',
+    'Endocrinology',
+    'Nephrology',
+    'Hematology',
+    'Pulmonology',
+    'Infectious Diseases',
+    'General Medicine',
+    'General Surgery',
+    'Emergency Medicine',
+    'Psychiatry',
+    'Pediatrics',
+    'Obstetrics',
+    'Gynecology',
+    'Orthopedics',
+    'Anesthetics',
+  ];
+
+  if (broadContainerNames.includes(topic.name)) return true;
+
+  // Root topics that behave like containers (no parent, high minute cost)
+  // are almost always container topics mistakenly marked seen in vault.
+  if (!topic.parentTopicId && (topic.estimatedMinutes ?? 0) >= 45) {
+    return true;
+  }
+
+  return false;
 }
 
 export function buildPlanBuckets(params: {

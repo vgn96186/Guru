@@ -52,6 +52,7 @@ export interface Topic {
   children?: TopicWithProgress[];
   estimatedMinutes: number;
   inicetPriority: number;
+  childCount?: number;
 }
 
 export interface TopicProgress {
@@ -386,6 +387,12 @@ export interface SocraticContent {
   questions: SocraticQuestion[];
 }
 
+export interface FlashcardsContent {
+  type: 'flashcards';
+  topicName: string;
+  cards: Array<{ front: string; back: string }>;
+}
+
 export type AIContent = (
   | KeyPointsContent
   | MustKnowContent
@@ -397,6 +404,7 @@ export type AIContent = (
   | DetectiveContent
   | ManualContent
   | SocraticContent
+  | FlashcardsContent
 ) & { modelUsed?: string };
 
 export interface AccountabilityMessage {

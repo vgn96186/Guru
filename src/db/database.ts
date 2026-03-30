@@ -310,21 +310,34 @@ async function seedTopics(db: SQLite.SQLiteDatabase): Promise<void> {
       }
     }
 
-    // Pass 2: Update parent links
-    for (const [subjectId, name, priority, minutes, parentName] of TOPICS_SEED) {
-      if (parentName) {
-        const parent = await db.getFirstAsync<{ id: number }>(
-          'SELECT id FROM topics WHERE subject_id = ? AND name = ?',
-          [subjectId, parentName],
-        );
-        if (parent) {
-          await db.runAsync(
-            'UPDATE topics SET parent_topic_id = ? WHERE subject_id = ? AND name = ?',
-            [parent.id, subjectId, name],
-          );
-        }
+    // Pass 2: Optimized parent linking (Bulk repair)
+    // We use a temporary table to map names to IDs to avoid tens of thousands of individual queries.
+    await db.execAsync(
+      'CREATE TEMP TABLE IF NOT EXISTS tmp_parent_mapping (subject_id INTEGER, name TEXT, parent_name TEXT)',
+    );
+    await db.execAsync('DELETE FROM tmp_parent_mapping');
+
+    // Efficiently batch the parent-child relationships from the seed
+    for (const [sid, name, , , pName] of TOPICS_SEED) {
+      if (pName) {
+        await db.runAsync('INSERT INTO tmp_parent_mapping VALUES (?, ?, ?)', [sid, name, pName]);
       }
     }
+
+    // Single-query bulk update: sets parent_topic_id for all unlinked children in one shot
+    await db.execAsync(`
+      UPDATE topics
+      SET parent_topic_id = (
+        SELECT p.id 
+        FROM topics p
+        JOIN tmp_parent_mapping m ON p.name = m.parent_name AND p.subject_id = m.subject_id
+        WHERE m.name = topics.name AND m.subject_id = topics.subject_id
+      )
+      WHERE parent_topic_id IS NULL 
+        AND EXISTS (SELECT 1 FROM tmp_parent_mapping m WHERE m.name = topics.name AND m.subject_id = topics.subject_id)
+    `);
+
+    await db.execAsync('DROP TABLE tmp_parent_mapping');
   });
 }
 

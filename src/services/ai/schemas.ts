@@ -78,7 +78,23 @@ const SocraticSchema = z.object({
   ),
 });
 
-export const AIContentSchema = z.union([
+const FlashcardSchema = z.object({
+  front: z.string().describe('Short question or prompt'),
+  back: z.string().describe('Short high-yield answer'),
+});
+
+const FlashcardsSchema = z.object({
+  type: z.literal('flashcards').describe('Discriminator for flashcards card'),
+  topicName: z.string().describe('Topic title aligned with the syllabus'),
+  cards: z.array(FlashcardSchema).describe('Typically 6-10 cards'),
+});
+
+const ManualSchema = z.object({
+  type: z.literal('manual').describe('Discriminator for manual card'),
+  topicName: z.string().describe('Topic title'),
+});
+
+export const AIContentSchema = z.discriminatedUnion('type', [
   KeyPointsSchema,
   MustKnowSchema,
   QuizSchema,
@@ -88,6 +104,8 @@ export const AIContentSchema = z.union([
   ErrorHuntSchema,
   DetectiveSchema,
   SocraticSchema,
+  FlashcardsSchema,
+  ManualSchema,
 ]);
 
 export const AgendaSchema = z.object({

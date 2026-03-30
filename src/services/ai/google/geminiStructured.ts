@@ -5,6 +5,7 @@ import { getGoogleGenAI } from './genaiClient';
 import { messagesToGeminiContents } from './geminiContents';
 import { isGeminiSdkRateLimitError, rethrowGeminiSdkError } from './geminiSdkErrors';
 import { zodSchemaToGeminiJsonSchema } from './zodToResponseJsonSchema';
+import { normalizeRootForSchema } from '../jsonRepair';
 
 function pickGeminiModelForStructured(taskComplexity: 'low' | 'high'): string {
   return taskComplexity === 'high'
@@ -24,7 +25,9 @@ export async function geminiGenerateStructuredJsonSdk<T>(
 ): Promise<{ parsed: T; modelUsed: string }> {
   const jsonSchema = zodSchemaToGeminiJsonSchema(schema);
   if (!jsonSchema) {
-    throw new Error('Zod schema could not be converted to JSON Schema for Gemini structured output');
+    throw new Error(
+      'Zod schema could not be converted to JSON Schema for Gemini structured output',
+    );
   }
 
   const ai = getGoogleGenAI(geminiKey);
@@ -57,7 +60,8 @@ export async function geminiGenerateStructuredJsonSdk<T>(
       throw new Error('Gemini returned non-JSON text for structured output');
     }
 
-    const parsed = schema.safeParse(data);
+    const normalized = normalizeRootForSchema(data, schema);
+    const parsed = schema.safeParse(normalized);
     if (!parsed.success) {
       throw new Error(`Gemini JSON failed Zod validation: ${parsed.error.message}`);
     }

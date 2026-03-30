@@ -191,6 +191,24 @@ Rules:
 - Focus only on the most frequently tested aspects. No obscure facts.`;
 }
 
+export function buildFlashcardsPrompt(topicName: string, subjectName: string): string {
+  return `Generate 8 high-yield NEET-PG/INICET flashcards for: "${topicName}" (${subjectName}).
+
+Rules:
+- Front: Short, direct (e.g., "Most common cause of...", "Drug of choice for...", "Classic triad of...").
+- Back: Concise, high-yield fact. Use **markdown bolding** for the single most important word or value.
+- Focus on: Named signs, gold standard tests, first-line treatments, and unique associations.
+
+Return JSON:
+{
+  "type": "flashcards",
+  "topicName": "${topicName}",
+  "cards": [
+    { "front": "...", "back": "..." }
+  ]
+}`;
+}
+
 export function buildManualPrompt(topicName: string, subjectName: string): string {
   return `Return strict JSON:
 {
@@ -429,23 +447,24 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
   detective: buildDetectivePrompt,
   manual: buildManualPrompt,
   socratic: buildSocraticPrompt,
+  flashcards: buildFlashcardsPrompt,
 };
 
 export function getMoodContentTypes(mood: Mood): ContentType[] {
   switch (mood) {
     case 'energetic':
-      return ['quiz', 'error_hunt', 'detective', 'keypoints', 'must_know'];
+      return ['quiz', 'error_hunt', 'detective', 'keypoints', 'must_know', 'flashcards'];
     case 'good':
-      return ['socratic', 'keypoints', 'must_know', 'quiz', 'detective'];
+      return ['socratic', 'keypoints', 'must_know', 'quiz', 'detective', 'flashcards'];
     case 'okay':
-      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz'];
+      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz', 'flashcards'];
     case 'tired':
-      return ['socratic', 'story', 'keypoints', 'must_know'];
+      return ['socratic', 'story', 'keypoints', 'must_know', 'flashcards'];
     case 'stressed':
-      return ['socratic', 'story', 'keypoints', 'must_know'];
+      return ['socratic', 'story', 'keypoints', 'must_know', 'flashcards'];
     case 'distracted':
-      return ['socratic', 'keypoints', 'must_know'];
+      return ['socratic', 'keypoints', 'must_know', 'flashcards'];
     default:
-      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz'];
+      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz', 'flashcards'];
   }
 }

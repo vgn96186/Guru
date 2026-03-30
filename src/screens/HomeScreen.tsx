@@ -591,6 +591,7 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
 
   // Build provider list
   const providers: { name: string; on: boolean }[] = [
+    { name: 'ChatGPT', on: !!profile.chatgptConnected },
     { name: 'Groq', on: !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY) },
     { name: 'Gemini', on: !!profile.geminiKey?.trim() },
     { name: 'OR', on: !!profile.openrouterKey?.trim() },
@@ -609,7 +610,7 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
   const activeBanner = isActive
     ? `${activeReq?.modelUsed?.split('/').pop() ?? activeReq?.backend ?? 'AI'}${elapsed > 0 ? ` ${elapsed}s` : ''}`
     : runtime.lastError
-      ? `Err: ${runtime.lastError.slice(0, 30)}`
+      ? `Err: ${runtime.lastError.slice(0, 100)}`
       : null;
 
   const bannerColor = isActive ? theme.colors.primary : theme.colors.warning;

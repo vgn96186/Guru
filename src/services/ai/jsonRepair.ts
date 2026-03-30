@@ -166,15 +166,50 @@ function repairTruncatedJson(raw: string): string {
   return raw + suffix;
 }
 
-function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>): unknown {
-  if (!(schema instanceof z.ZodArray)) return value;
+export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>): unknown {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
 
-  const entries = Object.entries(value as Record<string, unknown>);
-  if (entries.length !== 1) return value;
+  const v = value as Record<string, any>;
+  const entries = Object.entries(v);
 
-  const [, wrappedValue] = entries[0];
-  return Array.isArray(wrappedValue) ? wrappedValue : value;
+  // Pattern 1: Single-key wrapping ({ "keypoints": { "type": "keypoints", ... } } or { "data": { ... } })
+  if (entries.length === 1) {
+    const [key, wrappedValue] = entries[0];
+
+    // If we're expecting an array but got { "items": [...] }, unwrap
+    if (schema instanceof z.ZodArray && Array.isArray(wrappedValue)) return wrappedValue;
+
+    // If it's an object with a 'type' property inside, unwrap
+    if (wrappedValue && typeof wrappedValue === 'object' && !Array.isArray(wrappedValue)) {
+      if ('type' in (wrappedValue as any)) return wrappedValue;
+    }
+
+    // Un-wrap common generic keys like "data", "result", "payload"
+    if (['data', 'result', 'payload', 'card', 'content'].includes(key.toLowerCase())) {
+      return wrappedValue;
+    }
+  }
+
+  // Pattern 2: Normalizing common snake_case/kebab-case property names from flaky LLMs
+  // This is a "best effort" pass to help Zod validation succeed on key-value pairs.
+  const normalized: Record<string, any> = {};
+  for (const [k, val] of Object.entries(v)) {
+    // Map snake_case or kebab-case to camelCase for the expected schema fields
+    const camelKey = k.replace(/[_-][a-z]/g, (match) => match[1].toUpperCase());
+    normalized[camelKey] = val;
+
+    // Also keep the original key just in case it was already correct or needed
+    if (camelKey !== k) {
+      normalized[k] = val;
+    }
+
+    // Special case for "type": make lowercase to match Zod z.literal()
+    if (k.toLowerCase() === 'type' && typeof val === 'string') {
+      normalized['type'] = val.toLowerCase();
+    }
+  }
+
+  return normalized;
 }
 
 /**

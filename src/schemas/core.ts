@@ -20,6 +20,7 @@ export const ContentTypeSchema = z.enum([
   'detective',
   'manual',
   'socratic',
+  'flashcards',
 ]);
 export type ContentType = z.infer<typeof ContentTypeSchema>;
 
@@ -57,3 +58,15 @@ export const DailyLogSchema = z.object({
   sessionCount: z.number(),
 });
 export type DailyLog = z.infer<typeof DailyLogSchema>;
+
+export const FlashcardsContentSchema = z.object({
+  type: z.literal('flashcards'),
+  topicName: z.string(),
+  cards: z.array(
+    z.object({
+      front: z.string(),
+      back: z.string(),
+    }),
+  ),
+});
+export type FlashcardsContent = z.infer<typeof FlashcardsContentSchema>;

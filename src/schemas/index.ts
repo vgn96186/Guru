@@ -25,8 +25,10 @@ export {
   QuizQuestionSchema,
   QuizContentSchema,
   KeyPointsContentSchema,
+  FlashcardsContentSchema,
   LectureAnalysisSchema,
   type LectureAnalysis,
   type QuizContent,
   type KeyPointsContent,
+  type FlashcardsContent,
 } from './ai';

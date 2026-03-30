@@ -5,6 +5,7 @@ export const QuizQuestionSchema = z.object({
   options: z.tuple([z.string(), z.string(), z.string(), z.string()]),
   correctIndex: z.number().min(0).max(3),
   explanation: z.string(),
+  imageSearchQuery: z.string().optional(),
 });
 
 export const QuizContentSchema = z.object({
@@ -20,6 +21,17 @@ export const KeyPointsContentSchema = z.object({
   memoryHook: z.string(),
 });
 
+export const FlashcardsContentSchema = z.object({
+  type: z.literal('flashcards'),
+  topicName: z.string(),
+  cards: z.array(
+    z.object({
+      front: z.string(),
+      back: z.string(),
+    }),
+  ),
+});
+
 export const LectureAnalysisSchema = z.object({
   subject: z.string(),
   topics: z.array(z.string()),
@@ -33,3 +45,4 @@ export const LectureAnalysisSchema = z.object({
 export type LectureAnalysis = z.infer<typeof LectureAnalysisSchema>;
 export type QuizContent = z.infer<typeof QuizContentSchema>;
 export type KeyPointsContent = z.infer<typeof KeyPointsContentSchema>;
+export type FlashcardsContent = z.infer<typeof FlashcardsContentSchema>;

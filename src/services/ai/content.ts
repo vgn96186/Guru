@@ -117,6 +117,17 @@ function isLikelyIncompleteAiContent(content: AIContent): boolean {
             hasObviousCutOff(question.whyItMatters, true),
         )
       );
+    case 'flashcards':
+      return (
+        content.cards.length < 3 ||
+        content.cards.some(
+          (card) =>
+            card.front.trim().length < 5 ||
+            card.back.trim().length < 5 ||
+            hasObviousCutOff(card.front, false) ||
+            hasObviousCutOff(card.back, false),
+        )
+      );
     default:
       return false;
   }

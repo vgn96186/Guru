@@ -113,30 +113,29 @@ export async function runAppBootstrap(): Promise<BootstrapOutcome> {
       console.warn('[ConfidenceDecay] Error:', e);
     }
 
-    // Dismiss ALL retryable external_app_logs entries to stop runaway auto-transcription.
-    // Users process recordings manually via Recording Vault.
-    try {
-      const { getDb } = await import('../db/database');
-      const db = getDb();
-      await db.runAsync(
-        `UPDATE external_app_logs SET transcription_status = 'dismissed'
-         WHERE transcription_status IN ('pending', 'failed', 'recording', 'transcribing')
-            OR (transcription_status = 'completed' AND lecture_note_id IS NULL)`,
-      );
-    } catch (e) {
-      console.warn('[AppBootstrap] Orphan cleanup failed:', e);
-    }
+    // Dispatch maintenance tasks without awaiting to keep startup snappy.
+    void (async () => {
+      try {
+        const { getDb } = await import('../db/database');
+        const db = getDb();
+        await db.runAsync(
+          `UPDATE external_app_logs SET transcription_status = 'dismissed'
+           WHERE transcription_status IN ('pending', 'failed', 'recording', 'transcribing')
+              OR (transcription_status = 'completed' AND lecture_note_id IS NULL)`,
+        );
+      } catch (e) {
+        console.warn('[AppBootstrap] Orphan cleanup failed:', e);
+      }
+    })();
 
     // Heavy background tasks: only on devices with >= 3 GB RAM
     const { isBackgroundRecoveryAllowed } = await import('./deviceMemory');
     if (isBackgroundRecoveryAllowed()) {
       startMissingTopicEmbeddingSeed(); // Non-blocking async queue
-      bootstrapLocalModels().catch((e: unknown) =>
+      void bootstrapLocalModels().catch((e: unknown) =>
         console.warn('[AppBootstrap] Local model bootstrap skipped:', e),
       );
-      // All auto-recovery scanners disabled — they created duplicate notes
-      // and burned API credits. Users manage recordings via Recording Vault.
-      cleanupStaleCheckpointDirs().catch((e: unknown) =>
+      void cleanupStaleCheckpointDirs().catch((e: unknown) =>
         console.warn('[AppBootstrap] Checkpoint cleanup failed:', e),
       );
     } else if (__DEV__) {

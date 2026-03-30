@@ -87,13 +87,13 @@ describe('LectureReturnSheet', () => {
 
   it('renders nothing when not visible', () => {
     const { queryByText } = render(<LectureReturnSheet {...baseProps} visible={false} />);
-    expect(queryByText('LECTURE PROCESSING')).toBeNull();
+    expect(queryByText('Analyzing')).toBeNull();
   });
 
   it('shows compact processing card when visible (intro)', () => {
     const { getByText } = render(<LectureReturnSheet {...baseProps} />);
-    expect(getByText('LECTURE PROCESSING')).toBeTruthy();
-    expect(getByText('Analyzing your lecture')).toBeTruthy();
+    expect(getByText('Marrow')).toBeTruthy();
+    expect(getByText('Tap to start transcription')).toBeTruthy();
   });
 
   it('shows a subject-required prompt in results when the detected subject is unusable', async () => {
@@ -137,10 +137,9 @@ describe('LectureReturnSheet', () => {
 
     const { getByText } = render(<LectureReturnSheet {...baseProps} appName="YouTube" />);
 
-    expect(getByText('LECTURE READY')).toBeTruthy();
-    expect(getByText('Lecture summary is ready')).toBeTruthy();
+    expect(getByText('Summary ready')).toBeTruthy();
     expect(getByText('Medicine • 1 topic detected')).toBeTruthy();
-    expect(getByText('YOUTUBE')).toBeTruthy();
-    expect(getByText('47 MIN')).toBeTruthy();
+    expect(getByText('YouTube')).toBeTruthy();
+    expect(getByText('47 min recorded')).toBeTruthy();
   });
 });

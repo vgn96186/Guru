@@ -777,14 +777,15 @@ function QuizCard({
       compactLines(
         [
           `Card type: Quiz`,
-          `Current question ${currentQ + 1} of ${validQuestions.length}: ${q.question}`,
-          `Options: ${q.options.join(' | ')}`,
-          selectedOption
-            ? `Student selected: ${selectedOption}`
-            : 'Student has not selected an option yet.',
-          showExpl ? `Explanation shown: ${formattedExplanation}` : 'Explanation is not shown yet.',
+          `Active Question (${currentQ + 1}/${validQuestions.length}): ${q.question}`,
+          `Options: ${q.options.map((opt, i) => `${i}: ${opt}`).join(' | ')}`,
+          `Correct Answer Index: ${q.correctIndex} (${q.options[q.correctIndex]})`,
+          selected !== null
+            ? `Student choice: ${selected === -1 ? "I don't know" : q.options[selected]}`
+            : 'Student has not answered yet.',
+          `Full Explanation: ${formattedExplanation}`,
         ],
-        5,
+        7,
       ),
     );
   }, [
@@ -1148,15 +1149,18 @@ function TeachBackCard({
       compactLines(
         [
           'Card type: Teach-back',
-          `Prompt: ${content.prompt}`,
+          `Topic: ${content.topicName}`,
+          `Prompt given to student: ${content.prompt}`,
+          `Key points student MUST mention: ${content.keyPointsToMention.join(' | ')}`,
+          `Ideal Guru reaction/answer: ${content.guruReaction}`,
           answer.trim()
-            ? `Student draft answer: ${answer.trim()}`
-            : 'Student has not drafted an answer yet.',
+            ? `Student's current input: ${answer.trim()}`
+            : "Student hasn't started typing yet.",
           submitted
-            ? `Guru review visible: ${guruFeedback?.feedback ?? content.guruReaction}`
-            : 'Guru review is not shown yet.',
+            ? `Guru feedback shown: ${guruFeedback?.feedback ?? 'Calculating...'}`
+            : 'Result not yet revealed.',
         ],
-        4,
+        8,
       ),
     );
   }, [answer, content, guruFeedback, onContextChange, submitted]);
@@ -1275,13 +1279,15 @@ function ErrorHuntCard({
       compactLines(
         [
           'Card type: Error hunt',
-          'Task: Find the factual errors in the paragraph.',
           `Paragraph: ${content.paragraph}`,
+          `Actual errors to find: ${content.errors
+            .map((e) => `"${e.wrong}" should be "${e.correct}" because ${e.explanation}`)
+            .join(' | ')}`,
           revealed
-            ? `Revealed corrections: ${content.errors.map((error) => `${error.wrong} -> ${error.correct}`).join(' | ')}`
-            : 'Corrections are not revealed yet.',
+            ? 'Corrections are revealed to student.'
+            : 'Student is still searching for errors.',
         ],
-        4,
+        5,
       ),
     );
   }, [content, onContextChange, revealed]);
@@ -1343,11 +1349,13 @@ function DetectiveCard({
       compactLines(
         [
           'Card type: Detective',
-          `Visible clues: ${content.clues.slice(0, revealedClues).join(' | ')}`,
-          solved ? `Answer revealed: ${content.answer}` : 'Answer is not revealed yet.',
-          solved ? `Explanation visible: ${content.explanation}` : '',
+          `Diagnosis (Student shouldn't know yet unless solved): ${content.answer}`,
+          `Explanation: ${content.explanation}`,
+          `All Clues: ${content.clues.join(' | ')}`,
+          `Visible Clues count: ${revealedClues}`,
+          solved ? 'Student has solved/seen result.' : 'Student is still investigating.',
         ],
-        4,
+        7,
       ),
     );
   }, [content, onContextChange, revealedClues, solved]);

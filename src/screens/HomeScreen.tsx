@@ -17,10 +17,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
 import { useAppStore } from '../store/useAppStore';
 import { useSessionStore } from '../store/useSessionStore';
-import QuickStatsCard from '../components/home/QuickStatsCard';
-import ShortcutTile from '../components/home/ShortcutTile';
 import AgendaItem from '../components/home/AgendaItem';
-import TodayPlanCard from '../components/home/TodayPlanCard';
+import LinearSurface from '../components/primitives/LinearSurface';
+import Svg, { Circle } from 'react-native-svg';
 import StartButton from '../components/StartButton';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
 import { getDb } from '../db/database';
@@ -30,7 +29,7 @@ import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlann
 import type { DailyAgenda } from '../services/ai';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { BUNDLED_HF_TOKEN, DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import { getApiKeys } from '../services/ai/config';
 import { isLocalLlmUsable } from '../services/deviceMemory';
@@ -136,34 +135,25 @@ function ExamCountdownChips({
 
   const pulseDigitColor = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [theme.colors.textPrimary, theme.colors.warning],
+    outputRange: [n.colors.textMuted, n.colors.warning],
   });
 
   return (
     <View
-      style={styles.examCountRow}
+      style={styles.examCountInline}
       testID="inicet-countdown"
       accessibilityRole="text"
       accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
-      <View style={styles.examPill}>
-        <Text style={styles.examPillLabel}>INICET</Text>
-        <View style={styles.examPillValueRow}>
-          <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
-            {daysToInicet}
-          </Animated.Text>
-          <Text style={styles.examPillUnit}>days</Text>
-        </View>
-      </View>
-      <View style={styles.examPill}>
-        <Text style={styles.examPillLabel}>NEET-PG</Text>
-        <View style={styles.examPillValueRow}>
-          <Animated.Text style={[styles.examPillDays, { color: pulseDigitColor }]}>
-            {daysToNeetPg}
-          </Animated.Text>
-          <Text style={styles.examPillUnit}>days</Text>
-        </View>
-      </View>
+      <Text style={styles.examInlineLabel}>INICET </Text>
+      <Animated.Text style={[styles.examInlineDays, { color: pulseDigitColor }]}>
+        {daysToInicet}
+      </Animated.Text>
+      <Text style={styles.examInlineLabel}>d · NEET-PG </Text>
+      <Animated.Text style={[styles.examInlineDays, { color: pulseDigitColor }]}>
+        {daysToNeetPg}
+      </Animated.Text>
+      <Text style={styles.examInlineLabel}>d</Text>
     </View>
   );
 }
@@ -392,7 +382,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
 
       <ScrollView
         testID="home-scroll"
@@ -416,7 +406,7 @@ export default function HomeScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Open settings"
               >
-                <Ionicons name="settings-sharp" size={22} color={theme.colors.textSecondary} />
+                <Ionicons name="settings-sharp" size={22} color={n.colors.textSecondary} />
               </TouchableOpacity>
             </View>
           </View>
@@ -448,21 +438,57 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View style={styles.dualCardRow}>
-            <View style={styles.dualCardSlot}>
-              <TodayPlanCard />
+          {/* ── Compact stats bar ── */}
+          <LinearSurface style={styles.statsBar}>
+            <View style={styles.statsBarContent}>
+              {/* Progress ring */}
+              <View style={styles.statsRingWrap}>
+                <Svg width={RING_SIZE} height={RING_SIZE}>
+                  <Circle
+                    cx={RING_SIZE / 2}
+                    cy={RING_SIZE / 2}
+                    r={RADIUS}
+                    stroke={n.colors.border}
+                    strokeWidth={STROKE_WIDTH}
+                    fill="none"
+                  />
+                  <Circle
+                    cx={RING_SIZE / 2}
+                    cy={RING_SIZE / 2}
+                    r={RADIUS}
+                    stroke={n.colors.accent}
+                    strokeWidth={STROKE_WIDTH}
+                    fill="none"
+                    strokeDasharray={`${CIRCUMFERENCE}`}
+                    strokeDashoffset={CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100}
+                    strokeLinecap="round"
+                    rotation="-90"
+                    origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+                  />
+                </Svg>
+              </View>
+              {/* Minutes */}
+              <Text style={styles.statsText}>
+                {todayMinutes}min{' '}
+                <Text style={styles.statsTextMuted}>/ {profile.dailyGoalMinutes || 120}min</Text>
+              </Text>
+              <View style={styles.statsBarDivider} />
+              {/* Streak */}
+              <View style={styles.statsBarItem}>
+                <Ionicons name="flame" size={14} color={n.colors.warning} />
+                <Text style={styles.statsText}>{profile.streakCurrent}</Text>
+              </View>
+              <View style={styles.statsBarDivider} />
+              {/* Level */}
+              <Text style={styles.statsText}>Lv {levelInfo.level}</Text>
+              <View style={styles.statsBarDivider} />
+              {/* Sessions */}
+              <View style={styles.statsBarItem}>
+                <Text style={styles.statsText}>{completedSessions}</Text>
+                <Text style={styles.statsTextMuted}> done</Text>
+              </View>
             </View>
-            <View style={styles.dualCardSlot}>
-              <QuickStatsCard
-                progressPercent={progressClamped}
-                todayMinutes={todayMinutes}
-                dailyGoal={profile.dailyGoalMinutes || 120}
-                streak={profile.streakCurrent}
-                level={levelInfo.level}
-                completedSessions={completedSessions}
-              />
-            </View>
-          </View>
+          </LinearSurface>
 
           {loadError && (
             <View style={styles.loadErrorRow}>
@@ -494,26 +520,27 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 ) : (
                   weakTopics.slice(0, 1).map((t) => (
-                    <AgendaItem
-                      key={t.id}
-                      time="Now"
-                      title={t.name}
-                      type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
-                      subjectName={t.subjectName}
-                      priority={t.inicetPriority}
-                      rationale={homeSelectionReasonFromTopic(
-                        t,
-                        t.progress.status === 'unseen' ? 'new' : 'deep_dive',
-                      )}
-                      onPress={() =>
-                        navigation.navigate('Session', {
-                          mood,
-                          focusTopicId: t.id,
-                          preferredActionType:
-                            t.progress.status === 'unseen' ? 'study' : 'deep_dive',
-                        })
-                      }
-                    />
+                    <LinearSurface compact key={t.id} style={styles.agendaItemWrap}>
+                      <AgendaItem
+                        time="Now"
+                        title={t.name}
+                        type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
+                        subjectName={t.subjectName}
+                        priority={t.inicetPriority}
+                        rationale={homeSelectionReasonFromTopic(
+                          t,
+                          t.progress.status === 'unseen' ? 'new' : 'deep_dive',
+                        )}
+                        onPress={() =>
+                          navigation.navigate('Session', {
+                            mood,
+                            focusTopicId: t.id,
+                            preferredActionType:
+                              t.progress.status === 'unseen' ? 'study' : 'deep_dive',
+                          })
+                        }
+                      />
+                    </LinearSurface>
                   ))
                 )}
               </Section>
@@ -531,34 +558,35 @@ export default function HomeScreen() {
                     </Text>
                     <View style={styles.seeAllButton}>
                       <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                      <Ionicons name="chevron-forward" size={14} color={theme.colors.primary} />
+                      <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
                     </View>
                   </TouchableOpacity>
                 ) : (
                   <>
                     {todayTasks.slice(0, 2).map((t, i) => (
-                      <AgendaItem
-                        key={i}
-                        time={t.timeLabel.split(' ')[0]}
-                        title={t.topic.name}
-                        type={
-                          t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')
-                        }
-                        subjectName={t.topic.subjectName}
-                        priority={t.topic.inicetPriority}
-                        rationale={homeSelectionReasonFromTopic(
-                          t.topic,
-                          t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new'),
-                        )}
-                        onPress={() =>
-                          navigation.navigate('Session', {
-                            mood,
-                            focusTopicId: t.topic.id,
-                            preferredActionType: t.type,
-                            forcedMinutes: t.duration,
-                          })
-                        }
-                      />
+                      <LinearSurface compact key={i} style={styles.agendaItemWrap}>
+                        <AgendaItem
+                          time={t.timeLabel.split(' ')[0]}
+                          title={t.topic.name}
+                          type={
+                            t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')
+                          }
+                          subjectName={t.topic.subjectName}
+                          priority={t.topic.inicetPriority}
+                          rationale={homeSelectionReasonFromTopic(
+                            t.topic,
+                            t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new'),
+                          )}
+                          onPress={() =>
+                            navigation.navigate('Session', {
+                              mood,
+                              focusTopicId: t.topic.id,
+                              preferredActionType: t.type,
+                              forcedMinutes: t.duration,
+                            })
+                          }
+                        />
+                      </LinearSurface>
                     ))}
                     {todayTasks.length > 2 && (
                       <TouchableOpacity
@@ -570,7 +598,7 @@ export default function HomeScreen() {
                       >
                         <View style={styles.seeAllButton}>
                           <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                          <Ionicons name="chevron-forward" size={14} color={theme.colors.primary} />
+                          <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
                         </View>
                       </TouchableOpacity>
                     )}
@@ -578,40 +606,7 @@ export default function HomeScreen() {
                 )}
               </Section>
             </View>
-            <View style={isTabletLandscape ? { flex: 0.9 } : null}>
-              <Section label="QUICK ACCESS" accessibilityLabel="Quick access">
-                <View style={styles.shortcutGrid}>
-                  <ShortcutTile
-                    title="Study Plan"
-                    icon="calendar-outline"
-                    accent={theme.colors.primary}
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
-                    accessibilityLabel="Open Study Plan"
-                  />
-                  <ShortcutTile
-                    title="Notes Vault"
-                    icon="library-outline"
-                    accent={theme.colors.success}
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesVault' })}
-                    accessibilityLabel="Open Notes Vault"
-                  />
-                  <ShortcutTile
-                    title="Inertia"
-                    icon="flash-outline"
-                    accent={theme.colors.warning}
-                    onPress={() => navigation.navigate('Inertia')}
-                    accessibilityLabel="Open Task Paralysis helper"
-                  />
-                  <ShortcutTile
-                    title="Guru Chat"
-                    icon="chatbubbles-outline"
-                    accent={theme.colors.info}
-                    onPress={() => tabsNavigation?.navigate('ChatTab', { screen: 'GuruChat' })}
-                    accessibilityLabel="Open Guru Chat"
-                  />
-                </View>
-              </Section>
-            </View>
+            <View style={isTabletLandscape ? { flex: 0.9 } : null} />
           </View>
 
           <TouchableOpacity
@@ -643,49 +638,111 @@ export default function HomeScreen() {
                 ],
               }}
             >
-              <Ionicons name="chevron-down" size={16} color={theme.colors.textMuted} />
+              <Ionicons name="chevron-down" size={16} color={n.colors.textMuted} />
             </Animated.View>
           </TouchableOpacity>
 
           {moreExpanded && (
             <View style={styles.moreContent}>
-              <TouchableOpacity
-                style={styles.moreLink}
-                onPress={() => navigation.navigate('Inertia')}
-                testID="task-paralysis-btn"
-                accessibilityRole="button"
-                accessibilityLabel="Open Task Paralysis helper"
-              >
-                <Ionicons name="flash-outline" size={18} color={theme.colors.textMuted} />
-                <Text style={styles.moreLinkText}>Task Paralysis</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.moreLink}
-                onPress={() => navigation.getParent()?.navigate('DoomscrollGuide')}
-                accessibilityRole="button"
-                accessibilityLabel="Open Harassment Mode"
-              >
-                <Ionicons name="alert-circle-outline" size={18} color={theme.colors.textMuted} />
-                <Text style={styles.moreLinkText}>Harassment Mode</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.moreLink}
-                onPress={() => navigation.getParent()?.navigate('SleepMode')}
-                accessibilityRole="button"
-                accessibilityLabel="Open Nightstand Mode"
-              >
-                <Ionicons name="moon-outline" size={18} color={theme.colors.textMuted} />
-                <Text style={styles.moreLinkText}>Nightstand Mode</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.moreLink}
-                onPress={() => navigation.navigate('FlaggedReview')}
-                accessibilityRole="button"
-                accessibilityLabel="Open Flagged Review"
-              >
-                <Ionicons name="flag-outline" size={18} color={theme.colors.textMuted} />
-                <Text style={styles.moreLinkText}>Flagged Review</Text>
-              </TouchableOpacity>
+              {/* Merged shortcuts */}
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Study Plan"
+                >
+                  <Ionicons name="calendar-outline" size={18} color={n.colors.accent} />
+                  <Text style={styles.toolRowText}>Study Plan</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'NotesVault' })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Notes Vault"
+                >
+                  <Ionicons name="library-outline" size={18} color={n.colors.success} />
+                  <Text style={styles.toolRowText}>Notes Vault</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => navigation.navigate('Inertia')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Inertia"
+                >
+                  <Ionicons name="flash-outline" size={18} color={n.colors.warning} />
+                  <Text style={styles.toolRowText}>Inertia</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => tabsNavigation?.navigate('ChatTab', { screen: 'GuruChat' })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Guru Chat"
+                >
+                  <Ionicons name="chatbubbles-outline" size={18} color={n.colors.accent} />
+                  <Text style={styles.toolRowText}>Guru Chat</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              {/* Existing tools */}
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => navigation.navigate('Inertia')}
+                  testID="task-paralysis-btn"
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Task Paralysis helper"
+                >
+                  <Ionicons name="flash-outline" size={18} color={n.colors.textMuted} />
+                  <Text style={styles.toolRowText}>Task Paralysis</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => navigation.getParent()?.navigate('DoomscrollGuide')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Harassment Mode"
+                >
+                  <Ionicons name="alert-circle-outline" size={18} color={n.colors.textMuted} />
+                  <Text style={styles.toolRowText}>Harassment Mode</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => navigation.getParent()?.navigate('SleepMode')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Nightstand Mode"
+                >
+                  <Ionicons name="moon-outline" size={18} color={n.colors.textMuted} />
+                  <Text style={styles.toolRowText}>Nightstand Mode</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
+              <LinearSurface compact style={styles.toolRow}>
+                <TouchableOpacity
+                  style={styles.toolRowInner}
+                  onPress={() => navigation.navigate('FlaggedReview')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open Flagged Review"
+                >
+                  <Ionicons name="flag-outline" size={18} color={n.colors.textMuted} />
+                  <Text style={styles.toolRowText}>Flagged Review</Text>
+                  <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </LinearSurface>
             </View>
           )}
         </ResponsiveContainer>
@@ -755,7 +812,7 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
       ? `Err: ${runtime.lastError.slice(0, 100)}`
       : null;
 
-  const bannerColor = isActive ? theme.colors.primary : theme.colors.warning;
+  const bannerColor = isActive ? n.colors.accent : n.colors.warning;
   const glowOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.4] });
 
   return (
@@ -779,7 +836,7 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
         {onlineProviders.length > 0 ? (
           onlineProviders.map((p) => (
             <View key={p.name} style={aiStyles.tag}>
-              <View style={[aiStyles.tagDot, { backgroundColor: theme.colors.success }]} />
+              <View style={[aiStyles.tagDot, { backgroundColor: n.colors.success }]} />
               <Text style={aiStyles.tagText}>{p.name}</Text>
             </View>
           ))
@@ -788,10 +845,10 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
             <View
               style={[
                 aiStyles.tagDot,
-                { backgroundColor: hasAnyStt ? theme.colors.warning : theme.colors.error },
+                { backgroundColor: hasAnyStt ? n.colors.warning : n.colors.error },
               ]}
             />
-            <Text style={[aiStyles.tagText, { color: theme.colors.error }]}>
+            <Text style={[aiStyles.tagText, { color: n.colors.error }]}>
               {hasAnyStt ? 'STT only' : 'No AI'}
             </Text>
           </View>
@@ -811,10 +868,10 @@ const aiStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -844,12 +901,8 @@ const aiStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: theme.colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
   },
   tagDot: {
     width: 5,
@@ -859,7 +912,7 @@ const aiStyles = StyleSheet.create({
   tagText: {
     fontSize: 10,
     fontWeight: '700',
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
   },
 });
 
@@ -884,15 +937,21 @@ function Section({
   );
 }
 
+// ── Progress ring constants ──
+const RING_SIZE = 48;
+const STROKE_WIDTH = 5;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
+
 // ── Consistent spacing scale ──
-const HP = theme.spacing.xl; // 24 — horizontal page padding
-const CARD_GAP = theme.spacing.lg; // 16 — gap between cards
-const SECTION_GAP = theme.spacing.xl; // 24 — gap between sections
+const HP = n.spacing.xl; // 24 — horizontal page padding
+const CARD_GAP = n.spacing.lg; // 16 — gap between cards
+const SECTION_GAP = n.spacing.xl; // 24 — gap between sections
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   scrollContent: { paddingBottom: 40 },
-  content: { paddingHorizontal: HP, paddingTop: theme.spacing.md },
+  content: { paddingHorizontal: HP, paddingTop: n.spacing.md },
 
   // ── Header ──
   headerRow: {
@@ -906,70 +965,66 @@ const styles = StyleSheet.create({
   settingsBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   greetingText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 18,
   },
   greetingName: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '800',
   },
-  examCountRow: {
+
+  // ── Exam countdown inline ──
+  examCountInline: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginTop: 4,
-    gap: 6,
   },
-  examPill: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  examPillLabel: {
-    color: theme.colors.textMuted,
-    fontSize: 9,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-  },
-  examPillValueRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 3,
-  },
-  examPillDays: {
-    fontSize: 36,
-    lineHeight: 38,
-    fontWeight: '900',
-    letterSpacing: -1,
-  },
-  examPillUnit: {
-    color: theme.colors.textMuted,
+  examInlineLabel: {
+    color: n.colors.textMuted,
     fontSize: 12,
-    fontWeight: '700',
-    paddingBottom: 5,
+    fontWeight: '500',
+  },
+  examInlineDays: {
+    fontSize: 12,
+    fontWeight: '800',
   },
 
-  // AI Status styles moved to aiStyles (inline with AiStatusIndicator)
-
-  // ── Dual card row ──
-  dualCardRow: {
+  // ── Stats bar ──
+  statsBar: {
+    marginTop: 4,
+  },
+  statsBarContent: {
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  dualCardSlot: {
-    flex: 1,
+  statsRingWrap: {
+    marginRight: n.spacing.sm,
+  },
+  statsText: {
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  statsTextMuted: {
+    color: n.colors.textMuted,
+    fontWeight: '400',
+  },
+  statsBarDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  statsBarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
 
   // ── Hero section ──
@@ -977,24 +1032,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -8,
     paddingTop: 0,
-    paddingBottom: theme.spacing.sm,
-    gap: theme.spacing.sm,
+    paddingBottom: n.spacing.sm,
+    gap: n.spacing.sm,
   },
   heroStats: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: theme.spacing.xl,
+    gap: n.spacing.xl,
   },
   heroStatItem: { alignItems: 'center', minWidth: 50 },
   heroStatValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 22,
     fontWeight: '900',
     letterSpacing: -0.3,
   },
   heroStatLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -1004,7 +1059,12 @@ const styles = StyleSheet.create({
   heroStatDivider: {
     width: 1,
     height: 24,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
+  },
+
+  // ── Agenda item wrapper ──
+  agendaItemWrap: {
+    marginBottom: 8,
   },
 
   // ── Error row ──
@@ -1012,35 +1072,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.errorSurface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.md,
+    backgroundColor: n.colors.errorSurface,
+    borderRadius: n.radius.md,
+    padding: n.spacing.md,
     marginBottom: CARD_GAP,
     borderWidth: 1,
-    borderColor: theme.colors.error,
+    borderColor: n.colors.error,
   },
-  loadErrorText: { color: theme.colors.textSecondary, fontSize: 13 },
+  loadErrorText: { color: n.colors.textSecondary, fontSize: 13 },
   retryButton: {
-    backgroundColor: theme.colors.error,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: n.colors.error,
+    paddingHorizontal: n.spacing.lg,
+    paddingVertical: n.spacing.sm,
+    borderRadius: n.radius.sm,
     minHeight: 44,
     justifyContent: 'center',
   },
-  retryButtonText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 13 },
+  retryButtonText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 13 },
 
   // ── Empty sections ──
   emptySectionTouchable: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderStyle: 'dashed',
+    paddingVertical: 12,
+    paddingLeft: 14,
+    paddingRight: 8,
+    borderLeftWidth: 2,
+    borderLeftColor: n.colors.border,
   },
   emptySectionText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -1048,36 +1107,35 @@ const styles = StyleSheet.create({
   // ── Sections ──
   section: { marginBottom: SECTION_GAP },
   sectionLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '800',
     fontSize: 11,
     letterSpacing: 1.5,
-    marginBottom: theme.spacing.md,
+    marginBottom: n.spacing.md,
     textTransform: 'uppercase',
   },
 
   // ── Layouts ──
   gridLandscape: { flexDirection: 'row', gap: CARD_GAP },
-  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
 
   // ── Tools section ──
   moreHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: theme.spacing.md,
+    paddingVertical: n.spacing.md,
     alignItems: 'center',
   },
-  moreContent: { paddingBottom: SECTION_GAP },
-  moreLink: {
+  moreContent: { paddingBottom: SECTION_GAP, gap: 8 },
+  toolRow: {
+    // No extra margin needed — gap on parent handles spacing
+  },
+  toolRowInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    gap: n.spacing.md,
     minHeight: 44,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.colors.border,
-    gap: theme.spacing.md,
   },
-  moreLinkText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  toolRowText: { color: n.colors.textSecondary, fontSize: 14, fontWeight: '500', flex: 1 },
 
   // ── See all link ──
   seeAllButtonStandalone: {
@@ -1092,13 +1150,13 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingHorizontal: 10,
     paddingVertical: 7,
-    borderRadius: 999,
-    backgroundColor: theme.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: n.colors.borderLight,
   },
   seeAllButtonText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700',
   },

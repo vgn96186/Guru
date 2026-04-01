@@ -5,6 +5,9 @@ import type { PlanItem } from './studyPlanner';
 function makeTopic(params: {
   id: number;
   subjectId?: number;
+  parentTopicId?: number | null;
+  name?: string;
+  estimatedMinutes?: number;
   status?: TopicWithProgress['progress']['status'];
   confidence?: number;
   priority?: number;
@@ -13,10 +16,10 @@ function makeTopic(params: {
   return {
     id: params.id,
     subjectId: params.subjectId ?? 1,
-    parentTopicId: 999,
-    name: `Topic ${params.id}`,
+    parentTopicId: params.parentTopicId === undefined ? 999 : params.parentTopicId,
+    name: params.name ?? `Topic ${params.id}`,
     subtopics: [],
-    estimatedMinutes: 30,
+    estimatedMinutes: params.estimatedMinutes ?? 30,
     inicetPriority: params.inicetPriority ?? params.priority ?? 5,
     subjectName: 'Physiology',
     subjectCode: 'PHYS',
@@ -63,8 +66,8 @@ describe('studyPlannerBuckets', () => {
         mode: 'balanced',
         subjectWeights,
       });
-      expect(balanced.weak.map(t => t.id)).toEqual([2]);
-      expect(balanced.newTopics.map(t => t.id)).toEqual([3, 4]);
+      expect(balanced.weak.map((t) => t.id)).toEqual([2]);
+      expect(balanced.newTopics.map((t) => t.id)).toEqual([3, 4]);
 
       const highYield = buildPlanBuckets({
         allTopics,
@@ -72,7 +75,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'high_yield',
         subjectWeights,
       });
-      expect(highYield.newTopics.map(t => t.id)).toEqual([3]);
+      expect(highYield.newTopics.map((t) => t.id)).toEqual([3]);
     });
 
     it('filters weak topics correctly (confidence >= 3)', () => {
@@ -86,7 +89,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'balanced',
         subjectWeights: new Map(),
       });
-      expect(buckets.weak.map(t => t.id)).toEqual([2]);
+      expect(buckets.weak.map((t) => t.id)).toEqual([2]);
     });
 
     it('filters weak topics correctly in high_yield mode (priority < 7)', () => {
@@ -100,7 +103,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'high_yield',
         subjectWeights: new Map(),
       });
-      expect(buckets.weak.map(t => t.id)).toEqual([1]);
+      expect(buckets.weak.map((t) => t.id)).toEqual([1]);
     });
 
     it('filters new topics correctly in exam_crunch mode (priority < 9)', () => {
@@ -114,7 +117,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'exam_crunch',
         subjectWeights: new Map(),
       });
-      expect(buckets.newTopics.map(t => t.id)).toEqual([1]);
+      expect(buckets.newTopics.map((t) => t.id)).toEqual([1]);
     });
 
     it('sorts new topics by weighted score', () => {
@@ -123,8 +126,11 @@ describe('studyPlannerBuckets', () => {
         makeTopic({ id: 2, subjectId: 102, priority: 9 }), // (8 * 1.5) + 9 = 21
         makeTopic({ id: 3, subjectId: 103, priority: 2 }), // (default 5 * 1.5) + 2 = 9.5
       ];
-      const subjectWeights = new Map([[101, 5], [102, 8]]);
-      
+      const subjectWeights = new Map([
+        [101, 5],
+        [102, 8],
+      ]);
+
       const buckets = buildPlanBuckets({
         allTopics,
         due: [],
@@ -133,7 +139,7 @@ describe('studyPlannerBuckets', () => {
       });
 
       // Expected order: Topic 2 (21), Topic 1 (12.5), Topic 3 (9.5)
-      expect(buckets.newTopics.map(t => t.id)).toEqual([2, 1, 3]);
+      expect(buckets.newTopics.map((t) => t.id)).toEqual([2, 1, 3]);
     });
 
     it('handles empty inputs', () => {
@@ -159,7 +165,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'high_yield',
         subjectWeights: new Map(),
       });
-      expect(buckets.weak.map(t => t.id)).toEqual([1]);
+      expect(buckets.weak.map((t) => t.id)).toEqual([1]);
     });
 
     it('characterize high_yield boundary: new topics priority exactly 8', () => {
@@ -173,7 +179,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'high_yield',
         subjectWeights: new Map(),
       });
-      expect(buckets.newTopics.map(t => t.id)).toEqual([1]);
+      expect(buckets.newTopics.map((t) => t.id)).toEqual([1]);
     });
 
     it('characterize exam_crunch boundary: new topics priority exactly 9', () => {
@@ -187,7 +193,7 @@ describe('studyPlannerBuckets', () => {
         mode: 'exam_crunch',
         subjectWeights: new Map(),
       });
-      expect(buckets.newTopics.map(t => t.id)).toEqual([1]);
+      expect(buckets.newTopics.map((t) => t.id)).toEqual([1]);
     });
 
     it('characterize due topic overlap in balanced mode (should exclude)', () => {
@@ -198,8 +204,8 @@ describe('studyPlannerBuckets', () => {
         mode: 'balanced',
         subjectWeights: new Map(),
       });
-      expect(buckets.due.map(t => t.id)).toEqual([1]);
-      expect(buckets.weak.map(t => t.id)).toEqual([]);
+      expect(buckets.due.map((t) => t.id)).toEqual([1]);
+      expect(buckets.weak.map((t) => t.id)).toEqual([]);
     });
 
     it('characterize due topic overlap in high_yield mode (currently includes due topic in weak if priority >= 7)', () => {
@@ -210,9 +216,48 @@ describe('studyPlannerBuckets', () => {
         mode: 'high_yield',
         subjectWeights: new Map(),
       });
-      expect(buckets.due.map(t => t.id)).toEqual([1]);
+      expect(buckets.due.map((t) => t.id)).toEqual([1]);
       // Current behavior: priority check is early-exit in high_yield
-      expect(buckets.weak.map(t => t.id)).toEqual([1]);
+      expect(buckets.weak.map((t) => t.id)).toEqual([1]);
+    });
+
+    it('keeps high-priority long root topics in new queue', () => {
+      const allTopics = [
+        makeTopic({
+          id: 1,
+          parentTopicId: null,
+          estimatedMinutes: 75,
+          priority: 9,
+          status: 'unseen',
+        }),
+      ];
+      const buckets = buildPlanBuckets({
+        allTopics,
+        due: [],
+        mode: 'balanced',
+        subjectWeights: new Map(),
+      });
+      expect(buckets.newTopics.map((t) => t.id)).toEqual([1]);
+    });
+
+    it('filters broad root container topics from new queue', () => {
+      const allTopics = [
+        makeTopic({
+          id: 1,
+          parentTopicId: null,
+          name: 'General Surgery',
+          estimatedMinutes: 40,
+          status: 'unseen',
+          priority: 5,
+        }),
+      ];
+      const buckets = buildPlanBuckets({
+        allTopics,
+        due: [],
+        mode: 'balanced',
+        subjectWeights: new Map(),
+      });
+      expect(buckets.newTopics).toEqual([]);
     });
   });
 

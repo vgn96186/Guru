@@ -60,6 +60,7 @@ describe('DB integration (in-memory SQLite)', () => {
     await upsertSessionMemory(thread.id, 'TopicA', 'summary text', 10);
     const row = await getSessionMemoryRow(thread.id);
     expect(row?.summaryText).toBe('summary text');
+    expect(row?.stateJson).toBe('{}');
     expect(row?.messagesAtLastSummary).toBe(10);
 
     await deleteSessionMemory(thread.id);
@@ -68,7 +69,13 @@ describe('DB integration (in-memory SQLite)', () => {
 
   it('lists, renames, and deletes Guru chat threads', async () => {
     const thread = await createGuruChatThread('Neurology');
-    await saveChatMessage(thread.id, 'Neurology', 'user', 'What is internuclear ophthalmoplegia?', 3000);
+    await saveChatMessage(
+      thread.id,
+      'Neurology',
+      'user',
+      'What is internuclear ophthalmoplegia?',
+      3000,
+    );
 
     const listed = await listGuruChatThreads(10);
     expect(listed[0]?.id).toBe(thread.id);

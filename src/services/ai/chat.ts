@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { SYSTEM_PROMPT } from '../../constants/prompts';
-import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import type { MedicalGroundingSource, Message } from './types';
 import {
   generateJSONWithRouting,
@@ -17,6 +16,7 @@ import {
   buildMedicalSearchQuery,
 } from './medicalSearch';
 import { logGroundingEvent, previewText } from './runtimeDebug';
+import { parseGuruTutorState, type GuruTutorIntent } from '../guruChatSessionSummary';
 
 const MAX_CONTINUATION_ATTEMPTS = 2;
 
@@ -40,30 +40,38 @@ function buildGuruSystemPrompt(options: { grounded?: boolean; includeStudyContex
     '4) Be warm, calm, and concise.',
     '5) Prioritize forward progress over quizzing. If the student is uncertain, give the next important teaching point directly instead of asking another near-identical question.',
     '6) If the student says "just tell me", "explain it", or "don\'t know", do not repeat the same question. Give a brief direct explanation, then continue with the rest of the concept before asking at most one simpler checkpoint question only if it truly helps.',
+    '7) Never assume prerequisite knowledge. When you use a technical term, define it in plain words the first time.',
+    '8) Use a foundation-first ladder: Basics -> Mechanism -> Exam-relevant takeaway -> one checkpoint.',
+    '9) If STUDY CONTEXT suggests low confidence or weak basics, simplify aggressively and teach prerequisite concepts before advanced details.',
+    '10) If STUDENT INTENT says the learner wants direct teaching, explanation of an error, or a comparison, answer directly first. Do not stay Socratic by default.',
+    '11) If TUTOR STATE gives an open doubt or next micro-goal, resolve that before drifting into a new subtopic. Every turn should either close one doubt, advance one micro-goal, or briefly park a tangent and return.',
     options.grounded
-      ? '7) Do not use citations inline - keep it natural, not academic.'
+      ? '12) Do not use citations inline - keep it natural, not academic.'
       : options.includeStudyContext
-        ? '7) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
-        : '7) Never output JSON.',
+        ? '12) Use the STUDY CONTEXT when it is provided so your answer matches the exact card, question, or explanation the student is viewing.'
+        : '12) Never output JSON.',
     options.grounded
-      ? '8) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.'
+      ? '13) NEVER refuse to answer a medical question. Always provide your best knowledge even if sources are unavailable or irrelevant.'
       : options.includeStudyContext
-        ? '8) Never output JSON.'
-        : "8) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
+        ? '13) Never output JSON.'
+        : "13) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply.",
     options.grounded || options.includeStudyContext
-      ? "9) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply."
-      : '9) If you ask a question, that question must be the final line in your reply. Never answer your own question.',
+      ? "14) Output only Guru's next single turn. Never write Student:/User:/Guru: role labels and never invent the student's reply."
+      : '14) If you ask a question, that question must be the final line in your reply. Never answer your own question.',
     options.grounded || options.includeStudyContext
-      ? '10) Never ask the same or nearly the same question again if it was already asked in recent turns. Build on the conversation state instead.'
+      ? '15) Never ask the same or nearly the same question again if it was already asked in recent turns or blocked by TUTOR STATE. Build on the conversation state instead.'
       : null,
     options.grounded || options.includeStudyContext
-      ? '11) If the student has already failed or declined to answer a point, do not quiz them on that same point again in the next turn. Teach it and move on.'
+      ? '16) If the student has already failed or declined to answer a point, do not quiz them on that same point again in the next turn. Teach it and move on.'
       : null,
     options.grounded || options.includeStudyContext
-      ? '12) If you ask a question, that question must be the final line in your reply. Never answer your own question.'
-      : '10) Follow these output constraints exactly:',
+      ? '17) If the student raises a side question that is not central, answer it briefly, park it, and return to the main micro-goal unless they explicitly want to switch topics.'
+      : '15) Follow these output constraints exactly:',
     options.grounded || options.includeStudyContext
-      ? '13) Follow these output constraints exactly:'
+      ? '18) If you ask a question, that question must be the final line in your reply. Never answer your own question.'
+      : null,
+    options.grounded || options.includeStudyContext
+      ? '19) Follow these output constraints exactly:'
       : null,
     GURU_ADHD_FORMATTING_RULES,
   ];
@@ -180,7 +188,10 @@ function buildImageSearchSeed(
     return {
       topic: topicName.trim().slice(0, 120),
       context: recentGuruReply
-        ? `Topic: ${topicName.trim()}\nTutor context: ${clipText(recentGuruReply, 260)}\nLatest student message: ${clipText(trimmedQuestion, 160)}`
+        ? `Topic: ${topicName.trim()}\nTutor context: ${clipText(
+            recentGuruReply,
+            260,
+          )}\nLatest student message: ${clipText(trimmedQuestion, 160)}`
         : `Topic: ${topicName.trim()}\nLatest student message: ${clipText(trimmedQuestion, 160)}`,
     };
   }
@@ -316,6 +327,116 @@ function extractKeyTerms(text: string): string[] {
   );
 }
 
+function buildConceptKey(text: string): string {
+  return extractKeyTerms(text).slice(0, 5).join('_');
+}
+
+function conceptOverlap(a: string, b: string): boolean {
+  const aTerms = extractKeyTerms(a);
+  const bTerms = extractKeyTerms(b);
+  if (aTerms.length === 0 || bTerms.length === 0) return false;
+  const bSet = new Set(bTerms);
+  const overlapCount = aTerms.filter((term) => bSet.has(term)).length;
+  const minLen = Math.min(aTerms.length, bTerms.length);
+  return (
+    overlapCount >= Math.min(2, minLen) ||
+    overlapCount / Math.max(aTerms.length, bTerms.length) >= 0.6
+  );
+}
+
+function dedupeConcepts(values: Array<string | null | undefined>): string[] {
+  const items: string[] = [];
+  for (const value of values) {
+    const trimmed = (value ?? '').trim();
+    if (!trimmed) continue;
+    if (items.some((existing) => conceptOverlap(existing, trimmed))) continue;
+    items.push(trimmed);
+  }
+  return items;
+}
+
+function detectStudentIntent(question: string): GuruTutorIntent {
+  const normalized = question.trim().toLowerCase();
+  if (!normalized) return 'clarify_doubt';
+  if (/(compare|difference between|differentiate|vs\b|versus)/i.test(normalized)) return 'compare';
+  if (/(quiz me|test me|ask me|mcq|question me)/i.test(normalized)) return 'quiz_me';
+  if (/(wrong|why .*wrong|mistake|explanation for this answer)/i.test(normalized))
+    return 'explain_wrong_answer';
+  if (/(recap|summari[sz]e|short summary|revise quickly)/i.test(normalized)) return 'recap';
+  if (
+    /(just tell me|just explain|directly|straight answer|explain it|teach me|i don't know|dont know|do not know|no idea)/i.test(
+      normalized,
+    )
+  )
+    return 'direct_teach';
+  if (/(another thing|also|side note|by the way|unrelated)/i.test(normalized)) return 'tangent';
+  if (/(next|move on|continue|go ahead)/i.test(normalized)) return 'advance';
+  return 'clarify_doubt';
+}
+
+function buildIntentInstruction(intent: GuruTutorIntent): string {
+  switch (intent) {
+    case 'direct_teach':
+      return 'Student intent: direct_teach. Give a direct explanation first. Do not ask a discovery question until the core doubt is resolved.';
+    case 'explain_wrong_answer':
+      return 'Student intent: explain_wrong_answer. Explain exactly why the mistake happened, contrast the correct concept, and avoid vague motivational talk.';
+    case 'compare':
+      return 'Student intent: compare. Contrast the two entities cleanly using the highest-yield differences before any checkpoint.';
+    case 'quiz_me':
+      return 'Student intent: quiz_me. You may ask one checkpoint, but it must advance to a new concept rather than repeat the last failed one.';
+    case 'recap':
+      return 'Student intent: recap. Compress the concept into a clean recap, then stop or ask one very short next-step question only if useful.';
+    case 'tangent':
+      return 'Student intent: tangent. Answer briefly, park the tangent if needed, and return to the main topic unless the student clearly asks to switch.';
+    case 'advance':
+      return 'Student intent: advance. Continue from the next micro-goal instead of revisiting the same checkpoint.';
+    default:
+      return 'Student intent: clarify_doubt. Resolve the exact confusion in plain language before adding a checkpoint.';
+  }
+}
+
+function renderTutorStateForPrompt(
+  stateJson: string | null | undefined,
+  topicName: string | undefined,
+): { stateBlock?: string; blockedConcepts: string[] } {
+  const topic = topicName?.trim() || 'General Medicine';
+  const state = parseGuruTutorState(stateJson, topic);
+  const blockedConcepts = dedupeConcepts([
+    ...state.questionConceptsAlreadyAsked,
+    ...state.avoidReaskingConcepts,
+  ]);
+
+  const lines = [
+    `Tutor state topic focus: ${state.currentTopicFocus || topic}`,
+    state.currentSubtopic ? `Current subtopic: ${state.currentSubtopic}` : null,
+    `Active mode: ${state.activeMode}`,
+    `Last student intent: ${state.lastStudentIntent}`,
+    state.openDoubts.length > 0 ? `Open doubts: ${state.openDoubts.join(' | ')}` : null,
+    state.resolvedDoubts.length > 0 ? `Resolved doubts: ${state.resolvedDoubts.join(' | ')}` : null,
+    state.misconceptions.length > 0
+      ? `Known misconceptions: ${state.misconceptions.join(' | ')}`
+      : null,
+    state.prerequisitesExplained.length > 0
+      ? `Prerequisites already explained: ${state.prerequisitesExplained.join(' | ')}`
+      : null,
+    state.factsConfirmed.length > 0
+      ? `Facts already confirmed: ${state.factsConfirmed.join(' | ')}`
+      : null,
+    blockedConcepts.length > 0
+      ? `Do not immediately re-ask these concepts: ${blockedConcepts.join(' | ')}`
+      : null,
+    state.nextMicroGoal ? `Next micro-goal: ${state.nextMicroGoal}` : null,
+    state.tangentParkingLot.length > 0
+      ? `Tangent parking lot: ${state.tangentParkingLot.join(' | ')}`
+      : null,
+  ].filter(Boolean);
+
+  return {
+    stateBlock: lines.length > 0 ? `Structured tutoring state:\n${lines.join('\n')}\n` : undefined,
+    blockedConcepts,
+  };
+}
+
 function shouldDropFinalQuestion(reply: string, recentQuestions: string[] = []): boolean {
   const { body, question } = splitReplyAndFinalQuestion(reply);
   if (!question || !body) return false;
@@ -342,11 +463,75 @@ function shouldDropFinalQuestion(reply: string, recentQuestions: string[] = []):
   return overlapRatio >= 0.6 && directAnswerCue;
 }
 
-function finalizeGuruReply(reply: string, recentQuestions: string[] = []): string {
+type FinalizeGuruOptions = {
+  recentQuestions?: string[];
+  studentIntent?: GuruTutorIntent;
+  blockedConcepts?: string[];
+  studentQuestion?: string;
+};
+
+function normalizeFinalizeGuruOptions(
+  options: string[] | FinalizeGuruOptions | undefined,
+): FinalizeGuruOptions {
+  if (Array.isArray(options)) {
+    return { recentQuestions: options };
+  }
+  return options ?? {};
+}
+
+function shouldDropIntentQuestion(
+  body: string,
+  finalQuestion: string,
+  options: FinalizeGuruOptions,
+): boolean {
+  const { studentIntent, blockedConcepts = [], studentQuestion } = options;
+  if (!studentIntent) return false;
+
+  const isDirectHelpIntent = [
+    'clarify_doubt',
+    'direct_teach',
+    'compare',
+    'explain_wrong_answer',
+    'recap',
+  ].includes(studentIntent);
+  if (!isDirectHelpIntent) return false;
+
+  const finalConcept = buildConceptKey(finalQuestion);
+  const studentConcept = buildConceptKey(studentQuestion ?? '');
+  if (!finalConcept) return false;
+
+  if (studentConcept && conceptOverlap(finalConcept, studentConcept)) {
+    return true;
+  }
+
+  if (conceptOverlap(finalQuestion, body)) {
+    return true;
+  }
+
+  const bodyTerms = extractKeyTerms(body);
+  const finalQuestionTerms = extractKeyTerms(finalQuestion);
+  const sharedBodyTerms = finalQuestionTerms.filter((term) => bodyTerms.includes(term)).length;
+  const bodyLooksExplanatory =
+    /\b(because|due to|means|refers to|causes|happens when|so that)\b/i.test(body);
+  if (sharedBodyTerms >= 1 && bodyLooksExplanatory) {
+    return true;
+  }
+
+  return blockedConcepts.some((concept) => conceptOverlap(concept, finalQuestion));
+}
+
+function finalizeGuruReply(reply: string, options: string[] | FinalizeGuruOptions = []): string {
+  const normalizedOptions = normalizeFinalizeGuruOptions(options);
+  const recentQuestions = normalizedOptions.recentQuestions ?? [];
   const sanitized = sanitizeSingleGuruTurn(reply);
   if (!sanitized) return sanitized;
+  const { body, question } = splitReplyAndFinalQuestion(sanitized);
+  if (!question) return sanitized;
+  if (shouldDropIntentQuestion(body, question, normalizedOptions)) {
+    return body.trim();
+  }
   if (!shouldDropFinalQuestion(sanitized, recentQuestions)) return sanitized;
-  return splitReplyAndFinalQuestion(sanitized).body.trim();
+  return body.trim();
 }
 
 function truncateAfterAskedQuestion(text: string): string {
@@ -526,9 +711,10 @@ export async function chatWithGuru(
   studyContext?: string,
 ): Promise<{ reply: string }> {
   const recentGuruQuestions = extractRecentGuruQuestions(history);
+  const studentIntent = detectStudentIntent(question);
   const contextPrompt = `Topic: ${topicName}${
     studyContext ? `\n\nStudy context:\n${studyContext}` : ''
-  }`;
+  }\n\n${buildIntentInstruction(studentIntent)}\nInstruction: Prioritize exam-relevant high-yield concepts, but first repair foundational gaps. If prerequisite concepts are missing, explain those first in plain language.`;
   const systemPrompt = buildGuruSystemPrompt({ includeStudyContext: true });
   const { text } = await generateTextWithRouting(
     [
@@ -537,9 +723,15 @@ export async function chatWithGuru(
       ...buildHistoryMessages(history, 4),
       { role: 'user', content: question },
     ],
-    { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
+    { chosenModel },
   );
-  return { reply: finalizeGuruReply(text, recentGuruQuestions) };
+  return {
+    reply: finalizeGuruReply(text, {
+      recentQuestions: recentGuruQuestions,
+      studentIntent,
+      studentQuestion: question,
+    }),
+  };
 }
 
 export async function chatWithGuruGrounded(
@@ -561,10 +753,19 @@ export async function chatWithGuruGrounded(
   const systemPrompt = buildGuruSystemPrompt({ grounded: true });
 
   const topicContextLine = buildTopicContextLine(topicName);
-  const userPrompt = `${topicContextLine ? `${topicContextLine}\n` : ''}Student question: ${trimmedQuestion}
-${recentGuruQuestions.length > 0 ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n` : ''}
+  const userPrompt = `${
+    topicContextLine ? `${topicContextLine}\n` : ''
+  }Student question: ${trimmedQuestion}
+${
+  recentGuruQuestions.length > 0
+    ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions
+        .map((q, i) => `${i + 1}. ${q}`)
+        .join('\n')}\n`
+    : ''
+}
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
-Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
+Respond using your medical knowledge. Reference the sources only if they are directly relevant.
+If the student may not know prerequisites, explain prerequisite basics first and define jargon briefly.`;
 
   const msgs: Message[] = [
     { role: 'system', content: systemPrompt },
@@ -575,7 +776,6 @@ Respond using your medical knowledge. Reference the sources only if they are dir
   try {
     const response = await generateTextWithRouting(msgs, {
       chosenModel,
-      providerOrderOverride: DEFAULT_PROVIDER_ORDER,
     });
     let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
     let modelUsed = response.modelUsed;
@@ -590,7 +790,7 @@ Respond using your medical knowledge. Reference the sources only if they are dir
       }
       const continuation = await generateTextWithRouting(
         buildContinuationMessages(msgs, finalReply),
-        { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
+        { chosenModel },
       );
       const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
@@ -613,6 +813,8 @@ Respond using your medical knowledge. Reference the sources only if they are dir
 export type GuruChatMemoryContext = {
   /** Rolling summary of earlier turns in this thread (SQLite). */
   sessionSummary?: string;
+  /** Structured tutoring state carried across turns (SQLite). */
+  stateJson?: string;
   /** Optional facts the student saved in Settings (exam goals, weak subjects, etc.). */
   profileNotes?: string;
   /** Bounded FSRS/review + exam countdown line from DB (see `buildBoundedGuruChatStudyContext`). */
@@ -637,6 +839,15 @@ export async function chatWithGuruGroundedStreaming(
   const searchQuery = buildMedicalSearchQuery(trimmedQuestion, topicName);
   const imageSeed = buildImageSearchSeed(trimmedQuestion, topicName, history);
   const recentGuruQuestions = extractRecentGuruQuestions(history);
+  const studentIntent = detectStudentIntent(trimmedQuestion);
+  const { stateBlock, blockedConcepts } = renderTutorStateForPrompt(
+    memoryContext?.stateJson,
+    topicName,
+  );
+  const recentConcepts = recentGuruQuestions
+    .map((questionText) => buildConceptKey(questionText))
+    .filter(Boolean);
+  const allBlockedConcepts = dedupeConcepts([...blockedConcepts, ...recentConcepts]);
 
   // Parallel text + image search (fault-tolerant).
   // Image search helps future visual features, but should not pollute the citation/source panel.
@@ -696,25 +907,43 @@ export async function chatWithGuruGroundedStreaming(
     memoryContext?.sessionSummary?.trim() &&
     `Earlier thread summary (compressed — may omit details):\n${memoryContext.sessionSummary.trim()}\n`;
 
+  const tutorStateBlock = stateBlock;
+
   const studyBlock =
     memoryContext?.studyContext?.trim() &&
     `Study snapshot from their progress DB (samples only):\n${memoryContext.studyContext.trim()}\n`;
 
   const localGroundingBlock =
     memoryContext?.groundingContext?.trim() &&
-    `Student's saved notes context${memoryContext.groundingTitle ? ` (${memoryContext.groundingTitle})` : ''}:\n${clipText(
-      memoryContext.groundingContext.trim(),
-      5000,
-    )}\n`;
+    `Student's saved notes context${
+      memoryContext.groundingTitle ? ` (${memoryContext.groundingTitle})` : ''
+    }:\n${clipText(memoryContext.groundingContext.trim(), 5000)}\n`;
 
   const systemPrompt = buildGuruSystemPrompt({ grounded: true });
 
   const topicContextLine = buildTopicContextLine(topicName, memoryContext?.syllabusTopicId);
-  const userPrompt = `${topicContextLine ? `${topicContextLine}\n` : ''}${profileBlock ?? ''}${sessionBlock ?? ''}${studyBlock ?? ''}${localGroundingBlock ?? ''}
+  const userPrompt = `${topicContextLine ? `${topicContextLine}\n` : ''}${profileBlock ?? ''}${
+    sessionBlock ?? ''
+  }${tutorStateBlock ?? ''}${studyBlock ?? ''}${localGroundingBlock ?? ''}
+${buildIntentInstruction(studentIntent)}
 Student question: ${trimmedQuestion}
-${recentGuruQuestions.length > 0 ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}\n` : ''}
+${
+  recentGuruQuestions.length > 0
+    ? `\nRecent Guru questions already asked - do not repeat or paraphrase them:\n${recentGuruQuestions
+        .map((q, i) => `${i + 1}. ${q}`)
+        .join('\n')}\n`
+    : ''
+}
+${
+  allBlockedConcepts.length > 0
+    ? `\nConcepts blocked from immediate re-questioning:\n${allBlockedConcepts
+        .map((concept, i) => `${i + 1}. ${concept}`)
+        .join('\n')}\n`
+    : ''
+}
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
-Respond using your medical knowledge. Reference the sources only if they are directly relevant.`;
+Respond using your medical knowledge. Reference the sources only if they are directly relevant.
+If the student may not know prerequisites, explain prerequisite basics first and define jargon briefly.`;
 
   const msgs: Message[] = [
     { role: 'system', content: systemPrompt },
@@ -733,12 +962,13 @@ Respond using your medical knowledge. Reference the sources only if they are dir
       if (cleanDelta) onReplyDelta(cleanDelta);
     };
 
-    const response = await generateTextWithRoutingStream(
-      msgs,
-      { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
-      safeEmitDelta,
-    );
-    let finalReply = finalizeGuruReply(response.text, recentGuruQuestions);
+    const response = await generateTextWithRoutingStream(msgs, { chosenModel }, safeEmitDelta);
+    let finalReply = finalizeGuruReply(response.text, {
+      recentQuestions: recentGuruQuestions,
+      studentIntent,
+      blockedConcepts: allBlockedConcepts,
+      studentQuestion: trimmedQuestion,
+    });
     if (finalReply.length > emittedReply.length) {
       const remaining = finalReply.slice(emittedReply.length);
       if (remaining) {
@@ -758,10 +988,15 @@ Respond using your medical knowledge. Reference the sources only if they are dir
       }
       const continuation = await generateTextWithRoutingStream(
         buildContinuationMessages(msgs, finalReply),
-        { chosenModel, providerOrderOverride: DEFAULT_PROVIDER_ORDER },
+        { chosenModel },
         safeEmitDelta,
       );
-      const continuationText = finalizeGuruReply(continuation.text, recentGuruQuestions);
+      const continuationText = finalizeGuruReply(continuation.text, {
+        recentQuestions: recentGuruQuestions,
+        studentIntent,
+        blockedConcepts: allBlockedConcepts,
+        studentQuestion: trimmedQuestion,
+      });
       if (!hasUsefulContinuation(finalReply, continuationText)) break;
       const appended = appendContinuation(finalReply, continuationText);
       if (appended.length <= finalReply.length) break;
@@ -810,9 +1045,41 @@ Formatting rules:
     'low',
     true,
     undefined,
-    DEFAULT_PROVIDER_ORDER,
+    undefined,
   );
   return JSON.stringify(parsed);
+}
+
+export async function explainMostTestedRationale(
+  point: string,
+  topicName: string,
+): Promise<string> {
+  const messages: Message[] = [
+    {
+      role: 'system',
+      content: `You are Guru, a warm NEET-PG/INICET medical tutor.
+Explain why a point is "most tested/high-yield" for exams.
+Follow these output constraints exactly:
+${GURU_ADHD_FORMATTING_RULES}
+Never output JSON.`,
+    },
+    {
+      role: 'user',
+      content: `Topic: ${topicName}
+Point: ${point}
+
+Write 2-3 concise sentences that explain WHY this is high-yield.
+You MUST include all three:
+1) Clinical prevalence/common exam frequency
+2) Management shift or treatment implication (e.g., surgery vs radiotherapy/chemoradiation when relevant)
+3) Prognostic significance versus earlier/less severe disease
+
+If one dimension is not applicable, state that briefly but still cover the other two.
+Do not just restate the definition.`,
+    },
+  ];
+  const { text } = await generateTextWithRouting(messages, {});
+  return text.trim();
 }
 
 /**
@@ -834,27 +1101,44 @@ Never use raw escape characters like \\n in your output.`,
     },
     {
       role: 'user',
-      content: `The student doesn't understand a quiz question about "${topicName}". Help them understand the broader concept.
+      content: `The student doesn't understand a quiz question about "${topicName}". Your TOP priority is to teach the broader underlying concept the question is testing (not just justify the correct option).
 
 **Question:** ${question}
 **Correct answer:** ${correctAnswer}
 **Original explanation:** ${originalExplanation}
 
-Explain using this structure:
-1. **What is the core concept?** (1-2 short sentences)
+Write the answer using this structure (use real facts, no placeholders). Spend MOST of your words on (1) and (2):
 
-2. **Why is "${correctAnswer}" correct?** (1-2 short sentences)
+1) **Broader topic in plain language** (2-4 short bullets)
+- Define the concept + the clinical frame (what it is, where it applies).
+- Include the 2-3 highest-yield facts that let someone solve *new* variants of the question.
 
-3. **Key facts to remember**
-- Keep each bullet short
+2) **Mental model / how to reason** (2-4 short bullets)
+- “If you see X → think Y → choose Z” style rules.
+- Mention the single most common exam trap.
 
-4. **Clinical/exam tip** (one short practical takeaway)
+3) **If this is about a classification/staging system** (FIGO/TNM/staging/grades):
+- You MUST explicitly list the relevant stages/grades in compact bullets (no tables).
+- Example format (adapt to the exact system being asked):
+  - **Stage I**: ...
+  - **Stage II**: ...
+  - **Stage III**: ...
+  - **Stage IV**: ...
 
-Only bold the most important 3 or 4 terms in the whole answer.`,
+4) **Why the correct answer is correct** (2-4 short bullets)
+
+5) **Common traps / how exams twist it** (2-4 short bullets)
+
+6) **Treatment / management implication** (1-3 short bullets, only what’s exam-relevant)
+
+7) **One-liner memory hook** (one line)
+
+Constraints:
+- No tables.
+- Keep it under ~350 words.
+- Bold only the most important 4-6 terms total.`,
     },
   ];
-  const { text } = await generateTextWithRouting(messages, {
-    providerOrderOverride: DEFAULT_PROVIDER_ORDER,
-  });
+  const { text } = await generateTextWithRouting(messages, {});
   return text.trim();
 }

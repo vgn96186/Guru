@@ -14,6 +14,7 @@ import {
   Pressable,
   Dimensions,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type {
@@ -30,7 +31,7 @@ import type {
   SocraticContent,
 } from '../types';
 
-import { askGuru, explainTopicDeeper } from '../services/aiService';
+import { askGuru, explainMostTestedRationale, explainTopicDeeper } from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
@@ -39,6 +40,7 @@ import AppText from '../components/AppText';
 import StudyMarkdown from '../components/StudyMarkdown';
 import { theme } from '../constants/theme';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface TopicImageProps {
   topicName: string;
@@ -61,6 +63,12 @@ const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps
 
   return <Image source={{ uri: imageUrl }} style={s.topicImage} resizeMode="contain" />;
 });
+
+function isQuizImageHttpUrl(url: string | null | undefined): boolean {
+  const t = url?.trim();
+  if (!t) return false;
+  return /^https?:\/\//i.test(t);
+}
 
 /** Per-question medical image with tap-to-enlarge lightbox. */
 const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }) {
@@ -455,11 +463,13 @@ function KeyPointsCard({
     theme.colors.info,
   ];
 
+  const scrollContentStyle = useCardScrollContentStyle(0);
+
   return (
     <ScrollView
       key={`${viewportWidth}x${viewportHeight}`}
       style={s.scroll}
-      contentContainerStyle={s.container}
+      contentContainerStyle={scrollContentStyle}
     >
       <Text style={s.cardType}>KEY POINTS</Text>
       <AppText style={s.cardTitle} numberOfLines={3} variant="title">
@@ -537,10 +547,7 @@ function ExplainablePoint({
     if (explanation) return;
     setLoading(true);
     try {
-      const resp = await askGuru(
-        `Briefly explain why this is most tested/high yield (under 3 sentences):\n\n${item}`,
-        `Topic: ${topicName}`,
-      );
+      const resp = await explainMostTestedRationale(item, topicName);
       setExplanation(resp);
     } catch (err) {
       setExplanation('Could not load explanation. Try again.');
@@ -555,7 +562,7 @@ function ExplainablePoint({
       {explanation ? (
         <View style={s.explSection}>
           <Text style={s.explSectionTitle}>GURU'S EXPLANATION</Text>
-          <Text style={s.explText}>{explanation}</Text>
+          <StudyMarkdown content={emphasizeHighYieldMarkdown(explanation)} />
         </View>
       ) : loading ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
@@ -580,9 +587,10 @@ function MustKnowCard({
   onSkip,
 }: { content: MustKnowContent } & Omit<Props, 'content'>) {
   const [showRating, setShowRating] = useState(false);
+  const scrollContentStyle = useCardScrollContentStyle(0);
 
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>MUST KNOW</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -769,10 +777,23 @@ function QuizCard({
     () => formatQuizExplanation(q?.explanation ?? '', q?.options ?? [], q?.correctIndex ?? -1),
     [q?.correctIndex, q?.explanation, q?.options],
   );
-  if (!q) return null;
+
+  const { width: quizW, height: quizH } = useWindowDimensions();
+  const quizExtraBottom = useMemo(() => {
+    const isLandscape = quizW > quizH;
+    const isTablet = Math.min(quizW, quizH) >= 600;
+    let extra = 0;
+    if (showExpl && !deepExplanation && !isLoadingDeepExpl) {
+      extra = 52 + (isLandscape ? (isTablet ? 52 : 38) : isTablet ? 32 : 18);
+    } else if (deepExplanation || isLoadingDeepExpl) {
+      extra = 132 + (isLandscape ? (isTablet ? 72 : 52) : isTablet ? 44 : 26);
+    }
+    return extra;
+  }, [quizW, quizH, showExpl, deepExplanation, isLoadingDeepExpl]);
+  const quizScrollContentStyle = useCardScrollContentStyle(quizExtraBottom);
 
   useEffect(() => {
-    const selectedOption = selected !== null ? q.options[selected] : undefined;
+    if (!q) return;
     onContextChange?.(
       compactLines(
         [
@@ -800,6 +821,8 @@ function QuizCard({
 
   const scoreRef = React.useRef(score);
   scoreRef.current = score;
+
+  if (!q) return null;
 
   function handleSelect(idx: number) {
     if (selected !== null) return;
@@ -864,7 +887,14 @@ function QuizCard({
   }
 
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView
+      style={s.scroll}
+      contentContainerStyle={quizScrollContentStyle}
+      removeClippedSubviews={false}
+      nestedScrollEnabled={Platform.OS === 'android'}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator
+    >
       <View style={s.inlineLabelRow}>
         <Ionicons name="help-circle-outline" size={14} color="#6C63FF" />
         <Text style={s.cardType}>
@@ -874,7 +904,7 @@ function QuizCard({
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </Text>
-      {q.imageUrl ? <QuestionImage url={q.imageUrl} /> : null}
+      {isQuizImageHttpUrl(q.imageUrl) ? <QuestionImage url={q.imageUrl!.trim()} /> : null}
       <Text style={s.questionText}>{q.question}</Text>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
@@ -973,12 +1003,18 @@ function QuizCard({
         </View>
       )}
       {deepExplanation && (
-        <View style={[s.explBox, { borderLeftWidth: 3, borderLeftColor: theme.colors.primary }]}>
+        <View
+          style={[
+            s.explBox,
+            s.explBoxDeep,
+            { borderLeftWidth: 3, borderLeftColor: theme.colors.primary },
+          ]}
+        >
           <View style={s.inlineLabelRow}>
             <Ionicons name="school-outline" size={14} color={theme.colors.primary} />
             <Text style={s.explSectionTitle}>Deeper Explanation</Text>
           </View>
-          <StudyMarkdown content={emphasizeHighYieldMarkdown(deepExplanation)} compact />
+          <StudyMarkdown content={emphasizeHighYieldMarkdown(deepExplanation)} />
         </View>
       )}
       {showExpl && (
@@ -1010,8 +1046,9 @@ function StoryCard({
   onSkip,
 }: { content: StoryContent } & Omit<Props, 'content'>) {
   const [showRating, setShowRating] = useState(false);
+  const scrollContentStyle = useCardScrollContentStyle(0);
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>📖 CLINICAL STORY</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -1076,8 +1113,10 @@ function MnemonicCard({
     );
   }, [content, onContextChange, revealStep]);
 
+  const scrollContentStyle = useCardScrollContentStyle(0);
+
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>🧠 MNEMONIC</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -1182,8 +1221,10 @@ function TeachBackCard({
     }
   }
 
+  const scrollContentStyle = useCardScrollContentStyle(0);
+
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>🎤 TEACH BACK</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -1291,8 +1332,9 @@ function ErrorHuntCard({
       ),
     );
   }, [content, onContextChange, revealed]);
+  const scrollContentStyle = useCardScrollContentStyle(0);
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>🔍 ERROR HUNT</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -1359,8 +1401,9 @@ function DetectiveCard({
       ),
     );
   }, [content, onContextChange, revealedClues, solved]);
+  const scrollContentStyle = useCardScrollContentStyle(0);
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>🕵️ CLINICAL DETECTIVE</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -1421,8 +1464,9 @@ function ManualReviewCard({
   onSkip,
 }: { content: ManualContent } & Omit<Props, 'content'>) {
   const [showRating, setShowRating] = useState(false);
+  const scrollContentStyle = useCardScrollContentStyle(0);
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={s.container}>
+    <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
       <Text style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</Text>
       <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
@@ -1481,6 +1525,7 @@ function SocraticCard({
 
   const question = content.questions[index];
   const isLast = index === content.questions.length - 1;
+  const socraticPadBottom = useCardScrollPaddingBottom(0);
 
   function next(knew: boolean) {
     if (isLast) {
@@ -1514,8 +1559,17 @@ function SocraticCard({
   }, [content.questions.length, index, onContextChange, question, revealed]);
 
   return (
-    <ScrollView style={s.scroll} contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 }}>
+    <ScrollView
+      style={s.scroll}
+      contentContainerStyle={{
+        flexGrow: 1,
+        alignItems: 'stretch' as const,
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: socraticPadBottom,
+      }}
+    >
+      <View style={{ paddingBottom: 4 }}>
         <Text
           style={{
             color: '#6C63FF',
@@ -1642,10 +1696,15 @@ function SocraticCard({
 }
 
 const s = StyleSheet.create({
-  scroll: { flex: 1 },
+  scroll: { flex: 1, minHeight: 0, minWidth: 0 },
   // stretch: default flex-start shrink-wraps children; markdown rows then mis-measure width
   // (last words clipped on Android, esp. landscape with plenty of horizontal space).
-  container: { padding: 20, paddingBottom: 60, alignItems: 'stretch' as const },
+  container: {
+    padding: 20,
+    paddingBottom: 72,
+    alignItems: 'stretch' as const,
+    flexGrow: 1,
+  },
   cardType: {
     color: '#6C63FF',
     fontSize: 12,
@@ -1855,7 +1914,19 @@ const s = StyleSheet.create({
     fontSize: 13,
     fontStyle: 'italic' as const,
   },
-  explBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 12 },
+  explBox: {
+    backgroundColor: '#1A1A24',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    minWidth: 0,
+    alignSelf: 'stretch' as const,
+  },
+  explBoxDeep: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
   explLabel: {
     color: theme.colors.textSecondary,
     fontSize: 12,
@@ -2013,3 +2084,20 @@ const s = StyleSheet.create({
     fontStyle: 'italic' as const,
   },
 });
+
+function useCardScrollPaddingBottom(extraBottom = 0) {
+  const { width, height } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  return useMemo(() => {
+    const isLandscape = width > height;
+    const isTablet = Math.min(width, height) >= 600;
+    const safeBottom = Math.max(insets.bottom, Platform.OS === 'android' ? 10 : 0);
+    const orientationPad = isLandscape ? (isTablet ? 36 : 26) : isTablet ? 16 : 8;
+    return 72 + safeBottom + orientationPad + extraBottom;
+  }, [width, height, insets.bottom, extraBottom]);
+}
+
+function useCardScrollContentStyle(extraBottom = 0) {
+  const paddingBottom = useCardScrollPaddingBottom(extraBottom);
+  return useMemo(() => [s.container, { paddingBottom }], [paddingBottom]);
+}

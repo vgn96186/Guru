@@ -4,10 +4,18 @@ import {
   GEMINI_MODELS,
   CLOUDFLARE_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
+  GITHUB_COPILOT_MODELS,
   KILO_MODELS,
+  DEEPSEEK_MODELS,
+  AGENTROUTER_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
 } from '../../config/appConfig';
+import { getGitLabInstanceUrl } from './gitlab/gitlabAuth';
+import {
+  postGitHubCopilotChatCompletions,
+  getCopilotSessionToken,
+} from './github/githubCopilotClient';
 import { testGeminiConnectionSdk } from './google/geminiHealth';
 
 export interface ProviderHealthResult {
@@ -220,21 +228,17 @@ export async function testDeepgramConnection(key: string): Promise<ProviderHealt
 }
 
 export async function testKiloConnection(key: string): Promise<ProviderHealthResult> {
-  const trimmed = key.trim();
-  if (!trimmed) {
-    return { ok: false, status: 0, message: 'empty key' };
-  }
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const trimmed = key.trim();
+    if (trimmed) headers['Authorization'] = `Bearer ${trimmed}`;
     const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${trimmed}`,
-      },
+      headers,
       body: JSON.stringify({
-        model: KILO_MODELS[0],
+        model: 'kilo-auto/free',
         messages: [{ role: 'user', content: 'Reply with one word: ok' }],
-        max_tokens: 8,
+        max_tokens: 32,
       }),
     });
     return toHealthResult(res);
@@ -275,13 +279,173 @@ export async function testBraveSearchConnection(key: string): Promise<ProviderHe
     return { ok: false, status: 0, message: 'empty key' };
   }
   try {
-    const res = await fetch('https://api.search.brave.com/res/v1/images/search?q=medical+diagram&count=1', {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        'Accept-Encoding': 'gzip',
-        'X-Subscription-Token': trimmed,
+    const res = await fetch(
+      'https://api.search.brave.com/res/v1/images/search?q=medical+diagram&count=1',
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Accept-Encoding': 'gzip',
+          'X-Subscription-Token': trimmed,
+        },
       },
+    );
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testGitHubCopilotConnection(
+  oauthAccessToken: string,
+): Promise<ProviderHealthResult> {
+  try {
+    // Step 1: Exchange OAuth token for Copilot session token (validates subscription)
+    const sessionToken = await getCopilotSessionToken(oauthAccessToken);
+    // Step 2: Probe chat/completions with the session token
+    const res = await postGitHubCopilotChatCompletions(sessionToken, {
+      model: GITHUB_COPILOT_MODELS[0],
+      messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+      max_tokens: 5,
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testGitLabDuoConnection(accessToken: string): Promise<ProviderHealthResult> {
+  try {
+    const url = `${getGitLabInstanceUrl().replace(/\/+$/, '')}/api/v4/ai/third_party_agents/direct_access`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        feature_flags: { DuoAgentPlatformNext: true },
+      }),
+    });
+
+    if (res.status === 502 || res.status === 503) {
+      return {
+        ok: false,
+        status: res.status,
+        message: `GitLab AI Gateway unavailable (${res.status}). Verify Duo Pro/Enterprise is enabled on your account, or check status.gitlab.com.`,
+      };
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      return {
+        ok: false,
+        status: res.status,
+        message: `Access denied (${res.status}). The OAuth token may have expired or lack the 'api' scope. Disconnect and reconnect GitLab Duo.`,
+      };
+    }
+
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testPoeConnection(accessToken: string): Promise<ProviderHealthResult> {
+  try {
+    const res = await fetch('https://api.poe.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+        max_tokens: 5,
+      }),
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testDeepSeekConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) return { ok: false, status: 0, message: 'empty key' };
+  try {
+    const res = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${trimmed}`,
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODELS[0],
+        messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+        max_tokens: 8,
+      }),
+    });
+    return toHealthResult(res);
+  } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+/**
+ * AgentRouter requires a specific client fingerprint; we reuse the same header set as `llmRouting`.
+ */
+const AGENTROUTER_HEALTH_HEADERS = {
+  'User-Agent': 'Kilo-Code/5.11.0',
+  'HTTP-Referer': 'https://kilocode.ai',
+  'X-Title': 'Kilo Code',
+  'X-KiloCode-Version': '5.11.0',
+  'x-stainless-arch': 'x64',
+  'x-stainless-lang': 'js',
+  'x-stainless-os': 'Android',
+  'x-stainless-package-version': '6.32.0',
+  'x-stainless-retry-count': '0',
+  'x-stainless-runtime': 'node',
+  'x-stainless-runtime-version': 'v20.20.0',
+} as const;
+
+export async function testAgentRouterConnection(key: string): Promise<ProviderHealthResult> {
+  const trimmed = key.trim();
+  if (!trimmed) return { ok: false, status: 0, message: 'empty key' };
+  try {
+    const res = await fetch('https://agentrouter.org/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${trimmed}`,
+        ...AGENTROUTER_HEALTH_HEADERS,
+      },
+      body: JSON.stringify({
+        model: AGENTROUTER_MODELS[0],
+        messages: [{ role: 'user', content: 'Reply with one word: ok' }],
+        max_tokens: 8,
+      }),
     });
     return toHealthResult(res);
   } catch (error) {

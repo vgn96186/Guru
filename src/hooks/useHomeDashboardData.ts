@@ -7,11 +7,106 @@ import {
   markNemesisTopics,
   getHighPriorityUnseenTopics,
 } from '../db/queries/topics';
-import { getCompletedSessionCount } from '../db/queries/sessions';
+import { getCompletedSessionCount, getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
-import { getTodaysAgendaWithTimes, invalidatePlanCache, type TodayTask } from '../services/studyPlanner';
+import {
+  getTodaysAgendaWithTimes,
+  invalidatePlanCache,
+  type TodayTask,
+} from '../services/studyPlanner';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
+import { profileRepository } from '../db/repositories';
 import type { TopicWithProgress } from '../types';
+
+const RECENT_COMPLETION_WINDOW_MS = 36 * 60 * 60 * 1000; // 36h
+const homeShownTopicMap = new Map<number, number>();
+
+function isOverdueReviewTask(task: TodayTask, todayStr: string): boolean {
+  if (task.type !== 'review') return false;
+  const due = task.topic.progress.fsrsDue?.slice(0, 10);
+  return Boolean(due && due < todayStr);
+}
+
+function rankTasksForNovelty(
+  tasks: TodayTask[],
+  recentlyCompletedIds: Set<number>,
+  nowTs: number,
+  repeatCooldownMs: number,
+): TodayTask[] {
+  if (tasks.some((task) => !(task as any)?.topic?.id)) return tasks;
+
+  const todayStr = new Date(nowTs).toISOString().slice(0, 10);
+  const scored = tasks.map((task, index) => {
+    const lastShown = homeShownTopicMap.get(task.topic.id) ?? 0;
+    const shownRecently = nowTs - lastShown < repeatCooldownMs;
+    const completedRecently = recentlyCompletedIds.has(task.topic.id);
+    const overdueReview = isOverdueReviewTask(task, todayStr);
+
+    let score = 0;
+    if (overdueReview) score += 1000; // never hide urgent reviews
+    if (task.type === 'review') score += 120;
+    if (task.type === 'study' && task.topic.progress.status === 'unseen') score += 80;
+    if (task.type === 'deep_dive') score += 40;
+    score += task.topic.inicetPriority * 8;
+
+    if (!overdueReview && shownRecently) score -= 180;
+    if (!overdueReview && completedRecently) score -= 120;
+
+    return { task, score, index };
+  });
+
+  return scored
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.task);
+}
+
+function rankWeakTopicsForNovelty(
+  weak: TopicWithProgress[],
+  due: TopicWithProgress[],
+  recentlyCompletedIds: Set<number>,
+  nowTs: number,
+  repeatCooldownMs: number,
+): TopicWithProgress[] {
+  const dueIdSet = new Set(due.map((t) => t.id));
+  const scored = weak.map((topic, index) => {
+    const lastShown = homeShownTopicMap.get(topic.id) ?? 0;
+    const shownRecently = nowTs - lastShown < repeatCooldownMs;
+    const completedRecently = recentlyCompletedIds.has(topic.id);
+    const dueBoost = dueIdSet.has(topic.id) ? 500 : 0;
+
+    let score = 0;
+    score += dueBoost;
+    score += (3 - topic.progress.confidence) * 40;
+    score += Math.min(40, (topic.progress.wrongCount ?? 0) * 8);
+    if (topic.progress.isNemesis) score += 30;
+    score += topic.inicetPriority * 8;
+    if (topic.progress.status === 'unseen') score += 40;
+
+    if (!dueIdSet.has(topic.id) && shownRecently) score -= 160;
+    if (!dueIdSet.has(topic.id) && completedRecently) score -= 100;
+
+    return { topic, score, index };
+  });
+
+  return scored
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.index - b.index;
+    })
+    .map((entry) => entry.topic);
+}
+
+function trackHomeShownTopics(weak: TopicWithProgress[], tasks: TodayTask[], nowTs: number) {
+  const topWeak = weak.slice(0, 1).map((topic) => topic.id);
+  const topTasks = tasks
+    .slice(0, 3)
+    .map((task) => (task as any)?.topic?.id)
+    .filter((id): id is number => typeof id === 'number');
+  [...topWeak, ...topTasks].forEach((id) => homeShownTopicMap.set(id, nowTs));
+}
 
 export function useHomeDashboardData() {
   const [weakTopics, setWeakTopics] = useState<TopicWithProgress[]>([]);
@@ -33,20 +128,63 @@ export function useHomeDashboardData() {
       if (!options?.silent) {
         await markNemesisTopics();
       }
-      const [weak, due] = await Promise.all([getWeakestTopics(3), getTopicsDueForReview(5)]);
+      const nowTs = Date.now();
+      let noveltyCooldownHours = 6;
+      try {
+        const maybeProfile = await (profileRepository as any)?.getProfile?.();
+        if (maybeProfile?.homeNoveltyCooldownHours != null) {
+          noveltyCooldownHours = Math.min(24, Math.max(1, maybeProfile.homeNoveltyCooldownHours));
+        }
+      } catch {
+        noveltyCooldownHours = 6;
+      }
+      const repeatCooldownMs = noveltyCooldownHours * 60 * 60 * 1000;
+      const recentStart = nowTs - RECENT_COMPLETION_WINDOW_MS;
+      const getCompletedTopicIdsBetweenSafe = getCompletedTopicIdsBetween as unknown as
+        | ((startTs: number, endTs?: number) => Promise<number[]>)
+        | undefined;
+
+      const [weak, due, recentCompletedTopicIds] = await Promise.all([
+        getWeakestTopics(6),
+        getTopicsDueForReview(8),
+        getCompletedTopicIdsBetweenSafe
+          ? getCompletedTopicIdsBetweenSafe(recentStart)
+          : Promise.resolve([]),
+      ]);
+      const recentCompletedSet = new Set(recentCompletedTopicIds);
+
+      let displayedWeak: TopicWithProgress[] = [];
 
       // Fallback: if no weak topics yet (new user), show highest-priority unseen topics
       if (weak.length === 0) {
-        const unseen = await getHighPriorityUnseenTopics(3);
-        setWeakTopics(unseen);
+        const unseen = await getHighPriorityUnseenTopics(6);
+        const rotatedUnseen = rankWeakTopicsForNovelty(
+          unseen,
+          due,
+          recentCompletedSet,
+          nowTs,
+          repeatCooldownMs,
+        );
+        displayedWeak = rotatedUnseen.slice(0, 3);
+        setWeakTopics(displayedWeak);
       } else {
-        setWeakTopics(weak);
+        const rotatedWeak = rankWeakTopicsForNovelty(
+          weak,
+          due,
+          recentCompletedSet,
+          nowTs,
+          repeatCooldownMs,
+        );
+        displayedWeak = rotatedWeak.slice(0, 3);
+        setWeakTopics(displayedWeak);
       }
       setDueTopics(due);
 
       invalidatePlanCache();
       const tasks = await getTodaysAgendaWithTimes();
-      setTodayTasks(tasks);
+      const rotatedTasks = rankTasksForNovelty(tasks, recentCompletedSet, nowTs, repeatCooldownMs);
+      setTodayTasks(rotatedTasks);
+      trackHomeShownTopics(displayedWeak, rotatedTasks, nowTs);
 
       setCompletedSessions(await getCompletedSessionCount());
       const [log, externalMinutes] = await Promise.all([

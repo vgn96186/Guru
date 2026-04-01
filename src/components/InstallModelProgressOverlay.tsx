@@ -47,6 +47,8 @@ export function InstallModelProgressOverlay() {
   const translateY = useRef(new Animated.Value(18)).current;
   const shimmer = useRef(new Animated.Value(0)).current;
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Armed once per "tail" download; progress ticks must not reset the 20s failsafe. */
+  const downloadTailFailsafeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cardPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
@@ -62,9 +64,22 @@ export function InstallModelProgressOverlay() {
 
   useEffect(() => {
     return subscribeToLocalModelDownload((nextSnapshot) => {
-      if (hideTimerRef.current) {
-        clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = null;
+      if (!nextSnapshot) {
+        if (hideTimerRef.current) {
+          clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+      } else {
+        const isActiveWork =
+          nextSnapshot.stage === 'preparing' ||
+          nextSnapshot.stage === 'downloading' ||
+          nextSnapshot.stage === 'verifying' ||
+          (nextSnapshot.stage === 'error' && nextSnapshot.message === 'Download paused');
+
+        if (hideTimerRef.current && isActiveWork) {
+          clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
       }
 
       setSnapshot(nextSnapshot);
@@ -161,12 +176,32 @@ export function InstallModelProgressOverlay() {
   }, [snapshot]);
 
   useEffect(() => {
-    if (!snapshot || snapshot.stage !== 'downloading' || snapshot.progress < 99) return;
-    const t = setTimeout(() => {
+    const inDownloadTail = snapshot && snapshot.stage === 'downloading' && snapshot.progress >= 99;
+
+    if (!inDownloadTail) {
+      if (downloadTailFailsafeRef.current) {
+        clearTimeout(downloadTailFailsafeRef.current);
+        downloadTailFailsafeRef.current = null;
+      }
+      return;
+    }
+
+    if (downloadTailFailsafeRef.current) return;
+
+    downloadTailFailsafeRef.current = setTimeout(() => {
+      downloadTailFailsafeRef.current = null;
       clearLocalModelDownload();
     }, 20000);
-    return () => clearTimeout(t);
   }, [snapshot]);
+
+  useEffect(() => {
+    return () => {
+      if (downloadTailFailsafeRef.current) {
+        clearTimeout(downloadTailFailsafeRef.current);
+        downloadTailFailsafeRef.current = null;
+      }
+    };
+  }, []);
 
   const progressWidth: DimensionValue =
     `${Math.max(6, Math.min(100, mountedSnapshot?.progress ?? 0))}%` as `${number}%`;

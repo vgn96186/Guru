@@ -22,16 +22,21 @@ interface Props {
   color?: string;
   disabled?: boolean;
   disabledLabel?: string;
+  hidden?: boolean;
 }
 
-export default function StartButton({
-  onPress,
-  label = 'START SESSION',
-  sublabel,
-  color = theme.colors.primary,
-  disabled = false,
-  disabledLabel = 'LOADING...',
-}: Props) {
+const StartButton = React.forwardRef<View, Props>(function StartButton(
+  {
+    onPress,
+    label = 'START SESSION',
+    sublabel,
+    color = theme.colors.primary,
+    disabled = false,
+    disabledLabel = 'LOADING...',
+    hidden = false,
+  },
+  ref,
+) {
   const { width } = useWindowDimensions();
   const isTablet = width >= TABLET_BREAKPOINT;
   const size = isTablet ? TABLET_SIZE : PHONE_SIZE;
@@ -74,94 +79,122 @@ export default function StartButton({
   const btnColor = disabled ? theme.colors.cardHover : color;
 
   return (
-    <Animated.View style={{ transform: [{ scale }] }}>
-      <View style={[styles.glowWrapper, { width: size, height: size }]}>
-        {/* Outer glow */}
-        <Animated.View
-          style={[
-            styles.glowLayer,
-            {
-              width: size,
-              height: size,
-              borderRadius: radius,
-              opacity: glow,
-              backgroundColor: color,
-            },
-          ]}
-        />
-        {/* Touchable orb */}
-        <TouchableOpacity
-          onPress={handlePress}
-          disabled={disabled}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Start study session"
-          accessibilityState={{ disabled }}
-          testID="start-session-btn"
-          style={[
-            styles.button,
-            {
-              width: size,
-              height: size,
-              borderRadius: radius,
-              backgroundColor: btnColor,
-            },
-            disabled && styles.buttonDisabled,
-          ]}
-        >
-          {/* SVG orb layers */}
-          <View style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}>
-            <Svg width={size} height={size}>
-              <Defs>
-                {/* Main body gradient — top-left lit sphere */}
-                <RadialGradient id="orbBody" cx="38%" cy="32%" rx="60%" ry="60%" fx="38%" fy="32%">
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
-                  <Stop offset="45%" stopColor="#ffffff" stopOpacity="0.03" />
-                  <Stop offset="100%" stopColor="#000000" stopOpacity="0.22" />
-                </RadialGradient>
-                {/* Specular highlight — small bright spot */}
-                <RadialGradient id="specular" cx="35%" cy="28%" rx="22%" ry="22%" fx="35%" fy="28%">
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.30" />
-                  <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                </RadialGradient>
-                {/* Rim light — subtle edge glow on the opposite side */}
-                <RadialGradient id="rimLight" cx="72%" cy="75%" rx="35%" ry="35%" fx="72%" fy="75%">
-                  <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.10" />
-                  <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
-                </RadialGradient>
-              </Defs>
-              {/* Body shading */}
-              <Circle cx={radius} cy={radius} r={radius} fill="url(#orbBody)" />
-              {/* Specular highlight */}
-              <Circle cx={radius} cy={radius} r={radius} fill="url(#specular)" />
-              {/* Rim light */}
-              <Circle cx={radius} cy={radius} r={radius} fill="url(#rimLight)" />
-            </Svg>
-          </View>
-          {/* Text content */}
-          <Text
-            style={[styles.label, isTablet && styles.labelTablet]}
-            numberOfLines={2}
-            adjustsFontSizeToFit
-            minimumFontScale={0.75}
+    <View ref={ref} collapsable={false} style={hidden ? { opacity: 0 } : undefined}>
+      <Animated.View style={{ transform: [{ scale }] }}>
+        <View style={[styles.glowWrapper, { width: size, height: size }]}>
+          {/* Outer glow */}
+          <Animated.View
+            style={[
+              styles.glowLayer,
+              {
+                width: size,
+                height: size,
+                borderRadius: radius,
+                opacity: glow,
+                backgroundColor: color,
+              },
+            ]}
+          />
+          {/* Touchable orb */}
+          <TouchableOpacity
+            onPress={handlePress}
+            disabled={disabled}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Start study session"
+            accessibilityState={{ disabled }}
+            testID="start-session-btn"
+            style={[
+              styles.button,
+              {
+                width: size,
+                height: size,
+                borderRadius: radius,
+                backgroundColor: btnColor,
+              },
+              disabled && styles.buttonDisabled,
+            ]}
           >
-            {disabled ? disabledLabel : label}
-          </Text>
-          {sublabel ? (
+            {/* SVG orb layers */}
+            <View style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}>
+              <Svg width={size} height={size}>
+                <Defs>
+                  {/* Main body gradient — top-left lit sphere */}
+                  <RadialGradient
+                    id="orbBody"
+                    cx="38%"
+                    cy="32%"
+                    rx="60%"
+                    ry="60%"
+                    fx="38%"
+                    fy="32%"
+                  >
+                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
+                    <Stop offset="45%" stopColor="#ffffff" stopOpacity="0.03" />
+                    <Stop offset="100%" stopColor="#000000" stopOpacity="0.22" />
+                  </RadialGradient>
+                  {/* Specular highlight — small bright spot */}
+                  <RadialGradient
+                    id="specular"
+                    cx="35%"
+                    cy="28%"
+                    rx="22%"
+                    ry="22%"
+                    fx="35%"
+                    fy="28%"
+                  >
+                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.30" />
+                    <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                  </RadialGradient>
+                  {/* Rim light — subtle edge glow on the opposite side */}
+                  <RadialGradient
+                    id="rimLight"
+                    cx="72%"
+                    cy="75%"
+                    rx="35%"
+                    ry="35%"
+                    fx="72%"
+                    fy="75%"
+                  >
+                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.10" />
+                    <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                  </RadialGradient>
+                </Defs>
+                {/* Body shading */}
+                <Circle cx={radius} cy={radius} r={radius} fill="url(#orbBody)" />
+                {/* Specular highlight */}
+                <Circle cx={radius} cy={radius} r={radius} fill="url(#specular)" />
+                {/* Rim light */}
+                <Circle cx={radius} cy={radius} r={radius} fill="url(#rimLight)" />
+              </Svg>
+            </View>
+            {/* Text content */}
             <Text
-              style={[styles.sublabel, isTablet && styles.sublabelTablet]}
+              style={[styles.label, isTablet && styles.labelTablet]}
               numberOfLines={2}
               adjustsFontSizeToFit
-              minimumFontScale={0.85}
+              minimumFontScale={0.75}
             >
-              {sublabel}
+              {disabled ? disabledLabel : label}
             </Text>
-          ) : null}
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
+            {sublabel ? (
+              <Text
+                style={[styles.sublabel, isTablet && styles.sublabelTablet]}
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {sublabel}
+              </Text>
+            ) : null}
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+    </View>
   );
-}
+});
+
+export default StartButton;
 
 const styles = StyleSheet.create({
   glowWrapper: {

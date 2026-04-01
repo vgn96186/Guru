@@ -1,3 +1,5 @@
+import { BUNDLED_GOOGLE_WEB_CLIENT_ID } from './bundledEnv';
+
 /**
  * Centralized app configuration — single source for exam dates, AI model lists, and env-driven values.
  * Decouples hardcoded values from migrations, schema, and services.
@@ -10,6 +12,23 @@ export const DEFAULT_INICET_DATE =
 /** Default NEET-PG exam date (YYYY-MM-DD). Override via EXPO_PUBLIC_DEFAULT_NEET_DATE. */
 export const DEFAULT_NEET_DATE =
   (process.env.EXPO_PUBLIC_DEFAULT_NEET_DATE ?? '2026-08-30').trim() || '2026-08-30';
+
+function getExpoExtraString(key: string): string {
+  try {
+    const Constants = require('expo-constants');
+    const extra =
+      Constants.default?.expoConfig?.extra ??
+      Constants.expoConfig?.extra ??
+      Constants.default?.manifest2?.extra ??
+      Constants.manifest2?.extra ??
+      Constants.default?.manifest?.extra ??
+      Constants.manifest?.extra ??
+      null;
+    return typeof extra?.[key] === 'string' ? extra[key].trim() : '';
+  } catch {
+    return '';
+  }
+}
 
 // ── No bundled API keys in release builds ────────────────────────────────────
 // Users must manually enter keys in Settings after a fresh install.
@@ -25,6 +44,23 @@ export const BUNDLED_FAL_KEY = '';
 export const BUNDLED_BRAVE_SEARCH_KEY = '';
 export const BUNDLED_DEEPSEEK_KEY = '';
 export const BUNDLED_GITHUB_MODELS_PAT = '';
+
+// Project-level default so Google Drive sign-in works out-of-the-box on fresh installs.
+const DEFAULT_GOOGLE_WEB_CLIENT_ID =
+  '132201315043-443j8hva0nhoapt6j4brcdb9n57kb1rv.apps.googleusercontent.com';
+
+/**
+ * Google OAuth Web Client ID for Google Sign-In (used for GDrive backup).
+ * Create at: Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client IDs.
+ * Must be a **Web application** type client ID (not Android).
+ * Set via EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in .env.
+ */
+export const GOOGLE_WEB_CLIENT_ID = (
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+  BUNDLED_GOOGLE_WEB_CLIENT_ID ||
+  getExpoExtraString('googleWebClientId') ||
+  DEFAULT_GOOGLE_WEB_CLIENT_ID
+).trim();
 
 /**
  * GitHub Models inference API (OpenAI-style chat). See REST: POST .../inference/chat/completions.
@@ -58,12 +94,96 @@ export const GITHUB_MODELS_CHAT_MODELS = [
   'meta/Llama-3.3-70B-Instruct',
 ] as const;
 
+/**
+ * GitHub Copilot — `model` for `POST …/chat/completions` (see `services/ai/github/githubCopilotEnv.ts`
+ * for `EXPO_PUBLIC_GITHUB_COPILOT_API_ORIGIN`, `_EDITOR_VERSION`, `_INTEGRATION_ID`).
+ * Order matters for auto-routing.
+ */
+export const GITHUB_COPILOT_MODELS = [
+  'gpt-4o',
+  'gpt-5-codex',
+  'gpt-5.2',
+  'gpt-5.3-codex',
+  'gpt-5.2-codex',
+  'gpt-5.1-codex',
+  'gpt-5.1-codex-mini',
+  'gpt-5.1',
+  'gpt-5.4',
+  'gpt-5-mini',
+  'gpt-4.1',
+  'gemini-2.5-pro',
+  'gemini-3-flash-preview',
+  'gemini-3.1-pro-preview',
+  'claude-haiku-4-5',
+  'claude-sonnet-4-20250514',
+  'claude-sonnet-4-5',
+  'claude-sonnet-4.6',
+  'claude-opus-4-5',
+  'claude-opus-4-6',
+  'claude-opus-4-6-fast-preview',
+  'grok-code-fast-1',
+  'raptor-mini',
+  'goldeneye',
+] as const;
+
+const GITHUB_COPILOT_MODEL_ID_SET = new Set<string>([...GITHUB_COPILOT_MODELS]);
+
+export function orderedGitHubCopilotModels(preferred?: string | null): readonly string[] {
+  const p = (preferred ?? '').trim();
+  if (!p || !GITHUB_COPILOT_MODEL_ID_SET.has(p)) {
+    return GITHUB_COPILOT_MODELS;
+  }
+  const rest = (GITHUB_COPILOT_MODELS as readonly string[]).filter((m) => m !== p);
+  return [p, ...rest];
+}
+
+/**
+ * GitLab Duo — Settings / routing. `duo-chat-*` uses OpenCode-style gateway (direct_access + AI Gateway).
+ * Other ids fall back to `POST .../api/v4/chat/completions` with `content` only.
+ */
+export const GITLAB_DUO_MODELS = [
+  'duo-chat-haiku-4-5',
+  'duo-chat-sonnet-4-5',
+  'duo-chat-opus-4-5',
+  'duo-chat-opus-4-6',
+  'duo-chat-sonnet-4-6',
+  'duo-chat-gpt-5-4',
+  'duo-chat-gpt-5-2',
+  'duo-chat-gpt-5-1',
+  'duo-chat-gpt-5-mini',
+  'duo-chat-gpt-5-4-mini',
+  'duo-chat-gpt-5-4-nano',
+  'gitlab-duo-chat-eta',
+  'gpt-4o',
+  'claude-sonnet-4-20250514',
+] as const;
+
+const GITLAB_DUO_MODEL_ID_SET = new Set<string>([...GITLAB_DUO_MODELS]);
+
+export function orderedGitLabDuoModels(preferred?: string | null): readonly string[] {
+  const p = (preferred ?? '').trim();
+  if (!p || !GITLAB_DUO_MODEL_ID_SET.has(p)) {
+    return GITLAB_DUO_MODELS;
+  }
+  const rest = (GITLAB_DUO_MODELS as readonly string[]).filter((m) => m !== p);
+  return [p, ...rest];
+}
+
+/** Poe API chat models (OpenAI-compatible). */
+export const POE_MODELS = ['claude-sonnet-4-20250514', 'gpt-4o', 'gemini-2.5-flash'] as const;
+
 /** DeepSeek cloud models — explicitly testing deepseek-chat or v3. */
 export const DEEPSEEK_MODELS = ['deepseek-chat', 'deepseek-reasoner'] as const;
 /** Kilo gateway models (OpenAI-compatible). */
 export const KILO_MODELS = ['xiaomi/mimo', 'anthropic/claude-sonnet-4.5'] as const;
 /** AgentRouter models (OpenAI-compatible at agentrouter.org/v1). */
-export const AGENTROUTER_MODELS = ['deepseek-v3.2', 'deepseek-v3.1', 'deepseek-r1-0528', 'glm-4.5', 'glm-4.6'] as const;
+export const AGENTROUTER_MODELS = [
+  'deepseek-v3.2',
+  'deepseek-v3.1',
+  'deepseek-r1-0528',
+  'glm-4.5',
+  'glm-4.6',
+] as const;
 /**
  * ChatGPT subscription models via the Codex backend.
  * GPT-4.x is not supported in Codex. Keep this list aligned with the official Codex models page.

@@ -66,6 +66,8 @@ export const FlashcardsContentSchema = z.object({
     z.object({
       front: z.string(),
       back: z.string(),
+      imageSearchQuery: z.string().optional(),
+      imageUrl: z.string().optional(),
     }),
   ),
 });

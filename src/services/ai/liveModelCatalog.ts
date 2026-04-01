@@ -12,7 +12,10 @@ import {
   AGENTROUTER_MODELS,
   OPENROUTER_FREE_MODELS,
 } from '../../config/appConfig';
-import { fetchGeminiChatModelIdsViaSdk, mergeGeminiListWithDefaults } from './google/geminiListModels';
+import {
+  fetchGeminiChatModelIdsViaSdk,
+  mergeGeminiListWithDefaults,
+} from './google/geminiListModels';
 
 export interface LiveModelFetchMeta {
   source: 'live' | 'fallback';
@@ -31,7 +34,9 @@ function mergeUnique(preferred: string[], fallback: readonly string[]): string[]
 }
 
 /** Groq OpenAI-compatible /v1/models — exclude speech/embeddings. */
-export async function fetchGroqChatModelIds(apiKey: string): Promise<{ ids: string[] } & LiveModelFetchMeta> {
+export async function fetchGroqChatModelIds(
+  apiKey: string,
+): Promise<{ ids: string[] } & LiveModelFetchMeta> {
   const key = apiKey.trim();
   if (!key) {
     return { ids: [...GROQ_MODELS], source: 'fallback' };
@@ -85,7 +90,10 @@ export async function fetchOpenRouterFreeModelIds(
       };
     }
     const data = (await res.json()) as {
-      data?: { id?: string; pricing?: { prompt?: string | number; completion?: string | number } }[];
+      data?: {
+        id?: string;
+        pricing?: { prompt?: string | number; completion?: string | number };
+      }[];
     };
     const rows = data.data ?? [];
     const free = rows
@@ -110,7 +118,9 @@ export async function fetchOpenRouterFreeModelIds(
 }
 
 /** Google AI Studio — REST list (fallback when @google/genai list fails). */
-async function fetchGeminiChatModelIdsRest(apiKey: string): Promise<{ ids: string[] } & LiveModelFetchMeta> {
+async function fetchGeminiChatModelIdsRest(
+  apiKey: string,
+): Promise<{ ids: string[] } & LiveModelFetchMeta> {
   const key = apiKey.trim();
   try {
     const url = new URL('https://generativelanguage.googleapis.com/v1beta/models');
@@ -146,7 +156,9 @@ async function fetchGeminiChatModelIdsRest(apiKey: string): Promise<{ ids: strin
 }
 
 /** Google AI Studio — list models that support generateContent (@google/genai first, then REST). */
-export async function fetchGeminiChatModelIds(apiKey: string): Promise<{ ids: string[] } & LiveModelFetchMeta> {
+export async function fetchGeminiChatModelIds(
+  apiKey: string,
+): Promise<{ ids: string[] } & LiveModelFetchMeta> {
   const key = apiKey.trim();
   if (!key) {
     return { ids: [...GEMINI_MODELS], source: 'fallback' };
@@ -174,7 +186,9 @@ export async function fetchCloudflareChatModelIds(
     return { ids: [...CLOUDFLARE_MODELS], source: 'fallback' };
   }
   try {
-    const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(aid)}/ai/models/search`;
+    const url = `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(
+      aid,
+    )}/ai/models/search`;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${tok}` },
     });
@@ -189,7 +203,11 @@ export async function fetchCloudflareChatModelIds(
     const rawResult = json.result;
     let rows: unknown[] = [];
     if (Array.isArray(rawResult)) rows = rawResult;
-    else if (rawResult && typeof rawResult === 'object' && Array.isArray((rawResult as { models?: unknown[] }).models)) {
+    else if (
+      rawResult &&
+      typeof rawResult === 'object' &&
+      Array.isArray((rawResult as { models?: unknown[] }).models)
+    ) {
       rows = (rawResult as { models: unknown[] }).models;
     }
     const ids = rows
@@ -225,13 +243,10 @@ export async function fetchKiloModelIds(
   apiKey: string,
 ): Promise<{ ids: string[] } & LiveModelFetchMeta> {
   const key = apiKey.trim();
-  if (!key) {
-    return { ids: [...KILO_MODELS], source: 'fallback' };
-  }
   try {
-    const res = await fetch('https://api.kilo.ai/api/gateway/models', {
-      headers: { Authorization: `Bearer ${key}` },
-    });
+    const headers: Record<string, string> = {};
+    if (key) headers['Authorization'] = `Bearer ${key}`;
+    const res = await fetch('https://api.kilo.ai/api/gateway/models', { headers });
     if (!res.ok) {
       return {
         ids: [...KILO_MODELS],
@@ -276,7 +291,19 @@ export interface LiveGuruChatModelIds {
   /** True if any provider returned live data this refresh */
   anyLive: boolean;
   /** Last error strings per provider (debug) */
-  errors: Partial<Record<'chatgpt' | 'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'kilo' | 'deepseek' | 'agentrouter', string>>;
+  errors: Partial<
+    Record<
+      | 'chatgpt'
+      | 'groq'
+      | 'openrouter'
+      | 'gemini'
+      | 'cloudflare'
+      | 'kilo'
+      | 'deepseek'
+      | 'agentrouter',
+      string
+    >
+  >;
 }
 
 export async function fetchAllLiveGuruChatModelIds(keys: {

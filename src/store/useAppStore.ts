@@ -55,10 +55,24 @@ interface AppState {
   setUseLocalWhisper: (use: boolean) => Promise<void>;
   setLocalWhisperPath: (path: string | null) => Promise<void>;
   setStudyResourceMode: (mode: StudyResourceMode) => Promise<void>;
+  bootPhase: 'booting' | 'calming' | 'settling' | 'done';
+  startButtonLayout: { x: number; y: number; width: number; height: number } | null;
+  startButtonLabel: string;
+  startButtonSublabel: string;
+  setBootPhase: (phase: AppState['bootPhase']) => void;
+  setStartButtonLayout: (layout: AppState['startButtonLayout']) => void;
+  setStartButtonCta: (label: string, sublabel: string) => void;
 }
 
 /** Trailing-edge debounce timer for refreshProfile to collapse rapid successive calls. */
 let refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * When a refresh is requested while another profile fetch is in flight (e.g. OAuth completes
+ * during cold load), run one more fetch after the current one finishes so flags like
+ * `gitlabDuoConnected` are not stuck stale.
+ */
+let pendingCoalescedRefresh = false;
 
 /**
  * Shared profile fetcher used by both loadProfile (cold start) and refreshProfile (hot reload).
@@ -69,7 +83,10 @@ async function fetchProfile(
   set: (partial: Partial<AppState>) => void,
   resetOnError: boolean,
 ) {
-  if (get().loading) return;
+  if (get().loading) {
+    if (!resetOnError) pendingCoalescedRefresh = true;
+    return;
+  }
   set({ loading: true });
   try {
     const profile = await profileRepository.getProfile();
@@ -84,6 +101,10 @@ async function fetchProfile(
     }
   } finally {
     set({ loading: false });
+    if (pendingCoalescedRefresh) {
+      pendingCoalescedRefresh = false;
+      await fetchProfile(get, set, false);
+    }
   }
 }
 
@@ -120,8 +141,16 @@ export const useAppStore = create<AppState>((set, get) => {
     todayPlan: null,
     planGeneratedAt: null,
     isRecoveringBackground: false,
+    bootPhase: 'booting' as const,
+    startButtonLayout: null,
+    startButtonLabel: 'START SESSION',
+    startButtonSublabel: '',
 
     setRecoveringBackground: (value: boolean) => set({ isRecoveringBackground: value }),
+    setBootPhase: (phase) => set({ bootPhase: phase }),
+    setStartButtonLayout: (layout) => set({ startButtonLayout: layout }),
+    setStartButtonCta: (label, sublabel) =>
+      set({ startButtonLabel: label, startButtonSublabel: sublabel }),
 
     loadProfile: async () => {
       await fetchProfile(get, set, true);

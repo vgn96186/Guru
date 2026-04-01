@@ -8,6 +8,7 @@ interface AgendaItemProps {
   type: 'review' | 'deep_dive' | 'new';
   subjectName: string;
   priority: number;
+  rationale?: string;
   onPress: () => void;
 }
 
@@ -29,6 +30,7 @@ export default React.memo(function AgendaItem({
   type,
   subjectName,
   priority,
+  rationale,
   onPress,
 }: AgendaItemProps) {
   const accent = TYPE_COLORS[type];
@@ -61,6 +63,11 @@ export default React.memo(function AgendaItem({
           <Text style={styles.dot}>·</Text>
           <Text style={styles.subject}>{subjectName}</Text>
         </View>
+        {rationale ? (
+          <View style={styles.rationaleChip}>
+            <Text style={styles.rationaleText}>{rationale}</Text>
+          </View>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -136,5 +143,20 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontSize: 11,
     fontWeight: '500',
+  },
+  rationaleChip: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.primaryTintMedium,
+  },
+  rationaleText: {
+    color: theme.colors.primary,
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

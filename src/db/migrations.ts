@@ -864,7 +864,92 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_ch
              OR trim(chatgpt_accounts_json) = ''`,
     description: 'Backfill ChatGPT primary slot from legacy chatgpt_connected flag',
   },
+  {
+    version: 134,
+    sql: `ALTER TABLE user_profile ADD COLUMN auto_backup_frequency TEXT NOT NULL DEFAULT 'off'`,
+    description: 'Add auto-backup frequency setting for unified backup system',
+  },
+  {
+    version: 135,
+    sql: `ALTER TABLE user_profile ADD COLUMN last_auto_backup_at TEXT`,
+    description: 'Add timestamp for last auto-backup execution',
+  },
+  {
+    version: 136,
+    sql: `ALTER TABLE user_profile ADD COLUMN github_copilot_connected INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add github_copilot_connected flag to user_profile',
+  },
+  {
+    version: 137,
+    sql: `ALTER TABLE user_profile ADD COLUMN gitlab_duo_connected INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add gitlab_duo_connected flag to user_profile',
+  },
+  {
+    version: 138,
+    sql: `ALTER TABLE user_profile ADD COLUMN poe_connected INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add poe_connected flag to user_profile',
+  },
+  {
+    version: 139,
+    sql: `ALTER TABLE user_profile ADD COLUMN github_copilot_preferred_model TEXT NOT NULL DEFAULT ''`,
+    description: 'Preferred GitHub Copilot model id for auto-routing',
+  },
+  {
+    version: 140,
+    sql: `ALTER TABLE user_profile ADD COLUMN gitlab_oauth_client_id TEXT NOT NULL DEFAULT ''`,
+    description: 'GitLab OAuth Application ID (optional; overrides EXPO_PUBLIC_GITLAB_CLIENT_ID)',
+  },
+  {
+    version: 141,
+    sql: `ALTER TABLE user_profile ADD COLUMN gitlab_duo_preferred_model TEXT NOT NULL DEFAULT ''`,
+    description: 'Preferred GitLab Duo model id for auto-routing',
+  },
+  {
+    version: 142,
+    sql: `ALTER TABLE user_profile ADD COLUMN gdrive_connected INTEGER NOT NULL DEFAULT 0`,
+    description: 'Google Drive backup connection flag',
+  },
+  {
+    version: 143,
+    sql: `ALTER TABLE user_profile ADD COLUMN gdrive_email TEXT NOT NULL DEFAULT ''`,
+    description: 'Google Drive connected account email',
+  },
+  {
+    version: 144,
+    sql: `ALTER TABLE user_profile ADD COLUMN gdrive_last_sync_at TEXT`,
+    description: 'Timestamp of last successful GDrive backup sync',
+  },
+  {
+    version: 145,
+    sql: `ALTER TABLE user_profile ADD COLUMN last_backup_device_id TEXT NOT NULL DEFAULT ''`,
+    description: 'Device ID of the last auto-backup (for cross-device detection)',
+  },
+  {
+    version: 146,
+    sql: `ALTER TABLE user_profile ADD COLUMN dbmci_class_start_date TEXT`,
+    description: "Start date (YYYY-MM-DD) of the user's DBMCI One live batch",
+  },
+  {
+    version: 147,
+    sql: `ALTER TABLE user_profile ADD COLUMN btr_start_date TEXT`,
+    description: "Start date (YYYY-MM-DD) of the user's BTR (Back to Roots) revision batch",
+  },
+  {
+    version: 148,
+    sql: `ALTER TABLE user_profile ADD COLUMN home_novelty_cooldown_hours INTEGER NOT NULL DEFAULT 6`,
+    description: 'Home anti-repeat cooldown window (hours) for novelty rotation',
+  },
+  {
+    version: 149,
+    sql: `ALTER TABLE user_profile ADD COLUMN gdrive_web_client_id TEXT NOT NULL DEFAULT ''`,
+    description: 'Google OAuth Web Client ID for Drive sync (runtime override)',
+  },
+  {
+    version: 149,
+    sql: `ALTER TABLE guru_chat_session_memory ADD COLUMN state_json TEXT NOT NULL DEFAULT '{}'`,
+    description: 'Structured tutoring state for Guru chat thread memory',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 133;
+export const LATEST_VERSION = 149;

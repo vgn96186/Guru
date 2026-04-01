@@ -20,12 +20,23 @@ function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
       topicIds: [task.topic.id],
       durationMinutes: task.duration,
       startTime: task.timeLabel.split(' - ')[0],
-      type: (task.type === 'review' ? 'review' : task.type === 'deep_dive' ? 'test' : 'study') as 'study' | 'review' | 'test' | 'break',
-      why: `${task.topic.subjectName} — ${task.type === 'review' ? 'due for review' : task.type === 'deep_dive' ? 'weak, needs deep dive' : 'new topic to cover'}`,
+      type: (task.type === 'review' ? 'review' : task.type === 'deep_dive' ? 'test' : 'study') as
+        | 'study'
+        | 'review'
+        | 'test'
+        | 'break',
+      why: `${task.topic.subjectName} — ${
+        task.type === 'review'
+          ? 'due for review'
+          : task.type === 'deep_dive'
+            ? 'weak, needs deep dive'
+            : 'new topic to cover'
+      }`,
     })),
-    guruNote: tasks.length > 0
-      ? `${tasks.length} tasks lined up. Start with ${tasks[0].topic.name}.`
-      : 'Nothing urgent today — great time to explore new topics.',
+    guruNote:
+      tasks.length > 0
+        ? `${tasks.length} tasks lined up. Start with ${tasks[0].topic.name}.`
+        : 'Nothing urgent today — great time to explore new topics.',
   };
 }
 
@@ -171,6 +182,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    flex: 1,
+    justifyContent: 'space-between',
   },
   activeContainer: {
     borderColor: theme.colors.primaryTintMedium,

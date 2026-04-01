@@ -1,6 +1,8 @@
 /**
  * Guru Chat default model id persisted in Settings (`user_profile.guru_chat_default_model`).
- * Ids match `GuruChatScreen` model picker: `auto`, `local`, `groq/...`, `github/{publisher}/{model}`, OpenRouter slug, `gemini/...`, `cf/...`.
+ * Ids match `GuruChatScreen` model picker: `auto`, `local`, `groq/...`, `chatgpt/...`,
+ * `github/{publisher}/{model}`, `github_copilot/...`, `gitlab_duo/...`, `poe/...`,
+ * OpenRouter slug, `gemini/...`, `cf/...`, `deepseek/...`, `ar/...`, `kilo/...`.
  */
 
 export function coerceGuruChatDefaultModel(
@@ -33,6 +35,18 @@ export function formatGuruChatModelChipLabel(modelId: string): string {
   if (modelId.startsWith('github/')) {
     const rest = modelId.slice('github/'.length);
     return rest.length > 26 ? `${rest.slice(0, 24)}…` : rest;
+  }
+  if (modelId.startsWith('github_copilot/')) {
+    const m = modelId.slice('github_copilot/'.length);
+    return m.length > 22 ? `${m.slice(0, 20)}…` : m;
+  }
+  if (modelId.startsWith('gitlab_duo/')) {
+    const m = modelId.slice('gitlab_duo/'.length);
+    return m.length > 22 ? `${m.slice(0, 20)}…` : m;
+  }
+  if (modelId.startsWith('poe/')) {
+    const m = modelId.slice('poe/'.length);
+    return m.length > 22 ? `${m.slice(0, 20)}…` : m;
   }
   if (modelId.includes('/')) {
     const parts = modelId.split('/');

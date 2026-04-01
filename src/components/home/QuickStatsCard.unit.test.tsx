@@ -28,7 +28,7 @@ describe('QuickStatsCard', () => {
     const { getByText } = render(<QuickStatsCard {...defaultProps} />);
 
     expect(getByText('55 min left')).toBeTruthy();
-    expect(getByText('45 of 100 min today')).toBeTruthy();
+    expect(getByText('100m')).toBeTruthy();
     expect(getByText('45%')).toBeTruthy();
     expect(getByText('5d streak')).toBeTruthy();
     expect(getByText('Lv 12')).toBeTruthy();
@@ -50,7 +50,6 @@ describe('QuickStatsCard', () => {
       <QuickStatsCard {...defaultProps} progressPercent={100} todayMinutes={100} />,
     );
     expect(getByText('Goal reached')).toBeTruthy();
-    expect(getByText('Stack one more high-yield block.')).toBeTruthy();
   });
 
   it('renders goal complete message when progressPercent exceeds 100', () => {
@@ -63,7 +62,7 @@ describe('QuickStatsCard', () => {
 
   it('handles negative todayMinutes gracefully', () => {
     const { getByText } = render(<QuickStatsCard {...defaultProps} todayMinutes={-10} />);
-    expect(getByText('110 min left')).toBeTruthy();
+    expect(getByText('100 min left')).toBeTruthy();
   });
 
   it('handles negative progressPercent by clamping to 0%', () => {

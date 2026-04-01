@@ -45,6 +45,7 @@ function main() {
   const bundledCloudflareApiToken = (env.EXPO_PUBLIC_BUNDLED_CF_API_TOKEN ?? '').trim();
   const bundledDeepseek = (env.EXPO_PUBLIC_BUNDLED_DEEPSEEK_KEY ?? '').trim();
   const bundledGithubModelsPat = (env.EXPO_PUBLIC_BUNDLED_GITHUB_MODELS_PAT ?? '').trim();
+  const bundledGoogleWebClientId = (env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '').trim();
 
   const content = `/**
  * Auto-generated from .env by scripts/generate-bundled-env.js
@@ -59,6 +60,7 @@ export const BUNDLED_CF_ACCOUNT_ID = '${escapeForSingleQuotes(bundledCloudflareA
 export const BUNDLED_CF_API_TOKEN = '${escapeForSingleQuotes(bundledCloudflareApiToken)}';
 export const BUNDLED_DEEPSEEK_KEY = '${escapeForSingleQuotes(bundledDeepseek)}';
 export const BUNDLED_GITHUB_MODELS_PAT = '${escapeForSingleQuotes(bundledGithubModelsPat)}';
+export const BUNDLED_GOOGLE_WEB_CLIENT_ID = '${escapeForSingleQuotes(bundledGoogleWebClientId)}';
 `;
 
   fs.writeFileSync(outPath, content, 'utf8');

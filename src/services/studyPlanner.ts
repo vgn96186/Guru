@@ -11,8 +11,10 @@ import { MS_PER_DAY } from '../constants/time';
 import {
   buildPlanBuckets,
   buildTopicQueues,
+  isParentTopic,
   DBMCI_WORKLOAD_OVERRIDES,
 } from './studyPlannerBuckets';
+import { getExamAwareSubjectWeight, getExamTargetIntelligence } from './examIntelligence';
 
 export type PlanActionType = 'study' | 'review' | 'deep_dive';
 
@@ -35,11 +37,19 @@ export interface DailyPlan {
 export interface StudyPlanSummary {
   totalTopicsLeft: number;
   totalHoursLeft: number;
+  hoursBeyondHorizon: number;
+  targetExam: 'INICET' | 'NEET-PG';
+  targetExamDate: string;
+  daysToInicet: number;
+  daysToNeetPg: number;
+  phaseLabel: string;
+  phaseFocus: string;
   daysRemaining: number;
   requiredHoursPerDay: number;
   requiredHoursPerDayRaw: number;
   hoursPerDayCapped: boolean;
   feasible: boolean;
+  hasWorkBeyondHorizon: boolean;
   message: string;
   projectedFinishDate: string | null;
   bufferDays: number;
@@ -47,6 +57,20 @@ export interface StudyPlanSummary {
   resourceLabel: string;
   workloadAssumption: string;
   subjectLoadHighlights: string[];
+  /** Topics watched/seen but not yet quizzed/reviewed — the "watch ≠ learn" gap */
+  seenNeedingQuizCount: number;
+  /** Topics in reviewed/mastered state */
+  reviewedCount: number;
+  masteredCount: number;
+  /** Topics still completely unseen */
+  unseenCount: number;
+  /**
+   * Backlog pressure: ratio of overdue review minutes vs daily goal.
+   * > 3 = backlog is consuming >3× daily capacity — new topics should be gated.
+   */
+  overdueBacklogDays: number;
+  /** Whether the planner has suppressed new topics to let the review backlog clear */
+  newTopicsGated: boolean;
 }
 
 export interface TodayTask {
@@ -56,11 +80,15 @@ export interface TodayTask {
   duration: number;
 }
 
+const DUE_TOPICS_FETCH_LIMIT = 2000;
+
 export type PlanMode = 'balanced' | 'high_yield' | 'exam_crunch';
 
 interface GeneratePlanOptions {
   mode?: PlanMode;
   resourceMode?: StudyResourceMode;
+  /** Temporarily override the user's saved dailyGoalMinutes for this call only. */
+  dailyGoalOverrideMinutes?: number;
 }
 
 interface ResourceProfile {
@@ -181,6 +209,8 @@ function buildReasonLabels(
   }
 
   if (type === 'deep_dive') labels.push('Weak topic');
+  if (topic.progress.confidence <= 1 && topic.progress.status !== 'unseen')
+    labels.push('Foundation gap');
   if (type === 'study' && topic.progress.status === 'unseen') labels.push('Untouched');
   if (topic.inicetPriority >= 8) labels.push('High yield');
   if (topic.progress.isNemesis) labels.push('Nemesis');
@@ -290,6 +320,7 @@ export async function getTodaysAgendaWithTimes(): Promise<TodayTask[]> {
   const { plan } = await generateStudyPlan();
   const todayPlan = plan[0];
   if (!todayPlan || todayPlan.items.length === 0) return [];
+  const todayIso = new Date().toISOString().slice(0, 10);
 
   const formatClock = (totalMinutes: number) => {
     const normalized = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
@@ -298,11 +329,29 @@ export async function getTodaysAgendaWithTimes(): Promise<TodayTask[]> {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   };
 
+  const formatClockWithOffset = (totalMinutes: number) => {
+    const dayOffset = Math.floor(totalMinutes / (24 * 60));
+    const suffix = dayOffset > 0 ? ` (+${dayOffset}d)` : '';
+    return `${formatClock(totalMinutes)}${suffix}`;
+  };
+
   // Get user-stated availability from store
   const availability = useAppStore.getState().dailyAvailability;
 
   // 1. Filter items based on availability/capacity
   let items = todayPlan.items;
+
+  // Home card should feel fresh: avoid repeating the same topic multiple times in one agenda,
+  // except when a repeated item is an overdue review that must remain visible.
+  const seenTopicIds = new Set<number>();
+  items = items.filter((item) => {
+    const due = item.topic.progress.fsrsDue?.slice(0, 10);
+    const isOverdueReview = item.type === 'review' && Boolean(due && due < todayIso);
+    if (isOverdueReview) return true;
+    if (seenTopicIds.has(item.topic.id)) return false;
+    seenTopicIds.add(item.topic.id);
+    return true;
+  });
 
   if (availability !== null) {
     // "Just Checking" -> Show nothing or maybe just 1 quick win
@@ -353,7 +402,7 @@ export async function getTodaysAgendaWithTimes(): Promise<TodayTask[]> {
     const slotEnd = slotStart + item.duration;
 
     schedule.push({
-      timeLabel: `${formatClock(slotStart)} - ${formatClock(slotEnd)}`,
+      timeLabel: `${formatClockWithOffset(slotStart)} - ${formatClockWithOffset(slotEnd)}`,
       topic: item.topic,
       type: item.type,
       duration: item.duration,
@@ -379,18 +428,34 @@ export async function generateStudyPlan(
   const resourceMode = options?.resourceMode ?? profile.studyResourceMode ?? 'hybrid';
   const customSubjectLoads = profile.customSubjectLoadMultipliers ?? {};
   const resourceProfile = getResourceProfile(resourceMode);
-  const cacheKey = `${todayStr}:${mode}:${resourceMode}:${JSON.stringify(customSubjectLoads)}`;
+  const cacheKey = JSON.stringify({
+    todayStr,
+    mode,
+    resourceMode,
+    customSubjectLoads,
+    dailyGoalMinutes: options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes,
+    inicetDate: profile.inicetDate,
+    neetDate: profile.neetDate,
+    dbmciClassStartDate: profile.dbmciClassStartDate ?? null,
+    btrStartDate: profile.btrStartDate ?? null,
+  });
   if (cachedPlan && lastCacheKey === cacheKey) {
     return cachedPlan;
   }
 
   const [allTopics, subjects] = await Promise.all([getAllTopicsWithProgress(), getAllSubjects()]);
-  const subjectWeights = new Map(subjects.map((s) => [s.id, s.inicetWeight]));
+  const examIntelligence = getExamTargetIntelligence(profile, profileRepository.getDaysToExam);
+  const subjectWeights = new Map(
+    subjects.map((s) => [s.id, getExamAwareSubjectWeight(s, examIntelligence.targetExam)]),
+  );
 
   // 1. Initial State
   const today = new Date();
-  const daysToExam = profileRepository.getDaysToExam(profile.inicetDate);
-  const dailyGoal = profile.dailyGoalMinutes > 0 ? profile.dailyGoalMinutes : 120;
+  const daysToExam = examIntelligence.daysToTarget;
+  const dailyGoal =
+    (options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes) > 0
+      ? (options?.dailyGoalOverrideMinutes ?? profile.dailyGoalMinutes)
+      : 120;
 
   // Get exam dates to mark as rest days
   const examDates = new Set([profile.inicetDate, profile.neetDate]);
@@ -401,7 +466,7 @@ export async function generateStudyPlan(
   // 2. Identify Tasks
 
   // A. Overdue Reviews (Priority 1)
-  const due = await getTopicsDueForReview(1000); // Get all due
+  const due = await getTopicsDueForReview(DUE_TOPICS_FETCH_LIMIT);
   for (const t of due) {
     pendingActions.push(
       createPlanItem(
@@ -420,6 +485,10 @@ export async function generateStudyPlan(
     mode,
     resourceMode,
     subjectWeights,
+    liveClassStartDate:
+      resourceMode === 'btr'
+        ? (profile.btrStartDate ?? null)
+        : (profile.dbmciClassStartDate ?? null),
   });
 
   // B. Weak Topics (Priority 2 - Deep Dive)
@@ -435,7 +504,44 @@ export async function generateStudyPlan(
     });
   }
 
-  // C. New Topics (Priority 3)
+  // 2b. Mastery status counts (for summary)
+  const unseenCount = allTopics.filter(
+    (t) => !isParentTopic(t) && t.progress.status === 'unseen',
+  ).length;
+  const seenNeedingQuizCount = allTopics.filter(
+    (t) => !isParentTopic(t) && t.progress.status === 'seen' && t.progress.confidence < 1,
+  ).length;
+  const reviewedCount = allTopics.filter(
+    (t) => !isParentTopic(t) && t.progress.status === 'reviewed',
+  ).length;
+  const masteredCount = allTopics.filter(
+    (t) => !isParentTopic(t) && t.progress.status === 'mastered',
+  ).length;
+
+  const foundationalGapTopics = allTopics.filter((t) => {
+    if (isParentTopic(t)) return false;
+    if (t.progress.status === 'unseen') return false;
+    return t.progress.confidence <= 1 || (t.progress.wrongCount ?? 0) >= 2 || t.progress.isNemesis;
+  });
+
+  // 2c. Backlog pressure — how many days of just-reviews are sitting in the queue
+  const overdueReviewMinutes = due.reduce(
+    (sum, t) => sum + estimateActionDuration(t, 'review', resourceMode, customSubjectLoads),
+    0,
+  );
+  const overdueBacklogDays =
+    dailyGoal > 0 ? Math.round((overdueReviewMinutes / dailyGoal) * 10) / 10 : 0;
+  // Gate new topics when overdue backlog exceeds 4× daily capacity
+  const newTopicsGated = overdueBacklogDays > 4;
+  const foundationalGapMinutes = foundationalGapTopics.reduce(
+    (sum, t) => sum + estimateActionDuration(t, 'deep_dive', resourceMode, customSubjectLoads),
+    0,
+  );
+  const foundationalGapDays =
+    dailyGoal > 0 ? Math.round((foundationalGapMinutes / dailyGoal) * 10) / 10 : 0;
+  const foundationalGapsNeedPriority = foundationalGapDays > 2;
+
+  // C. New Topics (Priority 3 — gated when backlog is too large)
   for (const t of newTopics) {
     pendingActions.push(
       createPlanItem(
@@ -549,7 +655,9 @@ export async function generateStudyPlan(
     let divesToday = 0;
     const deepDiveBudget = Math.max(
       dailyGoal,
-      Math.round(dailyGoal * resourceProfile.deepDiveDailyBudgetMultiplier),
+      Math.round(
+        dailyGoal * resourceProfile.deepDiveDailyBudgetMultiplier * examIntelligence.deepDiveBias,
+      ),
     );
     while (queueDeep.length > 0 && dayMinutes < deepDiveBudget) {
       const diveLimit = mode === 'exam_crunch' ? 2 : 1;
@@ -576,15 +684,26 @@ export async function generateStudyPlan(
     }
 
     // 4. New Study
+    // When the overdue backlog is large (4+ days' worth), gate new topics so we clear
+    // the review pile first — on day i, allow new topics only once the overdue
+    // queue has been mostly absorbed.
     const baseNewTopicBudget = Math.round(
       dailyGoal * resourceProfile.newTopicDailyBudgetMultiplier,
     );
+    const newTopicBudgetMultiplier =
+      mode === 'exam_crunch' ? 0.55 : mode === 'high_yield' ? 0.8 : 1;
+    const backlogGateFactor = newTopicsGated
+      ? Math.max(0.1, 1 - (overdueBacklogDays - 4) * 0.15) // ramp down as backlog grows
+      : 1;
+    const foundationalGapGateFactor = foundationalGapsNeedPriority
+      ? Math.max(0.2, 1 - Math.max(0, foundationalGapDays - 2) * 0.18)
+      : 1;
     const newTopicBudget =
-      mode === 'exam_crunch'
-        ? baseNewTopicBudget * 0.55
-        : mode === 'high_yield'
-          ? baseNewTopicBudget * 0.8
-          : baseNewTopicBudget;
+      baseNewTopicBudget *
+      newTopicBudgetMultiplier *
+      examIntelligence.newTopicBias *
+      backlogGateFactor *
+      foundationalGapGateFactor;
     while (queueNew.length > 0 && dayMinutes < newTopicBudget) {
       const item = queueNew.shift()!;
       dayItems.push(item);
@@ -664,6 +783,7 @@ export async function generateStudyPlan(
     queueDeep.reduce((sum, item) => sum + item.duration, 0) +
     queueNew.reduce((sum, item) => sum + item.duration, 0) +
     remainingFutureReviewMinutes;
+  const hasWorkBeyondHorizon = remainingFutureReviewMinutes > 0;
   const isFeasible = remainingQueueMinutes === 0 && rawRequiredMinutesPerDay <= dailyGoal * 1.15;
 
   const lastPlannedDay = [...plan].reverse().find((day) => day.totalMinutes > 0);
@@ -683,26 +803,42 @@ export async function generateStudyPlan(
     message = 'High-yield mode: prioritizing the most exam-relevant topics first.';
   if (mode === 'exam_crunch')
     message = 'Exam crunch mode: review-heavy with only the highest-yield new topics.';
-  if (remainingQueueMinutes > 0)
-    message = `Course load exceeds the current horizon. Raise the daily goal or switch to a lighter resource profile.`;
+  if (newTopicsGated)
+    message = `Review backlog is ${overdueBacklogDays}d deep — new topics are gated until it clears. Focus on reviews first.`;
+  else if (foundationalGapsNeedPriority)
+    message = `Foundational gaps are ~${foundationalGapDays}d deep — plan is prioritizing weak basics before adding many new topics.`;
   else if (hoursPerDayCapped)
     message = `Impossible timeline: needs ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day. Extend the exam date, reduce scope, or lower resource load.`;
+  else if (hasWorkBeyondHorizon)
+    message = `Planned work extends beyond the visible ${daysToPlan}-day horizon. Continue daily and roll forward.`;
+  else if (remainingQueueMinutes > 0)
+    message = `Course load exceeds the current horizon. Raise the daily goal or switch to a lighter resource profile.`;
   else if (rawRequiredMinutesPerDay > dailyGoal)
     message = `Heavy load! ${Number((rawRequiredMinutesPerDay / 60).toFixed(1))}h/day required with ${resourceProfile.label}.`;
   else if (projectedFinishDate)
     message = `Projected finish ${projectedFinishDate}${bufferDays > 0 ? ` with ${bufferDays} buffer days.` : '.'}`;
   else message = 'Plan looks solid. Stick to it!';
 
+  message = `${message} ${examIntelligence.targetExam} phase: ${examIntelligence.phaseLabel}. ${examIntelligence.plannerFocus}`;
+
   const result = {
     plan,
     summary: {
       totalTopicsLeft: left,
       totalHoursLeft: Number((totalExpectedWorkloadMinutes / 60).toFixed(1)),
+      hoursBeyondHorizon: Number((remainingFutureReviewMinutes / 60).toFixed(1)),
+      targetExam: examIntelligence.targetExam,
+      targetExamDate: examIntelligence.targetDate,
+      daysToInicet: examIntelligence.daysToInicet,
+      daysToNeetPg: examIntelligence.daysToNeetPg,
+      phaseLabel: examIntelligence.phaseLabel,
+      phaseFocus: examIntelligence.plannerFocus,
       daysRemaining: daysToExam,
       requiredHoursPerDay: Number((requiredMinutesPerDay / 60).toFixed(1)),
       requiredHoursPerDayRaw: Number((rawRequiredMinutesPerDay / 60).toFixed(1)),
       hoursPerDayCapped,
       feasible: isFeasible,
+      hasWorkBeyondHorizon,
       message,
       projectedFinishDate,
       bufferDays,
@@ -710,6 +846,12 @@ export async function generateStudyPlan(
       resourceLabel: resourceProfile.label,
       workloadAssumption: resourceProfile.workloadAssumption,
       subjectLoadHighlights: getActiveSubjectLoadHighlights(resourceMode, customSubjectLoads),
+      unseenCount,
+      seenNeedingQuizCount,
+      reviewedCount,
+      masteredCount,
+      overdueBacklogDays,
+      newTopicsGated,
     },
   };
 

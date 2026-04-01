@@ -5,6 +5,50 @@ Target user: ADHD medical student. Stack: Expo SDK 52, expo-sqlite (sync), TypeS
 
 ---
 
+## User — Who This App Is For
+
+**The user is a medical student (Vishnu) preparing for NEET-PG and INICET.**
+
+### Goals
+
+- **Primary:** Sub-2000 rank in NEET-PG — either the upcoming attempt or next year's.
+- **Secondary:** Strong rank in INICET (which serves as practice and a real exam).
+- Both exams require genuine mastery of all 19 NEET-PG subjects, not just surface-level watching.
+
+### Current Situation (as of April 2026)
+
+- **DBMCI One live batch:** Not yet started — 0 lectures watched. Will begin soon.
+- **BTR (Back to Roots) batch:** Partially completed — several subjects done, a few remaining.
+- Watching lecture videos alone is not sufficient for the rank target. Topics must go through the full mastery pipeline: **watch → quiz → review → confirm mastery**.
+- The user has ADHD — motivation and consistency are variable. Some days are lazy days. The plan must adapt, not punish.
+
+### What "Thorough" Means for Sub-2000
+
+A topic counts as _properly learned_ only when it has gone through **all 4 stages**:
+
+1. **Watch** — Lecture video covered (status: `seen`)
+2. **Quiz** — At least one MCQ/content-card session done (confidence ≥ 1)
+3. **Review** — FSRS-scheduled spaced repetition session done (status: `reviewed`)
+4. **Mastered** — Confidence ≥ 3, FSRS stability high (status: `mastered`)
+
+Seeing a topic = 0 points toward the exam. Mastering it = 1 point.
+
+### Planning Philosophy
+
+- The dynamic plan must be **exam-date-driven**: work backwards from INICET / NEET-PG to assign a daily pace that is actually achievable.
+- When the user falls behind (lazy day, missed sessions), the plan **redistributes** the backlog over remaining days — it never just drops missed work silently.
+- Review backlog (overdue FSRS topics) takes priority over new topics. When the overdue pile exceeds ~4 days of capacity, new-topic intake is automatically throttled.
+- The lecture schedule (DBMCI One or BTR) determines **which subject's new topics appear first** in the queue — the plan stays in sync with live classes so the user can watch a lecture and immediately do the associated quiz/review in Guru.
+- On lazy/short days, the plan should offer a **minimal-effort fallback**: quick reviews + highest-yield MCQs only. Do not demand a full session on a bad day.
+
+### Exam Dates Context
+
+- INICET is roughly every 6 months (January and July cycles).
+- NEET-PG is annual.
+- All planning horizons and urgency levels are computed from these dates.
+
+---
+
 ## Project Structure
 
 ```
@@ -47,6 +91,7 @@ modules/
 ## Key Architectural Rules
 
 ### Database
+
 - DB access via `expo-sqlite` (`getDb()` from `src/db/database.ts`).
 - **Async-only** — prefer `db.runAsync`, `db.getFirstAsync`, `db.getAllAsync` to keep the UI responsive. Sync methods have been removed.
 - **Versioned migrations** — `src/db/migrations.ts` uses PRAGMA user_version; `migration_history` table (v59+) provides an audit trail.
@@ -56,15 +101,18 @@ modules/
 - `confidence` (0–3) maps to estimatedConfidence (1–3) from AI.
 
 ### App Bootstrap (replaces scripts/ patching)
+
 - **Cold start:** `src/services/appBootstrap.ts` — `runAppBootstrap()` orchestrates DB init, offline queue, background fetch, confidence decay, local model download. Called once from `App.tsx`.
 - **Post-mount:** `src/hooks/useAppBootstrap.ts` — profile load, exam date sync, accountability notifications, WakeUp notification routing, AppState listeners. Used by `AppContent`.
 - `src/navigation/navigationRef.ts` — shared `navigationRef` for imperative navigation (e.g. WakeUp from notification tap).
 
 ### Configuration & Schemas
+
 - **appConfig** (`src/config/appConfig.ts`) — `DEFAULT_INICET_DATE`, `DEFAULT_NEET_DATE` (env: `EXPO_PUBLIC_DEFAULT_*`), `OPENROUTER_FREE_MODELS`, `GROQ_MODELS`, `BUNDLED_GROQ_KEY`. Used by schema, migrations, progress, SettingsScreen, ai/config.
 - **Schemas** (`src/schemas/core.ts`) — Zod schemas for Mood, ContentType, DailyLog, TopicStatus, etc. Types derived via `z.infer`. `types/index.ts` re-exports.
 
 ### AI Service Routing (`src/services/aiService.ts` and `src/services/ai/`)
+
 - Implementation lives in `src/services/ai/` (config, types, schemas, jsonRepair, llmRouting, generate, medicalSearch, content, planning, chat, notifications, catalyze). `aiService.ts` is a thin barrel re-exporting the public API.
 - **Module aliases:** LlmRouter = llmRouting, JsonRepair = jsonRepair, MedicalGrounding = medicalSearch, ContentGeneration = content.
 - Local LLM: llama.rn / MedGemma/Qwen via `profile.localModelPath` when `profile.useLocalModel = true`.
@@ -78,10 +126,11 @@ modules/
 - `generateTextWithRouting()` — for free-text output.
 
 ### API Key Field Names
+
 ```typescript
-profile.openrouterApiKey  // = legacy field (kept for backward compatibility, not actively used)
-profile.openrouterKey     // = OpenRouter key for free model fallbacks
-profile.groqApiKey        // = Groq API key (falls back to BUNDLED_GROQ_KEY if empty)
+profile.openrouterApiKey; // = legacy field (kept for backward compatibility, not actively used)
+profile.openrouterKey; // = OpenRouter key for free model fallbacks
+profile.groqApiKey; // = Groq API key (falls back to BUNDLED_GROQ_KEY if empty)
 ```
 
 ---
@@ -89,7 +138,9 @@ profile.groqApiKey        // = Groq API key (falls back to BUNDLED_GROQ_KEY if e
 ## Lecture / Audio Transcription — Two Separate Flows
 
 ### Flow A: External App Recording (background, via native module)
+
 **Trigger:** User taps a lecture app in `ExternalToolsRow` on HomeScreen.
+
 1. `ExternalToolsRow` → `launchMedicalApp(app.id)` in `src/services/appLauncher.ts`
 2. `launchMedicalApp` → requests MediaProjection or mic permission → `startRecording(packageName)` → `launchApp(packageName)` → `showOverlay(appName)` → logs to `external_app_logs` via `startExternalAppSession()`
 3. Native `RecordingService.kt` records audio in background as `.m4a` in `context.filesDir`
@@ -99,7 +150,9 @@ profile.groqApiKey        // = Groq API key (falls back to BUNDLED_GROQ_KEY if e
 7. User taps "Mark as Studied" → `markTopicsFromLecture()` + `addXp()` + optional quiz via `catalyzeTranscript()`
 
 ### Flow B: In-App Recording (LectureModeScreen "Hostage Mode")
+
 **Trigger:** User navigates to `LectureMode` screen (phone stays open, tablet runs lecture).
+
 1. Toggle "Auto-Scribe" → starts `Audio.Recording` loop (3-minute chunks)
 2. Each chunk → `processRecording()` → `transcribeWithGroq()` or local Whisper → `LectureAnalysis`
 3. Calls `markTopicsFromLecture(getDb(), analysis.topics, analysis.estimatedConfidence, analysis.subject)` to update DB
@@ -107,35 +160,38 @@ profile.groqApiKey        // = Groq API key (falls back to BUNDLED_GROQ_KEY if e
 5. Proof-of-Life check every 15 min — user must type what professor just said
 
 ### Key transcription files
+
 - `src/services/transcriptionService.ts` — `transcribeWithGroq()`, `transcribeWithLocalWhisper()`, `transcribeWithOpenAI()`, `markTopicsFromLecture()`
 - `src/services/aiService.ts` — `transcribeAndSummarizeAudio()` (legacy, returns plain text only — do NOT use for knowledge base updates), `catalyzeTranscript()` (structured analysis from transcript text)
 - `src/db/queries/aiCache.ts` — `saveLectureNote()` (saves raw note text)
 
 ### `markTopicsFromLecture()` matching strategy (5 levels)
+
 1. Exact match within detected subject
 2. LIKE contains within subject
 3. Reverse contains within subject (DB name inside AI topic string)
 4. Cross-subject exact match fallback
 5. Cross-subject LIKE fallback
-Also marks parent topics of matched topics as 'seen'.
+   Also marks parent topics of matched topics as 'seen'.
 
 ---
 
 ## Native Module: `modules/app-launcher`
 
 JS API (`modules/app-launcher/index.ts`):
+
 ```typescript
-launchApp(packageName)           // Intent-based app launch
-isAppInstalled(packageName)      // Check installation
-getAppUid(packageName)           // For audio capture filtering
-requestMediaProjection()         // System dialog for internal audio capture (Android 10+)
-startRecording(targetPackage)    // Starts RecordingService (mic or internal)
-stopRecording()                  // Returns .m4a path
-deleteRecording(path)            // Cleanup after transcription
-canDrawOverlays()                // Check SYSTEM_ALERT_WINDOW
-requestOverlayPermission()       // Open settings
-showOverlay(appName, faceTracking) // Start OverlayService foreground
-hideOverlay()                    // Stop OverlayService
+launchApp(packageName); // Intent-based app launch
+isAppInstalled(packageName); // Check installation
+getAppUid(packageName); // For audio capture filtering
+requestMediaProjection(); // System dialog for internal audio capture (Android 10+)
+startRecording(targetPackage); // Starts RecordingService (mic or internal)
+stopRecording(); // Returns .m4a path
+deleteRecording(path); // Cleanup after transcription
+canDrawOverlays(); // Check SYSTEM_ALERT_WINDOW
+requestOverlayPermission(); // Open settings
+showOverlay(appName, faceTracking); // Start OverlayService foreground
+hideOverlay(); // Stop OverlayService
 ```
 
 OverlayService bubble colors: purple=neutral, green=focused, orange=drowsy/distracted, red=absent (sends notification after 15s absent).
@@ -145,37 +201,42 @@ OverlayService bubble colors: purple=neutral, green=focused, orange=drowsy/distr
 ## Navigation Structure
 
 ### Root Stack (modal overlays — always on top)
+
 `RootStackParamList`: PunishmentMode, BedLock, DoomscrollInterceptor, BreakEnforcer, DeviceLink, DoomscrollGuide, Lockdown, CheckIn, Tabs, BrainDumpReview, SleepMode, WakeUp, LocalModel
 
 ### Tabs (inside `Tabs` route)
+
 HomeTab, SyllabusTab, PlanTab, StatsTab, SettingsTab
 
 ### HomeStack (within HomeTab)
+
 `HomeStackParamList`: Home, Session, LectureMode, MockTest, Review, NotesSearch, BossBattle, Inertia, ManualLog, StudyPlan, DailyChallenge, FlaggedReview
 
 ### SyllabusStack
+
 `SyllabusStackParamList`: Syllabus, TopicDetail
 
 ---
 
 ## Database Schema Summary
 
-| Table | Purpose |
-|-------|---------|
-| `subjects` | 19 NEET-PG subjects (seeded, static) |
-| `topics` | Topic tree with `parent_topic_id`, `subject_id`, `inicet_priority` |
-| `topic_progress` | Per-topic status/confidence/FSRS fields — the progress KB |
-| `sessions` | Study session records with XP, mood, duration |
-| `daily_log` | One row per day — minutes, XP, mood |
-| `ai_cache` | Cached AI content per topic+contentType (keypoints/quiz/story/mnemonic/teach_back/error_hunt/detective) |
-| `lecture_notes` | Free-text notes saved during lectures |
-| `user_profile` | Single row (id=1) — all user settings and API keys |
-| `brain_dumps` | Quick capture notes |
-| `external_app_logs` | Records of lecture app sessions (`returned_at NULL` = active session) |
+| Table               | Purpose                                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `subjects`          | 19 NEET-PG subjects (seeded, static)                                                                    |
+| `topics`            | Topic tree with `parent_topic_id`, `subject_id`, `inicet_priority`                                      |
+| `topic_progress`    | Per-topic status/confidence/FSRS fields — the progress KB                                               |
+| `sessions`          | Study session records with XP, mood, duration                                                           |
+| `daily_log`         | One row per day — minutes, XP, mood                                                                     |
+| `ai_cache`          | Cached AI content per topic+contentType (keypoints/quiz/story/mnemonic/teach_back/error_hunt/detective) |
+| `lecture_notes`     | Free-text notes saved during lectures                                                                   |
+| `user_profile`      | Single row (id=1) — all user settings and API keys                                                      |
+| `brain_dumps`       | Quick capture notes                                                                                     |
+| `external_app_logs` | Records of lecture app sessions (`returned_at NULL` = active session)                                   |
 
 ---
 
 ## Zustand Store (`src/store/useAppStore.ts`)
+
 - `profile: UserProfile | null` — full user profile from DB
 - `levelInfo` — computed from `totalXp`
 - `refreshProfile()` — re-reads profile from DB into store
@@ -185,7 +246,9 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 ---
 
 ## Content Types & AI Cards
+
 `ContentType`: `keypoints | quiz | story | mnemonic | teach_back | error_hunt | detective`
+
 - Fetched via `fetchContent(topic, contentType)` in `aiService.ts`
 - Cached in `ai_cache` table (one row per topic+type)
 - All schemas are Zod-validated in `aiService.ts`
@@ -193,6 +256,7 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 ---
 
 ## ADHD-specific UX Patterns
+
 - Proof-of-Life checks every 15 min in Lecture Mode
 - Doomscroll detection via AppState changes (vibrate + notification)
 - Inertia screen — commitment ladder before quitting
@@ -204,6 +268,7 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 ---
 
 ## Device Sync (`src/services/deviceSyncService.ts`)
+
 - `connectToRoom(syncCode, callback)` — subscribes to sync messages
 - `sendSyncMessage(msg)` — broadcasts to paired device
 - Message types: `LECTURE_STARTED`, `LECTURE_STOPPED`, `LECTURE_RESUMED`, `BREAK_STARTED`, `DOOMSCROLL_DETECTED`
@@ -227,11 +292,13 @@ Always call `refreshProfile()` after XP or profile mutations so UI reflects chan
 Use `~/self-improving/` for execution-improvement memory: preferences, workflow lessons, style patterns, and corrections that should compound across tasks.
 
 Before non-trivial work:
+
 - Read `~/self-improving/memory.md`
 - List available files from `~/self-improving/domains/` and `~/self-improving/projects/`
 - Read only the smallest relevant domain or project files
 
 When writing memory:
+
 - Factual project history belongs in repo docs or dated notes
 - Explicit corrections go to `~/self-improving/corrections.md`
 - Reusable global preferences go to `~/self-improving/memory.md`
@@ -241,6 +308,7 @@ When writing memory:
 ---
 
 ## Known Naming Quirks / Gotchas
+
 - `profile.openrouterApiKey` = legacy field (kept for backward compatibility, not actively used in routing).
 - `profile.openrouterKey` = actual OpenRouter key for free model fallbacks.
 - `transcribeAndSummarizeAudio()` in `aiService.ts` is a legacy function returning plain text — it does NOT call `markTopicsFromLecture()`. Use `transcribeWithGroq()` from `transcriptionService.ts` instead.

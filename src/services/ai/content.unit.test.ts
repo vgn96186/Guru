@@ -19,6 +19,7 @@ import { fetchContent } from './content';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import { generateJSONWithRouting } from './generate';
+import { searchMedicalImages } from './medicalSearch';
 
 describe('ai content prefetching', () => {
   const topic: any = {
@@ -179,5 +180,95 @@ describe('ai content prefetching', () => {
       }),
       'groq/test-model',
     );
+  });
+
+  it('hydrates quiz imageSearchQuery into imageUrl before caching', async () => {
+    (getCachedContent as jest.Mock).mockResolvedValue(null);
+    (setCachedContent as jest.Mock).mockResolvedValue(undefined);
+    (searchMedicalImages as jest.Mock).mockResolvedValue([
+      {
+        id: 'img-1',
+        title: 'Chest radiograph',
+        url: 'https://example.com/source',
+        imageUrl: 'https://example.com/radiograph.jpg',
+        snippet: 'Chest radiograph',
+        source: 'Wikipedia',
+      },
+    ]);
+    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
+      parsed: {
+        type: 'quiz',
+        topicName: 'Hypertension',
+        questions: [
+          {
+            question: 'Based on the image shown, what is the diagnosis?',
+            options: ['A', 'B', 'C', 'D'],
+            correctIndex: 0,
+            explanation: 'Explanation long enough to pass completeness checks.',
+            imageSearchQuery: 'hypertensive retinopathy fundus',
+          },
+          {
+            question: 'Second complete question for retry guard.',
+            options: ['A', 'B', 'C', 'D'],
+            correctIndex: 1,
+            explanation: 'Another explanation long enough to pass completeness checks.',
+          },
+        ],
+      },
+      modelUsed: 'groq/test-model',
+    });
+
+    const result = await fetchContent(topic, 'quiz');
+
+    expect(searchMedicalImages).toHaveBeenCalledWith('hypertensive retinopathy fundus', 1);
+    expect(result.type).toBe('quiz');
+    if (result.type !== 'quiz') throw new Error('expected quiz');
+    expect(result.questions[0].imageUrl).toBe('https://example.com/radiograph.jpg');
+    expect(result.questions[0].imageSearchQuery).toBeUndefined();
+  });
+
+  it('hydrates flashcard imageSearchQuery into imageUrl before caching', async () => {
+    (getCachedContent as jest.Mock).mockResolvedValue(null);
+    (setCachedContent as jest.Mock).mockResolvedValue(undefined);
+    (searchMedicalImages as jest.Mock).mockResolvedValue([
+      {
+        id: 'img-2',
+        title: 'Fundus photo',
+        url: 'https://example.com/source2',
+        imageUrl: 'https://example.com/fundus.jpg',
+        snippet: 'Fundus image',
+        source: 'Wikipedia',
+      },
+    ]);
+    (generateJSONWithRouting as jest.Mock).mockResolvedValue({
+      parsed: {
+        type: 'flashcards',
+        topicName: 'Hypertension',
+        cards: [
+          {
+            front: 'Identify the retinal change shown.',
+            back: 'AV nicking',
+            imageSearchQuery: 'hypertensive retinopathy fundus',
+          },
+          {
+            front: 'Drug of choice?',
+            back: 'Labetalol',
+          },
+          {
+            front: 'Gold standard?',
+            back: 'Ambulatory BP monitoring',
+          },
+        ],
+      },
+      modelUsed: 'groq/test-model',
+    });
+
+    const result = await fetchContent(topic, 'flashcards');
+
+    expect(searchMedicalImages).toHaveBeenCalledWith('hypertensive retinopathy fundus', 1);
+    expect(result.type).toBe('flashcards');
+    if (result.type !== 'flashcards') throw new Error('expected flashcards');
+    expect(result.cards[0].imageUrl).toBe('https://example.com/fundus.jpg');
+    expect(result.cards[0].imageSearchQuery).toBeUndefined();
   });
 });

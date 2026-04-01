@@ -6,6 +6,7 @@ export const QuizQuestionSchema = z.object({
   correctIndex: z.number().min(0).max(3),
   explanation: z.string(),
   imageSearchQuery: z.string().optional(),
+  imageUrl: z.string().optional(),
 });
 
 export const QuizContentSchema = z.object({
@@ -28,6 +29,8 @@ export const FlashcardsContentSchema = z.object({
     z.object({
       front: z.string(),
       back: z.string(),
+      imageSearchQuery: z.string().optional(),
+      imageUrl: z.string().optional(),
     }),
   ),
 });

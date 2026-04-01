@@ -26,6 +26,11 @@ import {
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
+  GITHUB_COPILOT_MODELS,
+  orderedGitHubCopilotModels,
+  GITLAB_DUO_MODELS,
+  orderedGitLabDuoModels,
+  POE_MODELS,
 } from '../../config/appConfig';
 
 export {
@@ -56,7 +61,14 @@ export {
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
+  GITHUB_COPILOT_MODELS,
+  orderedGitHubCopilotModels,
+  GITLAB_DUO_MODELS,
+  orderedGitLabDuoModels,
+  POE_MODELS,
 };
+
+export { getGitLabAiGatewayUrl } from './gitlab/gitlabInstance';
 
 function isChatGptSlotEnabledAndConnected(
   slot?: { enabled?: boolean; connected?: boolean } | null,
@@ -105,6 +117,9 @@ export function getApiKeys(
       secondary?: { enabled?: boolean; connected?: boolean };
     };
     chatgptConnected?: boolean;
+    githubCopilotConnected?: boolean;
+    gitlabDuoConnected?: boolean;
+    poeConnected?: boolean;
   } | null,
 ): {
   orKey: string | undefined;
@@ -122,6 +137,9 @@ export function getApiKeys(
   agentRouterKey: string | undefined;
   deepgramKey: string | undefined;
   chatgptConnected: boolean;
+  githubCopilotConnected: boolean;
+  gitlabDuoConnected: boolean;
+  poeConnected: boolean;
 } {
   if (!profile) {
     return {
@@ -140,6 +158,9 @@ export function getApiKeys(
       agentRouterKey: undefined,
       deepgramKey: undefined,
       chatgptConnected: false,
+      githubCopilotConnected: false,
+      gitlabDuoConnected: false,
+      poeConnected: false,
     };
   }
   return {
@@ -158,5 +179,8 @@ export function getApiKeys(
     agentRouterKey: profile.agentRouterKey?.trim() || undefined,
     deepgramKey: profile.deepgramApiKey?.trim() || undefined,
     chatgptConnected: resolveChatGptConnected(profile),
+    githubCopilotConnected: !!profile.githubCopilotConnected,
+    gitlabDuoConnected: !!profile.gitlabDuoConnected,
+    poeConnected: !!profile.poeConnected,
   };
 }

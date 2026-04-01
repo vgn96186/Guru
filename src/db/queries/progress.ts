@@ -19,6 +19,7 @@ import {
 } from '../../config/appConfig';
 import { notifyDbUpdate, DB_EVENT_KEYS } from '../../services/databaseEvents';
 import { showToast } from '../../components/Toast';
+import { sanitizeProviderOrder } from '../../utils/providerOrder';
 
 // ── Enum allow-lists (single source of truth — update here when adding values) ──
 const VALID_ENUMS: Record<string, { values: readonly string[]; fallback: string }> = {
@@ -161,6 +162,19 @@ export async function getUserProfile(): Promise<UserProfile> {
     fal_api_key: string;
     brave_search_api_key: string;
     deepgram_api_key: string;
+    github_copilot_connected?: number;
+    github_copilot_preferred_model?: string;
+    gitlab_duo_connected?: number;
+    gitlab_oauth_client_id?: string;
+    gitlab_duo_preferred_model?: string;
+    poe_connected?: number;
+    gdrive_connected?: number;
+    gdrive_email?: string;
+    gdrive_last_sync_at?: string | null;
+    last_backup_device_id?: string;
+    dbmci_class_start_date?: string | null;
+    btr_start_date?: string | null;
+    home_novelty_cooldown_hours?: number | null;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -221,10 +235,24 @@ export async function getUserProfile(): Promise<UserProfile> {
       kiloApiKey: '',
       deepseekKey: '',
       agentRouterKey: '',
-      providerOrder: [],
+      providerOrder: sanitizeProviderOrder([]),
       apiValidation: {},
       chatgptAccounts: defaultChatGptAccountsConfig(),
       chatgptConnected: false,
+      githubCopilotConnected: false,
+      githubCopilotPreferredModel: '',
+      gitlabDuoConnected: false,
+      gitlabOauthClientId: '',
+      gitlabDuoPreferredModel: '',
+      poeConnected: false,
+      gdriveWebClientId: '',
+      gdriveConnected: false,
+      gdriveEmail: '',
+      gdriveLastSyncAt: null,
+      lastBackupDeviceId: '',
+      dbmciClassStartDate: null,
+      btrStartDate: null,
+      homeNoveltyCooldownHours: 6,
     };
   }
 
@@ -343,13 +371,15 @@ export async function getUserProfile(): Promise<UserProfile> {
     deepseekKey: r.deepseek_key ?? '',
     agentRouterKey: r.agentrouter_key ?? '',
     deepgramApiKey: r.deepgram_api_key ?? '',
-    providerOrder: (() => {
-      try {
-        return JSON.parse(r.provider_order ?? '[]');
-      } catch {
-        return [];
-      }
-    })() as import('../../types').ProviderId[],
+    providerOrder: sanitizeProviderOrder(
+      (() => {
+        try {
+          return JSON.parse(r.provider_order ?? '[]');
+        } catch {
+          return [];
+        }
+      })(),
+    ),
     apiValidation: (() => {
       try {
         const parsed = JSON.parse(r.api_validation_json ?? '{}');
@@ -362,6 +392,20 @@ export async function getUserProfile(): Promise<UserProfile> {
     })(),
     chatgptAccounts,
     chatgptConnected,
+    githubCopilotConnected: (r.github_copilot_connected ?? 0) === 1,
+    githubCopilotPreferredModel: (r.github_copilot_preferred_model ?? '').trim(),
+    gitlabDuoConnected: (r.gitlab_duo_connected ?? 0) === 1,
+    gitlabOauthClientId: (r.gitlab_oauth_client_id ?? '').trim(),
+    gitlabDuoPreferredModel: (r.gitlab_duo_preferred_model ?? '').trim(),
+    poeConnected: (r.poe_connected ?? 0) === 1,
+    gdriveWebClientId: (r.gdrive_web_client_id ?? '').trim(),
+    gdriveConnected: (r.gdrive_connected ?? 0) === 1,
+    gdriveEmail: (r.gdrive_email ?? '').trim(),
+    gdriveLastSyncAt: r.gdrive_last_sync_at ?? null,
+    lastBackupDeviceId: (r.last_backup_device_id ?? '').trim(),
+    dbmciClassStartDate: r.dbmci_class_start_date ?? null,
+    btrStartDate: r.btr_start_date ?? null,
+    homeNoveltyCooldownHours: Math.min(24, Math.max(1, r.home_novelty_cooldown_hours ?? 6)),
   };
 }
 
@@ -425,6 +469,20 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     apiValidation: 'api_validation_json',
     chatgptConnected: 'chatgpt_connected',
     chatgptAccounts: 'chatgpt_accounts_json',
+    githubCopilotConnected: 'github_copilot_connected',
+    githubCopilotPreferredModel: 'github_copilot_preferred_model',
+    gitlabDuoConnected: 'gitlab_duo_connected',
+    gitlabOauthClientId: 'gitlab_oauth_client_id',
+    gitlabDuoPreferredModel: 'gitlab_duo_preferred_model',
+    poeConnected: 'poe_connected',
+    gdriveWebClientId: 'gdrive_web_client_id',
+    gdriveConnected: 'gdrive_connected',
+    gdriveEmail: 'gdrive_email',
+    gdriveLastSyncAt: 'gdrive_last_sync_at',
+    lastBackupDeviceId: 'last_backup_device_id',
+    dbmciClassStartDate: 'dbmci_class_start_date',
+    btrStartDate: 'btr_start_date',
+    homeNoveltyCooldownHours: 'home_novelty_cooldown_hours',
   };
 
   const setClauses: string[] = [];

@@ -12,4 +12,5 @@ export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   detective: 'Detective',
   manual: 'Manual',
   socratic: 'Discussion',
+  flashcards: 'Flashcards',
 };

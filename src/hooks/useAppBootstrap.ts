@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Alert, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useAppStore } from '../store/useAppStore';
 import { syncExamDatesIfStale } from '../services/examDateSyncService';
@@ -11,6 +12,10 @@ import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/o
 import { useAppStateTransition } from './useAppStateTransition';
 import { requestNotifications } from '../services/appPermissions';
 import { warmAiContentCache } from '../services/backgroundTasks';
+import { tryCompleteGitLabDuoOAuth } from '../services/ai/gitlab';
+import { validateAiProvidersOnBoot } from '../services/ai/bootProviderValidation';
+import { shouldRunAutoBackup, runAutoBackup } from '../services/unifiedBackupService';
+import { resetDbSingleton } from '../db/database';
 
 /**
  * Master initialization hook.
@@ -22,6 +27,18 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
   const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const initialized = useRef(false);
 
+  useEffect(() => {
+    const handleUrl = (url: string | null) => {
+      if (!url) return;
+      void tryCompleteGitLabDuoOAuth(url).then((handled) => {
+        if (handled) void refreshProfile();
+      });
+    };
+    void Linking.getInitialURL().then(handleUrl);
+    const sub = Linking.addEventListener('url', (e) => handleUrl(e.url));
+    return () => sub.remove();
+  }, [refreshProfile]);
+
   useAppStateTransition({
     onActive: () => {
       refreshProfile();
@@ -32,6 +49,11 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
         .catch((e) => console.error('[Sync] Exam date sync failed on foreground:', e));
       void refreshAccountabilityNotificationsSafely((e) =>
         console.error('[Notifications] Refresh failed on foreground:', e),
+      );
+
+      // Check for newer GDrive backup from another device
+      void checkForNewerGDriveBackup().catch((e) =>
+        console.warn('[GDrive] Foreground sync check failed:', e),
       );
     },
   });
@@ -66,12 +88,17 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       const needsGroq = !!bundledGroq && !currentProfile?.groqApiKey;
       const needsHf = !!bundledHf && !currentProfile?.huggingFaceToken;
       const needsOr = !!bundledOr && !currentProfile?.openrouterKey;
-      if (needsGroq || needsHf || needsOr) {
+      // Also default auto-backup to daily on first run
+      const needsAutoBackup =
+        !(currentProfile as any)?.autoBackupFrequency ||
+        ((currentProfile as any)?.autoBackupFrequency === 'off' && currentProfile?.totalXp === 0);
+      if (needsGroq || needsHf || needsOr || needsAutoBackup) {
         await profileRepository.updateProfile({
           ...(needsGroq ? { groqApiKey: bundledGroq } : {}),
           ...(needsHf ? { huggingFaceToken: bundledHf } : {}),
           ...(needsOr ? { openrouterKey: bundledOr } : {}),
-        });
+          ...(needsAutoBackup ? { autoBackupFrequency: 'daily' } : {}),
+        } as any);
         await refreshProfile();
       }
 
@@ -93,12 +120,35 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
         console.error('[Notifications] Refresh failed:', e),
       );
 
-      // 4. Deferred Recovery (10s delay to stay out of critical path)
+      // 4. Auto-backup check (deferred, non-blocking)
+      setTimeout(() => {
+        shouldRunAutoBackup()
+          .then((shouldRun) => {
+            if (shouldRun) {
+              console.log('[AutoBackup] Running scheduled auto-backup...');
+              return runAutoBackup();
+            }
+            return false;
+          })
+          .then((didRun) => {
+            if (didRun) console.log('[AutoBackup] Auto-backup completed successfully.');
+          })
+          .catch((e) => console.warn('[AutoBackup] Auto-backup failed:', e));
+      }, 6000);
+
+      // 5. Deferred Recovery (10s delay to stay out of critical path)
       setTimeout(() => {
         warmAiContentCache({ topicLimit: 2, refreshNotifications: false }).catch((e) =>
           console.warn('[AIWarmup] Startup prefetch failed:', e),
         );
       }, 4000);
+
+      // 6. Background provider validation (non-blocking)
+      setTimeout(() => {
+        validateAiProvidersOnBoot().catch((e) =>
+          console.warn('[AI_BOOT] Provider validation failed:', e instanceof Error ? e.message : e),
+        );
+      }, 2500);
       // Auto-retry disabled — users process recordings manually via Recording Vault.
       // if (profileForRecovery?.groqApiKey) {
       //   setTimeout(() => {
@@ -125,4 +175,82 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       sub.remove();
     };
   }, [loadProfile, onFatalError, refreshProfile, setDailyAvailability]);
+}
+
+/**
+ * Check GDrive for a newer backup from a different device.
+ * Shows a prompt if found — user taps "Restore" or "Skip".
+ */
+async function checkForNewerGDriveBackup(): Promise<void> {
+  try {
+    const { isGDriveConnected, listGDriveBackups, downloadBackupFromGDrive } =
+      await import('../services/gdriveBackupService');
+    if (!(await isGDriveConnected())) return;
+
+    const profile = await profileRepository.getProfile();
+    const localLastBackup = (profile as any)?.lastAutoBackupAt as string | null;
+
+    const remoteBackups = await listGDriveBackups();
+    if (remoteBackups.length === 0) return;
+
+    // Find newest backup from a different device
+    const deviceName =
+      require('react-native').Platform.OS === 'android' ? 'Android Device' : 'iOS Device';
+    const newerRemote = remoteBackups.find((b) => {
+      if (b.deviceName === deviceName && b.deviceId === (profile as any)?.lastBackupDeviceId) {
+        return false; // Same device
+      }
+      if (!localLastBackup) return true; // No local backup — any remote is newer
+      return new Date(b.exportedAt).getTime() > new Date(localLastBackup).getTime();
+    });
+
+    if (!newerRemote) return;
+
+    const timeDiff = Date.now() - new Date(newerRemote.exportedAt).getTime();
+    const timeAgo = formatTimeAgo(timeDiff);
+
+    Alert.alert(
+      'Newer progress found',
+      `Your ${newerRemote.deviceName} has newer data (${timeAgo}).\n\nRestore it to this device?`,
+      [
+        { text: 'Skip', style: 'cancel' },
+        {
+          text: 'Restore',
+          onPress: async () => {
+            try {
+              const localPath = await downloadBackupFromGDrive(newerRemote.fileId);
+              if (!localPath) {
+                Alert.alert('Download failed', 'Could not download the backup from Google Drive.');
+                return;
+              }
+              // Use the existing import flow
+              const { importUnifiedBackupFromPath } =
+                await import('../services/unifiedBackupService');
+              const result = await importUnifiedBackupFromPath(localPath);
+              if (result.ok) {
+                const { refreshProfile } = useAppStore.getState();
+                refreshProfile();
+              } else {
+                Alert.alert('Restore failed', result.message);
+              }
+            } catch (e: any) {
+              Alert.alert('Restore failed', e?.message ?? 'Unknown error');
+            }
+          },
+        },
+      ],
+    );
+  } catch (e) {
+    // GDrive not available — silently skip
+    console.warn('[GDrive] Sync check unavailable:', e);
+  }
+}
+
+function formatTimeAgo(ms: number): string {
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }

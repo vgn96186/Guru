@@ -1,5 +1,16 @@
 # TODO
 
+## Loading Orb & Boot Transition
+
+- [x] Redesign LoadingOrb with layered glass visual (ambient glow, thin ripple rings, dual SVG gradients, specular highlight)
+- [x] Fix LoadingOrb centering on SessionScreen contentArea
+- [ ] Implement boot-to-start-button orb morph transition (spec: `docs/superpowers/specs/2026-04-01-boot-transition-design.md`)
+  - Phase 1: Jittery orb during app boot (fast breathing, shake animation)
+  - Phase 2: Calming during home data load (jitter fades, breathing slows)
+  - Phase 3: Settle — orb shrinks and morphs into StartButton position with text crossfade
+  - Portal overlay in App.tsx above navigation
+  - Zustand coordination: bootPhase, startButtonLayout, startButtonLabel
+
 ## Session Progression / FSRS
 
 - [ ] Define `mastered` from FSRS history, not a single Study Session rating

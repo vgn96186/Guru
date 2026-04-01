@@ -182,6 +182,8 @@ const styles = StyleSheet.create({
   },
   paragraph: {
     marginBottom: 10,
+    flexShrink: 1,
+    alignSelf: 'stretch',
   },
   heading: {
     color: theme.colors.textPrimary,

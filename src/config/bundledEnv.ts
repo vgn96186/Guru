@@ -11,3 +11,4 @@ export const BUNDLED_CF_ACCOUNT_ID = '';
 export const BUNDLED_CF_API_TOKEN = '';
 export const BUNDLED_DEEPSEEK_KEY = '';
 export const BUNDLED_GITHUB_MODELS_PAT = '';
+export const BUNDLED_GOOGLE_WEB_CLIENT_ID = '';

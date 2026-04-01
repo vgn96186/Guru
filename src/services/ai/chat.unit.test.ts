@@ -50,4 +50,21 @@ describe('chatWithGuru', () => {
       'The **superior oblique** depresses the adducted eye.\nQuestion: Which nerve innervates it?',
     );
   });
+
+  it('drops a repeated checkpoint when the student asked for direct teaching', async () => {
+    jest.mocked(generateTextWithRouting).mockResolvedValue({
+      text: 'Edema happens because low **albumin** lowers plasma oncotic pressure, so fluid shifts into tissue.\nQuestion: What causes edema in nephrotic syndrome?',
+      modelUsed: 'groq/test-model',
+    });
+
+    const result = await chatWithGuru(
+      "I don't know, just explain edema in nephrotic syndrome",
+      'Nephrotic syndrome',
+      [],
+    );
+
+    expect(result.reply).toBe(
+      'Edema happens because low **albumin** lowers plasma oncotic pressure, so fluid shifts into tissue.',
+    );
+  });
 });

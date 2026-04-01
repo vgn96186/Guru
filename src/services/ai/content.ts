@@ -6,7 +6,6 @@ import type {
   SaveQuestionInput,
 } from '../../types';
 import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP } from '../../constants/prompts';
-import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
@@ -16,8 +15,45 @@ import { searchMedicalImages } from './medicalSearch';
 
 const inFlightContentRequests = new Map<string, Promise<AIContent>>();
 
+function isRenderableQuizImageUrl(url?: string | null): boolean {
+  const t = url?.trim();
+  if (!t) return false;
+  return /^https?:\/\//i.test(t);
+}
+
 function getContentRequestKey(topicId: number, contentType: ContentType): string {
   return `${topicId}:${contentType}`;
+}
+
+function buildMasteryAdaptivePromptContext(topic: TopicWithProgress): string {
+  const status = topic.progress?.status ?? 'unseen';
+  const confidence = topic.progress?.confidence ?? 0;
+  const wrongCount = topic.progress?.wrongCount ?? 0;
+  const isGapHeavy =
+    status === 'unseen' || confidence <= 1 || wrongCount >= 2 || Boolean(topic.progress?.isNemesis);
+
+  if (isGapHeavy) {
+    return `
+ADAPTIVE TEACHING CONTEXT:
+- Student has foundational gaps on this topic.
+- Explain using prerequisite-first progression: basics -> mechanism -> exam clue.
+- Define any technical term in plain language before using it.
+- Avoid assuming prior technical understanding.
+- Keep exam focus on high-yield must-know discriminators.`;
+  }
+
+  if (confidence <= 2 || status === 'reviewed' || status === 'seen') {
+    return `
+ADAPTIVE TEACHING CONTEXT:
+- Student has partial mastery.
+- Give concise revision-style explanations with one-line prerequisite refreshers where needed.
+- Emphasize high-yield traps and commonly confused options.`;
+  }
+
+  return `
+ADAPTIVE TEACHING CONTEXT:
+- Student is relatively strong in this topic.
+- Keep content advanced, exam-focused, and high-yield with tricky discriminators.`;
 }
 
 function hasObviousCutOff(text: string, requireSentenceEnd = false): boolean {
@@ -139,7 +175,41 @@ export async function fetchContent(
   forceProvider?: 'groq' | 'gemini',
 ): Promise<AIContent> {
   const cached = await getCachedContent(topic.id, contentType);
-  if (cached) return cached;
+  if (cached) {
+    if (cached.type === 'quiz') {
+      const hydrated = (await resolveQuizImages(
+        cached as QuizContent & { modelUsed?: string },
+      )) as AIContent & { modelUsed?: string };
+      const beforeQ = JSON.stringify((cached as QuizContent).questions);
+      const afterQ = JSON.stringify((hydrated as QuizContent).questions);
+      if (afterQ !== beforeQ) {
+        await setCachedContent(
+          topic.id,
+          contentType,
+          hydrated,
+          (hydrated.modelUsed ?? 'cache').trim() || 'cache',
+        );
+      }
+      return hydrated;
+    }
+    if (cached.type === 'flashcards') {
+      const hydrated = (await resolveFlashcardImages(
+        cached as AIContent & { modelUsed?: string },
+      )) as AIContent & { modelUsed?: string };
+      const beforeCards = JSON.stringify((cached as { cards: unknown }).cards);
+      const afterCards = JSON.stringify((hydrated as { cards: unknown }).cards);
+      if (afterCards !== beforeCards) {
+        await setCachedContent(
+          topic.id,
+          contentType,
+          hydrated,
+          (hydrated.modelUsed ?? 'cache').trim() || 'cache',
+        );
+      }
+      return hydrated;
+    }
+    return cached;
+  }
 
   const requestKey = getContentRequestKey(topic.id, contentType);
   const inFlight = inFlightContentRequests.get(requestKey);
@@ -147,7 +217,7 @@ export async function fetchContent(
 
   const request = (async () => {
     const promptFn = CONTENT_PROMPT_MAP[contentType];
-    const userPrompt = promptFn(topic.name, topic.subjectName);
+    const userPrompt = `${promptFn(topic.name, topic.subjectName)}${buildMasteryAdaptivePromptContext(topic)}`;
     const messages: Message[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
@@ -158,19 +228,23 @@ export async function fetchContent(
     const maxAttempts = 3;
     let lastContent: AIContent | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      // Omit providerOrderOverride so Settings → Provider routing order (and llmRouting defaults) apply.
       const generated = await generateJSONWithRouting(
         messages,
         AIContentSchema,
         'low',
         true,
         forceProvider,
-        DEFAULT_PROVIDER_ORDER,
       );
       modelUsed = generated.modelUsed;
       contentWithMeta = { ...generated.parsed, modelUsed } as AIContent;
       if (contentWithMeta.type === 'quiz') {
         contentWithMeta = (await resolveQuizImages(
           contentWithMeta as QuizContent & { modelUsed?: string },
+        )) as AIContent;
+      } else if (contentWithMeta.type === 'flashcards') {
+        contentWithMeta = (await resolveFlashcardImages(
+          contentWithMeta as AIContent & { modelUsed?: string },
         )) as AIContent;
       }
       lastContent = contentWithMeta;
@@ -239,29 +313,64 @@ export async function fetchContent(
   }
 }
 
+function stripImageFramingFromStem(text: string): string {
+  return text
+    .replace(
+      /\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi,
+      '',
+    )
+    .replace(
+      /The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi,
+      '',
+    )
+    .replace(/^\s*[.,]\s*/, '');
+}
+
 /**
  * Resolve imageSearchQuery fields in quiz questions to actual image URLs.
  * Runs searches in parallel, populates `imageUrl` on each question that has a query.
  */
 async function resolveQuizImages<T extends QuizContent>(quiz: T): Promise<T> {
-  const questionsWithQuery = quiz.questions
-    .map((q, i) => ({ q, i }))
-    .filter(({ q }) => q.imageSearchQuery);
+  const sanitized = {
+    ...quiz,
+    questions: quiz.questions.map((q) => ({
+      ...q,
+      imageUrl: isRenderableQuizImageUrl(q.imageUrl) ? q.imageUrl!.trim() : undefined,
+    })),
+  } as T;
 
-  if (questionsWithQuery.length === 0) return quiz;
+  const questionsWithQuery = sanitized.questions
+    .map((q, i) => ({ q, i }))
+    .filter(
+      ({ q }) =>
+        Boolean(q.imageSearchQuery?.trim()) && !isRenderableQuizImageUrl(q.imageUrl ?? null),
+    );
+
+  if (questionsWithQuery.length === 0) return sanitized;
 
   const results = await Promise.allSettled(
     questionsWithQuery.map(({ q }) => searchMedicalImages(q.imageSearchQuery!, 1)),
   );
 
-  const updatedQuestions = [...quiz.questions];
+  const updatedQuestions = [...sanitized.questions];
   questionsWithQuery.forEach(({ i }, idx) => {
     const result = results[idx];
     if (result.status === 'fulfilled' && result.value.length > 0) {
-      updatedQuestions[i] = {
-        ...updatedQuestions[i],
-        imageUrl: result.value[0].imageUrl ?? result.value[0].url,
-      };
+      const url = (result.value[0].imageUrl ?? result.value[0].url)?.trim();
+      if (url && isRenderableQuizImageUrl(url)) {
+        updatedQuestions[i] = {
+          ...updatedQuestions[i],
+          imageUrl: url,
+          imageSearchQuery: undefined,
+        };
+      } else {
+        const q = updatedQuestions[i];
+        updatedQuestions[i] = {
+          ...q,
+          imageSearchQuery: undefined,
+          question: stripImageFramingFromStem(q.question),
+        };
+      }
     } else {
       // Image search failed — strip image-referencing language from the question text
       // so it doesn't confuse the student with "Based on the image shown..." when there's no image.
@@ -269,21 +378,60 @@ async function resolveQuizImages<T extends QuizContent>(quiz: T): Promise<T> {
       updatedQuestions[i] = {
         ...q,
         imageSearchQuery: undefined,
-        question: q.question
-          .replace(
-            /\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi,
-            '',
-          )
-          .replace(
-            /The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi,
-            '',
-          )
-          .replace(/^\s*[.,]\s*/, ''),
+        question: stripImageFramingFromStem(q.question),
       };
     }
   });
 
-  return { ...quiz, questions: updatedQuestions };
+  return { ...sanitized, questions: updatedQuestions };
+}
+
+async function resolveFlashcardImages<T extends Extract<AIContent, { type: 'flashcards' }>>(
+  flashcards: T,
+): Promise<T> {
+  const sanitized = {
+    ...flashcards,
+    cards: flashcards.cards.map((card) => ({
+      ...card,
+      imageUrl: isRenderableQuizImageUrl(card.imageUrl) ? card.imageUrl!.trim() : undefined,
+    })),
+  } as T;
+
+  const cardsWithQuery = sanitized.cards
+    .map((card, i) => ({ card, i }))
+    .filter(
+      ({ card }) =>
+        Boolean(card.imageSearchQuery?.trim()) && !isRenderableQuizImageUrl(card.imageUrl ?? null),
+    );
+
+  if (cardsWithQuery.length === 0) return sanitized;
+
+  const results = await Promise.allSettled(
+    cardsWithQuery.map(({ card }) => searchMedicalImages(card.imageSearchQuery!, 1)),
+  );
+
+  const updatedCards = [...sanitized.cards];
+  cardsWithQuery.forEach(({ i }, idx) => {
+    const result = results[idx];
+    if (result.status === 'fulfilled' && result.value.length > 0) {
+      const url = (result.value[0].imageUrl ?? result.value[0].url)?.trim();
+      if (url && isRenderableQuizImageUrl(url)) {
+        updatedCards[i] = {
+          ...updatedCards[i],
+          imageUrl: url,
+          imageSearchQuery: undefined,
+        };
+        return;
+      }
+    }
+
+    updatedCards[i] = {
+      ...updatedCards[i],
+      imageSearchQuery: undefined,
+    };
+  });
+
+  return { ...sanitized, cards: updatedCards };
 }
 
 export async function prefetchTopicContent(

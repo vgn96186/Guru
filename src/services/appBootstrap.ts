@@ -5,7 +5,13 @@
  */
 import * as SplashScreen from 'expo-splash-screen';
 import * as FileSystem from 'expo-file-system/legacy';
-import { initDatabase, getDb, resetDbSingleton } from '../db/database';
+import {
+  initDatabase,
+  getDb,
+  resetDbSingleton,
+  walCheckpoint,
+  closeDbGracefully,
+} from '../db/database';
 import { startMissingTopicEmbeddingSeed } from './ai/embeddingService';
 import { registerBackgroundFetch } from './backgroundTasks';
 import { bootstrapLocalModels } from './localModelBootstrap';
@@ -22,6 +28,9 @@ import {
 } from './lecture/lectureSessionMonitor';
 import { listPublicBackups, copyFileFromPublicBackup } from '../../modules/app-launcher';
 import { showToast } from '../components/Toast';
+import { unzip } from 'react-native-zip-archive';
+import { validateBackupFile } from './unifiedBackupService';
+import { GOOGLE_WEB_CLIENT_ID } from '../config/appConfig';
 
 export interface BootstrapResult {
   success: true;
@@ -36,40 +45,159 @@ export type BootstrapOutcome = BootstrapResult | BootstrapError;
 
 export type InitialRoute = 'Tabs' | 'CheckIn';
 
-async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
+/**
+ * Checks if this is a fresh install (no meaningful user data).
+ * More robust than checking a single table count.
+ */
+async function isFreshInstall(): Promise<boolean> {
   const db = getDb();
-  const count = await db.getFirstAsync<{ c: number }>('SELECT COUNT(*) as c FROM lecture_notes');
-  if (count && count.c > 0) return false; // Already has data
+  try {
+    const profile = await db.getFirstAsync<{ total_xp: number }>(
+      'SELECT total_xp FROM user_profile WHERE id = 1',
+    );
+    if (profile && profile.total_xp > 0) return false;
 
-  const backups = await listPublicBackups();
-  if (!backups.includes('guru_latest.db')) return false;
+    const progress = await db.getFirstAsync<{ c: number }>(
+      "SELECT COUNT(*) as c FROM topic_progress WHERE status != 'unseen'",
+    );
+    if (progress && progress.c > 0) return false;
 
-  // Close current DB gracefully to allow pending statements to finalize
-  if (typeof db.closeAsync === 'function') {
-    await db.closeAsync();
-  } else {
-    db.closeSync();
+    return true;
+  } catch {
+    return true; // If we can't even query, treat as fresh
   }
-  resetDbSingleton();
+}
 
-  // Drop AI cache files so restored main DB is the only source of truth (legacy backups embed ai_cache).
-  const aiCacheBase = stripFileUri(FileSystem.documentDirectory + 'SQLite/neet_ai_cache');
-  for (const ext of ['.db', '.db-wal', '.db-shm'] as const) {
-    try {
-      await FileSystem.deleteAsync(aiCacheBase + ext, { idempotent: true });
-    } catch {
-      /* ignore */
+const DB_PATH = FileSystem.documentDirectory + 'SQLite/neet_study.db';
+const TEMP_RESTORE_DIR = `${FileSystem.cacheDirectory}guru_boot_restore/`;
+
+/**
+ * On fresh install, check for an existing backup to restore from:
+ * 1. GDrive (if cached session exists) — newest cross-device backup
+ * 2. Public storage guru_latest.guru (survives uninstall)
+ * 3. Legacy guru_latest.db fallback
+ */
+async function checkAndRestoreFromPublicBackup(): Promise<boolean> {
+  if (!(await isFreshInstall())) return false;
+
+  // Try GDrive first (lazy import — module may not be ready)
+  try {
+    const { isGDriveConnected, downloadLatestFromGDrive } = await import('./gdriveBackupService');
+    if (await isGDriveConnected()) {
+      const gdriveBackupPath = await downloadLatestFromGDrive();
+      if (gdriveBackupPath) {
+        const restored = await restoreGuruBackup(gdriveBackupPath, 'Google Drive');
+        if (restored) return true;
+      }
+    }
+  } catch {
+    // GDrive not available — continue to local fallback
+  }
+
+  // Check public storage for .guru format backup
+  const backups = await listPublicBackups();
+
+  if (backups.includes('guru_latest.guru')) {
+    const tempGuruPath = `${FileSystem.cacheDirectory}guru_boot_latest.guru`;
+    const copied = await copyFileFromPublicBackup('guru_latest.guru', stripFileUri(tempGuruPath));
+    if (copied) {
+      const restored = await restoreGuruBackup(tempGuruPath, 'local backup');
+      await FileSystem.deleteAsync(tempGuruPath, { idempotent: true });
+      if (restored) return true;
     }
   }
 
-  // Copy backup over current DB
-  const dbPath = FileSystem.documentDirectory + 'SQLite/neet_study.db';
-  await copyFileFromPublicBackup('guru_latest.db', stripFileUri(dbPath));
+  // Legacy fallback: plain .db file
+  if (backups.includes('guru_latest.db')) {
+    try {
+      await walCheckpoint();
+    } catch {
+      /* may not have active DB */
+    }
+    try {
+      await closeDbGracefully();
+    } catch {
+      /* ignore */
+    }
+    resetDbSingleton();
 
-  // Re-init and run migrations
-  await initDatabase();
-  showToast('Restored your lecture notes from backup', 'success', undefined, 5000);
-  return true;
+    await copyFileFromPublicBackup('guru_latest.db', stripFileUri(DB_PATH));
+    await initDatabase();
+    showToast('Restored your progress from backup', 'success', undefined, 5000);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Restore from a .guru ZIP backup file. Handles extraction, validation,
+ * DB replacement, and asset recovery.
+ */
+async function restoreGuruBackup(guruFilePath: string, source: string): Promise<boolean> {
+  try {
+    const validation = await validateBackupFile(guruFilePath);
+    if (!validation.valid) {
+      console.warn(`[Bootstrap] Invalid ${source} backup:`, validation.error);
+      return false;
+    }
+
+    const tempDir = `${TEMP_RESTORE_DIR}${Date.now()}/`;
+    await FileSystem.makeDirectoryAsync(tempDir, { intermediates: true });
+    await unzip(guruFilePath, tempDir);
+
+    const extractedDbPath = `${tempDir}neet_study.db`;
+    const dbInfo = await FileSystem.getInfoAsync(extractedDbPath);
+    if (!dbInfo.exists) {
+      await FileSystem.deleteAsync(tempDir, { idempotent: true });
+      return false;
+    }
+
+    // Close current DB and replace
+    try {
+      await walCheckpoint();
+    } catch {
+      /* may not have active DB */
+    }
+    try {
+      await closeDbGracefully();
+    } catch {
+      /* ignore */
+    }
+    resetDbSingleton();
+
+    await FileSystem.copyAsync({ from: extractedDbPath, to: DB_PATH });
+
+    // Restore assets if present
+    const assetDirs = [
+      { src: `${tempDir}assets/transcripts/`, dest: `${FileSystem.documentDirectory}transcripts/` },
+      { src: `${tempDir}assets/images/`, dest: `${FileSystem.documentDirectory}generated_images/` },
+      { src: `${tempDir}assets/recordings/`, dest: `${FileSystem.documentDirectory}recordings/` },
+    ];
+    for (const { src, dest } of assetDirs) {
+      const srcInfo = await FileSystem.getInfoAsync(src);
+      if (!srcInfo.exists) continue;
+      await FileSystem.makeDirectoryAsync(dest, { intermediates: true });
+      const files = await FileSystem.readDirectoryAsync(src);
+      for (const file of files) {
+        try {
+          await FileSystem.copyAsync({ from: `${src}${file}`, to: `${dest}${file}` });
+        } catch (e) {
+          console.warn(`[Bootstrap] Failed to restore asset ${file}:`, e);
+        }
+      }
+    }
+
+    await FileSystem.deleteAsync(tempDir, { idempotent: true });
+
+    // Re-init DB with migrations + column verification
+    await initDatabase();
+    showToast(`Restored your progress from ${source}`, 'success', undefined, 5000);
+    return true;
+  } catch (e) {
+    console.error(`[Bootstrap] Failed to restore from ${source}:`, e);
+    return false;
+  }
 }
 
 /**
@@ -92,6 +220,17 @@ export async function resolveInitialRoute(): Promise<InitialRoute> {
 export async function runAppBootstrap(): Promise<BootstrapOutcome> {
   try {
     await SplashScreen.preventAutoHideAsync();
+
+    // Configure Google Sign-In early (non-blocking, no-op if client ID not set)
+    if (GOOGLE_WEB_CLIENT_ID) {
+      try {
+        const { configureGoogleSignIn } = await import('./gdriveBackupService');
+        configureGoogleSignIn(GOOGLE_WEB_CLIENT_ID);
+      } catch (e) {
+        console.warn('[GDrive] Google Sign-In configuration skipped:', e);
+      }
+    }
+
     await initDatabase();
     await checkAndRestoreFromPublicBackup();
     await enforceLocalLlmRamGuard();

@@ -198,6 +198,40 @@ export interface UserProfile {
   chatgptAccounts?: ChatGptAccountsConfig;
   /** True when ChatGPT OAuth tokens are stored in secure store. */
   chatgptConnected?: boolean;
+  /** True when GitHub Copilot OAuth tokens are stored in secure store. */
+  githubCopilotConnected?: boolean;
+  /**
+   * Copilot chat `model` id to try first when Auto routing hits GitHub Copilot (must match catalog).
+   * Empty string = use default catalog order in appConfig.
+   */
+  githubCopilotPreferredModel?: string;
+  /** True when GitLab Duo OAuth tokens are stored in secure store. */
+  gitlabDuoConnected?: boolean;
+  /**
+   * GitLab OAuth Application ID (optional). When set, used instead of EXPO_PUBLIC_GITLAB_CLIENT_ID
+   * for authorize + token exchange + refresh.
+   */
+  gitlabOauthClientId?: string;
+  /**
+   * GitLab Duo chat `model` id to try first when Auto routing hits GitLab (must match catalog).
+   */
+  gitlabDuoPreferredModel?: string;
+  /** True when Poe OAuth tokens are stored in secure store. */
+  poeConnected?: boolean;
+  /** Google OAuth Web Client ID for Drive sync; overrides build-time config when set. */
+  gdriveWebClientId?: string;
+  /** Google Drive backup connection state. */
+  gdriveConnected?: boolean;
+  gdriveEmail?: string;
+  gdriveLastSyncAt?: string | null;
+  /** Device ID written by the last auto-backup (for cross-device detection). */
+  lastBackupDeviceId?: string;
+  /** ISO date (YYYY-MM-DD) when the user's DBMCI One live batch started. */
+  dbmciClassStartDate?: string | null;
+  /** ISO date (YYYY-MM-DD) when the user's BTR (Back to Roots) revision batch started. */
+  btrStartDate?: string | null;
+  /** Home anti-repeat cooldown in hours (controls novelty rotation aggressiveness). */
+  homeNoveltyCooldownHours?: number;
 }
 
 export type ProviderId =
@@ -210,15 +244,21 @@ export type ProviderId =
   | 'gemini_fallback'
   | 'openrouter'
   | 'cloudflare'
-  | 'chatgpt';
+  | 'chatgpt'
+  | 'github_copilot'
+  | 'gitlab_duo'
+  | 'poe';
 
 export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'chatgpt',
+  'github_copilot',
+  'gitlab_duo',
+  'poe',
   'groq',
+  'agentrouter',
   'github',
   'kilo',
   'deepseek',
-  'agentrouter',
   'gemini',
   'gemini_fallback',
   'openrouter',
@@ -226,6 +266,9 @@ export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
 ];
 
 export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
+  'github_copilot',
+  'gitlab_duo',
+  'poe',
   'groq',
   'agentrouter',
   'github',
@@ -239,6 +282,9 @@ export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
 
 export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   chatgpt: 'ChatGPT',
+  github_copilot: 'GitHub Copilot',
+  gitlab_duo: 'GitLab Duo',
+  poe: 'Poe',
   groq: 'Groq',
   github: 'GitHub Models',
   kilo: 'Kilo',
@@ -390,7 +436,12 @@ export interface SocraticContent {
 export interface FlashcardsContent {
   type: 'flashcards';
   topicName: string;
-  cards: Array<{ front: string; back: string }>;
+  cards: Array<{
+    front: string;
+    back: string;
+    imageSearchQuery?: string;
+    imageUrl?: string;
+  }>;
 }
 
 export type AIContent = (

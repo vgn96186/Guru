@@ -1,10 +1,10 @@
 import { maybeSummarizeGuruSession, GURU_SESSION_SUMMARY_INTERVAL } from './guruChatSessionSummary';
-import { generateTextWithRouting } from './ai/generate';
+import { generateJSONWithRouting } from './ai/generate';
 import { getChatHistory, getChatMessageCount } from '../db/queries/aiCache';
 import { getSessionMemoryRow, upsertSessionMemory } from '../db/queries/guruChatMemory';
 
 jest.mock('./ai/generate', () => ({
-  generateTextWithRouting: jest.fn(),
+  generateJSONWithRouting: jest.fn(),
 }));
 
 jest.mock('../db/queries/aiCache', () => ({
@@ -17,16 +17,39 @@ jest.mock('../db/queries/guruChatMemory', () => ({
   upsertSessionMemory: jest.fn(),
 }));
 
-const mockGenerate = generateTextWithRouting as jest.MockedFunction<typeof generateTextWithRouting>;
+const mockGenerate = generateJSONWithRouting as jest.MockedFunction<typeof generateJSONWithRouting>;
 const mockCount = getChatMessageCount as jest.MockedFunction<typeof getChatMessageCount>;
 const mockHistory = getChatHistory as jest.MockedFunction<typeof getChatHistory>;
 const mockRow = getSessionMemoryRow as jest.MockedFunction<typeof getSessionMemoryRow>;
 const mockUpsert = upsertSessionMemory as jest.MockedFunction<typeof upsertSessionMemory>;
 
+const structuredSummary = {
+  parsed: {
+    summaryBullets: ['Point one'],
+    state: {
+      version: 1,
+      currentTopicFocus: 'x',
+      currentSubtopic: '',
+      activeMode: 'diagnose',
+      lastStudentIntent: 'clarify_doubt',
+      openDoubts: [],
+      resolvedDoubts: [],
+      misconceptions: [],
+      prerequisitesExplained: [],
+      factsConfirmed: [],
+      questionConceptsAlreadyAsked: [],
+      avoidReaskingConcepts: [],
+      nextMicroGoal: '',
+      tangentParkingLot: [],
+    },
+  },
+  modelUsed: 'm',
+} as const;
+
 describe('guruChatSessionSummary', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGenerate.mockResolvedValue({ text: '- Point one', modelUsed: 'm' });
+    mockGenerate.mockResolvedValue(structuredSummary as any);
     mockHistory.mockResolvedValue([
       { id: 1, threadId: 7, topicName: 't', role: 'user', message: 'hi', timestamp: 1 },
       { id: 2, threadId: 7, topicName: 't', role: 'guru', message: 'hello', timestamp: 2 },
@@ -39,6 +62,7 @@ describe('guruChatSessionSummary', () => {
       threadId: 7,
       topicName: 'x',
       summaryText: '',
+      stateJson: '{}',
       updatedAt: 0,
       messagesAtLastSummary: 0,
     });
@@ -55,6 +79,7 @@ describe('guruChatSessionSummary', () => {
       threadId: 7,
       topicName: 'x',
       summaryText: '',
+      stateJson: '{}',
       updatedAt: 0,
       messagesAtLastSummary: 0,
     });
@@ -62,7 +87,7 @@ describe('guruChatSessionSummary', () => {
     await maybeSummarizeGuruSession(7, 'x');
 
     expect(mockGenerate).toHaveBeenCalled();
-    expect(mockUpsert).toHaveBeenCalledWith(7, 'x', '- Point one', 8);
+    expect(mockUpsert).toHaveBeenCalledWith(7, 'x', '- Point one', 8, expect.any(String));
   });
 
   it('GURU_SESSION_SUMMARY_INTERVAL is positive', () => {
@@ -75,6 +100,7 @@ describe('guruChatSessionSummary', () => {
       threadId: 7,
       topicName: 'x',
       summaryText: '',
+      stateJson: '{}',
       updatedAt: 0,
       messagesAtLastSummary: 0,
     });
@@ -91,6 +117,7 @@ describe('guruChatSessionSummary', () => {
       threadId: 7,
       topicName: 'x',
       summaryText: '',
+      stateJson: '{}',
       updatedAt: 0,
       messagesAtLastSummary: 0,
     });
@@ -107,10 +134,14 @@ describe('guruChatSessionSummary', () => {
       threadId: 7,
       topicName: 'x',
       summaryText: '',
+      stateJson: '{}',
       updatedAt: 0,
       messagesAtLastSummary: 0,
     });
-    mockGenerate.mockResolvedValue({ text: '   ', modelUsed: 'm' });
+    mockGenerate.mockResolvedValue({
+      parsed: { ...structuredSummary.parsed, summaryBullets: ['   '] },
+      modelUsed: 'm',
+    } as any);
 
     await maybeSummarizeGuruSession(7, 'x');
 

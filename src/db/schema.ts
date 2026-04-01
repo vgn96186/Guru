@@ -202,6 +202,22 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , api_validation_json TEXT NOT NULL DEFAULT '{}'
   , chatgpt_connected INTEGER NOT NULL DEFAULT 0
   , chatgpt_accounts_json TEXT NOT NULL DEFAULT '{"primary":{"enabled":true,"connected":false},"secondary":{"enabled":false,"connected":false}}'
+  , auto_backup_frequency TEXT NOT NULL DEFAULT 'off'
+  , last_auto_backup_at TEXT
+  , github_copilot_connected INTEGER NOT NULL DEFAULT 0
+  , github_copilot_preferred_model TEXT NOT NULL DEFAULT ''
+  , gitlab_duo_connected INTEGER NOT NULL DEFAULT 0
+  , gitlab_oauth_client_id TEXT NOT NULL DEFAULT ''
+  , gitlab_duo_preferred_model TEXT NOT NULL DEFAULT ''
+  , poe_connected INTEGER NOT NULL DEFAULT 0
+  , gdrive_web_client_id TEXT NOT NULL DEFAULT ''
+  , gdrive_connected INTEGER NOT NULL DEFAULT 0
+  , gdrive_email TEXT NOT NULL DEFAULT ''
+  , gdrive_last_sync_at TEXT
+  , last_backup_device_id TEXT NOT NULL DEFAULT ''
+  , dbmci_class_start_date TEXT
+  , btr_start_date TEXT
+  , home_novelty_cooldown_hours INTEGER NOT NULL DEFAULT 6
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `
@@ -209,6 +225,7 @@ CREATE TABLE IF NOT EXISTS guru_chat_session_memory (
   thread_id INTEGER PRIMARY KEY,
   topic_name TEXT NOT NULL,
   summary_text TEXT NOT NULL DEFAULT '',
+  state_json TEXT NOT NULL DEFAULT '{}',
   updated_at INTEGER NOT NULL,
   messages_at_last_summary INTEGER NOT NULL DEFAULT 0,
   FOREIGN KEY(thread_id) REFERENCES guru_chat_threads(id) ON DELETE CASCADE

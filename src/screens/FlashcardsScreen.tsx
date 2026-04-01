@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
+  Image,
   View,
   Text,
   TouchableOpacity,
@@ -225,6 +226,13 @@ export default function FlashcardsScreen() {
                 {/* Front */}
                 <Animated.View style={[styles.card, frontAnimatedStyle]}>
                   <Text style={styles.cardLabel}>QUESTION</Text>
+                  {currentCard.imageUrl ? (
+                    <Image
+                      source={{ uri: currentCard.imageUrl }}
+                      style={styles.cardImage}
+                      resizeMode="contain"
+                    />
+                  ) : null}
                   <Text style={styles.cardContent}>{currentCard.front}</Text>
                   <TouchableOpacity style={styles.tapToReveal} onPress={handleFlip}>
                     <Text style={styles.tapText}>Tap to reveal</Text>
@@ -235,6 +243,13 @@ export default function FlashcardsScreen() {
                 <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
                   <Text style={[styles.cardLabel, { color: theme.colors.primary }]}>ANSWER</Text>
                   <ScrollView showsVerticalScrollIndicator={false} centerContent>
+                    {currentCard.imageUrl ? (
+                      <Image
+                        source={{ uri: currentCard.imageUrl }}
+                        style={styles.cardImage}
+                        resizeMode="contain"
+                      />
+                    ) : null}
                     <Text style={styles.cardContent}>{currentCard.back}</Text>
                   </ScrollView>
                   {!isLastCard && isFlipped && (
@@ -338,6 +353,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: 32,
+  },
+  cardImage: {
+    width: '100%',
+    height: 160,
+    borderRadius: 16,
+    marginBottom: 20,
+    backgroundColor: theme.colors.panelAlt,
   },
   tapToReveal: {
     position: 'absolute',

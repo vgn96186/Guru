@@ -36,6 +36,28 @@ export function resetAiCacheDbSingleton(): void {
   // No-op: AI cache now lives in the main DB. Kept for backward compatibility.
 }
 
+/**
+ * Flush WAL journal into the main DB file. Call before copying the .db file
+ * to ensure all committed writes are in the main file, not stranded in -wal.
+ */
+export async function walCheckpoint(): Promise<void> {
+  const db = getDb();
+  await db.execAsync('PRAGMA wal_checkpoint(TRUNCATE)');
+}
+
+/**
+ * Gracefully close the DB. Prefers async close (lets pending statements finalize)
+ * over sync close (which throws if statements are in-flight).
+ */
+export async function closeDbGracefully(): Promise<void> {
+  const db = getDb();
+  if (typeof db.closeAsync === 'function') {
+    await db.closeAsync();
+  } else {
+    db.closeSync();
+  }
+}
+
 /** Clear the DB singleton (used before re-importing a backup). */
 export function resetDbSingleton(): void {
   _db = null;
@@ -452,6 +474,19 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
         'chatgpt_accounts_json',
         `TEXT NOT NULL DEFAULT '{"primary":{"enabled":true,"connected":false},"secondary":{"enabled":false,"connected":false}}'`,
       ],
+      ['auto_backup_frequency', "TEXT NOT NULL DEFAULT 'off'"],
+      ['last_auto_backup_at', 'TEXT'],
+      ['github_copilot_connected', 'INTEGER NOT NULL DEFAULT 0'],
+      ['github_copilot_preferred_model', "TEXT NOT NULL DEFAULT ''"],
+      ['gitlab_duo_connected', 'INTEGER NOT NULL DEFAULT 0'],
+      ['gitlab_oauth_client_id', "TEXT NOT NULL DEFAULT ''"],
+      ['gitlab_duo_preferred_model', "TEXT NOT NULL DEFAULT ''"],
+      ['poe_connected', 'INTEGER NOT NULL DEFAULT 0'],
+      ['gdrive_web_client_id', "TEXT NOT NULL DEFAULT ''"],
+      ['gdrive_connected', 'INTEGER NOT NULL DEFAULT 0'],
+      ['gdrive_email', "TEXT NOT NULL DEFAULT ''"],
+      ['gdrive_last_sync_at', 'TEXT'],
+      ['last_backup_device_id', "TEXT NOT NULL DEFAULT ''"],
     ],
     topics: [
       ['parent_topic_id', 'INTEGER REFERENCES topics(id) ON DELETE SET NULL'],
@@ -500,7 +535,10 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['model_used', 'TEXT'],
       ['thread_id', 'INTEGER'],
     ],
-    guru_chat_session_memory: [['thread_id', 'INTEGER']],
+    guru_chat_session_memory: [
+      ['thread_id', 'INTEGER'],
+      ['state_json', "TEXT NOT NULL DEFAULT '{}'"],
+    ],
   };
 
   let totalAdded = 0;

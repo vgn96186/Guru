@@ -3,14 +3,20 @@ import type { Message } from './types';
 import { profileRepository } from '../../db/repositories';
 import { getApiKeys } from './config';
 import { parseStructuredJson } from './jsonRepair';
-import { attemptLocalLLM, attemptCloudLLM, attemptCloudLLMStream } from './llmRouting';
+import {
+  attemptLocalLLM,
+  attemptCloudLLM,
+  attemptCloudLLMStream,
+  clampMessagesForStructuredJsonRouting,
+} from './llmRouting';
 import { isTransientNetworkError } from '../offlineQueueErrors';
 import { getLocalLlmRamWarning, isLocalLlmUsable } from '../deviceMemory';
-import type { ProviderId, UserProfile } from '../../types';
+import { DEFAULT_PROVIDER_ORDER, type ProviderId, type UserProfile } from '../../types';
 import type { ChatGptAccountSlot } from '../../types';
 import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
 import { RateLimitError } from './schemas';
 import { createAiRequestTrace, logStreamEvent, previewText } from './runtimeDebug';
+import { sanitizeProviderOrder } from '../../utils/providerOrder';
 
 /** Resolve backend attempt order from profile. Used by both JSON and text routing. */
 function getBackendAttemptOrder(profile: UserProfile) {
@@ -26,6 +32,9 @@ function getBackendAttemptOrder(profile: UserProfile) {
     kiloApiKey,
     agentRouterKey,
     chatgptConnected,
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
   } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
   const hasCloud =
@@ -38,7 +47,10 @@ function getBackendAttemptOrder(profile: UserProfile) {
     !!githubModelsPat ||
     !!kiloApiKey ||
     !!agentRouterKey ||
-    chatgptConnected;
+    chatgptConnected ||
+    githubCopilotConnected ||
+    gitlabDuoConnected ||
+    poeConnected;
 
   const attempts: ('local' | 'cloud')[] = [];
   const chatgptSlots: ChatGptAccountSlot[] = [];
@@ -73,7 +85,10 @@ function getBackendAttemptOrder(profile: UserProfile) {
     agentRouterKey,
     chatgptConnected,
     chatgptSlots,
-    providerOrder: profile.providerOrder,
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
+    providerOrder: sanitizeProviderOrder(profile.providerOrder ?? []),
   };
 }
 
@@ -93,7 +108,8 @@ export async function generateJSONWithRouting<T>(
   forceProvider?: 'groq' | 'gemini',
   providerOrderOverride?: ProviderId[],
 ): Promise<{ parsed: T; modelUsed: string }> {
-  const trace = createAiRequestTrace('json', messages, {
+  const jsonRouteMessages = clampMessagesForStructuredJsonRouting(messages);
+  const trace = createAiRequestTrace('json', jsonRouteMessages, {
     taskComplexity,
     queueOnFailure,
     forceProvider: forceProvider ?? 'auto',
@@ -114,6 +130,9 @@ export async function generateJSONWithRouting<T>(
     agentRouterKey,
     chatgptConnected,
     chatgptSlots,
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
     providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
   let providerOrder = resolveProviderOrderOverride(providerOrderOverride) ?? profileProviderOrder;
@@ -129,7 +148,11 @@ export async function generateJSONWithRouting<T>(
     githubModelsPat = undefined;
     kiloApiKey = undefined;
     agentRouterKey = undefined;
-    providerOrder = ['groq'];
+    // Try Groq first (e.g. gpt-oss-120b) for low latency, then full user/default order for fallbacks.
+    const base =
+      providerOrder && providerOrder.length > 0 ? providerOrder : [...DEFAULT_PROVIDER_ORDER];
+    const rest = base.filter((p) => p !== 'groq');
+    providerOrder = ['groq', ...rest];
   } else if (forceProvider === 'gemini') {
     attempts = ['cloud'];
     orKey = undefined;
@@ -160,7 +183,7 @@ export async function generateJSONWithRouting<T>(
       }
 
       const { text, modelUsed } = await attemptCloudLLM(
-        messages,
+        jsonRouteMessages,
         orKey,
         false,
         groqKey,
@@ -176,6 +199,11 @@ export async function generateJSONWithRouting<T>(
         providerOrder,
         chatgptConnected,
         chatgptSlots,
+        githubCopilotConnected,
+        gitlabDuoConnected,
+        poeConnected,
+        profile.githubCopilotPreferredModel,
+        profile.gitlabDuoPreferredModel,
       );
       const parsed = await parseStructuredJson(text, schema);
       trace.success({
@@ -256,6 +284,9 @@ export async function generateTextWithRouting(
     agentRouterKey,
     chatgptConnected,
     chatgptSlots,
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
     providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
   const textProviderOrder =
@@ -287,6 +318,11 @@ export async function generateTextWithRouting(
               textProviderOrder,
               chatgptConnected,
               chatgptSlots,
+              githubCopilotConnected,
+              gitlabDuoConnected,
+              poeConnected,
+              profile.githubCopilotPreferredModel,
+              profile.gitlabDuoPreferredModel,
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       trace.success({
@@ -374,6 +410,9 @@ export async function generateTextWithRoutingStream(
     agentRouterKey,
     chatgptConnected,
     chatgptSlots,
+    githubCopilotConnected,
+    gitlabDuoConnected,
+    poeConnected,
     providerOrder: profileProviderOrder,
   } = getBackendAttemptOrder(profile);
   const streamProviderOrder =
@@ -419,6 +458,11 @@ export async function generateTextWithRoutingStream(
         streamProviderOrder,
         chatgptConnected,
         chatgptSlots,
+        githubCopilotConnected,
+        gitlabDuoConnected,
+        poeConnected,
+        profile.githubCopilotPreferredModel,
+        profile.gitlabDuoPreferredModel,
       );
       trace.success({
         backend,

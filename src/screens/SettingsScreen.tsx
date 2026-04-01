@@ -55,11 +55,14 @@ import {
   testBraveSearchConnection,
   testFalConnection,
   testGitHubModelsConnection,
+  testGitHubCopilotConnection,
+  testGitLabDuoConnection,
   testKiloConnection,
   testDeepgramConnection,
 } from '../services/ai/providerHealth';
 import type { ChatGptAccountSlot, ContentType, ProviderId, Subject, UserProfile } from '../types';
 import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
+import { sanitizeProviderOrder } from '../utils/providerOrder';
 import {
   requestDeviceCode,
   pollForAuthorization,
@@ -69,6 +72,35 @@ import {
   VERIFICATION_URL,
   type DeviceCodeResponse,
 } from '../services/ai/chatgpt';
+import {
+  requestDeviceCode as requestGitHubDeviceCode,
+  pollForToken as pollGitHubToken,
+  saveTokens as saveGitHubTokens,
+  clearTokens as clearGitHubTokens,
+  getValidAccessToken as getGitHubCopilotAccessToken,
+  VERIFICATION_URL as GITHUB_VERIFICATION_URL,
+  isGitHubCopilotConnected,
+  invalidateCopilotSessionToken,
+} from '../services/ai/github';
+import {
+  buildAuthUrl,
+  clearTokens as clearGitLabTokens,
+  savePendingOAuthSession,
+  getStoredGitLabClientSecret,
+  tryCompleteGitLabDuoOAuth,
+  getRedirectUri,
+  getGitLabInstanceUrl,
+  getValidAccessToken as getGitLabDuoAccessToken,
+  usesDefaultGitLabClientId,
+} from '../services/ai/gitlab';
+import {
+  requestDeviceCode as requestPoeDeviceCode,
+  pollForToken as pollPoeToken,
+  saveTokens as savePoeTokens,
+  clearTokens as clearPoeTokens,
+  VERIFICATION_URL as POE_VERIFICATION_URL,
+  isPoeConnected,
+} from '../services/ai/poe';
 import { theme } from '../constants/theme';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
@@ -76,6 +108,9 @@ import {
   DEFAULT_IMAGE_GENERATION_MODEL,
   DEFAULT_NEET_DATE,
   FAL_IMAGE_GENERATION_MODEL_OPTIONS,
+  GITHUB_COPILOT_MODELS,
+  GOOGLE_WEB_CLIENT_ID,
+  GITLAB_DUO_MODELS,
   IMAGE_GENERATION_MODEL_OPTIONS,
   normalizeImageGenerationModel,
 } from '../config/appConfig';
@@ -84,6 +119,28 @@ import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
+import {
+  exportUnifiedBackup,
+  importUnifiedBackup,
+  runAutoBackup,
+  shouldRunAutoBackup,
+  cleanupOldBackups,
+  type AutoBackupFrequency,
+  type RestoreOptions,
+} from '../services/unifiedBackupService';
+import { profileRepository } from '../db/repositories';
+
+function sanitizeGithubCopilotPreferredModel(value: string): string {
+  const t = value.trim();
+  if (!t) return '';
+  return (GITHUB_COPILOT_MODELS as readonly string[]).includes(t) ? t : '';
+}
+
+function sanitizeGitlabDuoPreferredModel(value: string): string {
+  const t = value.trim();
+  if (!t) return '';
+  return (GITLAB_DUO_MODELS as readonly string[]).includes(t) ? t : '';
+}
 
 const ALL_CONTENT_TYPES: { type: ContentType; label: string }[] = [
   { type: 'keypoints', label: 'Key Points' },
@@ -176,18 +233,6 @@ function asString(value: unknown, fallback = ''): string {
 
 function asNullableString(value: unknown): string | null {
   return typeof value === 'string' ? value : null;
-}
-
-function sanitizeProviderOrder(value: unknown): ProviderId[] {
-  if (!Array.isArray(value)) return [...DEFAULT_PROVIDER_ORDER];
-  const allowed = new Set<ProviderId>(DEFAULT_PROVIDER_ORDER);
-  const next = value.filter(
-    (item): item is ProviderId => typeof item === 'string' && allowed.has(item as ProviderId),
-  );
-  for (const provider of DEFAULT_PROVIDER_ORDER) {
-    if (!next.includes(provider)) next.push(provider);
-  }
-  return next;
 }
 
 function sanitizeApiValidationState(value: unknown): ApiValidationState {
@@ -462,12 +507,16 @@ export default function SettingsScreen() {
   const [name, setName] = useState('');
   const [inicetDate, setInicetDate] = useState(DEFAULT_INICET_DATE);
   const [neetDate, setNeetDate] = useState(DEFAULT_NEET_DATE);
+  const [dbmciClassStartDate, setDbmciClassStartDate] = useState('');
+  const [btrStartDate, setBtrStartDate] = useState('');
+  const [homeNoveltyCooldownHours, setHomeNoveltyCooldownHours] = useState('6');
   const [sessionLength, setSessionLength] = useState('45');
   const [dailyGoal, setDailyGoal] = useState('120');
   const [notifs, setNotifs] = useState(true);
   const [strictMode, setStrictMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [autoBackupFrequency, setAutoBackupFrequency] = useState<AutoBackupFrequency>('off');
   const [maintenanceBusy, setMaintenanceBusy] = useState<string | null>(null);
   const [bodyDoubling, setBodyDoubling] = useState(true);
   const [blockedTypes, setBlockedTypes] = useState<ContentType[]>([]);
@@ -534,6 +583,31 @@ export default function SettingsScreen() {
     null,
   );
   const [chatgptDeviceCode, setChatgptDeviceCode] = useState<DeviceCodeResponse | null>(null);
+  const [githubCopilotConnecting, setGithubCopilotConnecting] = useState(false);
+  const [githubCopilotDeviceCode, setGithubCopilotDeviceCode] = useState<any>(null);
+  const [githubCopilotConnected, setGithubCopilotConnected] = useState(false);
+  const [githubCopilotPreferredModel, setGithubCopilotPreferredModel] = useState('');
+  const [gitlabDuoPreferredModel, setGitlabDuoPreferredModel] = useState('');
+  const [gitlabDuoConnecting, setGitlabDuoConnecting] = useState(false);
+  const [gitlabDuoConnected, setGitlabDuoConnected] = useState(false);
+  const [gitlabPasteModalVisible, setGitlabPasteModalVisible] = useState(false);
+  const [gitlabPasteUrl, setGitlabPasteUrl] = useState('');
+  const [gitlabPasteSubmitting, setGitlabPasteSubmitting] = useState(false);
+  const [gitlabOauthClientId, setGitlabOauthClientId] = useState('');
+  /** Only in memory / SecureStore — never loaded from backup (confidential OAuth secret). */
+  const [gitlabOauthClientSecret, setGitlabOauthClientSecret] = useState('');
+  const [testingGitHubCopilotOAuth, setTestingGitHubCopilotOAuth] = useState(false);
+  const [githubCopilotOAuthTestResult, setGithubCopilotOAuthTestResult] = useState<
+    'ok' | 'fail' | null
+  >(null);
+  const [testingGitLabDuoOAuth, setTestingGitLabDuoOAuth] = useState(false);
+  const [gitlabDuoOAuthTestResult, setGitlabDuoOAuthTestResult] = useState<'ok' | 'fail' | null>(
+    null,
+  );
+  const [poeConnecting, setPoeConnecting] = useState(false);
+  const [poeDeviceCode, setPoeDeviceCode] = useState<any>(null);
+  const [poeConnected, setPoeConnected] = useState(false);
+  const [gdriveWebClientId, setGdriveWebClientId] = useState('');
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
     DEFAULT_IMAGE_GENERATION_MODEL,
@@ -648,10 +722,6 @@ export default function SettingsScreen() {
 
   async function testKiloKey() {
     const key = kiloApiKey.trim() || profile?.kiloApiKey || '';
-    if (!key) {
-      Alert.alert('No key', 'Enter a Kilo API key first.');
-      return;
-    }
     setTestingKiloKey(true);
     setKiloKeyTestResult(null);
     const res = await testKiloConnection(key);
@@ -821,6 +891,253 @@ export default function SettingsScreen() {
     ]);
   }
 
+  // ── GitHub Copilot OAuth ───────────────────────────────────────────────
+  async function connectGitHubCopilot() {
+    setGithubCopilotConnecting(true);
+    try {
+      const dc = await requestGitHubDeviceCode();
+      setGithubCopilotDeviceCode(dc);
+      Linking.openURL(GITHUB_VERIFICATION_URL);
+
+      const pollInterval = (dc.interval || 5) * 1000;
+      const deadline = Date.now() + dc.expires_in * 1000;
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+        const tokenResult = await pollGitHubToken(dc.device_code);
+        if (!tokenResult) continue;
+
+        await saveGitHubTokens(tokenResult);
+        await updateUserProfile({ githubCopilotConnected: true });
+        setGithubCopilotConnected(true);
+        setGithubCopilotDeviceCode(null);
+        setGithubCopilotConnecting(false);
+        refreshProfile();
+        Alert.alert('Connected', 'GitHub Copilot is now linked to Guru.');
+        return;
+      }
+      throw new Error('Device code expired. Please try again.');
+    } catch (err: any) {
+      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      setGithubCopilotDeviceCode(null);
+      setGithubCopilotConnecting(false);
+    }
+  }
+
+  async function disconnectGitHubCopilot() {
+    Alert.alert('Disconnect GitHub Copilot?', 'This will remove stored tokens.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          invalidateCopilotSessionToken();
+          await clearGitHubTokens();
+          await updateUserProfile({ githubCopilotConnected: false });
+          setGithubCopilotConnected(false);
+          setGithubCopilotOAuthTestResult(null);
+          refreshProfile();
+        },
+      },
+    ]);
+  }
+
+  async function validateGitHubCopilotConnection() {
+    const log = '[SETTINGS_VALIDATE][github_copilot]';
+    console.info(`${log} Starting OAuth + api.githubcopilot.com probe…`);
+    setTestingGitHubCopilotOAuth(true);
+    setGithubCopilotOAuthTestResult(null);
+    try {
+      let token: string;
+      try {
+        token = await getGitHubCopilotAccessToken();
+        console.info(`${log} Access token OK (chars=${token.length})`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`${log} Token failed:`, msg);
+        setGithubCopilotOAuthTestResult('fail');
+        Alert.alert(
+          'GitHub Copilot validate',
+          `${msg}\n\nMetro: search ${log} for full details.\nIf the app shows Connected but this fails, Disconnect and sign in again.`,
+        );
+        return;
+      }
+      const res = await testGitHubCopilotConnection(token);
+      console.info(`${log} HTTP ${res.status} ok=${res.ok}`, res.message?.slice(0, 400) ?? '');
+      setGithubCopilotOAuthTestResult(res.ok ? 'ok' : 'fail');
+      if (res.ok) {
+        Alert.alert(
+          'GitHub Copilot validate',
+          `OK — HTTP ${res.status}. Copilot API accepted a minimal chat request.\n\nMetro logs: ${log}`,
+        );
+      } else {
+        Alert.alert(
+          'GitHub Copilot validate',
+          `HTTP ${res.status}\n${(res.message ?? '').slice(0, 480)}\n\nMetro: ${log}`,
+        );
+      }
+    } finally {
+      setTestingGitHubCopilotOAuth(false);
+    }
+  }
+
+  // ── GitLab Duo OAuth ──────────────────────────────────────────────────
+  async function connectGitLabDuo() {
+    if (usesDefaultGitLabClientId(gitlabOauthClientId)) {
+      Alert.alert(
+        'GitLab Application ID required',
+        `Paste your OAuth Application ID in the field above (GitLab → Preferences → Applications), or set EXPO_PUBLIC_GITLAB_CLIENT_ID for your build.\n\nScopes: read_user, api (same as OpenCode GitLab Duo — enables AI Gateway).\nReconnect if you previously used ai_features only.\nRedirect URI must match exactly:\n${getRedirectUri()}`,
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+    const oauthSecret =
+      gitlabOauthClientSecret.trim() || (await getStoredGitLabClientSecret())?.trim() || undefined;
+    setGitlabDuoConnecting(true);
+    try {
+      const { url, codeVerifier, state, oauthClientId } = await buildAuthUrl(gitlabOauthClientId);
+      await savePendingOAuthSession(codeVerifier, state, oauthClientId, oauthSecret);
+      await Linking.openURL(url);
+      Alert.alert(
+        'Sign in with GitLab',
+        'Finish in the browser. The app should reopen automatically when authorization completes. If it does not, use "Paste callback URL" below with the full guru-study:// link.',
+      );
+    } catch (err: any) {
+      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+    } finally {
+      setGitlabDuoConnecting(false);
+    }
+  }
+
+  async function submitGitLabPasteUrl() {
+    const raw = gitlabPasteUrl.trim();
+    if (!raw) {
+      Alert.alert('Empty', 'Paste the full callback URL (guru-study://oauth/gitlab?...).');
+      return;
+    }
+    setGitlabPasteSubmitting(true);
+    try {
+      const handled = await tryCompleteGitLabDuoOAuth(raw);
+      if (handled) {
+        await refreshProfile();
+        const p = useAppStore.getState().profile;
+        setGitlabDuoConnected(!!p?.gitlabDuoConnected);
+        if (p?.gitlabDuoConnected) {
+          setGitlabPasteModalVisible(false);
+          setGitlabPasteUrl('');
+          setGitlabOauthClientSecret('');
+        }
+      }
+    } finally {
+      setGitlabPasteSubmitting(false);
+    }
+  }
+
+  async function disconnectGitLabDuo() {
+    Alert.alert('Disconnect GitLab Duo?', 'This will remove stored tokens.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          await clearGitLabTokens();
+          await updateUserProfile({ gitlabDuoConnected: false });
+          setGitlabDuoConnected(false);
+          setGitlabDuoOAuthTestResult(null);
+          refreshProfile();
+        },
+      },
+    ]);
+  }
+
+  async function validateGitLabDuoConnection() {
+    const log = '[SETTINGS_VALIDATE][gitlab_duo]';
+    const instance = getGitLabInstanceUrl();
+    console.info(
+      `${log} Starting OAuth + ${instance}/api/v4/ai/third_party_agents/direct_access probe…`,
+    );
+    setTestingGitLabDuoOAuth(true);
+    setGitlabDuoOAuthTestResult(null);
+    try {
+      let token: string;
+      try {
+        token = await getGitLabDuoAccessToken();
+        console.info(`${log} Access token OK (chars=${token.length})`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.warn(`${log} Token failed:`, msg);
+        setGitlabDuoOAuthTestResult('fail');
+        Alert.alert('GitLab Duo validate', `${msg}\n\nMetro: search ${log} for details.`);
+        return;
+      }
+      const res = await testGitLabDuoConnection(token);
+      console.info(`${log} HTTP ${res.status} ok=${res.ok}`, res.message?.slice(0, 400) ?? '');
+      setGitlabDuoOAuthTestResult(res.ok ? 'ok' : 'fail');
+      if (res.ok) {
+        Alert.alert(
+          'GitLab Duo validate',
+          `OK — HTTP ${res.status}. OpenCode-style direct_access (AI Gateway) accepted the token.\n\nMetro: ${log}`,
+        );
+      } else {
+        Alert.alert(
+          'GitLab Duo validate',
+          `HTTP ${res.status}\n${(res.message ?? '').slice(0, 480)}\n\n403/404: need Premium/Ultimate Duo, OAuth scopes read_user+api (reconnect), or self-managed Duo + Agent Platform. Metro: ${log}`,
+        );
+      }
+    } finally {
+      setTestingGitLabDuoOAuth(false);
+    }
+  }
+
+  // ── Poe OAuth ─────────────────────────────────────────────────────────
+  async function connectPoe() {
+    setPoeConnecting(true);
+    try {
+      const dc = await requestPoeDeviceCode();
+      setPoeDeviceCode(dc);
+      Linking.openURL(POE_VERIFICATION_URL);
+
+      const pollInterval = (dc.interval || 5) * 1000;
+      const deadline = Date.now() + dc.expires_in * 1000;
+
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, pollInterval));
+        const tokenResult = await pollPoeToken(dc.device_code);
+        if (!tokenResult) continue;
+
+        await savePoeTokens(tokenResult);
+        await updateUserProfile({ poeConnected: true });
+        setPoeConnected(true);
+        setPoeDeviceCode(null);
+        setPoeConnecting(false);
+        refreshProfile();
+        Alert.alert('Connected', 'Poe is now linked to Guru.');
+        return;
+      }
+      throw new Error('Device code expired. Please try again.');
+    } catch (err: any) {
+      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      setPoeDeviceCode(null);
+      setPoeConnecting(false);
+    }
+  }
+
+  async function disconnectPoe() {
+    Alert.alert('Disconnect Poe?', 'This will remove stored tokens.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          await clearPoeTokens();
+          await updateUserProfile({ poeConnected: false });
+          setPoeConnected(false);
+          refreshProfile();
+        },
+      },
+    ]);
+  }
+
   async function testGeminiKey() {
     const key = geminiKey.trim() || profile?.geminiKey || '';
     if (!key) {
@@ -952,6 +1269,13 @@ export default function SettingsScreen() {
         apiValidation: sanitizeApiValidationState(currentProfile.apiValidation),
         chatgptAccounts: sanitizeChatGptAccountSettings(currentProfile.chatgptAccounts),
         guruChatDefaultModel: currentProfile.guruChatDefaultModel ?? 'auto',
+        githubCopilotConnected: !!currentProfile.githubCopilotConnected,
+        githubCopilotPreferredModel: currentProfile.githubCopilotPreferredModel ?? '',
+        gitlabDuoConnected: !!currentProfile.gitlabDuoConnected,
+        gitlabDuoPreferredModel: currentProfile.gitlabDuoPreferredModel ?? '',
+        gitlabOauthClientId: currentProfile.gitlabOauthClientId ?? '',
+        poeConnected: !!currentProfile.poeConnected,
+        gdriveWebClientId: currentProfile.gdriveWebClientId ?? '',
         imageGenerationModel: currentProfile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL,
         guruMemoryNotes: currentProfile.guruMemoryNotes ?? '',
         preferGeminiStructuredJson: currentProfile.preferGeminiStructuredJson !== false,
@@ -964,6 +1288,7 @@ export default function SettingsScreen() {
         neetDate: currentProfile.neetDate,
         preferredSessionLength: currentProfile.preferredSessionLength,
         dailyGoalMinutes: currentProfile.dailyGoalMinutes,
+        homeNoveltyCooldownHours: currentProfile.homeNoveltyCooldownHours ?? 6,
         notificationsEnabled: currentProfile.notificationsEnabled,
         strictModeEnabled: currentProfile.strictModeEnabled,
         bodyDoublingEnabled: currentProfile.bodyDoublingEnabled ?? true,
@@ -1028,10 +1353,24 @@ export default function SettingsScreen() {
               : undefined),
         ),
       );
+      setGithubCopilotConnected(!!profile.githubCopilotConnected);
+      setGithubCopilotPreferredModel(
+        sanitizeGithubCopilotPreferredModel(profile.githubCopilotPreferredModel ?? ''),
+      );
+      setGitlabDuoPreferredModel(
+        sanitizeGitlabDuoPreferredModel(profile.gitlabDuoPreferredModel ?? ''),
+      );
+      setGitlabDuoConnected(!!profile.gitlabDuoConnected);
+      setGitlabOauthClientId(profile.gitlabOauthClientId ?? '');
+      setPoeConnected(!!profile.poeConnected);
+      setGdriveWebClientId(profile.gdriveWebClientId ?? '');
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
       setInicetDate(profile.inicetDate);
       setNeetDate(profile.neetDate);
+      setDbmciClassStartDate(profile.dbmciClassStartDate ?? '');
+      setBtrStartDate(profile.btrStartDate ?? '');
+      setHomeNoveltyCooldownHours((profile.homeNoveltyCooldownHours ?? 6).toString());
       setSessionLength(profile.preferredSessionLength.toString());
       setDailyGoal(profile.dailyGoalMinutes.toString());
       setNotifs(profile.notificationsEnabled);
@@ -1045,6 +1384,7 @@ export default function SettingsScreen() {
       setNotifHour((profile.notificationHour ?? 7).toString());
       setGuruFrequency(profile.guruFrequency ?? 'normal');
       setFocusSubjectIds(profile.focusSubjectIds ?? []);
+      setAutoBackupFrequency((profile as any).autoBackupFrequency ?? 'off');
       profileHydrationSignatureRef.current = nextSignature;
       profileLoaded.current = true;
     }
@@ -1073,6 +1413,12 @@ export default function SettingsScreen() {
         apiValidation: sanitizeApiValidationState(apiValidation),
         chatgptAccounts: sanitizeChatGptAccountSettings(chatgptAccounts),
         chatgptConnected: isChatGptEnabled(chatgptAccounts),
+        githubCopilotPreferredModel: sanitizeGithubCopilotPreferredModel(
+          githubCopilotPreferredModel,
+        ),
+        gitlabDuoPreferredModel: sanitizeGitlabDuoPreferredModel(gitlabDuoPreferredModel),
+        gitlabOauthClientId: gitlabOauthClientId.trim(),
+        gdriveWebClientId: gdriveWebClientId.trim(),
         guruChatDefaultModel: guruChatDefaultModel.trim() || 'auto',
         imageGenerationModel: normalizeImageGenerationModel(imageGenerationModel),
         guruMemoryNotes: guruMemoryNotes.trim(),
@@ -1084,6 +1430,12 @@ export default function SettingsScreen() {
         displayName: name.trim() || 'Doctor',
         inicetDate,
         neetDate,
+        dbmciClassStartDate: dbmciClassStartDate.trim() || null,
+        btrStartDate: btrStartDate.trim() || null,
+        homeNoveltyCooldownHours: Math.min(
+          24,
+          Math.max(1, parseInt(homeNoveltyCooldownHours, 10) || 6),
+        ),
         preferredSessionLength: parseInt(sessionLength) || 45,
         dailyGoalMinutes: parseInt(dailyGoal) || 120,
         notificationsEnabled: notifs,
@@ -1097,7 +1449,8 @@ export default function SettingsScreen() {
         notificationHour: Math.min(23, Math.max(0, parseInt(notifHour) || 7)),
         guruFrequency,
         focusSubjectIds,
-      });
+        autoBackupFrequency,
+      } as any);
       if (notifs) {
         try {
           await requestNotificationPermissions();
@@ -1130,6 +1483,10 @@ export default function SettingsScreen() {
     guruMemoryNotes,
     preferGeminiStructuredJson,
     chatgptAccounts,
+    githubCopilotPreferredModel,
+    gitlabDuoPreferredModel,
+    gitlabOauthClientId,
+    gdriveWebClientId,
     huggingFaceToken,
     huggingFaceModel,
     deepgramApiKey,
@@ -1138,7 +1495,9 @@ export default function SettingsScreen() {
     name,
     inicetDate,
     neetDate,
-    sessionLength,
+    dbmciClassStartDate,
+    btrStartDate,
+    homeNoveltyCooldownHours,
     dailyGoal,
     notifs,
     strictMode,
@@ -1151,6 +1510,7 @@ export default function SettingsScreen() {
     notifHour,
     guruFrequency,
     focusSubjectIds,
+    autoBackupFrequency,
   ]);
 
   // Fire auto-save 600ms after any setting changes (skip initial profile load)
@@ -1172,24 +1532,33 @@ export default function SettingsScreen() {
     return unsubscribe;
   }, [navigation, refreshProfile]);
 
-  const moveProvider = useCallback((fromIndex: number, toIndex: number) => {
-    setProviderOrder((currentOrder) => {
-      if (
-        fromIndex < 0 ||
-        toIndex < 0 ||
-        fromIndex >= currentOrder.length ||
-        toIndex >= currentOrder.length ||
-        fromIndex === toIndex
-      ) {
-        return currentOrder;
-      }
+  const moveProvider = useCallback(
+    (fromIndex: number, toIndex: number) => {
+      setProviderOrder((currentOrder) => {
+        if (
+          fromIndex < 0 ||
+          toIndex < 0 ||
+          fromIndex >= currentOrder.length ||
+          toIndex >= currentOrder.length ||
+          fromIndex === toIndex
+        ) {
+          return currentOrder;
+        }
 
-      const next = [...currentOrder];
-      const [moved] = next.splice(fromIndex, 1);
-      next.splice(toIndex, 0, moved);
-      return next;
-    });
-  }, []);
+        const next = [...currentOrder];
+        const [moved] = next.splice(fromIndex, 1);
+        next.splice(toIndex, 0, moved);
+        const sanitized = sanitizeProviderOrder(next);
+        void updateUserProfile({ providerOrder: sanitized })
+          .then(() => refreshProfile())
+          .catch((err) => {
+            if (__DEV__) console.warn('[Settings] Failed to save provider order:', err);
+          });
+        return sanitized;
+      });
+    },
+    [refreshProfile],
+  );
 
   async function testNotification() {
     try {
@@ -1292,7 +1661,9 @@ export default function SettingsScreen() {
   const cloudflareValidationStatus = resolveValidationStatus(
     'cloudflare',
     cloudflareTestResult,
-    `${cfAccountId.trim() || profile?.cloudflareAccountId || ''}:${cfApiToken.trim() || profile?.cloudflareApiToken || ''}`,
+    `${cfAccountId.trim() || profile?.cloudflareAccountId || ''}:${
+      cfApiToken.trim() || profile?.cloudflareApiToken || ''
+    }`,
   );
   const falValidationStatus = resolveValidationStatus(
     'fal',
@@ -1402,6 +1773,21 @@ export default function SettingsScreen() {
                     id: `github/${m}`,
                     label: formatGuruChatModelChipLabel(`github/${m}`),
                     group: 'GitHub Models',
+                  })),
+                  ...liveGuruChatModels.githubCopilot.map((m) => ({
+                    id: `github_copilot/${m}`,
+                    label: formatGuruChatModelChipLabel(`github_copilot/${m}`),
+                    group: 'GitHub Copilot',
+                  })),
+                  ...liveGuruChatModels.gitlabDuo.map((m) => ({
+                    id: `gitlab_duo/${m}`,
+                    label: formatGuruChatModelChipLabel(`gitlab_duo/${m}`),
+                    group: 'GitLab Duo',
+                  })),
+                  ...liveGuruChatModels.poe.map((m) => ({
+                    id: `poe/${m}`,
+                    label: formatGuruChatModelChipLabel(`poe/${m}`),
+                    group: 'Poe',
                   })),
                   ...liveGuruChatModels.kilo.map((m) => ({
                     id: `kilo/${m}`,
@@ -1648,6 +2034,652 @@ export default function SettingsScreen() {
               ) : null}
             </SubSectionToggle>
 
+            {/* ── GitHub Copilot OAuth ─────────────────────────────── */}
+            <View style={styles.subSectionDivider} />
+            <SubSectionToggle id="github_copilot_oauth" title="GITHUB COPILOT (OAUTH)">
+              <Text style={styles.hint}>
+                Connect your GitHub Copilot subscription through device code flow. Supports Copilot
+                Pro, Pro+, Business, and Enterprise.
+              </Text>
+              {githubCopilotConnecting && githubCopilotDeviceCode ? (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
+                    Enter this code at github.com:
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 28,
+                      fontWeight: '700',
+                      textAlign: 'center',
+                      color: theme.colors.primary,
+                      letterSpacing: 4,
+                      marginVertical: 8,
+                      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                    }}
+                    selectable
+                  >
+                    {githubCopilotDeviceCode.user_code}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginTop: 4,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text style={[styles.hint, { marginTop: 0 }]}>
+                      Waiting for authorization...
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{ marginTop: 12, alignSelf: 'center' }}
+                    onPress={() => Linking.openURL(GITHUB_VERIFICATION_URL)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        color: theme.colors.primary,
+                        textDecorationLine: 'underline',
+                        fontSize: 13,
+                      }}
+                    >
+                      Open login page again
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+              <View
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 12,
+                  backgroundColor: theme.colors.background,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons
+                    name={githubCopilotConnected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={20}
+                    color={githubCopilotConnected ? theme.colors.success : theme.colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.label,
+                      {
+                        flex: 1,
+                        color: githubCopilotConnected
+                          ? theme.colors.success
+                          : theme.colors.textMuted,
+                      },
+                    ]}
+                  >
+                    {githubCopilotConnected ? 'Connected' : 'Not connected'}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                    }}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        githubCopilotOAuthTestResult === 'ok' && styles.validateBtnOk,
+                        githubCopilotOAuthTestResult === 'fail' && styles.validateBtnFail,
+                        { paddingHorizontal: 10 },
+                      ]}
+                      onPress={() => void validateGitHubCopilotConnection()}
+                      disabled={testingGitHubCopilotOAuth || githubCopilotConnecting}
+                      activeOpacity={0.8}
+                      accessibilityLabel="Validate GitHub Copilot connection"
+                    >
+                      {testingGitHubCopilotOAuth ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                      ) : (
+                        <Ionicons
+                          name={
+                            githubCopilotOAuthTestResult === 'ok'
+                              ? 'checkmark-circle'
+                              : githubCopilotOAuthTestResult === 'fail'
+                                ? 'close-circle'
+                                : 'pulse-outline'
+                          }
+                          size={20}
+                          color={
+                            githubCopilotOAuthTestResult === 'ok'
+                              ? theme.colors.success
+                              : githubCopilotOAuthTestResult === 'fail'
+                                ? theme.colors.error
+                                : theme.colors.primary
+                          }
+                        />
+                      )}
+                    </TouchableOpacity>
+                    {githubCopilotConnected ? (
+                      <TouchableOpacity
+                        style={[
+                          styles.validateBtn,
+                          { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                        ]}
+                        onPress={disconnectGitHubCopilot}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}
+                        >
+                          Disconnect
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[
+                          styles.validateBtn,
+                          { paddingHorizontal: 16, backgroundColor: theme.colors.primary + '22' },
+                        ]}
+                        onPress={connectGitHubCopilot}
+                        disabled={githubCopilotConnecting}
+                        activeOpacity={0.8}
+                      >
+                        {githubCopilotConnecting ? (
+                          <ActivityIndicator size="small" color={theme.colors.primary} />
+                        ) : (
+                          <Text
+                            style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 13 }}
+                          >
+                            Connect
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              </View>
+              <Text style={[styles.hint, { marginTop: 8 }]}>
+                Validate (pulse icon): checks SecureStore token + a minimal Copilot API call. Full
+                trace in Metro:{' '}
+                <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                  [SETTINGS_VALIDATE][github_copilot]
+                </Text>
+              </Text>
+              {githubCopilotConnected ? (
+                <>
+                  <Text style={[styles.hint, { marginTop: 12 }]}>
+                    When Auto routing reaches GitHub Copilot, Guru tries this model first. If it
+                    fails, other catalog models are tried in order.
+                  </Text>
+                  <ModelDropdown
+                    label="Preferred Copilot model"
+                    value={githubCopilotPreferredModel}
+                    onSelect={setGithubCopilotPreferredModel}
+                    options={[
+                      {
+                        id: '',
+                        label: 'Default (catalog order)',
+                        group: 'GitHub Copilot',
+                      },
+                      ...GITHUB_COPILOT_MODELS.map((m) => ({
+                        id: m,
+                        label: m,
+                        group: 'GitHub Copilot',
+                      })),
+                    ]}
+                  />
+                </>
+              ) : null}
+            </SubSectionToggle>
+
+            {/* ── GitLab Duo OAuth ─────────────────────────────── */}
+            <View style={styles.subSectionDivider} />
+            <SubSectionToggle id="gitlab_duo_oauth" title="GITLAB DUO (OAUTH)">
+              <Text style={styles.hint}>
+                OAuth2 + PKCE against your GitLab instance. Add this redirect URI to your GitLab
+                OAuth application: {getRedirectUri()}
+              </Text>
+              <Text style={[styles.label, { marginTop: 12 }]}>Application ID</Text>
+              <Text style={styles.hint}>
+                Paste from GitLab → Preferences → Applications. Overrides
+                EXPO_PUBLIC_GITLAB_CLIENT_ID when set. Scopes: read_user, ai_features.
+              </Text>
+              <TextInput
+                value={gitlabOauthClientId}
+                onChangeText={setGitlabOauthClientId}
+                placeholder="Your GitLab OAuth Application ID"
+                placeholderTextColor={theme.colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!gitlabDuoConnecting}
+                style={{
+                  marginTop: 8,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  color: theme.colors.textPrimary,
+                  fontSize: 15,
+                }}
+              />
+              <Text style={[styles.label, { marginTop: 12 }]}>Application secret</Text>
+              <Text style={styles.hint}>
+                Confidential apps (default on GitLab.com) require this on token exchange — paste
+                from the same Applications page. Stored only in on-device secure storage, not in
+                backups. Leave empty only if you created a non-confidential (public) OAuth app.
+              </Text>
+              <TextInput
+                value={gitlabOauthClientSecret}
+                onChangeText={setGitlabOauthClientSecret}
+                placeholder="OAuth application secret"
+                placeholderTextColor={theme.colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry
+                editable={!gitlabDuoConnecting}
+                style={{
+                  marginTop: 8,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 10,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  color: theme.colors.textPrimary,
+                  fontSize: 15,
+                }}
+              />
+              <View
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 12,
+                  backgroundColor: theme.colors.background,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons
+                    name={gitlabDuoConnected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={20}
+                    color={gitlabDuoConnected ? theme.colors.success : theme.colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.label,
+                      {
+                        flex: 1,
+                        color: gitlabDuoConnected ? theme.colors.success : theme.colors.textMuted,
+                      },
+                    ]}
+                  >
+                    {gitlabDuoConnected ? 'Connected' : 'Not connected'}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                      alignItems: 'center',
+                      justifyContent: 'flex-end',
+                    }}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        gitlabDuoOAuthTestResult === 'ok' && styles.validateBtnOk,
+                        gitlabDuoOAuthTestResult === 'fail' && styles.validateBtnFail,
+                        { paddingHorizontal: 10 },
+                      ]}
+                      onPress={() => void validateGitLabDuoConnection()}
+                      disabled={testingGitLabDuoOAuth || gitlabDuoConnecting}
+                      activeOpacity={0.8}
+                      accessibilityLabel="Validate GitLab Duo connection"
+                    >
+                      {testingGitLabDuoOAuth ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                      ) : (
+                        <Ionicons
+                          name={
+                            gitlabDuoOAuthTestResult === 'ok'
+                              ? 'checkmark-circle'
+                              : gitlabDuoOAuthTestResult === 'fail'
+                                ? 'close-circle'
+                                : 'pulse-outline'
+                          }
+                          size={20}
+                          color={
+                            gitlabDuoOAuthTestResult === 'ok'
+                              ? theme.colors.success
+                              : gitlabDuoOAuthTestResult === 'fail'
+                                ? theme.colors.error
+                                : theme.colors.primary
+                          }
+                        />
+                      )}
+                    </TouchableOpacity>
+                    {gitlabDuoConnected ? (
+                      <TouchableOpacity
+                        style={[
+                          styles.validateBtn,
+                          { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                        ]}
+                        onPress={disconnectGitLabDuo}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}
+                        >
+                          Disconnect
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <>
+                        <TouchableOpacity
+                          style={[
+                            styles.validateBtn,
+                            { paddingHorizontal: 12, backgroundColor: theme.colors.primary + '22' },
+                          ]}
+                          onPress={connectGitLabDuo}
+                          disabled={gitlabDuoConnecting}
+                          activeOpacity={0.8}
+                        >
+                          {gitlabDuoConnecting ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                          ) : (
+                            <Text
+                              style={{
+                                color: theme.colors.primary,
+                                fontWeight: '600',
+                                fontSize: 13,
+                              }}
+                            >
+                              Connect
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.validateBtn,
+                            { paddingHorizontal: 12, backgroundColor: theme.colors.border + '44' },
+                          ]}
+                          onPress={() => setGitlabPasteModalVisible(true)}
+                          disabled={gitlabDuoConnecting}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            style={{
+                              color: theme.colors.textPrimary,
+                              fontWeight: '600',
+                              fontSize: 13,
+                            }}
+                          >
+                            Paste URL
+                          </Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                </View>
+              </View>
+              <Text style={[styles.hint, { marginTop: 8 }]}>
+                Validate (pulse icon): checks OAuth token +{' '}
+                <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                  POST {getGitLabInstanceUrl()}/api/v4/chat/completions
+                </Text>
+                . Metro:{' '}
+                <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                  [SETTINGS_VALIDATE][gitlab_duo]
+                </Text>
+              </Text>
+              <Text style={[styles.hint, { marginTop: 12 }]}>
+                Default GitLab Duo model for Auto routing. If unavailable, Guru automatically tries
+                the next best model in catalog order.
+              </Text>
+              <ModelDropdown
+                label="Default GitLab Duo model"
+                value={gitlabDuoPreferredModel}
+                onSelect={setGitlabDuoPreferredModel}
+                options={[
+                  {
+                    id: '',
+                    label: 'Default (catalog order)',
+                    group: 'GitLab Duo',
+                  },
+                  ...GITLAB_DUO_MODELS.map((m) => ({
+                    id: m,
+                    label: m,
+                    group: 'GitLab Duo',
+                  })),
+                ]}
+              />
+              <Modal
+                visible={gitlabPasteModalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setGitlabPasteModalVisible(false)}
+              >
+                <KeyboardAvoidingView
+                  behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                  style={{ flex: 1 }}
+                >
+                  <Pressable
+                    style={styles.dropdownBackdrop}
+                    onPress={() => setGitlabPasteModalVisible(false)}
+                  >
+                    <Pressable
+                      style={[styles.dropdownSheet, { minWidth: '88%' }]}
+                      onPress={(e) => e.stopPropagation()}
+                    >
+                      <Text style={styles.dropdownSheetTitle}>Paste GitLab callback URL</Text>
+                      <Text style={[styles.hint, { marginBottom: 8 }]}>
+                        After authorizing, paste the full guru-study://oauth/gitlab?... link (same
+                        device after tapping Connect).
+                      </Text>
+                      <TextInput
+                        value={gitlabPasteUrl}
+                        onChangeText={setGitlabPasteUrl}
+                        placeholder="guru-study://oauth/gitlab?code=..."
+                        placeholderTextColor={theme.colors.textMuted}
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        multiline
+                        style={{
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                          borderRadius: 10,
+                          padding: 12,
+                          color: theme.colors.textPrimary,
+                          minHeight: 88,
+                          textAlignVertical: 'top',
+                        }}
+                      />
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          justifyContent: 'flex-end',
+                          gap: 12,
+                          marginTop: 16,
+                        }}
+                      >
+                        <TouchableOpacity
+                          onPress={() => setGitlabPasteModalVisible(false)}
+                          style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+                        >
+                          <Text style={{ color: theme.colors.textMuted, fontWeight: '600' }}>
+                            Cancel
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={() => void submitGitLabPasteUrl()}
+                          disabled={gitlabPasteSubmitting}
+                          style={{
+                            paddingVertical: 10,
+                            paddingHorizontal: 16,
+                            backgroundColor: theme.colors.primary + '33',
+                            borderRadius: 10,
+                          }}
+                        >
+                          {gitlabPasteSubmitting ? (
+                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                          ) : (
+                            <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>
+                              Apply
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </Pressable>
+                  </Pressable>
+                </KeyboardAvoidingView>
+              </Modal>
+            </SubSectionToggle>
+
+            {/* ── Poe OAuth ─────────────────────────────── */}
+            <View style={styles.subSectionDivider} />
+            <SubSectionToggle id="poe_oauth" title="POE (OAUTH)">
+              <Text style={styles.hint}>
+                Connect your Poe subscription through device code flow. Access Claude, GPT-4o,
+                Gemini and more through Poe's API.
+              </Text>
+              {poeConnecting && poeDeviceCode ? (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
+                    Enter this code at poe.com:
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 28,
+                      fontWeight: '700',
+                      textAlign: 'center',
+                      color: theme.colors.primary,
+                      letterSpacing: 4,
+                      marginVertical: 8,
+                      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                    }}
+                    selectable
+                  >
+                    {poeDeviceCode.user_code}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginTop: 4,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <Text style={[styles.hint, { marginTop: 0 }]}>
+                      Waiting for authorization...
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={{ marginTop: 12, alignSelf: 'center' }}
+                    onPress={() => Linking.openURL(POE_VERIFICATION_URL)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={{
+                        color: theme.colors.primary,
+                        textDecorationLine: 'underline',
+                        fontSize: 13,
+                      }}
+                    >
+                      Open login page again
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+              <View
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  borderRadius: 12,
+                  backgroundColor: theme.colors.background,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons
+                    name={poeConnected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={20}
+                    color={poeConnected ? theme.colors.success : theme.colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.label,
+                      {
+                        flex: 1,
+                        color: poeConnected ? theme.colors.success : theme.colors.textMuted,
+                      },
+                    ]}
+                  >
+                    {poeConnected ? 'Connected' : 'Not connected'}
+                  </Text>
+                  {poeConnected ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                      ]}
+                      onPress={disconnectPoe}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}>
+                        Disconnect
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        { paddingHorizontal: 16, backgroundColor: theme.colors.primary + '22' },
+                      ]}
+                      onPress={connectPoe}
+                      disabled={poeConnecting}
+                      activeOpacity={0.8}
+                    >
+                      {poeConnecting ? (
+                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                      ) : (
+                        <Text
+                          style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 13 }}
+                        >
+                          Connect
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            </SubSectionToggle>
+
             {/* ── API Keys ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_api_keys" title="API KEYS">
@@ -1867,7 +2899,7 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               </View>
               <Text style={styles.hint}>
-                Gateway at api.kilo.ai (e.g. anthropic/claude-sonnet-4.5)
+                Gateway at api.kilo.ai (e.g. kilo-auto/balanced, xiaomi/mimo-v2-pro)
               </Text>
               <Label text="DeepSeek" />
               <View style={styles.apiKeyRow}>
@@ -2205,6 +3237,12 @@ export default function SettingsScreen() {
                         (cfAccountId.trim() || profile?.cloudflareAccountId) &&
                         (cfApiToken.trim() || profile?.cloudflareApiToken)
                       );
+                    case 'github_copilot':
+                      return !!profile?.githubCopilotConnected;
+                    case 'gitlab_duo':
+                      return !!profile?.gitlabDuoConnected;
+                    case 'poe':
+                      return !!profile?.poeConnected;
                     default:
                       return false;
                   }
@@ -2289,7 +3327,15 @@ export default function SettingsScreen() {
               })}
               <TouchableOpacity
                 style={[styles.testBtn, { marginTop: 4, marginBottom: 12 }]}
-                onPress={() => setProviderOrder([...DEFAULT_PROVIDER_ORDER])}
+                onPress={() => {
+                  const reset = [...DEFAULT_PROVIDER_ORDER];
+                  setProviderOrder(reset);
+                  void updateUserProfile({ providerOrder: sanitizeProviderOrder(reset) })
+                    .then(() => refreshProfile())
+                    .catch((err) => {
+                      if (__DEV__) console.warn('[Settings] Failed to reset provider order:', err);
+                    });
+                }}
                 activeOpacity={0.8}
               >
                 <Text style={styles.testBtnText}>Reset to Default Order</Text>
@@ -2638,6 +3684,58 @@ export default function SettingsScreen() {
           </SectionToggle>
 
           <Text style={styles.categoryLabel}>STUDY</Text>
+          <SectionToggle id="live_batch" title="Study Plan" icon="book-outline" tint="#2196F3">
+            <Label text="DBMCI One batch start date (YYYY-MM-DD)" />
+            <TextInput
+              style={styles.input}
+              value={dbmciClassStartDate}
+              onChangeText={setDbmciClassStartDate}
+              placeholder="e.g. 2025-01-06"
+              placeholderTextColor={theme.colors.textMuted}
+              autoCapitalize="none"
+            />
+            <Text style={styles.hint}>
+              Set this to unlock the live-class position tracker in the Study Plan screen. Guru will
+              highlight which subject DBMCI One is covering today.
+            </Text>
+            <Label text="BTR (Back to Roots) batch start date (YYYY-MM-DD)" />
+            <TextInput
+              style={styles.input}
+              value={btrStartDate}
+              onChangeText={setBtrStartDate}
+              placeholder="e.g. 2025-09-01"
+              placeholderTextColor={theme.colors.textMuted}
+              autoCapitalize="none"
+            />
+            <Text style={styles.hint}>
+              Set this when you start the BTR revision batch. Guru will align your daily revision
+              queue with the current BTR subject.
+            </Text>
+            <Label text="Home novelty cooldown (hours)" />
+            <View style={styles.frequencyRow}>
+              {[2, 4, 6, 8, 12].map((hrs) => {
+                const active = (parseInt(homeNoveltyCooldownHours, 10) || 6) === hrs;
+                return (
+                  <TouchableOpacity
+                    key={hrs}
+                    style={[styles.frequencyChip, active && styles.frequencyChipActive]}
+                    onPress={() => setHomeNoveltyCooldownHours(String(hrs))}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[styles.frequencyChipText, active && styles.frequencyChipTextActive]}
+                    >
+                      {hrs}h
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={styles.hint}>
+              Controls how quickly Home repeats the same topics in DO THIS NOW and UP NEXT. Lower =
+              more repetition, higher = more novelty.
+            </Text>
+          </SectionToggle>
           <SectionToggle
             id="study_prefs"
             title="Study Preferences"
@@ -3027,17 +4125,18 @@ export default function SettingsScreen() {
           </SectionToggle>
 
           <SectionToggle
-            id="backup"
-            title="Backup & Restore"
-            icon="cloud-upload-outline"
+            id="unified_backup"
+            title="Unified Backup & Restore"
+            icon="archive-outline"
             tint="#4CAF50"
           >
             <Text style={styles.hint}>
-              Export your study progress to a JSON file, or restore from a previous backup.
+              Export your entire study data (database, transcripts, images) to a single .guru backup
+              file, or restore from a previous backup.
             </Text>
-            {profile?.lastBackupDate && (
+            {(profile as any)?.lastAutoBackupAt && (
               <Text style={styles.backupDate}>
-                Last backup: {new Date(profile.lastBackupDate).toLocaleString()}
+                Last auto-backup: {new Date((profile as any).lastAutoBackupAt).toLocaleString()}
               </Text>
             )}
             <View style={styles.backupRow}>
@@ -3048,12 +4147,11 @@ export default function SettingsScreen() {
                 onPress={async () => {
                   setBackupBusy(true);
                   try {
-                    const success = await exportBackup();
+                    const success = await exportUnifiedBackup();
                     if (success) {
                       const now = new Date().toISOString();
-                      updateUserProfile({ lastBackupDate: now });
+                      updateUserProfile({ lastBackupDate: now } as any);
                       refreshProfile();
-                      Alert.alert('Backup successful');
                     }
                   } catch (e: any) {
                     Alert.alert('Export failed', e?.message ?? 'Unknown error');
@@ -3065,7 +4163,7 @@ export default function SettingsScreen() {
                 {backupBusy ? (
                   <ActivityIndicator size="small" color={theme.colors.textPrimary} />
                 ) : (
-                  <Text style={styles.backupBtnText}>Export Backup</Text>
+                  <Text style={styles.backupBtnText}>Create Full Backup</Text>
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -3079,7 +4177,7 @@ export default function SettingsScreen() {
                 onPress={async () => {
                   Alert.alert(
                     'Restore from backup?',
-                    'This will overwrite your current progress with data from the backup file.',
+                    'This will overwrite your current data with data from the .guru backup file. You can selectively restore settings, progress, transcripts, and images.',
                     [
                       { text: 'Cancel', style: 'cancel' },
                       {
@@ -3088,7 +4186,7 @@ export default function SettingsScreen() {
                         onPress: async () => {
                           setBackupBusy(true);
                           try {
-                            const res = await importBackup();
+                            const res = await importUnifiedBackup();
                             Alert.alert(res.ok ? 'Restored!' : 'Import failed', res.message);
                             if (res.ok) refreshProfile();
                           } catch (e: any) {
@@ -3103,10 +4201,254 @@ export default function SettingsScreen() {
                 }}
               >
                 <Text style={[styles.backupBtnText, { color: theme.colors.success }]}>
-                  Import Backup
+                  Restore from Backup
                 </Text>
               </TouchableOpacity>
             </View>
+
+            <View style={styles.subSectionDivider} />
+            <Text style={styles.subSectionLabel}>Auto-Backup Frequency</Text>
+            <Text style={styles.hint}>Automatically create backups when the app starts.</Text>
+            <View style={styles.frequencyRow}>
+              {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map(
+                (freq) => (
+                  <TouchableOpacity
+                    key={freq}
+                    style={[
+                      styles.frequencyChip,
+                      autoBackupFrequency === freq && styles.frequencyChipActive,
+                    ]}
+                    onPress={() => setAutoBackupFrequency(freq)}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.frequencyChipText,
+                        autoBackupFrequency === freq && styles.frequencyChipTextActive,
+                      ]}
+                    >
+                      {freq === 'off'
+                        ? 'Off'
+                        : freq === '3days'
+                          ? '3 Days'
+                          : freq.charAt(0).toUpperCase() + freq.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ),
+              )}
+            </View>
+            <TouchableOpacity
+              style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
+              disabled={backupBusy}
+              activeOpacity={0.8}
+              onPress={async () => {
+                Alert.alert(
+                  'Run Auto-Backup Now?',
+                  'This will create an automatic backup regardless of your frequency setting.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Run Backup',
+                      onPress: async () => {
+                        setBackupBusy(true);
+                        try {
+                          const success = await runAutoBackup();
+                          if (success) {
+                            const now = new Date().toISOString();
+                            await profileRepository.updateProfile({ lastAutoBackupAt: now } as any);
+                            refreshProfile();
+                            Alert.alert('Auto-backup complete');
+                          } else {
+                            Alert.alert('Failed', 'Auto-backup failed. Check logs for details.');
+                          }
+                        } catch (e: any) {
+                          Alert.alert('Failed', e?.message ?? 'Unknown error');
+                        } finally {
+                          setBackupBusy(false);
+                        }
+                      },
+                    },
+                  ],
+                );
+              }}
+            >
+              <Text style={styles.maintenanceBtnText}>Run Auto-Backup Now</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
+              disabled={backupBusy}
+              activeOpacity={0.8}
+              onPress={async () => {
+                setBackupBusy(true);
+                try {
+                  await cleanupOldBackups(5);
+                  Alert.alert('Cleanup complete', 'Old backups have been cleaned up.');
+                } catch (e: any) {
+                  Alert.alert('Cleanup failed', e?.message ?? 'Unknown error');
+                } finally {
+                  setBackupBusy(false);
+                }
+              }}
+            >
+              <Text style={styles.maintenanceBtnText}>Clean Up Old Backups</Text>
+            </TouchableOpacity>
+
+            <View style={styles.subSectionDivider} />
+            <Text style={styles.subSectionLabel}>Google Drive Sync</Text>
+            <Text style={styles.hint}>
+              Back up to Google Drive to sync between devices and survive app reinstalls.
+            </Text>
+            <Text style={[styles.label, { marginTop: 12 }]}>Google Web Client ID</Text>
+            <Text style={styles.hint}>
+              Paste your Google OAuth Web application client ID here once. Guru stores it in your
+              profile so future sign-ins do not require a rebuild.
+            </Text>
+            <TextInput
+              value={gdriveWebClientId}
+              onChangeText={setGdriveWebClientId}
+              placeholder="Your Google Web Client ID"
+              placeholderTextColor={theme.colors.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!backupBusy}
+              style={{
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                backgroundColor: theme.colors.surface,
+                color: theme.colors.textPrimary,
+                borderRadius: 12,
+                paddingHorizontal: 12,
+                paddingVertical: 12,
+                marginTop: 8,
+              }}
+            />
+            {(profile as any)?.gdriveConnected ? (
+              <View>
+                <Text style={[styles.backupDate, { marginBottom: 8 }]}>
+                  Connected: {(profile as any)?.gdriveEmail || 'Google Account'}
+                </Text>
+                {(profile as any)?.gdriveLastSyncAt && (
+                  <Text style={styles.backupDate}>
+                    Last sync: {new Date((profile as any).gdriveLastSyncAt).toLocaleString()}
+                  </Text>
+                )}
+                <View style={styles.backupRow}>
+                  <TouchableOpacity
+                    style={[styles.backupBtn, backupBusy && styles.saveBtnDisabled]}
+                    disabled={backupBusy}
+                    activeOpacity={0.8}
+                    onPress={async () => {
+                      setBackupBusy(true);
+                      try {
+                        const { runAutoBackup } = await import('../services/unifiedBackupService');
+                        const success = await runAutoBackup();
+                        if (success) {
+                          refreshProfile();
+                          Alert.alert('Synced', 'Backup uploaded to Google Drive.');
+                        } else {
+                          Alert.alert('Sync failed', 'Could not create or upload backup.');
+                        }
+                      } catch (e: any) {
+                        Alert.alert('Sync failed', e?.message ?? 'Unknown error');
+                      } finally {
+                        setBackupBusy(false);
+                      }
+                    }}
+                  >
+                    <Text style={styles.backupBtnText}>Sync Now</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.backupBtn,
+                      { borderColor: '#FF5252' },
+                      backupBusy && styles.saveBtnDisabled,
+                    ]}
+                    disabled={backupBusy}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      Alert.alert(
+                        'Disconnect Google Drive?',
+                        'Auto-sync will stop. Your existing backups on Drive will remain.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Disconnect',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                const { signOutGDrive } =
+                                  await import('../services/gdriveBackupService');
+                                await signOutGDrive();
+                                refreshProfile();
+                              } catch (e: any) {
+                                Alert.alert('Error', e?.message ?? 'Failed to disconnect');
+                              }
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                  >
+                    <Text style={[styles.backupBtnText, { color: '#FF5252' }]}>Disconnect</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.backupBtn, { marginTop: 8 }, backupBusy && styles.saveBtnDisabled]}
+                disabled={backupBusy}
+                activeOpacity={0.8}
+                onPress={async () => {
+                  const resolvedGoogleClientId =
+                    gdriveWebClientId.trim() ||
+                    GOOGLE_WEB_CLIENT_ID ||
+                    profile?.gdriveWebClientId?.trim();
+                  if (!resolvedGoogleClientId) {
+                    Alert.alert(
+                      'Google Drive setup required',
+                      'Paste your Google OAuth Web application client ID in the field above, or provide EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in your build config.',
+                    );
+                    return;
+                  }
+                  setBackupBusy(true);
+                  try {
+                    const { signInToGDrive } = await import('../services/gdriveBackupService');
+                    await updateUserProfile({ gdriveWebClientId: resolvedGoogleClientId } as any);
+                    const result = await signInToGDrive(resolvedGoogleClientId);
+                    refreshProfile();
+                    Alert.alert(
+                      'Connected!',
+                      `Signed in as ${result.email}. Your backups will now sync to Google Drive.`,
+                    );
+                  } catch (e: any) {
+                    if (e?.code !== 'SIGN_IN_CANCELLED') {
+                      const code = String(e?.code ?? '');
+                      const msg = String(e?.message ?? '');
+                      const isDeveloperError =
+                        code === '10' ||
+                        code === 'DEVELOPER_ERROR' ||
+                        msg.toLowerCase().includes('developer error');
+
+                      if (isDeveloperError) {
+                        Alert.alert(
+                          'Google Sign-In: Developer error',
+                          'Troubleshooting:\n\n1. In Google Cloud, create an Android OAuth client for package com.anonymous.gurustudy.\n2. Add SHA-1 and SHA-256 for your signing key (debug and release if needed).\n3. Keep this Web Client ID and Android client in the same Google project.\n4. Ensure OAuth consent screen is configured and your Google account is added as a test user.\n5. Uninstall/reinstall the app and retry sign-in.',
+                        );
+                      } else {
+                        Alert.alert(
+                          'Sign-in failed',
+                          e?.message ?? 'Could not connect to Google Drive',
+                        );
+                      }
+                    }
+                  } finally {
+                    setBackupBusy(false);
+                  }
+                }}
+              >
+                <Text style={styles.backupBtnText}>Connect Google Drive</Text>
+              </TouchableOpacity>
+            )}
           </SectionToggle>
 
           <SectionToggle
@@ -3602,6 +4944,27 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     flexWrap: 'wrap',
     alignItems: 'center',
+  },
+  frequencyChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: theme.colors.background,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  frequencyChipActive: {
+    backgroundColor: theme.colors.primaryTintMedium,
+    borderColor: theme.colors.primary,
+  },
+  frequencyChipText: {
+    fontSize: 13,
+    color: theme.colors.textMuted,
+    fontWeight: '500',
+  },
+  frequencyChipTextActive: {
+    color: theme.colors.primary,
+    fontWeight: '700',
   },
   guruMemoryInput: {
     minHeight: 88,

@@ -198,15 +198,18 @@ Rules:
 - Front: Short, direct (e.g., "Most common cause of...", "Drug of choice for...", "Classic triad of...").
 - Back: Concise, high-yield fact. Use **markdown bolding** for the single most important word or value.
 - Focus on: Named signs, gold standard tests, first-line treatments, and unique associations.
+- For visual topics (radiology, dermatology, pathology specimens, histology, ophthalmoscopy, ECG, peripheral smear, anatomy diagrams), add an "imageSearchQuery" field to 1-2 relevant cards with a precise medical image query. Omit it for non-visual cards.
 
 Return JSON:
 {
   "type": "flashcards",
   "topicName": "${topicName}",
   "cards": [
-    { "front": "...", "back": "..." }
+    { "front": "...", "back": "...", "imageSearchQuery": "optional precise medical image query" }
   ]
-}`;
+}
+
+Hard rule: "cards" must be an array where every item is only an object with string fields "front" and "back", plus optional string fields "imageSearchQuery" or "imageUrl". No bare strings, nulls, or commas between objects.`;
 }
 
 export function buildManualPrompt(topicName: string, subjectName: string): string {

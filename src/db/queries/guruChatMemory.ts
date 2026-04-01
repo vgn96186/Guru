@@ -4,6 +4,7 @@ export interface GuruChatSessionMemoryRow {
   threadId: number;
   topicName: string;
   summaryText: string;
+  stateJson: string;
   updatedAt: number;
   messagesAtLastSummary: number;
 }
@@ -16,6 +17,7 @@ export async function getSessionMemoryRow(
     thread_id: number;
     topic_name: string;
     summary_text: string;
+    state_json: string;
     updated_at: number;
     messages_at_last_summary: number;
   }>('SELECT * FROM guru_chat_session_memory WHERE thread_id = ?', [threadId]);
@@ -24,6 +26,7 @@ export async function getSessionMemoryRow(
     threadId: r.thread_id,
     topicName: r.topic_name,
     summaryText: r.summary_text,
+    stateJson: r.state_json ?? '{}',
     updatedAt: r.updated_at,
     messagesAtLastSummary: r.messages_at_last_summary,
   };
@@ -34,19 +37,21 @@ export async function upsertSessionMemory(
   topicName: string,
   summaryText: string,
   messagesAtLastSummary: number,
+  stateJson = '{}',
 ): Promise<void> {
   const db = getDb();
   const t = nowTs();
   await db.runAsync(
     `INSERT INTO guru_chat_session_memory
-      (thread_id, topic_name, summary_text, updated_at, messages_at_last_summary)
-     VALUES (?, ?, ?, ?, ?)
+      (thread_id, topic_name, summary_text, state_json, updated_at, messages_at_last_summary)
+     VALUES (?, ?, ?, ?, ?, ?)
      ON CONFLICT(thread_id) DO UPDATE SET
        topic_name = excluded.topic_name,
        summary_text = excluded.summary_text,
+       state_json = excluded.state_json,
        updated_at = excluded.updated_at,
        messages_at_last_summary = excluded.messages_at_last_summary`,
-    [threadId, topicName, summaryText, t, messagesAtLastSummary],
+    [threadId, topicName, summaryText, stateJson, t, messagesAtLastSummary],
   );
 }
 

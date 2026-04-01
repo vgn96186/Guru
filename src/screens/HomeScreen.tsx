@@ -27,21 +27,81 @@ import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '..
 import { getDb } from '../db/database';
 import { getSubjectById } from '../db/queries/topics';
 import { connectToRoom } from '../services/deviceSyncService';
+import { getTodaysAgendaWithTimes, type TodayTask } from '../services/studyPlanner';
+import type { DailyAgenda } from '../services/ai';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import { theme } from '../constants/theme';
-import {
-  BUNDLED_GROQ_KEY,
-  BUNDLED_HF_TOKEN,
-  DEFAULT_INICET_DATE,
-  DEFAULT_NEET_DATE,
-} from '../config/appConfig';
+import { BUNDLED_HF_TOKEN, DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
+import { getApiKeys } from '../services/ai/config';
 import { isLocalLlmUsable } from '../services/deviceMemory';
-import type { Mood, UserProfile } from '../types';
+import type { Mood, UserProfile, TopicWithProgress } from '../types';
 import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
 
 function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): boolean {
   return allIds.every((id) => validLeafIds.has(id));
+}
+
+function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
+  return {
+    blocks: tasks.map((task, i) => ({
+      id: `local-${i}`,
+      title: task.topic.name,
+      topicIds: [task.topic.id],
+      durationMinutes: task.duration,
+      startTime: task.timeLabel.split(' - ')[0],
+      type: (task.type === 'review' ? 'review' : task.type === 'deep_dive' ? 'test' : 'study') as
+        | 'study'
+        | 'review'
+        | 'test'
+        | 'break',
+      why: `${task.topic.subjectName} — ${
+        task.type === 'review'
+          ? 'due for review'
+          : task.type === 'deep_dive'
+            ? 'weak, needs deep dive'
+            : 'new topic to cover'
+      }`,
+    })),
+    guruNote:
+      tasks.length > 0
+        ? `${tasks.length} tasks lined up. Start with ${tasks[0].topic.name}.`
+        : 'Nothing urgent today — great time to explore new topics.',
+  };
+}
+
+function normalizeAgendaForCompare(plan: DailyAgenda | null): string {
+  if (!plan) return '';
+  return JSON.stringify({
+    blocks: plan.blocks.map((block) => ({
+      title: block.title,
+      topicIds: block.topicIds,
+      durationMinutes: block.durationMinutes,
+      startTime: block.startTime,
+      type: block.type,
+    })),
+    guruNote: plan.guruNote,
+  });
+}
+
+function homeSelectionReasonFromTopic(
+  topic: TopicWithProgress,
+  fallbackType: 'new' | 'review' | 'deep_dive',
+): string {
+  const due = topic.progress.fsrsDue?.slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  if (due && due < today) return 'Review critical';
+  if (topic.progress.status === 'seen' && topic.progress.confidence < 1) return 'Quiz pending';
+  if (
+    topic.progress.confidence <= 1 ||
+    (topic.progress.wrongCount ?? 0) >= 2 ||
+    topic.progress.isNemesis
+  )
+    return 'Foundation repair';
+  if (topic.progress.status === 'unseen') return 'Fresh coverage';
+  if (topic.inicetPriority >= 8) return 'High-yield focus';
+  if (fallbackType === 'review') return 'Spaced repetition';
+  return 'Novelty rotation';
 }
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
@@ -114,7 +174,7 @@ export default function HomeScreen() {
   const isTabletLandscape = width >= 900 && width > height;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const { profile, levelInfo, setTodayPlan } = useAppStore();
+  const { profile, levelInfo, todayPlan, setTodayPlan } = useAppStore();
 
   const {
     weakTopics,
@@ -156,38 +216,67 @@ export default function HomeScreen() {
       .then((log) => setMood((log?.mood as Mood) ?? 'good'))
       .catch((err) => console.warn('[Home] Failed to load daily log:', err));
 
-    // Load daily agenda on mount and validate topic IDs
+    // Load daily agenda on mount — auto-generate if missing
     const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
     dailyAgendaRepository
       .getDailyAgenda(date)
       .then(async (plan) => {
-        if (!plan) return;
-        // Validate: check that topicIds in blocks actually exist in the DB
-        const allIds = plan.blocks.flatMap((b) => b.topicIds ?? []).filter((id) => id > 0);
-        if (allIds.length > 0) {
-          const db = getDb();
-          const placeholders = allIds.map(() => '?').join(',');
-          const rows = await db.getAllAsync<{ id: number }>(
-            `SELECT id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
-            allIds,
-          );
-          const validLeafIds = new Set(rows.map((r) => r.id));
-          const hasInvalidTopicIds = !isLeafTopicIdListValid(allIds, validLeafIds);
-          if (hasInvalidTopicIds) {
-            if (__DEV__) {
-              const invalidCount = allIds.filter((id) => !validLeafIds.has(id)).length;
-              console.warn(
-                `[Home] Discarding stale plan: ${invalidCount} invalid or parent topic IDs`,
-              );
+        if (plan) {
+          // Validate: check that topicIds in blocks actually exist in the DB
+          const allIds = plan.blocks.flatMap((b) => b.topicIds ?? []).filter((id) => id > 0);
+          if (allIds.length > 0) {
+            const db = getDb();
+            const placeholders = allIds.map(() => '?').join(',');
+            const rows = await db.getAllAsync<{ id: number }>(
+              `SELECT id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
+              allIds,
+            );
+            const validLeafIds = new Set(rows.map((r) => r.id));
+            const hasInvalidTopicIds = !isLeafTopicIdListValid(allIds, validLeafIds);
+            if (hasInvalidTopicIds) {
+              if (__DEV__) {
+                const invalidCount = allIds.filter((id) => !validLeafIds.has(id)).length;
+                console.warn(
+                  `[Home] Discarding stale plan: ${invalidCount} invalid or parent topic IDs`,
+                );
+              }
+              await dailyAgendaRepository.deleteDailyAgenda(date);
+              // Fall through to auto-generate
+            } else {
+              setTodayPlan(plan);
+              return;
             }
-            await dailyAgendaRepository.deleteDailyAgenda(date);
+          } else {
+            setTodayPlan(plan);
             return;
           }
         }
-        setTodayPlan(plan);
+        // Auto-generate plan when none exists or stale plan was discarded
+        try {
+          const tasks = await getTodaysAgendaWithTimes();
+          const newPlan = tasksToAgenda(tasks);
+          await dailyAgendaRepository.saveDailyAgenda(date, newPlan, 'local');
+          setTodayPlan(newPlan);
+        } catch (e) {
+          console.warn('[Home] Auto plan generation failed:', e);
+        }
       })
       .catch((err) => console.warn('[Home] Failed to load daily agenda:', err));
   }, [setTodayPlan]);
+
+  useEffect(() => {
+    if (!profile) return;
+    const syncedPlan = tasksToAgenda(todayTasks);
+    const incoming = normalizeAgendaForCompare(syncedPlan);
+    const existing = normalizeAgendaForCompare(todayPlan ?? null);
+    if (incoming === existing) return;
+
+    const date = new Date().toLocaleDateString('en-CA');
+    void dailyAgendaRepository
+      .saveDailyAgenda(date, syncedPlan, 'local')
+      .then(() => setTodayPlan(syncedPlan))
+      .catch((err) => console.warn('[Home] Failed to sync computed plan:', err));
+  }, [profile, setTodayPlan, todayPlan, todayTasks]);
 
   useEffect(() => {
     if (!profile?.syncCode) return;
@@ -374,6 +463,10 @@ export default function HomeScreen() {
                       type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
                       subjectName={t.subjectName}
                       priority={t.inicetPriority}
+                      rationale={homeSelectionReasonFromTopic(
+                        t,
+                        t.progress.status === 'unseen' ? 'new' : 'deep_dive',
+                      )}
                       onPress={() =>
                         navigation.navigate('Session', {
                           mood,
@@ -415,11 +508,16 @@ export default function HomeScreen() {
                         }
                         subjectName={t.topic.subjectName}
                         priority={t.topic.inicetPriority}
+                        rationale={homeSelectionReasonFromTopic(
+                          t.topic,
+                          t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new'),
+                        )}
                         onPress={() =>
                           navigation.navigate('Session', {
                             mood,
                             focusTopicId: t.topic.id,
                             preferredActionType: t.type,
+                            forcedMinutes: t.duration,
                           })
                         }
                       />
@@ -589,15 +687,19 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
     return () => clearInterval(id);
   }, [isActive, runtime.active]);
 
-  // Build provider list
+  // Same “available provider” rules as routing / Guru Chat (incl. OAuth flags + bundled keys).
+  const keys = getApiKeys(profile);
   const providers: { name: string; on: boolean }[] = [
-    { name: 'ChatGPT', on: !!profile.chatgptConnected },
-    { name: 'Groq', on: !!(profile.groqApiKey?.trim() || BUNDLED_GROQ_KEY) },
-    { name: 'Gemini', on: !!profile.geminiKey?.trim() },
-    { name: 'OR', on: !!profile.openrouterKey?.trim() },
-    { name: 'DeepSeek', on: !!profile.deepseekKey?.trim() },
-    { name: 'AgentR', on: !!profile.agentRouterKey?.trim() },
-    { name: 'GitHub', on: !!profile.githubModelsPat?.trim() },
+    { name: 'ChatGPT', on: keys.chatgptConnected },
+    { name: 'Copilot', on: keys.githubCopilotConnected },
+    { name: 'GitLab', on: keys.gitlabDuoConnected },
+    { name: 'Poe', on: keys.poeConnected },
+    { name: 'Groq', on: !!keys.groqKey },
+    { name: 'Gemini', on: !!keys.geminiKey },
+    { name: 'OR', on: !!keys.orKey },
+    { name: 'DeepSeek', on: !!keys.deepseekKey },
+    { name: 'AgentR', on: !!keys.agentRouterKey },
+    { name: 'GitHub', on: !!keys.githubModelsPat },
     { name: 'Local', on: isLocalLlmUsable(profile) },
   ];
   const onlineProviders = providers.filter((p) => p.on);
@@ -608,7 +710,9 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
   // Active request banner
   const activeReq = runtime.active[0];
   const activeBanner = isActive
-    ? `${activeReq?.modelUsed?.split('/').pop() ?? activeReq?.backend ?? 'AI'}${elapsed > 0 ? ` ${elapsed}s` : ''}`
+    ? `${activeReq?.modelUsed?.split('/').pop() ?? activeReq?.backend ?? 'AI'}${
+        elapsed > 0 ? ` ${elapsed}s` : ''
+      }`
     : runtime.lastError
       ? `Err: ${runtime.lastError.slice(0, 100)}`
       : null;

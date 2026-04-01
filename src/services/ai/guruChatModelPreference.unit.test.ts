@@ -40,6 +40,9 @@ describe('guruChatModelPreference', () => {
       expect(formatGuruChatModelChipLabel('groq/llama-3.3-70b-versatile')).toContain('llama');
       expect(formatGuruChatModelChipLabel('gemini/gemini-2.0-flash')).toContain('gemini');
       expect(formatGuruChatModelChipLabel('cf/@cf/meta/llama-3.1-8b-instruct')).toBeTruthy();
+      expect(formatGuruChatModelChipLabel('github_copilot/gpt-4o')).toBe('gpt-4o');
+      expect(formatGuruChatModelChipLabel('gitlab_duo/gpt-4o')).toBe('gpt-4o');
+      expect(formatGuruChatModelChipLabel('poe/claude-sonnet-4-20250514')).toContain('claude');
     });
 
     it('truncates long OpenRouter-style ids', () => {
@@ -58,7 +61,9 @@ describe('guruChatModelPreference', () => {
 
   describe('guruChatPickerNameForOpenRouterSlug', () => {
     it('extracts middle segment or falls back to slug', () => {
-      expect(guruChatPickerNameForOpenRouterSlug('google/gemini-2.0-flash:free')).toBe('GEMINI-2.0-FLASH');
+      expect(guruChatPickerNameForOpenRouterSlug('google/gemini-2.0-flash:free')).toBe(
+        'GEMINI-2.0-FLASH',
+      );
       expect(guruChatPickerNameForOpenRouterSlug('nonslug')).toBe('NONSLUG');
     });
   });

@@ -12,6 +12,7 @@ import {
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -97,6 +98,9 @@ type ModelOption = {
     | 'Gemini'
     | 'Cloudflare'
     | 'GitHub Models'
+    | 'GitHub Copilot'
+    | 'GitLab Duo'
+    | 'Poe'
     | 'Kilo'
     | 'AgentRouter';
 };
@@ -114,6 +118,9 @@ const MODEL_GROUP_ORDER: ModelOption['group'][] = [
   'Gemini',
   'Cloudflare',
   'GitHub Models',
+  'GitHub Copilot',
+  'GitLab Duo',
+  'Poe',
   'Kilo',
   'AgentRouter',
 ];
@@ -584,12 +591,14 @@ export default function GuruChatScreen() {
   const [bannerVisible, setBannerVisible] = useState(true);
   const [chosenModel, setChosenModel] = useState<string>('auto');
   const [showModelPicker, setShowModelPicker] = useState(false);
+  const [pickerTab, setPickerTab] = useState<ModelOption['group']>('Local');
   const [showHistoryDrawer, setShowHistoryDrawer] = useState(false);
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   const [expandedSourcesMessageId, setExpandedSourcesMessageId] = useState<string | null>(null);
   const [keyboardInset, setKeyboardInset] = useState(0);
   const [sessionSummary, setSessionSummary] = useState('');
+  const [sessionStateJson, setSessionStateJson] = useState('{}');
   const [threads, setThreads] = useState<GuruChatThread[]>([]);
   const [currentThread, setCurrentThread] = useState<GuruChatThread | null>(null);
   const [renameThreadId, setRenameThreadId] = useState<number | null>(null);
@@ -650,9 +659,13 @@ export default function GuruChatScreen() {
   useEffect(() => {
     if (!currentThreadId) {
       setSessionSummary('');
+      setSessionStateJson('{}');
       return;
     }
-    void getSessionMemoryRow(currentThreadId).then((r) => setSessionSummary(r?.summaryText ?? ''));
+    void getSessionMemoryRow(currentThreadId).then((r) => {
+      setSessionSummary(r?.summaryText ?? '');
+      setSessionStateJson(r?.stateJson ?? '{}');
+    });
   }, [currentThreadId]);
 
   useEffect(() => {
@@ -713,6 +726,9 @@ export default function GuruChatScreen() {
     gemini: geminiModelIds,
     cloudflare: cfModelIds,
     github: githubModelIds,
+    githubCopilot: githubCopilotModelIds,
+    gitlabDuo: gitlabDuoModelIds,
+    poe: poeModelIds,
     kilo: kiloModelIds,
     agentrouter: arModelIds,
   } = useLiveGuruChatModels(profile);
@@ -728,6 +744,9 @@ export default function GuruChatScreen() {
       kiloApiKey,
       agentRouterKey,
       chatgptConnected,
+      githubCopilotConnected,
+      gitlabDuoConnected,
+      poeConnected,
     } = getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
@@ -795,6 +814,36 @@ export default function GuruChatScreen() {
       });
     }
 
+    if (githubCopilotConnected) {
+      githubCopilotModelIds.forEach((model) => {
+        list.push({
+          id: `github_copilot/${model}`,
+          name: model.toUpperCase(),
+          group: 'GitHub Copilot',
+        });
+      });
+    }
+
+    if (gitlabDuoConnected) {
+      gitlabDuoModelIds.forEach((model) => {
+        list.push({
+          id: `gitlab_duo/${model}`,
+          name: model.toUpperCase(),
+          group: 'GitLab Duo',
+        });
+      });
+    }
+
+    if (poeConnected) {
+      poeModelIds.forEach((model) => {
+        list.push({
+          id: `poe/${model}`,
+          name: model.toUpperCase(),
+          group: 'Poe',
+        });
+      });
+    }
+
     if (kiloApiKey) {
       kiloModelIds.forEach((model) => {
         list.push({
@@ -824,6 +873,9 @@ export default function GuruChatScreen() {
     geminiModelIds,
     cfModelIds,
     githubModelIds,
+    githubCopilotModelIds,
+    gitlabDuoModelIds,
+    poeModelIds,
     kiloModelIds,
     arModelIds,
   ]);
@@ -845,9 +897,18 @@ export default function GuruChatScreen() {
     });
   }, [profile, profile?.guruChatDefaultModel, availableModels]);
 
-  const currentModelName = useMemo(() => {
+  const currentModelLabel = useMemo(() => {
+    if (chosenModel === 'auto') return 'Auto';
     const found = availableModels.find((model) => model.id === chosenModel);
-    return found ? found.name : 'Auto';
+    if (!found) return 'Auto';
+    // Show just the model name, truncated
+    const name = found.name;
+    return name.length > 24 ? name.slice(0, 22) + '...' : name;
+  }, [availableModels, chosenModel]);
+
+  const currentModelGroup = useMemo(() => {
+    const found = availableModels.find((m) => m.id === chosenModel);
+    return found?.group ?? 'Local';
   }, [availableModels, chosenModel]);
 
   const visibleModelGroups = useMemo(() => {
@@ -888,14 +949,14 @@ export default function GuruChatScreen() {
     }
 
     return {
-      text: `Selected: ${currentModelName}`,
+      text: `Selected: ${currentModelLabel}`,
       tone: getRuntimeStatusTone({
         isActive: false,
         hasError: !!runtime.lastError,
         hasLastModel: false,
       }),
     };
-  }, [currentModelName, runtime]);
+  }, [currentModelLabel, runtime]);
 
   const modelHistory = useMemo(
     () => messages.map((message) => ({ role: message.role, text: message.text })),
@@ -1095,7 +1156,7 @@ export default function GuruChatScreen() {
     let sawFirstToken = false;
 
     try {
-      const studyContextLine = await buildBoundedGuruChatStudyContext(profile);
+      const studyContextLine = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
       const selectedModelAtSend = chosenModelRef.current;
       const modelForApi = selectedModelAtSend === 'auto' ? undefined : selectedModelAtSend;
       // #region agent log
@@ -1148,6 +1209,7 @@ export default function GuruChatScreen() {
         },
         {
           sessionSummary: sessionSummary.trim() || undefined,
+          stateJson: sessionStateJson.trim() || undefined,
           profileNotes: profile?.guruMemoryNotes?.trim() || undefined,
           studyContext: studyContextLine,
           syllabusTopicId,
@@ -1265,6 +1327,7 @@ export default function GuruChatScreen() {
         await maybeSummarizeGuruSession(currentThreadId, topicName);
         const row = await getSessionMemoryRow(currentThreadId);
         setSessionSummary(row?.summaryText ?? '');
+        setSessionStateJson(row?.stateJson ?? '{}');
       } catch {
         /* session summary is optional */
       }
@@ -1841,67 +1904,82 @@ export default function GuruChatScreen() {
               <View style={styles.sheetContent}>
                 <Text style={styles.sheetTitle}>Choose Brain</Text>
                 {localLlmWarning ? <Text style={styles.warningText}>{localLlmWarning}</Text> : null}
+
+                {/* Provider tabs */}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.tabStrip}
+                  contentContainerStyle={styles.tabStripContent}
+                >
+                  {visibleModelGroups.map((group) => (
+                    <Pressable
+                      key={group}
+                      style={[styles.tabChip, pickerTab === group && styles.tabChipActive]}
+                      onPress={() => setPickerTab(group)}
+                    >
+                      <Text
+                        style={[
+                          styles.tabChipText,
+                          pickerTab === group && styles.tabChipTextActive,
+                        ]}
+                      >
+                        {group}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+
+                {/* Models for selected tab */}
                 <FlatList
-                  data={visibleModelGroups}
-                  keyExtractor={(group) => group}
-                  renderItem={({ item: group }) => {
-                    const groupModels = availableModels.filter((model) => model.group === group);
-                    if (groupModels.length === 0) return null;
-                    return (
-                      <View style={styles.modelGroup}>
-                        <Text style={styles.modelGroupLabel}>{group}</Text>
-                        {groupModels.map((model) => (
-                          <Pressable
-                            key={model.id}
-                            style={({ pressed }) => [
-                              styles.modelItem,
-                              chosenModel === model.id && styles.modelItemActive,
-                              pressed && styles.pressed,
-                            ]}
-                            android_ripple={{ color: `${theme.colors.primary}22` }}
-                            onPress={() => {
-                              if (messages.length > 0 && model.id !== chosenModel) {
-                                Alert.alert(
-                                  'Switch model?',
-                                  "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
-                                  [
-                                    { text: 'Cancel', style: 'cancel' },
-                                    {
-                                      text: 'Switch',
-                                      onPress: () => {
-                                        applyChosenModel(model.id);
-                                        setShowModelPicker(false);
-                                      },
-                                    },
-                                  ],
-                                );
-                              } else {
-                                applyChosenModel(model.id);
-                                setShowModelPicker(false);
-                              }
-                            }}
-                          >
-                            <Text
-                              style={[
-                                styles.modelItemText,
-                                chosenModel === model.id && styles.modelItemTextActive,
-                              ]}
-                            >
-                              {model.name}
-                            </Text>
-                            {chosenModel === model.id ? (
-                              <Ionicons
-                                name="checkmark-circle"
-                                size={18}
-                                color={theme.colors.primary}
-                              />
-                            ) : null}
-                          </Pressable>
-                        ))}
-                      </View>
-                    );
-                  }}
+                  data={availableModels.filter((m) => m.group === pickerTab)}
+                  keyExtractor={(m) => m.id}
+                  style={styles.modelList}
+                  renderItem={({ item: model }: ListRenderItemInfo<ModelOption>) => (
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.modelItem,
+                        chosenModel === model.id && styles.modelItemActive,
+                        pressed && styles.pressed,
+                      ]}
+                      android_ripple={{ color: `${theme.colors.primary}22` }}
+                      onPress={() => {
+                        if (messages.length > 0 && model.id !== chosenModel) {
+                          Alert.alert(
+                            'Switch model?',
+                            "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              {
+                                text: 'Switch',
+                                onPress: () => {
+                                  applyChosenModel(model.id);
+                                  setShowModelPicker(false);
+                                },
+                              },
+                            ],
+                          );
+                        } else {
+                          applyChosenModel(model.id);
+                          setShowModelPicker(false);
+                        }
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.modelItemText,
+                          chosenModel === model.id && styles.modelItemTextActive,
+                        ]}
+                      >
+                        {model.name}
+                      </Text>
+                      {chosenModel === model.id ? (
+                        <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                      ) : null}
+                    </Pressable>
+                  )}
                 />
+
                 <Pressable
                   style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
                   onPress={() => setShowModelPicker(false)}
@@ -2020,31 +2098,36 @@ export default function GuruChatScreen() {
             <View
               style={[styles.composerWrap, keyboardInset > 0 && { marginBottom: keyboardInset }]}
             >
+              <Pressable
+                style={styles.modelSelectorRow}
+                onPress={() => {
+                  setPickerTab(currentModelGroup);
+                  setShowModelPicker(true);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
+              >
+                <View style={styles.modelDot} />
+                <Text style={styles.modelSelectorText} numberOfLines={1}>
+                  {currentModelLabel}
+                </Text>
+                <Ionicons name="chevron-down" size={10} color={theme.colors.textMuted} />
+              </Pressable>
               <View style={styles.inputRow}>
-                <Pressable
-                  style={({ pressed }) => [styles.gearBtn, pressed && styles.pressed]}
-                  onPress={() => setShowModelPicker(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Chat settings. Current model ${currentModelName}. ${runtimeStatus.text}`}
-                >
-                  <Ionicons name="settings-outline" size={18} color={theme.colors.primaryLight} />
-                </Pressable>
-                <View style={styles.inputShell}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ask Guru anything medical..."
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={input}
-                    autoFocus={!!route.params?.autoFocusComposer}
-                    onChangeText={setInput}
-                    onSubmitEditing={() => handleSend()}
-                    returnKeyType="send"
-                    multiline={false}
-                    blurOnSubmit={false}
-                    maxLength={1000}
-                    selectionColor={theme.colors.primaryLight}
-                  />
-                </View>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ask Guru anything..."
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={input}
+                  autoFocus={!!route.params?.autoFocusComposer}
+                  onChangeText={setInput}
+                  onSubmitEditing={() => handleSend()}
+                  returnKeyType="send"
+                  multiline={false}
+                  blurOnSubmit={false}
+                  maxLength={1000}
+                  selectionColor={theme.colors.primaryLight}
+                />
                 <Pressable
                   style={({ pressed }) => [
                     styles.sendBtn,
@@ -2287,18 +2370,21 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.backdropStrong,
   },
   sheetContent: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    maxHeight: '80%',
+    backgroundColor: '#101018',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    maxHeight: '70%',
   },
   sheetTitle: {
     color: theme.colors.textPrimary,
-    fontSize: 20,
-    fontWeight: '900',
-    marginBottom: 16,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 12,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
   warningText: {
     color: '#FFD58A',
@@ -2307,53 +2393,64 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  modelGroup: {
-    marginBottom: 20,
+  tabStrip: {
+    flexGrow: 0,
+    marginBottom: 12,
   },
-  modelGroupLabel: {
-    color: '#667091',
+  tabStripContent: {
+    gap: 8,
+    paddingHorizontal: 2,
+  },
+  tabChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
+  },
+  tabChipActive: {
+    backgroundColor: '#1E1A3A',
+  },
+  tabChipText: {
+    color: '#4A506A',
     fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-    marginLeft: 4,
+    fontWeight: '700',
+  },
+  tabChipTextActive: {
+    color: theme.colors.primaryLight,
+  },
+  modelList: {
+    maxHeight: 320,
   },
   modelItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    backgroundColor: '#13131E',
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#23233A',
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginBottom: 4,
   },
   modelItemActive: {
-    backgroundColor: '#25205A',
-    borderColor: '#4A43B0',
+    backgroundColor: '#1E1A3A',
   },
   modelItemText: {
-    color: '#AEB5C4',
-    fontSize: 15,
+    color: '#7A8199',
+    fontSize: 13,
     fontWeight: '600',
   },
   modelItemTextActive: {
     color: theme.colors.textPrimary,
   },
   closeBtn: {
-    marginTop: 8,
-    padding: 16,
+    marginTop: 10,
+    padding: 12,
     alignItems: 'center',
-    backgroundColor: '#23233A',
-    borderRadius: 14,
+    borderRadius: 12,
   },
   closeBtnText: {
-    color: theme.colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 15,
+    color: theme.colors.textMuted,
+    fontWeight: '600',
+    fontSize: 13,
   },
   renameSheet: {
     backgroundColor: theme.colors.surface,
@@ -2872,11 +2969,11 @@ const styles = StyleSheet.create({
   },
   composerWrap: {
     gap: 0,
-    paddingTop: 4,
-    paddingHorizontal: 4,
-    paddingBottom: 4,
-    borderRadius: 24,
-    backgroundColor: '#0F141D',
+    paddingTop: 0,
+    paddingHorizontal: 12,
+    paddingBottom: 6,
+    borderRadius: 20,
+    backgroundColor: '#0E1219',
     borderWidth: 1,
     borderColor: '#1B2332',
   },
@@ -2908,49 +3005,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  modelSelectorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    paddingHorizontal: 2,
+  },
+  modelDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: theme.colors.primary,
+  },
+  modelSelectorText: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#0B1017',
-    borderWidth: 1,
-    borderColor: '#1D2432',
-  },
-  gearBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#121926',
-    borderWidth: 1,
-    borderColor: '#27314A',
-  },
-  inputShell: {
-    flex: 1,
-    paddingHorizontal: 2,
   },
   input: {
-    minHeight: 44,
+    flex: 1,
+    minHeight: 40,
     color: theme.colors.textPrimary,
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 20,
     paddingHorizontal: 0,
-    paddingVertical: 10,
+    paddingVertical: 8,
     textAlignVertical: 'center',
   },
   sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: theme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#857EFF',
   },
   sendBtnDisabled: {
     backgroundColor: '#232838',

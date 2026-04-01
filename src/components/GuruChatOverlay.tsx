@@ -160,11 +160,17 @@ export default function GuruChatOverlay({
     abortControllerRef.current = new AbortController();
 
     try {
-      const dbStudy = await buildBoundedGuruChatStudyContext(profile);
+      const dbStudy = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
       const topicMeta =
         syllabusTopicId != null ? `Syllabus topic id: ${syllabusTopicId}` : undefined;
       const merged = [topicMeta, dbStudy, contextText].filter(Boolean).join('\n\n');
-      const { reply } = await chatWithGuru(q, topicName, next.slice(-10), undefined, merged || undefined);
+      const { reply } = await chatWithGuru(
+        q,
+        topicName,
+        next.slice(-10),
+        undefined,
+        merged || undefined,
+      );
 
       if (isMountedRef.current) {
         setMessages((prev) => [...prev, { role: 'guru', text: reply }]);

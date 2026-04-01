@@ -24,6 +24,10 @@ const QuizQuestionSchema = z.object({
     .string()
     .optional()
     .describe('Search query to fetch a relevant medical image for this question'),
+  imageUrl: z
+    .string()
+    .optional()
+    .describe('Direct https image URL when known; otherwise omit and use imageSearchQuery'),
 });
 const QuizSchema = z.object({
   type: z.literal('quiz').describe('Discriminator for quiz card'),
@@ -81,12 +85,66 @@ const SocraticSchema = z.object({
 const FlashcardSchema = z.object({
   front: z.string().describe('Short question or prompt'),
   back: z.string().describe('Short high-yield answer'),
+  imageSearchQuery: z
+    .string()
+    .optional()
+    .describe('Optional search query for a relevant reference image on visual topics'),
+  imageUrl: z
+    .string()
+    .optional()
+    .describe('Direct https image URL when known; otherwise omit and use imageSearchQuery'),
 });
+
+/** Some models interleave stray strings in `cards[]`; keep only valid card objects. */
+function normalizeAiFlashcardsCards(
+  raw: unknown,
+): Array<{ front: string; back: string; imageSearchQuery?: string; imageUrl?: string }> {
+  if (!Array.isArray(raw)) return [];
+  const out: Array<{
+    front: string;
+    back: string;
+    imageSearchQuery?: string;
+    imageUrl?: string;
+  }> = [];
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    const o = item as Record<string, unknown>;
+    let front: unknown = o.front;
+    let back: unknown = o.back;
+    if (
+      (front === undefined || front === null || (typeof front === 'string' && !front.trim())) &&
+      typeof o.question === 'string'
+    ) {
+      front = o.question;
+    }
+    if (
+      (back === undefined || back === null || (typeof back === 'string' && !back.trim())) &&
+      typeof o.answer === 'string'
+    ) {
+      back = o.answer;
+    }
+    if (typeof front !== 'string' || typeof back !== 'string') continue;
+    const ft = front.trim();
+    const bt = back.trim();
+    if (!ft || !bt) continue;
+    const imageSearchQuery =
+      typeof o.imageSearchQuery === 'string' && o.imageSearchQuery.trim()
+        ? o.imageSearchQuery.trim()
+        : undefined;
+    const imageUrl =
+      typeof o.imageUrl === 'string' && o.imageUrl.trim() ? o.imageUrl.trim() : undefined;
+    out.push({ front: ft, back: bt, imageSearchQuery, imageUrl });
+  }
+  return out;
+}
 
 const FlashcardsSchema = z.object({
   type: z.literal('flashcards').describe('Discriminator for flashcards card'),
   topicName: z.string().describe('Topic title aligned with the syllabus'),
-  cards: z.array(FlashcardSchema).describe('Typically 6-10 cards'),
+  cards: z
+    .unknown()
+    .transform((v) => normalizeAiFlashcardsCards(v))
+    .pipe(z.array(FlashcardSchema).min(1).describe('Typically 6-10 cards')),
 });
 
 const ManualSchema = z.object({

@@ -6,10 +6,14 @@ import {
   CLOUDFLARE_MODELS,
   DEEPSEEK_MODELS,
   GEMINI_MODELS,
+  GITHUB_COPILOT_MODELS,
   GITHUB_MODELS_CHAT_MODELS,
   GROQ_MODELS,
   KILO_MODELS,
   OPENROUTER_FREE_MODELS,
+  orderedGitHubCopilotModels,
+  orderedGitLabDuoModels,
+  POE_MODELS,
 } from '../config/appConfig';
 import { getApiKeys } from '../services/ai/config';
 import {
@@ -43,7 +47,9 @@ function mergeDraftProfile(profile: UserProfile, draft: LiveGuruChatDraftKeys): 
     deepseekKey: draft.deepseekKey?.trim() || profile.deepseekKey || '',
     agentRouterKey: draft.agentRouterKey?.trim() || profile.agentRouterKey || '',
     chatgptConnected:
-      typeof draft.chatgptConnected === 'boolean' ? draft.chatgptConnected : profile.chatgptConnected,
+      typeof draft.chatgptConnected === 'boolean'
+        ? draft.chatgptConnected
+        : profile.chatgptConnected,
   };
 }
 
@@ -59,6 +65,8 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
   }, [value, delayMs]);
   return debounced;
 }
+
+const EMPTY: readonly string[] = [];
 
 /**
  * Loads provider model IDs from live APIs (with static fallbacks in `liveModelCatalog`).
@@ -108,8 +116,17 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       return profile;
     })();
 
-    const { groqKey, orKey, geminiKey, cfAccountId, cfApiToken, kiloApiKey, deepseekKey, agentRouterKey, chatgptConnected } =
-      getApiKeys(mergedProfile);
+    const {
+      groqKey,
+      orKey,
+      geminiKey,
+      cfAccountId,
+      cfApiToken,
+      kiloApiKey,
+      deepseekKey,
+      agentRouterKey,
+      chatgptConnected,
+    } = getApiKeys(mergedProfile);
 
     fetchAllLiveGuruChatModelIds({
       chatgptConnected,
@@ -137,24 +154,104 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
     };
   }, [profile, debouncedKeysString, refreshToken]);
 
-  const mergedProfile = (() => {
-    if (!profile) return null;
-    const d = draftRef.current;
-    if (d) return mergeDraftProfile(profile, d);
-    return profile;
-  })();
-  const resolvedKeys = mergedProfile ? getApiKeys(mergedProfile) : null;
+  // Derive a stable key string from profile fields that affect which providers are connected.
+  // This prevents re-creating memoized arrays when unrelated profile fields change.
+  const resolvedKeys = profile
+    ? getApiKeys(draft ? mergeDraftProfile(profile, draft) : profile)
+    : null;
+  const providerKeyString = resolvedKeys
+    ? [
+        resolvedKeys.groqKey ? '1' : '0',
+        resolvedKeys.orKey ? '1' : '0',
+        resolvedKeys.geminiKey ? '1' : '0',
+        resolvedKeys.cfAccountId && resolvedKeys.cfApiToken ? '1' : '0',
+        resolvedKeys.githubModelsPat ? '1' : '0',
+        resolvedKeys.githubCopilotConnected ? '1' : '0',
+        resolvedKeys.gitlabDuoConnected ? '1' : '0',
+        resolvedKeys.poeConnected ? '1' : '0',
+        resolvedKeys.kiloApiKey ? '1' : '0',
+        resolvedKeys.deepseekKey ? '1' : '0',
+        resolvedKeys.agentRouterKey ? '1' : '0',
+        resolvedKeys.chatgptConnected ? '1' : '0',
+      ].join('')
+    : '';
+
+  const copilotPref = profile?.githubCopilotPreferredModel ?? '';
+  const gitlabPref = profile?.gitlabDuoPreferredModel ?? '';
+
+  const chatgptModelIds = useMemo(
+    () => (resolvedKeys?.chatgptConnected ? (live?.chatgpt ?? [...CHATGPT_MODELS]) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.chatgpt],
+  );
+  const groqModelIds = useMemo(
+    () => (resolvedKeys?.groqKey ? (live?.groq ?? [...GROQ_MODELS]) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.groq],
+  );
+  const openrouterModelIds = useMemo(
+    () => (resolvedKeys?.orKey ? (live?.openrouter ?? [...OPENROUTER_FREE_MODELS]) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.openrouter],
+  );
+  const geminiModelIds = useMemo(
+    () => (resolvedKeys?.geminiKey ? (live?.gemini ?? [...GEMINI_MODELS]) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.gemini],
+  );
+  const cloudflareModelIds = useMemo(
+    () =>
+      resolvedKeys?.cfAccountId && resolvedKeys?.cfApiToken
+        ? (live?.cloudflare ?? [...CLOUDFLARE_MODELS])
+        : EMPTY,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.cloudflare],
+  );
+  const githubModelIds = useMemo(
+    () => (resolvedKeys?.githubModelsPat ? [...GITHUB_MODELS_CHAT_MODELS] : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString],
+  );
+  const githubCopilotModelIds = useMemo(
+    () => (resolvedKeys?.githubCopilotConnected ? orderedGitHubCopilotModels(copilotPref) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, copilotPref],
+  );
+  const gitlabDuoModelIds = useMemo(
+    () => (resolvedKeys?.gitlabDuoConnected ? orderedGitLabDuoModels(gitlabPref) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, gitlabPref],
+  );
+  const poeModelIds = useMemo(
+    () => (resolvedKeys?.poeConnected ? [...POE_MODELS] : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString],
+  );
+  const kiloModelIds = useMemo(() => live?.kilo ?? [...KILO_MODELS], [live?.kilo]);
+  const deepseekModelIds = useMemo(
+    () => (resolvedKeys?.deepseekKey ? (live?.deepseek ?? [...DEEPSEEK_MODELS]) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.deepseek],
+  );
+  const agentRouterModelIds = useMemo(
+    () => (resolvedKeys?.agentRouterKey ? (live?.agentrouter ?? [...AGENTROUTER_MODELS]) : EMPTY),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [providerKeyString, live?.agentrouter],
+  );
 
   return {
-    chatgpt: resolvedKeys?.chatgptConnected ? (live?.chatgpt ?? [...CHATGPT_MODELS]) : [],
-    groq: live?.groq ?? (resolvedKeys?.groqKey ? [...GROQ_MODELS] : []),
-    openrouter: live?.openrouter ?? (resolvedKeys?.orKey ? [...OPENROUTER_FREE_MODELS] : []),
-    gemini: live?.gemini ?? (resolvedKeys?.geminiKey ? [...GEMINI_MODELS] : []),
-    cloudflare: live?.cloudflare ?? (resolvedKeys?.cfAccountId && resolvedKeys?.cfApiToken ? [...CLOUDFLARE_MODELS] : []),
-    github: resolvedKeys?.githubModelsPat ? [...GITHUB_MODELS_CHAT_MODELS] : [],
-    kilo: resolvedKeys?.kiloApiKey ? (live?.kilo ?? [...KILO_MODELS]) : [],
-    deepseek: resolvedKeys?.deepseekKey ? (live?.deepseek ?? [...DEEPSEEK_MODELS]) : [],
-    agentrouter: resolvedKeys?.agentRouterKey ? (live?.agentrouter ?? [...AGENTROUTER_MODELS]) : [],
+    chatgpt: chatgptModelIds,
+    groq: groqModelIds,
+    openrouter: openrouterModelIds,
+    gemini: geminiModelIds,
+    cloudflare: cloudflareModelIds,
+    github: githubModelIds,
+    githubCopilot: githubCopilotModelIds,
+    gitlabDuo: gitlabDuoModelIds,
+    poe: poeModelIds,
+    kilo: kiloModelIds,
+    deepseek: deepseekModelIds,
+    agentrouter: agentRouterModelIds,
     loading,
     anyLive: live?.anyLive ?? false,
     errors: live?.errors ?? {},

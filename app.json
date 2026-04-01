@@ -46,7 +46,8 @@
       "expo-build-properties",
       "expo-font",
       "llama.rn",
-      "@config-plugins/detox"
+      "@config-plugins/detox",
+      "@react-native-google-signin/google-signin"
     ],
     "developmentClient": {
       "silentLaunch": true

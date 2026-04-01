@@ -104,6 +104,10 @@ function formatSessionModelLabel(modelUsed?: string | null): string {
   if (m.startsWith('groq/')) return `AI · Groq / ${m.slice(5)}`;
   if (m.startsWith('gemini/')) return `AI · Gemini / ${m.slice(7)}`;
   if (m.startsWith('github/')) return `AI · GitHub Models / ${m.slice(7)}`;
+  if (m.startsWith('github_copilot/'))
+    return `AI · GitHub Copilot / ${m.slice('github_copilot/'.length)}`;
+  if (m.startsWith('gitlab_duo/')) return `AI · GitLab Duo / ${m.slice('gitlab_duo/'.length)}`;
+  if (m.startsWith('poe/')) return `AI · Poe / ${m.slice(4)}`;
   if (m.startsWith('deepseek/')) return `AI · DeepSeek / ${m.slice(9)}`;
   if (m.startsWith('cf/')) return `AI · Cloudflare / ${m.slice(3)}`;
   if (modelUsed.startsWith('local-')) return `AI · On-device / ${m}`;
@@ -404,7 +408,9 @@ export default function SessionScreen() {
           const delay = PLANNING_AUTO_RETRY_DELAYS_MS[attempt];
           if (__DEV__) {
             console.warn(
-              `[Session] Planning failed (attempt ${attempt + 1}/${PLANNING_AUTO_RETRY_DELAYS_MS.length + 1}), retrying in ${delay}ms:`,
+              `[Session] Planning failed (attempt ${attempt + 1}/${
+                PLANNING_AUTO_RETRY_DELAYS_MS.length + 1
+              }), retrying in ${delay}ms:`,
               e?.message,
             );
           }
@@ -545,11 +551,12 @@ export default function SessionScreen() {
     // If there's an active aiError, don't auto-load (user must tap retry or skip)
     if (aiError) return;
 
-    // Force Groq (fastest provider) for the very first content card
-    const forceGroq =
+    // First card only: prefer Groq first in the chain (fast gpt-oss-120b); fallbacks still follow
+    // full provider order (Copilot, GitLab, etc.) — see generate.ts forceProvider === 'groq'.
+    const forceGroqForFirstCard =
       currentItemIndex === 0 && currentContentIndex === 0 ? ('groq' as const) : undefined;
     setLoadingContent(true);
-    fetchContent(item.topic, cType, forceGroq)
+    fetchContent(item.topic, cType, forceGroqForFirstCard)
       .then((content) => {
         setCurrentContent(content);
         setLoadingContent(false);
@@ -565,7 +572,9 @@ export default function SessionScreen() {
           setContentRetryPending(true);
           if (__DEV__) {
             console.warn(
-              `[Session] AI content failed (attempt ${attempt + 1}/${CONTENT_AUTO_RETRY_DELAYS_MS.length + 1}), retrying in ${delay}ms:`,
+              `[Session] AI content failed (attempt ${attempt + 1}/${
+                CONTENT_AUTO_RETRY_DELAYS_MS.length + 1
+              }), retrying in ${delay}ms:`,
               e?.message,
             );
           }
@@ -862,6 +871,43 @@ export default function SessionScreen() {
   }
 
   if (sessionState === 'agenda_reveal' && agenda) {
+    const uniqueTopicCount = new Set(agenda.items.map((i) => i.topic.id)).size;
+    const totalCards = agenda.items.reduce((sum, i) => sum + (i.contentTypes?.length ?? 0), 0);
+    const minutes = forcedMinutes ?? agenda.totalMinutes;
+    const sanitizedFocusNote = (agenda.focusNote || '')
+      .replace(/deep_dive/gi, 'deep dive')
+      .replace(/_/g, ' ')
+      .trim();
+    const title = sanitizedFocusNote.length > 0 ? sanitizedFocusNote : 'Your session is ready';
+    const modeChip =
+      /\bdeep dive\b/i.test(sanitizedFocusNote) || agenda.mode === 'deep'
+        ? {
+            label: 'DEEP',
+            bg: theme.colors.error + '22',
+            border: theme.colors.error + '55',
+            fg: theme.colors.error,
+          }
+        : agenda.mode === 'sprint'
+          ? {
+              label: 'SPRINT',
+              bg: theme.colors.primary + '22',
+              border: theme.colors.primary + '55',
+              fg: theme.colors.primary,
+            }
+          : agenda.mode === 'gentle'
+            ? {
+                label: 'GENTLE',
+                bg: theme.colors.warning + '18',
+                border: theme.colors.warning + '44',
+                fg: theme.colors.warning,
+              }
+            : {
+                label: 'FOCUS',
+                bg: theme.colors.border,
+                border: theme.colors.borderLight,
+                fg: theme.colors.textSecondary,
+              };
+
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
@@ -874,18 +920,33 @@ export default function SessionScreen() {
             <View style={styles.revealHeader}>
               <IconCircle name="flag" color={theme.colors.primary} size={48} />
               <View style={styles.revealHeaderText}>
-                <Text style={styles.revealFocus} numberOfLines={3} ellipsizeMode="tail">
-                  {agenda.focusNote}
-                </Text>
+                <View style={styles.revealTitleRow}>
+                  <Text style={styles.revealFocus} numberOfLines={2} ellipsizeMode="tail">
+                    {title}
+                  </Text>
+                  <View
+                    style={[
+                      styles.revealModeChip,
+                      { backgroundColor: modeChip.bg, borderColor: modeChip.border },
+                    ]}
+                  >
+                    <Text style={[styles.revealModeChipText, { color: modeChip.fg }]}>
+                      {modeChip.label}
+                    </Text>
+                  </View>
+                </View>
                 <Text style={styles.revealMeta}>
-                  {agenda.items.length} topic{agenda.items.length !== 1 ? 's' : ''}
-                  {forcedMinutes ? ` · ${forcedMinutes} min` : ''}
+                  {uniqueTopicCount} topic{uniqueTopicCount !== 1 ? 's' : ''} · {totalCards} card
+                  {totalCards !== 1 ? 's' : ''} · {minutes} min
                 </Text>
               </View>
             </View>
 
             {/* Guru message */}
             <View style={styles.revealGuruCard}>
+              <View style={styles.revealGuruHeader}>
+                <Text style={styles.revealGuruLabel}>GURU’S PLAN</Text>
+              </View>
               <View style={styles.revealGuru}>
                 <MarkdownRender content={agenda.guruMessage} compact />
               </View>
@@ -929,7 +990,7 @@ export default function SessionScreen() {
             {/* Footer */}
             <View style={styles.revealLiveRow}>
               <View style={styles.revealLiveDot} />
-              <Text style={styles.revealSub}>Starting in a moment</Text>
+              <Text style={styles.revealSub}>Auto-starting…</Text>
             </View>
           </ResponsiveContainer>
         </ScrollView>
@@ -1245,7 +1306,9 @@ export default function SessionScreen() {
 
         <View style={styles.contentArea} {...panHandlers}>
           {isLoadingContent ? (
-            <LoadingOrb message="Fetching content..." />
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <LoadingOrb message="Fetching content..." />
+            </View>
           ) : currentContent ? (
             <ErrorBoundary>
               <ContentCard
@@ -1290,17 +1353,52 @@ export default function SessionScreen() {
 
         {showPausedOverlay && (
           <View style={styles.pausedOverlay}>
-            <Text style={styles.pausedText}>Session Paused</Text>
-            <Text style={styles.pausedSubText}>Are you still studying, Doctor?</Text>
-            <TouchableOpacity
-              style={styles.resumeOverlayBtn}
-              onPress={() => {
-                isManuallyPausedRef.current = false;
-                setPaused(false);
-              }}
-            >
-              <Text style={styles.resumeOverlayBtnText}>Resume Session</Text>
-            </TouchableOpacity>
+            <View style={styles.pausedContent}>
+              <Ionicons
+                name="pause-circle"
+                size={64}
+                color={theme.colors.primary}
+                style={{ marginBottom: 16 }}
+              />
+              <Text style={styles.pausedText}>Study Session Paused</Text>
+              <Text style={styles.pausedSubText}>
+                Keep the momentum going, Doctor!{'\n'}Ready to dive back in?
+              </Text>
+              <View style={styles.pausedActions}>
+                <TouchableOpacity
+                  style={[styles.resumeOverlayBtn, styles.resumeBtn]}
+                  onPress={() => {
+                    isManuallyPausedRef.current = false;
+                    setPaused(false);
+                  }}
+                >
+                  <Ionicons name="play" size={20} color={theme.colors.textPrimary} />
+                  <Text style={styles.resumeOverlayBtnText}>Resume Studying</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.resumeOverlayBtn, styles.endBtn]}
+                  onPress={() => {
+                    Alert.alert(
+                      'End Session?',
+                      'This will finalize your current study session and award XP.',
+                      [
+                        { text: 'Keep Studying', style: 'cancel' },
+                        {
+                          text: 'End Session',
+                          style: 'destructive',
+                          onPress: () => {
+                            finishSession();
+                          },
+                        },
+                      ],
+                    );
+                  }}
+                >
+                  <Ionicons name="stop" size={20} color={theme.colors.textPrimary} />
+                  <Text style={styles.resumeOverlayBtnText}>End Session</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         )}
         <BrainDumpFab />
@@ -1454,7 +1552,7 @@ function SessionDoneScreen({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  contentArea: { flex: 1 },
+  contentArea: { flex: 1, minHeight: 0 },
   storyBarContainer: { height: 3, backgroundColor: theme.colors.border },
   storyBarFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 0 },
   topicProgressSection: { paddingHorizontal: theme.spacing.lg, marginBottom: 8 },
@@ -1595,17 +1693,36 @@ const styles = StyleSheet.create({
   revealHeaderText: {
     flex: 1,
   },
+  revealTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
   revealFocus: {
     color: theme.colors.textPrimary,
     fontWeight: '800',
     fontSize: 18,
     lineHeight: 24,
+    flex: 1,
   },
   revealMeta: {
     color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
+  },
+  revealModeChip: {
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    marginTop: 2,
+  },
+  revealModeChipText: {
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
   },
   revealGuruCard: {
     backgroundColor: theme.colors.surface,
@@ -1615,6 +1732,18 @@ const styles = StyleSheet.create({
     borderLeftColor: theme.colors.primary,
     width: '100%',
     marginBottom: 20,
+  },
+  revealGuruHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  revealGuruLabel: {
+    color: theme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   revealGuru: {
     alignSelf: 'stretch',
@@ -1892,25 +2021,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 100,
   },
+  pausedContent: {
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
   pausedText: {
     color: theme.colors.textPrimary,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '800',
-    marginBottom: 10,
+    marginBottom: 12,
+    textAlign: 'center',
   },
   pausedSubText: {
     color: theme.colors.textSecondary,
-    fontSize: 15,
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  pausedActions: {
+    flexDirection: 'row',
+    gap: 16,
   },
   resumeOverlayBtn: {
-    backgroundColor: theme.colors.primary,
     borderRadius: 16,
-    paddingHorizontal: 40,
+    paddingHorizontal: 24,
     paddingVertical: theme.spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minWidth: 140,
+    justifyContent: 'center',
   },
-  resumeOverlayBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  resumeBtn: {
+    backgroundColor: theme.colors.primary,
+  },
+  endBtn: {
+    backgroundColor: theme.colors.error,
+  },
+  resumeOverlayBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 16 },
   tabRowWrapper: { flexDirection: 'row', alignItems: 'center', flexGrow: 0, flexShrink: 0 },
   cardCountText: {
     color: theme.colors.textMuted,

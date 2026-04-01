@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../constants/theme';
 import { profileRepository } from '../../db/repositories';
 import { useAppStore } from '../../store/useAppStore';
@@ -16,8 +17,8 @@ interface QuickStatsCardProps {
   completedSessions: number;
 }
 
-const RING_SIZE = 64;
-const STROKE_WIDTH = 5;
+const RING_SIZE = 88;
+const STROKE_WIDTH = 8;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
@@ -34,7 +35,7 @@ export default React.memo(function QuickStatsCard({
   const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100;
   const done = progressClamped >= 100;
   const ringColor = done ? theme.colors.success : theme.colors.primary;
-  const minutesLeft = Math.max(0, dailyGoal - todayMinutes);
+  const minutesLeft = Math.max(0, Math.min(dailyGoal, dailyGoal - todayMinutes));
 
   const handleGoalChange = useCallback(async (minutes: number) => {
     await profileRepository.updateProfile({ dailyGoalMinutes: minutes });
@@ -43,15 +44,30 @@ export default React.memo(function QuickStatsCard({
   }, []);
 
   return (
-    <View style={styles.card} accessibilityRole="summary">
-      <View style={styles.topRow}>
+    <View
+      style={[styles.card, done && styles.cardDone]}
+      accessibilityRole="summary"
+      accessibilityLabel={`Daily progress: ${progressClamped} percent. ${
+        done ? 'Goal reached' : `${minutesLeft} minutes left`
+      }. ${streak} day streak, level ${level}, ${completedSessions} sessions completed.`}
+    >
+      <View style={styles.headerRow}>
+        <Ionicons
+          name="speedometer-outline"
+          size={18}
+          color={done ? theme.colors.success : theme.colors.primary}
+        />
+        <Text style={[styles.label, done && { color: theme.colors.success }]}>DAILY PROGRESS</Text>
+      </View>
+
+      <View style={styles.progressRow}>
         <View style={styles.ringWrap}>
           <Svg width={RING_SIZE} height={RING_SIZE}>
             <Circle
               cx={RING_SIZE / 2}
               cy={RING_SIZE / 2}
               r={RADIUS}
-              stroke={theme.colors.border}
+              stroke={done ? theme.colors.successTintSoft : theme.colors.primaryTintSoft}
               strokeWidth={STROKE_WIDTH}
               fill="transparent"
             />
@@ -75,47 +91,80 @@ export default React.memo(function QuickStatsCard({
             </Text>
           </View>
         </View>
+
         <View style={styles.copy}>
-          <Text style={styles.title}>{done ? 'Goal reached' : `${minutesLeft} min left`}</Text>
-          <Pressable onPress={() => setShowGoalPicker((v) => !v)} hitSlop={6}>
-            <Text style={styles.sub}>
-              {done ? 'Stack one more high-yield block.' : `${todayMinutes} of `}
-              {!done && <Text style={styles.goalTappable}>{dailyGoal} min</Text>}
-              {!done && ' today'}
-            </Text>
+          <Text style={styles.minutesBig}>
+            {todayMinutes}
+            <Text style={styles.minutesUnit}> min</Text>
+          </Text>
+          <Pressable onPress={() => setShowGoalPicker((v) => !v)} hitSlop={8}>
+            {done ? (
+              <View style={styles.doneRow}>
+                <Ionicons name="checkmark-circle" size={14} color={theme.colors.success} />
+                <Text style={styles.doneLabel}>Goal reached</Text>
+              </View>
+            ) : (
+              <View style={styles.goalInline}>
+                <Text style={styles.minutesLeft}>{minutesLeft} min left</Text>
+                <Pressable
+                  style={[styles.goalBadge, showGoalPicker && styles.goalBadgeActive]}
+                  onPress={() => setShowGoalPicker((v) => !v)}
+                  hitSlop={6}
+                >
+                  <Ionicons name="flag" size={11} color={theme.colors.primary} />
+                  <Text style={styles.goalBadgeText}>{dailyGoal}m</Text>
+                </Pressable>
+                {showGoalPicker &&
+                  GOAL_PRESETS.filter((m) => m !== dailyGoal).map((m) => (
+                    <Pressable key={m} style={styles.goalChip} onPress={() => handleGoalChange(m)}>
+                      <Text style={styles.goalChipText}>{m >= 60 ? `${m / 60}h` : `${m}m`}</Text>
+                    </Pressable>
+                  ))}
+              </View>
+            )}
           </Pressable>
         </View>
       </View>
 
-      {showGoalPicker && (
-        <View style={styles.goalRow}>
-          {GOAL_PRESETS.map((m) => (
-            <Pressable
-              key={m}
-              style={[styles.goalChip, m === dailyGoal && styles.goalChipActive]}
-              onPress={() => handleGoalChange(m)}
-            >
-              <Text style={[styles.goalChipText, m === dailyGoal && styles.goalChipTextActive]}>
-                {m >= 60 ? `${m / 60}h` : `${m}m`}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-
-      <View style={styles.metaRow}>
-        <MetaChip label={`${streak}d streak`} />
-        <MetaChip label={`Lv ${level}`} />
-        <MetaChip label={`${completedSessions} session${completedSessions === 1 ? '' : 's'}`} />
+      <View style={styles.footer}>
+        <MetaChip
+          label={`${streak}d streak`}
+          icon="flame"
+          color={theme.colors.warning}
+          bgColor={theme.colors.warningTintSoft}
+        />
+        <MetaChip
+          label={`Lv ${level}`}
+          icon="flash"
+          color={theme.colors.primary}
+          bgColor={theme.colors.primaryTintSoft}
+        />
+        <MetaChip
+          label={`${completedSessions} session${completedSessions === 1 ? '' : 's'}`}
+          icon="checkmark-done"
+          color={theme.colors.info}
+          bgColor="rgba(33, 150, 243, 0.13)"
+        />
       </View>
     </View>
   );
 });
 
-function MetaChip({ label }: { label: string }) {
+function MetaChip({
+  label,
+  icon,
+  color,
+  bgColor,
+}: {
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  bgColor: string;
+}) {
   return (
-    <View style={styles.metaChip}>
-      <Text style={styles.metaChipText}>{label}</Text>
+    <View style={[styles.metaChip, { backgroundColor: bgColor }]}>
+      <Ionicons name={icon} size={14} color={color} />
+      <Text style={[styles.metaChipText, { color }]}>{label}</Text>
     </View>
   );
 }
@@ -128,67 +177,107 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     padding: theme.spacing.lg,
     marginBottom: theme.spacing.lg,
+    flex: 1,
+    justifyContent: 'space-between',
   },
-  topRow: {
+  cardDone: {
+    borderColor: theme.colors.success,
+    shadowColor: theme.colors.success,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.lg,
+    gap: 8,
+    marginBottom: theme.spacing.md,
+  },
+  label: {
+    color: theme.colors.textMuted,
+    fontWeight: '800',
+    fontSize: 11,
+    letterSpacing: 1.5,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
   },
   ringWrap: { width: RING_SIZE, height: RING_SIZE },
   ringLabel: { alignItems: 'center', justifyContent: 'center' },
   ringPercent: {
     color: theme.colors.textPrimary,
-    fontWeight: '800',
-    fontSize: 13,
+    fontWeight: '900',
+    fontSize: 18,
   },
   copy: { flex: 1 },
-  title: {
+  minutesBig: {
     color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    lineHeight: 30,
   },
-  sub: {
+  minutesUnit: {
+    fontSize: 15,
+    fontWeight: '600',
     color: theme.colors.textMuted,
+  },
+  minutesLeft: {
+    color: theme.colors.textSecondary,
     fontSize: 13,
+    fontWeight: '600',
+  },
+  doneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     marginTop: 3,
   },
-  goalTappable: {
-    color: theme.colors.primary,
-    textDecorationLine: 'underline',
-    textDecorationStyle: 'dotted',
-  },
-  goalRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: theme.spacing.md,
-    paddingTop: theme.spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-  },
-  goalChip: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  goalChipActive: {
-    backgroundColor: `${theme.colors.primary}22`,
-    borderColor: theme.colors.primary,
-  },
-  goalChipText: {
-    color: theme.colors.textSecondary,
+  doneLabel: {
+    color: theme.colors.success,
     fontSize: 13,
     fontWeight: '700',
   },
-  goalChipTextActive: {
-    color: theme.colors.primary,
-  },
-  metaRow: {
+  goalInline: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 3,
+  },
+  goalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: theme.colors.primaryTintSoft,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+  },
+  goalBadgeActive: {
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+  },
+  goalBadgeText: {
+    color: theme.colors.primary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  goalChip: {
+    backgroundColor: theme.colors.surfaceAlt,
+    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  goalChipText: {
+    color: theme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  footer: {
+    flexDirection: 'row',
     gap: 8,
     marginTop: theme.spacing.md,
     paddingTop: theme.spacing.md,
@@ -196,14 +285,17 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.border,
   },
   metaChip: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 999,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: theme.borderRadius.full,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 8,
+    gap: 5,
   },
   metaChipText: {
-    color: theme.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
   },
 });

@@ -128,6 +128,13 @@ function dedupeImageQueries(queries: Array<string | null | undefined>): string[]
   return unique;
 }
 
+function upscaleWikipediaThumbnail(url?: string): string | undefined {
+  const trimmed = url?.trim();
+  if (!trimmed) return undefined;
+  const normalized = trimmed.startsWith('//') ? `https:${trimmed}` : trimmed;
+  return normalized.replace(/\/\d+px-([^/?#]+)([?#].*)?$/i, '/640px-$1$2');
+}
+
 function buildConceptFamilyImageQueries(query: string): string[] {
   const normalized = normalizeImageQuery(query);
   const familyQueries: string[] = [];
@@ -643,10 +650,11 @@ export async function searchMedicalImages(
   if (__DEV__) console.log('[MedicalSearch] Image query:', query);
 
   async function runImageSearch(searchQuery: string) {
-    const [commons, medpix, openi, brave] = await Promise.allSettled([
+    const [commons, medpix, openi, wikipedia, brave] = await Promise.allSettled([
       searchWikimediaCommons(searchQuery, Math.min(3, maxResults)),
       searchOpenI(searchQuery, Math.min(3, maxResults), 'mpx'),
       searchOpenI(searchQuery, Math.min(2, maxResults)),
+      searchWikipedia(searchQuery, Math.min(3, maxResults)),
       searchBraveImages(searchQuery, Math.min(3, maxResults)),
     ]);
 
@@ -654,6 +662,9 @@ export async function searchMedicalImages(
     if (medpix.status === 'fulfilled') collected.push(...medpix.value);
     if (commons.status === 'fulfilled') collected.push(...commons.value);
     if (openi.status === 'fulfilled') collected.push(...openi.value);
+    if (collected.length === 0 && wikipedia.status === 'fulfilled') {
+      collected.push(...wikipedia.value.filter((row) => Boolean(row.imageUrl)));
+    }
     if (collected.length === 0 && brave.status === 'fulfilled') collected.push(...brave.value);
 
     return {
@@ -661,6 +672,7 @@ export async function searchMedicalImages(
       commons,
       medpix,
       openi,
+      wikipedia,
       brave,
     };
   }
@@ -677,6 +689,10 @@ export async function searchMedicalImages(
     value: [],
   };
   let openi: PromiseSettledResult<MedicalGroundingSource[]> = {
+    status: 'fulfilled',
+    value: [],
+  };
+  let wikipedia: PromiseSettledResult<MedicalGroundingSource[]> = {
     status: 'fulfilled',
     value: [],
   };
@@ -698,6 +714,7 @@ export async function searchMedicalImages(
     commons = result.commons;
     medpix = result.medpix;
     openi = result.openi;
+    wikipedia = result.wikipedia;
     brave = result.brave;
     collected = dedupeGroundingSources([...collected, ...result.collected]);
     if (collected.length >= maxResults) {
@@ -714,6 +731,7 @@ export async function searchMedicalImages(
       medpix: medpix.status === 'fulfilled' ? medpix.value.length : 'failed',
       commons: commons.status === 'fulfilled' ? commons.value.length : 'failed',
       openi: openi.status === 'fulfilled' ? openi.value.length : 'failed',
+      wikipedia: wikipedia.status === 'fulfilled' ? wikipedia.value.length : 'failed',
       brave: brave.status === 'fulfilled' ? brave.value.length : 'failed',
     },
     sampleTitles: collected.slice(0, 3).map((row) => previewText(row.title, 80)),
@@ -722,7 +740,7 @@ export async function searchMedicalImages(
 
   if (__DEV__)
     console.log(
-      `[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`,
+      `[MedicalSearch] Images found: ${collected.length} (medpix: ${medpix.status === 'fulfilled' ? medpix.value.length : 'failed'}, commons: ${commons.status === 'fulfilled' ? commons.value.length : 'failed'}, openi: ${openi.status === 'fulfilled' ? openi.value.length : 'failed'}, wikipedia: ${wikipedia.status === 'fulfilled' ? wikipedia.value.length : 'failed'}, brave: ${brave.status === 'fulfilled' ? brave.value.length : 'failed'})`,
     );
 
   if (collected.length === 0) {
@@ -802,7 +820,7 @@ async function searchWikipedia(
       let imageUrl: string | undefined = undefined;
       const tUrl = p.thumbnail?.url;
       if (tUrl) {
-        imageUrl = tUrl.startsWith('//') ? `https:${tUrl}` : tUrl;
+        imageUrl = upscaleWikipediaThumbnail(tUrl);
       }
 
       return {

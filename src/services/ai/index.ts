@@ -59,6 +59,7 @@ export {
   chatWithGuruGrounded,
   chatWithGuruGroundedStreaming,
   askGuru,
+  explainMostTestedRationale,
   explainTopicDeeper,
   type GuruChatMemoryContext,
 } from './chat';

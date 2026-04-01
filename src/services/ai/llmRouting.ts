@@ -14,11 +14,21 @@ import {
   GITHUB_MODELS_CHAT_MODELS,
   GITHUB_MODELS_API_VERSION,
   getGitHubModelsChatCompletionsUrl,
+  GITHUB_COPILOT_MODELS,
+  orderedGitHubCopilotModels,
+  GITLAB_DUO_MODELS,
+  orderedGitLabDuoModels,
+  POE_MODELS,
 } from './config';
 import { RateLimitError } from './schemas';
 import { readOpenAiCompatibleSse } from './openaiSseStream';
 import { geminiGenerateContentSdk, geminiGenerateContentStreamSdk } from './google/geminiChat';
 import { callChatGpt, streamChatGpt } from './chatgpt/chatgptApi';
+import { getValidAccessToken as getGitHubCopilotToken } from './github/githubTokenStore';
+import { getValidAccessToken as getGitLabDuoToken } from './gitlab/gitlabTokenStore';
+import { completeGitLabDuoOpenCodeGateway } from './gitlab/gitlabDuoOpenCode';
+import { isGitLabDuoOpenCodeGatewayModel } from './gitlab/gitlabDuoGatewayModels';
+import { getValidAccessToken as getPoeToken } from './poe/poeTokenStore';
 import type { ChatGptAccountSlot, ProviderId } from '../../types';
 import { DEFAULT_PROVIDER_ORDER } from '../../types';
 import { logStreamEvent } from './runtimeDebug';
@@ -55,7 +65,11 @@ function splitForPseudoStream(text: string, targetChunkChars = 34): string[] {
 async function emitPseudoStreamFallback(
   text: string,
   onDelta: (delta: string) => void,
-  meta: { provider: string; model: string; reason: 'no_body' | 'empty_sse' },
+  meta: {
+    provider: string;
+    model: string;
+    reason: 'no_body' | 'empty_sse' | 'v4_chat_no_sse' | 'gateway_no_sse';
+  },
 ) {
   const chunks = splitForPseudoStream(text);
   const targetDurationMs = Math.min(1400, Math.max(280, Math.round(text.length * 2.2)));
@@ -517,6 +531,92 @@ async function streamCloudflareChat(
   return text;
 }
 
+/** Groq returns 400 if prompt + max_tokens exceeds the model window; some models are tighter than 128k. */
+const GROQ_MAX_COMPLETION_TOKENS = 2048;
+/** Soft cap on total message characters before middle-truncating (rough token safety). */
+const GROQ_MESSAGES_CHAR_BUDGET = 72_000;
+/**
+ * Copilot gpt-4.1 / gpt-4o enforce ~64k prompt tokens. Dense/code-heavy text can approach ~1 token/char
+ * in worst cases; keep a conservative cap and rely on retry for `model_max_prompt_tokens_exceeded`.
+ */
+const GITHUB_COPILOT_MESSAGES_CHAR_BUDGET = 52_000;
+
+function truncateMessageMiddle(content: string, maxLen: number): string {
+  if (content.length <= maxLen) return content;
+  const head = Math.floor((maxLen - 120) * 0.5);
+  const tail = maxLen - head - 80;
+  const omitted = content.length - head - tail;
+  return `${content.slice(0, head)}\n\n… [${omitted} characters omitted for API limit] …\n\n${content.slice(-tail)}`;
+}
+
+function clampMessagesToCharBudget(
+  messages: Message[],
+  charBudget: number,
+  devLogName: string,
+): Message[] {
+  const origChars = messages.reduce((s, m) => s + m.content.length, 0);
+  const out = messages.map((m) => ({ role: m.role, content: m.content }));
+
+  for (let guard = 0; guard < 24; guard += 1) {
+    const total = out.reduce((s, m) => s + m.content.length, 0);
+    if (total <= charBudget) {
+      if (__DEV__ && origChars > charBudget) {
+        console.warn(`[AI] ${devLogName} messages clamped: ${origChars} → ${total} chars`);
+      }
+      return out;
+    }
+    let bestI = 0;
+    let bestLen = 0;
+    for (let i = 0; i < out.length; i += 1) {
+      if (out[i].content.length > bestLen) {
+        bestLen = out[i].content.length;
+        bestI = i;
+      }
+    }
+    if (bestLen < 900) break;
+    const totalNow = out.reduce((s, m) => s + m.content.length, 0);
+    const target = Math.max(800, bestLen - (totalNow - charBudget) - 400);
+    out[bestI] = {
+      ...out[bestI],
+      content: truncateMessageMiddle(out[bestI].content, target),
+    };
+  }
+
+  if (__DEV__) {
+    const finalTotal = out.reduce((s, m) => s + m.content.length, 0);
+    if (finalTotal > charBudget) {
+      console.warn(
+        `[AI] ${devLogName} clamp: messages still ~${finalTotal} chars (budget ${charBudget})`,
+      );
+    } else if (origChars > charBudget) {
+      console.warn(`[AI] ${devLogName} messages clamped: ${origChars} → ${finalTotal} chars`);
+    }
+  }
+  return out;
+}
+
+function clampMessagesForGroq(messages: Message[]): Message[] {
+  return clampMessagesToCharBudget(messages, GROQ_MESSAGES_CHAR_BUDGET, 'Groq');
+}
+
+function clampMessagesForGitHubCopilot(messages: Message[]): Message[] {
+  return clampMessagesToCharBudget(messages, GITHUB_COPILOT_MESSAGES_CHAR_BUDGET, 'GitHub Copilot');
+}
+
+/**
+ * Single ceiling for {@link generateJSONWithRouting} before any cloud/local structured call.
+ * Avoids ~hundreds-of-kB prompts that exhaust Groq, Copilot (even after per-provider clamps), and GitLab.
+ */
+const STRUCTURED_JSON_ROUTING_CHAR_BUDGET = 56_000;
+
+export function clampMessagesForStructuredJsonRouting(messages: Message[]): Message[] {
+  return clampMessagesToCharBudget(
+    messages,
+    STRUCTURED_JSON_ROUTING_CHAR_BUDGET,
+    'Structured JSON routing',
+  );
+}
+
 async function callGroq(
   messages: Message[],
   groqKey: string,
@@ -543,11 +643,13 @@ async function callGroq(
     }
   }
 
+  const payloadMessages = clampMessagesForGroq(jsonMode ? clonedMessages : messages);
+
   const body: Record<string, unknown> = {
     model,
-    messages: jsonMode ? clonedMessages : messages,
+    messages: payloadMessages,
     temperature: 0.7,
-    max_tokens: 4096,
+    max_tokens: GROQ_MAX_COMPLETION_TOKENS,
   };
   if (jsonMode) {
     body.response_format = { type: 'json_object' };
@@ -584,6 +686,7 @@ async function streamGroqChat(
   model: string,
   onDelta: (delta: string) => void,
 ): Promise<string> {
+  const payloadMessages = clampMessagesForGroq(messages);
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -592,9 +695,9 @@ async function streamGroqChat(
     },
     body: JSON.stringify({
       model,
-      messages,
+      messages: payloadMessages,
       temperature: 0.7,
-      max_tokens: 4096,
+      max_tokens: GROQ_MAX_COMPLETION_TOKENS,
       stream: true,
     }),
   });
@@ -610,7 +713,7 @@ async function streamGroqChat(
 
   if (!res.body) {
     logStreamEvent('no_body_fallback', { provider: 'groq', model });
-    const text = await callGroq(messages, groqKey, model, false);
+    const text = await callGroq(payloadMessages, groqKey, model, false);
     await emitPseudoStreamFallback(text, onDelta, {
       provider: 'groq',
       model,
@@ -982,9 +1085,389 @@ async function streamGitHubModelsChat(
   return text;
 }
 
+// ── GitHub Copilot (OAuth token → chat/completions directly) ────────────
+// Matches OpenCode's approach: send OAuth access token as Bearer directly
+// to api.githubcopilot.com/chat/completions. No session token exchange.
+import {
+  getGitHubCopilotEditorVersion,
+  getGitHubCopilotIntegrationId,
+  getGitHubCopilotChatCompletionsUrl,
+} from './github/githubCopilotEnv';
+
+function githubCopilotHeaders(oauthToken: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${oauthToken}`,
+    'User-Agent': 'GuruStudy/1.0',
+    'Editor-Version': getGitHubCopilotEditorVersion(),
+    'Copilot-Integration-Id': getGitHubCopilotIntegrationId(),
+    'Openai-Intent': 'conversation-edits',
+  };
+}
+
+/** OAuth token is sent directly — no session token exchange needed. */
+async function resolveCopilotSessionToken(oauthToken: string): Promise<string> {
+  return oauthToken;
+}
+
+async function callGitHubCopilot(
+  messages: Message[],
+  oauthToken: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  if (__DEV__) console.log(`[AI] callGitHubCopilot attempt: model=${model} json=${jsonMode}`);
+
+  const sessionToken = await resolveCopilotSessionToken(oauthToken);
+
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+
+  const payloadMessages = clampMessagesForGitHubCopilot(clonedMessages);
+  const apiUrl = getGitHubCopilotChatCompletionsUrl();
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: payloadMessages,
+    temperature: 0.7,
+    max_tokens: 4096,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  const res = await fetch(apiUrl, {
+    method: 'POST',
+    headers: githubCopilotHeaders(sessionToken),
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 429) {
+    if (__DEV__) console.warn(`[AI] GitHub Copilot 429: ${model}`);
+    throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    if (__DEV__) console.error(`[AI] GitHub Copilot ${res.status} (${model}):`, err);
+    const errLower = err.toLowerCase();
+    if (
+      errLower.includes('model_max_prompt_tokens_exceeded') &&
+      payloadMessages.reduce((s, m) => s + m.content.length, 0) > 12_000
+    ) {
+      const tighter = clampMessagesToCharBudget(
+        clonedMessages,
+        Math.floor(GITHUB_COPILOT_MESSAGES_CHAR_BUDGET * 0.45),
+        'GitHub Copilot (retry)',
+      );
+      const retryBody: Record<string, unknown> = {
+        model,
+        messages: tighter,
+        temperature: 0.7,
+        max_tokens: 4096,
+      };
+      if (jsonMode) retryBody.response_format = { type: 'json_object' };
+      const res2 = await fetch(apiUrl, {
+        method: 'POST',
+        headers: githubCopilotHeaders(sessionToken),
+        body: JSON.stringify(retryBody),
+      });
+      if (res2.status === 429) {
+        throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
+      }
+      if (!res2.ok) {
+        const err2 = await res2.text().catch(() => res2.status.toString());
+        if (__DEV__) console.error(`[AI] GitHub Copilot retry ${res2.status} (${model}):`, err2);
+        throw new Error(`GitHub Copilot error ${res2.status} (${model}): ${err2}`);
+      }
+      const data2 = await res2.json();
+      const text2 = data2?.choices?.[0]?.message?.content;
+      if (!text2 || !text2.trim()) {
+        throw new Error(`Empty response from GitHub Copilot model ${model}`);
+      }
+      if (__DEV__) console.log(`[AI] GitHub Copilot success (after prompt clamp retry): ${model}`);
+      return text2;
+    }
+    throw new Error(`GitHub Copilot error ${res.status} (${model}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from GitHub Copilot model ${model}`);
+  if (__DEV__) console.log(`[AI] GitHub Copilot success: ${model} (${text.length} chars)`);
+  return text;
+}
+
+async function streamGitHubCopilotChat(
+  messages: Message[],
+  oauthToken: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const sessionToken = await resolveCopilotSessionToken(oauthToken);
+  const apiUrl = getGitHubCopilotChatCompletionsUrl();
+  const payloadMessages = clampMessagesForGitHubCopilot(messages);
+
+  const postStream = (payload: Message[]) =>
+    fetch(apiUrl, {
+      method: 'POST',
+      headers: githubCopilotHeaders(sessionToken),
+      body: JSON.stringify({
+        model,
+        messages: payload,
+        temperature: 0.7,
+        max_tokens: 4096,
+        stream: true,
+      }),
+    });
+
+  let res = await postStream(payloadMessages);
+
+  if (res.status === 429) {
+    throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    const errLower = err.toLowerCase();
+    if (
+      errLower.includes('model_max_prompt_tokens_exceeded') &&
+      payloadMessages.reduce((s, m) => s + m.content.length, 0) > 12_000
+    ) {
+      const tighter = clampMessagesToCharBudget(
+        messages,
+        Math.floor(GITHUB_COPILOT_MESSAGES_CHAR_BUDGET * 0.45),
+        'GitHub Copilot stream (retry)',
+      );
+      res = await postStream(tighter);
+      if (res.status === 429) {
+        throw new RateLimitError(`GitHub Copilot rate limit on ${model}`);
+      }
+      if (!res.ok) {
+        const err2 = await res.text().catch(() => res.status.toString());
+        if (__DEV__)
+          console.error(`[AI] GitHub Copilot stream retry ${res.status} (${model}):`, err2);
+        throw new Error(`GitHub Copilot error ${res.status} (${model}): ${err2}`);
+      }
+    } else {
+      throw new Error(`GitHub Copilot error ${res.status} (${model}): ${err}`);
+    }
+  }
+
+  if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'github_copilot', model });
+    const text = await callGitHubCopilot(messages, oauthToken, model, false);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'github_copilot',
+      model,
+      reason: 'no_body',
+    });
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'github_copilot',
+    model,
+    outputChars: text.length,
+  });
+  if (!text.trim()) throw new Error(`Empty response from GitHub Copilot model ${model}`);
+  return text;
+}
+
+// ── GitLab Duo (OpenCode gateway only) ─────────────────────────────────
+// All models route through: OAuth `read_user api` → `POST .../api/v4/ai/third_party_agents/direct_access`
+// → GitLab AI Gateway (`EXPO_PUBLIC_GITLAB_AI_GATEWAY_URL`, default cloud.gitlab.com) Anthropic/OpenAI proxy.
+// The legacy `POST {instance}/api/v4/chat/completions` is deprecated (502 on most instances).
+
+async function callGitLabDuo(
+  messages: Message[],
+  accessToken: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  if (__DEV__) console.log(`[AI] callGitLabDuo attempt: model=${model} json=${jsonMode}`);
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+
+  if (!isGitLabDuoOpenCodeGatewayModel(model)) {
+    throw new Error(
+      `GitLab Duo model "${model}" is not mapped to the AI Gateway. Add it to gitlabDuoGatewayModels.ts or remove it from GITLAB_DUO_MODELS.`,
+    );
+  }
+
+  if (__DEV__) console.log(`[AI] callGitLabDuo OpenCode gateway: model=${model}`);
+  return completeGitLabDuoOpenCodeGateway(clonedMessages, accessToken, model, jsonMode);
+}
+
+async function streamGitLabDuoChat(
+  messages: Message[],
+  accessToken: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  // All GitLab Duo models go through the OpenCode gateway (Anthropic/OpenAI proxy).
+  // The gateway doesn't support SSE for the proxy endpoints, so we pseudo-stream.
+  const text = await callGitLabDuo(messages, accessToken, model, false);
+  await emitPseudoStreamFallback(text, onDelta, {
+    provider: 'gitlab_duo',
+    model,
+    reason: 'gateway_no_sse',
+  });
+  if (!text.trim()) throw new Error(`Empty response from GitLab Duo model ${model}`);
+  return text;
+}
+
+// ── Poe (OAuth) ─────────────────────────────────────────────────────────
+function poeHeaders(accessToken: string): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${accessToken}`,
+  };
+}
+
+const POE_API_URL = 'https://api.poe.com/v1/chat/completions';
+
+async function callPoe(
+  messages: Message[],
+  accessToken: string,
+  model: string,
+  jsonMode = true,
+): Promise<string> {
+  if (__DEV__) console.log(`[AI] callPoe attempt: model=${model} json=${jsonMode}`);
+  const clonedMessages = [...messages];
+  if (jsonMode) {
+    const hasJsonWord = clonedMessages.some((m) => m.content.toLowerCase().includes('json'));
+    if (!hasJsonWord) {
+      const systemIdx = clonedMessages.findIndex((m) => m.role === 'system');
+      if (systemIdx !== -1) {
+        clonedMessages[systemIdx] = {
+          ...clonedMessages[systemIdx],
+          content: clonedMessages[systemIdx].content + '\nRespond in JSON format.',
+        };
+      } else {
+        clonedMessages[0] = {
+          ...clonedMessages[0],
+          content: clonedMessages[0].content + '\nRespond in JSON format.',
+        };
+      }
+    }
+  }
+
+  const body: Record<string, unknown> = {
+    model,
+    messages: clonedMessages,
+    temperature: 0.7,
+    max_tokens: 4096,
+  };
+  if (jsonMode) {
+    body.response_format = { type: 'json_object' };
+  }
+
+  const res = await fetch(POE_API_URL, {
+    method: 'POST',
+    headers: poeHeaders(accessToken),
+    body: JSON.stringify(body),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Poe rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Poe error ${res.status} (${model}): ${err}`);
+  }
+
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content;
+  if (!text || !text.trim()) throw new Error(`Empty response from Poe model ${model}`);
+  return text;
+}
+
+async function streamPoeChat(
+  messages: Message[],
+  accessToken: string,
+  model: string,
+  onDelta: (delta: string) => void,
+): Promise<string> {
+  const res = await fetch(POE_API_URL, {
+    method: 'POST',
+    headers: poeHeaders(accessToken),
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: 0.7,
+      max_tokens: 4096,
+      stream: true,
+    }),
+  });
+
+  if (res.status === 429) {
+    throw new RateLimitError(`Poe rate limit on ${model}`);
+  }
+
+  if (!res.ok) {
+    const err = await res.text().catch(() => res.status.toString());
+    throw new Error(`Poe error ${res.status} (${model}): ${err}`);
+  }
+
+  if (!res.body) {
+    logStreamEvent('no_body_fallback', { provider: 'poe', model });
+    const text = await callPoe(messages, accessToken, model, false);
+    await emitPseudoStreamFallback(text, onDelta, {
+      provider: 'poe',
+      model,
+      reason: 'no_body',
+    });
+    return text;
+  }
+
+  const text = await readOpenAiCompatibleSse(res, onDelta);
+  logStreamEvent('sse_complete', {
+    provider: 'poe',
+    model,
+    outputChars: text.length,
+  });
+  if (!text.trim()) throw new Error(`Empty response from Poe model ${model}`);
+  return text;
+}
+
 async function callKilo(
   messages: Message[],
-  kiloApiKey: string,
+  kiloApiKey: string | undefined,
   model: string,
   jsonMode = true,
 ): Promise<string> {
@@ -1013,12 +1496,11 @@ async function callKilo(
     max_tokens: 4096,
   };
   if (jsonMode) body.response_format = { type: 'json_object' };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (kiloApiKey) headers['Authorization'] = `Bearer ${kiloApiKey}`;
   const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${kiloApiKey}`,
-    },
+    headers,
     body: JSON.stringify(body),
   });
   if (res.status === 429) {
@@ -1029,23 +1511,25 @@ async function callKilo(
     throw new Error(`Kilo error ${res.status} (${model}): ${err}`);
   }
   const data = await res.json();
-  const text = data?.choices?.[0]?.message?.content;
-  if (!text || !text.trim()) throw new Error(`Empty response from Kilo model ${model}`);
-  return text;
+  const msg = data?.choices?.[0]?.message;
+  const text = msg?.content;
+  if (text && text.trim()) return text.trim();
+  const reasoning = typeof msg?.reasoning === 'string' ? msg.reasoning : '';
+  if (reasoning.trim()) return reasoning.trim();
+  throw new Error(`Empty response from Kilo model ${model}`);
 }
 
 async function streamKiloChat(
   messages: Message[],
-  kiloApiKey: string,
+  kiloApiKey: string | undefined,
   model: string,
   onDelta: (delta: string) => void,
 ): Promise<string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (kiloApiKey) headers['Authorization'] = `Bearer ${kiloApiKey}`;
   const res = await fetch('https://api.kilo.ai/api/gateway/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${kiloApiKey}`,
-    },
+    headers,
     body: JSON.stringify({
       model,
       messages,
@@ -1214,6 +1698,13 @@ interface ProviderKeys {
   cfApiToken?: string;
   chatgptConnected?: boolean;
   chatgptSlots?: ChatGptAccountSlot[];
+  githubCopilotConnected?: boolean;
+  /** When set, Copilot auto-routing tries this model id first (must be in {@link GITHUB_COPILOT_MODELS}). */
+  githubCopilotPreferredModel?: string;
+  gitlabDuoConnected?: boolean;
+  /** When set, GitLab Duo auto-routing tries this model id first (must be in {@link GITLAB_DUO_MODELS}). */
+  gitlabDuoPreferredModel?: string;
+  poeConnected?: boolean;
 }
 
 /** Ensure chatgpt is in the provider order (old saved orders won't have it). */
@@ -1227,12 +1718,18 @@ function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
   switch (provider) {
     case 'chatgpt':
       return !!keys.chatgptConnected;
+    case 'github_copilot':
+      return !!keys.githubCopilotConnected;
+    case 'gitlab_duo':
+      return !!keys.gitlabDuoConnected;
+    case 'poe':
+      return !!keys.poeConnected;
     case 'groq':
       return !!keys.groqKey;
     case 'github':
       return !!keys.githubModelsPat;
     case 'kilo':
-      return !!keys.kiloApiKey;
+      return true; // kilo-auto/free works without auth
     case 'deepseek':
       return !!keys.deepseekKey;
     case 'agentrouter':
@@ -1248,6 +1745,37 @@ function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * OAuth providers can show "connected" in SQLite while SecureStore has no refresh token.
+ * For accurate `[AI] … available:` dev logs, verify tokens once.
+ */
+async function refineAvailableProvidersForDevLog(available: ProviderId[]): Promise<ProviderId[]> {
+  const out: ProviderId[] = [];
+  for (const p of available) {
+    if (p === 'github_copilot') {
+      try {
+        await getGitHubCopilotToken();
+      } catch {
+        continue;
+      }
+    } else if (p === 'gitlab_duo') {
+      try {
+        await getGitLabDuoToken();
+      } catch {
+        continue;
+      }
+    } else if (p === 'poe') {
+      try {
+        await getPoeToken();
+      } catch {
+        continue;
+      }
+    }
+    out.push(p);
+  }
+  return out;
 }
 
 function getChatGptFallbackSlots(keys: ProviderKeys): ChatGptAccountSlot[] {
@@ -1373,6 +1901,41 @@ async function tryStreamProvider(
         (m) => streamChatGptWithFallback(messages, m, onDelta, getChatGptFallbackSlots(keys)),
         'chatgpt',
       );
+    case 'github_copilot': {
+      if (!keys.githubCopilotConnected) return null;
+      let copilotStreamToken: string;
+      try {
+        copilotStreamToken = await getGitHubCopilotToken();
+      } catch (err) {
+        if (__DEV__) console.warn(`[AI] github_copilot skipped:`, (err as Error).message);
+        return null;
+      }
+      return tryModels(
+        orderedGitHubCopilotModels(keys.githubCopilotPreferredModel),
+        (m) => streamGitHubCopilotChat(messages, copilotStreamToken, m, onDelta),
+        'github_copilot',
+      );
+    }
+    case 'gitlab_duo':
+      if (!keys.gitlabDuoConnected) return null;
+      return tryModels(
+        orderedGitLabDuoModels(keys.gitlabDuoPreferredModel),
+        async (m) => {
+          const token = await getGitLabDuoToken();
+          return streamGitLabDuoChat(messages, token, m, onDelta);
+        },
+        'gitlab_duo',
+      );
+    case 'poe':
+      if (!keys.poeConnected) return null;
+      return tryModels(
+        POE_MODELS,
+        async (m) => {
+          const token = await getPoeToken();
+          return streamPoeChat(messages, token, m, onDelta);
+        },
+        'poe',
+      );
     case 'groq':
       if (!keys.groqKey) return null;
       return tryModels(
@@ -1478,6 +2041,41 @@ async function tryProvider(
         (m) => callChatGptWithFallback(messages, m, json, getChatGptFallbackSlots(keys)),
         'chatgpt',
       );
+    case 'github_copilot': {
+      if (!keys.githubCopilotConnected) return null;
+      let copilotToken: string;
+      try {
+        copilotToken = await getGitHubCopilotToken();
+      } catch (err) {
+        if (__DEV__) console.warn(`[AI] github_copilot skipped:`, (err as Error).message);
+        return null;
+      }
+      return tryModels(
+        orderedGitHubCopilotModels(keys.githubCopilotPreferredModel),
+        (m) => callGitHubCopilot(messages, copilotToken, m, json),
+        'github_copilot',
+      );
+    }
+    case 'gitlab_duo':
+      if (!keys.gitlabDuoConnected) return null;
+      return tryModels(
+        orderedGitLabDuoModels(keys.gitlabDuoPreferredModel),
+        async (m) => {
+          const token = await getGitLabDuoToken();
+          return callGitLabDuo(messages, token, m, json);
+        },
+        'gitlab_duo',
+      );
+    case 'poe':
+      if (!keys.poeConnected) return null;
+      return tryModels(
+        POE_MODELS,
+        async (m) => {
+          const token = await getPoeToken();
+          return callPoe(messages, token, m, json);
+        },
+        'poe',
+      );
     case 'groq':
       if (!keys.groqKey) return null;
       return tryModels(GROQ_MODELS, (m) => callGroq(messages, keys.groqKey!, m, json), 'groq');
@@ -1559,6 +2157,11 @@ export async function attemptCloudLLMStream(
   providerOrder?: ProviderId[],
   chatgptConnected?: boolean,
   chatgptSlots?: ChatGptAccountSlot[],
+  githubCopilotConnected?: boolean,
+  gitlabDuoConnected?: boolean,
+  poeConnected?: boolean,
+  githubCopilotPreferredModel?: string,
+  gitlabDuoPreferredModel?: string,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1584,6 +2187,15 @@ export async function attemptCloudLLMStream(
   const preferredChatGptModel = chosenModel?.startsWith('chatgpt/')
     ? chosenModel.replace('chatgpt/', '')
     : undefined;
+  const preferredGithubCopilotModel = chosenModel?.startsWith('github_copilot/')
+    ? chosenModel.replace('github_copilot/', '')
+    : undefined;
+  const preferredGitlabDuoModel = chosenModel?.startsWith('gitlab_duo/')
+    ? chosenModel.replace('gitlab_duo/', '')
+    : undefined;
+  const preferredPoeModel = chosenModel?.startsWith('poe/')
+    ? chosenModel.replace('poe/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -1594,6 +2206,9 @@ export async function attemptCloudLLMStream(
     !preferredKiloModel &&
     !preferredAgentRouterModel &&
     !preferredChatGptModel &&
+    !preferredGithubCopilotModel &&
+    !preferredGitlabDuoModel &&
+    !preferredPoeModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -1729,6 +2344,41 @@ export async function attemptCloudLLMStream(
     }
   }
 
+  if (preferredGithubCopilotModel && githubCopilotConnected) {
+    try {
+      const token = await getGitHubCopilotToken();
+      const text = await streamGitHubCopilotChat(
+        messages,
+        token,
+        preferredGithubCopilotModel,
+        onDelta,
+      );
+      return { text, modelUsed: `github_copilot/${preferredGithubCopilotModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredGitlabDuoModel && gitlabDuoConnected) {
+    try {
+      const token = await getGitLabDuoToken();
+      const text = await streamGitLabDuoChat(messages, token, preferredGitlabDuoModel, onDelta);
+      return { text, modelUsed: `gitlab_duo/${preferredGitlabDuoModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredPoeModel && poeConnected) {
+    try {
+      const token = await getPoeToken();
+      const text = await streamPoeChat(messages, token, preferredPoeModel, onDelta);
+      return { text, modelUsed: `poe/${preferredPoeModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   const userPickedSpecificModel =
     !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
   if (userPickedSpecificModel) {
@@ -1772,6 +2422,11 @@ export async function attemptCloudLLMStream(
     cfApiToken,
     chatgptConnected,
     chatgptSlots,
+    githubCopilotConnected,
+    githubCopilotPreferredModel: (githubCopilotPreferredModel ?? '').trim() || undefined,
+    gitlabDuoConnected,
+    gitlabDuoPreferredModel: (gitlabDuoPreferredModel ?? '').trim() || undefined,
+    poeConnected,
   };
   const skipModels: Record<string, string | undefined> = {
     chatgpt: preferredChatGptModel,
@@ -1784,10 +2439,14 @@ export async function attemptCloudLLMStream(
     gemini_fallback: preferredGeminiModel,
     openrouter: preferredOpenRouterModel,
     cloudflare: preferredCfModel,
+    github_copilot: preferredGithubCopilotModel,
+    gitlab_duo: preferredGitlabDuoModel,
+    poe: preferredPoeModel,
   };
 
   if (__DEV__) {
-    const available = order.filter((p) => providerHasKey(p, keys));
+    const flagged = order.filter((p) => providerHasKey(p, keys));
+    const available = await refineAvailableProvidersForDevLog(flagged);
     console.log(
       `[AI] stream routing order: [${order.join(' → ')}] (available: ${available.join(', ')})`,
     );
@@ -1876,6 +2535,11 @@ export async function attemptCloudLLM(
   providerOrder?: ProviderId[],
   chatgptConnected?: boolean,
   chatgptSlots?: ChatGptAccountSlot[],
+  githubCopilotConnected?: boolean,
+  gitlabDuoConnected?: boolean,
+  poeConnected?: boolean,
+  githubCopilotPreferredModel?: string,
+  gitlabDuoPreferredModel?: string,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -1901,6 +2565,15 @@ export async function attemptCloudLLM(
   const preferredChatGptModel = chosenModel?.startsWith('chatgpt/')
     ? chosenModel.replace('chatgpt/', '')
     : undefined;
+  const preferredGithubCopilotModel = chosenModel?.startsWith('github_copilot/')
+    ? chosenModel.replace('github_copilot/', '')
+    : undefined;
+  const preferredGitlabDuoModel = chosenModel?.startsWith('gitlab_duo/')
+    ? chosenModel.replace('gitlab_duo/', '')
+    : undefined;
+  const preferredPoeModel = chosenModel?.startsWith('poe/')
+    ? chosenModel.replace('poe/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -1911,6 +2584,9 @@ export async function attemptCloudLLM(
     !preferredKiloModel &&
     !preferredAgentRouterModel &&
     !preferredChatGptModel &&
+    !preferredGithubCopilotModel &&
+    !preferredGitlabDuoModel &&
+    !preferredPoeModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -2015,6 +2691,42 @@ export async function attemptCloudLLM(
     }
   }
 
+  if (preferredGithubCopilotModel && githubCopilotConnected) {
+    try {
+      const token = await getGitHubCopilotToken();
+      const text = textMode
+        ? await callGitHubCopilot(messages, token, preferredGithubCopilotModel, false)
+        : await callGitHubCopilot(messages, token, preferredGithubCopilotModel);
+      return { text, modelUsed: `github_copilot/${preferredGithubCopilotModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredGitlabDuoModel && gitlabDuoConnected) {
+    try {
+      const token = await getGitLabDuoToken();
+      const text = textMode
+        ? await callGitLabDuo(messages, token, preferredGitlabDuoModel, false)
+        : await callGitLabDuo(messages, token, preferredGitlabDuoModel);
+      return { text, modelUsed: `gitlab_duo/${preferredGitlabDuoModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
+  if (preferredPoeModel && poeConnected) {
+    try {
+      const token = await getPoeToken();
+      const text = textMode
+        ? await callPoe(messages, token, preferredPoeModel, false)
+        : await callPoe(messages, token, preferredPoeModel);
+      return { text, modelUsed: `poe/${preferredPoeModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   // 2. Default Routing — iterate providers in user-defined (or default) order
   const order = ensureChatGptInOrder(
     providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER,
@@ -2032,6 +2744,11 @@ export async function attemptCloudLLM(
     cfApiToken,
     chatgptConnected,
     chatgptSlots,
+    githubCopilotConnected,
+    githubCopilotPreferredModel: (githubCopilotPreferredModel ?? '').trim() || undefined,
+    gitlabDuoConnected,
+    gitlabDuoPreferredModel: (gitlabDuoPreferredModel ?? '').trim() || undefined,
+    poeConnected,
   };
   const skipModels: Record<string, string | undefined> = {
     chatgpt: preferredChatGptModel,
@@ -2044,12 +2761,18 @@ export async function attemptCloudLLM(
     gemini_fallback: preferredGeminiModel,
     openrouter: preferredOpenRouterModel,
     cloudflare: preferredCfModel,
+    github_copilot: preferredGithubCopilotModel,
+    gitlab_duo: preferredGitlabDuoModel,
+    poe: preferredPoeModel,
   };
 
   if (__DEV__) {
-    const available = order.filter((p) => providerHasKey(p, keys2));
+    const flagged = order.filter((p) => providerHasKey(p, keys2));
+    const available = await refineAvailableProvidersForDevLog(flagged);
     console.log(
-      `[AI] routing order: [${order.join(' → ')}] (available: ${available.join(', ')}) textMode=${textMode}`,
+      `[AI] routing order: [${order.join(' → ')}] (available: ${available.join(
+        ', ',
+      )}) textMode=${textMode}`,
     );
   }
 

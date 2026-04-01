@@ -22,7 +22,6 @@ import ShortcutTile from '../components/home/ShortcutTile';
 import AgendaItem from '../components/home/AgendaItem';
 import TodayPlanCard from '../components/home/TodayPlanCard';
 import StartButton from '../components/StartButton';
-import LoadingOrb from '../components/LoadingOrb';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
 import { getDb } from '../db/database';
 import { getSubjectById } from '../db/queries/topics';
@@ -305,11 +304,7 @@ export default function HomeScreen() {
   }, [profile?.syncCode, navigation]);
 
   if (isLoading || !profile || !levelInfo) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <LoadingOrb message="Loading progress..." />
-      </SafeAreaView>
-    );
+    return <SafeAreaView style={styles.safe} />;
   }
 
   const progressClamped = Math.min(
@@ -351,6 +346,32 @@ export default function HomeScreen() {
     };
   })();
 
+  const bootPhase = useAppStore((s) => s.bootPhase);
+  const setBootPhase = useAppStore((s) => s.setBootPhase);
+  const setStartButtonLayout = useAppStore((s) => s.setStartButtonLayout);
+  const setStartButtonCta = useAppStore((s) => s.setStartButtonCta);
+  const startButtonRef = useRef<View>(null);
+
+  useEffect(() => {
+    setStartButtonCta(heroCta.label, heroCta.sublabel ?? '');
+  }, [heroCta.label, heroCta.sublabel, setStartButtonCta]);
+
+  useEffect(() => {
+    if (!isLoading && bootPhase === 'calming') {
+      const timer = setTimeout(() => {
+        if (startButtonRef.current) {
+          startButtonRef.current.measureInWindow((x, y, width, height) => {
+            setStartButtonLayout({ x, y, width, height });
+            setBootPhase('settling');
+          });
+        } else {
+          setBootPhase('settling');
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, bootPhase, setBootPhase, setStartButtonLayout]);
+
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);
 
@@ -388,9 +409,11 @@ export default function HomeScreen() {
           {/* ── Hero: Start button + inline stats ── */}
           <View style={styles.heroSection}>
             <StartButton
+              ref={startButtonRef}
               onPress={heroCta.onPress}
               label={heroCta.label}
               sublabel={heroCta.sublabel}
+              hidden={bootPhase !== 'done'}
             />
             <View style={styles.heroStats}>
               <View style={styles.heroStatItem}>

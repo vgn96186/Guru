@@ -12,6 +12,7 @@ jest.mock('./llmRouting', () => ({
   attemptLocalLLM: jest.fn(),
   attemptCloudLLM: jest.fn(),
   attemptCloudLLMStream: jest.fn(),
+  clampMessagesForStructuredJsonRouting: jest.fn((msgs: unknown[]) => msgs),
 }));
 
 jest.mock('../deviceMemory', () => ({
@@ -21,6 +22,16 @@ jest.mock('../deviceMemory', () => ({
 
 jest.mock('./config', () => ({
   getApiKeys: jest.fn(),
+}));
+
+jest.mock('./runtimeDebug', () => ({
+  createAiRequestTrace: jest.fn(() => ({
+    success: jest.fn(),
+    failure: jest.fn(),
+    log: jest.fn(),
+  })),
+  logStreamEvent: jest.fn(),
+  previewText: jest.fn((t: string) => t?.slice(0, 80) ?? ''),
 }));
 
 import { z } from 'zod';

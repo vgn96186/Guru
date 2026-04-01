@@ -27,6 +27,21 @@ jest.mock('react-native-reanimated', () => {
   };
 });
 
+jest.mock('react-native-svg', () => {
+  const React = require('react');
+  const el = (tag: string) => (props: any) => React.createElement(tag, props, props.children);
+  return {
+    __esModule: true,
+    default: el('Svg'),
+    Svg: el('Svg'),
+    Defs: el('Defs'),
+    RadialGradient: el('RadialGradient'),
+    Stop: el('Stop'),
+    Circle: el('Circle'),
+    Ellipse: el('Ellipse'),
+  };
+});
+
 describe('LoadingOrb', () => {
   it('renders correctly with default message', () => {
     const { getByText } = render(<LoadingOrb />);

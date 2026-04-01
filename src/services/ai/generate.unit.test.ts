@@ -28,6 +28,7 @@ jest.mock('./runtimeDebug', () => ({
   createAiRequestTrace: jest.fn(() => ({
     success: jest.fn(),
     failure: jest.fn(),
+    fail: jest.fn(),
     log: jest.fn(),
   })),
   logStreamEvent: jest.fn(),

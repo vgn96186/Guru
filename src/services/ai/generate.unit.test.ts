@@ -24,16 +24,25 @@ jest.mock('./config', () => ({
   getApiKeys: jest.fn(),
 }));
 
-jest.mock('./runtimeDebug', () => ({
-  createAiRequestTrace: jest.fn(() => ({
+jest.mock('../runtimeActivity', () => ({
+  markAiRuntimeStart: jest.fn(),
+  markAiRuntimeFinish: jest.fn(),
+}));
+
+jest.mock('./runtimeDebug', () => {
+  const trace = {
     success: jest.fn(),
     failure: jest.fn(),
     fail: jest.fn(),
     log: jest.fn(),
-  })),
-  logStreamEvent: jest.fn(),
-  previewText: jest.fn((t: string) => t?.slice(0, 80) ?? ''),
-}));
+  };
+  return {
+    __esModule: true,
+    createAiRequestTrace: jest.fn(() => trace),
+    logStreamEvent: jest.fn(),
+    previewText: jest.fn((t: string) => (t ? t.slice(0, 80) : '')),
+  };
+});
 
 import { z } from 'zod';
 import { profileRepository } from '../../db/repositories';

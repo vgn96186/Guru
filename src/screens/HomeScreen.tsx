@@ -303,49 +303,19 @@ export default function HomeScreen() {
     );
   }, [profile?.syncCode, navigation]);
 
-  if (isLoading || !profile || !levelInfo) {
-    return <SafeAreaView style={styles.safe} />;
-  }
+  // Compute heroCta label early so boot transition hooks can use it before early return
+  const heroCtaLabel = sessionResumeValid
+    ? 'START FRESH'
+    : todayTasks.length > 0
+      ? 'DO NEXT TASK'
+      : 'START FOCUS SPRINT';
+  const heroCtaSublabel = sessionResumeValid
+    ? 'New session'
+    : todayTasks.length > 0
+      ? todayTasks[0].topic.name
+      : 'Quick guided session';
 
-  const progressClamped = Math.min(
-    100,
-    Math.max(0, Math.round((todayMinutes / (profile.dailyGoalMinutes || 120)) * 100)),
-  );
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Morning' : hour < 18 ? 'Afternoon' : 'Evening';
-  const firstName = profile.displayName?.split(' ')[0] || 'Doctor';
-
-  const heroCta = (() => {
-    if (sessionResumeValid) {
-      return {
-        label: 'START FRESH',
-        sublabel: 'New session',
-        onPress: () => {
-          useSessionStore.getState().resetSession();
-          navigation.navigate('Session', { mood, mode: 'warmup' });
-        },
-      };
-    }
-    if (todayTasks.length > 0) {
-      const next = todayTasks[0];
-      return {
-        label: 'DO NEXT TASK',
-        sublabel: next.topic.name,
-        onPress: () =>
-          navigation.navigate('Session', {
-            mood,
-            focusTopicId: next.topic.id,
-            preferredActionType: next.type,
-          }),
-      };
-    }
-    return {
-      label: 'START FOCUS SPRINT',
-      sublabel: 'Quick guided session',
-      onPress: () => navigation.navigate('Session', { mood, mode: 'warmup' }),
-    };
-  })();
-
+  // Boot transition hooks — must be before early return to satisfy rules of hooks
   const bootPhase = useAppStore((s) => s.bootPhase);
   const setBootPhase = useAppStore((s) => s.setBootPhase);
   const setStartButtonLayout = useAppStore((s) => s.setStartButtonLayout);
@@ -353,8 +323,10 @@ export default function HomeScreen() {
   const startButtonRef = useRef<View>(null);
 
   useEffect(() => {
-    setStartButtonCta(heroCta.label, heroCta.sublabel ?? '');
-  }, [heroCta.label, heroCta.sublabel, setStartButtonCta]);
+    if (!isLoading) {
+      setStartButtonCta(heroCtaLabel, heroCtaSublabel);
+    }
+  }, [isLoading, heroCtaLabel, heroCtaSublabel, setStartButtonCta]);
 
   useEffect(() => {
     if (!isLoading && bootPhase === 'calming') {
@@ -371,6 +343,49 @@ export default function HomeScreen() {
       return () => clearTimeout(timer);
     }
   }, [isLoading, bootPhase, setBootPhase, setStartButtonLayout]);
+
+  if (isLoading || !profile || !levelInfo) {
+    return <SafeAreaView style={styles.safe} />;
+  }
+
+  const progressClamped = Math.min(
+    100,
+    Math.max(0, Math.round((todayMinutes / (profile.dailyGoalMinutes || 120)) * 100)),
+  );
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Morning' : hour < 18 ? 'Afternoon' : 'Evening';
+  const firstName = profile.displayName?.split(' ')[0] || 'Doctor';
+
+  const heroCta = (() => {
+    if (sessionResumeValid) {
+      return {
+        label: heroCtaLabel,
+        sublabel: heroCtaSublabel,
+        onPress: () => {
+          useSessionStore.getState().resetSession();
+          navigation.navigate('Session', { mood, mode: 'warmup' });
+        },
+      };
+    }
+    if (todayTasks.length > 0) {
+      const next = todayTasks[0];
+      return {
+        label: heroCtaLabel,
+        sublabel: heroCtaSublabel,
+        onPress: () =>
+          navigation.navigate('Session', {
+            mood,
+            focusTopicId: next.topic.id,
+            preferredActionType: next.type,
+          }),
+      };
+    }
+    return {
+      label: heroCtaLabel,
+      sublabel: heroCtaSublabel,
+      onPress: () => navigation.navigate('Session', { mood, mode: 'warmup' }),
+    };
+  })();
 
   const daysToInicet = profileRepository.getDaysToExam(profile.inicetDate || DEFAULT_INICET_DATE);
   const daysToNeetPg = profileRepository.getDaysToExam(profile.neetDate || DEFAULT_NEET_DATE);

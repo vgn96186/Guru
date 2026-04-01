@@ -30,17 +30,16 @@ jest.mock('../runtimeActivity', () => ({
 }));
 
 jest.mock('./runtimeDebug', () => {
-  const trace = {
-    success: jest.fn(),
-    failure: jest.fn(),
-    fail: jest.fn(),
-    log: jest.fn(),
-  };
   return {
     __esModule: true,
-    createAiRequestTrace: jest.fn(() => trace),
+    createAiRequestTrace: jest.fn().mockImplementation(() => ({
+      success: jest.fn(),
+      failure: jest.fn(),
+      fail: jest.fn(),
+      log: jest.fn(),
+    })),
     logStreamEvent: jest.fn(),
-    previewText: jest.fn((t: string) => (t ? t.slice(0, 80) : '')),
+    previewText: jest.fn().mockImplementation((t: string) => (t ? t.slice(0, 80) : '')),
   };
 });
 
@@ -48,8 +47,20 @@ import { z } from 'zod';
 import { profileRepository } from '../../db/repositories';
 import { getApiKeys } from './config';
 import { geminiGenerateStructuredJsonSdk } from './google/geminiStructured';
-import { attemptCloudLLM, attemptLocalLLM } from './llmRouting';
+import {
+  clampMessagesForStructuredJsonRouting,
+  attemptCloudLLM,
+  attemptLocalLLM,
+} from './llmRouting';
+import { createAiRequestTrace } from './runtimeDebug';
 import { generateJSONWithRouting } from './generate';
+
+const traceMock = {
+  success: jest.fn(),
+  failure: jest.fn(),
+  fail: jest.fn(),
+  log: jest.fn(),
+};
 
 const minimalProfile = {
   openrouterKey: '',
@@ -64,6 +75,15 @@ const minimalProfile = {
 
 describe('generateJSONWithRouting', () => {
   beforeEach(() => {
+    // Restore trace mock after resetMocks wipes it each test
+    jest.mocked(createAiRequestTrace).mockImplementation(() => ({
+      success: jest.fn(),
+      failure: jest.fn(),
+      fail: jest.fn(),
+      log: jest.fn(),
+    }));
+    // clampMessages must pass-through (resetMocks wipes the factory impl)
+    jest.mocked(clampMessagesForStructuredJsonRouting).mockImplementation((msgs) => msgs);
     jest.mocked(getApiKeys).mockReturnValue({
       orKey: 'openrouter',
       groqKey: undefined,

@@ -24,7 +24,7 @@ jest.mock('./config', () => ({
   getApiKeys: jest.fn(),
 }));
 
-jest.mock('../runtimeActivity', () => ({
+jest.mock('./runtimeActivity', () => ({
   markAiRuntimeStart: jest.fn(),
   markAiRuntimeFinish: jest.fn(),
 }));
@@ -39,6 +39,11 @@ jest.mock('./runtimeDebug', () => {
       log: jest.fn(),
     })),
     logStreamEvent: jest.fn(),
+    logJsonParseSummary: jest.fn(),
+    logJsonParseSuccess: jest.fn(),
+    logJsonParseFailure: jest.fn(),
+    logBootstrapEvent: jest.fn(),
+    logGroundingEvent: jest.fn(),
     previewText: jest.fn().mockImplementation((t: string) => (t ? t.slice(0, 80) : '')),
   };
 });

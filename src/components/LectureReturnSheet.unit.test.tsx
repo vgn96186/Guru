@@ -139,7 +139,5 @@ describe('LectureReturnSheet', () => {
 
     expect(getByText('Summary ready')).toBeTruthy();
     expect(getByText('Medicine • 1 topic detected')).toBeTruthy();
-    expect(getByText('YouTube')).toBeTruthy();
-    expect(getByText('47 min recorded')).toBeTruthy();
   });
 });

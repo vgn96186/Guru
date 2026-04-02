@@ -26,7 +26,9 @@ interface PersistentScreenBannerContextValue {
 
 const DEFAULT_RESERVED_HEIGHT = 112;
 
-const PersistentScreenBannerContext = createContext<PersistentScreenBannerContextValue | null>(null);
+const PersistentScreenBannerContext = createContext<PersistentScreenBannerContextValue | null>(
+  null,
+);
 
 export function PersistentScreenBannerProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<{
@@ -116,5 +118,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
+    backgroundColor: '#000000',
   },
 });

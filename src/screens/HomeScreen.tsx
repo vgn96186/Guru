@@ -36,6 +36,7 @@ import { getApiKeys } from '../services/ai/config';
 import { isLocalLlmUsable } from '../services/deviceMemory';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
 import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
+import NextLectureSection from '../components/home/NextLectureSection';
 
 function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): boolean {
   return allIds.every((id) => validLeafIds.has(id));
@@ -142,11 +143,15 @@ function ExamCountdownChips({
       accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
       <Text style={styles.examInlineLabel}>INICET </Text>
-      <Animated.Text style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}>
+      <Animated.Text
+        style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}
+      >
         {daysToInicet}
       </Animated.Text>
-      <Text style={styles.examInlineLabel}> days  ·  NEET-PG </Text>
-      <Animated.Text style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}>
+      <Text style={styles.examInlineLabel}> days · NEET-PG </Text>
+      <Animated.Text
+        style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}
+      >
         {daysToNeetPg}
       </Animated.Text>
       <Text style={styles.examInlineLabel}> days</Text>
@@ -464,7 +469,9 @@ export default function HomeScreen() {
                   </Svg>
                   <Text style={styles.ringPercentText}>{progressClamped}%</Text>
                 </View>
-                <Text style={styles.statsLabel}>{todayMinutes}/{profile.dailyGoalMinutes || 120}m</Text>
+                <Text style={styles.statsLabel}>
+                  {todayMinutes}/{profile.dailyGoalMinutes || 120}m
+                </Text>
               </View>
               <View style={styles.statsBarDivider} />
               {/* Streak */}
@@ -500,8 +507,12 @@ export default function HomeScreen() {
             </View>
           )}
 
-          <View style={isTabletLandscape ? styles.gridLandscape : null}>
-            <View style={isTabletLandscape ? { flex: 1.1 } : null}>
+          <View style={[styles.gridLandscape, styles.twoColumnGrid]}>
+            <View style={styles.leftColumn}>
+              <NextLectureSection />
+            </View>
+
+            <View style={styles.rightColumn}>
               <Section label="DO THIS NOW" accessibilityLabel="Do this now">
                 {weakTopics.length === 0 ? (
                   <TouchableOpacity
@@ -543,19 +554,20 @@ export default function HomeScreen() {
               <Section label="UP NEXT" accessibilityLabel="Up next">
                 {todayTasks.length === 0 ? (
                   <TouchableOpacity
-                    style={styles.emptySectionTouchable}
                     onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
                     activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel="Open Study Plan"
                   >
-                    <Text style={styles.emptySectionText}>
-                      Nothing scheduled — tap to open Study Plan.
-                    </Text>
-                    <View style={styles.seeAllButton}>
-                      <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                      <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
-                    </View>
+                    <LinearSurface compact style={styles.agendaItemWrap}>
+                      <Text style={styles.emptySectionText}>
+                        Nothing scheduled — tap to open Study Plan.
+                      </Text>
+                      <View style={styles.seeAllButton}>
+                        <Text style={styles.seeAllButtonText}>Open study plan</Text>
+                        <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
+                      </View>
+                    </LinearSurface>
                   </TouchableOpacity>
                 ) : (
                   <>
@@ -602,7 +614,6 @@ export default function HomeScreen() {
                 )}
               </Section>
             </View>
-            <View style={isTabletLandscape ? { flex: 0.9 } : null} />
           </View>
 
           <TouchableOpacity
@@ -1066,7 +1077,26 @@ const styles = StyleSheet.create({
 
   // ── Agenda item wrapper ──
   agendaItemWrap: {
-    marginBottom: 8,
+    marginBottom: 12,
+    height: 135,
+    justifyContent: 'center',
+  },
+
+  // ── Two Column Layout ──
+  gridLandscape: {
+    flexDirection: 'row',
+    gap: 32,
+  },
+  twoColumnGrid: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  leftColumn: {
+    flex: 1,
+  },
+  rightColumn: {
+    flex: 1,
   },
 
   // ── Error row ──
@@ -1118,7 +1148,6 @@ const styles = StyleSheet.create({
   },
 
   // ── Layouts ──
-  gridLandscape: { flexDirection: 'row', gap: CARD_GAP },
 
   // ── Tools section ──
   moreHeader: {

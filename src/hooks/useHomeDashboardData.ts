@@ -166,7 +166,6 @@ export function useHomeDashboardData() {
           repeatCooldownMs,
         );
         displayedWeak = rotatedUnseen.slice(0, 3);
-        setWeakTopics(displayedWeak);
       } else {
         const rotatedWeak = rankWeakTopicsForNovelty(
           weak,
@@ -176,14 +175,27 @@ export function useHomeDashboardData() {
           repeatCooldownMs,
         );
         displayedWeak = rotatedWeak.slice(0, 3);
-        setWeakTopics(displayedWeak);
       }
-      setDueTopics(due);
 
       invalidatePlanCache();
       const tasks = await getTodaysAgendaWithTimes();
       const rotatedTasks = rankTasksForNovelty(tasks, recentCompletedSet, nowTs, repeatCooldownMs);
-      setTodayTasks(rotatedTasks);
+
+      // ── Stabilise state: skip updates when data hasn't actually changed ──
+      // This prevents the "DO THIS NOW" / "UP NEXT" cards from jittering on
+      // every silent focus-reload by avoiding new array references.
+      setWeakTopics((prev) => {
+        const ids = displayedWeak.map((t) => t.id).join(',');
+        return prev.map((t) => t.id).join(',') === ids ? prev : displayedWeak;
+      });
+      setDueTopics((prev) => {
+        const ids = due.map((t) => t.id).join(',');
+        return prev.map((t) => t.id).join(',') === ids ? prev : due;
+      });
+      setTodayTasks((prev) => {
+        const ids = rotatedTasks.map((t) => t.topic.id).join(',');
+        return prev.map((t) => t.topic.id).join(',') === ids ? prev : rotatedTasks;
+      });
       trackHomeShownTopics(displayedWeak, rotatedTasks, nowTs);
 
       setCompletedSessions(await getCompletedSessionCount());
@@ -191,7 +203,8 @@ export function useHomeDashboardData() {
         dailyLogRepository.getDailyLog(),
         getTodaysExternalStudyMinutes(),
       ]);
-      setTodayMinutes((log?.totalMinutes ?? 0) + externalMinutes);
+      const nextMinutes = (log?.totalMinutes ?? 0) + externalMinutes;
+      setTodayMinutes((prev) => (prev === nextMinutes ? prev : nextMinutes));
     } catch (err: any) {
       console.error('[Home] Failed to load initial data:', err);
       const message = err?.message ?? 'Unable to load home data. Please try again.';

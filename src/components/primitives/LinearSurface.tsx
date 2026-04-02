@@ -1,7 +1,17 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { View, StyleSheet, type ViewProps, type ViewStyle, type StyleProp } from 'react-native';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import { linearTheme } from '../../theme/linearTheme';
+
+// Hoisted constants — created once, shared across all instances
+const GRADIENT_COLORS = [
+  'rgba(255,255,255,0.03)',
+  'rgba(255,255,255,0.008)',
+  'rgba(255,255,255,0)',
+] as const;
+const GRADIENT_LOCATIONS = [0, 0.4, 1] as const;
+const GRADIENT_START = { x: 0, y: 0 } as const;
+const GRADIENT_END = { x: 0, y: 1 } as const;
 
 interface LinearSurfaceProps extends ViewProps {
   children: React.ReactNode;
@@ -19,8 +29,6 @@ export default function LinearSurface({
   compact = false,
   ...rest
 }: LinearSurfaceProps) {
-  const gradientIdRef = useRef(`linear-surface-${Math.random().toString(36).slice(2, 9)}`);
-
   const baseStyle = compact ? styles.baseCompact : styles.base;
 
   let contentStyle: object;
@@ -34,18 +42,14 @@ export default function LinearSurface({
 
   return (
     <View style={[baseStyle, { borderColor }, style]} {...rest}>
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        <Svg width="100%" height="100%" preserveAspectRatio="none">
-          <Defs>
-            <LinearGradient id={gradientIdRef.current} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.03" />
-              <Stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.008" />
-              <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientIdRef.current})`} />
-        </Svg>
-      </View>
+      <LinearGradient
+        pointerEvents="none"
+        colors={GRADIENT_COLORS}
+        locations={GRADIENT_LOCATIONS}
+        start={GRADIENT_START}
+        end={GRADIENT_END}
+        style={StyleSheet.absoluteFill}
+      />
       <View pointerEvents="none" style={styles.frostLayer} />
       <View pointerEvents="none" style={styles.topEdge} />
       <View style={contentStyle}>{children}</View>

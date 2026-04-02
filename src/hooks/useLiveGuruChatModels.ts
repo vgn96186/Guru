@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { InteractionManager } from 'react-native';
 import type { UserProfile } from '../types';
 import {
   AGENTROUTER_MODELS,
@@ -128,29 +129,33 @@ export function useLiveGuruChatModels(profile: UserProfile | null, draft?: LiveG
       chatgptConnected,
     } = getApiKeys(mergedProfile);
 
-    fetchAllLiveGuruChatModelIds({
-      chatgptConnected,
-      groqKey,
-      orKey,
-      geminiKey,
-      cfAccountId,
-      cfApiToken,
-      kiloApiKey,
-      deepseekKey,
-      agentRouterKey,
-    })
-      .then((r) => {
-        if (!cancelled) setLive(r);
+    // Defer network fetch behind InteractionManager so tab-switch animation isn't blocked
+    const task = InteractionManager.runAfterInteractions(() => {
+      fetchAllLiveGuruChatModelIds({
+        chatgptConnected,
+        groqKey,
+        orKey,
+        geminiKey,
+        cfAccountId,
+        cfApiToken,
+        kiloApiKey,
+        deepseekKey,
+        agentRouterKey,
       })
-      .catch(() => {
-        if (!cancelled) setLive(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        .then((r) => {
+          if (!cancelled) setLive(r);
+        })
+        .catch(() => {
+          if (!cancelled) setLive(null);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    });
 
     return () => {
       cancelled = true;
+      task.cancel();
     };
   }, [profile, debouncedKeysString, refreshToken]);
 

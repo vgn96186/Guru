@@ -374,6 +374,15 @@ CREATE TABLE IF NOT EXISTS question_bank (
   created_at INTEGER NOT NULL
 )`;
 
+export const CREATE_LECTURE_SCHEDULE_PROGRESS = `
+CREATE TABLE IF NOT EXISTS lecture_schedule_progress (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  batch_id TEXT NOT NULL,
+  lecture_index INTEGER NOT NULL,
+  completed_at INTEGER NOT NULL,
+  UNIQUE(batch_id, lecture_index)
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
@@ -440,4 +449,5 @@ export const ALL_SCHEMAS = [
   CREATE_LECTURE_LEARNED_TOPICS,
   CREATE_AI_CACHE_STANDALONE,
   CREATE_QUESTION_BANK,
+  CREATE_LECTURE_SCHEDULE_PROGRESS,
 ];

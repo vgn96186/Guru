@@ -546,7 +546,75 @@ function MessageSources({
   );
 }
 
+function ChatSkeleton() {
+  return (
+    <View style={chatSkeletonStyles.container}>
+      <View style={chatSkeletonStyles.header}>
+        <View style={chatSkeletonStyles.headerBar} />
+        <View style={chatSkeletonStyles.headerBarSmall} />
+      </View>
+      <View style={chatSkeletonStyles.body}>
+        <View style={chatSkeletonStyles.bubble} />
+        <View style={[chatSkeletonStyles.bubble, chatSkeletonStyles.bubbleRight]} />
+        <View style={chatSkeletonStyles.bubble} />
+      </View>
+    </View>
+  );
+}
+
+const chatSkeletonStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: n.colors.background },
+  header: { paddingHorizontal: 16, paddingTop: 16, gap: 6 },
+  headerBar: {
+    width: '40%',
+    height: 12,
+    borderRadius: 4,
+    backgroundColor: n.colors.border,
+    opacity: 0.5,
+  },
+  headerBarSmall: {
+    width: '25%',
+    height: 8,
+    borderRadius: 3,
+    backgroundColor: n.colors.border,
+    opacity: 0.3,
+  },
+  body: { flex: 1, paddingHorizontal: 16, paddingTop: 32, gap: 16 },
+  bubble: {
+    width: '65%',
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: n.colors.surface,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    opacity: 0.5,
+  },
+  bubbleRight: { alignSelf: 'flex-end', width: '50%', height: 32 },
+});
+
 export default function GuruChatScreen() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
+  if (!ready) {
+    return (
+      <SafeAreaView style={styles.safe} testID="guru-chat-screen">
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ChatSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  return <GuruChatScreenContent />;
+}
+
+function GuruChatScreenContent() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<ScreenRoute>();
   const insets = useSafeAreaInsets();
@@ -1568,11 +1636,7 @@ export default function GuruChatScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Regenerate response"
                       >
-                        <Ionicons
-                          name="refresh-outline"
-                          size={15}
-                          color={n.colors.textPrimary}
-                        />
+                        <Ionicons name="refresh-outline" size={15} color={n.colors.textPrimary} />
                       </Pressable>
                     ) : null}
                     <Pressable
@@ -1601,9 +1665,7 @@ export default function GuruChatScreen() {
                         <Ionicons
                           name="link-outline"
                           size={15}
-                          color={
-                            sourcesExpanded ? n.colors.textPrimary : n.colors.accent
-                          }
+                          color={sourcesExpanded ? n.colors.textPrimary : n.colors.accent}
                         />
                       </Pressable>
                     ) : null}
@@ -1787,11 +1849,7 @@ export default function GuruChatScreen() {
                               }}
                               hitSlop={6}
                             >
-                              <Ionicons
-                                name="pencil-outline"
-                                size={14}
-                                color={n.colors.accent}
-                              />
+                              <Ionicons name="pencil-outline" size={14} color={n.colors.accent} />
                             </Pressable>
                             <Pressable
                               style={({ pressed }) => [
@@ -1803,11 +1861,7 @@ export default function GuruChatScreen() {
                               }}
                               hitSlop={6}
                             >
-                              <Ionicons
-                                name="trash-outline"
-                                size={14}
-                                color={n.colors.textMuted}
-                              />
+                              <Ionicons name="trash-outline" size={14} color={n.colors.textMuted} />
                             </Pressable>
                           </View>
                         </View>
@@ -1833,7 +1887,11 @@ export default function GuruChatScreen() {
                   setRenameDraft('');
                 }}
               />
-              <LinearSurface padded={false} borderColor={n.colors.borderHighlight} style={styles.renameSheet}>
+              <LinearSurface
+                padded={false}
+                borderColor={n.colors.borderHighlight}
+                style={styles.renameSheet}
+              >
                 <Text style={styles.renameTitle}>Rename Chat</Text>
                 <TextInput
                   style={styles.renameInput}
@@ -2073,10 +2131,7 @@ export default function GuruChatScreen() {
             >
               <View style={styles.inputRow}>
                 <Pressable
-                  style={({ pressed }) => [
-                    styles.modelIconBtn,
-                    pressed && styles.pressed,
-                  ]}
+                  style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
                   onPress={() => {
                     setPickerTab(currentModelGroup);
                     setShowModelPicker(true);

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TouchableOpacity, View, StyleSheet } from 'react-native';
 import ReAnimated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -60,12 +61,21 @@ export default React.memo(function SubjectCard({
   }
 
   const pct = coverage.total > 0 ? Math.round((coverage.seen / coverage.total) * 100) : 0;
-  const progressTransitionStyle = {
-    width: `${pct}%`,
-    transitionProperty: 'width',
-    transitionDuration: 560,
-    transitionTimingFunction: 'ease-in-out',
-  } as const;
+
+  const progressWidth = useSharedValue(pct);
+
+  useEffect(() => {
+    progressWidth.value = withTiming(pct, {
+      duration: 600,
+      easing: Easing.inOut(Easing.cubic),
+    });
+  }, [pct, progressWidth]);
+
+  const progressAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      width: `${Math.min(100, Math.max(0, progressWidth.value))}%`,
+    };
+  });
 
   const hasDue = metrics && metrics.due > 0;
 
@@ -81,93 +91,101 @@ export default React.memo(function SubjectCard({
         accessibilityLabel={`${subject.name} subject`}
         accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}
       >
-      <LinearSurface compact padded={false} style={styles.row}>
-      <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
-      <View style={styles.body}>
-        <View style={styles.mainLine}>
-          <AppText style={styles.name} numberOfLines={1} ellipsizeMode="tail" variant="body">
-            {subject.name}
-          </AppText>
-          <View style={styles.trailing}>
-            {matchingTopicsCount !== undefined && matchingTopicsCount > 0 ? (
-              <AppText style={styles.matchCount} variant="caption">
-                {matchingTopicsCount} match
-              </AppText>
-            ) : null}
-            <AppText
-              style={[
-                styles.pct,
-                {
-                  color:
-                    pct >= 80
-                      ? n.colors.success
-                      : pct >= 50
-                        ? n.colors.warning
-                        : n.colors.textMuted,
-                },
-              ]}
-              variant="caption"
-            >
-              {pct}%
-            </AppText>
-            <Ionicons name="chevron-forward" size={14} color={n.colors.textMuted} />
-          </View>
-        </View>
-        {/* Inline labels — each with its own color for scannability */}
-        <View style={styles.labelRow}>
-          <AppText style={styles.labelDim}>{subject.shortCode}</AppText>
-          <AppText style={styles.sep}>·</AppText>
-          <View style={styles.coveragePill}>
-            <AppText style={styles.coverageSeen}>{coverage.seen}</AppText>
-            <View style={styles.coverageBarTrack}>
-              <View
-                style={[
-                  styles.coverageBarFill,
-                  {
-                    width: `${pct}%`,
-                    backgroundColor: subject.colorHex,
-                  },
-                ]}
-              />
+        <LinearSurface compact padded={false}>
+          <View style={styles.row}>
+            <View style={styles.leftHalf}>
+              <View style={[styles.dot, { backgroundColor: subject.colorHex }]} />
+              <View style={styles.body}>
+                <View style={styles.mainLine}>
+                  <AppText
+                    style={styles.name}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    variant="body"
+                  >
+                    {subject.name}
+                  </AppText>
+                </View>
+                {/* Metric Badges — organized for instant scannability */}
+                <View style={styles.labelRow}>
+                  <View style={styles.badgeShortCode}>
+                    <AppText style={styles.labelShortCode}>{subject.shortCode}</AppText>
+                  </View>
+                  <View style={styles.coveragePill}>
+                    <AppText style={styles.coverageSeen}>{coverage.seen}</AppText>
+                    <AppText style={styles.coverageSlash}>/</AppText>
+                    <AppText style={styles.coverageTotal}>{coverage.total}</AppText>
+                  </View>
+                  {hasDue ? (
+                    <View style={styles.badgeDue}>
+                      <AppText style={styles.labelDue}>Due {metrics!.due}</AppText>
+                    </View>
+                  ) : null}
+                  {metrics && metrics.highYield > 0 ? (
+                    <View style={styles.badgeHY}>
+                      <AppText style={styles.labelHY}>HY {metrics.highYield}</AppText>
+                    </View>
+                  ) : null}
+                  {metrics && metrics.unseen > 0 ? (
+                    <View style={styles.badgeUnseen}>
+                      <AppText style={styles.labelUnseen}>Unseen {metrics.unseen}</AppText>
+                    </View>
+                  ) : null}
+                  {metrics && metrics.withNotes > 0 ? (
+                    <View style={styles.badgeNotes}>
+                      <AppText style={styles.labelNotes}>Notes {metrics.withNotes}</AppText>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
             </View>
-            <AppText style={styles.coverageTotal}>{coverage.total}</AppText>
+
+            <View style={styles.rightHalf}>
+              <View style={styles.trailing}>
+                {matchingTopicsCount !== undefined && matchingTopicsCount > 0 ? (
+                  <View style={styles.matchCountContainer}>
+                    <AppText style={styles.matchCount} variant="caption">
+                      {matchingTopicsCount} match
+                    </AppText>
+                  </View>
+                ) : null}
+                <View style={styles.pctRow}>
+                  <View style={styles.rightProgressTrack}>
+                    <ReAnimated.View
+                      style={[
+                        styles.rightProgressFill,
+                        progressAnimatedStyle,
+                        { backgroundColor: subject.colorHex },
+                      ]}
+                    />
+                  </View>
+                  <AppText
+                    style={[
+                      styles.pct,
+                      {
+                        color:
+                          pct >= 80
+                            ? n.colors.success
+                            : pct >= 50
+                              ? n.colors.warning
+                              : n.colors.textPrimary,
+                      },
+                    ]}
+                    variant="caption"
+                  >
+                    {pct}%
+                  </AppText>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={14}
+                    color={n.colors.textMuted}
+                    style={styles.chevron}
+                  />
+                </View>
+              </View>
+            </View>
           </View>
-          {hasDue ? (
-            <>
-              <AppText style={styles.sep}>·</AppText>
-              <AppText style={styles.labelDue}>Due {metrics!.due}</AppText>
-            </>
-          ) : null}
-          {metrics && metrics.highYield > 0 ? (
-            <>
-              <AppText style={styles.sep}>·</AppText>
-              <AppText style={styles.labelHY}>HY {metrics.highYield}</AppText>
-            </>
-          ) : null}
-          {metrics && metrics.unseen > 0 ? (
-            <>
-              <AppText style={styles.sep}>·</AppText>
-              <AppText style={styles.labelUnseen}>Unseen {metrics.unseen}</AppText>
-            </>
-          ) : null}
-          {metrics && metrics.withNotes > 0 ? (
-            <>
-              <AppText style={styles.sep}>·</AppText>
-              <AppText style={styles.labelNotes}>Notes {metrics.withNotes}</AppText>
-            </>
-          ) : null}
-        </View>
-        <View style={styles.progressTrack}>
-          <ReAnimated.View
-            style={[
-              styles.progressFill,
-              progressTransitionStyle,
-              { backgroundColor: subject.colorHex },
-            ]}
-          />
-        </View>
-      </View>
-      </LinearSurface>
+        </LinearSurface>
       </TouchableOpacity>
     </ReAnimated.View>
   );
@@ -176,9 +194,21 @@ export default React.memo(function SubjectCard({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
+    width: '100%',
+  },
+  leftHalf: {
+    width: '50%',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingLeft: 12,
     paddingVertical: 12,
-    paddingHorizontal: 12,
+  },
+  rightHalf: {
+    width: '50%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingRight: 12,
+    paddingVertical: 12,
   },
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: 12, flexShrink: 0 },
   body: { flex: 1, minWidth: 0 },
@@ -188,9 +218,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: n.colors.textPrimary,
-    marginRight: 8,
+    marginRight: 4,
   },
-  trailing: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
+  trailing: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 4,
+    minWidth: 0,
+  },
+  matchCountContainer: { width: '100%', alignItems: 'flex-end' },
+  pctRow: { flexDirection: 'row', alignItems: 'center', gap: 6, width: '100%' },
+  chevron: { marginLeft: 0 },
   matchCount: {
     fontSize: 11,
     fontWeight: '700',
@@ -200,43 +239,67 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginTop: 3,
-    gap: 3,
+    marginTop: 6,
+    gap: 6,
   },
-  sep: { fontSize: 10, color: n.colors.border, marginHorizontal: 1 },
-  labelDim: { fontSize: 11, color: n.colors.textMuted, fontWeight: '500' },
   coveragePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: n.colors.surface,
+    backgroundColor: n.colors.surfaceHover,
     borderRadius: 4,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.border,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    gap: 4,
+    gap: 3,
   },
   coverageSeen: { fontSize: 10, color: n.colors.textPrimary, fontWeight: '800' },
-  coverageBarTrack: {
-    width: 24,
-    height: 3,
-    backgroundColor: n.colors.border,
-    borderRadius: 1.5,
-    overflow: 'hidden',
-  },
-  coverageBarFill: { height: '100%', borderRadius: 1.5 },
+  coverageSlash: { fontSize: 9, color: n.colors.textMuted, fontWeight: '800' },
   coverageTotal: { fontSize: 10, color: n.colors.textMuted, fontWeight: '500' },
-  labelDue: { fontSize: 11, color: n.colors.error, fontWeight: '700' },
-  labelHY: { fontSize: 11, color: n.colors.warning, fontWeight: '700' },
-  labelUnseen: { fontSize: 11, color: '#8B9CF7', fontWeight: '600' },
-  labelNotes: { fontSize: 11, color: n.colors.accent, fontWeight: '600' },
-  pct: { fontSize: 12, fontWeight: '700', minWidth: 30, textAlign: 'right' },
-  progressTrack: {
-    height: 2,
-    backgroundColor: n.colors.border,
-    borderRadius: 1,
-    overflow: 'hidden',
-    marginTop: 6,
+  badgeDue: {
+    backgroundColor: 'rgba(255, 75, 75, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  progressFill: { height: '100%', borderRadius: 1 },
+  badgeHY: {
+    backgroundColor: 'rgba(250, 173, 20, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeUnseen: {
+    backgroundColor: 'rgba(139, 156, 247, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeNotes: {
+    backgroundColor: n.colors.primaryTintSoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeShortCode: {
+    backgroundColor: n.colors.surfaceHover,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+  },
+  labelDue: { fontSize: 10, color: n.colors.error, fontWeight: '800' },
+  labelHY: { fontSize: 10, color: n.colors.warning, fontWeight: '800' },
+  labelUnseen: { fontSize: 10, color: '#8B9CF7', fontWeight: '800' },
+  labelNotes: { fontSize: 10, color: n.colors.accent, fontWeight: '800' },
+  labelShortCode: { fontSize: 10, color: n.colors.textMuted, fontWeight: '700' },
+  pct: { fontSize: 12, fontWeight: '800', textAlign: 'right', minWidth: 26 },
+  rightProgressTrack: {
+    flex: 1,
+    height: 6,
+    backgroundColor: n.colors.border,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  rightProgressFill: { height: '100%', borderRadius: 3 },
 });

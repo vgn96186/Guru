@@ -557,7 +557,8 @@ export async function getSubjectStatsAggregated(): Promise<SubjectStatsRow[]> {
        SUM(CASE WHEN COALESCE(p.times_studied, 0) > 0 AND COALESCE(p.confidence, 0) < 3 THEN 1 ELSE 0 END) AS weak
      FROM topics t
      LEFT JOIN topic_progress p ON p.topic_id = t.id
-     WHERE NOT EXISTS (SELECT 1 FROM topics c WHERE c.parent_topic_id = t.id)
+     LEFT JOIN topics c ON c.parent_topic_id = t.id
+     WHERE c.id IS NULL
      GROUP BY t.subject_id`,
   );
 }

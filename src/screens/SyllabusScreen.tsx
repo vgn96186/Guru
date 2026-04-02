@@ -8,10 +8,15 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  TextInput,
   InteractionManager,
+  ScrollView,
 } from 'react-native';
-import ReAnimated, { useSharedValue, useAnimatedStyle, withTiming, Easing as ReanimatedEasing } from 'react-native-reanimated';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing as ReanimatedEasing,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -63,7 +68,88 @@ const SORT_OPTIONS: Array<{ key: SubjectSortMode; label: string }> = [
   { key: 'high_yield', label: 'High Yield' },
 ];
 
+const EMPTY_COVERAGE = { total: 0, seen: 0 };
+const EMPTY_METRICS: SubjectMetrics = { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
+
+/** Lightweight skeleton shown during initial data load to avoid blank screen flash */
+function SyllabusSkeleton() {
+  return (
+    <View style={skeletonStyles.container}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <View key={i} style={skeletonStyles.row}>
+          <View style={skeletonStyles.dot} />
+          <View style={skeletonStyles.body}>
+            <View style={[skeletonStyles.bar, { width: `${55 + (i % 3) * 15}%` }]} />
+            <View style={[skeletonStyles.barSmall, { width: `${35 + (i % 4) * 10}%` }]} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const skeletonStyles = StyleSheet.create({
+  container: { paddingHorizontal: n.spacing.md, paddingTop: 16, gap: 10 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: n.colors.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: n.colors.border,
+    marginRight: 12,
+  },
+  body: { flex: 1, gap: 6 },
+  bar: {
+    height: 10,
+    borderRadius: 3,
+    backgroundColor: n.colors.border,
+    opacity: 0.5,
+  },
+  barSmall: {
+    height: 7,
+    borderRadius: 2,
+    backgroundColor: n.colors.border,
+    opacity: 0.3,
+  },
+});
+/**
+ * Shell wrapper — renders only a lightweight skeleton during the tab-switch
+ * animation, then mounts the full SyllabusScreen content after the transition
+ * settles. This prevents heavy hook/component initialization from competing
+ * with React Navigation's animation frames.
+ */
 export default function SyllabusScreen() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
+  if (!ready) {
+    return (
+      <SafeAreaView style={styles.safe} testID="syllabus-screen">
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <SyllabusSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  return <SyllabusScreenContent />;
+}
+
+function SyllabusScreenContent() {
   const navigation = useNavigation<Nav>();
   const isFocused = useIsFocused();
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -78,6 +164,7 @@ export default function SyllabusScreen() {
   const [topicResults, setTopicResults] = useState<TopicSearchResult[]>([]);
   const [pendingSuggestions, setPendingSuggestions] = useState<TopicSuggestion[]>([]);
   const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isFocusedRef = useRef(isFocused);
   const navLockRef = useRef(false);
   const navUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -129,20 +216,8 @@ export default function SyllabusScreen() {
     const sortedSubjects = [...subs].sort((a, b) => {
       const aCoverage = map.get(a.id) ?? { total: 0, seen: 0 };
       const bCoverage = map.get(b.id) ?? { total: 0, seen: 0 };
-      const aMetrics = metricMap.get(a.id) ?? {
-        due: 0,
-        highYield: 0,
-        unseen: 0,
-        withNotes: 0,
-        weak: 0,
-      };
-      const bMetrics = metricMap.get(b.id) ?? {
-        due: 0,
-        highYield: 0,
-        unseen: 0,
-        withNotes: 0,
-        weak: 0,
-      };
+      const aMetrics = metricMap.get(a.id) ?? EMPTY_METRICS;
+      const bMetrics = metricMap.get(b.id) ?? EMPTY_METRICS;
       const aPct = aCoverage.total > 0 ? aCoverage.seen / aCoverage.total : 0;
       const bPct = bCoverage.total > 0 ? bCoverage.seen / bCoverage.total : 0;
 
@@ -170,16 +245,15 @@ export default function SyllabusScreen() {
     setCoverage(map);
     setSubjectMetrics(metricMap);
     setPendingSuggestions(suggestions);
+    setIsInitialLoad(false);
   }, [sortMode]);
 
   useEffect(() => {
     if (isFocused) {
       unlockNavigation();
-      InteractionManager.runAfterInteractions(() => {
-        if (isFocusedRef.current) {
-          loadData();
-        }
-      });
+      // No InteractionManager needed — the entire component only mounts
+      // after the tab-switch animation completes (deferred by the shell).
+      loadData();
     }
   }, [isFocused, sortMode, loadData, unlockNavigation]);
 
@@ -381,17 +455,27 @@ export default function SyllabusScreen() {
 
   const keyExtractor = useCallback((s: Subject) => s.id.toString(), []);
 
+  // Stable refs for maps — lets renderSubjectItem's useCallback deps stay empty
+  const coverageRef = useRef(coverage);
+  coverageRef.current = coverage;
+  const subjectMetricsRef = useRef(subjectMetrics);
+  subjectMetricsRef.current = subjectMetrics;
+  const searchMatchCountsRef = useRef(searchMatchCounts);
+  searchMatchCountsRef.current = searchMatchCounts;
+  const handleSubjectPressRef = useRef(handleSubjectPress);
+  handleSubjectPressRef.current = handleSubjectPress;
+
   const renderSubjectItem = useCallback(
     ({ item }: { item: Subject }) => (
       <SubjectCard
         subject={item}
-        coverage={coverage.get(item.id) ?? { total: 0, seen: 0 }}
-        metrics={subjectMetrics.get(item.id)}
-        matchingTopicsCount={searchMatchCounts.get(item.id)}
-        onPress={() => handleSubjectPress(item)}
+        coverage={coverageRef.current.get(item.id) ?? EMPTY_COVERAGE}
+        metrics={subjectMetricsRef.current.get(item.id)}
+        matchingTopicsCount={searchMatchCountsRef.current.get(item.id)}
+        onPress={() => handleSubjectPressRef.current(item)}
       />
     ),
-    [coverage, subjectMetrics, searchMatchCounts, handleSubjectPress],
+    [],
   );
 
   const listHeaderComponent = useMemo(() => {
@@ -452,9 +536,9 @@ export default function SyllabusScreen() {
     <SafeAreaView style={styles.safe} testID="syllabus-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
-          <ScreenHeader
-            title="Syllabus"
-            subtitle={
+        <ScreenHeader
+          title="Syllabus"
+          subtitle={
             seenTopics === 0
               ? 'Open any subject to start building coverage.'
               : 'Track coverage, due topics, and high-yield gaps across all subjects.'
@@ -489,48 +573,61 @@ export default function SyllabusScreen() {
               </BannerIconButton>
             </View>
           }
-        >
-        </ScreenHeader>
-        {seenTopics === 0 ? null : (
-          <LinearSurface compact style={styles.heroSurface}>
-            <View style={styles.statsRow}>
-              <Text style={styles.statsCount}>{seenTopics}</Text>
-              <Text style={styles.statsSlash}>/{totalTopics}</Text>
-              <Text style={styles.statsLabel}>topics</Text>
-              <View
-                style={[
-                  styles.pctChip,
-                  overallPct >= 50 && styles.pctChipGood,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.pctChipText,
-                    overallPct >= 50 && { color: n.colors.success },
-                  ]}
-                >
-                  {overallPct}%
-                </Text>
+        ></ScreenHeader>
+        <LinearSurface compact style={styles.heroSurface}>
+          <View style={styles.heroColumn}>
+            <Text style={styles.heroEyebrow}>Overall Syllabus</Text>
+
+            <View style={styles.heroMainRow}>
+              <View style={styles.heroStatsRow}>
+                <Text style={styles.heroStatsCount}>{seenTopics}</Text>
+                <Text style={styles.heroStatsTotal}>/ {totalTopics > 0 ? totalTopics : '-'}</Text>
               </View>
+
+              <View style={styles.heroProgressTrackMain}>
+                <ReAnimated.View
+                  style={[
+                    styles.heroProgressFillMain,
+                    progressAnimatedStyle,
+                    overallPct >= 50 && { backgroundColor: n.colors.success },
+                  ]}
+                />
+              </View>
+
+              <Text style={[styles.heroPctMain, overallPct >= 50 && { color: n.colors.success }]}>
+                {overallPct}%
+              </Text>
             </View>
-            <View style={styles.progressTrack}>
-              <ReAnimated.View style={[styles.progressFill, progressAnimatedStyle]} />
-            </View>
-            <View style={styles.metaRow}>
-              {totalDue > 0 ? (
-                <Text style={styles.metaDue}>Due {totalDue}</Text>
-              ) : null}
-              {totalHighYield > 0 ? (
-                <Text style={styles.metaHY}>HY {totalHighYield}</Text>
-              ) : null}
-              {totalWithNotes > 0 ? (
-                <Text style={styles.metaNotes}>Notes {totalWithNotes}</Text>
-              ) : null}
-            </View>
-          </LinearSurface>
-        )}
+
+            {seenTopics > 0 ? (
+              <View style={styles.heroBadgesRow}>
+                {totalDue > 0 ? (
+                  <View style={styles.badgeDue}>
+                    <Text style={styles.labelDue}>Due {totalDue}</Text>
+                  </View>
+                ) : null}
+                {totalHighYield > 0 ? (
+                  <View style={styles.badgeHY}>
+                    <Text style={styles.labelHY}>HY {totalHighYield}</Text>
+                  </View>
+                ) : null}
+                {totalWithNotes > 0 ? (
+                  <View style={styles.badgeNotes}>
+                    <Text style={styles.labelNotes}>Notes {totalWithNotes}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <Text style={styles.metaLabelEmpty}>Complete topics to unlock stats.</Text>
+            )}
+          </View>
+        </LinearSurface>
         <View style={styles.controls}>
-          <View style={styles.sortRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.sortContentContainer}
+          >
             {SORT_OPTIONS.map((option) => (
               <TouchableOpacity
                 key={option.key}
@@ -551,7 +648,7 @@ export default function SyllabusScreen() {
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
         {pendingSuggestions.length > 0 ? (
           <View style={styles.suggestionSection}>
@@ -610,36 +707,41 @@ export default function SyllabusScreen() {
             })}
           </View>
         ) : null}
-        <FlatList
-          data={filteredSubjects}
-          keyExtractor={keyExtractor}
-          keyboardDismissMode="on-drag"
-          contentContainerStyle={styles.list}
-          removeClippedSubviews={true}
-          initialNumToRender={4}
-          maxToRenderPerBatch={8}
-          windowSize={4}
-          updateCellsBatchingPeriod={80}
-          getItemLayout={(data, index) => ({ length: 76, offset: 76 * index, index })}
-          onRefresh={async () => {
-            setRefreshing(true);
-            await loadData();
-            setRefreshing(false);
-          }}
-          refreshing={refreshing}
-          ListHeaderComponent={listHeaderComponent}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>
-                {searchLower.length >= 2 ? 'No subjects or topics matched' : 'No subjects matched'}
-              </Text>
-              <Text style={styles.emptySub}>
-                Try a different subject name, short code, or topic keyword.
-              </Text>
-            </View>
-          }
-          renderItem={renderSubjectItem}
-        />
+        {isInitialLoad ? (
+          <SyllabusSkeleton />
+        ) : (
+          <FlatList
+            data={filteredSubjects}
+            keyExtractor={keyExtractor}
+            keyboardDismissMode="on-drag"
+            contentContainerStyle={styles.list}
+            removeClippedSubviews={true}
+            initialNumToRender={6}
+            maxToRenderPerBatch={6}
+            windowSize={5}
+            updateCellsBatchingPeriod={50}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await loadData();
+              setRefreshing(false);
+            }}
+            refreshing={refreshing}
+            ListHeaderComponent={listHeaderComponent}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>
+                  {searchLower.length >= 2
+                    ? 'No subjects or topics matched'
+                    : 'No subjects matched'}
+                </Text>
+                <Text style={styles.emptySub}>
+                  Try a different subject name, short code, or topic keyword.
+                </Text>
+              </View>
+            }
+            renderItem={renderSubjectItem}
+          />
+        )}
       </ResponsiveContainer>
     </SafeAreaView>
   );
@@ -681,65 +783,66 @@ const styles = StyleSheet.create({
   },
   heroSurface: {
     marginTop: 4,
+    paddingVertical: 6,
   },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginBottom: 6,
+  heroColumn: { gap: 8 },
+  heroEyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    color: n.colors.textMuted,
   },
-  statsCount: {
-    color: n.colors.textPrimary,
+
+  heroMainRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  heroStatsRow: { flexDirection: 'row', alignItems: 'baseline', flexShrink: 0 },
+  heroStatsCount: {
+    fontSize: 32,
     fontWeight: '800',
-    fontSize: 18,
+    color: n.colors.textPrimary,
+    letterSpacing: -0.5,
   },
-  statsSlash: {
-    color: n.colors.textMuted,
-    fontWeight: '500',
-    fontSize: 13,
+  heroStatsTotal: { fontSize: 16, fontWeight: '700', color: n.colors.textMuted, marginLeft: 4 },
+
+  heroProgressTrackMain: {
+    flex: 1,
+    height: 12,
+    backgroundColor: n.colors.border,
+    borderRadius: 6,
+    overflow: 'hidden',
   },
-  statsLabel: {
-    color: n.colors.textMuted,
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  pctChip: {
-    marginLeft: 10,
+  heroProgressFillMain: { height: '100%', borderRadius: 6, backgroundColor: n.colors.accent },
+
+  heroPctMain: { fontSize: 24, fontWeight: '800', color: n.colors.accent, flexShrink: 0 },
+  heroBadgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
+
+  badgeDue: {
+    backgroundColor: 'rgba(255, 75, 75, 0.15)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: n.colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
   },
-  pctChipGood: {
-    backgroundColor: n.colors.successSurface,
-    borderColor: n.colors.success,
+  badgeHY: {
+    backgroundColor: 'rgba(250, 173, 20, 0.15)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  pctChipText: {
-    color: n.colors.textSecondary,
-    fontWeight: '800',
-    fontSize: 11,
+  badgeNotes: {
+    backgroundColor: n.colors.primaryTintSoft,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  progressTrack: {
-    height: 3,
-    backgroundColor: n.colors.border,
-    borderRadius: 1.5,
-    overflow: 'hidden',
-    marginBottom: 6,
+  labelDue: { fontSize: 10, color: n.colors.error, fontWeight: '800' },
+  labelHY: { fontSize: 10, color: n.colors.warning, fontWeight: '800' },
+  labelNotes: { fontSize: 10, color: n.colors.accent, fontWeight: '800' },
+  metaLabelEmpty: {
+    fontSize: 12,
+    color: n.colors.textMuted,
+    fontStyle: 'italic',
+    fontWeight: '500',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: n.colors.accent,
-    borderRadius: 1.5,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  metaDue: { fontSize: 11, color: n.colors.error, fontWeight: '700' },
-  metaHY: { fontSize: 11, color: n.colors.warning, fontWeight: '700' },
-  metaNotes: { fontSize: 11, color: n.colors.accent, fontWeight: '600' },
   controls: {
     paddingHorizontal: n.spacing.md,
     paddingVertical: n.spacing.sm,
@@ -756,15 +859,18 @@ const styles = StyleSheet.create({
     color: n.colors.textPrimary,
     fontSize: 14,
   },
-  sortRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 0 },
+  sortContentContainer: { flexDirection: 'row', gap: 6, paddingRight: n.spacing.md },
   sortChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: 'transparent',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: n.colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
   },
   sortChipActive: {
     backgroundColor: n.colors.primaryTintSoft,
+    borderColor: n.colors.accent,
   },
   sortChipText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
   sortChipTextActive: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },

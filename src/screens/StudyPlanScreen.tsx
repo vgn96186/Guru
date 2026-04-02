@@ -34,6 +34,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import { DBMCI_SUBJECT_ORDER, DBMCI_WORKLOAD_OVERRIDES } from '../services/studyPlannerBuckets';
 import { SUBJECTS_SEED } from '../constants/syllabus';
 import { getCurrentLecturePosition } from '../services/lecturePositionService';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 const SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
 const DBMCI_TOTAL_DAYS = 137;
@@ -58,12 +59,12 @@ function LiveClassBanner({
 
   if (!startDate) {
     return (
-      <View style={liveStyles.banner}>
+      <LinearSurface compact style={liveStyles.banner}>
         <Text style={liveStyles.bannerTitle}>📺 {batchLabel} Live Batch</Text>
         <Text style={liveStyles.bannerHint}>
           Set your batch start date in Settings → Study Plan to unlock daily lecture tracking.
         </Text>
-      </View>
+      </LinearSurface>
     );
   }
 
@@ -72,12 +73,12 @@ function LiveClassBanner({
 
   if (pos.isComplete) {
     return (
-      <View style={liveStyles.banner}>
+      <LinearSurface compact style={liveStyles.banner}>
         <Text style={liveStyles.bannerTitle}>🎓 {batchLabel} — Complete!</Text>
         <Text style={liveStyles.bannerHint}>
           All {pos.totalDays} teaching days covered. Focus on revision and mocks.
         </Text>
-      </View>
+      </LinearSurface>
     );
   }
 
@@ -93,7 +94,7 @@ function LiveClassBanner({
   const progressBarWidth = `${progressPercent}%` as `${number}%`;
 
   return (
-    <View style={liveStyles.banner}>
+    <LinearSurface compact style={liveStyles.banner}>
       <View style={liveStyles.bannerRow}>
         <Text style={liveStyles.bannerTitle}>📺 {batchLabel}</Text>
         <Text style={liveStyles.bannerDay}>
@@ -123,11 +124,13 @@ function LiveClassBanner({
           <View style={[liveStyles.subjectBadge, liveStyles.subjectBadgeNext]}>
             <Text style={liveStyles.subjectBadgeText}>NEXT</Text>
           </View>
-          <Text style={[liveStyles.subjectName, { color: '#999' }]}>{nextBlock.subjectName}</Text>
+          <Text style={[liveStyles.subjectName, { color: n.colors.textMuted }]}>
+            {nextBlock.subjectName}
+          </Text>
           <Text style={liveStyles.subjectMeta}>{nextBlock.days}d</Text>
         </View>
       )}
-    </View>
+    </LinearSurface>
   );
 }
 
@@ -139,7 +142,7 @@ function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
   }
 
   return (
-    <View style={dbmciStyles.card}>
+    <LinearSurface style={dbmciStyles.card}>
       <Text style={dbmciStyles.title}>📋 DBMCI One — Study Sequence</Text>
       <Text style={dbmciStyles.subtitle}>
         Follow this order · {DBMCI_TOTAL_DAYS} lecture days · Topics auto-tracked from recordings
@@ -165,7 +168,7 @@ function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
           </View>
         );
       })}
-    </View>
+    </LinearSurface>
   );
 }
 
@@ -233,7 +236,7 @@ function BTRProgressCard({
   };
 
   return (
-    <View style={dbmciStyles.card}>
+    <LinearSurface style={dbmciStyles.card}>
       <Text style={dbmciStyles.title}>📊 BTR — Mastery Progress</Text>
       <Text style={dbmciStyles.subtitle}>
         {overallSeen}/{overallTotal} watched · {overallMastered} mastered · Watching ≠ Learning
@@ -241,19 +244,19 @@ function BTRProgressCard({
       {/* Pipeline legend */}
       <View style={masteryStyles.legendRow}>
         <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: '#555' }]} />
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.textMuted }]} />
           <Text style={masteryStyles.legendText}>Unseen</Text>
         </View>
         <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: '#2196F3' }]} />
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.accent }]} />
           <Text style={masteryStyles.legendText}>Watched</Text>
         </View>
         <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: '#FF9800' }]} />
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.warning }]} />
           <Text style={masteryStyles.legendText}>Reviewed</Text>
         </View>
         <View style={masteryStyles.legendItem}>
-          <View style={[masteryStyles.legendDot, { backgroundColor: '#4CAF50' }]} />
+          <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.success }]} />
           <Text style={masteryStyles.legendText}>Mastered</Text>
         </View>
       </View>
@@ -283,7 +286,12 @@ function BTRProgressCard({
               style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 4 }}
             >
               <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
-              <Text style={[dbmciStyles.subjectName, watchedOrBetter === 0 && { color: '#666' }]}>
+              <Text
+                style={[
+                  dbmciStyles.subjectName,
+                  watchedOrBetter === 0 && { color: n.colors.textMuted },
+                ]}
+              >
                 {subject.name}
               </Text>
               {stats.total > 0 && (
@@ -298,7 +306,10 @@ function BTRProgressCard({
                 <View
                   style={[
                     masteryStyles.barSeg,
-                    { width: `${masteredPct * 100}%` as `${number}%`, backgroundColor: '#4CAF50' },
+                    {
+                      width: `${masteredPct * 100}%` as `${number}%`,
+                      backgroundColor: n.colors.success,
+                    },
                   ]}
                 />
                 <View
@@ -306,7 +317,7 @@ function BTRProgressCard({
                     masteryStyles.barSeg,
                     {
                       width: `${(reviewedPct - masteredPct) * 100}%` as `${number}%`,
-                      backgroundColor: '#FF9800',
+                      backgroundColor: n.colors.warning,
                     },
                   ]}
                 />
@@ -315,7 +326,7 @@ function BTRProgressCard({
                     masteryStyles.barSeg,
                     {
                       width: `${(watchedPct - reviewedPct) * 100}%` as `${number}%`,
-                      backgroundColor: '#2196F3',
+                      backgroundColor: n.colors.accent,
                     },
                   ]}
                 />
@@ -347,7 +358,7 @@ function BTRProgressCard({
           </View>
         );
       })}
-    </View>
+    </LinearSurface>
   );
 }
 
@@ -370,36 +381,26 @@ function MasteryFunnelCard({ summary }: { summary: StudyPlanSummary }) {
 
   return (
     <View style={masteryStyles.funnelCard}>
-      <Text style={masteryStyles.funnelTitle}>📈 Mastery Pipeline</Text>
-      <Text style={masteryStyles.funnelSub}>
-        Watching alone is not enough. All topics must reach Mastered.
-      </Text>
       <View style={masteryStyles.funnelBar}>
-        {bar(summary.masteredCount, '#4CAF50')}
-        {bar(summary.reviewedCount, '#FF9800')}
-        {bar(summary.seenNeedingQuizCount, '#2196F3')}
-        {bar(summary.unseenCount, '#2A2A38')}
+        {bar(summary.masteredCount, n.colors.success)}
+        {bar(summary.reviewedCount, n.colors.warning)}
+        {bar(summary.seenNeedingQuizCount, n.colors.accent)}
+        {bar(summary.unseenCount, n.colors.border)}
       </View>
       <View style={masteryStyles.funnelLegendRow}>
-        <Text style={[masteryStyles.funnelLegendItem, { color: '#4CAF50' }]}>
-          ✓ {summary.masteredCount} Mastered
+        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.success }]}>
+          {summary.masteredCount}
         </Text>
-        <Text style={[masteryStyles.funnelLegendItem, { color: '#FF9800' }]}>
-          ↺ {summary.reviewedCount} Reviewed
+        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.warning }]}>
+          {summary.reviewedCount}
         </Text>
-        <Text style={[masteryStyles.funnelLegendItem, { color: '#2196F3' }]}>
-          👁 {summary.seenNeedingQuizCount} Watched
+        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.accent }]}>
+          {summary.seenNeedingQuizCount}
         </Text>
-        <Text style={[masteryStyles.funnelLegendItem, { color: '#555' }]}>
-          ○ {summary.unseenCount} Unseen
+        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.textMuted }]}>
+          {summary.unseenCount}
         </Text>
       </View>
-      {summary.seenNeedingQuizCount > 0 && (
-        <Text style={masteryStyles.watchGapWarning}>
-          ⚡ {summary.seenNeedingQuizCount} topics watched but never quizzed — these don't count
-          until reviewed!
-        </Text>
-      )}
     </View>
   );
 }
@@ -409,15 +410,15 @@ function BacklogBanner({ summary }: { summary: StudyPlanSummary }) {
   if (summary.overdueBacklogDays < 2) return null;
   const severe = summary.overdueBacklogDays > 4;
   return (
-    <View style={[masteryStyles.backlogBanner, severe && masteryStyles.backlogBannerSevere]}>
-      <Text style={masteryStyles.backlogBannerTitle}>
-        {severe ? '🔴 Review backlog is critical' : '🟠 Review backlog building'}
-      </Text>
-      <Text style={masteryStyles.backlogBannerText}>
-        {summary.overdueBacklogDays}d of overdue reviews queued.{' '}
-        {severe
-          ? 'New topics have been throttled. Clear your review pile first.'
-          : 'Prioritise reviews before starting new topics today.'}
+    <View style={masteryStyles.backlogBanner}>
+      <Text
+        style={[
+          masteryStyles.backlogBannerText,
+          { color: severe ? n.colors.error : n.colors.warning },
+        ]}
+      >
+        {summary.overdueBacklogDays}d overdue reviews
+        {severe ? ' — new topics throttled' : ' — clear before new topics'}
       </Text>
     </View>
   );
@@ -450,108 +451,37 @@ function FoundationRepairQueueCard({
   const tone = summary.newTopicsGated || summary.overdueBacklogDays > 4;
 
   return (
-    <View style={[masteryStyles.foundationCard, tone && masteryStyles.foundationCardCritical]}>
-      <Text style={masteryStyles.foundationTitle}>🧱 Foundation Repair Queue</Text>
-      <Text style={masteryStyles.foundationSub}>
-        Fix basics first, then layer high-yield details. This prevents fake progress from video-only
-        learning.
-      </Text>
-
-      <View style={masteryStyles.foundationStatsRow}>
-        <View style={masteryStyles.foundationStatBox}>
-          <Text style={masteryStyles.foundationStatLabel}>Today's weak blocks</Text>
-          <Text style={masteryStyles.foundationStatValue}>{foundationToday.length}</Text>
-        </View>
-        <View style={masteryStyles.foundationStatBox}>
-          <Text style={masteryStyles.foundationStatLabel}>Repair minutes</Text>
-          <Text style={masteryStyles.foundationStatValue}>{foundationMinutes}m</Text>
-        </View>
-        <View style={masteryStyles.foundationStatBox}>
-          <Text style={masteryStyles.foundationStatLabel}>Watched to quiz pending</Text>
-          <Text style={masteryStyles.foundationStatValue}>{summary.seenNeedingQuizCount}</Text>
-        </View>
-      </View>
-
-      <View style={masteryStyles.foundationActionRow}>
+    <View style={masteryStyles.foundationActionRow}>
+      <TouchableOpacity
+        style={masteryStyles.foundationPrimaryBtn}
+        onPress={onStartFoundation}
+        activeOpacity={0.8}
+      >
+        <Text style={masteryStyles.foundationPrimaryBtnText}>
+          Repair {foundationToday.length} weak
+        </Text>
+      </TouchableOpacity>
+      {summary.seenNeedingQuizCount > 0 && (
         <TouchableOpacity
-          style={masteryStyles.foundationPrimaryBtn}
-          onPress={onStartFoundation}
+          style={masteryStyles.foundationGhostBtn}
+          onPress={onStartQuizRecovery}
           activeOpacity={0.8}
         >
-          <Text style={masteryStyles.foundationPrimaryBtnText}>Start Foundation Repair</Text>
+          <Text style={masteryStyles.foundationGhostBtnText}>
+            Quiz {summary.seenNeedingQuizCount} watched
+          </Text>
         </TouchableOpacity>
-        {summary.seenNeedingQuizCount > 0 && (
-          <TouchableOpacity
-            style={masteryStyles.foundationGhostBtn}
-            onPress={onStartQuizRecovery}
-            activeOpacity={0.8}
-          >
-            <Text style={masteryStyles.foundationGhostBtnText}>Fix Watched Topics</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      )}
     </View>
   );
 }
 
-/** Exam countdown + required mastery-rate card. */
-function UrgencyCard({ summary }: { summary: StudyPlanSummary }) {
-  const total =
-    summary.unseenCount +
-    summary.seenNeedingQuizCount +
-    summary.reviewedCount +
-    summary.masteredCount;
-  if (total === 0 || summary.daysRemaining <= 0) return null;
-  const remaining = total - summary.masteredCount;
-  const topicsPerDay = (remaining / summary.daysRemaining).toFixed(1);
-  const masteryPct = Math.round((summary.masteredCount / total) * 100);
-  // Rough "on track": mastered% ≥ elapsed% of the 180-day study window
-  const studyWindow = 180;
-  const elapsed = Math.max(0, studyWindow - summary.daysRemaining);
-  const onTrack =
-    summary.masteredCount > 0 && masteryPct >= Math.round((elapsed / studyWindow) * 100);
+/** Inline urgency cell for the summary strip. */
+function UrgencyCell({ summary }: { summary: StudyPlanSummary }) {
   return (
-    <View style={urgencyStyles.card}>
-      <View style={urgencyStyles.row}>
-        <View style={urgencyStyles.box}>
-          <Text style={urgencyStyles.boxLabel}>{summary.targetExam} in</Text>
-          <Text style={urgencyStyles.boxValue}>{summary.daysRemaining}d</Text>
-        </View>
-        <View style={urgencyStyles.box}>
-          <Text style={urgencyStyles.boxLabel}>Mastered</Text>
-          <Text style={urgencyStyles.hint}>
-            INICET: {summary.daysToInicet}d · NEET-PG: {summary.daysToNeetPg}d · Phase:{' '}
-            {summary.phaseLabel}
-          </Text>
-          <Text
-            style={[
-              urgencyStyles.boxValue,
-              { color: masteryPct > 60 ? '#4CAF50' : masteryPct > 30 ? '#FF9800' : '#F44336' },
-            ]}
-          >
-            {remaining} topics remain to be mastered · {topicsPerDay} per day needed to finish by{' '}
-            {summary.targetExam}
-          </Text>
-        </View>
-        <View style={urgencyStyles.box}>
-          <Text style={urgencyStyles.boxLabel}>Topics/day</Text>
-          <Text style={urgencyStyles.boxValue}>{topicsPerDay}</Text>
-        </View>
-        <View style={urgencyStyles.box}>
-          <Text style={urgencyStyles.boxLabel}>Status</Text>
-          <Text
-            style={[
-              urgencyStyles.boxValue,
-              { color: onTrack ? '#4CAF50' : '#FF9800', fontSize: 12 },
-            ]}
-          >
-            {onTrack ? '✅ On track' : '⚠️ Behind'}
-          </Text>
-        </View>
-      </View>
-      <Text style={urgencyStyles.hint}>
-        {remaining} topics remain to be mastered · {topicsPerDay} per day needed to finish by INICET
-      </Text>
+    <View style={styles.summaryCell}>
+      <Text style={styles.summaryValue}>{summary.daysRemaining}d</Text>
+      <Text style={styles.summaryLabel}>{summary.targetExam}</Text>
     </View>
   );
 }
@@ -704,18 +634,6 @@ export default function StudyPlanScreen() {
     });
   }
 
-  function renderReasonPills(reasonLabels: string[]) {
-    return (
-      <View style={styles.reasonRow}>
-        {reasonLabels.map((label) => (
-          <Text key={label} style={styles.reasonPill}>
-            {label}
-          </Text>
-        ))}
-      </View>
-    );
-  }
-
   function renderPlanRow(day: DailyPlan, index: number, completedIds: Set<number>) {
     const item = day.items[index];
     if (!item) return null;
@@ -724,48 +642,41 @@ export default function StudyPlanScreen() {
     return (
       <TouchableOpacity
         key={`${day.date}-${item.id}-${index}`}
+        activeOpacity={0.7}
+        onPress={() => handleStartPlannedTopic(day, index)}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.topic.name}, ${item.type === 'review' ? 'review' : item.type === 'deep_dive' ? 'deep dive' : 'study'}${isCompleted ? ', completed' : ''}`}
         style={[
           styles.topicRow,
           item.type === 'review' && styles.rowReview,
           item.type === 'deep_dive' && styles.rowDeep,
           isCompleted && styles.rowCompleted,
         ]}
-        activeOpacity={0.7}
-        onPress={() => handleStartPlannedTopic(day, index)}
-        accessibilityRole="button"
-        accessibilityLabel={`${item.topic.name}, ${item.type === 'review' ? 'review' : item.type === 'deep_dive' ? 'deep dive' : 'study'}${isCompleted ? ', completed' : ''}`}
       >
         <View style={[styles.dot, { backgroundColor: item.topic.subjectColor }]} />
         <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {item.type === 'review' && <Text style={styles.tagReview}>REL</Text>}
+          <View style={styles.topicNameRow}>
+            {item.type === 'review' && <Text style={styles.tagReview}>REV</Text>}
             {item.type === 'deep_dive' && <Text style={styles.tagDeep}>DEEP</Text>}
             {item.type === 'study' && <Text style={styles.tagNew}>NEW</Text>}
             {item.topic.inicetPriority >= 8 && <Text style={styles.tagHighYield}>HY</Text>}
             <Text
               style={[styles.topicName, isCompleted && styles.topicNameCompleted]}
-              numberOfLines={3}
+              numberOfLines={2}
               ellipsizeMode="tail"
             >
               {item.topic.name}
             </Text>
           </View>
           <Text style={styles.topicSub}>
-            {item.topic.subjectName} · Priority {item.topic.inicetPriority}/10
+            {item.topic.subjectName} · P{item.topic.inicetPriority} · {item.duration}m
           </Text>
-          {renderReasonPills(item.reasonLabels)}
         </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.topicTime}>{item.duration}m</Text>
-          {isCompleted ? (
-            <Text style={styles.completedLabel}>Completed</Text>
-          ) : (
-            <View style={styles.startHintRow}>
-              <Text style={styles.startHint}>Start planned topic</Text>
-              <Ionicons name="chevron-forward" size={12} color="#6C63FF" />
-            </View>
-          )}
-        </View>
+        {isCompleted ? (
+          <Ionicons name="checkmark-circle" size={16} color={n.colors.success} />
+        ) : (
+          <Ionicons name="chevron-forward" size={14} color={n.colors.textMuted} />
+        )}
       </TouchableOpacity>
     );
   }
@@ -775,7 +686,7 @@ export default function StudyPlanScreen() {
       <SafeAreaView style={styles.safe} testID="plan-screen">
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#6C63FF" />
+          <ActivityIndicator size="large" color={n.colors.accent} />
           <Text style={styles.loadingText}>Building your study plan...</Text>
         </View>
       </SafeAreaView>
@@ -878,86 +789,35 @@ export default function StudyPlanScreen() {
             </View>
           </View>
 
-          {/* Stats Card */}
-          <View style={[styles.card, !summary.feasible && styles.cardWarning]}>
-            <Text style={styles.cardTitle}>Daily Target</Text>
-            <Text style={styles.cardEyebrow}>{summary.resourceLabel}</Text>
-            <View style={styles.cardRow}>
-              <Text style={styles.cardValue}>{requiredHoursDisplay}</Text>
-              <Text style={styles.cardLabel}>/ day needed</Text>
-            </View>
-            <Text style={styles.cardSub}>{summary.message}</Text>
-            {summary.hasWorkBeyondHorizon && (
-              <Text style={styles.horizonNote}>
-                {summary.hoursBeyondHorizon}h of follow-up reviews sit beyond the current planning
-                window and will roll in as days pass.
-              </Text>
-            )}
-            <Text style={styles.cardMeta}>{summary.workloadAssumption}</Text>
-            {summary.subjectLoadHighlights.length > 0 && (
-              <View style={styles.loadHighlightBox}>
-                <Text style={styles.loadHighlightLabel}>Heavier subject blocks</Text>
-                <Text style={styles.loadHighlightValue}>
-                  {summary.subjectLoadHighlights.join(' · ')}
-                </Text>
+          {/* ── Dashboard card ── */}
+          <LinearSurface compact style={styles.dashboardCard}>
+            <View style={styles.summaryStrip}>
+              <View style={styles.summaryCell}>
+                <Text style={styles.summaryValue}>{requiredHoursDisplay}</Text>
+                <Text style={styles.summaryLabel}>per day</Text>
               </View>
-            )}
-            <View style={styles.forecastRow}>
-              <View style={styles.forecastCard}>
-                <Text style={styles.forecastLabel}>Projected finish</Text>
-                <Text style={styles.forecastValue}>
-                  {summary.projectedFinishDate ?? 'Not enough data'}
-                </Text>
-              </View>
-              <View style={styles.forecastCard}>
-                <Text style={styles.forecastLabel}>Buffer</Text>
-                <Text style={styles.forecastValue}>
-                  {summary.bufferDays} day{summary.bufferDays === 1 ? '' : 's'}
-                </Text>
+              <View style={styles.summaryDivider} />
+              <UrgencyCell summary={summary} />
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryCell}>
+                <Text style={styles.summaryValue}>{summary.bufferDays}d</Text>
+                <Text style={styles.summaryLabel}>buffer</Text>
               </View>
             </View>
+            {!summary.feasible && <Text style={styles.warningHint}>{summary.message}</Text>}
+            <MasteryFunnelCard summary={summary} />
+          </LinearSurface>
 
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBarBg}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${summary.requiredHoursPerDayRaw > 0 ? Math.min(100, ((capacityOverrideMinutes ?? profile?.dailyGoalMinutes ?? 120) / (summary.requiredHoursPerDayRaw * 60)) * 100) : 100}%`,
-                    },
-                    !summary.feasible && { backgroundColor: '#FF9800' },
-                  ]}
-                />
-              </View>
-              <Text style={styles.progressLabel}>
-                {capacityOverrideMinutes !== null
-                  ? `Today's override: ${capacityOverrideMinutes >= 60 ? `${capacityOverrideMinutes / 60}h` : `${capacityOverrideMinutes}m`}`
-                  : `Current Goal: ${Math.round((profile?.dailyGoalMinutes || 120) / 60)}h`}
-              </Text>
-            </View>
-          </View>
-
-          {/* Mastery pipeline overview — always visible */}
-          <MasteryFunnelCard summary={summary} />
-
-          {/* Exam countdown + required daily mastery rate */}
-          <UrgencyCard summary={summary} />
-
-          {/* Today's capacity quick-set */}
-          <View style={masteryStyles.capacityRow}>
-            <Text style={masteryStyles.capacityLabel}>
-              {capacityOverrideMinutes !== null ? '⏱ Today I have' : '⏱ How much time today?'}
-            </Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+          {/* ── Controls ── */}
+          <View style={styles.controlsRow}>
+            <View style={masteryStyles.capacityChipRow}>
               {CAPACITY_OPTIONS.map((opt) => {
                 const active = capacityOverrideMinutes === opt.minutes;
                 return (
                   <TouchableOpacity
                     key={opt.minutes}
                     style={[masteryStyles.capacityChip, active && masteryStyles.capacityChipActive]}
-                    onPress={() => {
-                      setCapacityOverrideMinutes(active ? null : opt.minutes);
-                    }}
+                    onPress={() => setCapacityOverrideMinutes(active ? null : opt.minutes)}
                     activeOpacity={0.8}
                   >
                     <Text
@@ -972,32 +832,25 @@ export default function StudyPlanScreen() {
                 );
               })}
             </View>
-            {capacityOverrideMinutes !== null && (
-              <TouchableOpacity onPress={() => setCapacityOverrideMinutes(null)}>
-                <Text style={masteryStyles.capacityClear}>Reset to default</Text>
-              </TouchableOpacity>
-            )}
+            <FoundationRepairQueueCard
+              summary={summary}
+              todayPlan={todayPlan}
+              onStartFoundation={() =>
+                handleStartTopicSet(
+                  foundationToday.length > 0 ? foundationToday : missedTopics,
+                  'deep_dive',
+                )
+              }
+              onStartQuizRecovery={() =>
+                handleStartTopicSet(
+                  watchedNeedingQuizToday.length > 0 ? watchedNeedingQuizToday : missedTopics,
+                  'review',
+                )
+              }
+            />
           </View>
 
-          {/* Review backlog warning */}
           <BacklogBanner summary={summary} />
-
-          <FoundationRepairQueueCard
-            summary={summary}
-            todayPlan={todayPlan}
-            onStartFoundation={() =>
-              handleStartTopicSet(
-                foundationToday.length > 0 ? foundationToday : missedTopics,
-                'deep_dive',
-              )
-            }
-            onStartQuizRecovery={() =>
-              handleStartTopicSet(
-                watchedNeedingQuizToday.length > 0 ? watchedNeedingQuizToday : missedTopics,
-                'review',
-              )
-            }
-          />
 
           {(resourceMode === 'dbmci_live' || resourceMode === 'hybrid') && (
             <LiveClassBanner
@@ -1020,11 +873,12 @@ export default function StudyPlanScreen() {
             <BTRProgressCard allTopics={allTopics} onRefresh={refreshPlan} />
           )}
 
+          {/* ── Today ── */}
           <Text style={styles.sectionTitle}>Today</Text>
           {todayPlan && todayPlan.items.length > 0 ? (
             <View style={styles.dayBlock}>
               <View style={styles.dayHeader}>
-                <Text style={[styles.dayLabel, { color: '#6C63FF' }]}>{todayPlan.dayLabel}</Text>
+                <Text style={styles.dayLabel}>{todayPlan.dayLabel}</Text>
                 <Text style={styles.dayMeta}>
                   {Math.round(todayPlan.totalMinutes / 60)}h · {todayPlan.items.length} tasks
                 </Text>
@@ -1032,19 +886,20 @@ export default function StudyPlanScreen() {
               {todayPlan.items.map((_, idx) => renderPlanRow(todayPlan, idx, completedTodayIds))}
               {todayPlan.isRestDay && (
                 <View style={styles.restBox}>
-                  <Text style={styles.restText}>🧘 Rest Day / Catch Up</Text>
+                  <Text style={styles.restText}>Rest Day / Catch Up</Text>
                 </View>
               )}
             </View>
           ) : (
             <View style={styles.emptySection}>
-              <Text style={styles.emptySectionTitle}>Nothing queued for today</Text>
+              <Text style={styles.emptySectionTitle}>Nothing queued</Text>
               <Text style={styles.emptySectionSub}>
-                Use the syllabus filters or switch plan modes to generate a tighter target.
+                Switch plan modes or open syllabus to generate targets.
               </Text>
             </View>
           )}
 
+          {/* ── This Week ── */}
           <Text style={styles.sectionTitle}>This Week</Text>
           {weekPlans.map((day, i) => (
             <View key={i} style={styles.dayBlock}>
@@ -1057,23 +912,23 @@ export default function StudyPlanScreen() {
               {day.items.map((_, idx) => renderPlanRow(day, idx, completedWeekIds))}
               {day.isRestDay && (
                 <View style={styles.restBox}>
-                  <Text style={styles.restText}>🧘 Rest Day / Catch Up</Text>
+                  <Text style={styles.restText}>Rest Day / Catch Up</Text>
                 </View>
               )}
             </View>
           ))}
 
-          <Text style={styles.sectionTitle}>Missed</Text>
+          {/* ── Overdue ── */}
+          <Text style={styles.sectionTitle}>Overdue</Text>
           {missedTopics.length > 0 ? (
             <View style={styles.dayBlock}>
               <View style={styles.dayHeader}>
-                <Text style={styles.dayLabel}>Overdue reviews</Text>
-                <Text style={styles.dayMeta}>{missedTotalCount} items</Text>
+                <Text style={[styles.dayLabel, { color: n.colors.warning }]}>
+                  {missedTotalCount} review{missedTotalCount === 1 ? '' : 's'} due
+                </Text>
               </View>
               {missedTotalCount > missedTopics.length && (
-                <Text style={styles.previewMeta}>
-                  Showing first {missedTopics.length} overdue topics
-                </Text>
+                <Text style={styles.previewMeta}>Showing first {missedTopics.length}</Text>
               )}
               {missedTopics.map((topic) => (
                 <TouchableOpacity
@@ -1084,33 +939,21 @@ export default function StudyPlanScreen() {
                 >
                   <View style={[styles.dot, { backgroundColor: topic.subjectColor }]} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.topicName} numberOfLines={3} ellipsizeMode="tail">
+                    <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
                       {topic.name}
                     </Text>
-                    <Text style={styles.topicSub}>{topic.subjectName}</Text>
-                    {renderReasonPills([
-                      topic.progress.fsrsDue?.slice(0, 10)
-                        ? `Overdue since ${topic.progress.fsrsDue.slice(0, 10)}`
-                        : 'Overdue',
-                      topic.inicetPriority >= 8 ? 'High yield' : 'Review',
-                    ])}
+                    <Text style={styles.topicSub}>
+                      {topic.subjectName} · {topic.progress.fsrsDue?.slice(5, 10) ?? 'overdue'}
+                    </Text>
                   </View>
-                  <View style={{ alignItems: 'flex-end' }}>
-                    <Text style={styles.topicTime}>Review</Text>
-                    <View style={styles.startHintRow}>
-                      <Text style={styles.startHint}>Recover now</Text>
-                      <Ionicons name="chevron-forward" size={12} color="#6C63FF" />
-                    </View>
-                  </View>
+                  <Ionicons name="chevron-forward" size={14} color={n.colors.textMuted} />
                 </TouchableOpacity>
               ))}
             </View>
           ) : (
             <View style={styles.emptySection}>
-              <Text style={styles.emptySectionTitle}>No overdue tasks</Text>
-              <Text style={styles.emptySectionSub}>
-                Your review queue is under control right now.
-              </Text>
+              <Text style={styles.emptySectionTitle}>All clear</Text>
+              <Text style={styles.emptySectionSub}>No overdue reviews right now.</Text>
             </View>
           )}
         </ResponsiveContainer>
@@ -1121,305 +964,238 @@ export default function StudyPlanScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
-  content: { padding: 20, paddingBottom: 60 },
-  header: { marginBottom: 24 },
-  title: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 4 },
-  subtitle: { color: n.colors.textSecondary, fontSize: 14 },
-  modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  resourceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  content: { paddingHorizontal: n.spacing.md, paddingTop: n.spacing.sm, paddingBottom: 40 },
+  header: { marginBottom: n.spacing.sm },
+  title: { ...n.typography.display, color: n.colors.textPrimary, marginBottom: n.spacing.xs },
+  subtitle: { ...n.typography.bodySmall, color: n.colors.textSecondary },
+  modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: n.spacing.sm },
+  resourceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   modeChip: {
-    backgroundColor: '#171722',
-    borderRadius: 999,
+    backgroundColor: 'transparent',
+    borderRadius: n.radius.full,
     borderWidth: 1,
-    borderColor: '#2A2A38',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: n.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   modeChipActive: {
-    backgroundColor: '#262145',
-    borderColor: '#6C63FF66',
+    backgroundColor: n.colors.primaryTintSoft,
+    borderColor: `${n.colors.accent}66`,
   },
-  modeChipText: { color: '#A5ADBE', fontSize: 12, fontWeight: '800' },
-  modeChipTextActive: { color: '#ECE9FF' },
+  modeChipText: { ...n.typography.meta, color: n.colors.textMuted, fontWeight: '700' },
+  modeChipTextActive: { color: n.colors.textPrimary },
   resourceChip: {
-    backgroundColor: '#141824',
-    borderRadius: 999,
+    backgroundColor: 'transparent',
+    borderRadius: n.radius.full,
     borderWidth: 1,
-    borderColor: '#243148',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: n.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   resourceChipActive: {
-    backgroundColor: '#0F2B3A',
-    borderColor: '#49B6FF66',
+    backgroundColor: n.colors.primaryTintSoft,
+    borderColor: n.colors.borderLight,
   },
-  resourceChipText: { color: '#9AC5DF', fontSize: 12, fontWeight: '800' },
-  resourceChipTextActive: { color: '#E7F6FF' },
+  resourceChipText: { ...n.typography.meta, color: n.colors.textMuted, fontWeight: '700' },
+  resourceChipTextActive: { color: n.colors.textPrimary },
 
-  card: {
-    backgroundColor: '#1A1A24',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 32,
-    borderWidth: 1,
-    borderColor: '#333',
+  // ── Dashboard card ──
+  dashboardCard: {
+    marginBottom: n.spacing.md,
   },
-  cardWarning: { borderColor: '#F44336', backgroundColor: '#2A0A0A' },
-  cardTitle: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 8,
+  summaryStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: n.spacing.sm,
   },
-  cardEyebrow: {
-    color: '#7CC7FF',
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
-  cardRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 4 },
-  cardValue: { color: '#fff', fontSize: 32, fontWeight: '900' },
-  cardLabel: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
-  cardSub: { color: '#CCC', fontSize: 14, marginBottom: 16, fontStyle: 'italic' },
-  cardMeta: { color: '#97A2B8', fontSize: 12, lineHeight: 18, marginTop: -8, marginBottom: 16 },
-  loadHighlightBox: {
-    backgroundColor: '#141A22',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#243148',
-    padding: 12,
-    marginBottom: 16,
-  },
-  loadHighlightLabel: {
-    color: '#7BA5C8',
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  loadHighlightValue: { color: '#E6F1F8', fontSize: 13, fontWeight: '700', lineHeight: 18 },
-  forecastRow: { flexDirection: 'row', gap: 10, marginBottom: 16 },
-  forecastCard: {
-    flex: 1,
-    backgroundColor: '#16161C',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    padding: 12,
-  },
-  forecastLabel: {
-    color: '#7E8496',
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  forecastValue: { color: '#F2F4F8', fontSize: 14, fontWeight: '800' },
-
-  progressContainer: { marginTop: 8 },
-  progressBarBg: {
-    height: 6,
-    backgroundColor: '#333',
-    borderRadius: 3,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  progressBarFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 3 },
-  progressLabel: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
-  horizonNote: {
-    color: '#FFE1A6',
-    fontSize: 12,
-    lineHeight: 18,
-    marginTop: -6,
-    marginBottom: 10,
+  summaryCell: { flex: 1, alignItems: 'center' },
+  summaryValue: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '900' },
+  summaryLabel: { ...n.typography.meta, color: n.colors.textMuted, fontSize: 10, marginTop: 2 },
+  summaryDivider: { width: 1, height: 24, backgroundColor: n.colors.border },
+  warningHint: {
+    ...n.typography.caption,
+    color: n.colors.warning,
+    marginBottom: n.spacing.sm,
+    fontStyle: 'italic',
   },
 
+  // ── Controls row ──
+  controlsRow: {
+    marginBottom: n.spacing.md,
+    gap: n.spacing.sm,
+  },
+
+  // ── Section labels ──
   sectionTitle: {
-    color: n.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1,
+    ...n.typography.label,
+    color: n.colors.textMuted,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-    marginBottom: 16,
+    marginBottom: n.spacing.sm,
+    marginTop: n.spacing.sm,
   },
 
-  dayBlock: { marginBottom: 24 },
+  dayBlock: { marginBottom: n.spacing.lg },
   dayHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    paddingBottom: 8,
+    alignItems: 'center',
+    marginBottom: n.spacing.sm,
+    paddingBottom: n.spacing.xs,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: n.colors.border,
   },
-  dayLabel: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  dayMeta: { color: n.colors.textMuted, fontSize: 12 },
+  dayLabel: { ...n.typography.label, color: n.colors.textPrimary, fontSize: 14 },
+  dayMeta: { ...n.typography.meta, color: n.colors.textMuted },
 
   topicRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#16161C',
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#222',
-  },
-  rowReview: { borderColor: '#4CAF5044', borderLeftWidth: 3, borderLeftColor: '#4CAF50' },
-  rowDeep: { borderColor: '#F4433644', borderLeftWidth: 3, borderLeftColor: '#F44336' },
-  rowCompleted: { opacity: 0.7, backgroundColor: '#132017', borderColor: '#2C5A36' },
-  dot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
-  topicName: { color: '#E0E0E0', fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  topicNameCompleted: { textDecorationLine: 'line-through', color: '#A8D9B2' },
-  topicSub: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
-  topicTime: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  startHint: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
-  completedLabel: { color: '#63C27D', fontSize: 12, fontWeight: '800', marginTop: 4 },
-  reasonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  reasonPill: {
-    color: '#CBD3E2',
-    fontSize: 12,
-    fontWeight: '700',
+    alignItems: 'center',
+    paddingVertical: 10,
     paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: '#252734',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: n.colors.border,
   },
-
+  rowReview: { borderLeftWidth: 2, borderLeftColor: n.colors.success, paddingLeft: 10 },
+  rowDeep: { borderLeftWidth: 2, borderLeftColor: n.colors.error, paddingLeft: 10 },
+  rowCompleted: { opacity: 0.4 },
+  dot: { width: 6, height: 6, borderRadius: 3, marginRight: 10 },
+  topicNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, flexWrap: 'wrap' },
+  topicName: { ...n.typography.bodySmall, color: n.colors.textPrimary, fontWeight: '500', flex: 1 },
+  topicNameCompleted: { textDecorationLine: 'line-through', color: n.colors.textMuted },
+  topicSub: { ...n.typography.meta, color: n.colors.textMuted, fontSize: 11, marginTop: 2 },
   tagReview: {
-    fontSize: 12,
+    ...n.typography.meta,
+    fontSize: 10,
     color: n.colors.success,
-    fontWeight: '900',
-    backgroundColor: 'rgba(63,185,80,0.08)',
+    fontWeight: '800',
+    backgroundColor: n.colors.successSurface,
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   tagDeep: {
-    fontSize: 12,
+    ...n.typography.meta,
+    fontSize: 10,
     color: n.colors.error,
-    fontWeight: '900',
-    backgroundColor: 'rgba(241,76,76,0.08)',
+    fontWeight: '800',
+    backgroundColor: n.colors.errorSurface,
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   tagNew: {
-    fontSize: 12,
+    ...n.typography.meta,
+    fontSize: 10,
     color: n.colors.accent,
-    fontWeight: '900',
+    fontWeight: '800',
     backgroundColor: n.colors.primaryTintSoft,
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
   tagHighYield: {
-    fontSize: 12,
-    color: n.colors.textInverse,
-    fontWeight: '900',
-    backgroundColor: n.colors.warning,
+    ...n.typography.meta,
+    fontSize: 10,
+    color: n.colors.warning,
+    fontWeight: '800',
+    backgroundColor: 'rgba(217, 119, 6, 0.1)',
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  startHintRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
   emptySection: {
-    backgroundColor: '#171722',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    padding: 16,
-    marginBottom: 20,
+    paddingVertical: n.spacing.md,
+    paddingLeft: 14,
+    borderLeftWidth: 2,
+    borderLeftColor: n.colors.border,
+    marginBottom: n.spacing.md,
   },
-  emptySectionTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  emptySectionSub: { color: n.colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
+  emptySectionTitle: {
+    ...n.typography.bodySmall,
+    color: n.colors.textSecondary,
+    fontWeight: '600',
+  },
+  emptySectionSub: { ...n.typography.caption, color: n.colors.textMuted, marginTop: 4 },
   previewMeta: {
+    ...n.typography.meta,
     color: n.colors.textMuted,
-    fontSize: 12,
-    marginBottom: 10,
+    marginBottom: 6,
   },
 
   restBox: {
-    padding: 12,
+    padding: n.spacing.sm,
     alignItems: 'center',
-    backgroundColor: '#1A2A1A',
-    borderRadius: 10,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: '#4CAF5044',
+    backgroundColor: n.colors.successSurface,
+    borderRadius: n.radius.sm,
+    marginTop: n.spacing.xs,
   },
-  restText: { color: '#4CAF50', fontWeight: '600' },
+  restText: { ...n.typography.caption, color: n.colors.success, fontWeight: '600' },
   loadingWrap: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: n.spacing.lg,
   },
   loadingText: {
+    ...n.typography.bodySmall,
     color: n.colors.textSecondary,
     marginTop: 12,
-    fontSize: 14,
   },
   errorTitle: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '800',
-    marginBottom: 8,
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
+    marginBottom: n.spacing.sm,
     textAlign: 'center',
   },
   errorText: {
+    ...n.typography.bodySmall,
     color: n.colors.textMuted,
-    fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 16,
+    marginBottom: n.spacing.md,
   },
   retryButton: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 10,
+    backgroundColor: n.colors.accent,
+    borderRadius: n.radius.sm,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingVertical: n.spacing.sm,
   },
   retryButtonText: {
-    color: '#fff',
-    fontWeight: '800',
-    fontSize: 13,
+    ...n.typography.button,
+    color: n.colors.textPrimary,
   },
 });
 
 const dbmciStyles = StyleSheet.create({
   card: {
-    backgroundColor: '#171722',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    padding: 16,
-    marginBottom: 20,
+    marginBottom: n.spacing.sm,
   },
   title: {
-    color: '#fff',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
     fontSize: 16,
-    fontWeight: '800',
     marginBottom: 2,
   },
   subtitle: {
+    ...n.typography.meta,
     color: n.colors.textMuted,
-    fontSize: 12,
     marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 4,
-    borderRadius: 8,
+    paddingHorizontal: n.spacing.xs,
+    borderRadius: n.radius.sm,
     marginBottom: 2,
   },
   idx: {
-    fontSize: 11,
+    ...n.typography.meta,
     fontWeight: '900',
     width: 20,
     textAlign: 'center',
@@ -1428,33 +1204,32 @@ const dbmciStyles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    marginRight: 8,
+    marginRight: n.spacing.sm,
   },
   rowContent: {
     flex: 1,
   },
   subjectName: {
-    color: '#E0E0E0',
-    fontSize: 13,
-    fontWeight: '600',
+    ...n.typography.label,
+    color: n.colors.textPrimary,
   },
   topicCount: {
+    ...n.typography.meta,
     color: n.colors.textMuted,
-    fontSize: 11,
     marginTop: 1,
   },
   meta: {
     alignItems: 'flex-end',
-    marginLeft: 8,
+    marginLeft: n.spacing.sm,
   },
   days: {
+    ...n.typography.meta,
     color: n.colors.textMuted,
-    fontSize: 11,
     fontWeight: '700',
   },
   barBg: {
     height: 3,
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
     borderRadius: 2,
     marginTop: 3,
     overflow: 'hidden',
@@ -1464,305 +1239,179 @@ const dbmciStyles = StyleSheet.create({
     borderRadius: 2,
   },
   pct: {
-    color: '#6C63FF',
-    fontSize: 11,
+    ...n.typography.meta,
+    color: n.colors.accent,
     fontWeight: '800',
   },
   markBtn: {
-    color: '#6C63FF',
-    fontSize: 11,
+    ...n.typography.meta,
+    color: n.colors.accent,
     fontWeight: '700',
-    paddingHorizontal: 8,
+    paddingHorizontal: n.spacing.sm,
     paddingVertical: 3,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: `${n.colors.accent}44`,
     overflow: 'hidden',
   },
 });
 
 const liveStyles = StyleSheet.create({
   banner: {
-    backgroundColor: '#13131F',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    padding: 14,
-    marginBottom: 16,
+    marginBottom: n.spacing.sm,
   },
   bannerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: n.spacing.sm,
   },
   bannerTitle: {
-    color: '#fff',
+    ...n.typography.label,
+    color: n.colors.textPrimary,
     fontSize: 14,
-    fontWeight: '800',
   },
   bannerDay: {
-    color: '#6C63FF',
+    ...n.typography.label,
+    color: n.colors.accent,
     fontSize: 12,
-    fontWeight: '700',
   },
   bannerHint: {
+    ...n.typography.caption,
     color: n.colors.textMuted,
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 17,
+    marginTop: n.spacing.xs,
   },
   progressTrack: {
     height: 4,
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
     borderRadius: 2,
     marginBottom: 10,
     overflow: 'hidden',
   },
   progressFill: {
     height: 4,
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     borderRadius: 2,
   },
   subjectRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-    gap: 8,
+    marginBottom: n.spacing.xs,
+    gap: n.spacing.sm,
   },
   subjectBadge: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 4,
+    backgroundColor: n.colors.accent,
+    borderRadius: n.spacing.xs,
     paddingHorizontal: 5,
     paddingVertical: 2,
   },
   subjectBadgeNext: {
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
   },
   subjectBadgeText: {
-    color: '#fff',
+    ...n.typography.meta,
+    color: n.colors.textPrimary,
     fontSize: 9,
     fontWeight: '900',
   },
   subjectName: {
-    color: '#E0E0E0',
-    fontSize: 13,
-    fontWeight: '600',
+    ...n.typography.label,
+    color: n.colors.textPrimary,
     flex: 1,
   },
   subjectMeta: {
+    ...n.typography.meta,
     color: n.colors.textMuted,
-    fontSize: 11,
   },
 });
 
 const masteryStyles = StyleSheet.create({
   // BTRProgressCard enhancements
-  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { color: n.colors.textMuted, fontSize: 11 },
+  legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: n.spacing.sm },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  legendDot: { width: 6, height: 6, borderRadius: 3 },
+  legendText: { ...n.typography.meta, color: n.colors.textMuted, fontSize: 10 },
   barTrack: {
-    height: 6,
-    backgroundColor: '#2A2A38',
-    borderRadius: 3,
+    height: 4,
+    backgroundColor: n.colors.border,
+    borderRadius: 2,
     flexDirection: 'row',
     overflow: 'hidden',
     width: '100%',
   },
-  barSeg: { height: 6 },
-  quizNudge: { color: '#2196F3', fontSize: 11, fontWeight: '700' },
+  barSeg: { height: 4 },
+  quizNudge: { ...n.typography.meta, color: n.colors.accent, fontWeight: '700', fontSize: 10 },
 
-  // MasteryFunnelCard
-  funnelCard: {
-    backgroundColor: '#12121C',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    padding: 16,
-    marginBottom: 16,
-  },
-  funnelTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  funnelSub: { color: n.colors.textMuted, fontSize: 12, marginBottom: 12, lineHeight: 17 },
+  // MasteryFunnelCard — flat bar inside dashboard
+  funnelCard: {},
   funnelBar: {
-    height: 10,
-    borderRadius: 5,
+    height: 6,
+    borderRadius: 3,
     flexDirection: 'row',
     overflow: 'hidden',
-    backgroundColor: '#2A2A38',
-    marginBottom: 10,
+    backgroundColor: n.colors.border,
+    marginBottom: 6,
   },
-  funnelSeg: { height: 10 },
-  funnelLegendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 6 },
-  funnelLegendItem: { fontSize: 12, fontWeight: '700' },
-  watchGapWarning: {
-    color: '#64B5F6',
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 6,
-    fontStyle: 'italic',
-  },
+  funnelSeg: { height: 6 },
+  funnelLegendRow: { flexDirection: 'row', gap: 14 },
+  funnelLegendItem: { ...n.typography.meta, fontSize: 11, fontWeight: '700' },
 
-  // BacklogBanner
+  // BacklogBanner — inline text
   backlogBanner: {
-    backgroundColor: '#241A00',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FF980066',
-    padding: 14,
-    marginBottom: 16,
+    marginBottom: n.spacing.sm,
   },
-  backlogBannerSevere: {
-    backgroundColor: '#2A0A0A',
-    borderColor: '#F4433666',
-  },
-  backlogBannerTitle: { color: '#fff', fontSize: 14, fontWeight: '800', marginBottom: 4 },
-  backlogBannerText: { color: '#CCC', fontSize: 13, lineHeight: 18 },
-
-  // Foundation repair queue
-  foundationCard: {
-    backgroundColor: '#171322',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#423468',
-    padding: 14,
-    marginBottom: 16,
-  },
-  foundationCardCritical: {
-    backgroundColor: '#2A0D16',
-    borderColor: '#7A3246',
-  },
-  foundationTitle: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 4,
-  },
-  foundationSub: {
-    color: '#D5CCE9',
-    fontSize: 12,
-    lineHeight: 17,
-    marginBottom: 10,
-  },
-  foundationStatsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-  },
-  foundationStatBox: {
-    flex: 1,
-    backgroundColor: '#201A31',
-    borderRadius: 10,
-    paddingHorizontal: 8,
-    paddingVertical: 9,
-  },
-  foundationStatLabel: {
-    color: '#B8A9D6',
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 3,
-  },
-  foundationStatValue: {
-    color: '#F7F3FF',
-    fontSize: 17,
-    fontWeight: '900',
+  backlogBannerText: {
+    ...n.typography.caption,
+    color: n.colors.textSecondary,
+    fontStyle: 'italic',
   },
   foundationActionRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   foundationPrimaryBtn: {
-    flex: 1,
-    backgroundColor: '#6C63FF',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
+    backgroundColor: n.colors.accent,
+    borderRadius: n.radius.sm,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
   foundationPrimaryBtnText: {
-    color: '#fff',
+    ...n.typography.meta,
+    color: n.colors.textPrimary,
     fontWeight: '800',
-    fontSize: 12,
+    fontSize: 11,
   },
   foundationGhostBtn: {
-    flex: 1,
-    borderRadius: 10,
+    borderRadius: n.radius.sm,
     borderWidth: 1,
-    borderColor: '#6C63FF66',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    backgroundColor: '#1A1730',
+    borderColor: n.colors.border,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
   foundationGhostBtnText: {
-    color: '#CDC6FF',
-    fontWeight: '800',
-    fontSize: 12,
-  },
-
-  // Daily capacity chips
-  capacityRow: {
-    marginBottom: 16,
-    backgroundColor: '#13131F',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2A2A38',
-    padding: 12,
-  },
-  capacityLabel: {
-    color: n.colors.textMuted,
+    ...n.typography.meta,
+    color: n.colors.accent,
+    fontWeight: '700',
     fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    marginBottom: 8,
+  },
+  capacityChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   capacityChip: {
-    backgroundColor: '#1E1E2E',
-    borderRadius: 999,
+    borderRadius: n.radius.full,
     borderWidth: 1,
-    borderColor: '#333',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderColor: n.colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
   capacityChipActive: {
-    backgroundColor: '#2B2060',
-    borderColor: '#6C63FF88',
+    backgroundColor: n.colors.primaryTintSoft,
+    borderColor: `${n.colors.accent}88`,
   },
-  capacityChipText: { color: '#AAA', fontSize: 12, fontWeight: '700' },
-  capacityChipTextActive: { color: '#ECE9FF' },
-  capacityClear: {
-    color: '#6C63FF',
-    fontSize: 11,
-    fontWeight: '700',
-    marginTop: 8,
-  },
+  capacityChipText: { ...n.typography.meta, color: n.colors.textMuted, fontSize: 11 },
+  capacityChipTextActive: { color: n.colors.textPrimary },
 });
 
-const urgencyStyles = StyleSheet.create({
-  card: {
-    backgroundColor: '#0F131C',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#243148',
-    padding: 16,
-    marginBottom: 16,
-  },
-  row: { flexDirection: 'row', gap: 8, marginBottom: 10 },
-  box: {
-    flex: 1,
-    backgroundColor: '#141824',
-    borderRadius: 10,
-    padding: 10,
-    alignItems: 'center',
-  },
-  boxLabel: {
-    color: '#7E8496',
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  boxValue: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  hint: { color: n.colors.textMuted, fontSize: 12, lineHeight: 17 },
-});
+// urgencyStyles removed — UrgencyCell is now inline in the summary strip

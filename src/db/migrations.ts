@@ -949,7 +949,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_ch
     sql: `ALTER TABLE guru_chat_session_memory ADD COLUMN state_json TEXT NOT NULL DEFAULT '{}'`,
     description: 'Structured tutoring state for Guru chat thread memory',
   },
+  // ── Lecture Schedule Progress ─────────────────────────────────────────────────
+  {
+    version: 150,
+    sql: `CREATE TABLE IF NOT EXISTS lecture_schedule_progress (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  batch_id TEXT NOT NULL,
+  lecture_index INTEGER NOT NULL,
+  completed_at INTEGER NOT NULL,
+  UNIQUE(batch_id, lecture_index)
+)`,
+    description: 'Track completed lectures per coaching batch (BTR, DBMCI One)',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 149;
+export const LATEST_VERSION = 150;

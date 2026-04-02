@@ -71,16 +71,66 @@ const SORT_OPTIONS: Array<{ key: SubjectSortMode; label: string }> = [
 const EMPTY_COVERAGE = { total: 0, seen: 0 };
 const EMPTY_METRICS: SubjectMetrics = { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
 
-/** Lightweight skeleton shown during initial data load to avoid blank screen flash */
+/** Premium skeleton matching the split SubjectCard layout */
 function SyllabusSkeleton() {
   return (
     <View style={skeletonStyles.container}>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <View key={i} style={skeletonStyles.row}>
-          <View style={skeletonStyles.dot} />
-          <View style={skeletonStyles.body}>
-            <View style={[skeletonStyles.bar, { width: `${55 + (i % 3) * 15}%` }]} />
-            <View style={[skeletonStyles.barSmall, { width: `${35 + (i % 4) * 10}%` }]} />
+      {/* Header Skeleton */}
+      <View style={skeletonStyles.headerRow}>
+        <View style={skeletonStyles.headerTitle} />
+        <View style={skeletonStyles.headerActions} />
+      </View>
+
+      {/* Hero Surface Skeleton */}
+      <View style={skeletonStyles.heroSurface}>
+        <View style={[skeletonStyles.bar, { width: '40%', marginBottom: 12 }]} />
+        <View style={skeletonStyles.heroMain}>
+          <View style={skeletonStyles.heroStats} />
+          <View style={skeletonStyles.heroTrack} />
+        </View>
+      </View>
+
+      {/* Grid Controls Skeleton */}
+      <View style={skeletonStyles.controls}>
+        <View
+          style={{
+            width: 80,
+            height: 28,
+            backgroundColor: n.colors.border,
+            borderRadius: 8,
+            opacity: 0.3,
+          }}
+        />
+        <View
+          style={{
+            width: 80,
+            height: 28,
+            backgroundColor: n.colors.border,
+            borderRadius: 8,
+            opacity: 0.2,
+          }}
+        />
+        <View
+          style={{
+            width: 80,
+            height: 28,
+            backgroundColor: n.colors.border,
+            borderRadius: 8,
+            opacity: 0.2,
+          }}
+        />
+      </View>
+
+      {/* Cards List Skeleton */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <View key={i} style={skeletonStyles.card}>
+          {/* 50/50 Split Matching SubjectCard */}
+          <View style={skeletonStyles.leftHalf}>
+            <View style={[skeletonStyles.bar, { width: `${60 + (i % 2) * 20}%` }]} />
+            <View style={[skeletonStyles.barSmall, { width: '40%', marginTop: 6 }]} />
+          </View>
+          <View style={skeletonStyles.rightHalf}>
+            <View style={skeletonStyles.thickProgressBar} />
           </View>
         </View>
       ))}
@@ -89,36 +139,93 @@ function SyllabusSkeleton() {
 }
 
 const skeletonStyles = StyleSheet.create({
-  container: { paddingHorizontal: n.spacing.md, paddingTop: 16, gap: 10 },
-  row: {
+  container: {
+    flex: 1,
+    backgroundColor: n.colors.background,
+    paddingHorizontal: n.spacing.md,
+    paddingTop: 16,
+  },
+  headerRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    paddingHorizontal: 4,
+  },
+  headerTitle: {
+    width: 120,
+    height: 24,
+    backgroundColor: n.colors.border,
+    borderRadius: 4,
+    opacity: 0.5,
+  },
+  headerActions: {
+    width: 80,
+    height: 32,
+    backgroundColor: n.colors.border,
+    borderRadius: 16,
+    opacity: 0.3,
+  },
+
+  heroSurface: {
+    height: 100,
     backgroundColor: n.colors.surface,
-    borderRadius: 10,
+    borderRadius: n.radius.md,
     borderWidth: 1,
     borderColor: n.colors.border,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    padding: 16,
+    marginBottom: 20,
+    opacity: 0.6,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  heroMain: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  heroStats: {
+    width: 80,
+    height: 36,
     backgroundColor: n.colors.border,
-    marginRight: 12,
+    borderRadius: 6,
+    opacity: 0.4,
   },
-  body: { flex: 1, gap: 6 },
+  heroTrack: {
+    flex: 1,
+    height: 12,
+    backgroundColor: n.colors.border,
+    borderRadius: 6,
+    opacity: 0.3,
+  },
+
+  controls: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+
+  card: {
+    flexDirection: 'row',
+    height: 90,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.md,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    marginBottom: 10,
+    overflow: 'hidden',
+    opacity: 0.8,
+  },
+  leftHalf: { flex: 1, padding: 14, justifyContent: 'center' },
+  rightHalf: { flex: 1, padding: 14, justifyContent: 'center' },
+
   bar: {
-    height: 10,
-    borderRadius: 3,
+    height: 12,
+    borderRadius: 4,
     backgroundColor: n.colors.border,
     opacity: 0.5,
   },
   barSmall: {
-    height: 7,
-    borderRadius: 2,
+    height: 8,
+    borderRadius: 3,
     backgroundColor: n.colors.border,
     opacity: 0.3,
+  },
+  thickProgressBar: {
+    height: 12,
+    backgroundColor: n.colors.border,
+    borderRadius: 6,
+    opacity: 0.2,
+    width: '100%',
   },
 });
 /**

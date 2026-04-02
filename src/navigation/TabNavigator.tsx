@@ -91,7 +91,14 @@ const MenuStack = createNativeStackNavigator<MenuStackParamList>();
 
 function HomeStackNav() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}>
+    <HomeStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        freezeOnBlur: true,
+        animation: 'simple_push',
+        contentStyle: { backgroundColor: '#000000' },
+      }}
+    >
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="Session" component={SessionScreen} />
       <HomeStack.Screen name="LectureMode" component={LectureModeScreen} />
@@ -109,7 +116,14 @@ function HomeStackNav() {
 
 function SyllabusStackNav() {
   return (
-    <SyllabusStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}>
+    <SyllabusStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        freezeOnBlur: true,
+        animation: 'simple_push',
+        contentStyle: { backgroundColor: '#000000' },
+      }}
+    >
       <SyllabusStack.Screen name="Syllabus" component={SyllabusScreen} />
       <SyllabusStack.Screen
         name="TopicDetail"
@@ -124,7 +138,12 @@ function ChatStackNav() {
   return (
     <ChatStack.Navigator
       initialRouteName="GuruChat"
-      screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}
+      screenOptions={{
+        headerShown: false,
+        freezeOnBlur: true,
+        animation: 'simple_push',
+        contentStyle: { backgroundColor: '#000000' },
+      }}
     >
       <ChatStack.Screen name="GuruChat" component={GuruChatScreen} />
     </ChatStack.Navigator>
@@ -135,7 +154,12 @@ function MenuStackNav() {
   return (
     <MenuStack.Navigator
       initialRouteName="MenuHome"
-      screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}
+      screenOptions={{
+        headerShown: false,
+        freezeOnBlur: true,
+        animation: 'simple_push',
+        contentStyle: { backgroundColor: '#000000' },
+      }}
     >
       <MenuStack.Screen name="MenuHome" component={MenuScreen} />
       <MenuStack.Screen name="StudyPlan" component={StudyPlanScreen} />
@@ -431,7 +455,6 @@ export default function TabNavigator() {
           headerShown: false,
           freezeOnBlur: true,
           tabBarHideOnKeyboard: true,
-          animation: "fade",
           tabBarShowLabel: true,
           tabBarLabelStyle: {
             ...n.typography.caption,
@@ -573,11 +596,7 @@ export default function TabNavigator() {
         >
           <LinearGradient
             pointerEvents="none"
-            colors={[
-              'rgba(255,255,255,0.05)',
-              'rgba(255,255,255,0.015)',
-              'rgba(255,255,255,0.0)',
-            ]}
+            colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.015)', 'rgba(255,255,255,0.0)']}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={styles.sheetGlassLayer}

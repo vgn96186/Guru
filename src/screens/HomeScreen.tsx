@@ -117,22 +117,28 @@ function ExamCountdownChips({
   const pulseAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 0.4,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
+    let animation: Animated.CompositeAnimation | null = null;
+    const task = InteractionManager.runAfterInteractions(() => {
+      animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 0.4,
+            duration: 2000,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      animation.start();
+    });
+    return () => {
+      task.cancel();
+      animation?.stop();
+    };
   }, [pulseAnim]);
 
   return (
@@ -159,7 +165,103 @@ function ExamCountdownChips({
   );
 }
 
+/** Lightweight skeleton for Home to show during transitions */
+function HomeSkeleton() {
+  return (
+    <View style={styles.content}>
+      {/* Header Skeleton */}
+      <View style={[styles.headerRow, { opacity: 0.3 }]}>
+        <View>
+          <View
+            style={{ width: 140, height: 24, backgroundColor: n.colors.border, borderRadius: 4 }}
+          />
+          {/* Exam Countdown Placeholder */}
+          <View
+            style={{
+              width: 180,
+              height: 14,
+              backgroundColor: n.colors.border,
+              borderRadius: 4,
+              marginTop: 10,
+              opacity: 0.6,
+            }}
+          />
+        </View>
+        <View
+          style={{ width: 80, height: 32, backgroundColor: n.colors.border, borderRadius: 16 }}
+        />
+      </View>
+
+      {/* Hero Button Skeleton */}
+      <View style={[styles.heroSection, { opacity: 0.2, marginTop: 10 }]}>
+        <View
+          style={{ width: '100%', height: 180, backgroundColor: n.colors.border, borderRadius: 24 }}
+        />
+      </View>
+
+      {/* Stats Bar Skeleton */}
+      <View style={[styles.statsBar, { opacity: 0.2 }]}>
+        <View
+          style={{ width: '100%', height: 60, backgroundColor: n.colors.border, borderRadius: 12 }}
+        />
+      </View>
+
+      {/* Grid Skeleton */}
+      <View style={[styles.gridLandscape, styles.twoColumnGrid, { opacity: 0.2, marginTop: 16 }]}>
+        <View style={styles.leftColumn}>
+          <View
+            style={{ width: 80, height: 12, backgroundColor: n.colors.border, marginBottom: 12 }}
+          />
+          <View
+            style={{
+              width: '100%',
+              height: 120,
+              backgroundColor: n.colors.border,
+              borderRadius: 16,
+            }}
+          />
+        </View>
+        <View style={styles.rightColumn}>
+          <View
+            style={{ width: 80, height: 12, backgroundColor: n.colors.border, marginBottom: 12 }}
+          />
+          <View
+            style={{
+              width: '100%',
+              height: 120,
+              backgroundColor: n.colors.border,
+              borderRadius: 16,
+            }}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function HomeScreen() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
+  if (!ready) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <HomeSkeleton />
+      </SafeAreaView>
+    );
+  }
+
+  return <HomeScreenContent />;
+}
+
+function HomeScreenContent() {
   const { width, height } = useWindowDimensions();
   const isTabletLandscape = width >= 900 && width > height;
   const navigation = useNavigation<Nav>();
@@ -183,33 +285,41 @@ export default function HomeScreen() {
   const flameScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(flameScale, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-        Animated.timing(flameScale, { toValue: 0.95, duration: 500, useNativeDriver: true }),
-        Animated.timing(flameScale, { toValue: 1, duration: 400, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
+    let loop: Animated.CompositeAnimation | null = null;
+    const task = InteractionManager.runAfterInteractions(() => {
+      loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(flameScale, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+          Animated.timing(flameScale, { toValue: 0.95, duration: 500, useNativeDriver: true }),
+          Animated.timing(flameScale, { toValue: 1, duration: 400, useNativeDriver: true }),
+        ]),
+      );
+      loop.start();
+    });
+    return () => {
+      task.cancel();
+      loop?.stop();
+    };
   }, [flameScale]);
 
   // Added from UI-UX audit branch
 
   useFocusEffect(
     useCallback(() => {
-      reloadHomeDashboard({ silent: true });
-      // Validate that the Zustand session ID still exists in SQLite
-      // (OS can purge in-memory store on low-RAM devices)
-      const { sessionId, sessionState } = useSessionStore.getState();
-      if (sessionId && sessionState !== 'session_done') {
-        getDb()
-          .getFirstAsync<{ id: number }>('SELECT id FROM sessions WHERE id = ?', [sessionId])
-          .then((row) => setSessionResumeValid(!!row))
-          .catch(() => setSessionResumeValid(false));
-      } else {
-        setSessionResumeValid(false);
-      }
+      const task = InteractionManager.runAfterInteractions(() => {
+        reloadHomeDashboard({ silent: true });
+        // Validate that the Zustand session ID still exists in SQLite
+        const { sessionId, sessionState } = useSessionStore.getState();
+        if (sessionId && sessionState !== 'session_done') {
+          getDb()
+            .getFirstAsync<{ id: number }>('SELECT id FROM sessions WHERE id = ?', [sessionId])
+            .then((row) => setSessionResumeValid(!!row))
+            .catch(() => setSessionResumeValid(false));
+        } else {
+          setSessionResumeValid(false);
+        }
+      });
+      return () => task.cancel();
     }, [reloadHomeDashboard]),
   );
 
@@ -765,17 +875,24 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
   const isActive = runtime.activeCount > 0;
 
   useEffect(() => {
-    if (isActive) {
-      const loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-          Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
-        ]),
-      );
-      loop.start();
-      return () => loop.stop();
-    }
-    pulseAnim.setValue(0);
+    let loop: Animated.CompositeAnimation | null = null;
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (isActive) {
+        loop = Animated.loop(
+          Animated.sequence([
+            Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+            Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+          ]),
+        );
+        loop.start();
+      } else {
+        pulseAnim.setValue(0);
+      }
+    });
+    return () => {
+      task.cancel();
+      loop?.stop();
+    };
   }, [isActive, pulseAnim]);
 
   useEffect(() => {

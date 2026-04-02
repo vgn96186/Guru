@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native';
 import AppText from './AppText';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface Props {
   subject: string;
@@ -15,9 +15,9 @@ interface Props {
 
 export default React.memo(function SubjectChip({
   subject,
-  color = theme.colors.primary,
-  backgroundColor = theme.colors.primary + '22',
-  borderColor = theme.colors.primary + '66',
+  color = n.colors.accent,
+  backgroundColor = n.colors.accent + '22',
+  borderColor = n.colors.accent + '66',
   style,
   textStyle,
   numberOfLines,

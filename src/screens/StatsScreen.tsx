@@ -25,8 +25,9 @@ import { useAppStore } from '../store/useAppStore';
 import LoadingOrb from '../components/LoadingOrb';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ReviewCalendar from '../components/ReviewCalendar';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import ScreenHeader from '../components/ScreenHeader';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 export default function StatsScreen() {
   const navigation = useNavigation<any>();
@@ -132,7 +133,7 @@ export default function StatsScreen() {
 
   const { width: screenWidth } = useWindowDimensions();
   // Respect ResponsiveContainer max width (tablet caps at ~600px)
-  const containerWidth = Math.min(screenWidth, 600) - theme.spacing.lg * 2;
+  const containerWidth = Math.min(screenWidth, 600) - n.spacing.lg * 2;
 
   if (loading) return <LoadingOrb message="Calculating your progress..." />;
 
@@ -142,7 +143,7 @@ export default function StatsScreen() {
 
   return (
     <SafeAreaView style={styles.safe} testID="stats-screen">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -150,8 +151,8 @@ export default function StatsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={theme.colors.primary}
-            colors={[theme.colors.primary]}
+            tintColor={n.colors.accent}
+            colors={[n.colors.accent]}
           />
         }
       >
@@ -165,7 +166,7 @@ export default function StatsScreen() {
           </View>
 
           {stats.totalSessions === 0 ? (
-            <View style={styles.emptyHeroCard}>
+            <LinearSurface padded={false} style={styles.emptyHeroCard}>
               <Text style={styles.emptyHeroEmoji}>📊</Text>
               <Text style={styles.emptyHeroTitle}>No study data yet</Text>
               <Text style={styles.emptyHeroText}>
@@ -179,11 +180,11 @@ export default function StatsScreen() {
               >
                 <Text style={styles.emptyHeroCtaText}>Start Your First Session →</Text>
               </TouchableOpacity>
-            </View>
+            </LinearSurface>
           ) : null}
 
           {/* The Big Projection Card */}
-          <View style={styles.projectionCard}>
+          <LinearSurface padded={false} borderColor={n.colors.borderHighlight} style={styles.projectionCard}>
             <View style={styles.projectionRow}>
               <View style={styles.projectionStat}>
                 <Text style={styles.projectionVal}>{stats.coveragePercent}%</Text>
@@ -191,7 +192,7 @@ export default function StatsScreen() {
               </View>
               <View style={styles.projectionDivider} />
               <View style={styles.projectionStat}>
-                <Text style={[styles.projectionVal, { color: theme.colors.warning }]}>
+                <Text style={[styles.projectionVal, { color: n.colors.warning }]}>
                   ~{stats.projectedScore}/300
                 </Text>
                 <Text style={styles.projectionLabel}>Projected INICET Score</Text>
@@ -204,10 +205,10 @@ export default function StatsScreen() {
             <Text style={styles.projectionFormula}>
               Score estimate = 50 base + (high-yield coverage % × 2.5). Covers up to 300.
             </Text>
-          </View>
+          </LinearSurface>
 
           {/* Absolute Progress (Anti-Guilt) */}
-          <View style={styles.absoluteCard}>
+          <LinearSurface padded={false} style={styles.absoluteCard}>
             <Text style={styles.absoluteTitle}>Total Knowledge Acquired</Text>
             <Text style={styles.absoluteBig}>
               {stats.totalCovered} / {stats.totalTopics}
@@ -222,28 +223,28 @@ export default function StatsScreen() {
                 ]}
               />
             </View>
-          </View>
+          </LinearSurface>
 
           {/* Consistency Card utilizing unused getActivityHistory metric */}
-          <View style={[styles.absoluteCard, { backgroundColor: theme.colors.successSurface }]}>
-            <Text style={[styles.absoluteTitle, { color: theme.colors.success }]}>
+          <LinearSurface padded={false} style={[styles.absoluteCard, { backgroundColor: n.colors.successSurface }]}>
+            <Text style={[styles.absoluteTitle, { color: n.colors.success }]}>
               30-Day Consistency
             </Text>
-            <Text style={[styles.absoluteBig, { color: theme.colors.success }]}>
+            <Text style={[styles.absoluteBig, { color: n.colors.success }]}>
               {stats.activeDays30} / 30 Days
             </Text>
             <Text style={styles.absoluteSub}>days studied in the past month</Text>
-          </View>
+          </LinearSurface>
 
           {/* Streak Card */}
-          <View style={[styles.absoluteCard, { backgroundColor: theme.colors.warningSurface }]}>
+          <LinearSurface padded={false} style={[styles.absoluteCard, { backgroundColor: 'rgba(217,119,6,0.1)' }]}>
             <View style={styles.streakRow}>
               <Text style={styles.streakEmoji}>🔥</Text>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.absoluteTitle, { color: theme.colors.warning }]}>
+                <Text style={[styles.absoluteTitle, { color: n.colors.warning }]}>
                   Current Streak
                 </Text>
-                <Text style={[styles.absoluteBig, { color: theme.colors.warning }]}>
+                <Text style={[styles.absoluteBig, { color: n.colors.warning }]}>
                   {stats.currentStreak} Days
                 </Text>
               </View>
@@ -262,10 +263,10 @@ export default function StatsScreen() {
                     : '⭐ One week down!'}
               </Text>
             )}
-          </View>
+          </LinearSurface>
 
           {/* Week-over-Week Comparison */}
-          <View style={styles.absoluteCard}>
+          <LinearSurface padded={false} style={styles.absoluteCard}>
             <Text style={styles.absoluteTitle}>This Week vs Last Week</Text>
             <View style={styles.weekCompRow}>
               <View style={styles.weekCol}>
@@ -293,15 +294,15 @@ export default function StatsScreen() {
                         styles.weekChangeBadge,
                         {
                           backgroundColor: isUp
-                            ? theme.colors.successSurface
-                            : theme.colors.errorSurface,
+                            ? n.colors.successSurface
+                            : n.colors.errorSurface,
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.weekChangeText,
-                          { color: isUp ? theme.colors.success : theme.colors.error },
+                          { color: isUp ? n.colors.success : n.colors.error },
                         ]}
                       >
                         {isUp ? '↑' : '↓'} {Math.abs(pct)}%
@@ -312,7 +313,7 @@ export default function StatsScreen() {
               </View>
               <View style={styles.weekCol}>
                 <Text style={styles.weekLabel}>Last Week</Text>
-                <Text style={[styles.weekVal, { color: theme.colors.textMuted }]}>
+                <Text style={[styles.weekVal, { color: n.colors.textMuted }]}>
                   {Math.floor(stats.lastWeek.minutes / 60)}h {stats.lastWeek.minutes % 60}m
                 </Text>
                 <Text style={styles.weekSub}>
@@ -320,7 +321,7 @@ export default function StatsScreen() {
                 </Text>
               </View>
             </View>
-          </View>
+          </LinearSurface>
 
           {/* Weekly Activity Sparkline */}
           {stats.last7DayMinutes.length === 7 && (
@@ -329,20 +330,15 @@ export default function StatsScreen() {
 
           {/* Projected Completion */}
           {stats.avgTopicsPerDay > 0 && stats.projectedCompletionDays < 365 && (
-            <View
-              style={[
-                styles.absoluteCard,
-                {
-                  backgroundColor: theme.colors.card,
-                  borderWidth: 1,
-                  borderColor: theme.colors.primaryTintMedium,
-                },
-              ]}
+            <LinearSurface
+              padded={false}
+              borderColor={n.colors.borderHighlight}
+              style={styles.absoluteCard}
             >
-              <Text style={[styles.absoluteTitle, { color: theme.colors.primary }]}>
+              <Text style={[styles.absoluteTitle, { color: n.colors.accent }]}>
                 📅 Syllabus Completion Projection
               </Text>
-              <Text style={[styles.absoluteBig, { color: theme.colors.primary }]}>
+              <Text style={[styles.absoluteBig, { color: n.colors.accent }]}>
                 {stats.projectedCompletionDays} days
               </Text>
               <Text style={styles.absoluteSub}>
@@ -350,15 +346,17 @@ export default function StatsScreen() {
                 {stats.totalTopics - stats.totalCovered} remaining)
               </Text>
               {daysToInicet > 0 && (
-                <View
+                <LinearSurface
+                  compact
+                  padded={false}
                   style={[
                     styles.projectionNote,
                     {
                       marginTop: 12,
                       backgroundColor:
                         stats.projectedCompletionDays <= daysToInicet
-                          ? theme.colors.successSurface
-                          : theme.colors.errorSurface,
+                          ? n.colors.successSurface
+                          : n.colors.errorSurface,
                     },
                   ]}
                 >
@@ -366,8 +364,8 @@ export default function StatsScreen() {
                     style={{
                       color:
                         stats.projectedCompletionDays <= daysToInicet
-                          ? theme.colors.success
-                          : theme.colors.error,
+                          ? n.colors.success
+                          : n.colors.error,
                       fontSize: 13,
                       textAlign: 'center',
                     }}
@@ -376,13 +374,13 @@ export default function StatsScreen() {
                       ? `✅ On track! ${daysToInicet - stats.projectedCompletionDays} buffer days before INICET`
                       : `⚠️ Need ${Math.ceil((stats.totalTopics - stats.totalCovered) / daysToInicet)} topics/day to finish before INICET`}
                   </Text>
-                </View>
+                </LinearSurface>
               )}
-            </View>
+            </LinearSurface>
           )}
 
           {/* Time Logged Card */}
-          <View style={styles.absoluteCard}>
+          <LinearSurface padded={false} style={styles.absoluteCard}>
             <Text style={styles.absoluteTitle}>Time Invested</Text>
             <Text style={styles.absoluteBig}>
               {Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h{' '}
@@ -391,11 +389,11 @@ export default function StatsScreen() {
             <Text style={styles.absoluteSub}>
               Total study time across {stats.totalSessions} sessions
             </Text>
-          </View>
+          </LinearSurface>
 
           {/* Mastered Topics Boost */}
           {stats.masteredCount > 0 && (
-            <View style={styles.masteredCard}>
+            <LinearSurface padded={false} borderColor="rgba(217,119,6,0.18)" style={styles.masteredCard}>
               <Text style={styles.masteredEmoji}>🔥</Text>
               <View style={styles.masteredInfo}>
                 <Text style={styles.masteredTitle}>
@@ -407,14 +405,14 @@ export default function StatsScreen() {
                     : 'Keep stacking strong reviews and this bank will grow quickly.'}
                 </Text>
               </View>
-            </View>
+            </LinearSurface>
           )}
 
           {/* Subject Breakdown */}
           <Text style={styles.sectionTitle}>Subject Coverage</Text>
           <View style={styles.subjectGrid}>
             {stats.subjectBreakdown.map((sub) => (
-              <View key={sub.id} style={styles.subjectRow}>
+              <LinearSurface key={sub.id} padded={false} style={styles.subjectRow}>
                 <View style={styles.subjectHeader}>
                   <View style={styles.subjectNameRow}>
                     <View style={[styles.subjectDot, { backgroundColor: sub.color }]} />
@@ -433,7 +431,7 @@ export default function StatsScreen() {
                 <Text style={styles.subjectFraction}>
                   {sub.covered} / {sub.total} topics
                 </Text>
-              </View>
+              </LinearSurface>
             ))}
           </View>
 
@@ -466,7 +464,7 @@ function WeeklySparkline({
   const todayDow = new Date().getDay();
 
   return (
-    <View style={[sparkStyles.card]}>
+    <LinearSurface padded={false} style={[sparkStyles.card]}>
       <Text style={sparkStyles.title}>7-Day Activity</Text>
       <Svg width={chartWidth} height={chartHeight + 20}>
         {minutes.map((mins, i) => {
@@ -474,10 +472,10 @@ function WeeklySparkline({
           const x = i * (barWidth + gap);
           const isToday = i === 6;
           const fill = isToday
-            ? theme.colors.primary
+            ? n.colors.accent
             : mins > 0
-              ? theme.colors.success
-              : theme.colors.border;
+              ? n.colors.success
+              : n.colors.border;
           const label = DAY_LETTERS[(todayDow - (6 - i) + 7) % 7];
           return (
             <React.Fragment key={i}>
@@ -493,7 +491,7 @@ function WeeklySparkline({
                 x={x + barWidth / 2}
                 y={chartHeight + 14}
                 fontSize={10}
-                fill={isToday ? theme.colors.primary : theme.colors.textMuted}
+                fill={isToday ? n.colors.accent : n.colors.textMuted}
                 textAnchor="middle"
               >
                 {label}
@@ -502,36 +500,32 @@ function WeeklySparkline({
           );
         })}
       </Svg>
-    </View>
+    </LinearSurface>
   );
 }
 
 const sparkStyles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
     borderRadius: 20,
-    padding: theme.spacing.xl,
+    padding: n.spacing.xl,
     marginBottom: 20,
   },
   title: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
-    marginBottom: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
   },
 });
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
-  container: { padding: theme.spacing.lg, paddingBottom: 40 },
+  safe: { flex: 1, backgroundColor: n.colors.background },
+  container: { padding: n.spacing.lg, paddingBottom: 40 },
   emptyHeroCard: {
-    backgroundColor: theme.colors.surface,
     borderRadius: 20,
     padding: 24,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     alignItems: 'center',
   },
   emptyHeroEmoji: {
@@ -540,20 +534,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyHeroTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptyHeroText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     textAlign: 'center',
   },
   emptyHeroCta: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 24,
@@ -561,26 +555,23 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   emptyHeroCtaText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '800',
   },
-  header: { marginBottom: theme.spacing.xl, marginTop: theme.spacing.lg },
+  header: { marginBottom: n.spacing.xl, marginTop: n.spacing.lg },
   headerTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
-  headerSub: { color: theme.colors.textSecondary, fontSize: 14, marginTop: 4 },
+  headerSub: { color: n.colors.textSecondary, fontSize: 14, marginTop: 4 },
 
   projectionCard: {
-    backgroundColor: theme.colors.card,
     borderRadius: 20,
-    padding: theme.spacing.xl,
+    padding: n.spacing.xl,
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
   },
   projectionRow: {
     flexDirection: 'row',
@@ -590,32 +581,31 @@ const styles = StyleSheet.create({
   },
   projectionStat: { alignItems: 'center', flex: 1 },
   projectionVal: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 30,
     fontWeight: '900',
     textAlign: 'center',
   },
   projectionLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     marginTop: 4,
     fontWeight: '600',
     textTransform: 'uppercase',
     textAlign: 'center',
   },
-  projectionDivider: { width: 1, height: 40, backgroundColor: theme.colors.borderLight },
+  projectionDivider: { width: 1, height: 40, backgroundColor: n.colors.borderLight },
   projectionNote: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
-    backgroundColor: theme.colors.surfaceAlt,
     padding: 12,
     borderRadius: 12,
   },
 
   projectionFormula: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     textAlign: 'center',
     marginTop: 6,
@@ -623,55 +613,51 @@ const styles = StyleSheet.create({
   },
 
   absoluteCard: {
-    backgroundColor: theme.colors.surface,
     borderRadius: 20,
-    padding: theme.spacing.xl,
+    padding: n.spacing.xl,
     marginBottom: 20,
   },
   absoluteTitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
     marginBottom: 8,
   },
-  absoluteBig: { color: theme.colors.textPrimary, fontSize: 34, fontWeight: '900' },
-  absoluteSub: { color: theme.colors.textMuted, fontSize: 13, marginBottom: theme.spacing.lg },
+  absoluteBig: { color: n.colors.textPrimary, fontSize: 34, fontWeight: '900' },
+  absoluteSub: { color: n.colors.textMuted, fontSize: 13, marginBottom: n.spacing.lg },
   progressBar: {
     height: 8,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     borderRadius: 4,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: theme.colors.success, borderRadius: 4 },
+  progressFill: { height: '100%', backgroundColor: n.colors.success, borderRadius: 4 },
 
   masteredCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.warningSurface,
-    borderRadius: 16,
+    backgroundColor: 'rgba(217,119,6,0.1)',
     padding: 20,
     marginBottom: 24,
-    borderWidth: 1,
-    borderColor: theme.colors.warningTintSoft,
   },
   masteredEmoji: { fontSize: 32, marginRight: 16 },
   masteredInfo: { flex: 1 },
-  masteredTitle: { color: theme.colors.warning, fontSize: 16, fontWeight: '800', marginBottom: 4 },
-  masteredSub: { color: theme.colors.warning, fontSize: 13, lineHeight: 18 },
+  masteredTitle: { color: n.colors.warning, fontSize: 16, fontWeight: '800', marginBottom: 4 },
+  masteredSub: { color: n.colors.warning, fontSize: 13, lineHeight: 18 },
 
   sectionTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
-    marginBottom: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
     marginTop: 8,
   },
   subjectGrid: { gap: 16 },
   subjectRow: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
   },
   subjectHeader: {
     flexDirection: 'row',
@@ -681,35 +667,35 @@ const styles = StyleSheet.create({
   },
   subjectNameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: 8 },
   subjectDot: { width: 10, height: 10, borderRadius: 5, marginRight: 10, flexShrink: 0 },
-  subjectName: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '700', flex: 1 },
+  subjectName: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '700', flex: 1 },
   subjectPercent: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '900',
     flexShrink: 0,
   },
   subProgressBar: {
     height: 6,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 8,
   },
   subProgressFill: { height: '100%', borderRadius: 3 },
-  subjectFraction: { color: theme.colors.textMuted, fontSize: 11, textAlign: 'right' },
+  subjectFraction: { color: n.colors.textMuted, fontSize: 11, textAlign: 'right' },
 
   // Streak styles
   streakRow: { flexDirection: 'row', alignItems: 'center' },
   streakEmoji: { fontSize: 40, marginRight: 16 },
   bestStreakBadge: {
-    backgroundColor: theme.colors.warningSurface,
+    backgroundColor: 'rgba(217,119,6,0.1)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
   },
-  bestStreakText: { color: theme.colors.warning, fontSize: 12, fontWeight: '700' },
+  bestStreakText: { color: n.colors.warning, fontSize: 12, fontWeight: '700' },
   streakMotivation: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontSize: 13,
     marginTop: 12,
     textAlign: 'center',
@@ -719,14 +705,14 @@ const styles = StyleSheet.create({
   weekCompRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   weekCol: { flex: 1 },
   weekLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     textTransform: 'uppercase',
     fontWeight: '600',
     marginBottom: 4,
   },
-  weekVal: { color: theme.colors.textPrimary, fontSize: 20, fontWeight: '900' },
-  weekSub: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2, flexWrap: 'wrap' },
+  weekVal: { color: n.colors.textPrimary, fontSize: 20, fontWeight: '900' },
+  weekSub: { color: n.colors.textMuted, fontSize: 11, marginTop: 2, flexWrap: 'wrap' },
   weekDivider: { width: 60, alignItems: 'center', justifyContent: 'center' },
   weekChangeBadge: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
   weekChangeText: { fontSize: 14, fontWeight: '800' },

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import type { TodayTask } from '../../services/studyPlanner';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 import AppText from '../AppText';
 
 interface Props {
@@ -85,21 +85,21 @@ const styles = StyleSheet.create({
   timeText: { textAlign: 'right' },
   taskCard: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     padding: 12,
     borderRadius: 10,
     borderLeftWidth: 3,
-    borderLeftColor: theme.colors.primary,
+    borderLeftColor: n.colors.accent,
   },
-  taskReview: { borderLeftColor: theme.colors.success },
-  taskDeep: { borderLeftColor: theme.colors.error },
+  taskReview: { borderLeftColor: n.colors.success },
+  taskDeep: { borderLeftColor: n.colors.error },
   taskTitle: { marginBottom: 4, fontWeight: '600' },
   taskSub: {
     textTransform: 'uppercase',
     letterSpacing: 0.2,
   },
   emptyStateCard: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 24,
     marginHorizontal: 16,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   emptyBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,

@@ -19,9 +19,10 @@ import { fetchContent } from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import LoadingOrb from '../components/LoadingOrb';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import type { DetectiveContent, TopicWithProgress } from '../types';
 
 const { width } = Dimensions.get('window');
@@ -159,14 +160,19 @@ export default function InertiaScreen() {
     revealStep: number;
     isSolved: boolean;
   }) => (
-    <View style={styles.card}>
+    <LinearSurface padded={false} style={styles.card}>
       <Text style={styles.cardHeader}>CLINICAL MYSTERY</Text>
 
       {content.clues.slice(0, revealStep).map((clue, i) => (
-        <View key={i} style={[styles.clueBox, i === revealStep - 1 && styles.newClue]}>
+        <LinearSurface
+          key={i}
+          padded={false}
+          borderColor={n.colors.cardHover}
+          style={[styles.clueBox, i === revealStep - 1 && styles.newClue]}
+        >
           <Text style={styles.clueLabel}>Visual / Sign {i + 1}</Text>
           <Text style={styles.clueText}>{clue}</Text>
-        </View>
+        </LinearSurface>
       ))}
 
       {isSolved && (
@@ -177,13 +183,13 @@ export default function InertiaScreen() {
           <MarkdownRender content={content.explanation} compact />
         </Animated.View>
       )}
-    </View>
+    </LinearSurface>
   );
 
   if (phase === 'breathe') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
           <Text style={styles.breatheTitle}>Brain Fog?</Text>
           <Text style={styles.breatheSub}>Let's reset. Breathe with the circle.</Text>
@@ -204,7 +210,7 @@ export default function InertiaScreen() {
   if (phase === 'fetching') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <LoadingOrb message="Constructing a diagnostic puzzle..." />
       </SafeAreaView>
     );
@@ -213,7 +219,7 @@ export default function InertiaScreen() {
   if (phase === 'sit_up_prompt') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.sitUpEmoji}>🕵️</Text>
@@ -239,7 +245,7 @@ export default function InertiaScreen() {
   if ((phase === 'micro_win' || phase === 'micro_win_bed') && content) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.winTitle}>Solve the Mystery</Text>
@@ -264,7 +270,7 @@ export default function InertiaScreen() {
               </View>
             ) : (
               <TouchableOpacity
-                style={[styles.doneBtn, { backgroundColor: theme.colors.success, marginTop: 20 }]}
+                style={[styles.doneBtn, { backgroundColor: n.colors.success, marginTop: 20 }]}
                 onPress={handleWinComplete}
               >
                 <Text style={styles.doneBtnText}>Boom. I'm moving. →</Text>
@@ -279,7 +285,7 @@ export default function InertiaScreen() {
   if (phase === 'pivot') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
             <Text style={styles.emoji}>🔥</Text>
@@ -306,25 +312,25 @@ export default function InertiaScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   topicImage: {
     width: '100%',
     height: 160,
     borderRadius: 16,
     marginBottom: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
   },
 
   breatheTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 8,
     textAlign: 'center',
   },
   breatheSub: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     marginBottom: 60,
     textAlign: 'center',
@@ -335,17 +341,17 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 2,
-    borderColor: theme.colors.primary,
-    shadowColor: theme.colors.primary,
+    borderColor: n.colors.accent,
+    shadowColor: n.colors.accent,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 20,
     elevation: 10,
   },
   breatheText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
@@ -356,13 +362,13 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  skipBtnText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
+  skipBtnText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
 
   emoji: { fontSize: 64, marginBottom: 20 },
   winTitle: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 14,
     fontWeight: '800',
     textTransform: 'uppercase',
@@ -370,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   winTopic: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 24,
@@ -378,85 +384,79 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    backgroundColor: theme.colors.surface,
     padding: 20,
     borderRadius: 24,
     width: '100%',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
   cardHeader: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 1.5,
     marginBottom: 16,
   },
   clueBox: {
-    backgroundColor: theme.colors.surfaceAlt,
     padding: 16,
     borderRadius: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.cardHover,
   },
-  newClue: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
-  clueLabel: { color: theme.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
-  clueText: { color: theme.colors.textPrimary, fontSize: 16, lineHeight: 22 },
+  newClue: { borderColor: n.colors.accent, backgroundColor: n.colors.primaryTintSoft },
+  clueLabel: { color: n.colors.textMuted, fontSize: 11, fontWeight: '700', marginBottom: 4 },
+  clueText: { color: n.colors.textPrimary, fontSize: 16, lineHeight: 22 },
 
   solutionBox: {
     marginTop: 8,
     padding: 16,
-    backgroundColor: theme.colors.successSurface,
+    backgroundColor: n.colors.successSurface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.success + '44',
+    borderColor: n.colors.success + '44',
   },
-  solutionLabel: { color: theme.colors.success, fontSize: 11, fontWeight: '800', marginBottom: 4 },
+  solutionLabel: { color: n.colors.success, fontSize: 11, fontWeight: '800', marginBottom: 4 },
   solutionValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 22,
     fontWeight: '900',
     marginBottom: 12,
   },
-  divider: { height: 1, backgroundColor: theme.colors.success + '44', marginVertical: 12 },
+  divider: { height: 1, backgroundColor: n.colors.success + '44', marginVertical: 12 },
 
   doneBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     width: '100%',
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    ...theme.shadows.glow(theme.colors.primary),
+    ...((c: string) => ({ shadowColor: c, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8 }))(n.colors.accent),
   },
-  doneBtnText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
+  doneBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '900' },
   giveUpBtn: { padding: 16, alignItems: 'center' },
-  giveUpText: { color: theme.colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
+  giveUpText: { color: n.colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
 
   pivotTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 32,
     fontWeight: '900',
     marginBottom: 12,
     textAlign: 'center',
   },
   pivotSub: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
   },
   offerBox: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     padding: 20,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.primaryTint,
+    borderColor: n.colors.primaryTintSoft,
     marginBottom: 32,
   },
   offerText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
@@ -464,27 +464,27 @@ const styles = StyleSheet.create({
   },
 
   sprintBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     width: '100%',
     paddingVertical: 20,
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 16,
   },
-  sprintBtnText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
+  sprintBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '900' },
   closeBtn: { padding: 16 },
-  closeBtnText: { color: theme.colors.textMuted, fontSize: 16, fontWeight: '600' },
+  closeBtnText: { color: n.colors.textMuted, fontSize: 16, fontWeight: '600' },
 
   sitUpEmoji: { fontSize: 64, marginBottom: 20 },
   sitUpTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 12,
     textAlign: 'center',
   },
   sitUpSub: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 40,
@@ -492,23 +492,23 @@ const styles = StyleSheet.create({
   },
   choiceBox: { alignItems: 'center', width: '100%' },
   sitUpBtn: {
-    backgroundColor: theme.colors.success,
+    backgroundColor: n.colors.success,
     width: '100%',
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
     marginBottom: 16,
   },
-  sitUpBtnText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '900' },
-  orText: { color: theme.colors.textMuted, fontSize: 14, marginVertical: 12 },
+  sitUpBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '900' },
+  orText: { color: n.colors.textMuted, fontSize: 14, marginVertical: 12 },
   bedBtn: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     width: '100%',
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  bedBtnText: { color: theme.colors.textSecondary, fontSize: 16, fontWeight: '700' },
+  bedBtnText: { color: n.colors.textSecondary, fontSize: 16, fontWeight: '700' },
 });

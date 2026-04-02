@@ -16,7 +16,7 @@ import {
   Clipboard,
   Alert,
 } from 'react-native';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 export interface LogEntry {
   id: number;
@@ -170,7 +170,7 @@ export default function DevConsole() {
               <Text style={styles.actionText}>Clear</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.actionBtn, { backgroundColor: theme.colors.error }]}
+              style={[styles.actionBtn, { backgroundColor: n.colors.error }]}
               onPress={() => setVisible(false)}
             >
               <Text style={[styles.actionText, { color: '#fff' }]}>Close</Text>
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A24',
   },
   filterBtnActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
   },
   filterText: {
     color: '#888',
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A24',
   },
   actionText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -285,19 +285,19 @@ const styles = StyleSheet.create({
     width: 32,
     fontSize: 10,
     fontWeight: '700',
-    fontFamily: 'monospace',
+    fontFamily: 'Inter_400Regular',
   },
   logTime: {
     width: 60,
     color: '#555',
     fontSize: 10,
-    fontFamily: 'monospace',
+    fontFamily: 'Inter_400Regular',
   },
   logMsg: {
     flex: 1,
     color: '#CCC',
     fontSize: 11,
-    fontFamily: 'monospace',
+    fontFamily: 'Inter_400Regular',
     lineHeight: 16,
   },
 });

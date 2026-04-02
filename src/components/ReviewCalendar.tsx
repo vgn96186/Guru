@@ -8,7 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getReviewCalendarData, type ReviewDay } from '../db/queries/topics';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 function toLocalDateKey(date: Date): string {
   const y = date.getFullYear();
@@ -98,9 +98,9 @@ export default React.memo(function ReviewCalendar() {
         <TouchableOpacity
           onPress={() => changeMonth(-1)}
           style={styles.navBtn}
-          hitSlop={theme.hitSlop}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-back" size={20} color={theme.colors.textMuted} />
+          <Ionicons name="chevron-back" size={20} color={n.colors.textMuted} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.monthText}>
@@ -113,9 +113,9 @@ export default React.memo(function ReviewCalendar() {
         <TouchableOpacity
           onPress={() => changeMonth(1)}
           style={styles.navBtn}
-          hitSlop={theme.hitSlop}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+          <Ionicons name="chevron-forward" size={20} color={n.colors.textMuted} />
         </TouchableOpacity>
       </View>
 
@@ -174,15 +174,15 @@ export default React.memo(function ReviewCalendar() {
                       Array.from({ length: review.count }).map((_, i) => (
                         <View
                           key={i}
-                          style={[styles.dot, isPast && { backgroundColor: theme.colors.error }]}
+                          style={[styles.dot, isPast && { backgroundColor: n.colors.error }]}
                         />
                       ))
                     ) : (
                       <>
                         <View
-                          style={[styles.dot, isPast && { backgroundColor: theme.colors.error }]}
+                          style={[styles.dot, isPast && { backgroundColor: n.colors.error }]}
                         />
-                        <Text style={[styles.dotCount, isPast && { color: theme.colors.error }]}>
+                        <Text style={[styles.dotCount, isPast && { color: n.colors.error }]}>
                           {review.count}
                         </Text>
                       </>
@@ -216,10 +216,10 @@ export default React.memo(function ReviewCalendar() {
                     {
                       backgroundColor:
                         t.confidence >= 3
-                          ? theme.colors.success
+                          ? n.colors.success
                           : t.confidence >= 2
-                            ? theme.colors.warning
-                            : theme.colors.error,
+                            ? n.colors.warning
+                            : n.colors.error,
                     },
                   ]}
                 />
@@ -235,12 +235,12 @@ export default React.memo(function ReviewCalendar() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.lg,
+    padding: n.spacing.lg,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   header: {
     flexDirection: 'row',
@@ -250,13 +250,13 @@ const styles = StyleSheet.create({
   },
   navBtn: { padding: 8 },
   headerCenter: { alignItems: 'center' },
-  monthText: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '700' },
-  reviewCount: { color: theme.colors.textMuted, fontSize: 11, marginTop: 2 },
+  monthText: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  reviewCount: { color: n.colors.textMuted, fontSize: 11, marginTop: 2 },
   weekRow: { flexDirection: 'row' },
   dayHeader: {
     flex: 1,
     textAlign: 'center',
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     paddingVertical: 6,
@@ -270,17 +270,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   todayCell: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderRadius: 10,
   },
   selectedCell: {
-    backgroundColor: theme.colors.primaryTintMedium,
+    backgroundColor: n.colors.borderHighlight,
     borderRadius: 10,
   },
-  dayText: { color: theme.colors.textSecondary, fontSize: 12, textAlign: 'center' },
-  todayText: { color: theme.colors.primary, fontWeight: '800' },
-  selectedText: { color: theme.colors.textPrimary, fontWeight: '800' },
-  pastText: { color: theme.colors.textMuted },
+  dayText: { color: n.colors.textSecondary, fontSize: 12, textAlign: 'center' },
+  todayText: { color: n.colors.accent, fontWeight: '800' },
+  selectedText: { color: n.colors.textPrimary, fontWeight: '800' },
+  pastText: { color: n.colors.textMuted },
   dotsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -291,10 +291,10 @@ const styles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
   },
   dotCount: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 11,
     fontWeight: '700',
     marginLeft: 1,
@@ -302,12 +302,12 @@ const styles = StyleSheet.create({
   detailSection: {
     marginTop: 12,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: n.colors.border,
     paddingTop: 12,
     maxHeight: 160,
   },
   detailTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
     marginBottom: 8,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   topicName: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     flex: 1,
   },

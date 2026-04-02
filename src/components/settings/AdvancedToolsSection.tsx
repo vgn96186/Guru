@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface AdvancedToolsSectionProps {
   onExportBackup: () => void;
@@ -70,26 +70,26 @@ export default React.memo(AdvancedToolsSection);
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     marginBottom: 20,
   },
   sectionTitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
     marginBottom: 16,
   },
   buttonGroup: { marginBottom: 20 },
-  groupLabel: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 10 },
+  groupLabel: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 10 },
   row: { flexDirection: 'row', gap: 10 },
   button: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
@@ -97,20 +97,20 @@ const styles = StyleSheet.create({
     height: 44,
   },
   buttonText: { color: '#FFF', fontSize: 13, fontWeight: '700' },
-  outlineButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: theme.colors.primary },
-  outlineButtonText: { color: theme.colors.primary },
-  hint: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 6, lineHeight: 16 },
+  outlineButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: n.colors.accent },
+  outlineButtonText: { color: n.colors.accent },
+  hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 6, lineHeight: 16 },
   dangerZone: {
     marginTop: 10,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: n.colors.border,
   },
-  dangerLabel: { color: theme.colors.error, fontSize: 12, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
+  dangerLabel: { color: n.colors.error, fontSize: 12, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
   dangerButton: {
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.divider,
+    borderBottomColor: n.colors.border,
   },
-  dangerButtonText: { color: theme.colors.textSecondary, fontSize: 14 },
+  dangerButtonText: { color: n.colors.textSecondary, fontSize: 14 },
 });

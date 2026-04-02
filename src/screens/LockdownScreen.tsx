@@ -6,7 +6,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import LinearButton from '../components/primitives/LinearButton';
 
 export default function LockdownScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -52,7 +53,7 @@ export default function LockdownScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>🔒</Text>
         <Text style={styles.title}>FOCUS TIMER</Text>
@@ -68,7 +69,8 @@ export default function LockdownScreen() {
           </Text>
         )}
 
-        <TouchableOpacity
+        <LinearButton
+          variant="glassTinted"
           style={styles.studyBtn}
           onPress={() =>
             navigation.navigate('Tabs', {
@@ -85,9 +87,8 @@ export default function LockdownScreen() {
           }
           accessibilityRole="button"
           accessibilityLabel={`Start ${Math.ceil(timeLeft / 60)} minute sprint`}
-        >
-          <Text style={styles.studyBtnText}>Start {Math.ceil(timeLeft / 60)}-min Sprint</Text>
-        </TouchableOpacity>
+          label={`Start ${Math.ceil(timeLeft / 60)}-min Sprint`}
+        />
 
         <TouchableOpacity
           style={styles.exitBtn}
@@ -112,7 +113,7 @@ export default function LockdownScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 64, marginBottom: 24 },
   title: {
@@ -140,14 +141,10 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   studyBtn: {
-    backgroundColor: '#6C63FF',
     width: '100%',
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
+    minHeight: 60,
     marginBottom: 24,
   },
-  studyBtnText: { color: '#fff', fontSize: 18, fontWeight: '800', textTransform: 'uppercase' },
   exitBtn: { padding: 12 },
-  exitBtnText: { color: theme.colors.textSecondary, fontSize: 14, textDecorationLine: 'underline' },
+  exitBtnText: { color: n.colors.textSecondary, fontSize: 14, textDecorationLine: 'underline' },
 });

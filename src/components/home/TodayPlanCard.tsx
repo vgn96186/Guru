@@ -4,7 +4,8 @@ import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { HomeStackParamList, TabParamList } from '../../navigation/types';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
+import LinearSurface from '../primitives/LinearSurface';
 import { useAppStore } from '../../store/useAppStore';
 import { getTodaysAgendaWithTimes, type TodayTask } from '../../services/studyPlanner';
 import { dailyAgendaRepository } from '../../db/repositories';
@@ -72,9 +73,9 @@ export default function TodayPlanCard() {
 
   if (!todayPlan) {
     return (
-      <View style={styles.container}>
+      <LinearSurface style={styles.container} borderColor="rgba(255,255,255,0.10)">
         <View style={styles.headerRow}>
-          <Ionicons name="compass-outline" size={18} color={theme.colors.textMuted} />
+          <Ionicons name="compass-outline" size={18} color={n.colors.textMuted} />
           <Text style={styles.label}>TODAY'S MISSION</Text>
         </View>
         <Text style={styles.subtitle}>No plan generated yet.</Text>
@@ -87,12 +88,12 @@ export default function TodayPlanCard() {
           accessibilityLabel="Generate daily plan"
         >
           {isGenerating ? (
-            <ActivityIndicator color={theme.colors.textPrimary} size="small" />
+            <ActivityIndicator color={n.colors.textPrimary} size="small" />
           ) : (
             <Text style={styles.generateBtnText}>GENERATE PLAN</Text>
           )}
         </TouchableOpacity>
-      </View>
+      </LinearSurface>
     );
   }
 
@@ -104,17 +105,20 @@ export default function TodayPlanCard() {
     nextTask?.type === 'review' ? 'REVIEW' : nextTask?.type === 'test' ? 'TEST' : 'STUDY';
   const typeColor =
     nextTask?.type === 'review'
-      ? theme.colors.warning
+      ? n.colors.warning
       : nextTask?.type === 'test'
         ? '#E05252'
-        : theme.colors.primary;
+        : n.colors.accent;
 
   return (
-    <View style={[styles.container, styles.activeContainer]}>
+    <LinearSurface
+      style={[styles.container, styles.activeContainer]}
+      borderColor="rgba(108,99,255,0.34)"
+    >
       <View style={styles.activeHeader}>
         <View style={styles.headerRow}>
-          <Ionicons name="compass" size={18} color={theme.colors.primary} />
-          <Text style={[styles.label, { color: theme.colors.primary }]}>UP NEXT</Text>
+          <Ionicons name="compass" size={18} color={n.colors.accent} />
+          <Text style={[styles.label, { color: n.colors.accent }]}>UP NEXT</Text>
         </View>
         <View style={styles.metaRow}>
           <View style={[styles.typeBadge, { backgroundColor: `${typeColor}22` }]}>
@@ -167,26 +171,23 @@ export default function TodayPlanCard() {
           <Text style={styles.viewFullText}>
             {remainingBlocks} block{remainingBlocks !== 1 ? 's' : ''} · {totalMinutes}m total
           </Text>
-          <Ionicons name="chevron-forward" size={14} color={theme.colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={n.colors.textMuted} />
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearSurface>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    marginBottom: n.spacing.lg,
     flex: 1,
     justifyContent: 'space-between',
   },
   activeContainer: {
-    borderColor: theme.colors.primaryTintMedium,
+    backgroundColor: 'transparent',
   },
   headerRow: {
     flexDirection: 'row',
@@ -194,27 +195,27 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   label: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '800',
     fontSize: 11,
     letterSpacing: 1.5,
   },
   subtitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     marginTop: 8,
-    marginBottom: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
   },
   generateBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: n.colors.accent,
+    borderRadius: n.radius.sm,
     paddingVertical: 12,
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
   },
   generateBtnText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 0.8,
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: n.spacing.md,
   },
   metaRow: {
     flexDirection: 'row',
@@ -241,21 +242,21 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   durationText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
   taskBlock: {
-    marginBottom: theme.spacing.md,
+    marginBottom: n.spacing.md,
   },
   taskTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 17,
     fontWeight: '700',
     marginBottom: 4,
   },
   taskWhy: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -264,9 +265,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: theme.borderRadius.sm,
+    borderRadius: n.radius.sm,
     paddingVertical: 13,
-    marginBottom: theme.spacing.md,
+    marginBottom: n.spacing.md,
   },
   startBtnText: {
     color: '#fff',
@@ -276,8 +277,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-    paddingTop: theme.spacing.md,
+    borderTopColor: 'rgba(255,255,255,0.08)',
+    paddingTop: n.spacing.md,
   },
   viewFullBtn: {
     flexDirection: 'row',
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   viewFullText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },

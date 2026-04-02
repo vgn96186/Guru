@@ -13,7 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearSurface from '../components/primitives/LinearSurface';
+import { linearTheme as n } from '../theme/linearTheme';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ScreenHeader from '../components/ScreenHeader';
 import {
@@ -171,10 +173,10 @@ export default function QuestionBankScreen() {
 
       return (
         <TouchableOpacity
-          style={styles.card}
           activeOpacity={0.85}
           onPress={() => setExpandedId(isExpanded ? null : item.id)}
         >
+          <LinearSurface padded={false} style={styles.card}>
           <View style={styles.cardHeader}>
             {item.subjectName ? (
               <View style={[styles.subjectChip, { backgroundColor: '#E040FB22' }]}>
@@ -229,7 +231,7 @@ export default function QuestionBankScreen() {
                 <Ionicons
                   name={item.isBookmarked ? 'star' : 'star-outline'}
                   size={20}
-                  color={item.isBookmarked ? '#FFD700' : theme.colors.textMuted}
+                  color={item.isBookmarked ? '#FFD700' : n.colors.textMuted}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -239,14 +241,15 @@ export default function QuestionBankScreen() {
                 <Ionicons
                   name={item.isMastered ? 'checkmark-circle' : 'checkmark-circle-outline'}
                   size={20}
-                  color={item.isMastered ? theme.colors.success : theme.colors.textMuted}
+                  color={item.isMastered ? n.colors.success : n.colors.textMuted}
                 />
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={8}>
-                <Ionicons name="trash-outline" size={18} color={theme.colors.textMuted} />
+                <Ionicons name="trash-outline" size={18} color={n.colors.textMuted} />
               </TouchableOpacity>
             </View>
           </View>
+          </LinearSurface>
         </TouchableOpacity>
       );
     },
@@ -264,7 +267,7 @@ export default function QuestionBankScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScreenHeader title="Question Bank" subtitle={`${totalCount} questions saved`} />
 
       {/* Stats + Filter bar */}
@@ -272,33 +275,41 @@ export default function QuestionBankScreen() {
         {filters.map((f) => (
           <TouchableOpacity
             key={f.mode}
-            style={[styles.filterChip, filterMode === f.mode && styles.filterChipActive]}
             onPress={() => setFilterMode(f.mode)}
+            activeOpacity={0.8}
           >
-            <Text
-              style={[styles.filterChipText, filterMode === f.mode && styles.filterChipTextActive]}
+            <LinearSurface
+              padded={false}
+              style={[styles.filterChip, filterMode === f.mode && styles.filterChipActive]}
             >
-              {f.label} ({f.count})
-            </Text>
+              <Text
+                style={[styles.filterChipText, filterMode === f.mode && styles.filterChipTextActive]}
+              >
+                {f.label} ({f.count})
+              </Text>
+            </LinearSurface>
           </TouchableOpacity>
         ))}
       </View>
 
       {/* Action row */}
       <View style={styles.actionRow}>
-        <TouchableOpacity style={styles.practiceBtn} onPress={startPractice} activeOpacity={0.8}>
-          <Ionicons name="play-circle-outline" size={20} color={theme.colors.textPrimary} />
-          <Text style={styles.practiceBtnText}>Practice</Text>
-        </TouchableOpacity>
+        <LinearButton
+          variant="glass"
+          style={styles.practiceBtn}
+          onPress={startPractice}
+          leftIcon={<Ionicons name="play-circle-outline" size={20} color={n.colors.textPrimary} />}
+          label="Practice"
+        />
       </View>
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={n.colors.accent} />
         </View>
       ) : questions.length === 0 ? (
         <View style={styles.center}>
-          <Ionicons name="help-circle-outline" size={48} color={theme.colors.textMuted} />
+          <Ionicons name="help-circle-outline" size={48} color={n.colors.textMuted} />
           <Text style={styles.emptyText}>No questions yet</Text>
           <Text style={styles.emptyHint}>
             Study topics or take quizzes to auto-save questions here.
@@ -317,7 +328,7 @@ export default function QuestionBankScreen() {
       {/* ── Practice Modal ───────────────────────────────────────────────── */}
       <Modal visible={practiceActive} animationType="slide" transparent={false}>
         <SafeAreaView style={styles.safe}>
-          <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+          <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
           <View style={styles.practiceHeader}>
             <TouchableOpacity
               onPress={() => {
@@ -325,7 +336,7 @@ export default function QuestionBankScreen() {
                 loadData();
               }}
             >
-              <Ionicons name="close" size={28} color={theme.colors.textPrimary} />
+              <Ionicons name="close" size={28} color={n.colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.practiceProgress}>
               {practiceIndex + 1} / {practiceQuestions.length}
@@ -388,7 +399,7 @@ export default function QuestionBankScreen() {
                   <Text style={styles.nextBtnText}>
                     {practiceIndex + 1 >= practiceQuestions.length ? 'Finish' : 'Next'}
                   </Text>
-                  <Ionicons name="arrow-forward" size={18} color={theme.colors.textPrimary} />
+                  <Ionicons name="arrow-forward" size={18} color={n.colors.textPrimary} />
                 </TouchableOpacity>
               )}
             </View>
@@ -400,7 +411,7 @@ export default function QuestionBankScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   filterBar: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -411,18 +422,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: theme.colors.surface,
   },
   filterChipActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
   },
   filterChipText: {
     fontSize: 12,
     fontWeight: '600',
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
   },
   filterChipTextActive: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
   },
   actionRow: {
     flexDirection: 'row',
@@ -431,36 +441,25 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   practiceBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.colors.surface,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
-  },
-  practiceBtnText: {
-    color: theme.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
+    minWidth: 160,
+    minHeight: 52,
   },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     fontWeight: '600',
     marginTop: 12,
   },
   emptyHint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
     marginTop: 4,
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     padding: 14,
     marginBottom: 10,
   },
@@ -479,11 +478,11 @@ const styles = StyleSheet.create({
   topicLabel: {
     fontSize: 11,
     lineHeight: 16,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     flex: 1,
   },
   questionText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -499,18 +498,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF5022',
   },
   optionLetter: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 13,
     fontWeight: '700',
     width: 24,
   },
   optionText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     flex: 1,
   },
   correctOptionText: {
-    color: theme.colors.success,
+    color: n.colors.success,
     fontWeight: '600',
   },
   explanationWrap: { marginTop: 8 },
@@ -521,11 +520,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   statsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statText: { color: theme.colors.textMuted, fontSize: 11 },
+  statText: { color: n.colors.textMuted, fontSize: 11 },
   sourceChip: {
     fontSize: 10,
-    color: theme.colors.textMuted,
-    backgroundColor: theme.colors.background,
+    color: n.colors.textMuted,
+    backgroundColor: n.colors.background,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -542,18 +541,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   practiceProgress: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     fontWeight: '600',
   },
   practiceScoreText: {
-    color: theme.colors.success,
+    color: n.colors.success,
     fontSize: 14,
     fontWeight: '600',
   },
   practiceBody: { flex: 1, paddingHorizontal: 20, paddingTop: 16 },
   practiceQuestion: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 17,
     fontWeight: '600',
     lineHeight: 24,
@@ -562,36 +561,33 @@ const styles = StyleSheet.create({
   practiceOptions: { gap: 10 },
   practiceOption: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
     padding: 14,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: n.radius.md,
   },
   practiceOptionCorrect: {
     flexDirection: 'row' as const,
     backgroundColor: '#4CAF5022',
     padding: 14,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.success,
+    borderColor: n.colors.success,
   },
   practiceOptionWrong: {
     flexDirection: 'row' as const,
     backgroundColor: '#F4433622',
     padding: 14,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.error,
+    borderColor: n.colors.error,
   },
   practiceOptionLetter: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     fontWeight: '700',
     width: 28,
   },
   practiceOptionText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     flex: 1,
   },
@@ -601,13 +597,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     paddingVertical: 14,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     marginTop: 20,
   },
   nextBtnText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },

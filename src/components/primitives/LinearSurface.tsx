@@ -38,14 +38,15 @@ export default function LinearSurface({
         <Svg width="100%" height="100%" preserveAspectRatio="none">
           <Defs>
             <LinearGradient id={gradientIdRef.current} x1="0%" y1="0%" x2="0%" y2="100%">
-              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.04" />
-              <Stop offset="60%" stopColor="#FFFFFF" stopOpacity="0.01" />
+              <Stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.03" />
+              <Stop offset="40%" stopColor="#FFFFFF" stopOpacity="0.008" />
               <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
             </LinearGradient>
           </Defs>
           <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradientIdRef.current})`} />
         </Svg>
       </View>
+      <View pointerEvents="none" style={styles.frostLayer} />
       <View pointerEvents="none" style={styles.topEdge} />
       <View style={contentStyle}>{children}</View>
     </View>
@@ -70,8 +71,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    height: 1,
-    backgroundColor: linearTheme.colors.borderHighlight,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  frostLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.006)',
   },
   content: {
     padding: 0,

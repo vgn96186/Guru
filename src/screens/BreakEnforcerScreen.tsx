@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import * as Haptics from 'expo-haptics';
 import { connectToRoom } from '../services/deviceSyncService';
 import { scheduleBreakEndAlarms, cancelAllNotifications } from '../services/notificationService';
@@ -85,7 +85,7 @@ export default function BreakEnforcerScreen() {
   if (isOver) {
     return (
       <SafeAreaView style={styles.safeError}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.error} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.error} />
         <ResponsiveContainer style={styles.container}>
           <Text style={styles.emoji}>🚨</Text>
           <Text style={styles.titleError}>YOUR BREAK IS OVER</Text>
@@ -109,7 +109,7 @@ export default function BreakEnforcerScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <Text style={styles.emoji}>☕</Text>
         <Text style={styles.title}>Break Time</Text>

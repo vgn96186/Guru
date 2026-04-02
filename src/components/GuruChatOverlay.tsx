@@ -20,7 +20,7 @@ import { chatWithGuru } from '../services/aiService';
 import { markTopicDiscussedInChat } from '../db/queries/topics';
 import { useAppStore } from '../store/useAppStore';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { MarkdownRender } from './MarkdownRender';
 
 interface ChatMessage {
@@ -281,7 +281,7 @@ export default function GuruChatOverlay({
               accessibilityRole="button"
               accessibilityLabel="Close"
             >
-              <Ionicons name="close-circle" size={28} color={theme.colors.textMuted} />
+              <Ionicons name="close-circle" size={28} color={n.colors.textMuted} />
             </TouchableOpacity>
           </View>
 
@@ -295,7 +295,7 @@ export default function GuruChatOverlay({
             {messages.length === 0 && (
               <View style={s.emptyContainer}>
                 <View style={s.emptyIconCircle}>
-                  <Ionicons name="sparkles" size={32} color={theme.colors.primary} />
+                  <Ionicons name="sparkles" size={32} color={n.colors.accent} />
                 </View>
                 <Text style={s.emptyTitle}>Ask anything about this topic</Text>
                 <Text style={s.emptyHint}>
@@ -338,7 +338,7 @@ export default function GuruChatOverlay({
             {loading && (
               <View style={s.guruContainer}>
                 <View style={[s.avatar, s.guruAvatar]}>
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                  <ActivityIndicator size="small" color={n.colors.accent} />
                 </View>
                 <View style={[s.bubble, s.guruBubble, s.loadingBubble]}>
                   <View style={s.typingIndicator}>
@@ -372,7 +372,7 @@ export default function GuruChatOverlay({
               <TextInput
                 style={[s.input, error && s.inputError]}
                 placeholder="Ask a question..."
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={n.colors.textMuted}
                 value={input}
                 onChangeText={setInput}
                 onSubmitEditing={handleSend}
@@ -397,7 +397,7 @@ export default function GuruChatOverlay({
                   <Ionicons
                     name="arrow-up"
                     size={20}
-                    color={!input.trim() ? theme.colors.textMuted : '#fff'}
+                    color={!input.trim() ? n.colors.textMuted : '#fff'}
                   />
                 )}
               </TouchableOpacity>
@@ -416,35 +416,38 @@ export default function GuruChatOverlay({
 
 const s = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFillObject },
-  backdropOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)' },
+  backdropOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.65)' },
   kvWrapper: { flex: 1, justifyContent: 'flex-end' },
   panel: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
+    backgroundColor: 'rgba(5, 5, 5, 0.98)',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     height: '80%',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomWidth: 0,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -10 },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 20,
+    shadowOffset: { width: 0, height: -12 },
+    shadowOpacity: 0.5,
+    shadowRadius: 28,
+    elevation: 24,
   },
   dragHandle: {
-    width: 40,
+    width: 36,
     height: 4,
-    backgroundColor: theme.colors.borderLight,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 2,
     alignSelf: 'center',
-    marginTop: 12,
+    marginTop: 10,
     marginBottom: 4,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
   headerLeft: {
     flex: 1,
@@ -462,28 +465,32 @@ const s = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: theme.colors.primary,
-    opacity: 0.3,
+    backgroundColor: n.colors.accent,
+    opacity: 0.25,
   },
   innerDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     position: 'absolute',
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
   },
   headerText: { flex: 1 },
   headerTitle: {
-    color: theme.colors.textPrimary,
-    fontWeight: '900',
-    fontSize: 18,
-    letterSpacing: 0.5,
+    color: n.colors.textPrimary,
+    fontWeight: '800',
+    fontSize: 17,
+    letterSpacing: 0.3,
   },
   headerSub: {
-    color: theme.colors.primary,
-    fontSize: 12,
+    color: n.colors.accent,
+    fontSize: 11,
     fontWeight: '700',
-    marginTop: 1,
+    marginTop: 2,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
@@ -492,35 +499,42 @@ const s = StyleSheet.create({
   },
   messages: { flex: 1 },
   messagesContent: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 16,
+    padding: 16,
+    paddingBottom: 32,
+    gap: 14,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 60,
-    paddingHorizontal: 40,
+    marginTop: 48,
+    paddingHorizontal: 36,
   },
   emptyIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: theme.colors.primaryTintSoft,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.25)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emptyTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 8,
   },
   emptyHint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -549,55 +563,57 @@ const s = StyleSheet.create({
     marginHorizontal: 8,
   },
   guruAvatar: {
-    backgroundColor: theme.colors.primary,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
+    backgroundColor: 'rgba(94, 106, 210, 0.15)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.3)',
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
   },
   userAvatar: {
-    backgroundColor: theme.colors.primary,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
+    backgroundColor: 'rgba(94, 106, 210, 0.2)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.35)',
   },
   avatarText: {
-    color: '#fff',
-    fontSize: 14,
+    color: n.colors.accent,
+    fontSize: 13,
     fontWeight: '900',
   },
   bubble: {
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   userBubble: {
-    backgroundColor: theme.colors.primary,
-    borderBottomRightRadius: 4,
-    borderTopRightRadius: 20,
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    backgroundColor: 'rgba(94, 106, 210, 0.14)',
+    borderColor: 'rgba(94, 106, 210, 0.35)',
+    borderBottomRightRadius: 6,
+    borderTopRightRadius: 18,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
   guruBubble: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderBottomLeftRadius: 4,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomLeftRadius: 6,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    borderBottomRightRadius: 18,
+    borderTopColor: 'rgba(255, 255, 255, 0.12)',
   },
-  userBubbleTail: {
-    // Tail effect for user messages (pointing left)
-    borderLeftWidth: 0,
-  },
-  guruBubbleTail: {
-    // Tail effect for guru messages (pointing right)
-    borderRightWidth: 0,
-  },
+  userBubbleTail: {},
+  guruBubbleTail: {},
   userBubbleText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '500',
     lineHeight: 22,
@@ -605,92 +621,107 @@ const s = StyleSheet.create({
   loadingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     minWidth: 80,
   },
   typingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
   },
   typingDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: theme.colors.textMuted,
+    backgroundColor: n.colors.accent,
+    opacity: 0.6,
   },
 
   errorContainer: {
     alignSelf: 'center',
-    backgroundColor: theme.colors.error + '15',
-    padding: 12,
-    borderRadius: 12,
+    backgroundColor: 'rgba(241, 76, 76, 0.08)',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(241, 76, 76, 0.2)',
     marginVertical: 8,
     alignItems: 'center',
     maxWidth: '90%',
   },
   errorText: {
-    color: theme.colors.error,
+    color: n.colors.error,
     fontSize: 13,
     textAlign: 'center',
     marginBottom: 8,
   },
   retryBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: n.colors.accent,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 999,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
   },
   retryBtnText: {
     color: '#fff',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
   inputWrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    backgroundColor: theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 18,
+    backgroundColor: 'transparent',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.06)',
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.inputBg,
-    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 0.025)',
+    borderRadius: 22,
     paddingLeft: 16,
     paddingRight: 6,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    paddingVertical: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   input: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     maxHeight: 100,
     paddingVertical: 8,
   },
   inputError: {
-    borderColor: theme.colors.error,
+    borderColor: 'rgba(241, 76, 76, 0.4)',
   },
   inputErrorHint: {
-    color: theme.colors.error,
+    color: n.colors.error,
     fontSize: 11,
     marginTop: 4,
-    marginLeft: 12,
+    marginLeft: 14,
   },
   sendBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     width: 36,
     height: 36,
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   sendBtnDisabled: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });

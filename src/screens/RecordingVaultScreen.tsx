@@ -21,7 +21,6 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as DocumentPicker from 'expo-document-picker';
 import {
@@ -38,8 +37,11 @@ import { saveLecturePersistence } from '../services/lecture/persistence';
 import { profileRepository } from '../db/repositories';
 import { getApiKeys } from '../services/ai/config';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 const CUSTOM_FOLDERS_KEY = 'guru_recording_vault_custom_folders';
 
@@ -81,7 +83,6 @@ function entriesToRecordingFiles(
 }
 
 export default function RecordingVaultScreen() {
-  const navigation = useNavigation();
   const [recordings, setRecordings] = useState<RecordingFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingFile, setProcessingFile] = useState<string | null>(null);
@@ -322,12 +323,6 @@ export default function RecordingVaultScreen() {
 
     return (
       <Pressable
-        style={[
-          styles.card,
-          isDone && styles.cardDone,
-          isError && styles.cardError,
-          isSelected && styles.cardSelected,
-        ]}
         onLongPress={() => handleLongPress(item.path)}
         onPress={() => {
           if (isSelectionMode) {
@@ -337,79 +332,98 @@ export default function RecordingVaultScreen() {
         }}
         delayLongPress={220}
       >
-        {isSelectionMode ? (
-          <View style={styles.cardIcon}>
-            <Ionicons
-              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-              size={24}
-              color={isSelected ? theme.colors.primary : theme.colors.textMuted}
-            />
-          </View>
-        ) : (
-          <View style={styles.cardIcon}>
-            <Ionicons
-              name={isDone ? 'checkmark-circle' : 'mic-outline'}
-              size={24}
-              color={isDone ? theme.colors.success : theme.colors.primary}
-            />
-          </View>
-        )}
-        <View style={styles.cardBody}>
-          <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
-            {item.name}
-          </Text>
-          <Text style={styles.cardMeta}>
-            {formatDate(item.date)} · {item.sizeMB} MB · {item.folder}
-          </Text>
-          {isProcessing && processingMsg ? (
-            <View style={styles.statusRow}>
-              {processingState === 'transcribing' || processingState === 'saving' ? (
-                <ActivityIndicator
-                  size="small"
-                  color={theme.colors.primary}
-                  style={{ marginRight: 6 }}
-                />
-              ) : null}
-              <Text
-                style={[
-                  styles.statusText,
-                  isDone && { color: theme.colors.success },
-                  isError && { color: theme.colors.error },
-                ]}
-                numberOfLines={2}
-              >
-                {processingMsg}
-              </Text>
+        <LinearSurface
+          padded={false}
+          borderColor={
+            isSelected
+              ? n.colors.accent
+              : isError
+                ? n.colors.error
+                : isDone
+                  ? n.colors.success
+                  : n.colors.border
+          }
+          style={[
+            styles.card,
+            isDone && styles.cardDone,
+            isError && styles.cardError,
+            isSelected && styles.cardSelected,
+          ]}
+        >
+          {isSelectionMode ? (
+            <View style={styles.cardIcon}>
+              <Ionicons
+                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                size={24}
+                color={isSelected ? n.colors.accent : n.colors.textMuted}
+              />
             </View>
-          ) : null}
-        </View>
-        {!isSelectionMode && (
-          <View style={styles.cardActions}>
-            {!isProcessing || isDone || isError ? (
-              <>
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => {
-                    if (isDone || isError) resetProcessing();
-                    void handleProcess(item);
-                  }}
-                  disabled={isProcessing && !isDone && !isError}
+          ) : (
+            <View style={styles.cardIcon}>
+              <Ionicons
+                name={isDone ? 'checkmark-circle' : 'mic-outline'}
+                size={24}
+                color={isDone ? n.colors.success : n.colors.accent}
+              />
+            </View>
+          )}
+          <View style={styles.cardBody}>
+            <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
+              {item.name}
+            </Text>
+            <Text style={styles.cardMeta}>
+              {formatDate(item.date)} · {item.sizeMB} MB · {item.folder}
+            </Text>
+            {isProcessing && processingMsg ? (
+              <View style={styles.statusRow}>
+                {processingState === 'transcribing' || processingState === 'saving' ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={n.colors.accent}
+                    style={{ marginRight: 6 }}
+                  />
+                ) : null}
+                <Text
+                  style={[
+                    styles.statusText,
+                    isDone && { color: n.colors.success },
+                    isError && { color: n.colors.error },
+                  ]}
+                  numberOfLines={2}
                 >
-                  <Ionicons name="cloud-upload-outline" size={20} color={theme.colors.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.actionBtn}
-                  onPress={() => handleDelete(item)}
-                  disabled={isProcessing && !isDone && !isError}
-                >
-                  <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            )}
+                  {processingMsg}
+                </Text>
+              </View>
+            ) : null}
           </View>
-        )}
+          {!isSelectionMode && (
+            <View style={styles.cardActions}>
+              {!isProcessing || isDone || isError ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => {
+                      if (isDone || isError) resetProcessing();
+                      void handleProcess(item);
+                    }}
+                    disabled={isProcessing && !isDone && !isError}
+                  >
+                    <Ionicons name="cloud-upload-outline" size={20} color={n.colors.accent} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.actionBtn}
+                    onPress={() => handleDelete(item)}
+                    disabled={isProcessing && !isDone && !isError}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={n.colors.error} />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <ActivityIndicator size="small" color={n.colors.accent} />
+              )}
+            </View>
+          )}
+        </LinearSurface>
       </Pressable>
     );
   };
@@ -492,50 +506,45 @@ export default function RecordingVaultScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerTextWrap}>
-            <Text style={styles.headerTitle}>Recording Vault</Text>
-            <Text style={styles.headerSub}>
-              {recordings.length} recording{recordings.length !== 1 ? 's' : ''} found
-            </Text>
-          </View>
-          <TouchableOpacity onPress={handlePickFolder} style={styles.refreshBtn}>
-            <Ionicons name="folder-open-outline" size={20} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={loadRecordings} style={styles.refreshBtn}>
-            <Ionicons name="refresh" size={20} color={theme.colors.textMuted} />
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader
+          title="Recording Vault"
+          subtitle={`${recordings.length} recording${recordings.length !== 1 ? 's' : ''} found`}
+          rightElement={
+            <View style={styles.headerActions}>
+              <TouchableOpacity onPress={handlePickFolder} style={styles.refreshBtn}>
+                <Ionicons name="folder-open-outline" size={20} color={n.colors.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => void loadRecordings()} style={styles.refreshBtn}>
+                <Ionicons name="refresh" size={20} color={n.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          }
+        />
 
         <View style={styles.topActions}>
-          <TouchableOpacity
+          <LinearButton
+            variant="glass"
             style={[styles.topActionBtn, isUploadingAudio && styles.topActionBtnDisabled]}
             onPress={() => void handleUploadAudio()}
             disabled={isUploadingAudio}
-            activeOpacity={0.8}
-          >
-            {isUploadingAudio ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="cloud-upload-outline" size={18} color={theme.colors.primary} />
-            )}
-            <Text style={styles.topActionText}>
-              {isUploadingAudio ? 'Uploading…' : 'Upload Audio'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            leftIcon={
+              isUploadingAudio ? (
+                <ActivityIndicator size="small" color={n.colors.accent} />
+              ) : (
+                <Ionicons name="cloud-upload-outline" size={18} color={n.colors.accent} />
+              )
+            }
+            label={isUploadingAudio ? 'Uploading…' : 'Upload Audio'}
+          />
+          <LinearButton
+            variant="glass"
             style={styles.topActionBtn}
             onPress={handlePickFolder}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="folder-open-outline" size={18} color={theme.colors.primary} />
-            <Text style={styles.topActionText}>Add Folder</Text>
-          </TouchableOpacity>
+            leftIcon={<Ionicons name="folder-open-outline" size={18} color={n.colors.accent} />}
+            label="Add Folder"
+          />
         </View>
 
         <TranscriptionSettingsPanel />
@@ -565,11 +574,11 @@ export default function RecordingVaultScreen() {
               // User will be sent to settings — re-check on return
             }}
           >
-            <Ionicons name="lock-open-outline" size={18} color={theme.colors.warning} />
+            <Ionicons name="lock-open-outline" size={18} color={n.colors.warning} />
             <Text style={styles.permBannerText}>
               Grant "All files access" to scan all folders automatically.
             </Text>
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
           </TouchableOpacity>
         )}
 
@@ -582,12 +591,12 @@ export default function RecordingVaultScreen() {
                 style={styles.folderChip}
                 onLongPress={() => handleRemoveFolder(f)}
               >
-                <Ionicons name="folder-outline" size={14} color={theme.colors.primary} />
+                <Ionicons name="folder-outline" size={14} color={n.colors.accent} />
                 <Text style={styles.folderChipText} numberOfLines={2}>
                   {f.label}
                 </Text>
                 <TouchableOpacity onPress={() => handleRemoveFolder(f)} hitSlop={8}>
-                  <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
+                  <Ionicons name="close-circle" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
@@ -596,12 +605,12 @@ export default function RecordingVaultScreen() {
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <ActivityIndicator size="large" color={n.colors.accent} />
             <Text style={styles.emptyText}>Scanning recordings...</Text>
           </View>
         ) : recordings.length === 0 ? (
           <View style={styles.center}>
-            <Ionicons name="mic-off-outline" size={48} color={theme.colors.textMuted} />
+            <Ionicons name="mic-off-outline" size={48} color={n.colors.textMuted} />
             <Text style={styles.emptyTitle}>No recordings found</Text>
             <Text style={styles.emptyText}>
               Lecture recordings appear here after you use the external app recording feature.
@@ -623,88 +632,72 @@ export default function RecordingVaultScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   container: { flex: 1 },
-  header: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    gap: 8,
   },
-  backBtn: { marginRight: 12, padding: 4 },
-  headerTextWrap: { flex: 1 },
-  headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
-  headerSub: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 2 },
-  refreshBtn: { padding: 8 },
+  refreshBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 0,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
   topActions: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: n.spacing.lg,
     paddingTop: 10,
   },
   topActionBtn: {
     flex: 1,
-    minHeight: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    minHeight: 52,
   },
   topActionBtnDisabled: {
     opacity: 0.6,
   },
-  topActionText: {
-    color: theme.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  list: { padding: theme.spacing.lg, paddingBottom: 40 },
+  list: { padding: n.spacing.lg, paddingBottom: 40 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  cardDone: { borderColor: theme.colors.successTintSoft },
-  cardError: { borderColor: theme.colors.errorTintSoft },
-  cardSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '12' },
+  cardDone: {},
+  cardError: {},
+  cardSelected: { borderColor: n.colors.accent, backgroundColor: n.colors.accent + '12' },
   cardIcon: { marginRight: 12 },
   cardBody: { flex: 1, minWidth: 0 },
-  cardName: { color: theme.colors.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  cardMeta: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
+  cardName: { color: n.colors.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  cardMeta: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
   statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  statusText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, flex: 1 },
+  statusText: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 18, flex: 1 },
   cardActions: { flexDirection: 'row', gap: 4, marginLeft: 8 },
   actionBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.card,
+    backgroundColor: n.colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
@@ -713,23 +706,23 @@ const styles = StyleSheet.create({
   foldersStrip: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: n.spacing.lg,
     paddingTop: 8,
     gap: 6,
   },
   folderChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 5,
     gap: 5,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   folderChipText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     maxWidth: 160,
@@ -738,24 +731,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.primary + '18',
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: n.colors.accent + '18',
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '40',
+    borderColor: n.colors.accent + '40',
   },
-  selectionText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
+  selectionText: { color: n.colors.accent, fontSize: 14, fontWeight: '700' },
   selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   selectionCancelBtn: { paddingHorizontal: 12, paddingVertical: 6 },
-  selectionCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '700' },
+  selectionCancelText: { color: n.colors.accent, fontSize: 13, fontWeight: '700' },
   selectionDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.error,
+    backgroundColor: n.colors.error,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -764,19 +757,19 @@ const styles = StyleSheet.create({
   permBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `${theme.colors.warning}15`,
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: `${n.colors.warning}15`,
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: `${theme.colors.warning}40`,
+    borderColor: `${n.colors.warning}40`,
     gap: 8,
   },
   permBannerText: {
     flex: 1,
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
   },

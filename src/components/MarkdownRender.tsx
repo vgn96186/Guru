@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface MarkdownRenderProps {
   content: string;
@@ -111,7 +111,7 @@ const markdownStyles: any = {
     fontStyle: 'italic',
   },
   link: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     textDecorationLine: 'underline',
   },
   paragraph: {
@@ -133,19 +133,19 @@ const markdownStyles: any = {
   },
   bullet_list_icon: {
     marginLeft: 0,
-    marginRight: theme.spacing.sm,
-    color: theme.colors.primary,
+    marginRight: n.spacing.sm,
+    color: n.colors.accent,
   },
   ordered_list_icon: {
     marginLeft: 0,
-    marginRight: theme.spacing.sm,
-    color: theme.colors.primary,
+    marginRight: n.spacing.sm,
+    color: n.colors.accent,
     fontWeight: '600',
   },
   list_item: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: theme.spacing.xs,
+    marginBottom: n.spacing.xs,
     minWidth: 0,
     width: '100%',
   },
@@ -158,49 +158,49 @@ const markdownStyles: any = {
     minWidth: 0,
   },
   heading1: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.h2.fontSize,
+    color: n.colors.textPrimary,
+    fontSize: n.typography.title.fontSize,
     fontWeight: 'bold',
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.lg,
+    marginBottom: n.spacing.md,
+    marginTop: n.spacing.lg,
   },
   heading2: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.h3.fontSize,
+    color: n.colors.textPrimary,
+    fontSize: n.typography.sectionTitle.fontSize,
     fontWeight: 'bold',
-    marginBottom: theme.spacing.md,
-    marginTop: theme.spacing.md,
+    marginBottom: n.spacing.md,
+    marginTop: n.spacing.md,
   },
   heading3: {
-    color: theme.colors.textPrimary,
-    fontSize: theme.typography.h4.fontSize,
+    color: n.colors.textPrimary,
+    fontSize: n.typography.sectionTitle.fontSize,
     fontWeight: 'bold',
-    marginBottom: theme.spacing.sm,
-    marginTop: theme.spacing.md,
+    marginBottom: n.spacing.sm,
+    marginTop: n.spacing.md,
   },
   code_inline: {
-    color: theme.colors.primary,
-    backgroundColor: theme.colors.surfaceAlt,
-    paddingHorizontal: theme.spacing.xs,
+    color: n.colors.accent,
+    backgroundColor: n.colors.surface,
+    paddingHorizontal: n.spacing.xs,
     paddingVertical: 2,
     borderRadius: 4,
-    fontFamily: 'monospace',
+    fontFamily: 'Inter_400Regular',
   },
   code_block: {
-    color: theme.colors.textSecondary,
-    backgroundColor: theme.colors.surfaceAlt,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.sm,
-    fontFamily: 'monospace',
-    marginBottom: theme.spacing.md,
+    color: n.colors.textSecondary,
+    backgroundColor: n.colors.surface,
+    padding: n.spacing.md,
+    borderRadius: n.radius.sm,
+    fontFamily: 'Inter_400Regular',
+    marginBottom: n.spacing.md,
   },
   blockquote: {
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
-    paddingLeft: theme.spacing.md,
-    marginBottom: theme.spacing.md,
+    borderLeftColor: n.colors.accent,
+    paddingLeft: n.spacing.md,
+    marginBottom: n.spacing.md,
     fontStyle: 'italic',
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
   },
 };
 

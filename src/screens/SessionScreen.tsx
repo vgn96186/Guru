@@ -1,3 +1,4 @@
+import LinearSurface from '../components/primitives/LinearSurface';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -8,8 +9,9 @@ import {
   StatusBar,
   BackHandler,
   Alert,
-  Animated,
   ScrollView,
+  InteractionManager,
+  Animated,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -86,11 +88,13 @@ function useEntranceAnimation(duration = 400) {
   useEffect(() => {
     fade.setValue(0);
     slide.setValue(24);
-    Animated.parallel([
-      Animated.timing(fade, { toValue: 1, duration, useNativeDriver: true }),
-      Animated.timing(slide, { toValue: 0, duration, useNativeDriver: true }),
-    ]).start();
-  }, []);
+    InteractionManager.runAfterInteractions(() => {
+      Animated.parallel([
+        Animated.timing(fade, { toValue: 1, duration, useNativeDriver: true }),
+        Animated.timing(slide, { toValue: 0, duration, useNativeDriver: true }),
+      ]).start();
+    });
+  }, [duration, fade, slide]);
   return { fade, slide };
 }
 const SESSION_PREFETCH_LOOKAHEAD = 3;
@@ -943,49 +947,49 @@ export default function SessionScreen() {
             </View>
 
             {/* Guru message */}
-            <View style={styles.revealGuruCard}>
+            <LinearSurface style={styles.revealGuruCard} padded={false}>
               <View style={styles.revealGuruHeader}>
                 <Text style={styles.revealGuruLabel}>GURU’S PLAN</Text>
               </View>
               <View style={styles.revealGuru}>
                 <MarkdownRender content={agenda.guruMessage} compact />
               </View>
-            </View>
+            </LinearSurface>
 
             {/* Topic list */}
             <Text style={styles.revealSectionLabel}>TOPICS</Text>
-            <View style={styles.revealTopicList}>
+            <LinearSurface style={styles.revealTopicList} padded={false}>
               {agenda.items.map((i, idx) => {
                 const topicColor = i.topic.subjectColor || theme.colors.primary;
                 return (
-                  <View
+                  <LinearSurface
                     key={i.topic.id}
                     style={[styles.revealTopic, { borderLeftColor: topicColor }]}
-                  >
-                    <View style={styles.revealTopicRow}>
+                   padded={false}>
+                    <LinearSurface style={styles.revealTopicRow} padded={false}>
                       <View style={[styles.revealInitial, { backgroundColor: topicColor + '22' }]}>
                         <Text style={[styles.revealInitialText, { color: topicColor }]}>
                           {idx + 1}
                         </Text>
                       </View>
-                      <View style={styles.revealTopicInfo}>
+                      <LinearSurface style={styles.revealTopicInfo} padded={false}>
                         <Text style={styles.revealTopicName} numberOfLines={2} ellipsizeMode="tail">
                           {i.topic.name}
                         </Text>
-                        <View style={styles.revealTopicMeta}>
+                        <LinearSurface style={styles.revealTopicMeta} padded={false}>
                           <Text style={styles.revealTopicSub}>{i.topic.subjectCode}</Text>
                           {i.contentTypes?.length > 0 && (
                             <Text style={styles.revealTopicCards}>
                               {i.contentTypes.length} card{i.contentTypes.length !== 1 ? 's' : ''}
                             </Text>
                           )}
-                        </View>
-                      </View>
-                    </View>
-                  </View>
+                        </LinearSurface>
+                      </LinearSurface>
+                    </LinearSurface>
+                  </LinearSurface>
                 );
               })}
-            </View>
+            </LinearSurface>
 
             {/* Footer */}
             <View style={styles.revealLiveRow}>
@@ -1504,7 +1508,7 @@ function SessionDoneScreen({
       >
         <IconCircle name="trophy" color={theme.colors.accentAlt} size={64} />
         <Text style={styles.doneTitle}>Session Complete!</Text>
-        <View style={styles.summaryCard}>
+        <LinearSurface style={styles.summaryCard} padded={false}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Ionicons
@@ -1541,7 +1545,7 @@ function SessionDoneScreen({
               <Text style={styles.summaryLabel}>XP</Text>
             </View>
           </View>
-        </View>
+        </LinearSurface>
         <TouchableOpacity style={styles.doneBtn} onPress={onClose} testID="back-to-home-btn">
           <Text style={styles.doneBtnText}>Back to Home</Text>
         </TouchableOpacity>
@@ -1575,7 +1579,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: 10,
-    backgroundColor: theme.colors.surface,
+    
   },
   headerLeft: { flex: 1, minWidth: 0, marginRight: 12 },
   headerRight: { flexDirection: 'row', alignItems: 'center', paddingTop: 4 },
@@ -1631,7 +1635,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 60,
     right: 16,
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -1725,7 +1729,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   revealGuruCard: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     borderLeftWidth: 3,
@@ -1757,7 +1761,7 @@ const styles = StyleSheet.create({
   },
   revealTopicList: { width: '100%', marginBottom: 20 },
   revealTopic: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: theme.borderRadius.sm,
     borderLeftWidth: 3,
     marginBottom: 8,
@@ -1858,7 +1862,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   summaryCard: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 16,
     padding: 20,
     marginBottom: theme.spacing.xl,
@@ -1894,7 +1898,7 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   doneSecondaryBtn: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 16,
     paddingHorizontal: 40,
     paddingVertical: theme.spacing.lg,
@@ -1915,7 +1919,7 @@ const styles = StyleSheet.create({
   warmupScoreCard: {
     alignItems: 'center',
     marginBottom: 16,
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: theme.borderRadius.lg,
     paddingVertical: 16,
     paddingHorizontal: 32,
@@ -1969,7 +1973,7 @@ const styles = StyleSheet.create({
   },
   retryBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
   manualBtn: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 14,
     paddingHorizontal: 40,
     paddingVertical: 14,

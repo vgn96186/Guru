@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { addBrainDump } from '../db/queries/brainDumps';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { navigationRef } from '../navigation/navigationRef';
 
 export default function BrainDumpFab() {
@@ -37,7 +37,7 @@ export default function BrainDumpFab() {
         accessibilityRole="button"
         accessibilityLabel="Add quick note"
       >
-        <Ionicons name="bulb" size={24} color={theme.colors.textPrimary} />
+        <Ionicons name="bulb" size={24} color={n.colors.textPrimary} />
       </TouchableOpacity>
 
       <Modal
@@ -59,7 +59,7 @@ export default function BrainDumpFab() {
                 accessibilityRole="button"
                 accessibilityLabel="Close"
               >
-                <Ionicons name="close" size={24} color={theme.colors.textMuted} />
+                <Ionicons name="close" size={24} color={n.colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -78,14 +78,14 @@ export default function BrainDumpFab() {
               accessibilityRole="button"
               accessibilityLabel="Review parked thoughts"
             >
-              <Ionicons name="list-outline" size={18} color={theme.colors.primary} />
+              <Ionicons name="list-outline" size={18} color={n.colors.accent} />
               <Text style={styles.reviewLinkText}>Review parked thoughts</Text>
             </TouchableOpacity>
 
             <TextInput
               style={styles.input}
               placeholder="e.g., Pay electricity bill..."
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
               value={note}
               onChangeText={setNote}
               multiline
@@ -116,22 +116,22 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 5,
-    shadowColor: theme.colors.primary,
+    shadowColor: n.colors.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: theme.colors.overlay,
+    backgroundColor: 'rgba(2,2,4,0.72)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
@@ -146,11 +146,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
   },
   subtitle: {
     fontSize: 14,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     marginBottom: 12,
   },
   reviewLink: {
@@ -162,32 +162,32 @@ const styles = StyleSheet.create({
   },
   reviewLinkText: {
     fontSize: 14,
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontWeight: '600',
   },
   input: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 12,
     padding: 16,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     minHeight: 100,
     textAlignVertical: 'top',
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   saveButton: {
-    backgroundColor: theme.colors.success,
+    backgroundColor: n.colors.success,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
   },
   saveButtonDisabled: {
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
   },
   saveText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: 'bold',
   },

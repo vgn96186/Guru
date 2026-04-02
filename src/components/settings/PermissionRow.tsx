@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface PermissionRowProps {
   label: string;
@@ -37,20 +37,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.divider,
+    borderBottomColor: n.colors.border,
   },
   left: { flex: 1 },
-  label: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  label: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
   status: { fontSize: 12, marginTop: 2, fontWeight: '700' },
-  granted: { color: theme.colors.success },
-  denied: { color: theme.colors.error },
+  granted: { color: n.colors.success },
+  denied: { color: n.colors.error },
   fixBtn: {
-    backgroundColor: `${theme.colors.primary}22`,
+    backgroundColor: `${n.colors.accent}22`,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
   },
-  fixBtnText: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
+  fixBtnText: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface StudyMarkdownProps {
   content: string;
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
   },
   heading: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '800',
     marginTop: 6,
     marginBottom: 10,
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   marker: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 17,
     lineHeight: 28,
     fontWeight: '700',

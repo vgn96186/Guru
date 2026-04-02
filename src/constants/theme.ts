@@ -11,11 +11,11 @@
 export const theme = {
   colors: {
     // Backgrounds
-    background: '#0F0F14',
-    surface: '#1A1A24',
-    surfaceAlt: '#13131A',
-    card: '#1E1E2E',
-    cardHover: '#252535',
+    background: '#000000',
+    surface: '#111111',
+    surfaceAlt: '#1A1A1A',
+    card: '#1A1A1A',
+    cardHover: '#222222',
 
     // Brand
     primary: '#6C63FF',

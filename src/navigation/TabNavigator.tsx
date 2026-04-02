@@ -14,6 +14,7 @@ import {
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
@@ -57,6 +58,7 @@ import TranscriptVaultScreen from '../screens/TranscriptVaultScreen';
 import LectureReturnSheet from '../components/LectureReturnSheet';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { launchMedicalApp, type SupportedMedicalApp } from '../services/appLauncher';
 import { useAppStore } from '../store/useAppStore';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN } from '../config/appConfig';
@@ -89,7 +91,7 @@ const MenuStack = createNativeStackNavigator<MenuStackParamList>();
 
 function HomeStackNav() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }}>
+    <HomeStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}>
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="Session" component={SessionScreen} />
       <HomeStack.Screen name="LectureMode" component={LectureModeScreen} />
@@ -107,9 +109,13 @@ function HomeStackNav() {
 
 function SyllabusStackNav() {
   return (
-    <SyllabusStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true }}>
+    <SyllabusStack.Navigator screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}>
       <SyllabusStack.Screen name="Syllabus" component={SyllabusScreen} />
-      <SyllabusStack.Screen name="TopicDetail" component={TopicDetailScreen} />
+      <SyllabusStack.Screen
+        name="TopicDetail"
+        component={TopicDetailScreen}
+        options={{ animation: 'none' }}
+      />
     </SyllabusStack.Navigator>
   );
 }
@@ -118,7 +124,7 @@ function ChatStackNav() {
   return (
     <ChatStack.Navigator
       initialRouteName="GuruChat"
-      screenOptions={{ headerShown: false, freezeOnBlur: true }}
+      screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}
     >
       <ChatStack.Screen name="GuruChat" component={GuruChatScreen} />
     </ChatStack.Navigator>
@@ -129,7 +135,7 @@ function MenuStackNav() {
   return (
     <MenuStack.Navigator
       initialRouteName="MenuHome"
-      screenOptions={{ headerShown: false, freezeOnBlur: true }}
+      screenOptions={{ headerShown: false, freezeOnBlur: true, animation: 'simple_push', contentStyle: { backgroundColor: '#000000' } }}
     >
       <MenuStack.Screen name="MenuHome" component={MenuScreen} />
       <MenuStack.Screen name="StudyPlan" component={StudyPlanScreen} />
@@ -425,25 +431,29 @@ export default function TabNavigator() {
           headerShown: false,
           freezeOnBlur: true,
           tabBarHideOnKeyboard: true,
+          animation: "fade",
           tabBarShowLabel: true,
           tabBarLabelStyle: {
-            fontSize: 12,
-            fontWeight: '700',
-            marginTop: 0,
-            letterSpacing: 0.3,
+            ...n.typography.caption,
+            fontSize: 10,
+            marginTop: 4,
+            letterSpacing: 0,
           },
           tabBarItemStyle: {
-            paddingTop: 2,
+            paddingTop: 8,
           },
           tabBarStyle: {
-            backgroundColor: theme.colors.surface,
-            borderTopColor: theme.colors.border,
-            paddingBottom: bottomInset,
-            height: 66 + bottomInset,
-            paddingTop: 4,
+            backgroundColor: n.colors.background,
+            borderTopColor: n.colors.borderHighlight,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            paddingBottom: bottomInset + 4,
+            height: 60 + bottomInset,
+            paddingTop: 0,
+            elevation: 0,
+            shadowOpacity: 0,
           },
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.textMuted,
+          tabBarActiveTintColor: n.colors.textPrimary,
+          tabBarInactiveTintColor: n.colors.textMuted,
           tabBarIcon: ({ color, size, focused }) => {
             const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
               HomeTab: focused ? 'home' : 'home-outline',
@@ -473,7 +483,7 @@ export default function TabNavigator() {
             tabBarButtonTestID: 'tab-syllabus',
             tabBarAccessibilityLabel: 'Syllabus tab',
             tabBarBadge: dueCount > 0 ? dueCount : undefined,
-            tabBarBadgeStyle: { backgroundColor: theme.colors.error, fontSize: 10 },
+            tabBarBadgeStyle: { backgroundColor: n.colors.error, fontSize: 10 },
           }}
         />
         <Tab.Screen
@@ -494,8 +504,8 @@ export default function TabNavigator() {
                 <View style={styles.fabButton}>
                   <Ionicons
                     name={isActionHubOpen ? 'close' : 'add'}
-                    size={28}
-                    color={theme.colors.textPrimary}
+                    size={26}
+                    color={n.colors.textPrimary}
                   />
                 </View>
                 <Text style={styles.fabLabel}>Actions</Text>
@@ -561,6 +571,18 @@ export default function TabNavigator() {
             },
           ]}
         >
+          <LinearGradient
+            pointerEvents="none"
+            colors={[
+              'rgba(255,255,255,0.05)',
+              'rgba(255,255,255,0.015)',
+              'rgba(255,255,255,0.0)',
+            ]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.sheetGlassLayer}
+          />
+          <View pointerEvents="none" style={styles.sheetFrostLayer} />
           <View style={styles.sheetHandleHitbox}>
             <View style={styles.sheetHandle} />
           </View>
@@ -587,7 +609,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Record lecture"
               >
-                <Ionicons name="mic-outline" size={22} color={theme.colors.textPrimary} />
+                <Ionicons name="mic-outline" size={20} color={n.colors.textPrimary} />
                 <Text style={styles.topActionTitle}>Record Lecture</Text>
               </Pressable>
 
@@ -599,7 +621,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Search any topic"
               >
-                <Ionicons name="search-outline" size={22} color={theme.colors.info} />
+                <Ionicons name="search-outline" size={20} color={n.colors.textPrimary} />
                 <Text style={styles.topActionTitle}>Search Topics</Text>
               </Pressable>
 
@@ -611,7 +633,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open notes vault"
               >
-                <Ionicons name="library-outline" size={22} color={theme.colors.accentAlt} />
+                <Ionicons name="library-outline" size={20} color={n.colors.textPrimary} />
                 <Text style={styles.topActionTitle}>Notes Vault</Text>
               </Pressable>
             </View>
@@ -624,7 +646,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open recording vault"
               >
-                <Ionicons name="mic-outline" size={18} color={theme.colors.textSecondary} />
+                <Ionicons name="mic-outline" size={16} color={n.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Upload Audio</Text>
               </Pressable>
 
@@ -635,7 +657,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open transcript vault"
               >
-                <Ionicons name="clipboard-outline" size={18} color={theme.colors.textSecondary} />
+                <Ionicons name="clipboard-outline" size={16} color={n.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Transcript Tools</Text>
               </Pressable>
 
@@ -646,7 +668,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Review parked thoughts"
               >
-                <Ionicons name="bulb-outline" size={18} color={theme.colors.textSecondary} />
+                <Ionicons name="bulb-outline" size={16} color={n.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Parked thoughts</Text>
               </Pressable>
             </View>
@@ -680,7 +702,9 @@ export default function TabNavigator() {
                       color={app.color}
                     />
                   </View>
-                  <Text style={styles.externalChipLabel}>{app.name}</Text>
+                  <Text style={styles.externalChipLabel} numberOfLines={1} ellipsizeMode="tail">
+                    {app.name}
+                  </Text>
                 </Pressable>
               ))}
             </View>
@@ -795,22 +819,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   fabButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: theme.colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: n.colors.surfaceHover,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: theme.colors.background,
-    ...theme.shadows.glow(theme.colors.primary),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.borderHighlight,
   },
   fabLabel: {
-    color: theme.colors.textSecondary,
+    ...n.typography.meta,
+    color: n.colors.textSecondary,
     fontSize: 10,
-    fontWeight: '700',
-    marginTop: 2,
-    letterSpacing: 0.3,
+    marginTop: 4,
+    letterSpacing: 0,
   },
   sheetRoot: {
     ...StyleSheet.absoluteFillObject,
@@ -818,7 +841,7 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(6, 8, 14, 0.72)',
+    backgroundColor: 'rgba(2, 4, 8, 0.46)',
   },
   uploadModalOverlay: {
     flex: 1,
@@ -876,14 +899,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sheet: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: 'rgba(2, 2, 4, 0.97)',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.sm,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: n.spacing.lg,
+    paddingTop: n.spacing.sm,
     maxHeight: '85%',
+    width: '98%',
+    maxWidth: 680,
+    alignSelf: 'center',
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  sheetGlassLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  sheetFrostLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.01)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.10)',
   },
   sheetScroll: {
     flexGrow: 0,
@@ -898,133 +935,132 @@ const styles = StyleSheet.create({
     width: 44,
     height: 5,
     borderRadius: 999,
-    backgroundColor: theme.colors.textMuted,
+    backgroundColor: n.colors.textMuted,
     opacity: 0.55,
   },
   sheetScrollContent: {
-    gap: theme.spacing.lg,
-    paddingBottom: theme.spacing.lg,
+    gap: n.spacing.md,
+    paddingBottom: n.spacing.md,
   },
   sheetEyebrow: {
-    color: theme.colors.primaryLight,
+    ...n.typography.meta,
+    color: n.colors.textSecondary,
     fontSize: 11,
-    fontWeight: '800',
     letterSpacing: 1.6,
   },
   sheetTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '900',
-    lineHeight: 30,
+    ...n.typography.title,
+    color: n.colors.textPrimary,
   },
   topActionRow: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
+    flexDirection: 'column',
+    gap: 0,
   },
   topActionTile: {
-    flex: 1,
-    minHeight: 88,
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    width: '100%',
+    minHeight: 44,
+    backgroundColor: 'transparent',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: n.colors.border,
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: n.spacing.sm,
+    paddingVertical: n.spacing.sm,
+    paddingHorizontal: 0,
   },
   topActionTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '800',
-    textAlign: 'center',
+    ...n.typography.body,
+    color: n.colors.textPrimary,
+    textAlign: 'left',
   },
   manualActionsContainer: {
-    flexDirection: 'row',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.sm,
+    flexDirection: 'column',
+    gap: 0,
+    marginTop: 0,
   },
   manualActionText: {
-    color: theme.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '800',
-    textAlign: 'center',
+    ...n.typography.bodySmall,
+    color: n.colors.textSecondary,
+    textAlign: 'left',
   },
   primaryAction: {
-    backgroundColor: theme.colors.primaryDark,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.sm,
+    backgroundColor: n.colors.surfaceHover,
+    borderRadius: n.radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.accent,
+    padding: n.spacing.lg,
+    gap: n.spacing.sm,
   },
   secondaryAction: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: theme.spacing.sm,
+    backgroundColor: n.colors.surfaceHover,
+    borderRadius: n.radius.lg,
+    padding: n.spacing.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.borderHighlight,
+    gap: n.spacing.sm,
   },
   actionPressed: {
-    opacity: theme.alpha.pressed,
+    opacity: n.alpha.pressed,
     transform: [{ scale: 0.98 }],
   },
   primaryActionTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
   },
   primaryActionSubtitle: {
-    color: theme.colors.primaryLight,
-    fontSize: 13,
-    lineHeight: 19,
+    ...n.typography.bodySmall,
+    color: n.colors.accent,
   },
   secondaryActionTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
   },
   secondaryActionSubtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
+    ...n.typography.bodySmall,
+    color: n.colors.textSecondary,
   },
   externalHeader: {
     gap: 4,
   },
   externalTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '800',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
   },
   externalSubtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 12,
+    ...n.typography.bodySmall,
+    color: n.colors.textSecondary,
   },
   externalGrid: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
-    rowGap: theme.spacing.md,
+    flexWrap: 'nowrap',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   externalChip: {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    width: '16%',
+    width: '16.66%',
+    minWidth: 0,
   },
   externalIconCircle: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.borderHighlight,
+    backgroundColor: n.colors.surfaceHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
   externalChipLabel: {
-    color: theme.colors.textSecondary,
-    fontSize: 10,
-    fontWeight: '700',
+    ...n.typography.meta,
+    color: n.colors.textSecondary,
     textAlign: 'center',
+    width: '100%',
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0,
   },
 });

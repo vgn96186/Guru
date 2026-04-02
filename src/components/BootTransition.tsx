@@ -12,7 +12,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { useAppStore } from '../store/useAppStore';
 
 const ORB_SIZE = 180;
@@ -76,8 +76,7 @@ export default function BootTransition() {
   // --- Shared values ---
   const scaleCore = useSharedValue(0.95);
   const opacityCore = useSharedValue(0.85);
-  const scaleGlow = useSharedValue(0.97);
-  const opacityGlow = useSharedValue(0.12);
+  const opacityGlow = useSharedValue(0.4);
   const scaleRing1 = useSharedValue(1);
   const scaleRing2 = useSharedValue(1);
   const scaleRing3 = useSharedValue(1);
@@ -88,6 +87,7 @@ export default function BootTransition() {
   const highlightOpacity = useSharedValue(0.45);
   const jitterX = useSharedValue(0);
   const jitterY = useSharedValue(0);
+  const jitterDamping = useSharedValue(1);
   const settleProgress = useSharedValue(0);
   const bgOpacity = useSharedValue(1);
   const loadingTextOpacity = useSharedValue(1);
@@ -95,15 +95,14 @@ export default function BootTransition() {
 
   // --- Phase 1: Jittery ---
   useEffect(() => {
-    const jitterConfig = { duration: 200, easing: Easing.inOut(Easing.ease) };
+    const jitterConfig = { duration: 150, easing: Easing.inOut(Easing.ease) };
     const fastCore = { duration: 1200, easing: Easing.inOut(Easing.ease) };
     const fastEmit = { duration: 2300, easing: Easing.out(Easing.quad) };
 
-    scaleCore.value = withRepeat(withTiming(1.08, fastCore), -1, true);
+    scaleCore.value = withRepeat(withTiming(1.1, fastCore), -1, true);
     opacityCore.value = withRepeat(withTiming(1, fastCore), -1, true);
 
-    scaleGlow.value = withRepeat(withTiming(1.06, fastCore), -1, true);
-    opacityGlow.value = withRepeat(withTiming(0.25, fastCore), -1, true);
+    opacityGlow.value = withRepeat(withTiming(0.7, fastCore), -1, true);
 
     scaleRing1.value = withDelay(0, withRepeat(withTiming(3.0, fastEmit), -1, false));
     opacityRing1.value = withDelay(0, withRepeat(withTiming(0, fastEmit), -1, false));
@@ -118,29 +117,35 @@ export default function BootTransition() {
       withRepeat(withTiming(0, { ...fastEmit, duration: 2800 }), -1, false),
     );
 
-    highlightTranslateY.value = withRepeat(withTiming(2, fastCore), -1, true);
+    highlightTranslateY.value = withRepeat(withTiming(3, fastCore), -1, true);
     highlightOpacity.value = withRepeat(withTiming(0.55, fastCore), -1, true);
+    jitterDamping.value = 1;
 
+    // Jitter: ±7px rapid erratic shake
     jitterX.value = withRepeat(
       withSequence(
+        withTiming(7, jitterConfig),
+        withTiming(-5, jitterConfig),
+        withTiming(-7, jitterConfig),
         withTiming(3, jitterConfig),
+        withTiming(6, jitterConfig),
+        withTiming(-4, jitterConfig),
         withTiming(-2, jitterConfig),
-        withTiming(-3, jitterConfig),
-        withTiming(1, jitterConfig),
-        withTiming(2, jitterConfig),
-        withTiming(-1, jitterConfig),
+        withTiming(5, jitterConfig),
       ),
       -1,
       true,
     );
     jitterY.value = withRepeat(
       withSequence(
-        withTiming(-2, jitterConfig),
+        withTiming(-5, jitterConfig),
+        withTiming(7, jitterConfig),
         withTiming(3, jitterConfig),
-        withTiming(1, jitterConfig),
+        withTiming(-7, jitterConfig),
         withTiming(-3, jitterConfig),
-        withTiming(-1, jitterConfig),
+        withTiming(6, jitterConfig),
         withTiming(2, jitterConfig),
+        withTiming(-4, jitterConfig),
       ),
       -1,
       true,
@@ -155,27 +160,34 @@ export default function BootTransition() {
 
     const elapsed = Date.now() - bootStartTime.current;
     const delay = Math.max(0, MIN_BOOT_DISPLAY_MS - elapsed);
+    let stopJitterTimer: ReturnType<typeof setTimeout> | null = null;
+    const calmJitterEasing = Easing.bezier(0.22, 1, 0.36, 1);
+
+    // Safety net: if HomeScreen never advances the phase within 4 s, force settle.
+    const safetyTimer = setTimeout(() => {
+      setBootPhase('settling');
+    }, 4000);
 
     const timer = setTimeout(() => {
-      const calmConfig = { duration: 800, easing: Easing.inOut(Easing.ease) };
-
-      cancelAnimation(jitterX);
-      cancelAnimation(jitterY);
-      jitterX.value = withTiming(0, calmConfig);
-      jitterY.value = withTiming(0, calmConfig);
+      // Smoothly damp the erratic movement before zeroing the jitter values.
+      jitterDamping.value = withTiming(0, { duration: 1400, easing: calmJitterEasing });
+      stopJitterTimer = setTimeout(() => {
+        cancelAnimation(jitterX);
+        cancelAnimation(jitterY);
+        jitterX.value = 0;
+        jitterY.value = 0;
+      }, 1400);
 
       const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
       const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
 
       cancelAnimation(scaleCore);
       cancelAnimation(opacityCore);
-      scaleCore.value = withRepeat(withTiming(1.08, normalCore), -1, true);
+      scaleCore.value = withRepeat(withTiming(1.06, normalCore), -1, true);
       opacityCore.value = withRepeat(withTiming(1, normalCore), -1, true);
 
-      cancelAnimation(scaleGlow);
       cancelAnimation(opacityGlow);
-      scaleGlow.value = withRepeat(withTiming(1.04, normalCore), -1, true);
-      opacityGlow.value = withRepeat(withTiming(0.2, normalCore), -1, true);
+      opacityGlow.value = withRepeat(withTiming(0.5, normalCore), -1, true);
 
       cancelAnimation(scaleRing1);
       cancelAnimation(opacityRing1);
@@ -199,49 +211,62 @@ export default function BootTransition() {
       );
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(safetyTimer);
+      if (stopJitterTimer) clearTimeout(stopJitterTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bootPhase]);
 
   // --- Phase 3: Settle ---
+  // Handles both with and without startButtonLayout (graceful fallback)
   useEffect(() => {
     if (bootPhase !== 'settling') return;
-    if (!startButtonLayout) return;
 
-    const settleEasing = Easing.bezier(0.4, 0, 0.2, 1);
+    const settleEasing = Easing.bezier(0.4, 0.0, 0.2, 1);
 
+    // Fade rings out
     cancelAnimation(scaleRing1);
     cancelAnimation(opacityRing1);
     cancelAnimation(scaleRing2);
     cancelAnimation(opacityRing2);
     cancelAnimation(scaleRing3);
     cancelAnimation(opacityRing3);
-    opacityRing1.value = withTiming(0, { duration: 400 });
-    opacityRing2.value = withTiming(0, { duration: 400 });
-    opacityRing3.value = withTiming(0, { duration: 400 });
+    opacityRing1.value = withTiming(0, { duration: 1000 });
+    opacityRing2.value = withTiming(0, { duration: 1000 });
+    opacityRing3.value = withTiming(0, { duration: 1000 });
 
-    cancelAnimation(scaleGlow);
+    // Fade glow
     cancelAnimation(opacityGlow);
-    opacityGlow.value = withTiming(0.08, { duration: 600 });
+    opacityGlow.value = withTiming(0, { duration: 1200 });
 
+    // Stop core breathing — settle to steady
     cancelAnimation(scaleCore);
     cancelAnimation(opacityCore);
-    scaleCore.value = withTiming(1, { duration: 600, easing: settleEasing });
-    opacityCore.value = withTiming(1, { duration: 600 });
+    scaleCore.value = withTiming(1, { duration: 1600, easing: settleEasing });
+    opacityCore.value = withTiming(1, { duration: 1600 });
 
-    settleProgress.value = withTiming(1, { duration: 700, easing: settleEasing });
+    // Animate position + size (works even if startButtonLayout is null — stays centered)
+    settleProgress.value = withDelay(100, withTiming(1, { duration: 2400, easing: settleEasing }));
 
-    bgOpacity.value = withTiming(0, { duration: 600, easing: settleEasing });
+    // Background fade out
+    bgOpacity.value = withTiming(0, { duration: 1800, easing: settleEasing });
 
-    loadingTextOpacity.value = withTiming(0, { duration: 200 });
-    ctaTextOpacity.value = withDelay(250, withTiming(1, { duration: 300 }));
+    // Text crossfade: loading out, then CTA in
+    loadingTextOpacity.value = withTiming(0, { duration: 600 });
+    ctaTextOpacity.value = withDelay(800, withTiming(1, { duration: 800 }));
 
+    // Specular — settle
+    cancelAnimation(highlightOpacity);
+    highlightOpacity.value = withTiming(0.45, { duration: 1600 });
     cancelAnimation(highlightTranslateY);
-    highlightTranslateY.value = withTiming(0, { duration: 600 });
+    highlightTranslateY.value = withTiming(0, { duration: 1600 });
 
+    // Complete after animation
     const completeTimer = setTimeout(() => {
       setBootPhase('done');
-    }, 800);
+    }, 2800);
 
     return () => clearTimeout(completeTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -267,7 +292,10 @@ export default function BootTransition() {
       borderRadius: currentSize / 2,
       left: currentX - currentSize / 2,
       top: currentY - currentSize / 2,
-      transform: [{ translateX: jitterX.value }, { translateY: jitterY.value }],
+      transform: [
+        { translateX: jitterX.value * jitterDamping.value },
+        { translateY: jitterY.value * jitterDamping.value },
+      ],
     };
   });
 
@@ -277,7 +305,6 @@ export default function BootTransition() {
   }));
 
   const styleGlow = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleGlow.value }],
     opacity: opacityGlow.value,
   }));
 
@@ -318,13 +345,16 @@ export default function BootTransition() {
       <Animated.View style={[styles.background, styleBg]} />
 
       <Animated.View style={styleOrb}>
-        <Animated.View style={[styles.ambientGlow, styleGlow]} />
-
+        {/* Ripple rings */}
         <Animated.View style={[styles.rippleRing, styleRing3]} />
         <Animated.View style={[styles.rippleRing, styleRing2]} />
         <Animated.View style={[styles.rippleRing, styleRing1]} />
 
+        {/* Core sphere with shadow-based glow */}
         <Animated.View style={[styles.coreShadow, styleCore]}>
+          {/* Glow layer using shadow only — no solid bg circle */}
+          <Animated.View style={[styles.glowShadow, styleGlow]} />
+
           <View style={styles.coreInner}>
             <Svg height="100%" width="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
               <Defs>
@@ -337,9 +367,9 @@ export default function BootTransition() {
                   fx="45%"
                   fy="45%"
                 >
-                  <Stop offset="0%" stopColor={theme.colors.primaryLight} stopOpacity="1" />
-                  <Stop offset="60%" stopColor={theme.colors.primary} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={theme.colors.primaryDark} stopOpacity="1" />
+                  <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
                 </RadialGradient>
                 <RadialGradient
                   id="btLightGrad"
@@ -362,6 +392,7 @@ export default function BootTransition() {
             </Svg>
           </View>
 
+          {/* Specular highlight */}
           <Animated.View style={[styles.specularContainer, styleHighlight]}>
             <Svg width={40} height={25} viewBox="0 0 40 25">
               <Defs>
@@ -375,6 +406,7 @@ export default function BootTransition() {
             </Svg>
           </Animated.View>
 
+          {/* CTA text (fades in during settle) */}
           <Animated.View style={[styles.ctaContainer, styleCtaText]} pointerEvents="none">
             <Animated.Text
               style={styles.ctaLabel}
@@ -398,6 +430,7 @@ export default function BootTransition() {
         </Animated.View>
       </Animated.View>
 
+      {/* Loading text (below orb, fades out during settle) */}
       <Animated.View style={[styles.textContainer, styleLoadingText]} pointerEvents="none">
         <Animated.Text style={styles.text}>{displayMessage.replace(/^\s*\+\s*/, '')}</Animated.Text>
       </Animated.View>
@@ -412,16 +445,7 @@ const styles = StyleSheet.create({
   },
   background: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: theme.colors.background,
-  },
-  ambientGlow: {
-    position: 'absolute',
-    width: '200%',
-    height: '200%',
-    borderRadius: 9999,
-    backgroundColor: theme.colors.primary,
-    left: '-50%',
-    top: '-50%',
+    backgroundColor: n.colors.background,
   },
   rippleRing: {
     position: 'absolute',
@@ -430,7 +454,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
     left: 0,
     top: 0,
   },
@@ -439,14 +463,21 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 9999,
-    backgroundColor: theme.colors.primary,
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 15 },
-    shadowRadius: 30,
-    shadowOpacity: 0.7,
-    elevation: 20,
+    backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  glowShadow: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
+    backgroundColor: 'transparent',
+    shadowColor: n.colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 40,
+    shadowOpacity: 1,
+    elevation: 30,
   },
   coreInner: {
     ...StyleSheet.absoluteFillObject,
@@ -465,7 +496,7 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   ctaLabel: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '900',
     fontSize: 17,
     letterSpacing: 1.2,
@@ -492,7 +523,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   text: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 16,
     fontStyle: 'italic',
     fontWeight: '500',

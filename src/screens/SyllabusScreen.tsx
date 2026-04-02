@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,10 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Animated,
-  Easing,
   TextInput,
+  InteractionManager,
 } from 'react-native';
+import ReAnimated, { useSharedValue, useAnimatedStyle, withTiming, Easing as ReanimatedEasing } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -31,8 +31,11 @@ import SubjectCard from '../components/SubjectCard';
 import type { Subject } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import * as Haptics from 'expo-haptics';
-import { theme } from '../constants/theme';
-
+import BannerIconButton from '../components/BannerIconButton';
+import BannerSearchBar from '../components/BannerSearchBar';
+import { linearTheme as n } from '../theme/linearTheme';
+import ScreenHeader from '../components/ScreenHeader';
+import LinearSurface from '../components/primitives/LinearSurface';
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'Syllabus'>;
 
 type SubjectSortMode = 'weight' | 'due' | 'coverage' | 'high_yield';
@@ -67,6 +70,7 @@ export default function SyllabusScreen() {
   const [coverage, setCoverage] = useState<Map<number, { total: number; seen: number }>>(new Map());
   const [subjectMetrics, setSubjectMetrics] = useState<Map<number, SubjectMetrics>>(new Map());
   const [refreshing, setRefreshing] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SubjectSortMode>('weight');
   const [searchMatchIds, setSearchMatchIds] = useState<Set<number>>(new Set());
@@ -74,6 +78,31 @@ export default function SyllabusScreen() {
   const [topicResults, setTopicResults] = useState<TopicSearchResult[]>([]);
   const [pendingSuggestions, setPendingSuggestions] = useState<TopicSuggestion[]>([]);
   const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
+  const isFocusedRef = useRef(isFocused);
+  const navLockRef = useRef(false);
+  const navUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const unlockNavigation = useCallback(() => {
+    navLockRef.current = false;
+    if (navUnlockTimerRef.current) {
+      clearTimeout(navUnlockTimerRef.current);
+      navUnlockTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleNavUnlock = useCallback((ms: number) => {
+    if (navUnlockTimerRef.current) {
+      clearTimeout(navUnlockTimerRef.current);
+    }
+    navUnlockTimerRef.current = setTimeout(() => {
+      navLockRef.current = false;
+      navUnlockTimerRef.current = null;
+    }, ms);
+  }, []);
+
+  useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
 
   const loadData = useCallback(async () => {
     const [subs, combinedRows, suggestions] = await Promise.all([
@@ -136,6 +165,7 @@ export default function SyllabusScreen() {
       }
     });
 
+    if (!isFocusedRef.current) return;
     setSubjects(sortedSubjects);
     setCoverage(map);
     setSubjectMetrics(metricMap);
@@ -144,9 +174,22 @@ export default function SyllabusScreen() {
 
   useEffect(() => {
     if (isFocused) {
-      loadData();
+      unlockNavigation();
+      InteractionManager.runAfterInteractions(() => {
+        if (isFocusedRef.current) {
+          loadData();
+        }
+      });
     }
-  }, [isFocused, sortMode, loadData]);
+  }, [isFocused, sortMode, loadData, unlockNavigation]);
+
+  useEffect(() => {
+    return () => {
+      if (navUnlockTimerRef.current) {
+        clearTimeout(navUnlockTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const onProgressOrLecture = () => void loadData();
@@ -157,6 +200,13 @@ export default function SyllabusScreen() {
       dbEvents.off(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
     };
   }, [loadData]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     const searchLower = searchQuery.trim().toLowerCase();
@@ -187,6 +237,7 @@ export default function SyllabusScreen() {
           [`%${searchLower}%`],
         ),
       ]).then(([rows, topics]) => {
+        if (!isFocusedRef.current) return;
         setSearchMatchIds(new Set(rows.map((r) => r.subject_id)));
         setSearchMatchCounts(new Map(rows.map((r) => [r.subject_id, r.c])));
         setTopicResults(topics);
@@ -288,131 +339,197 @@ export default function SyllabusScreen() {
   );
 
   const searchLower = searchQuery.trim().toLowerCase();
-  const filteredSubjects = subjects.filter(
-    (subject) =>
-      subject.name.toLowerCase().includes(searchLower) ||
-      subject.shortCode.toLowerCase().includes(searchLower) ||
-      searchMatchIds.has(subject.id),
+  const filteredSubjects = useMemo(
+    () =>
+      subjects.filter(
+        (subject) =>
+          subject.name.toLowerCase().includes(searchLower) ||
+          subject.shortCode.toLowerCase().includes(searchLower) ||
+          searchMatchIds.has(subject.id),
+      ),
+    [subjects, searchLower, searchMatchIds],
   );
 
+  const handleTopicResultPress = useCallback(
+    (topic: TopicSearchResult) => {
+      if (navLockRef.current) return;
+      navLockRef.current = true;
+      scheduleNavUnlock(700);
+      navigation.push('TopicDetail', {
+        subjectId: topic.subject_id,
+        subjectName: topic.subject_name,
+        initialTopicId: topic.id,
+        initialSearchQuery: topic.name,
+      });
+    },
+    [navigation, scheduleNavUnlock],
+  );
+
+  const handleSubjectPress = useCallback(
+    (item: Subject) => {
+      if (navLockRef.current) return;
+      navLockRef.current = true;
+      scheduleNavUnlock(700);
+      navigation.push('TopicDetail', {
+        subjectId: item.id,
+        subjectName: item.name,
+        initialSearchQuery: searchQuery.trim(),
+      });
+    },
+    [navigation, searchQuery, scheduleNavUnlock],
+  );
+
+  const keyExtractor = useCallback((s: Subject) => s.id.toString(), []);
+
+  const renderSubjectItem = useCallback(
+    ({ item }: { item: Subject }) => (
+      <SubjectCard
+        subject={item}
+        coverage={coverage.get(item.id) ?? { total: 0, seen: 0 }}
+        metrics={subjectMetrics.get(item.id)}
+        matchingTopicsCount={searchMatchCounts.get(item.id)}
+        onPress={() => handleSubjectPress(item)}
+      />
+    ),
+    [coverage, subjectMetrics, searchMatchCounts, handleSubjectPress],
+  );
+
+  const listHeaderComponent = useMemo(() => {
+    if (searchLower.length < 2 || topicResults.length === 0) return null;
+    return (
+      <View style={styles.topicResultsSection}>
+        <Text style={styles.topicResultsLabel}>Direct Topic Matches</Text>
+        {topicResults.map((topic) => (
+          <TouchableOpacity
+            key={`topic-${topic.id}`}
+            activeOpacity={0.8}
+            onPress={() => handleTopicResultPress(topic)}
+          >
+            <LinearSurface compact padded={false} style={styles.topicResultCard}>
+              <View style={[styles.topicResultDot, { backgroundColor: topic.color_hex }]} />
+              <View style={styles.topicResultCopy}>
+                <Text style={styles.topicResultName} numberOfLines={2}>
+                  {topic.name}
+                </Text>
+                <Text style={styles.topicResultSubject}>{topic.subject_name}</Text>
+              </View>
+              <Text style={styles.topicResultAction}>Open</Text>
+            </LinearSurface>
+          </TouchableOpacity>
+        ))}
+        <Text style={styles.topicResultsDivider}>Matching Subjects</Text>
+      </View>
+    );
+  }, [searchLower.length, topicResults, handleTopicResultPress]);
+
   // Animated progress
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progressWidth = useSharedValue(0);
   const prevPct = useRef(0);
-  const countAnim = useRef(new Animated.Value(0)).current;
-  const [displayCount, setDisplayCount] = useState(seenTopics);
 
   useEffect(() => {
     const increased = overallPct > prevPct.current;
     prevPct.current = overallPct;
 
-    // Animate progress bar
-    Animated.timing(progressAnim, {
-      toValue: overallPct,
-      duration: 800,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    // Animate count
-    Animated.timing(countAnim, {
-      toValue: seenTopics,
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    const listener = countAnim.addListener(({ value }) => {
-      setDisplayCount(Math.round(value));
+    // Animate progress bar on UI thread
+    progressWidth.value = withTiming(overallPct, {
+      duration: 1200,
+      easing: ReanimatedEasing.inOut(ReanimatedEasing.cubic),
     });
 
     // Haptic on milestone
     if (increased && overallPct > 0 && overallPct % 10 === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+  }, [overallPct, progressWidth]);
 
-    return () => countAnim.removeListener(listener);
-  }, [countAnim, overallPct, progressAnim, seenTopics]);
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-    extrapolate: 'clamp',
+  const progressAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      width: `${Math.min(100, Math.max(0, progressWidth.value))}%`,
+    };
   });
 
   return (
     <SafeAreaView style={styles.safe} testID="syllabus-screen">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
-        <View style={styles.header}>
-          <View style={{ flex: 1 }}>
-            <View style={styles.headerTitleRow}>
-              <Text style={styles.title}>Syllabus</Text>
-              <TouchableOpacity
-                style={styles.settingsBtn}
+          <ScreenHeader
+            title="Syllabus"
+            subtitle={
+            seenTopics === 0
+              ? 'Open any subject to start building coverage.'
+              : 'Track coverage, due topics, and high-yield gaps across all subjects.'
+          }
+          searchElement={
+            <BannerSearchBar
+              value={searchInput}
+              onChangeText={setSearchInput}
+              placeholder="Search subjects or topics..."
+            />
+          }
+          rightElement={
+            <View style={styles.headerActions}>
+              <BannerIconButton
+                onPress={handleManualSync}
+                disabled={refreshing}
+                accessibilityRole="button"
+                accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
+              >
+                {refreshing ? (
+                  <ActivityIndicator size="small" color={n.colors.textSecondary} />
+                ) : (
+                  <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
+                )}
+              </BannerIconButton>
+              <BannerIconButton
                 onPress={() => navigation.navigate('Settings' as never)}
                 accessibilityRole="button"
                 accessibilityLabel="Open settings"
               >
-                <Ionicons name="settings-sharp" size={22} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+                <Ionicons name="settings-sharp" size={17} color={n.colors.textSecondary} />
+              </BannerIconButton>
             </View>
-            <Text style={styles.subtitle}>
-              Track exam prep through micro-topics, due reviews, and high-yield coverage.
-            </Text>
-            {seenTopics === 0 ? (
-              <View style={styles.emptySummaryCard}>
-                <Text style={styles.emptySummaryTitle}>You are starting fresh</Text>
-                <Text style={styles.emptySummaryText}>
-                  Open any subject to mark topics, capture lectures, and build coverage momentum.
-                </Text>
-              </View>
-            ) : null}
+          }
+        >
+        </ScreenHeader>
+        {seenTopics === 0 ? null : (
+          <LinearSurface compact style={styles.heroSurface}>
             <View style={styles.statsRow}>
-              <View style={styles.overallBadge}>
-                <Text style={styles.overallPct}>{displayCount}</Text>
-                <Text style={styles.overallLabel}>/{totalTopics} micro-topics</Text>
-              </View>
-              <View style={[styles.pctBadge, overallPct >= 50 && styles.pctBadgeGood]}>
-                <Text style={[styles.pctText, overallPct >= 50 && { color: theme.colors.success }]}>
+              <Text style={styles.statsCount}>{seenTopics}</Text>
+              <Text style={styles.statsSlash}>/{totalTopics}</Text>
+              <Text style={styles.statsLabel}>topics</Text>
+              <View
+                style={[
+                  styles.pctChip,
+                  overallPct >= 50 && styles.pctChipGood,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.pctChipText,
+                    overallPct >= 50 && { color: n.colors.success },
+                  ]}
+                >
                   {overallPct}%
                 </Text>
               </View>
             </View>
-            {/* Progress bar */}
             <View style={styles.progressTrack}>
-              <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+              <ReAnimated.View style={[styles.progressFill, progressAnimatedStyle]} />
             </View>
-            <View style={styles.snapshotRow}>
-              <Text style={styles.snapshotPill}>Due {totalDue}</Text>
-              <Text style={styles.snapshotPill}>High yield {totalHighYield}</Text>
-              <Text style={styles.snapshotPill}>Notes {totalWithNotes}</Text>
+            <View style={styles.metaRow}>
+              {totalDue > 0 ? (
+                <Text style={styles.metaDue}>Due {totalDue}</Text>
+              ) : null}
+              {totalHighYield > 0 ? (
+                <Text style={styles.metaHY}>HY {totalHighYield}</Text>
+              ) : null}
+              {totalWithNotes > 0 ? (
+                <Text style={styles.metaNotes}>Notes {totalWithNotes}</Text>
+              ) : null}
             </View>
-          </View>
-          <TouchableOpacity
-            onPress={handleManualSync}
-            disabled={refreshing}
-            style={styles.syncBtn}
-            accessibilityRole="button"
-            accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
-          >
-            {refreshing ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <>
-                <Ionicons name="sync-outline" size={20} color={theme.colors.primary} />
-                <Text style={styles.syncBtnLabel}>Sync Topics</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+          </LinearSurface>
+        )}
         <View style={styles.controls}>
-          <TextInput
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search subjects or topics..."
-            placeholderTextColor={theme.colors.textMuted}
-            style={styles.searchInput}
-          />
           <View style={styles.sortRow}>
             {SORT_OPTIONS.map((option) => (
               <TouchableOpacity
@@ -445,12 +562,12 @@ export default function SyllabusScreen() {
             {pendingSuggestions.slice(0, 6).map((suggestion) => {
               const busy = suggestionBusyId === suggestion.id;
               return (
-                <View key={suggestion.id} style={styles.suggestionCard}>
+                <LinearSurface key={suggestion.id} compact style={styles.suggestionCard}>
                   <View style={styles.suggestionHeader}>
                     <View
                       style={[
                         styles.suggestionDot,
-                        { backgroundColor: suggestion.subjectColor || theme.colors.primary },
+                        { backgroundColor: suggestion.subjectColor || n.colors.accent },
                       ]}
                     />
                     <View style={styles.suggestionCopy}>
@@ -482,60 +599,35 @@ export default function SyllabusScreen() {
                       activeOpacity={0.8}
                     >
                       {busy ? (
-                        <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                        <ActivityIndicator size="small" color={n.colors.textPrimary} />
                       ) : (
                         <Text style={styles.suggestionApproveText}>Add to syllabus</Text>
                       )}
                     </TouchableOpacity>
                   </View>
-                </View>
+                </LinearSurface>
               );
             })}
           </View>
         ) : null}
         <FlatList
           data={filteredSubjects}
-          keyExtractor={(s) => s.id.toString()}
+          keyExtractor={keyExtractor}
           keyboardDismissMode="on-drag"
           contentContainerStyle={styles.list}
+          removeClippedSubviews={true}
+          initialNumToRender={4}
+          maxToRenderPerBatch={8}
+          windowSize={4}
+          updateCellsBatchingPeriod={80}
+          getItemLayout={(data, index) => ({ length: 76, offset: 76 * index, index })}
           onRefresh={async () => {
             setRefreshing(true);
             await loadData();
             setRefreshing(false);
           }}
           refreshing={refreshing}
-          ListHeaderComponent={
-            searchLower.length >= 2 && topicResults.length > 0 ? (
-              <View style={styles.topicResultsSection}>
-                <Text style={styles.topicResultsLabel}>Direct Topic Matches</Text>
-                {topicResults.map((topic) => (
-                  <TouchableOpacity
-                    key={`topic-${topic.id}`}
-                    style={styles.topicResultCard}
-                    activeOpacity={0.8}
-                    onPress={() =>
-                      navigation.navigate('TopicDetail', {
-                        subjectId: topic.subject_id,
-                        subjectName: topic.subject_name,
-                        initialTopicId: topic.id,
-                        initialSearchQuery: topic.name,
-                      })
-                    }
-                  >
-                    <View style={[styles.topicResultDot, { backgroundColor: topic.color_hex }]} />
-                    <View style={styles.topicResultCopy}>
-                      <Text style={styles.topicResultName} numberOfLines={2}>
-                        {topic.name}
-                      </Text>
-                      <Text style={styles.topicResultSubject}>{topic.subject_name}</Text>
-                    </View>
-                    <Text style={styles.topicResultAction}>Open</Text>
-                  </TouchableOpacity>
-                ))}
-                <Text style={styles.topicResultsDivider}>Matching Subjects</Text>
-              </View>
-            ) : null
-          }
+          ListHeaderComponent={listHeaderComponent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>
@@ -546,21 +638,7 @@ export default function SyllabusScreen() {
               </Text>
             </View>
           }
-          renderItem={({ item }) => (
-            <SubjectCard
-              subject={item}
-              coverage={coverage.get(item.id) ?? { total: 0, seen: 0 }}
-              metrics={subjectMetrics.get(item.id)}
-              matchingTopicsCount={searchMatchCounts.get(item.id)}
-              onPress={() =>
-                navigation.navigate('TopicDetail', {
-                  subjectId: item.id,
-                  subjectName: item.name,
-                  initialSearchQuery: searchQuery.trim(),
-                })
-              }
-            />
-          )}
+          renderItem={renderSubjectItem}
         />
       </ResponsiveContainer>
     </SafeAreaView>
@@ -568,208 +646,214 @@ export default function SyllabusScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: theme.spacing.lg,
-    paddingTop: 20,
+    paddingHorizontal: n.spacing.md,
+    paddingTop: n.spacing.sm,
+    paddingBottom: n.spacing.md,
+    gap: 8,
   },
   headerTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
-  settingsBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surfaceAlt,
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  title: { color: theme.colors.textPrimary, fontSize: 26, fontWeight: '900' },
-  subtitle: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19, marginBottom: 10 },
-  emptySummaryCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    marginBottom: 12,
+  title: {
+    ...n.typography.title,
+    color: n.colors.textPrimary,
+    fontSize: 20,
+    lineHeight: 26,
   },
-  emptySummaryTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 14,
+  subtitle: {
+    ...n.typography.caption,
+    color: n.colors.textMuted,
+    lineHeight: 17,
+    marginBottom: 2,
+  },
+  heroSurface: {
+    marginTop: 4,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 6,
+  },
+  statsCount: {
+    color: n.colors.textPrimary,
     fontWeight: '800',
-    marginBottom: 4,
+    fontSize: 18,
   },
-  emptySummaryText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
-  statsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  overallBadge: { flexDirection: 'row', alignItems: 'baseline' },
-  overallPct: { color: theme.colors.primary, fontWeight: '900', fontSize: 24 },
-  overallLabel: { color: theme.colors.textSecondary, fontSize: 14, marginLeft: 2 },
-  pctBadge: {
-    backgroundColor: theme.colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    marginLeft: 12,
+  statsSlash: {
+    color: n.colors.textMuted,
+    fontWeight: '500',
+    fontSize: 13,
   },
-  pctBadgeGood: { backgroundColor: theme.colors.successSurface },
-  pctText: { color: theme.colors.textSecondary, fontWeight: '800', fontSize: 14 },
+  statsLabel: {
+    color: n.colors.textMuted,
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  pctChip: {
+    marginLeft: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    backgroundColor: n.colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+  },
+  pctChipGood: {
+    backgroundColor: n.colors.successSurface,
+    borderColor: n.colors.success,
+  },
+  pctChipText: {
+    color: n.colors.textSecondary,
+    fontWeight: '800',
+    fontSize: 11,
+  },
   progressTrack: {
-    height: 6,
-    backgroundColor: theme.colors.border,
-    borderRadius: 3,
+    height: 3,
+    backgroundColor: n.colors.border,
+    borderRadius: 1.5,
     overflow: 'hidden',
+    marginBottom: 6,
   },
-  progressFill: { height: '100%', backgroundColor: theme.colors.primary, borderRadius: 3 },
-  snapshotRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  snapshotPill: {
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
-    borderRadius: 999,
+  progressFill: {
+    height: '100%',
+    backgroundColor: n.colors.accent,
+    borderRadius: 1.5,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  metaDue: { fontSize: 11, color: n.colors.error, fontWeight: '700' },
+  metaHY: { fontSize: 11, color: n.colors.warning, fontWeight: '700' },
+  metaNotes: { fontSize: 11, color: n.colors.accent, fontWeight: '600' },
+  controls: {
+    paddingHorizontal: n.spacing.md,
+    paddingVertical: n.spacing.sm,
+    gap: 8,
+  },
+  searchInput: {
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: n.colors.border,
+    paddingHorizontal: 0,
+    paddingVertical: 8,
+    color: n.colors.textPrimary,
+    fontSize: 14,
+  },
+  sortRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 0 },
+  sortChip: {
     paddingHorizontal: 10,
     paddingVertical: 6,
-    fontSize: 12,
-    fontWeight: '700',
+    borderRadius: 6,
+    backgroundColor: 'transparent',
   },
-  syncBtn: {
-    backgroundColor: theme.colors.surface,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
-    alignItems: 'center',
-    minWidth: 56,
+  sortChipActive: {
+    backgroundColor: n.colors.primaryTintSoft,
   },
-  syncBtnLabel: { color: theme.colors.primary, fontSize: 10, fontWeight: '700', marginTop: 4 },
-  controls: { paddingHorizontal: theme.spacing.lg, paddingBottom: 8, gap: 10 },
+  sortChipText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
+  sortChipTextActive: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
+  list: { paddingHorizontal: n.spacing.md, paddingTop: n.spacing.sm, paddingBottom: 40, gap: 8 },
   suggestionSection: {
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: n.spacing.md,
     paddingBottom: 8,
-    gap: 10,
+    gap: 8,
   },
   suggestionTitle: {
-    color: theme.colors.textPrimary,
-    fontWeight: '800',
-    fontSize: 16,
+    ...n.typography.label,
+    color: n.colors.textPrimary,
+    fontSize: 13,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginTop: 8,
   },
   suggestionSubtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 18,
+    ...n.typography.caption,
+    color: n.colors.textMuted,
+    lineHeight: 17,
   },
   suggestionCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    gap: 10,
+    gap: 8,
   },
   suggestionHeader: { flexDirection: 'row', alignItems: 'center' },
-  suggestionDot: { width: 10, height: 10, borderRadius: 999, marginRight: 10 },
+  suggestionDot: { width: 8, height: 8, borderRadius: 4, marginRight: 10 },
   suggestionCopy: { flex: 1 },
-  suggestionName: { color: theme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
-  suggestionMeta: { color: theme.colors.textMuted, fontSize: 12, marginTop: 2 },
-  suggestionSummary: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  suggestionName: { ...n.typography.label, color: n.colors.textPrimary, fontSize: 14 },
+  suggestionMeta: { ...n.typography.caption, color: n.colors.textMuted, marginTop: 2 },
+  suggestionSummary: { ...n.typography.caption, color: n.colors.textSecondary, lineHeight: 17 },
   suggestionActions: { flexDirection: 'row', gap: 10 },
   suggestionActionBtn: {
     flex: 1,
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: 4,
+    paddingVertical: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   suggestionApproveBtn: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
+    borderColor: n.colors.accent,
   },
   suggestionRejectBtn: {
-    backgroundColor: theme.colors.background,
-    borderColor: theme.colors.borderLight,
+    backgroundColor: 'transparent',
+    borderColor: n.colors.border,
   },
-  suggestionApproveText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '800' },
-  suggestionRejectText: { color: theme.colors.textSecondary, fontSize: 13, fontWeight: '700' },
-  searchInput: {
-    backgroundColor: theme.colors.panel,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    color: theme.colors.textPrimary,
-    fontSize: 14,
-  },
-  sortRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  sortChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: theme.colors.panel,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  sortChipActive: {
-    backgroundColor: theme.colors.primaryTint,
-    borderColor: theme.colors.primaryTintMedium,
-  },
-  sortChipText: { color: theme.colors.textSecondary, fontSize: 12, fontWeight: '700' },
-  sortChipTextActive: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '700' },
-  list: { paddingHorizontal: theme.spacing.lg, paddingBottom: 40 },
-  topicResultsSection: { marginBottom: 20 },
+  suggestionApproveText: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '800' },
+  suggestionRejectText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
+  topicResultsSection: { marginBottom: 8, gap: 6 },
   topicResultsLabel: {
-    color: theme.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
+    color: n.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   topicResultCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.panel,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
-    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  topicResultDot: { width: 10, height: 10, borderRadius: 5, marginRight: 12 },
+  topicResultDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
   topicResultCopy: { flex: 1, marginRight: 12 },
   topicResultName: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 4,
+    color: n.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 2,
   },
-  topicResultSubject: { color: theme.colors.textSecondary, fontSize: 12 },
+  topicResultSubject: { color: n.colors.textMuted, fontSize: 11 },
   topicResultAction: {
-    color: theme.colors.primaryLight,
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
+    color: n.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
   },
   topicResultsDivider: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
+    color: n.colors.textMuted,
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 8,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   emptyState: { alignItems: 'center', paddingVertical: 48 },
-  emptyTitle: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '700' },
-  emptySub: { color: theme.colors.textMuted, fontSize: 13, marginTop: 6 },
+  emptyTitle: { color: n.colors.textSecondary, fontSize: 15, fontWeight: '600' },
+  emptySub: { color: n.colors.textMuted, fontSize: 12, marginTop: 4 },
 });

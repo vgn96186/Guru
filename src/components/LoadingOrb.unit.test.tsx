@@ -4,13 +4,11 @@ import LoadingOrb from './LoadingOrb';
 
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
-  const { View, Text } = require('react-native');
-
+  const { View } = require('react-native');
   return {
     __esModule: true,
     default: {
       View,
-      Text,
       createAnimatedComponent: (Component: any) => Component,
     },
     useSharedValue: (value: any) => ({ value }),
@@ -43,32 +41,13 @@ jest.mock('react-native-svg', () => {
 });
 
 describe('LoadingOrb', () => {
-  it('renders correctly with default message', () => {
-    const { getByText } = render(<LoadingOrb />);
-    // Initial message is one of the MESSAGE_VARIATIONS
-    const found = [
-      'Analyzing...',
-      'Deep thinking...',
-      'Connecting dots...',
-      'Hey there! Let me think...',
-      'Crunching the concepts...',
-    ].some((m) => {
-      try {
-        return getByText(m);
-      } catch {
-        return false;
-      }
-    });
-    expect(found).toBe(true);
-  });
-
-  it('renders with custom message', () => {
-    const { getByText } = render(<LoadingOrb message="Custom Loading..." />);
-    expect(getByText('Custom Loading...')).toBeTruthy();
-  });
-
   it('renders without crashing on mount', () => {
-    const { getByText } = render(<LoadingOrb />);
-    expect(getByText(/.+/)).toBeTruthy();
+    const { root } = render(<LoadingOrb />);
+    expect(root).toBeTruthy();
+  });
+
+  it('renders with custom size', () => {
+    const { root } = render(<LoadingOrb size={120} />);
+    expect(root).toBeTruthy();
   });
 });

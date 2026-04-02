@@ -19,9 +19,10 @@ import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
 import type { QuizContent, TopicWithProgress } from '../types';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import ScreenHeader from '../components/ScreenHeader';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyChallenge'>;
 
@@ -186,7 +187,7 @@ export default function DailyChallengeScreen() {
       loadingProgress.total > 0 ? (loadingProgress.current / loadingProgress.total) * 100 : 0;
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6C63FF" />
@@ -218,7 +219,7 @@ export default function DailyChallengeScreen() {
 
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <View style={styles.doneContainer}>
             <Text style={styles.doneEmoji}>{pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '📚'}</Text>
@@ -290,18 +291,13 @@ export default function DailyChallengeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-            <Text style={styles.closeText}>✕</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>⚡ Daily Challenge</Text>
-          <Text style={styles.headerScore}>
-            {score}/{currentIdx + 1}
-          </Text>
-        </View>
+        <ScreenHeader
+          title="Daily Challenge"
+          subtitle="Five quick questions from your weakest and due topics."
+          rightElement={<Text style={styles.headerScore}>{score}/{currentIdx + 1}</Text>}
+        />
 
         {/* Progress bar */}
         <View style={styles.progressTrack}>

@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Animated, Easing, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import {
   clearLocalModelDownload,
   getLocalModelDownloadSnapshot,
@@ -211,9 +211,9 @@ export function InstallModelProgressOverlay() {
   });
 
   const accentColor = useMemo(() => {
-    if (!mountedSnapshot) return theme.colors.primary;
-    if (mountedSnapshot.stage === 'complete') return theme.colors.success;
-    if (mountedSnapshot.stage === 'error') return theme.colors.warning;
+    if (!mountedSnapshot) return n.colors.accent;
+    if (mountedSnapshot.stage === 'complete') return n.colors.success;
+    if (mountedSnapshot.stage === 'error') return n.colors.warning;
     return mountedSnapshot.type === 'whisper' ? '#59C3C3' : '#7C72FF';
   }, [mountedSnapshot]);
 
@@ -315,7 +315,7 @@ export function InstallModelProgressOverlay() {
                   <Ionicons
                     name={paused ? 'play' : 'pause'}
                     size={15}
-                    color={theme.colors.textSecondary}
+                    color={n.colors.textSecondary}
                   />
                 </Pressable>
                 <Pressable
@@ -323,7 +323,7 @@ export function InstallModelProgressOverlay() {
                   onPress={() => setDownloadMinimized(true)}
                   hitSlop={12}
                 >
-                  <Ionicons name="chevron-up" size={16} color={theme.colors.textSecondary} />
+                  <Ionicons name="chevron-up" size={16} color={n.colors.textSecondary} />
                 </Pressable>
               </>
             ) : null}
@@ -409,13 +409,13 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   pillText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
   },
   percent: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
@@ -425,20 +425,20 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: theme.colors.card,
+    backgroundColor: n.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 4,
   },
   subtitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     marginBottom: 12,
   },
@@ -462,13 +462,13 @@ const styles = StyleSheet.create({
   },
   meta: {
     marginTop: 10,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   gestureHint: {
     marginTop: 8,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 10,
     textAlign: 'right',
     letterSpacing: 0.3,
@@ -499,12 +499,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   miniText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
   },
   miniLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   miniMeta: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 10,
     maxWidth: 92,
   },

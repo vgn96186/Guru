@@ -9,10 +9,11 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface Props {
   message?: string;
+  size?: number;
 }
 
 const MESSAGE_VARIATIONS: Record<string, string[]> = {
@@ -80,7 +81,7 @@ function getRandomVariation(message: string): string {
   return variations[Math.floor(Math.random() * variations.length)];
 }
 
-export default React.memo(function LoadingOrb({ message = 'Hey there! Let me think...' }: Props) {
+export default React.memo(function LoadingOrb({ message = 'Hey there! Let me think...', size = 180 }: Props) {
   const [displayMessage, setDisplayMessage] = React.useState(message);
   const lastMessageRef = useRef(message);
 
@@ -101,8 +102,7 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
   const opacityCore = useSharedValue(0.85);
 
   // Ambient glow
-  const scaleGlow = useSharedValue(0.97);
-  const opacityGlow = useSharedValue(0.12);
+  const opacityGlow = useSharedValue(0.4);
 
   // Ripple rings
   const scaleRing1 = useSharedValue(1);
@@ -116,60 +116,41 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
   const highlightTranslateY = useSharedValue(0);
   const highlightOpacity = useSharedValue(0.45);
 
-  // Text
-  const textOpacity = useSharedValue(1);
 
   useEffect(() => {
-    const coreConfig = { duration: 1800, easing: Easing.inOut(Easing.ease) };
-    const emitConfig = { duration: 3500, easing: Easing.out(Easing.quad) };
+    const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
+    const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
 
     // Core breathing
-    scaleCore.value = withRepeat(withTiming(1.08, coreConfig), -1, true);
-    opacityCore.value = withRepeat(withTiming(1, coreConfig), -1, true);
+    scaleCore.value = withRepeat(withTiming(1.06, normalCore), -1, true);
+    opacityCore.value = withRepeat(withTiming(1, normalCore), -1, true);
 
-    // Ambient glow — synced to core, subtler range
-    scaleGlow.value = withRepeat(withTiming(1.04, coreConfig), -1, true);
-    opacityGlow.value = withRepeat(withTiming(0.2, coreConfig), -1, true);
+    // Ambient glow — synced to core
+    opacityGlow.value = withRepeat(withTiming(0.5, normalCore), -1, true);
 
     // Ring 1 — inner ripple
-    scaleRing1.value = withDelay(0, withRepeat(withTiming(3.0, emitConfig), -1, false));
-    opacityRing1.value = withDelay(0, withRepeat(withTiming(0, emitConfig), -1, false));
+    scaleRing1.value = withDelay(0, withRepeat(withTiming(3.0, normalEmit), -1, false));
+    opacityRing1.value = withDelay(0, withRepeat(withTiming(0, normalEmit), -1, false));
 
     // Ring 2 — mid ripple
-    scaleRing2.value = withDelay(1200, withRepeat(withTiming(4.5, emitConfig), -1, false));
-    opacityRing2.value = withDelay(1200, withRepeat(withTiming(0, emitConfig), -1, false));
+    scaleRing2.value = withDelay(1200, withRepeat(withTiming(4.5, normalEmit), -1, false));
+    opacityRing2.value = withDelay(1200, withRepeat(withTiming(0, normalEmit), -1, false));
 
     // Ring 3 — outer ripple
     scaleRing3.value = withDelay(
       2400,
-      withRepeat(withTiming(6.5, { ...emitConfig, duration: 4000 }), -1, false),
+      withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false)
     );
     opacityRing3.value = withDelay(
       2400,
-      withRepeat(withTiming(0, { ...emitConfig, duration: 4000 }), -1, false),
+      withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false)
     );
 
     // Specular highlight — subtle shift synced to breathing
-    highlightTranslateY.value = withRepeat(withTiming(2, coreConfig), -1, true);
-    highlightOpacity.value = withRepeat(withTiming(0.55, coreConfig), -1, true);
+    highlightTranslateY.value = withRepeat(withTiming(2, normalCore), -1, true);
+    highlightOpacity.value = withRepeat(withTiming(0.55, normalCore), -1, true);
 
-    // Text — gentle fade only, no scale
-    textOpacity.value = withRepeat(withTiming(0.85, { duration: 2000 }), -1, true);
-  }, [
-    scaleCore,
-    opacityCore,
-    scaleGlow,
-    opacityGlow,
-    scaleRing1,
-    scaleRing2,
-    scaleRing3,
-    opacityRing1,
-    opacityRing2,
-    opacityRing3,
-    highlightTranslateY,
-    highlightOpacity,
-    textOpacity,
-  ]);
+  }, []);
 
   const styleCore = useAnimatedStyle(() => ({
     transform: [{ scale: scaleCore.value }],
@@ -177,7 +158,6 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
   }));
 
   const styleGlow = useAnimatedStyle(() => ({
-    transform: [{ scale: scaleGlow.value }],
     opacity: opacityGlow.value,
   }));
 
@@ -199,34 +179,26 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
     opacity: highlightOpacity.value,
   }));
 
-  const styleText = useAnimatedStyle(() => ({
-    opacity: textOpacity.value,
-  }));
 
   return (
     <View style={styles.container}>
-      <View style={styles.orbContainer}>
-        {/* Layer 1: Ambient glow */}
-        <Animated.View style={[styles.ambientGlow, styleGlow]} />
-
-        {/* Layer 2: Ripple rings (thin strokes) */}
+      <View style={[styles.orbWrapper, { width: size, height: size, marginBottom: 0 }]}>
+        
+        {/* Ripple rings */}
         <Animated.View style={[styles.rippleRing, styleRing3]} />
         <Animated.View style={[styles.rippleRing, styleRing2]} />
         <Animated.View style={[styles.rippleRing, styleRing1]} />
 
-        {/* Layer 3: Core sphere */}
+        {/* Core sphere with shadow-based glow */}
         <Animated.View style={[styles.coreShadow, styleCore]}>
+          {/* Glow layer using shadow only — no solid bg circle */}
+          <Animated.View style={[styles.glowShadow, styleGlow]} />
+
           <View style={styles.coreInner}>
-            <Svg
-              height={ORB_SIZE}
-              width={ORB_SIZE}
-              viewBox="0 0 100 100"
-              style={StyleSheet.absoluteFill}
-            >
+            <Svg height="100%" width="100%" viewBox="0 0 100 100" style={StyleSheet.absoluteFill}>
               <Defs>
-                {/* Color gradient: primaryLight center -> primaryDark edge */}
                 <RadialGradient
-                  id="colorGrad"
+                  id="loColorGrad"
                   cx="45%"
                   cy="45%"
                   rx="55%"
@@ -234,13 +206,12 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
                   fx="45%"
                   fy="45%"
                 >
-                  <Stop offset="0%" stopColor={theme.colors.primaryLight} stopOpacity="1" />
-                  <Stop offset="60%" stopColor={theme.colors.primary} stopOpacity="1" />
-                  <Stop offset="100%" stopColor={theme.colors.primaryDark} stopOpacity="1" />
+                  <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
+                  <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
                 </RadialGradient>
-                {/* Lighting gradient: white highlight top-left, dark rim bottom-right */}
                 <RadialGradient
-                  id="lightGrad"
+                  id="loLightGrad"
                   cx="30%"
                   cy="28%"
                   rx="65%"
@@ -255,35 +226,30 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
                   <Stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
                 </RadialGradient>
               </Defs>
-              <Circle cx="50" cy="50" r="50" fill="url(#colorGrad)" />
-              <Circle cx="50" cy="50" r="50" fill="url(#lightGrad)" />
+              <Circle cx="50" cy="50" r="50" fill="url(#loColorGrad)" />
+              <Circle cx="50" cy="50" r="50" fill="url(#loLightGrad)" />
             </Svg>
           </View>
 
           {/* Layer 4: Specular highlight */}
           <Animated.View style={[styles.specularContainer, styleHighlight]}>
-            <Svg width={40} height={25} viewBox="0 0 40 25">
+            <Svg width="40%" height="25%" viewBox="0 0 40 25">
               <Defs>
-                <RadialGradient id="specular" cx="50%" cy="50%" rx="50%" ry="50%">
+                <RadialGradient id="loSpecular" cx="50%" cy="50%" rx="50%" ry="50%">
                   <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
                   <Stop offset="60%" stopColor="#ffffff" stopOpacity="0.3" />
                   <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                 </RadialGradient>
               </Defs>
-              <Ellipse cx="20" cy="12.5" rx="18" ry="10" fill="url(#specular)" />
+              <Ellipse cx="20" cy="12.5" rx="18" ry="10" fill="url(#loSpecular)" />
             </Svg>
           </Animated.View>
         </Animated.View>
       </View>
-      <Animated.Text style={[styles.text, styleText]}>
-        {displayMessage.replace(/^\s*\+\s*/, '')}
-      </Animated.Text>
+
     </View>
   );
 });
-
-const ORB_SIZE = 180;
-const GLOW_SIZE = ORB_SIZE * 2;
 
 const styles = StyleSheet.create({
   container: {
@@ -291,56 +257,54 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 32,
   },
-  orbContainer: {
-    width: ORB_SIZE * 7,
-    height: ORB_SIZE * 7,
+  orbWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-  },
-  ambientGlow: {
-    position: 'absolute',
-    width: GLOW_SIZE,
-    height: GLOW_SIZE,
-    borderRadius: GLOW_SIZE / 2,
-    backgroundColor: theme.colors.primary,
+    position: 'relative',
   },
   rippleRing: {
     position: 'absolute',
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    borderRadius: ORB_SIZE / 2,
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
     backgroundColor: 'transparent',
     borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
+    left: 0,
+    top: 0,
   },
   coreShadow: {
     position: 'absolute',
-    width: ORB_SIZE,
-    height: ORB_SIZE,
-    borderRadius: ORB_SIZE / 2,
-    backgroundColor: theme.colors.primary,
-    shadowColor: theme.colors.primary,
-    shadowOffset: { width: 0, height: 15 },
-    shadowRadius: 30,
-    shadowOpacity: 0.7,
-    elevation: 20,
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
+    backgroundColor: n.colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  glowShadow: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
+    backgroundColor: 'transparent',
+    shadowColor: n.colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 40,
+    shadowOpacity: 1,
+    elevation: 30,
   },
   coreInner: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: ORB_SIZE / 2,
+    width: '100%',
+    height: '100%',
+    borderRadius: 9999,
     overflow: 'hidden',
   },
   specularContainer: {
     position: 'absolute',
-    top: ORB_SIZE * 0.15,
-    left: ORB_SIZE * 0.18,
-  },
-  text: {
-    color: theme.colors.textMuted,
-    fontSize: 16,
-    fontStyle: 'italic',
-    fontWeight: '500',
-    letterSpacing: 0.5,
+    top: '8%',
+    left: '20%',
+    width: '100%',
+    height: '100%',
   },
 });

@@ -19,10 +19,11 @@ import { fetchContent } from '../services/aiService';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import ScreenHeader from '../components/ScreenHeader';
 
 const BOSS_HP = 100;
 const PLAYER_HP = 3;
@@ -176,13 +177,11 @@ export default function BossBattleScreen() {
   if (phase === 'select') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.back}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>Select Boss</Text>
-        </View>
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ScreenHeader
+          title="Select Boss"
+          subtitle="Pick a subject and fight through five cached questions."
+        />
         <ScrollView contentContainerStyle={styles.grid}>
           <ResponsiveContainer>
             {subjects.map((s) => {
@@ -193,14 +192,14 @@ export default function BossBattleScreen() {
                   key={s.id}
                   style={[
                     styles.subjectCard,
-                    { borderColor: needsMore ? theme.colors.warning : s.colorHex },
+                    { borderColor: needsMore ? n.colors.warning : s.colorHex },
                   ]}
                   onPress={() => startBattle(s.name)}
                   disabled={startingBattle}
                 >
                   <Text style={styles.subjectEmoji}>👹</Text>
                   <Text style={[styles.subjectName, { color: s.colorHex }]}>{s.name}</Text>
-                  <Text style={[styles.qBadge, needsMore && { color: theme.colors.warning }]}>
+                  <Text style={[styles.qBadge, needsMore && { color: n.colors.warning }]}>
                     {count}/5 Qs
                   </Text>
                   {needsMore && <Text style={styles.qHint}>Need {5 - count} more</Text>}
@@ -254,7 +253,7 @@ export default function BossBattleScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <Animated.View style={[styles.battleContainer, { transform: [{ translateX: shakeAnim }] }]}>
         {/* HUD */}
         <View style={styles.hud}>
@@ -345,8 +344,8 @@ const styles = StyleSheet.create({
   },
   subjectEmoji: { fontSize: 32, marginBottom: 8 },
   subjectName: { fontWeight: '800', fontSize: 14, textAlign: 'center' },
-  qBadge: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '700', marginTop: 4 },
-  qHint: { color: theme.colors.warning, fontSize: 10, marginTop: 2, textAlign: 'center' },
+  qBadge: { color: n.colors.textSecondary, fontSize: 11, fontWeight: '700', marginTop: 4 },
+  qHint: { color: n.colors.warning, fontSize: 10, marginTop: 2, textAlign: 'center' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emoji: { fontSize: 80, marginBottom: 20 },
   sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 20 },

@@ -9,6 +9,7 @@ import {
   StatusBar,
   Alert,
   useWindowDimensions,
+  InteractionManager,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -112,7 +113,7 @@ function ExamCountdownChips({
   daysToInicet: number;
   daysToNeetPg: number;
 }) {
-  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -120,23 +121,18 @@ function ExamCountdownChips({
         Animated.timing(pulseAnim, {
           toValue: 1,
           duration: 2000,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
-          toValue: 0,
+          toValue: 0.4,
           duration: 2000,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }),
       ]),
     );
     animation.start();
     return () => animation.stop();
   }, [pulseAnim]);
-
-  const pulseDigitColor = pulseAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [n.colors.textMuted, n.colors.warning],
-  });
 
   return (
     <View
@@ -146,14 +142,14 @@ function ExamCountdownChips({
       accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
     >
       <Text style={styles.examInlineLabel}>INICET </Text>
-      <Animated.Text style={[styles.examInlineDays, { color: pulseDigitColor }]}>
+      <Animated.Text style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}>
         {daysToInicet}
       </Animated.Text>
-      <Text style={styles.examInlineLabel}>d · NEET-PG </Text>
-      <Animated.Text style={[styles.examInlineDays, { color: pulseDigitColor }]}>
+      <Text style={styles.examInlineLabel}> days  ·  NEET-PG </Text>
+      <Animated.Text style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}>
         {daysToNeetPg}
       </Animated.Text>
-      <Text style={styles.examInlineLabel}>d</Text>
+      <Text style={styles.examInlineLabel}> days</Text>
     </View>
   );
 }
@@ -179,6 +175,19 @@ export default function HomeScreen() {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [sessionResumeValid, setSessionResumeValid] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
+  const flameScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flameScale, { toValue: 1.15, duration: 600, useNativeDriver: true }),
+        Animated.timing(flameScale, { toValue: 0.95, duration: 500, useNativeDriver: true }),
+        Animated.timing(flameScale, { toValue: 1, duration: 400, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [flameScale]);
 
   // Added from UI-UX audit branch
 
@@ -200,57 +209,59 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
-    dailyLogRepository
-      .getDailyLog()
-      .then((log) => setMood((log?.mood as Mood) ?? 'good'))
-      .catch((err) => console.warn('[Home] Failed to load daily log:', err));
+    InteractionManager.runAfterInteractions(() => {
+      dailyLogRepository
+        .getDailyLog()
+        .then((log) => setMood((log?.mood as Mood) ?? 'good'))
+        .catch((err) => console.warn('[Home] Failed to load daily log:', err));
 
-    // Load daily agenda on mount — auto-generate if missing
-    const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
-    dailyAgendaRepository
-      .getDailyAgenda(date)
-      .then(async (plan) => {
-        if (plan) {
-          // Validate: check that topicIds in blocks actually exist in the DB
-          const allIds = plan.blocks.flatMap((b) => b.topicIds ?? []).filter((id) => id > 0);
-          if (allIds.length > 0) {
-            const db = getDb();
-            const placeholders = allIds.map(() => '?').join(',');
-            const rows = await db.getAllAsync<{ id: number }>(
-              `SELECT id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
-              allIds,
-            );
-            const validLeafIds = new Set(rows.map((r) => r.id));
-            const hasInvalidTopicIds = !isLeafTopicIdListValid(allIds, validLeafIds);
-            if (hasInvalidTopicIds) {
-              if (__DEV__) {
-                const invalidCount = allIds.filter((id) => !validLeafIds.has(id)).length;
-                console.warn(
-                  `[Home] Discarding stale plan: ${invalidCount} invalid or parent topic IDs`,
-                );
+      // Load daily agenda on mount — auto-generate if missing
+      const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+      dailyAgendaRepository
+        .getDailyAgenda(date)
+        .then(async (plan) => {
+          if (plan) {
+            // Validate: check that topicIds in blocks actually exist in the DB
+            const allIds = plan.blocks.flatMap((b) => b.topicIds ?? []).filter((id) => id > 0);
+            if (allIds.length > 0) {
+              const db = getDb();
+              const placeholders = allIds.map(() => '?').join(',');
+              const rows = await db.getAllAsync<{ id: number }>(
+                `SELECT id FROM topics WHERE id IN (${placeholders}) AND parent_topic_id IS NOT NULL`,
+                allIds,
+              );
+              const validLeafIds = new Set(rows.map((r) => r.id));
+              const hasInvalidTopicIds = !isLeafTopicIdListValid(allIds, validLeafIds);
+              if (hasInvalidTopicIds) {
+                if (__DEV__) {
+                  const invalidCount = allIds.filter((id) => !validLeafIds.has(id)).length;
+                  console.warn(
+                    `[Home] Discarding stale plan: ${invalidCount} invalid or parent topic IDs`,
+                  );
+                }
+                await dailyAgendaRepository.deleteDailyAgenda(date);
+                // Fall through to auto-generate
+              } else {
+                setTodayPlan(plan);
+                return;
               }
-              await dailyAgendaRepository.deleteDailyAgenda(date);
-              // Fall through to auto-generate
             } else {
               setTodayPlan(plan);
               return;
             }
-          } else {
-            setTodayPlan(plan);
-            return;
           }
-        }
-        // Auto-generate plan when none exists or stale plan was discarded
-        try {
-          const tasks = await getTodaysAgendaWithTimes();
-          const newPlan = tasksToAgenda(tasks);
-          await dailyAgendaRepository.saveDailyAgenda(date, newPlan, 'local');
-          setTodayPlan(newPlan);
-        } catch (e) {
-          console.warn('[Home] Auto plan generation failed:', e);
-        }
-      })
-      .catch((err) => console.warn('[Home] Failed to load daily agenda:', err));
+          // Auto-generate plan when none exists or stale plan was discarded
+          try {
+            const tasks = await getTodaysAgendaWithTimes();
+            const newPlan = tasksToAgenda(tasks);
+            await dailyAgendaRepository.saveDailyAgenda(date, newPlan, 'local');
+            setTodayPlan(newPlan);
+          } catch (e) {
+            console.warn('[Home] Auto plan generation failed:', e);
+          }
+        })
+        .catch((err) => console.warn('[Home] Failed to load daily agenda:', err));
+    });
   }, [setTodayPlan]);
 
   useEffect(() => {
@@ -411,7 +422,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          {/* ── Hero: Start button + inline stats ── */}
+          {/* ── Hero: Start button ── */}
           <View style={styles.heroSection}>
             <StartButton
               ref={startButtonRef}
@@ -420,72 +431,57 @@ export default function HomeScreen() {
               sublabel={heroCta.sublabel}
               hidden={bootPhase !== 'done'}
             />
-            <View style={styles.heroStats}>
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatValue}>{profile.streakCurrent}</Text>
-                <Text style={styles.heroStatLabel}>streak</Text>
-              </View>
-              <View style={styles.heroStatDivider} />
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatValue}>{progressClamped}%</Text>
-                <Text style={styles.heroStatLabel}>today</Text>
-              </View>
-              <View style={styles.heroStatDivider} />
-              <View style={styles.heroStatItem}>
-                <Text style={styles.heroStatValue}>{levelInfo.level}</Text>
-                <Text style={styles.heroStatLabel}>level</Text>
-              </View>
-            </View>
           </View>
 
-          {/* ── Compact stats bar ── */}
-          <LinearSurface style={styles.statsBar}>
+          {/* ── Unified stats bar ── */}
+          <LinearSurface compact style={styles.statsBar}>
             <View style={styles.statsBarContent}>
-              {/* Progress ring */}
-              <View style={styles.statsRingWrap}>
-                <Svg width={RING_SIZE} height={RING_SIZE}>
-                  <Circle
-                    cx={RING_SIZE / 2}
-                    cy={RING_SIZE / 2}
-                    r={RADIUS}
-                    stroke={n.colors.border}
-                    strokeWidth={STROKE_WIDTH}
-                    fill="none"
-                  />
-                  <Circle
-                    cx={RING_SIZE / 2}
-                    cy={RING_SIZE / 2}
-                    r={RADIUS}
-                    stroke={n.colors.accent}
-                    strokeWidth={STROKE_WIDTH}
-                    fill="none"
-                    strokeDasharray={`${CIRCUMFERENCE}`}
-                    strokeDashoffset={CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100}
-                    strokeLinecap="round"
-                    rotation="-90"
-                    origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
-                  />
-                </Svg>
+              {/* Today progress */}
+              <View style={styles.statsBarItemCenter}>
+                <View style={styles.statsRingWrap}>
+                  <Svg width={RING_SIZE} height={RING_SIZE}>
+                    <Circle
+                      cx={RING_SIZE / 2}
+                      cy={RING_SIZE / 2}
+                      r={RADIUS}
+                      stroke={n.colors.border}
+                      strokeWidth={STROKE_WIDTH}
+                      fill="none"
+                    />
+                    <Circle
+                      cx={RING_SIZE / 2}
+                      cy={RING_SIZE / 2}
+                      r={RADIUS}
+                      stroke={n.colors.accent}
+                      strokeWidth={STROKE_WIDTH}
+                      fill="none"
+                      strokeDasharray={`${CIRCUMFERENCE}`}
+                      strokeDashoffset={CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100}
+                      strokeLinecap="round"
+                      rotation="-90"
+                      origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+                    />
+                  </Svg>
+                  <Text style={styles.ringPercentText}>{progressClamped}%</Text>
+                </View>
+                <Text style={styles.statsLabel}>{todayMinutes}/{profile.dailyGoalMinutes || 120}m</Text>
               </View>
-              {/* Minutes */}
-              <Text style={styles.statsText}>
-                {todayMinutes}min{' '}
-                <Text style={styles.statsTextMuted}>/ {profile.dailyGoalMinutes || 120}min</Text>
-              </Text>
               <View style={styles.statsBarDivider} />
               {/* Streak */}
-              <View style={styles.statsBarItem}>
-                <Ionicons name="flame" size={14} color={n.colors.warning} />
-                <Text style={styles.statsText}>{profile.streakCurrent}</Text>
+              <View style={styles.statsBarItemCenter}>
+                <View style={styles.flameWrap}>
+                  <Animated.View style={{ transform: [{ scale: flameScale }] }}>
+                    <Ionicons name="flame" size={30} color={n.colors.warning} />
+                  </Animated.View>
+                  <Text style={styles.flameNumber}>{profile.streakCurrent}</Text>
+                </View>
+                <Text style={styles.statsLabel}>streak</Text>
               </View>
               <View style={styles.statsBarDivider} />
               {/* Level */}
-              <Text style={styles.statsText}>Lv {levelInfo.level}</Text>
-              <View style={styles.statsBarDivider} />
-              {/* Sessions */}
-              <View style={styles.statsBarItem}>
-                <Text style={styles.statsText}>{completedSessions}</Text>
-                <Text style={styles.statsTextMuted}> done</Text>
+              <View style={styles.statsBarItemCenter}>
+                <Text style={styles.statsValue}>Level {levelInfo.level}</Text>
+                <Text style={styles.statsLabel}>{completedSessions} done</Text>
               </View>
             </View>
           </LinearSurface>
@@ -761,8 +757,8 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
     if (isActive) {
       const loop = Animated.loop(
         Animated.sequence([
-          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: false }),
-          Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: false }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
         ]),
       );
       loop.start();
@@ -861,7 +857,7 @@ function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | nul
 const aiStyles = StyleSheet.create({
   wrap: {
     alignItems: 'flex-end',
-    gap: 6,
+    gap: 4,
     flexShrink: 1,
   },
   banner: {
@@ -870,9 +866,9 @@ const aiStyles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
+    borderRadius: n.radius.sm,
+    backgroundColor: n.colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
   },
   bannerGlow: {
@@ -881,38 +877,43 @@ const aiStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    opacity: 0.12,
   },
   bannerDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   bannerText: {
-    fontSize: 12,
-    fontWeight: '800',
+    ...n.typography.meta,
+    fontWeight: '700',
   },
   tagRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-end',
-    gap: 4,
+    gap: 3,
   },
   tag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 4,
+    gap: 3,
+    paddingHorizontal: 6,
     paddingVertical: 2,
+    borderRadius: n.radius.sm,
+    backgroundColor: n.colors.surface,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
   },
   tagDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   tagText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: n.colors.textSecondary,
+    ...n.typography.meta,
+    fontSize: 9,
+    color: n.colors.textMuted,
   },
 });
 
@@ -938,8 +939,8 @@ function Section({
 }
 
 // ── Progress ring constants ──
-const RING_SIZE = 48;
-const STROKE_WIDTH = 5;
+const RING_SIZE = 36;
+const STROKE_WIDTH = 4;
 const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
@@ -958,7 +959,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 0,
+    marginBottom: n.spacing.sm,
   },
   headerLeft: { flex: 1 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -969,62 +970,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   greetingText: {
-    color: n.colors.textMuted,
-    fontSize: 14,
-    fontWeight: '600',
-    lineHeight: 18,
+    ...n.typography.title,
+    color: n.colors.textSecondary,
   },
   greetingName: {
     color: n.colors.textPrimary,
-    fontWeight: '800',
   },
 
   // ── Exam countdown inline ──
   examCountInline: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
+    alignItems: 'baseline',
+    marginTop: 6,
+    gap: 2,
   },
   examInlineLabel: {
     color: n.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   examInlineDays: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-
-  // ── Stats bar ──
-  statsBar: {
-    marginTop: 4,
-  },
-  statsBarContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  statsRingWrap: {
-    marginRight: n.spacing.sm,
-  },
-  statsText: {
-    color: n.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  statsTextMuted: {
-    color: n.colors.textMuted,
-    fontWeight: '400',
-  },
-  statsBarDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  statsBarItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3,
   },
 
   // ── Hero section ──
@@ -1032,34 +1001,67 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: -8,
     paddingTop: 0,
-    paddingBottom: n.spacing.sm,
-    gap: n.spacing.sm,
+    paddingBottom: n.spacing.lg,
   },
-  heroStats: {
+
+  // ── Stats bar ──
+  statsBar: {
+    marginBottom: n.spacing.md,
+    alignSelf: 'center',
+    width: '85%',
+    maxWidth: 360,
+  },
+  statsBarContent: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  statsRingWrap: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: n.spacing.xl,
   },
-  heroStatItem: { alignItems: 'center', minWidth: 50 },
-  heroStatValue: {
+  ringPercentText: {
+    position: 'absolute',
     color: n.colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: -0.3,
+    fontSize: 10,
+    fontWeight: '800',
   },
-  heroStatLabel: {
+  flameWrap: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  flameNumber: {
+    position: 'absolute',
+    color: n.colors.textPrimary,
+    fontSize: 11,
+    fontWeight: '900',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  statsBarItemCenter: {
+    alignItems: 'center',
+    gap: 2,
+    flex: 1,
+  },
+  statsValue: {
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  statsLabel: {
     color: n.colors.textMuted,
     fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
+    fontWeight: '500',
   },
-  heroStatDivider: {
+  statsBarDivider: {
     width: 1,
-    height: 24,
-    backgroundColor: n.colors.border,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
 
   // ── Agenda item wrapper ──
@@ -1105,7 +1107,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Sections ──
-  section: { marginBottom: SECTION_GAP },
+  section: { marginBottom: n.spacing.md },
   sectionLabel: {
     color: n.colors.textMuted,
     fontWeight: '800',

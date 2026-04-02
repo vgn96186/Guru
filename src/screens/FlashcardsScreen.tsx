@@ -22,14 +22,16 @@ import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, FlashcardsContent } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import ScreenHeader from '../components/ScreenHeader';
 
 const RATINGS = [
-  { label: 'Again', confidence: 1, color: theme.colors.error },
-  { label: 'Hard', confidence: 2, color: theme.colors.warning },
-  { label: 'Good', confidence: 3, color: theme.colors.success },
-  { label: 'Easy', confidence: 4, color: theme.colors.info },
+  { label: 'Again', confidence: 1, color: n.colors.error },
+  { label: 'Hard', confidence: 2, color: n.colors.warning },
+  { label: 'Good', confidence: 3, color: n.colors.success },
+  { label: 'Easy', confidence: 4, color: n.colors.accent },
 ];
 
 export default function FlashcardsScreen() {
@@ -166,7 +168,7 @@ export default function FlashcardsScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <Ionicons name="sparkles" size={60} color={theme.colors.primary} />
+          <Ionicons name="sparkles" size={60} color={n.colors.accent} />
           <Text style={styles.title}>All Caught Up!</Text>
           <Text style={styles.sub}>Finished all reviews for now</Text>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
@@ -204,18 +206,11 @@ export default function FlashcardsScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" />
       <ResponsiveContainer>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="chevron-back" size={28} color={theme.colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerText}>
-            <Text style={styles.headerTitle}>{currentTopic?.name}</Text>
-            <Text style={styles.headerSub}>{currentTopic?.subjectName}</Text>
-          </View>
-          <Text style={styles.progressText}>
-            {currentIdx + 1}/{queue.length}
-          </Text>
-        </View>
+        <ScreenHeader
+          title={currentTopic?.name ?? 'Flashcards'}
+          subtitle={currentTopic?.subjectName}
+          rightElement={<Text style={styles.progressText}>{currentIdx + 1}/{queue.length}</Text>}
+        />
 
         <View style={styles.cardArea}>
           {loading ? (
@@ -241,7 +236,7 @@ export default function FlashcardsScreen() {
 
                 {/* Back */}
                 <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-                  <Text style={[styles.cardLabel, { color: theme.colors.primary }]}>ANSWER</Text>
+                  <Text style={[styles.cardLabel, { color: n.colors.accent }]}>ANSWER</Text>
                   <ScrollView showsVerticalScrollIndicator={false} centerContent>
                     {currentCard.imageUrl ? (
                       <Image
@@ -304,7 +299,7 @@ export default function FlashcardsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   header: {
     flexDirection: 'row',
@@ -313,21 +308,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerText: { flex: 1 },
-  headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
-  headerSub: { color: theme.colors.primary, fontSize: 12, fontWeight: '600' },
-  progressText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '700' },
+  headerTitle: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800' },
+  headerSub: { color: n.colors.accent, fontSize: 12, fontWeight: '600' },
+  progressText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '700' },
   cardArea: { flex: 1, padding: 20, justifyContent: 'center' },
   cardContainer: { height: 400 },
   cardWrap: { flex: 1 },
   card: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 24,
     padding: 30,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -335,20 +330,20 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   cardBack: {
-    backgroundColor: theme.colors.panelAlt,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.surface,
+    borderColor: n.colors.accent,
   },
   cardLabel: {
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 2,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     marginBottom: 20,
     position: 'absolute',
     top: 30,
   },
   cardContent: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 24,
     fontWeight: '700',
     textAlign: 'center',
@@ -359,25 +354,25 @@ const styles = StyleSheet.create({
     height: 160,
     borderRadius: 16,
     marginBottom: 20,
-    backgroundColor: theme.colors.panelAlt,
+    backgroundColor: n.colors.surface,
   },
   tapToReveal: {
     position: 'absolute',
     bottom: 30,
   },
-  tapText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
+  tapText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '600' },
   nextCardBtn: {
     position: 'absolute',
     bottom: 30,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
   },
-  nextCardText: { color: theme.colors.textPrimary, fontWeight: '800' },
+  nextCardText: { color: n.colors.textPrimary, fontWeight: '800' },
   controls: { padding: 20, height: 100, justifyContent: 'center' },
   metaInfo: { alignItems: 'center' },
-  cardCounter: { color: theme.colors.textMuted, fontWeight: '600' },
+  cardCounter: { color: n.colors.textMuted, fontWeight: '600' },
   ratings: { flexDirection: 'row', gap: 8 },
   rateBtn: {
     flex: 1,
@@ -388,9 +383,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rateText: { fontWeight: '800', fontSize: 14 },
-  title: { color: theme.colors.textPrimary, fontSize: 24, fontWeight: '900', marginTop: 16 },
+  title: { color: n.colors.textPrimary, fontSize: 24, fontWeight: '900', marginTop: 16 },
   sub: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     marginVertical: 8,
     textAlign: 'center',
@@ -398,14 +393,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   btn: {
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 20,
   },
-  btnText: { color: theme.colors.textPrimary, fontWeight: '700' },
-  errorText: { color: theme.colors.error, textAlign: 'center' },
+  btnText: { color: n.colors.textPrimary, fontWeight: '700' },
+  errorText: { color: n.colors.error, textAlign: 'center' },
 });

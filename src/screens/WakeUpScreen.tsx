@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { dailyLogRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
@@ -101,7 +102,7 @@ export default function WakeUpScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
         {phase === 'breathe' && (
           <View style={styles.centerBox}>
@@ -175,22 +176,28 @@ export default function WakeUpScreen() {
             <Text style={styles.title}>How is the brain fog today?</Text>
 
             <View style={styles.fogGrid}>
-              <TouchableOpacity style={styles.fogBtn} onPress={() => handleFogCheck('clear')}>
-                <Text style={styles.fogBtnEmoji}>☀️</Text>
-                <Text style={styles.fogBtnText}>Actually Okay</Text>
-                <Text style={styles.fogBtnSub}>Ready to start</Text>
+              <TouchableOpacity onPress={() => handleFogCheck('clear')}>
+                <LinearSurface padded={false} style={styles.fogBtn}>
+                  <Text style={styles.fogBtnEmoji}>☀️</Text>
+                  <Text style={styles.fogBtnText}>Actually Okay</Text>
+                  <Text style={styles.fogBtnSub}>Ready to start</Text>
+                </LinearSurface>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.fogBtn} onPress={() => handleFogCheck('hazy')}>
-                <Text style={styles.fogBtnEmoji}>🌥️</Text>
-                <Text style={styles.fogBtnText}>A Bit Hazy</Text>
-                <Text style={styles.fogBtnSub}>Need a slow start</Text>
+              <TouchableOpacity onPress={() => handleFogCheck('hazy')}>
+                <LinearSurface padded={false} style={styles.fogBtn}>
+                  <Text style={styles.fogBtnEmoji}>🌥️</Text>
+                  <Text style={styles.fogBtnText}>A Bit Hazy</Text>
+                  <Text style={styles.fogBtnSub}>Need a slow start</Text>
+                </LinearSurface>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.fogBtn} onPress={() => handleFogCheck('foggy')}>
-                <Text style={styles.fogBtnEmoji}>☁️</Text>
-                <Text style={styles.fogBtnText}>Very Foggy</Text>
-                <Text style={styles.fogBtnSub}>Hard to think</Text>
+              <TouchableOpacity onPress={() => handleFogCheck('foggy')}>
+                <LinearSurface padded={false} style={styles.fogBtn}>
+                  <Text style={styles.fogBtnEmoji}>☁️</Text>
+                  <Text style={styles.fogBtnText}>Very Foggy</Text>
+                  <Text style={styles.fogBtnSub}>Hard to think</Text>
+                </LinearSurface>
               </TouchableOpacity>
             </View>
           </View>
@@ -201,20 +208,20 @@ export default function WakeUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   container: { flex: 1, padding: 24, justifyContent: 'center' },
   centerBox: { alignItems: 'center' },
   progressRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 20 },
-  progressText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
+  progressText: { color: n.colors.accent, fontSize: 14, fontWeight: '700' },
   emoji: { fontSize: 64, marginBottom: 20 },
   title: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
     marginBottom: 8,
   },
-  sub: { color: theme.colors.textSecondary, fontSize: 16, textAlign: 'center', marginBottom: 60 },
+  sub: { color: n.colors.textSecondary, fontSize: 16, textAlign: 'center', marginBottom: 60 },
 
   breatheBox: { width: 200, height: 200, justifyContent: 'center', alignItems: 'center' },
   breatheCircle: {
@@ -222,11 +229,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
   },
-  breatheText: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '700', zIndex: 10 },
+  breatheText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '700', zIndex: 10 },
 
   skipBtn: {
     marginTop: 40,
@@ -235,12 +242,12 @@ const styles = StyleSheet.create({
     minHeight: 44,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  skipBtnText: { color: theme.colors.textSecondary, fontSize: 14, fontWeight: '600' },
+  skipBtnText: { color: n.colors.textSecondary, fontSize: 14, fontWeight: '600' },
 
   groundText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 20,
     fontWeight: '700',
     textAlign: 'center',
@@ -249,28 +256,25 @@ const styles = StyleSheet.create({
     lineHeight: 30,
   },
   nextBtn: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     paddingHorizontal: 40,
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  nextBtnText: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '700' },
+  nextBtnText: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '700' },
 
   _unusedSkipBtn: { alignSelf: 'flex-end', padding: 8, marginBottom: 8 },
-  _unusedSkipBtnText: { color: theme.colors.textMuted, fontSize: 13 },
+  _unusedSkipBtnText: { color: n.colors.textMuted, fontSize: 13 },
   fogGrid: { width: '100%', gap: 12, marginTop: 20 },
   fogBtn: {
-    backgroundColor: theme.colors.surface,
     padding: 20,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
   },
   fogBtnEmoji: { fontSize: 32, marginRight: 16 },
-  fogBtnText: { color: theme.colors.textPrimary, fontSize: 16, fontWeight: '700', flex: 1 },
-  fogBtnSub: { color: theme.colors.textMuted, fontSize: 12 },
+  fogBtnText: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '700', flex: 1 },
+  fogBtnSub: { color: n.colors.textMuted, fontSize: 12 },
 });

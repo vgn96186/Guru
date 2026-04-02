@@ -4,6 +4,7 @@ import type {
   TopicWithProgress,
   QuizContent,
   SaveQuestionInput,
+  FlashcardsContent,
 } from '../../types';
 import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP } from '../../constants/prompts';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
@@ -194,7 +195,7 @@ export async function fetchContent(
     }
     if (cached.type === 'flashcards') {
       const hydrated = (await resolveFlashcardImages(
-        cached as AIContent & { modelUsed?: string },
+          cached as FlashcardsContent & { modelUsed?: string },
       )) as AIContent & { modelUsed?: string };
       const beforeCards = JSON.stringify((cached as { cards: unknown }).cards);
       const afterCards = JSON.stringify((hydrated as { cards: unknown }).cards);
@@ -244,7 +245,7 @@ export async function fetchContent(
         )) as AIContent;
       } else if (contentWithMeta.type === 'flashcards') {
         contentWithMeta = (await resolveFlashcardImages(
-          contentWithMeta as AIContent & { modelUsed?: string },
+          contentWithMeta as FlashcardsContent & { modelUsed?: string },
         )) as AIContent;
       }
       lastContent = contentWithMeta;

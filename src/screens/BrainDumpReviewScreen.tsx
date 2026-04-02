@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import {
   getBrainDumps,
   clearBrainDumps,
@@ -61,7 +61,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <View style={styles.header}>
           <Text style={styles.title}>Parked Thoughts</Text>
@@ -95,7 +95,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={`Delete parked thought: ${item.note}`}
                 >
-                  <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
+                  <Ionicons name="trash-outline" size={18} color={n.colors.error} />
                 </TouchableOpacity>
               </View>
             )}
@@ -110,7 +110,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
               accessibilityRole="button"
               accessibilityLabel="Clear all parked thoughts"
             >
-              <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
+              <Ionicons name="trash-outline" size={20} color={n.colors.error} />
               <Text style={styles.clearText}>Clear All</Text>
             </TouchableOpacity>
           )}

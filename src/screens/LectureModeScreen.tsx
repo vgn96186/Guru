@@ -1,3 +1,4 @@
+import LinearSurface from '../components/primitives/LinearSurface';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
@@ -1237,7 +1238,7 @@ const styles = StyleSheet.create({
   content: { padding: theme.spacing.lg, paddingBottom: 60 },
 
   hostageInfo: {
-    backgroundColor: theme.colors.surface,
+    
     padding: theme.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
@@ -1251,7 +1252,7 @@ const styles = StyleSheet.create({
 
   timerBox: {
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 20,
     padding: theme.spacing.xl,
     marginBottom: theme.spacing.xl,
@@ -1383,7 +1384,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    backgroundColor: theme.colors.surface,
+    
   },
   subjectChipText: { fontWeight: '700', fontSize: 13, lineHeight: 18 },
   selectedSubject: {
@@ -1391,7 +1392,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: theme.spacing.lg,
-    backgroundColor: theme.colors.surface,
+    
     padding: theme.spacing.lg,
     borderRadius: 12,
   },
@@ -1399,7 +1400,7 @@ const styles = StyleSheet.create({
   changeBtn: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
 
   transcribeBtn: {
-    backgroundColor: theme.colors.surface,
+    
     padding: theme.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
@@ -1416,7 +1417,7 @@ const styles = StyleSheet.create({
 
   noteSection: { marginBottom: 20 },
   noteInput: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 12,
     padding: theme.spacing.lg,
     color: theme.colors.textPrimary,
@@ -1459,7 +1460,7 @@ const styles = StyleSheet.create({
   noteRow: {
     flexDirection: 'row',
     marginBottom: 8,
-    backgroundColor: theme.colors.surface,
+    
     padding: 12,
     borderRadius: 8,
   },

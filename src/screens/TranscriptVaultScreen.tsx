@@ -38,7 +38,10 @@ import {
 } from '../../modules/app-launcher';
 import { z } from 'zod';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import ScreenHeader from '../components/ScreenHeader';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { generateJSONWithRouting } from '../services/ai/generate';
 import type { Message } from '../services/ai/types';
 import { analyzeTranscript } from '../services/transcription/analysis';
@@ -706,7 +709,6 @@ export default function TranscriptVaultScreen() {
     const isSelected = selectedPaths.has(item.path);
     return (
       <Pressable
-        style={[styles.card, isSelected && styles.cardSelected]}
         onLongPress={() => handleLongPress(item.path)}
         onPress={() => {
           if (isSelectionMode) {
@@ -718,99 +720,100 @@ export default function TranscriptVaultScreen() {
         }}
         delayLongPress={220}
       >
-        {isSelectionMode ? (
-          <View style={styles.cardIcon}>
-            <Ionicons
-              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-              size={24}
-              color={isSelected ? theme.colors.primary : theme.colors.textMuted}
-            />
+        <LinearSurface
+          padded={false}
+          borderColor={isSelected ? n.colors.accent : n.colors.border}
+          style={[styles.card, isSelected && styles.cardSelected]}
+        >
+          {isSelectionMode ? (
+            <View style={styles.cardIcon}>
+              <Ionicons
+                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                size={24}
+                color={isSelected ? n.colors.accent : n.colors.textMuted}
+              />
+            </View>
+          ) : (
+            <View style={styles.cardIcon}>
+              <Ionicons name="document-text-outline" size={24} color={n.colors.accent} />
+            </View>
+          )}
+          <View style={styles.cardBody}>
+            <Text style={styles.cardName} numberOfLines={3} ellipsizeMode="tail">
+              {displayName(item.name, item.extractedTitle)}
+            </Text>
+            <Text style={styles.cardMeta}>
+              {item.wordCount.toLocaleString()} words · {item.folder}
+              {item.sizeMB > 0 ? ` · ${item.sizeMB} KB` : ''}
+            </Text>
           </View>
-        ) : (
-          <View style={styles.cardIcon}>
-            <Ionicons name="document-text-outline" size={24} color={theme.colors.primary} />
-          </View>
-        )}
-        <View style={styles.cardBody}>
-          <Text style={styles.cardName} numberOfLines={3} ellipsizeMode="tail">
-            {displayName(item.name, item.extractedTitle)}
-          </Text>
-          <Text style={styles.cardMeta}>
-            {item.wordCount.toLocaleString()} words · {item.folder}
-            {item.sizeMB > 0 ? ` · ${item.sizeMB} KB` : ''}
-          </Text>
-        </View>
-        {!isSelectionMode && (
-          <View style={styles.cardActions}>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handleProcess(item)}>
-              <Ionicons name="sparkles" size={20} color={theme.colors.success ?? '#4CAF50'} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => void handleRead(item)}>
-              <Ionicons name="book-outline" size={20} color={theme.colors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(item)}>
-              <Ionicons name="trash-outline" size={20} color={theme.colors.error} />
-            </TouchableOpacity>
-          </View>
-        )}
+          {!isSelectionMode && (
+            <View style={styles.cardActions}>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => handleProcess(item)}>
+                <Ionicons name="sparkles" size={20} color={n.colors.success ?? '#4CAF50'} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => void handleRead(item)}>
+                <Ionicons name="book-outline" size={20} color={n.colors.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionBtn} onPress={() => handleDelete(item)}>
+                <Ionicons name="trash-outline" size={20} color={n.colors.error} />
+              </TouchableOpacity>
+            </View>
+          )}
+        </LinearSurface>
       </Pressable>
     );
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerTextWrap}>
-            <Text style={styles.headerTitle}>Transcript Vault</Text>
-            <Text style={styles.headerSub}>
-              {files.length} transcript{files.length !== 1 ? 's' : ''} found
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => setSortBy((s) => (s === 'name' ? 'words' : 'name'))}
-            style={styles.sortBtn}
-          >
-            <Ionicons
-              name={sortBy === 'words' ? 'text-outline' : 'swap-vertical-outline'}
-              size={18}
-              color={theme.colors.primary}
-            />
-            <Text style={styles.sortLabel}>{sortBy === 'words' ? 'Words' : 'Name'}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={loadFiles} style={styles.refreshBtn}>
-            <Ionicons name="refresh" size={20} color={theme.colors.textMuted} />
-          </TouchableOpacity>
-        </View>
+        <ScreenHeader
+          title="Transcript Vault"
+          subtitle={`${files.length} transcript${files.length !== 1 ? 's' : ''} found`}
+          rightElement={
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                onPress={() => setSortBy((s) => (s === 'name' ? 'words' : 'name'))}
+                style={styles.sortBtn}
+              >
+                <Ionicons
+                  name={sortBy === 'words' ? 'text-outline' : 'swap-vertical-outline'}
+                  size={18}
+                  color={n.colors.accent}
+                />
+                <Text style={styles.sortLabel}>{sortBy === 'words' ? 'Words' : 'Name'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => void loadFiles()} style={styles.refreshBtn}>
+                <Ionicons name="refresh" size={20} color={n.colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          }
+        />
 
         <View style={styles.topActions}>
-          <TouchableOpacity
+          <LinearButton
+            variant="glass"
             style={styles.topActionBtn}
             onPress={() => navigation.navigate('ManualNoteCreation' as never)}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="clipboard-outline" size={18} color={theme.colors.accent} />
-            <Text style={styles.topActionText}>Paste Transcript</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+            leftIcon={<Ionicons name="clipboard-outline" size={18} color={n.colors.error} />}
+            label="Paste Transcript"
+          />
+          <LinearButton
+            variant="glass"
             style={[styles.topActionBtn, isImportingText && styles.topActionBtnDisabled]}
             onPress={() => void handleUploadText()}
             disabled={isImportingText}
-            activeOpacity={0.8}
-          >
-            {isImportingText ? (
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-            ) : (
-              <Ionicons name="document-attach-outline" size={18} color={theme.colors.primary} />
-            )}
-            <Text style={styles.topActionText}>
-              {isImportingText ? 'Importing…' : 'Upload Text'}
-            </Text>
-          </TouchableOpacity>
+            leftIcon={
+              isImportingText ? (
+                <ActivityIndicator size="small" color={n.colors.accent} />
+              ) : (
+                <Ionicons name="document-attach-outline" size={18} color={n.colors.accent} />
+              )
+            }
+            label={isImportingText ? 'Importing…' : 'Upload Text'}
+          />
         </View>
 
         {/* Cleanup junk banner */}
@@ -843,7 +846,7 @@ export default function TranscriptVaultScreen() {
               );
             }}
           >
-            <Ionicons name="trash-outline" size={16} color={theme.colors.error} />
+            <Ionicons name="trash-outline" size={16} color={n.colors.error} />
             <Text style={styles.cleanupText}>
               {files.filter((f) => f.wordCount < 10).length} junk transcript
               {files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
@@ -880,7 +883,7 @@ export default function TranscriptVaultScreen() {
               );
             }}
           >
-            <Ionicons name="copy-outline" size={16} color={theme.colors.warning} />
+            <Ionicons name="copy-outline" size={16} color={n.colors.warning} />
             <Text style={styles.cleanupText}>
               {duplicatePaths.size} duplicate{duplicatePaths.size !== 1 ? 's' : ''} found
             </Text>
@@ -891,7 +894,7 @@ export default function TranscriptVaultScreen() {
         {/* AI rename banner */}
         {!isSelectionMode && renamableFiles.length > 0 && !renameProgress && (
           <TouchableOpacity style={styles.renameBanner} onPress={handleSmartRename}>
-            <Ionicons name="sparkles-outline" size={16} color={theme.colors.primary} />
+            <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
             <Text style={styles.cleanupText}>
               {renamableFiles.length} file{renamableFiles.length !== 1 ? 's' : ''} with unclear
               names
@@ -903,7 +906,7 @@ export default function TranscriptVaultScreen() {
         {/* Rename progress */}
         {renameProgress && (
           <View style={styles.renameBanner}>
-            <ActivityIndicator size="small" color={theme.colors.primary} />
+            <ActivityIndicator size="small" color={n.colors.accent} />
             <Text style={styles.cleanupText} numberOfLines={2}>
               {renameProgress}
             </Text>
@@ -913,7 +916,7 @@ export default function TranscriptVaultScreen() {
         {/* Process progress */}
         {processProgress && (
           <View style={styles.processBanner}>
-            <ActivityIndicator size="small" color={theme.colors.success ?? '#4CAF50'} />
+            <ActivityIndicator size="small" color={n.colors.success ?? '#4CAF50'} />
             <Text style={styles.cleanupText}>Processing transcript {processProgress}...</Text>
           </View>
         )}
@@ -946,22 +949,22 @@ export default function TranscriptVaultScreen() {
               await requestAllFilesAccess();
             }}
           >
-            <Ionicons name="lock-open-outline" size={18} color={theme.colors.warning} />
+            <Ionicons name="lock-open-outline" size={18} color={n.colors.warning} />
             <Text style={styles.permBannerText}>
               Grant file access to scan all transcript folders.
             </Text>
-            <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
           </TouchableOpacity>
         )}
 
         {loading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <ActivityIndicator size="large" color={n.colors.accent} />
             <Text style={styles.emptyText}>Scanning transcripts...</Text>
           </View>
         ) : files.length === 0 ? (
           <View style={styles.center}>
-            <Ionicons name="document-text-outline" size={48} color={theme.colors.textMuted} />
+            <Ionicons name="document-text-outline" size={48} color={n.colors.textMuted} />
             <Text style={styles.emptyTitle}>No transcripts found</Text>
             <Text style={styles.emptyText}>
               Transcript files (.txt) appear here from your Documents/Guru folder and internal
@@ -992,7 +995,7 @@ export default function TranscriptVaultScreen() {
                 onPress={() => setReaderContent(null)}
                 style={styles.readerCloseBtn}
               >
-                <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
+                <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
               </TouchableOpacity>
               <Text style={styles.readerHeaderTitle} numberOfLines={2}>
                 {readerTitle}
@@ -1006,7 +1009,7 @@ export default function TranscriptVaultScreen() {
                 }}
                 style={styles.readerCopyBtn}
               >
-                <Ionicons name="copy-outline" size={20} color={theme.colors.textMuted} />
+                <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
               </TouchableOpacity>
             </View>
             <ScrollView
@@ -1023,94 +1026,79 @@ export default function TranscriptVaultScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   container: { flex: 1 },
-  header: {
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    gap: 8,
   },
-  backBtn: { marginRight: 12, padding: 4 },
-  headerTextWrap: { flex: 1 },
-  headerTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
-  headerSub: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 18, marginTop: 2 },
   topActions: {
     flexDirection: 'row',
     gap: 10,
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: n.spacing.lg,
     paddingTop: 10,
   },
   topActionBtn: {
     flex: 1,
-    minHeight: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    minHeight: 52,
   },
   topActionBtnDisabled: {
     opacity: 0.6,
-  },
-  topActionText: {
-    color: theme.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '800',
   },
   sortBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 14,
-    backgroundColor: theme.colors.primary + '18',
+    borderWidth: 1,
+    borderColor: 'rgba(130,170,255,0.2)',
+    backgroundColor: n.colors.accent + '18',
   },
-  sortLabel: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
-  refreshBtn: { padding: 8, marginLeft: 4 },
-  list: { padding: theme.spacing.lg, paddingBottom: 40 },
+  sortLabel: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
+  refreshBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  list: { padding: n.spacing.lg, paddingBottom: 40 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
     marginBottom: 10,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  cardSelected: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primary + '12' },
+  cardSelected: { borderColor: n.colors.accent, backgroundColor: n.colors.accent + '12' },
   cardIcon: { marginRight: 12 },
   cardBody: { flex: 1, minWidth: 0 },
-  cardName: { color: theme.colors.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
-  cardMeta: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
+  cardName: { color: n.colors.textPrimary, fontSize: 15, lineHeight: 21, fontWeight: '600' },
+  cardMeta: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
   cardActions: { flexDirection: 'row', gap: 4, marginLeft: 8 },
   actionBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.card,
+    backgroundColor: n.colors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
@@ -1120,24 +1108,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.primary + '18',
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: n.colors.accent + '18',
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '40',
+    borderColor: n.colors.accent + '40',
   },
-  selectionText: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
+  selectionText: { color: n.colors.accent, fontSize: 14, fontWeight: '700' },
   selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   selectionCancelBtn: { paddingHorizontal: 12, paddingVertical: 6 },
-  selectionCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '700' },
+  selectionCancelText: { color: n.colors.accent, fontSize: 13, fontWeight: '700' },
   selectionDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.error,
+    backgroundColor: n.colors.error,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -1147,61 +1135,61 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: theme.colors.error + '12',
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: n.colors.error + '12',
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.error + '30',
+    borderColor: n.colors.error + '30',
   },
   cleanupText: {
     flex: 1,
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     fontWeight: '600',
   },
-  cleanupAction: { color: theme.colors.error, fontSize: 13, fontWeight: '800' },
+  cleanupAction: { color: n.colors.error, fontSize: 13, fontWeight: '800' },
   dupeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: theme.colors.warning + '12',
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: n.colors.warning + '12',
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.warning + '30',
+    borderColor: n.colors.warning + '30',
   },
-  dupeAction: { color: theme.colors.warning, fontSize: 13, fontWeight: '800' },
+  dupeAction: { color: n.colors.warning, fontSize: 13, fontWeight: '800' },
   renameBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: theme.colors.primary + '12',
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: n.colors.accent + '12',
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '30',
+    borderColor: n.colors.accent + '30',
   },
-  renameAction: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
+  renameAction: { color: n.colors.accent, fontSize: 13, fontWeight: '800' },
   processBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     backgroundColor: '#4CAF5012',
-    marginHorizontal: theme.spacing.lg,
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
     borderColor: '#4CAF5030',
   },
@@ -1209,7 +1197,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.success ?? '#4CAF50',
+    backgroundColor: n.colors.success ?? '#4CAF50',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -1217,31 +1205,31 @@ const styles = StyleSheet.create({
   permBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: `${theme.colors.warning}15`,
-    marginHorizontal: theme.spacing.lg,
+    backgroundColor: `${n.colors.warning}15`,
+    marginHorizontal: n.spacing.lg,
     marginTop: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: `${theme.colors.warning}40`,
+    borderColor: `${n.colors.warning}40`,
     gap: 8,
   },
-  permBannerText: { flex: 1, color: theme.colors.textSecondary, fontSize: 13, lineHeight: 18 },
-  readerContainer: { flex: 1, backgroundColor: theme.colors.background },
+  permBannerText: { flex: 1, color: n.colors.textSecondary, fontSize: 13, lineHeight: 18 },
+  readerContainer: { flex: 1, backgroundColor: n.colors.background },
   readerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: n.colors.border,
     gap: 10,
   },
   readerCloseBtn: { padding: 6 },
   readerHeaderTitle: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: '700',
@@ -1249,5 +1237,5 @@ const styles = StyleSheet.create({
   readerCopyBtn: { padding: 6 },
   readerScroll: { flex: 1 },
   readerScrollContent: { padding: 20, paddingBottom: 60 },
-  readerText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 22 },
+  readerText: { color: n.colors.textSecondary, fontSize: 14, lineHeight: 22 },
 });

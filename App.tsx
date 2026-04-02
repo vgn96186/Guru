@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, DevSettings, Text } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { View, StyleSheet, DevSettings, Text, TextInput } from 'react-native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
 import RootNavigator from './src/navigation/RootNavigator';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import AppRecoveryScreen from './src/components/AppRecoveryScreen';
@@ -27,9 +36,27 @@ const textComponent = Text as typeof Text & {
   defaultProps?: React.ComponentProps<typeof Text>;
 };
 
+const textInputComponent = TextInput as typeof TextInput & {
+  defaultProps?: React.ComponentProps<typeof TextInput>;
+};
+
+const defaultInterTextStyle: NonNullable<React.ComponentProps<typeof Text>['style']> = {
+  fontFamily: 'Inter_400Regular',
+};
+
+const appendDefaultTextStyle = (
+  style: React.ComponentProps<typeof Text>['style'] | undefined,
+) => (style ? [defaultInterTextStyle, style] : defaultInterTextStyle);
+
 textComponent.defaultProps = {
   ...textComponent.defaultProps,
   ellipsizeMode: 'clip',
+  style: appendDefaultTextStyle(textComponent.defaultProps?.style),
+};
+
+textInputComponent.defaultProps = {
+  ...textInputComponent.defaultProps,
+  style: appendDefaultTextStyle(textInputComponent.defaultProps?.style),
 };
 
 export { navigationRef };
@@ -54,7 +81,10 @@ function AppContent({
   useAppBootstrap(onFatalError);
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking} theme={{
+      ...DarkTheme,
+      colors: { ...DarkTheme.colors, background: '#000000', card: '#000000' },
+    }}>
       <RootNavigator initialRoute={initialRoute} />
       <InstallModelProgressOverlay />
       <ToastContainer />
@@ -75,19 +105,37 @@ function AppShell({
   const { isReady, initialRoute, error } = useAppInitialization();
   const setBootPhase = useAppStore((s) => s.setBootPhase);
 
-  useEffect(() => {
-    if (isReady && initialRoute !== null) {
-      setBootPhase('calming');
-    }
-  }, [isReady, initialRoute, setBootPhase]);
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
+  });
 
-  if (error) {
+  const isCompletelyReady = isReady && fontsLoaded;
+
+  useEffect(() => {
+    if (isCompletelyReady && initialRoute !== null) {
+      // If the initial route is CheckIn, HomeScreen won't mount to advance the
+      // boot phase from 'calming' → 'settling'. Go straight to 'settling' so
+      // the BootTransition overlay doesn't stay on screen forever.
+      if (initialRoute === 'CheckIn') {
+        setBootPhase('settling');
+      } else {
+        setBootPhase('calming');
+      }
+    }
+  }, [isCompletelyReady, initialRoute, setBootPhase]);
+
+  if (error || fontError) {
     return (
       <SafeAreaProvider>
         <AppRecoveryScreen
           title="Startup error"
           message="Guru could not finish launching. Your local study data should still be safe on this device."
-          detail={error}
+          detail={error || fontError?.message || 'Font loading failed'}
           statusLabel="Startup recovery"
           primaryLabel="Reload App"
           primaryAccessibilityLabel="Reload app"
@@ -104,7 +152,7 @@ function AppShell({
     );
   }
 
-  if (!isReady || initialRoute === null) {
+  if (!isCompletelyReady || initialRoute === null) {
     return (
       <SafeAreaProvider>
         <View style={styles.loadingContainer} />

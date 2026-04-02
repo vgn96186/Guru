@@ -82,6 +82,8 @@ describe('generateJSONWithRouting', () => {
   beforeEach(() => {
     // Restore trace mock after resetMocks wipes it each test
     jest.mocked(createAiRequestTrace).mockImplementation(() => ({
+      requestId: 'test-req-id',
+      startedAt: Date.now(),
       success: jest.fn(),
       failure: jest.fn(),
       fail: jest.fn(),

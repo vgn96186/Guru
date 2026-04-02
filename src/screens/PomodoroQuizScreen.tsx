@@ -16,7 +16,8 @@ import { getTopicsDueForReview, getWeakestTopics } from '../db/queries/topics';
 import { fetchContent } from '../services/aiService';
 import type { QuizContent, TopicWithProgress } from '../types';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'PomodoroQuiz'>;
@@ -106,9 +107,9 @@ export default function PomodoroQuizScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <ActivityIndicator size="large" color={n.colors.accent} />
           <Text style={styles.loadingText}>
             {isExternalLectureMode
               ? 'Preparing your live lecture break quiz...'
@@ -122,7 +123,7 @@ export default function PomodoroQuizScreen() {
   if (noQuizAvailable) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
           <Text style={styles.emoji}>☕</Text>
           <Text style={styles.title}>Take a Break!</Text>
@@ -148,7 +149,7 @@ export default function PomodoroQuizScreen() {
   if (isDone || !question) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
           <Text style={styles.emoji}>🧠</Text>
           <Text style={styles.title}>Break Complete</Text>
@@ -175,7 +176,7 @@ export default function PomodoroQuizScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
@@ -191,7 +192,7 @@ export default function PomodoroQuizScreen() {
         </Text>
 
         {isExternalLectureMode && (
-          <View style={styles.contextCard}>
+          <LinearSurface padded={false} style={styles.contextCard}>
             {breakPayload?.summary ? (
               <>
                 <Text style={styles.contextLabel}>What The Lecture Is Covering</Text>
@@ -211,7 +212,7 @@ export default function PomodoroQuizScreen() {
                 ))}
               </>
             ) : null}
-          </View>
+          </LinearSurface>
         )}
 
         {questions.length > 1 ? (
@@ -224,8 +225,8 @@ export default function PomodoroQuizScreen() {
 
         <View style={styles.options}>
           {question.options.map((opt: string, idx: number) => {
-            let bg: string = theme.colors.surfaceAlt;
-            let border: string = theme.colors.border;
+            let bg: string = n.colors.surface;
+            let border: string = n.colors.border;
             if (selected !== null) {
               if (idx === question.correctIndex) {
                 bg = '#1A2A1A';
@@ -280,19 +281,19 @@ export default function PomodoroQuizScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   loadingText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     marginTop: 16,
     fontSize: 16,
     textAlign: 'center',
   },
   emoji: { fontSize: 64, marginBottom: 16 },
-  title: { color: theme.colors.textPrimary, fontSize: 28, fontWeight: '800', marginBottom: 8 },
-  sub: { color: theme.colors.textSecondary, fontSize: 16, textAlign: 'center', marginBottom: 32 },
+  title: { color: n.colors.textPrimary, fontSize: 28, fontWeight: '800', marginBottom: 8 },
+  sub: { color: n.colors.textSecondary, fontSize: 16, textAlign: 'center', marginBottom: 32 },
   btn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 12,
@@ -302,23 +303,20 @@ const styles = StyleSheet.create({
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   container: { flexGrow: 1, padding: 24, paddingBottom: 40 },
   header: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 14,
     fontWeight: '800',
     textTransform: 'uppercase',
     marginBottom: 8,
   },
-  topicName: { color: theme.colors.textSecondary, fontSize: 14, marginBottom: 20 },
+  topicName: { color: n.colors.textSecondary, fontSize: 14, marginBottom: 20 },
   contextCard: {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-    borderWidth: 1,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
   },
   contextLabel: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '800',
     textTransform: 'uppercase',
@@ -328,7 +326,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   contextSummary: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
     marginTop: 8,
@@ -339,25 +337,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   keyConceptBullet: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 16,
     lineHeight: 22,
     marginRight: 8,
   },
   keyConceptText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     lineHeight: 22,
     flex: 1,
   },
   progressText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 10,
   },
   question: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '700',
     lineHeight: 28,
@@ -365,15 +363,15 @@ const styles = StyleSheet.create({
   },
   options: { gap: 12 },
   option: { flexDirection: 'row', padding: 16, borderRadius: 12, borderWidth: 1 },
-  optionLetter: { color: theme.colors.primary, fontWeight: '800', fontSize: 16, width: 24 },
-  optionText: { color: theme.colors.textPrimary, fontSize: 16, flex: 1, lineHeight: 22 },
+  optionLetter: { color: n.colors.accent, fontWeight: '800', fontSize: 16, width: 24 },
+  optionText: { color: n.colors.textPrimary, fontSize: 16, flex: 1, lineHeight: 22 },
   feedback: { marginTop: 24, padding: 16, borderRadius: 12, borderWidth: 1 },
   feedbackCorrect: { backgroundColor: '#0D2010', borderColor: '#4CAF50' },
   feedbackWrong: { backgroundColor: '#200D0D', borderColor: '#F44336' },
   feedbackLabel: { color: '#fff', fontWeight: '800', fontSize: 16, marginBottom: 8 },
   nextBtn: {
     marginTop: 18,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

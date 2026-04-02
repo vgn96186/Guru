@@ -1,19 +1,23 @@
-import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  TouchableOpacity,
-  Text,
-  View,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native';
-import Svg, { Defs, RadialGradient, Stop, Circle } from 'react-native-svg';
+import React, { useEffect } from 'react';
+import { TouchableOpacity, Text, View, StyleSheet, useWindowDimensions } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  cancelAnimation,
+  Easing,
+} from 'react-native-reanimated';
+import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 const PHONE_SIZE = 156;
 const TABLET_SIZE = 220;
 const TABLET_BREAKPOINT = 600;
+const BOX_STEP = 4000;
+const easeBreath = Easing.bezier(0.4, 0.0, 0.2, 1);
 
 interface Props {
   onPress: () => void;
@@ -30,7 +34,7 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
     onPress,
     label = 'START SESSION',
     sublabel,
-    color = theme.colors.primary,
+    color = n.colors.accent,
     disabled = false,
     disabledLabel = 'LOADING...',
     hidden = false,
@@ -42,154 +46,194 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
   const size = isTablet ? TABLET_SIZE : PHONE_SIZE;
   const radius = size / 2;
 
-  const scale = useRef(new Animated.Value(1)).current;
-  const glow = useRef(new Animated.Value(0)).current;
+  const breathScale = useSharedValue(1);
+  const breathGlow = useSharedValue(0);
+  const highlightTranslateY = useSharedValue(0);
+  const highlightOpacity = useSharedValue(0.45);
+
+  useEffect(() => {
+    if (hidden || disabled) {
+      cancelAnimation(breathScale);
+      cancelAnimation(breathGlow);
+      cancelAnimation(highlightTranslateY);
+      cancelAnimation(highlightOpacity);
+      breathScale.value = 1;
+      breathGlow.value = 0;
+      highlightTranslateY.value = 0;
+      highlightOpacity.value = 0.45;
+      return;
+    }
+
+    breathScale.value = withSequence(
+      withTiming(1.08, { duration: BOX_STEP / 2, easing: easeBreath }),
+      withRepeat(
+        withSequence(
+          withTiming(1.08, { duration: BOX_STEP }),
+          withTiming(0.92, { duration: BOX_STEP, easing: easeBreath }),
+          withTiming(0.92, { duration: BOX_STEP }),
+          withTiming(1.08, { duration: BOX_STEP, easing: easeBreath }),
+        ),
+        -1,
+        false
+      )
+    );
+
+    breathGlow.value = withSequence(
+      withTiming(0.95, { duration: BOX_STEP / 2, easing: easeBreath }),
+      withRepeat(
+        withSequence(
+          withTiming(0.95, { duration: BOX_STEP }),
+          withTiming(0.05, { duration: BOX_STEP, easing: easeBreath }),
+          withTiming(0.05, { duration: BOX_STEP }),
+          withTiming(0.95, { duration: BOX_STEP, easing: easeBreath }),
+        ),
+        -1,
+        false
+      )
+    );
+
+    highlightTranslateY.value = withSequence(
+      withTiming(3, { duration: BOX_STEP / 2, easing: easeBreath }),
+      withRepeat(
+        withSequence(
+          withTiming(3, { duration: BOX_STEP }),
+          withTiming(-2, { duration: BOX_STEP, easing: easeBreath }),
+          withTiming(-2, { duration: BOX_STEP }),
+          withTiming(3, { duration: BOX_STEP, easing: easeBreath }),
+        ),
+        -1,
+        false
+      )
+    );
+
+    highlightOpacity.value = withSequence(
+      withTiming(0.75, { duration: BOX_STEP / 2, easing: easeBreath }),
+      withRepeat(
+        withSequence(
+          withTiming(0.75, { duration: BOX_STEP }),
+          withTiming(0.35, { duration: BOX_STEP, easing: easeBreath }),
+          withTiming(0.35, { duration: BOX_STEP }),
+          withTiming(0.75, { duration: BOX_STEP, easing: easeBreath }),
+        ),
+        -1,
+        false
+      )
+    );
+
+    return () => {
+      cancelAnimation(breathScale);
+      cancelAnimation(breathGlow);
+      cancelAnimation(highlightTranslateY);
+      cancelAnimation(highlightOpacity);
+    };
+  }, [disabled, hidden, breathGlow, breathScale, highlightOpacity, highlightTranslateY]);
+
+  const styleOrbBody = useAnimatedStyle(() => ({
+    transform: [{ scale: breathScale.value }],
+  }));
+
+  const styleGlow = useAnimatedStyle(() => ({
+    opacity: breathGlow.value,
+  }));
+
+  const styleHighlight = useAnimatedStyle(() => ({
+    transform: [{ translateY: highlightTranslateY.value }],
+    opacity: highlightOpacity.value,
+  }));
 
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onPress();
   }
 
-  useEffect(() => {
-    if (disabled) {
-      scale.setValue(1.0);
-      glow.setValue(0);
-      return;
-    }
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 1.04, duration: 1200, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1.0, duration: 1200, useNativeDriver: true }),
-      ]),
-    );
-    const glowAnim = Animated.loop(
-      Animated.sequence([
-        Animated.timing(glow, { toValue: 1, duration: 1200, useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: true }),
-      ]),
-    );
-    pulse.start();
-    glowAnim.start();
-    return () => {
-      pulse.stop();
-      glowAnim.stop();
-    };
-  }, [disabled, glow, scale]);
-
-  const btnColor = disabled ? theme.colors.cardHover : color;
+  const btnColor = disabled ? n.colors.cardHover : color;
 
   return (
-    <View ref={ref} collapsable={false} style={hidden ? { opacity: 0 } : undefined}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <View style={[styles.glowWrapper, { width: size, height: size }]}>
-          {/* Outer glow */}
+    <View ref={ref} collapsable={false} style={hidden ? styles.hidden : undefined}>
+      <TouchableOpacity
+        onPress={handlePress}
+        disabled={disabled}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Start study session"
+        accessibilityState={{ disabled }}
+        testID="start-session-btn"
+        style={[
+          styles.button,
+          { width: size, height: size, borderRadius: radius },
+          disabled && styles.buttonDisabled,
+        ]}
+      >
+        <Animated.View
+          pointerEvents="none"
+          style={[styles.orbVisual, { width: size, height: size, borderRadius: radius }, styleOrbBody]}
+        >
           <Animated.View
             style={[
               styles.glowLayer,
-              {
-                width: size,
-                height: size,
-                borderRadius: radius,
-                opacity: glow,
-                backgroundColor: color,
-              },
+              { width: size, height: size, borderRadius: radius, shadowColor: color },
+              styleGlow,
             ]}
           />
-          {/* Touchable orb */}
-          <TouchableOpacity
-            onPress={handlePress}
-            disabled={disabled}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="Start study session"
-            accessibilityState={{ disabled }}
-            testID="start-session-btn"
-            style={[
-              styles.button,
-              {
-                width: size,
-                height: size,
-                borderRadius: radius,
-                backgroundColor: btnColor,
-              },
-              disabled && styles.buttonDisabled,
-            ]}
-          >
-            {/* SVG orb layers */}
+
+          <View style={[styles.orbCore, { width: size, height: size, borderRadius: radius, backgroundColor: btnColor }]}>
             <View style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: 'hidden' }]}>
-              <Svg width={size} height={size}>
+              <Svg width={size} height={size} viewBox="0 0 100 100">
                 <Defs>
-                  {/* Main body gradient — top-left lit sphere */}
-                  <RadialGradient
-                    id="orbBody"
-                    cx="38%"
-                    cy="32%"
-                    rx="60%"
-                    ry="60%"
-                    fx="38%"
-                    fy="32%"
-                  >
-                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
-                    <Stop offset="45%" stopColor="#ffffff" stopOpacity="0.03" />
-                    <Stop offset="100%" stopColor="#000000" stopOpacity="0.22" />
+                  <RadialGradient id="startColorGrad" cx="45%" cy="45%" rx="55%" ry="55%" fx="45%" fy="45%">
+                    <Stop offset="0%" stopColor={n.colors.accent} stopOpacity="1" />
+                    <Stop offset="60%" stopColor={n.colors.accent} stopOpacity="1" />
+                    <Stop offset="100%" stopColor={n.colors.accent} stopOpacity="1" />
                   </RadialGradient>
-                  {/* Specular highlight — small bright spot */}
-                  <RadialGradient
-                    id="specular"
-                    cx="35%"
-                    cy="28%"
-                    rx="22%"
-                    ry="22%"
-                    fx="35%"
-                    fy="28%"
-                  >
-                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.30" />
-                    <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                  <RadialGradient id="startLightGrad" cx="30%" cy="28%" rx="65%" ry="65%" fx="30%" fy="28%">
+                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+                    <Stop offset="35%" stopColor="#ffffff" stopOpacity="0.1" />
+                    <Stop offset="65%" stopColor="#000000" stopOpacity="0.0" />
+                    <Stop offset="85%" stopColor="#000000" stopOpacity="0.25" />
+                    <Stop offset="100%" stopColor="#000000" stopOpacity="0.5" />
                   </RadialGradient>
-                  {/* Rim light — subtle edge glow on the opposite side */}
-                  <RadialGradient
-                    id="rimLight"
-                    cx="72%"
-                    cy="75%"
-                    rx="35%"
-                    ry="35%"
-                    fx="72%"
-                    fy="75%"
-                  >
-                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.10" />
+                </Defs>
+                <Circle cx="50" cy="50" r="50" fill="url(#startColorGrad)" />
+                <Circle cx="50" cy="50" r="50" fill="url(#startLightGrad)" />
+              </Svg>
+            </View>
+
+            <Animated.View style={[styles.specularContainer, styleHighlight]}>
+              <Svg width={40} height={25} viewBox="0 0 40 25">
+                <Defs>
+                  <RadialGradient id="startSpecularHighlight" cx="50%" cy="50%" rx="50%" ry="50%">
+                    <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+                    <Stop offset="60%" stopColor="#ffffff" stopOpacity="0.3" />
                     <Stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
                   </RadialGradient>
                 </Defs>
-                {/* Body shading */}
-                <Circle cx={radius} cy={radius} r={radius} fill="url(#orbBody)" />
-                {/* Specular highlight */}
-                <Circle cx={radius} cy={radius} r={radius} fill="url(#specular)" />
-                {/* Rim light */}
-                <Circle cx={radius} cy={radius} r={radius} fill="url(#rimLight)" />
+                <Ellipse cx="20" cy="12.5" rx="18" ry="10" fill="url(#startSpecularHighlight)" />
               </Svg>
-            </View>
-            {/* Text content */}
+            </Animated.View>
+          </View>
+        </Animated.View>
+
+        <View pointerEvents="none" style={styles.textLayer}>
+          <Text
+            style={[styles.label, isTablet && styles.labelTablet]}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+          >
+            {disabled ? disabledLabel : label}
+          </Text>
+          {sublabel ? (
             <Text
-              style={[styles.label, isTablet && styles.labelTablet]}
+              style={[styles.sublabel, isTablet && styles.sublabelTablet]}
               numberOfLines={2}
               adjustsFontSizeToFit
-              minimumFontScale={0.75}
+              minimumFontScale={0.85}
             >
-              {disabled ? disabledLabel : label}
+              {sublabel}
             </Text>
-            {sublabel ? (
-              <Text
-                style={[styles.sublabel, isTablet && styles.sublabelTablet]}
-                numberOfLines={2}
-                adjustsFontSizeToFit
-                minimumFontScale={0.85}
-              >
-                {sublabel}
-              </Text>
-            ) : null}
-          </TouchableOpacity>
+          ) : null}
         </View>
-      </Animated.View>
+      </TouchableOpacity>
     </View>
   );
 });
@@ -197,27 +241,47 @@ const StartButton = React.forwardRef<View, Props>(function StartButton(
 export default StartButton;
 
 const styles = StyleSheet.create({
-  glowWrapper: {
+  hidden: {
+    opacity: 0,
+  },
+  button: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  orbVisual: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  orbCore: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
   glowLayer: {
     position: 'absolute',
-    shadowColor: theme.colors.primary,
+    backgroundColor: 'transparent',
     shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 28,
-    shadowOpacity: 0.7,
-    elevation: 20,
+    shadowRadius: 40,
+    shadowOpacity: 1,
+    elevation: 30,
   },
-  button: {
+  specularContainer: {
+    position: 'absolute',
+    top: '15%',
+    left: '18%',
+  },
+  textLayer: {
+    position: 'absolute',
+    width: '90%',
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 12,
-    paddingHorizontal: 18,
   },
   buttonDisabled: { opacity: 0.6 },
   label: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '900',
     fontSize: 17,
     letterSpacing: 1.2,

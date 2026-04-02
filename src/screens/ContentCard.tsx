@@ -38,8 +38,9 @@ import GuruChatOverlay from '../components/GuruChatOverlay';
 import ErrorBoundary from '../components/ErrorBoundary';
 import AppText from '../components/AppText';
 import StudyMarkdown from '../components/StudyMarkdown';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface TopicImageProps {
@@ -455,12 +456,12 @@ function KeyPointsCard({
   }, [content, revealIndex, isFullyRevealed, onContextChange]);
 
   const POINT_COLORS = [
-    theme.colors.primary,
-    theme.colors.accent,
-    theme.colors.warning,
-    theme.colors.success,
-    theme.colors.error,
-    theme.colors.info,
+    n.colors.accent,
+    n.colors.error,
+    n.colors.warning,
+    n.colors.success,
+    n.colors.error,
+    n.colors.accent,
   ];
 
   const scrollContentStyle = useCardScrollContentStyle(0);
@@ -566,14 +567,14 @@ function ExplainablePoint({
         </View>
       ) : loading ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-          <Text style={{ color: theme.colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
+          <ActivityIndicator size="small" color={n.colors.accent} />
+          <Text style={{ color: n.colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
             Explaining...
           </Text>
         </View>
       ) : (
         <TouchableOpacity style={s.smallExplainBtn} onPress={handleExplain} activeOpacity={0.8}>
-          <Ionicons name="sparkles" size={14} color={theme.colors.primary} />
+          <Ionicons name="sparkles" size={14} color={n.colors.accent} />
           <Text style={s.smallExplainText}>Explain this</Text>
         </TouchableOpacity>
       )}
@@ -598,19 +599,19 @@ function MustKnowCard({
       <TopicImage topicName={content.topicName} />
 
       <Text style={s.mkSectionLabel}>
-        <Ionicons name="alert-circle" size={13} color={theme.colors.error} />
+        <Ionicons name="alert-circle" size={13} color={n.colors.error} />
         {'  '}CANNOT FORGET
       </Text>
       <View style={s.mkList}>
         {content.mustKnow.map((item, i) => (
-          <View key={i} style={[s.mkItem, { borderLeftColor: theme.colors.error }]}>
+          <View key={i} style={[s.mkItem, { borderLeftColor: n.colors.error }]}>
             <StudyMarkdown content={emphasizeHighYieldMarkdown(item)} compact />
           </View>
         ))}
       </View>
 
       <Text style={s.mkSectionLabel}>
-        <Ionicons name="flame" size={13} color={theme.colors.warning} />
+        <Ionicons name="flame" size={13} color={n.colors.warning} />
         {'  '}MOST TESTED
       </Text>
       <View style={s.mkList}>
@@ -619,7 +620,7 @@ function MustKnowCard({
             key={i}
             item={item}
             topicName={content.topicName}
-            color={theme.colors.warning}
+            color={n.colors.warning}
           />
         ))}
       </View>
@@ -953,10 +954,10 @@ function QuizCard({
               size={16}
               color={
                 selected === q.correctIndex
-                  ? theme.colors.success
+                  ? n.colors.success
                   : selected === -1
-                    ? theme.colors.primary
-                    : theme.colors.error
+                    ? n.colors.accent
+                    : n.colors.error
               }
             />
             <Text style={s.explLabel}>
@@ -976,7 +977,7 @@ function QuizCard({
           )}
           <View style={s.explSection}>
             <View style={s.inlineLabelRow}>
-              <Ionicons name="reader-outline" size={14} color={theme.colors.primary} />
+              <Ionicons name="reader-outline" size={14} color={n.colors.accent} />
               <Text style={s.explSectionTitle}>Explanation</Text>
             </View>
             <StudyMarkdown content={emphasizeHighYieldMarkdown(formattedExplanation)} />
@@ -991,14 +992,14 @@ function QuizCard({
           activeOpacity={0.8}
         >
           <View style={s.inlineLabelRow}>
-            <Ionicons name="bulb-outline" size={14} color={theme.colors.primary} />
+            <Ionicons name="bulb-outline" size={14} color={n.colors.accent} />
             <Text style={s.explainDeeperText}>Explain the broader topic</Text>
           </View>
         </TouchableOpacity>
       )}
       {isLoadingDeepExpl && (
         <View style={s.deepExplLoading}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
+          <ActivityIndicator size="small" color={n.colors.accent} />
           <Text style={s.deepExplLoadingText}>Guru is explaining...</Text>
         </View>
       )}
@@ -1007,11 +1008,11 @@ function QuizCard({
           style={[
             s.explBox,
             s.explBoxDeep,
-            { borderLeftWidth: 3, borderLeftColor: theme.colors.primary },
+            { borderLeftWidth: 3, borderLeftColor: n.colors.accent },
           ]}
         >
           <View style={s.inlineLabelRow}>
-            <Ionicons name="school-outline" size={14} color={theme.colors.primary} />
+            <Ionicons name="school-outline" size={14} color={n.colors.accent} />
             <Text style={s.explSectionTitle}>Deeper Explanation</Text>
           </View>
           <StudyMarkdown content={emphasizeHighYieldMarkdown(deepExplanation)} />
@@ -1236,7 +1237,7 @@ function TeachBackCard({
           <TextInput
             style={s.textInput}
             placeholder="Type your explanation here..."
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={n.colors.textMuted}
             multiline
             value={answer}
             onChangeText={setAnswer}
@@ -1755,14 +1756,14 @@ const s = StyleSheet.create({
   },
   pointsContainer: { marginBottom: 16, gap: 10 },
   pointRow: { flexDirection: 'row' as const, marginBottom: 12 },
-  bullet: { color: theme.colors.primary, fontSize: 16, marginRight: 10, marginTop: 1 },
-  pointText: { color: theme.colors.textPrimary, fontSize: 15, flex: 1, lineHeight: 22 },
+  bullet: { color: n.colors.accent, fontSize: 16, marginRight: 10, marginTop: 1 },
+  pointText: { color: n.colors.textPrimary, fontSize: 15, flex: 1, lineHeight: 22 },
   kpCard: {
     flexDirection: 'row' as const,
     alignItems: 'flex-start' as const,
     alignSelf: 'stretch' as const,
     minWidth: 0,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     borderLeftWidth: 3,
     padding: 12,
@@ -1784,41 +1785,43 @@ const s = StyleSheet.create({
     minWidth: 0,
   },
   kpProgress: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '600' as const,
     marginBottom: 12,
   },
   hookBox: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '44',
+    borderColor: n.colors.accent + '44',
   },
   hookLabel: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 11,
     fontWeight: '800' as const,
     letterSpacing: 0.8,
     marginBottom: 8,
   },
-  hookText: { color: theme.colors.textPrimary, fontSize: 14, fontStyle: 'italic' as const },
+  hookText: { color: n.colors.textPrimary, fontSize: 14, fontStyle: 'italic' as const },
   doneBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: 'rgba(109,153,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(130,170,255,0.24)',
     borderRadius: 14,
     padding: 16,
     alignItems: 'center',
     marginBottom: 10,
   },
-  disabledBtn: { backgroundColor: '#333' },
-  doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  disabledBtn: { opacity: 0.5 },
+  doneBtnText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 16 },
   skipBtn: { padding: 12, alignItems: 'center' },
-  skipText: { color: theme.colors.textMuted, fontSize: 13 },
+  skipText: { color: n.colors.textMuted, fontSize: 13 },
   ratingContainer: { marginTop: 16, marginBottom: 10 },
   ratingTitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     marginBottom: 12,
     textAlign: 'center',
@@ -1840,15 +1843,15 @@ const s = StyleSheet.create({
   optionBtn: { borderRadius: 12, padding: 14, borderWidth: 2, minWidth: 0 },
   optionText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
   iDontKnowBtn: {
-    backgroundColor: 'transparent',
+    backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.warning,
+    borderColor: n.colors.warning,
     paddingVertical: 14,
     alignItems: 'center' as const,
     marginBottom: 12,
   },
-  iDontKnowText: { color: theme.colors.warning, fontWeight: '700' as const, fontSize: 15 },
+  iDontKnowText: { color: n.colors.warning, fontWeight: '700' as const, fontSize: 15 },
   correctAnswerBox: {
     backgroundColor: '#1A2A1A',
     borderRadius: 8,
@@ -1866,7 +1869,7 @@ const s = StyleSheet.create({
   correctAnswerText: { color: '#E0E0E0', fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
   explSection: { marginTop: 8 },
   explSectionTitle: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700' as const,
     letterSpacing: 0.5,
@@ -1874,15 +1877,15 @@ const s = StyleSheet.create({
     textTransform: 'uppercase' as const,
   },
   explainDeeperBtn: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: 'rgba(109,153,255,0.1)',
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center' as const,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
   },
-  explainDeeperText: { color: theme.colors.primary, fontWeight: '700' as const, fontSize: 14 },
+  explainDeeperText: { color: n.colors.accent, fontWeight: '700' as const, fontSize: 14 },
   smallExplainBtn: {
     alignSelf: 'flex-start' as const,
     flexDirection: 'row' as const,
@@ -1891,13 +1894,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: 'rgba(109,153,255,0.1)',
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
     gap: 4,
   },
   smallExplainText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700' as const,
   },
@@ -1910,7 +1913,7 @@ const s = StyleSheet.create({
     gap: 10,
   },
   deepExplLoadingText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontStyle: 'italic' as const,
   },
@@ -1928,7 +1931,7 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   explLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 6,
@@ -1939,7 +1942,7 @@ const s = StyleSheet.create({
   storyText: { color: '#E0E0E0', fontSize: 15, lineHeight: 26, marginBottom: 20 },
   highlightsBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 20 },
   highlightsLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 8,
@@ -2031,7 +2034,7 @@ const s = StyleSheet.create({
   },
   offlineEmoji: { fontSize: 32, textAlign: 'center', marginBottom: 12 },
   offlineText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -2046,7 +2049,7 @@ const s = StyleSheet.create({
     marginBottom: 32,
   },
   mkSectionLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '800' as const,
     letterSpacing: 1,
@@ -2056,29 +2059,29 @@ const s = StyleSheet.create({
   },
   mkList: { gap: 10, marginBottom: 10 },
   mkItem: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 12,
     borderLeftWidth: 4,
   },
   mkTipBox: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderRadius: 12,
     padding: 16,
     marginTop: 20,
     marginBottom: 30,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '33',
+    borderColor: n.colors.accent + '33',
   },
   mkTipLabel: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 11,
     fontWeight: '900' as const,
     letterSpacing: 1,
     marginBottom: 6,
   },
   mkTipText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontStyle: 'italic' as const,

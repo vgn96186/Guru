@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface StudyGoalsSectionProps {
   inicetDate: string;
@@ -38,7 +38,7 @@ function StudyGoalsSection({
           value={inicetDate}
           onChangeText={onInicetDateChange}
           placeholder="YYYY-MM-DD"
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={n.colors.textMuted}
         />
         {errorInicet && <Text style={styles.errorText}>{errorInicet}</Text>}
       </View>
@@ -50,7 +50,7 @@ function StudyGoalsSection({
           value={neetDate}
           onChangeText={onNeetDateChange}
           placeholder="YYYY-MM-DD"
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={n.colors.textMuted}
         />
         {errorNeet && <Text style={styles.errorText}>{errorNeet}</Text>}
       </View>
@@ -83,15 +83,15 @@ export default React.memo(StudyGoalsSection);
 
 const styles = StyleSheet.create({
   section: {
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     marginBottom: 20,
   },
   sectionTitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
@@ -99,21 +99,21 @@ const styles = StyleSheet.create({
   },
   inputGroup: { marginBottom: 16 },
   row: { flexDirection: 'row' },
-  label: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 6 },
+  label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700', marginBottom: 6 },
   input: {
-    backgroundColor: theme.colors.surface,
-    color: theme.colors.textPrimary,
+    backgroundColor: n.colors.surface,
+    color: n.colors.textPrimary,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     fontSize: 14,
   },
   inputError: {
-    borderColor: theme.colors.warning,
+    borderColor: n.colors.warning,
   },
   errorText: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontSize: 12,
     marginTop: 4,
   },

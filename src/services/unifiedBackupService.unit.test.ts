@@ -48,6 +48,8 @@ jest.mock('../../modules/app-launcher', () => ({
 jest.mock('../db/database', () => ({
   getDb: jest.fn(),
   resetDbSingleton: jest.fn(),
+  walCheckpoint: jest.fn().mockResolvedValue(undefined),
+  closeDbGracefully: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('../db/repositories', () => ({
@@ -169,7 +171,7 @@ describe('unifiedBackupService', () => {
       (FileSystem.readAsStringAsync as jest.Mock).mockImplementation(
         (_path: string, options?: { encoding?: string }) => {
           if (options?.encoding === 'base64') {
-            return Promise.resolve('U2VpdGUgZm9ybWF0IDM='); // base64 of "SQLite format 3"
+            return Promise.resolve('U1FMaXRlIGZvcm1hdCAz'); // base64 of "SQLite format 3"
           }
           return Promise.resolve(JSON.stringify(validManifest));
         },
@@ -242,7 +244,7 @@ describe('unifiedBackupService', () => {
         appVersion: '1.0.0',
         backupType: 'full',
         includedAssets: {
-          database: true,
+          database: false,
           transcripts: true,
           images: true,
           recordings: false,
@@ -313,7 +315,7 @@ describe('unifiedBackupService', () => {
         appVersion: '1.0.0',
         backupType: 'full',
         includedAssets: {
-          database: true,
+          database: false,
           transcripts: true,
           images: true,
           recordings: false,
@@ -405,7 +407,7 @@ describe('unifiedBackupService', () => {
         appVersion: '1.0.0',
         backupType: 'full',
         includedAssets: {
-          database: true,
+          database: false,
           transcripts: true,
           images: true,
           recordings: false,

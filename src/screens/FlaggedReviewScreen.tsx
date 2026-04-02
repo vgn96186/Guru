@@ -9,15 +9,14 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { HomeStackParamList } from '../navigation/types';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { CONTENT_TYPE_LABELS } from '../constants/contentTypes';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import ScreenHeader from '../components/ScreenHeader';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 function renderPreview(item: FlaggedItem) {
   const c = item.content;
@@ -83,7 +82,7 @@ const FlaggedItemCard = React.memo(
     onUnflag: () => void;
   }) => {
     return (
-      <View style={styles.card}>
+      <LinearSurface padded={false} borderColor={n.colors.warning} style={styles.card}>
         <View style={styles.cardHeader}>
           <TouchableOpacity
             style={styles.cardMeta}
@@ -123,13 +122,12 @@ const FlaggedItemCard = React.memo(
           {isExpanded && <View style={styles.preview}>{renderPreview(item)}</View>}
           <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
         </TouchableOpacity>
-      </View>
+      </LinearSurface>
     );
   },
 );
 
 export default function FlaggedReviewScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const [items, setItems] = useState<FlaggedItem[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -172,15 +170,13 @@ export default function FlaggedReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Text style={styles.backText}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>🚩 Flagged for Review</Text>
-          <Text style={styles.count}>{items.length}</Text>
-        </View>
+        <ScreenHeader
+          title="Flagged for Review"
+          subtitle="Recheck AI content you marked for a second look."
+          rightElement={<Text style={styles.count}>{items.length}</Text>}
+        />
 
         {items.length === 0 ? (
           <View style={styles.empty}>
@@ -216,61 +212,55 @@ export default function FlaggedReviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  backBtn: { padding: 4 },
-  backText: { color: theme.colors.primary, fontSize: 22, fontWeight: '700' },
-  title: { flex: 1, color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   count: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontWeight: '700',
     fontSize: 16,
-    backgroundColor: theme.colors.warningSurface,
+    backgroundColor: 'rgba(217,119,6,0.1)',
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 3,
   },
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   hint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 17,
     marginBottom: 16,
     fontStyle: 'italic',
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 14,
     padding: 16,
     marginBottom: 12,
     borderLeftWidth: 3,
-    borderLeftColor: theme.colors.warning,
+    borderLeftColor: n.colors.warning,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   cardMeta: { flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' },
   cardType: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontWeight: '700',
     fontSize: 12,
-    backgroundColor: theme.colors.warningSurface,
+    backgroundColor: 'rgba(217,119,6,0.1)',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  cardSubject: { color: theme.colors.textMuted, fontSize: 12 },
+  cardSubject: { color: n.colors.textMuted, fontSize: 12 },
   unflagBtn: {
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surfaceHover,
     borderRadius: 12,
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  unflagText: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '700' },
-  cardTopic: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 15, marginBottom: 4 },
-  cardModel: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 8 },
+  unflagText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '700' },
+  cardTopic: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 15, marginBottom: 4 },
+  cardModel: { color: n.colors.textSecondary, fontSize: 11, marginBottom: 8 },
   preview: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
@@ -283,6 +273,6 @@ const styles = StyleSheet.create({
   expandHint: { color: '#555', fontSize: 11, textAlign: 'center', marginTop: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyTitle: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 20, marginBottom: 8 },
-  emptySub: { color: theme.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 20, marginBottom: 8 },
+  emptySub: { color: n.colors.textMuted, fontSize: 14, textAlign: 'center', lineHeight: 22 },
 });

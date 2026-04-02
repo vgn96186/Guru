@@ -49,7 +49,16 @@ jest.mock('expo-haptics', () => ({
 
 jest.mock('react-native-reanimated', () => {
   try {
-    return require('react-native-reanimated/mock');
+    const mock = require('react-native-reanimated/mock');
+    const existingEasing = mock.Easing ?? {};
+    return {
+      ...mock,
+      Easing: {
+        ...existingEasing,
+        linear: existingEasing.linear ?? ((x) => x),
+        bezier: existingEasing.bezier ?? (() => (x) => x),
+      },
+    };
   } catch {
     const React = require('react');
     const { View } = require('react-native');
@@ -62,7 +71,10 @@ jest.mock('react-native-reanimated', () => {
       useSharedValue: (init) => ({ value: init }),
       useAnimatedProps: () => ({}),
       withTiming: (to) => to,
-      Easing: { linear: (x) => x },
+      Easing: {
+        linear: (x) => x,
+        bezier: () => (x) => x,
+      },
       interpolateColor: () => '#000000',
     };
   }
@@ -77,6 +89,10 @@ jest.mock('react-native-svg', () => {
     Svg: el('Svg'),
     Circle: el('Circle'),
     G: el('G'),
+    Defs: el('Defs'),
+    LinearGradient: el('LinearGradient'),
+    Rect: el('Rect'),
+    Stop: el('Stop'),
   };
 });
 

@@ -8,14 +8,20 @@ import {
   StatusBar,
   TextInput,
   Alert,
-  Animated,
-  Easing,
   Image,
   Platform,
   Pressable,
   Modal,
   ScrollView,
+  InteractionManager,
 } from 'react-native';
+import ReAnimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  Easing,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -32,8 +38,10 @@ import { clearTopicCache } from '../db/queries/aiCache';
 import { fetchWikipediaImage } from '../services/imageService';
 import type { TopicWithProgress, TopicStatus } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
+import BannerSearchBar from '../components/BannerSearchBar';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { MS_PER_DAY } from '../constants/time';
 import * as Haptics from 'expo-haptics';
 import {
@@ -59,10 +67,10 @@ type Route = RouteProp<SyllabusStackParamList, 'TopicDetail'>;
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
 
 const STATUS_COLORS: Record<TopicStatus, string> = {
-  unseen: theme.colors.unseen,
-  seen: theme.colors.seen,
-  reviewed: theme.colors.primary,
-  mastered: theme.colors.mastered,
+  unseen: '#606080',
+  seen: '#2196F3',
+  reviewed: n.colors.accent,
+  mastered: '#4CAF50',
 };
 
 type TopicFilter = 'all' | 'due' | 'unseen' | 'weak' | 'high_yield' | 'notes';
@@ -110,8 +118,7 @@ export default function TopicDetailScreen() {
   const [milestoneText, setMilestoneText] = useState('');
   const [noteImages, setNoteImages] = useState<Record<number, GeneratedStudyImageRecord[]>>({});
   const [imageJobKey, setImageJobKey] = useState<string | null>(null);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const searchWidthAnim = useRef(new Animated.Value(170)).current;
+  const [screenHydrated, setScreenHydrated] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
   const isSingleTopicView = initialTopicId != null;
   const childrenByParentId = useMemo(() => {
@@ -152,20 +159,31 @@ export default function TopicDetailScreen() {
   }, [allTopics]);
 
   useEffect(() => {
-    if (isFocused) {
-      void getTopicsBySubject(subjectId).then(setAllTopics);
+    if (!isFocused) {
+      setScreenHydrated(false);
+      return;
     }
-  }, [isFocused, subjectId, subjectName]);
+
+    // Defer heavy fetch/list hydration until native transition interactions finish.
+    const task = InteractionManager.runAfterInteractions(() => {
+      void getTopicsBySubject(subjectId).then((rows) => {
+        setAllTopics(rows);
+        setScreenHydrated(true);
+      });
+    });
+
+    return () => task.cancel();
+  }, [isFocused, subjectId]);
 
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused || !screenHydrated) return;
     if (initialSearchQuery && !isSingleTopicView) {
       setSearchQuery(initialSearchQuery);
     }
-  }, [initialSearchQuery, isFocused, isSingleTopicView]);
+  }, [initialSearchQuery, isFocused, isSingleTopicView, screenHydrated]);
 
   useEffect(() => {
-    if (!isFocused || !initialTopicId || allTopics.length === 0) return;
+    if (!isFocused || !screenHydrated || !initialTopicId || allTopics.length === 0) return;
     const topic = allTopics.find((item) => item.id === initialTopicId);
     if (!topic) return;
 
@@ -180,9 +198,14 @@ export default function TopicDetailScreen() {
     setExpandedId(topic.id);
     setNoteText(topic.progress.userNotes);
     void loadTopicImages(topic.id);
-  }, [allTopics, initialTopicId, isFocused]);
+  }, [allTopics, initialTopicId, isFocused, screenHydrated]);
 
   useEffect(() => {
+    if (!screenHydrated) {
+      setDisplayTopics([]);
+      return;
+    }
+
     if (isSingleTopicView) {
       const topic = allTopics.find((item) => item.id === initialTopicId);
       setDisplayTopics(topic ? [topic] : []);
@@ -287,6 +310,7 @@ export default function TopicDetailScreen() {
     initialTopicId,
     isSingleTopicView,
     searchQuery,
+    screenHydrated,
     sortBy,
   ]);
 
@@ -483,53 +507,27 @@ export default function TopicDetailScreen() {
   }
 
   // Animated progress
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const countAnim = useRef(new Animated.Value(0)).current;
-  const [displayCount, setDisplayCount] = useState(done);
+  const progressAnim = useSharedValue(0);
   const prevPct = useRef(0);
-
-  useEffect(() => {
-    Animated.timing(searchWidthAnim, {
-      toValue: isSearchFocused || searchQuery.length > 0 ? 280 : 170, // Expands to approx 3 inches
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [isSearchFocused, searchQuery.length, searchWidthAnim]);
 
   useEffect(() => {
     const increased = pct > prevPct.current;
     prevPct.current = pct;
 
-    Animated.timing(progressAnim, {
-      toValue: pct,
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    Animated.timing(countAnim, {
-      toValue: done,
-      duration: 400,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-
-    const listener = countAnim.addListener(({ value }) => {
-      setDisplayCount(Math.round(value));
+    progressAnim.value = withTiming(pct, {
+      duration: 900,
+      easing: Easing.inOut(Easing.cubic),
     });
 
     if (increased && pct > 0 && pct % 25 === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
+  }, [pct]);
 
-    return () => countAnim.removeListener(listener);
-  }, [pct, done]);
-
-  const progressWidth = progressAnim.interpolate({
-    inputRange: [0, 100],
-    outputRange: ['0%', '100%'],
-    extrapolate: 'clamp',
+  const progressStyle = useAnimatedStyle(() => {
+    return {
+      width: `${Math.min(Math.max(progressAnim.value, 0), 100)}%`,
+    };
   });
 
   // Format review date
@@ -545,56 +543,29 @@ export default function TopicDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+    <View style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safe}>
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <ScreenHeader
           title={subjectName}
           titleNumberOfLines={1}
           containerStyle={styles.screenHeader}
           titleStyle={styles.screenHeaderTitle}
-          rightElement={
+          searchElement={
             !isSingleTopicView ? (
-              <Animated.View
-                style={[
-                  styles.headerSearchContainer,
-                  {
-                    width: searchWidthAnim,
-                    backgroundColor:
-                      isSearchFocused || searchQuery.length > 0
-                        ? theme.colors.surface
-                        : theme.colors.surfaceAlt,
-                  },
-                ]}
-              >
-                <Ionicons name="search" size={16} color={theme.colors.textMuted} />
-                <TextInput
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
-                  placeholder="Search..."
-                  placeholderTextColor={theme.colors.textMuted}
-                  style={styles.headerSearchInputNative}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setSearchQuery('')}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  >
-                    <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
-                  </TouchableOpacity>
-                )}
-              </Animated.View>
+              <BannerSearchBar
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search topics..."
+              />
             ) : undefined
           }
         >
           <View style={styles.headerCenter}>
             <View style={styles.progressRow}>
               <Text style={styles.subtitle}>
-                {displayCount}/{leafTopics.length} micro-topics
+                {done}/{leafTopics.length} micro-topics
               </Text>
               <View
                 style={[
@@ -616,7 +587,7 @@ export default function TopicDetailScreen() {
             </View>
             {milestoneText ? <Text style={styles.milestoneText}>{milestoneText}</Text> : null}
             <View style={styles.progressTrack}>
-              <Animated.View style={[styles.progressFill, { width: progressWidth }]} />
+              <ReAnimated.View style={[styles.progressFill, progressStyle]} />
             </View>
           </View>
         </ScreenHeader>
@@ -650,7 +621,7 @@ export default function TopicDetailScreen() {
                       name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
                       size={15}
                       color={
-                        isSortMenuOpen ? theme.colors.primaryLight : theme.colors.textSecondary
+                        isSortMenuOpen ? n.colors.accent : n.colors.textSecondary
                       }
                     />
                     <Text
@@ -676,8 +647,8 @@ export default function TopicDetailScreen() {
                       size={15}
                       color={
                         activeFilter !== 'all' || isFilterMenuOpen
-                          ? theme.colors.primaryLight
-                          : theme.colors.textSecondary
+                          ? n.colors.accent
+                          : n.colors.textSecondary
                       }
                     />
                     <Text
@@ -693,7 +664,7 @@ export default function TopicDetailScreen() {
               </View>
               {isSortMenuOpen ? (
                 <View style={styles.sortSection}>
-                  <View style={styles.sortMenu}>
+                  <LinearSurface padded={false} style={styles.sortMenu}>
                     {SORT_OPTIONS.map((option) => (
                       <TouchableOpacity
                         key={option.value}
@@ -715,11 +686,11 @@ export default function TopicDetailScreen() {
                           {option.label}
                         </Text>
                         {sortBy === option.value ? (
-                          <Ionicons name="checkmark" size={16} color={theme.colors.primaryLight} />
+                          <Ionicons name="checkmark" size={16} color={n.colors.accent} />
                         ) : null}
                       </TouchableOpacity>
                     ))}
-                  </View>
+                  </LinearSurface>
                 </View>
               ) : null}
               <View style={styles.bulkRow}>
@@ -759,6 +730,11 @@ export default function TopicDetailScreen() {
           data={displayTopics}
           keyExtractor={(t) => t.id.toString()}
           keyboardDismissMode="on-drag"
+          removeClippedSubviews={true}
+          initialNumToRender={6}
+          maxToRenderPerBatch={8}
+          windowSize={4}
+          updateCellsBatchingPeriod={80}
           contentContainerStyle={styles.list}
           onRefresh={async () => {
             setRefreshing(true);
@@ -779,7 +755,7 @@ export default function TopicDetailScreen() {
             const isDue =
               item.progress.status !== 'unseen' &&
               !!item.progress.fsrsDue &&
-              item.progress.fsrsDue.slice(0, 10) <= new Date().toISOString().slice(0, 10);
+              item.progress.fsrsDue.slice(0, 10) <= today;
             const isWeak =
               item.progress.timesStudied > 0 &&
               item.progress.confidence > 0 &&
@@ -869,15 +845,13 @@ export default function TopicDetailScreen() {
                       <View
                         style={[
                           styles.reviewBadge,
-                          item.progress.fsrsDue.slice(0, 10) <
-                            new Date().toISOString().slice(0, 10) && styles.reviewOverdue,
+                          item.progress.fsrsDue.slice(0, 10) < today && styles.reviewOverdue,
                         ]}
                       >
                         <Text
                           style={[
                             styles.reviewText,
-                            item.progress.fsrsDue.slice(0, 10) <
-                              new Date().toISOString().slice(0, 10) && styles.reviewTextOverdue,
+                            item.progress.fsrsDue.slice(0, 10) < today && styles.reviewTextOverdue,
                           ]}
                         >
                           {formatReviewDate(item.progress.fsrsDue.slice(0, 10))}
@@ -906,8 +880,8 @@ export default function TopicDetailScreen() {
                               {
                                 backgroundColor:
                                   i <= item.progress.confidence
-                                    ? theme.colors.warning
-                                    : theme.colors.border,
+                                    ? n.colors.warning
+                                    : n.colors.border,
                               },
                             ]}
                           />
@@ -940,14 +914,14 @@ export default function TopicDetailScreen() {
                     <TouchableOpacity
                       style={[
                         styles.studyNowBtn,
-                        { backgroundColor: theme.colors.success, marginTop: 8 },
+                        { backgroundColor: n.colors.success, marginTop: 8 },
                       ]}
                       onPress={() => markTopicMastered(item)}
                       activeOpacity={0.8}
                       accessibilityRole="button"
                       accessibilityLabel="Mark topic as mastered"
                     >
-                      <Text style={[styles.studyNowText, { color: theme.colors.textInverse }]}>
+                      <Text style={[styles.studyNowText, { color: n.colors.textInverse }]}>
                         Mark as Mastered ✓
                       </Text>
                     </TouchableOpacity>
@@ -957,7 +931,7 @@ export default function TopicDetailScreen() {
                       value={noteText}
                       onChangeText={setNoteText}
                       placeholder="Write your own notes..."
-                      placeholderTextColor={theme.colors.textMuted}
+                      placeholderTextColor={n.colors.textMuted}
                       multiline
                       autoFocus
                     />
@@ -1031,7 +1005,7 @@ export default function TopicDetailScreen() {
                     <TouchableOpacity
                       style={[
                         styles.notesCancel,
-                        { backgroundColor: theme.colors.errorSurface, marginTop: 12 },
+                        { backgroundColor: n.colors.errorSurface, marginTop: 12 },
                       ]}
                       onPress={() => {
                         Alert.alert(
@@ -1051,7 +1025,7 @@ export default function TopicDetailScreen() {
                         );
                       }}
                     >
-                      <Text style={[styles.notesCancelText, { color: theme.colors.error }]}>
+                      <Text style={[styles.notesCancelText, { color: n.colors.error }]}>
                         Clear AI Cache
                       </Text>
                     </TouchableOpacity>
@@ -1069,7 +1043,7 @@ export default function TopicDetailScreen() {
         >
           <View style={styles.sheetOverlay}>
             <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
-            <View style={styles.sheetCard}>
+            <LinearSurface padded={false} style={styles.sheetCard}>
               <View style={styles.sheetHeader}>
                 <View style={styles.sheetHeaderCopy}>
                   <Text style={styles.sheetTitle}>Filter Topics</Text>
@@ -1081,7 +1055,7 @@ export default function TopicDetailScreen() {
                   style={styles.sheetCloseBtn}
                   onPress={() => setIsFilterMenuOpen(false)}
                 >
-                  <Ionicons name="close" size={18} color={theme.colors.textMuted} />
+                  <Ionicons name="close" size={18} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </View>
 
@@ -1104,51 +1078,57 @@ export default function TopicDetailScreen() {
                   <Text style={styles.sheetSectionTitle}>Topic focus</Text>
                   <View style={styles.sheetOptions}>
                     {FILTER_OPTIONS.map((option) => (
-                      <TouchableOpacity
+                      <LinearSurface
                         key={option.key}
+                        padded={false}
                         style={[
-                          styles.sheetOption,
+                          styles.sheetOptionSurface,
                           activeFilter === option.key && styles.sheetOptionActive,
                         ]}
-                        onPress={() => {
-                          setActiveFilter(option.key);
-                          setIsFilterMenuOpen(false);
-                        }}
                       >
-                        <Text
-                          style={[
-                            styles.sheetOptionText,
-                            activeFilter === option.key && styles.sheetOptionTextActive,
-                          ]}
+                        <TouchableOpacity
+                          style={styles.sheetOptionInner}
+                          onPress={() => {
+                            setActiveFilter(option.key);
+                            setIsFilterMenuOpen(false);
+                          }}
                         >
-                          {option.label} {filterCounts[option.key]}
-                        </Text>
-                        <Ionicons
-                          name={
-                            activeFilter === option.key ? 'radio-button-on' : 'radio-button-off'
-                          }
-                          size={18}
-                          color={
-                            activeFilter === option.key
-                              ? theme.colors.primaryLight
-                              : theme.colors.textMuted
-                          }
-                        />
-                      </TouchableOpacity>
+                          <Text
+                            style={[
+                              styles.sheetOptionText,
+                              activeFilter === option.key && styles.sheetOptionTextActive,
+                            ]}
+                          >
+                            {option.label} {filterCounts[option.key]}
+                          </Text>
+                          <Ionicons
+                            name={
+                              activeFilter === option.key ? 'radio-button-on' : 'radio-button-off'
+                            }
+                            size={18}
+                            color={
+                              activeFilter === option.key
+                                ? n.colors.accent
+                                : n.colors.textMuted
+                            }
+                          />
+                        </TouchableOpacity>
+                      </LinearSurface>
                     ))}
                   </View>
                 </View>
               </ScrollView>
-            </View>
+            </LinearSurface>
           </View>
         </Modal>
       </ResponsiveContainer>
     </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   screenHeader: { padding: 16, paddingTop: 20, marginBottom: 0 },
   headerCenter: { minWidth: 0 },
   screenHeaderTitle: { fontSize: 22, fontWeight: '800' },
@@ -1160,7 +1140,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A1A24',
   },
   progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
-  subtitle: { color: theme.colors.textSecondary, fontSize: 13 },
+  subtitle: { color: n.colors.textSecondary, fontSize: 13 },
   milestoneText: { color: '#7CFFB2', fontSize: 12, fontWeight: '700', marginBottom: 8 },
   pctBadge: {
     backgroundColor: '#2A2A38',
@@ -1171,28 +1151,10 @@ const styles = StyleSheet.create({
   },
   pctBadgeGood: { backgroundColor: '#1A2A1A' },
   pctBadgeComplete: { backgroundColor: '#2A2A0A' },
-  pctText: { color: theme.colors.textSecondary, fontWeight: '800', fontSize: 12 },
+  pctText: { color: n.colors.textSecondary, fontWeight: '800', fontSize: 12 },
   progressTrack: { height: 4, backgroundColor: '#2A2A38', borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 2 },
   controls: { paddingHorizontal: 16, gap: 10, marginBottom: 10 },
-  headerSearchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: 12,
-    minHeight: 36,
-  },
-  headerSearchInputNative: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 14,
-    marginLeft: 8,
-    paddingVertical: 0,
-    minHeight: 26,
-  },
   singleTopicBanner: {
     backgroundColor: '#171722',
     borderRadius: 14,
@@ -1208,7 +1170,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   singleTopicBannerText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
   },
@@ -1222,28 +1184,28 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   quickActionChipPrimary: {
-    backgroundColor: theme.colors.primary + '14',
-    borderColor: theme.colors.primary + '38',
+    backgroundColor: n.colors.accent + '14',
+    borderColor: n.colors.accent + '38',
   },
   quickActionText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
   },
   quickActionTextPrimary: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
   },
   quickActionValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',
@@ -1253,10 +1215,6 @@ const styles = StyleSheet.create({
   },
   sortMenu: {
     borderRadius: 14,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: 'hidden',
   },
   sortOption: {
     minHeight: 44,
@@ -1268,16 +1226,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sortOptionActive: {
-    backgroundColor: theme.colors.primary + '12',
+    backgroundColor: n.colors.accent + '12',
   },
   sortOptionText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
   },
   sortOptionTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontWeight: '700',
   },
   bulkRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -1313,7 +1271,7 @@ const styles = StyleSheet.create({
   parentDueText: { color: '#FFB6BC', fontSize: 12, fontWeight: '800' },
   parentHighYieldText: { color: '#FFD36C', fontSize: 12, fontWeight: '800' },
   topicMeta: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
-  topicMetaText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  topicMetaText: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 18 },
   studiedText: { color: '#6C63FF', fontSize: 12, lineHeight: 18 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   highYieldBadge: {
@@ -1364,7 +1322,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   confRow: { flexDirection: 'row', gap: 3, marginBottom: 4, alignItems: 'center' },
-  confLabel: { color: theme.colors.textMuted, fontSize: 9, fontWeight: '700', marginRight: 2 },
+  confLabel: { color: n.colors.textMuted, fontSize: 9, fontWeight: '700', marginRight: 2 },
   confDot: { width: 6, height: 6, borderRadius: 3 },
 
   notePreview: {
@@ -1385,14 +1343,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheetCard: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderBottomWidth: 0,
     maxHeight: '78%',
     paddingTop: 12,
+    overflow: 'hidden',
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -1407,13 +1363,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   sheetTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '800',
   },
   sheetSubtitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
@@ -1424,7 +1380,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
   },
   clearFiltersBtn: {
     alignSelf: 'flex-start',
@@ -1433,12 +1389,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: theme.colors.primary + '14',
+    backgroundColor: n.colors.accent + '14',
     borderWidth: 1,
-    borderColor: theme.colors.primary + '32',
+    borderColor: n.colors.accent + '32',
   },
   clearFiltersText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
@@ -1455,7 +1411,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sheetSectionTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 20,
     fontWeight: '800',
@@ -1463,12 +1419,11 @@ const styles = StyleSheet.create({
   sheetOptions: {
     gap: 8,
   },
-  sheetOption: {
+  sheetOptionSurface: {
     minHeight: 46,
     borderRadius: 14,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  },
+  sheetOptionInner: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -1477,19 +1432,19 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sheetOptionActive: {
-    borderColor: theme.colors.primary + '50',
-    backgroundColor: theme.colors.primary + '12',
+    borderColor: n.colors.accent + '50',
+    backgroundColor: n.colors.accent + '12',
   },
   sheetOptionText: {
     flex: 1,
     minWidth: 0,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
   },
   sheetOptionTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontWeight: '700',
   },
   notesExpanded: {
@@ -1561,7 +1516,7 @@ const styles = StyleSheet.create({
     padding: 10,
     alignItems: 'center',
   },
-  notesCancelText: { color: theme.colors.textSecondary, fontWeight: '600', fontSize: 13 },
+  notesCancelText: { color: n.colors.textSecondary, fontWeight: '600', fontSize: 13 },
   studyNowBtn: {
     backgroundColor: '#6C63FF',
     borderRadius: 10,

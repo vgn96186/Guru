@@ -1,3 +1,4 @@
+import LinearSurface from '../components/primitives/LinearSurface';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,

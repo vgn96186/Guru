@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface HeroCardProps {
   daysToInicet: number;
@@ -31,7 +31,7 @@ export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: Hero
 
   const urgentColor = pulseAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [theme.colors.textPrimary, theme.colors.warning],
+    outputRange: [n.colors.textPrimary, n.colors.warning],
   });
 
   return (
@@ -64,19 +64,19 @@ export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: Hero
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    borderColor: n.colors.border,
+    padding: n.spacing.lg,
+    marginBottom: n.spacing.lg,
   },
   label: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.5,
-    marginBottom: theme.spacing.md,
+    marginBottom: n.spacing.md,
   },
   row: {
     flexDirection: 'row',
@@ -87,20 +87,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   examLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1,
     marginBottom: 4,
   },
   examDays: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 32,
     fontWeight: '900',
     letterSpacing: -1,
   },
   examUnit: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '600',
     marginTop: 2,
@@ -108,6 +108,6 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     height: 48,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
   },
 });

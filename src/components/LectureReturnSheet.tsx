@@ -21,7 +21,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { CONFIDENCE_LABELS, CONFIDENCE_LABELS_WITH_EMOJI } from '../constants/gamification';
 import { type LecturePipelineStage } from '../services/lecture/lectureSessionMonitor';
 import { useLecturePipeline } from '../hooks/useLecturePipeline';
@@ -138,13 +138,13 @@ export default function LectureReturnSheet(props: Props) {
     Anatomy: '#E91E63',
     Physiology: '#9C27B0',
     Biochemistry: '#3F51B5',
-    Pathology: theme.colors.error,
+    Pathology: n.colors.error,
     Microbiology: '#009688',
-    Pharmacology: theme.colors.warning,
-    Medicine: theme.colors.info,
+    Pharmacology: n.colors.warning,
+    Medicine: n.colors.accent,
     Surgery: '#795548',
     OBG: '#E91E63',
-    Pediatrics: theme.colors.success,
+    Pediatrics: n.colors.success,
     Ophthalmology: '#00BCD4',
     ENT: '#8BC34A',
     Psychiatry: '#673AB7',
@@ -157,7 +157,7 @@ export default function LectureReturnSheet(props: Props) {
     'Community Medicine': '#388E3C',
   };
   const subjectColor =
-    SUBJECT_COLORS[selectedSubjectName ?? analysis?.subject ?? ''] ?? theme.colors.primary;
+    SUBJECT_COLORS[selectedSubjectName ?? analysis?.subject ?? ''] ?? n.colors.accent;
   const isWorkingPhase = phase === 'transcribing' || activeStage !== null;
   const isIntroPhase = phase === 'intro';
   const showCompactCard = !isExpanded;
@@ -206,16 +206,16 @@ export default function LectureReturnSheet(props: Props) {
                   size={18}
                   color={
                     phase === 'error'
-                      ? theme.colors.error
+                      ? n.colors.error
                       : phase === 'results' || phase === 'quiz' || phase === 'quiz_done'
-                        ? theme.colors.success
-                        : theme.colors.primary
+                        ? n.colors.success
+                        : n.colors.accent
                   }
                 />
                 {isWorkingPhase ? (
                   <ActivityIndicator
                     style={styles.bubbleSpinner}
-                    color={theme.colors.primary}
+                    color={n.colors.accent}
                     size="small"
                   />
                 ) : null}
@@ -264,7 +264,7 @@ export default function LectureReturnSheet(props: Props) {
                 <Ionicons
                   name="mic-outline"
                   size={40}
-                  color={theme.colors.primary}
+                  color={n.colors.accent}
                   style={styles.returnIcon}
                 />
                 <Text style={styles.returnTitle}>Back from {appName}!</Text>
@@ -392,7 +392,7 @@ export default function LectureReturnSheet(props: Props) {
               <ScrollView showsVerticalScrollIndicator={false}>
                 {isSaving && (
                   <View style={styles.inlineStatusCard}>
-                    <ActivityIndicator color={theme.colors.primary} size="small" />
+                    <ActivityIndicator color={n.colors.accent} size="small" />
                     <Text style={styles.inlineStatusTitle}>Saving lecture summary</Text>
                     <Text style={styles.inlineStatusHint}>
                       Topics are being marked now. The detailed note will be enhanced in the
@@ -472,9 +472,9 @@ export default function LectureReturnSheet(props: Props) {
                         const isSelected =
                           (userConfidence ?? analysis.estimatedConfidence) === level;
                         const colors = {
-                          1: theme.colors.error,
-                          2: theme.colors.warning,
-                          3: theme.colors.success,
+                          1: n.colors.error,
+                          2: n.colors.warning,
+                          3: n.colors.success,
                         };
                         return (
                           <TouchableOpacity
@@ -528,7 +528,7 @@ export default function LectureReturnSheet(props: Props) {
               <ScrollView showsVerticalScrollIndicator={false}>
                 {quizLoading && !q ? (
                   <View style={styles.centeredBlock}>
-                    <ActivityIndicator color={theme.colors.primary} size="large" />
+                    <ActivityIndicator color={n.colors.accent} size="large" />
                     <Text style={[styles.spinnerText, { marginTop: 12 }]}>Generating quiz</Text>
                   </View>
                 ) : q ? (
@@ -539,15 +539,15 @@ export default function LectureReturnSheet(props: Props) {
                     <Text style={styles.questionText}>{q.question}</Text>
                     <View style={styles.optionsContainer}>
                       {q.options.map((opt: string, idx: number) => {
-                        let bgColor: string = theme.colors.inputBg;
-                        let borderColor: string = theme.colors.border;
+                        let bgColor: string = n.colors.surface;
+                        let borderColor: string = n.colors.border;
                         if (selected !== null) {
                           if (idx === q.correctIndex) {
-                            bgColor = theme.colors.successSurface;
-                            borderColor = theme.colors.success;
+                            bgColor = n.colors.successSurface;
+                            borderColor = n.colors.success;
                           } else if (idx === selected) {
-                            bgColor = theme.colors.errorSurface;
-                            borderColor = theme.colors.error;
+                            bgColor = n.colors.errorSurface;
+                            borderColor = n.colors.error;
                           }
                         }
                         return (
@@ -570,8 +570,8 @@ export default function LectureReturnSheet(props: Props) {
                           {
                             borderColor:
                               selected === q.correctIndex
-                                ? theme.colors.success
-                                : theme.colors.error,
+                                ? n.colors.success
+                                : n.colors.error,
                           },
                         ]}
                       >
@@ -581,8 +581,8 @@ export default function LectureReturnSheet(props: Props) {
                             {
                               color:
                                 selected === q.correctIndex
-                                  ? theme.colors.success
-                                  : theme.colors.error,
+                                  ? n.colors.success
+                                  : n.colors.error,
                             },
                           ]}
                         >
@@ -597,7 +597,7 @@ export default function LectureReturnSheet(props: Props) {
                     <Ionicons
                       name="help-circle-outline"
                       size={40}
-                      color={theme.colors.textMuted}
+                      color={n.colors.textMuted}
                       style={styles.returnIcon}
                     />
                     <Text style={styles.returnTitle}>No quiz available</Text>
@@ -621,10 +621,10 @@ export default function LectureReturnSheet(props: Props) {
                   size={40}
                   color={
                     score === quizQuestions.length
-                      ? theme.colors.warning
+                      ? n.colors.warning
                       : score >= quizQuestions.length / 2
-                        ? theme.colors.success
-                        : theme.colors.primary
+                        ? n.colors.success
+                        : n.colors.accent
                   }
                   style={styles.returnIcon}
                 />
@@ -652,7 +652,7 @@ export default function LectureReturnSheet(props: Props) {
                 <Ionicons
                   name="alert-circle-outline"
                   size={40}
-                  color={theme.colors.error}
+                  color={n.colors.error}
                   style={styles.returnIcon}
                 />
                 <Text style={styles.returnTitle}>Transcription failed</Text>
@@ -806,9 +806,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     borderRadius: 28,
     paddingLeft: 6,
     paddingRight: 14,
@@ -821,16 +821,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
   },
   bubbleReady: {
-    borderColor: theme.colors.success + '66',
+    borderColor: n.colors.success + '66',
   },
   bubbleError: {
-    borderColor: theme.colors.error + '66',
+    borderColor: n.colors.error + '66',
   },
   bubbleIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -842,13 +842,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   bubbleTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
   },
   bubbleSub: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 10,
     fontWeight: '600',
     marginTop: 1,
@@ -858,25 +858,25 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 2,
   },
   bubbleDismissText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 13,
     fontWeight: '700',
     marginTop: -1,
   },
   sheet: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '85%',
     borderTopWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     elevation: 10,
     shadowColor: '#000',
     shadowOpacity: 0.28,
@@ -891,7 +891,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: theme.colors.divider,
+    backgroundColor: n.colors.border,
     alignSelf: 'center',
   },
   minimizeBtn: {
@@ -901,25 +901,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
+    borderColor: n.colors.borderLight,
   },
   minimizeBtnText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
   },
   centeredBlock: { alignItems: 'center', paddingVertical: 12 },
   returnIcon: { marginBottom: 10 },
   returnTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
   },
-  returnSub: { color: theme.colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' },
-  spinnerText: { color: theme.colors.primary, fontSize: 13, flexShrink: 1 },
+  returnSub: { color: n.colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' },
+  spinnerText: { color: n.colors.accent, fontSize: 13, flexShrink: 1 },
   processingCard: {
     width: '100%',
     marginTop: 20,
@@ -927,8 +927,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceAlt,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
     alignItems: 'center',
     gap: 8,
   },
@@ -940,13 +940,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   processingTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     flex: 1,
   },
   progressPercentText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -954,13 +954,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 8,
     borderRadius: 999,
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
     borderRadius: 999,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
   },
   stageRow: {
     width: '100%',
@@ -972,38 +972,38 @@ const styles = StyleSheet.create({
   stagePill: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-    backgroundColor: theme.colors.panel,
+    borderColor: n.colors.borderLight,
+    backgroundColor: n.colors.surface,
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
   stagePillActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primaryTintSoft,
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.primaryTintSoft,
   },
   stagePillDone: {
-    borderColor: theme.colors.success,
-    backgroundColor: theme.colors.successSurface,
+    borderColor: n.colors.success,
+    backgroundColor: n.colors.successSurface,
   },
   stagePillText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
   stagePillTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
   },
   stagePillTextDone: {
-    color: theme.colors.success,
+    color: n.colors.success,
   },
   processingHint: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     textAlign: 'center',
   },
   processingMeta: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
@@ -1019,12 +1019,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
+    borderColor: n.colors.borderLight,
   },
   progressFactText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -1032,14 +1032,14 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-    backgroundColor: theme.colors.panel,
+    borderColor: n.colors.borderLight,
+    backgroundColor: n.colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 10,
   },
   timelineLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.8,
@@ -1054,19 +1054,19 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     marginTop: 5,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
   },
   timelineTextWrap: {
     flex: 1,
     gap: 2,
   },
   timelineTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
   },
   timelineDetail: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
   },
@@ -1076,11 +1076,11 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.error,
-    backgroundColor: theme.colors.errorSurface,
+    borderColor: n.colors.error,
+    backgroundColor: n.colors.errorSurface,
   },
   cancelProcessingBtnText: {
-    color: theme.colors.error,
+    color: n.colors.error,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -1088,21 +1088,21 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceAlt,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
     paddingHorizontal: 14,
     paddingVertical: 14,
     alignItems: 'center',
     gap: 8,
   },
   inlineStatusTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     fontWeight: '800',
     textAlign: 'center',
   },
   inlineStatusHint: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
@@ -1117,10 +1117,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subjectChipText: { fontSize: 13, lineHeight: 18, fontWeight: '800' },
-  summaryText: { color: theme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  summaryText: { color: n.colors.textSecondary, fontSize: 13, lineHeight: 19 },
   section: { marginBottom: 14 },
   sectionLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.8,
@@ -1128,17 +1128,17 @@ const styles = StyleSheet.create({
   },
   topicRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   topicPill: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: n.colors.borderHighlight,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   topicPillEditable: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: n.colors.borderHighlight,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1149,24 +1149,24 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
     minHeight: 34,
   },
-  topicRemoveIcon: { color: theme.colors.primary, fontSize: 16, fontWeight: '700' },
-  topicHint: { color: theme.colors.textMuted, fontSize: 11, marginTop: 6, fontStyle: 'italic' },
+  topicRemoveIcon: { color: n.colors.accent, fontSize: 16, fontWeight: '700' },
+  topicHint: { color: n.colors.textMuted, fontSize: 11, marginTop: 6, fontStyle: 'italic' },
   topicPillText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '600',
     flexShrink: 1,
   },
-  conceptItem: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 20 },
+  conceptItem: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 20 },
   confidenceBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
     marginBottom: 16,
   },
-  confidenceLabel: { color: theme.colors.textMuted, fontSize: 12 },
-  confidenceVal: { color: theme.colors.textPrimary, fontSize: 12, fontWeight: '700' },
+  confidenceLabel: { color: n.colors.textMuted, fontSize: 12 },
+  confidenceVal: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '700' },
   confidenceSection: { marginBottom: 16 },
   confidenceSelector: { flexDirection: 'row', gap: 8, marginTop: 4 },
   confidenceOption: {
@@ -1175,24 +1175,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
     alignItems: 'center',
   },
   confidenceOptionText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     fontWeight: '600',
     textAlign: 'center',
   },
   confidenceOverrideNote: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     marginTop: 8,
     fontStyle: 'italic',
   },
   noContentNote: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontStyle: 'italic',
     textAlign: 'center',
@@ -1206,38 +1206,38 @@ const styles = StyleSheet.create({
   },
   noTopicsIcon: { fontSize: 40 },
   noTopicsTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
   noTopicsHint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
   },
   errorDetail: {
-    color: theme.colors.error,
+    color: n.colors.error,
     fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
     marginBottom: 16,
   },
   retryBtn: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 20,
     marginTop: 8,
   },
-  retryBtnText: { color: theme.colors.primary, fontWeight: '700' },
+  retryBtnText: { color: n.colors.accent, fontWeight: '700' },
 
   // Quiz
   quizProgress: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1245,7 +1245,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   questionText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
@@ -1257,41 +1257,41 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
   },
-  optionText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
+  optionText: { color: n.colors.textSecondary, fontSize: 14, lineHeight: 20 },
   explBox: {
     borderWidth: 1,
     borderRadius: 10,
     padding: 12,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: theme.colors.panel,
+    backgroundColor: n.colors.surface,
   },
   explLabel: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
-  explText: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18 },
+  explText: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
 
   // XP bonus
   xpBonusBox: {
     marginTop: 16,
-    backgroundColor: theme.colors.successTintSoft,
+    backgroundColor: 'rgba(63,185,80,0.08)',
     borderWidth: 1,
-    borderColor: theme.colors.success + '55',
+    borderColor: n.colors.success + '55',
     borderRadius: 12,
     paddingHorizontal: 20,
     paddingVertical: 10,
   },
-  xpBonusText: { color: theme.colors.success, fontWeight: '800', fontSize: 15 },
+  xpBonusText: { color: n.colors.success, fontWeight: '800', fontSize: 15 },
 
   // Actions
   actions: { marginTop: 12, gap: 8 },
   primaryBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
   primaryBtnText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 15,
     textAlign: 'center',
@@ -1299,19 +1299,19 @@ const styles = StyleSheet.create({
   },
   outlineBtn: {
     borderWidth: 1.5,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
   outlineBtnText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontWeight: '700',
     fontSize: 14,
     textAlign: 'center',
     flexShrink: 1,
   },
   secondaryBtn: { alignItems: 'center', paddingVertical: 12 },
-  secondaryBtnText: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
+  secondaryBtnText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
 });

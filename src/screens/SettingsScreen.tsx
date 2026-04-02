@@ -18,6 +18,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearSurface from '../components/primitives/LinearSurface';
 import {
   useNavigation,
   useIsFocused,
@@ -101,7 +102,7 @@ import {
   VERIFICATION_URL as POE_VERIFICATION_URL,
   isPoeConnected,
 } from '../services/ai/poe';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
   DEFAULT_INICET_DATE,
@@ -445,10 +446,10 @@ export default function SettingsScreen() {
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
             size={18}
-            color={theme.colors.textMuted}
+            color={n.colors.textMuted}
           />
         </TouchableOpacity>
-        {isExpanded && <View style={styles.sectionContent}>{children}</View>}
+        {isExpanded && <LinearSurface padded={false} style={styles.sectionContent}>{children}</LinearSurface>}
       </View>
     );
   }
@@ -481,7 +482,7 @@ export default function SettingsScreen() {
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
             size={14}
-            color={theme.colors.primary}
+            color={n.colors.accent}
           />
         </TouchableOpacity>
         {isExpanded && children}
@@ -1697,7 +1698,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1739,7 +1740,7 @@ export default function SettingsScreen() {
                   </Text>
                 </TouchableOpacity>
                 {liveGuruChatModels.loading && (
-                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                  <ActivityIndicator size="small" color={n.colors.accent} />
                 )}
               </View>
               <ModelDropdown
@@ -1832,7 +1833,7 @@ export default function SettingsScreen() {
               <TextInput
                 style={[styles.input, styles.guruMemoryInput]}
                 placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={n.colors.textMuted}
                 value={guruMemoryNotes}
                 onChangeText={setGuruMemoryNotes}
                 multiline
@@ -1863,10 +1864,10 @@ export default function SettingsScreen() {
                       fontSize: 28,
                       fontWeight: '700',
                       textAlign: 'center',
-                      color: theme.colors.primary,
+                      color: n.colors.accent,
                       letterSpacing: 4,
                       marginVertical: 8,
-                      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                      fontFamily: 'Inter_400Regular',
                     }}
                     selectable
                   >
@@ -1881,7 +1882,7 @@ export default function SettingsScreen() {
                       marginTop: 4,
                     }}
                   >
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                     <Text style={[styles.hint, { marginTop: 0 }]}>
                       Waiting for authorization for the{' '}
                       {chatgptConnectingSlot === 'primary' ? 'primary' : 'secondary'} account...
@@ -1894,7 +1895,7 @@ export default function SettingsScreen() {
                   >
                     <Text
                       style={{
-                        color: theme.colors.primary,
+                        color: n.colors.accent,
                         textDecorationLine: 'underline',
                         fontSize: 13,
                       }}
@@ -1915,9 +1916,9 @@ export default function SettingsScreen() {
                       marginTop: 12,
                       padding: 12,
                       borderWidth: 1,
-                      borderColor: theme.colors.border,
+                      borderColor: n.colors.border,
                       borderRadius: 12,
-                      backgroundColor: theme.colors.background,
+                      backgroundColor: n.colors.background,
                     }}
                   >
                     <View style={styles.switchRow}>
@@ -1940,11 +1941,11 @@ export default function SettingsScreen() {
                           }))
                         }
                         trackColor={{
-                          false: theme.colors.border,
-                          true: theme.colors.primaryTintMedium,
+                          false: n.colors.border,
+                          true: n.colors.borderHighlight,
                         }}
                         thumbColor={
-                          slotState.enabled ? theme.colors.primary : theme.colors.textMuted
+                          slotState.enabled ? n.colors.accent : n.colors.textMuted
                         }
                       />
                     </View>
@@ -1959,7 +1960,7 @@ export default function SettingsScreen() {
                       <Ionicons
                         name={slotState.connected ? 'checkmark-circle' : 'ellipse-outline'}
                         size={20}
-                        color={slotState.connected ? theme.colors.success : theme.colors.textMuted}
+                        color={slotState.connected ? n.colors.success : n.colors.textMuted}
                       />
                       <Text
                         style={[
@@ -1967,8 +1968,8 @@ export default function SettingsScreen() {
                           {
                             flex: 1,
                             color: slotState.connected
-                              ? theme.colors.success
-                              : theme.colors.textMuted,
+                              ? n.colors.success
+                              : n.colors.textMuted,
                           },
                         ]}
                       >
@@ -1978,13 +1979,13 @@ export default function SettingsScreen() {
                         <TouchableOpacity
                           style={[
                             styles.validateBtn,
-                            { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                            { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
                           ]}
                           onPress={() => disconnectChatGpt(slot)}
                           activeOpacity={0.8}
                         >
                           <Text
-                            style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}
+                            style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
                           >
                             Disconnect
                           </Text>
@@ -1995,7 +1996,7 @@ export default function SettingsScreen() {
                             styles.validateBtn,
                             {
                               paddingHorizontal: 16,
-                              backgroundColor: theme.colors.primary + '22',
+                              backgroundColor: n.colors.accent + '22',
                             },
                           ]}
                           onPress={() => connectChatGpt(slot)}
@@ -2003,11 +2004,11 @@ export default function SettingsScreen() {
                           activeOpacity={0.8}
                         >
                           {isConnecting ? (
-                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <ActivityIndicator size="small" color={n.colors.accent} />
                           ) : (
                             <Text
                               style={{
-                                color: theme.colors.primary,
+                                color: n.colors.accent,
                                 fontWeight: '600',
                                 fontSize: 13,
                               }}
@@ -2051,10 +2052,10 @@ export default function SettingsScreen() {
                       fontSize: 28,
                       fontWeight: '700',
                       textAlign: 'center',
-                      color: theme.colors.primary,
+                      color: n.colors.accent,
                       letterSpacing: 4,
                       marginVertical: 8,
-                      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                      fontFamily: 'Inter_400Regular',
                     }}
                     selectable
                   >
@@ -2069,7 +2070,7 @@ export default function SettingsScreen() {
                       marginTop: 4,
                     }}
                   >
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                     <Text style={[styles.hint, { marginTop: 0 }]}>
                       Waiting for authorization...
                     </Text>
@@ -2081,7 +2082,7 @@ export default function SettingsScreen() {
                   >
                     <Text
                       style={{
-                        color: theme.colors.primary,
+                        color: n.colors.accent,
                         textDecorationLine: 'underline',
                         fontSize: 13,
                       }}
@@ -2096,9 +2097,9 @@ export default function SettingsScreen() {
                   marginTop: 12,
                   padding: 12,
                   borderWidth: 1,
-                  borderColor: theme.colors.border,
+                  borderColor: n.colors.border,
                   borderRadius: 12,
-                  backgroundColor: theme.colors.background,
+                  backgroundColor: n.colors.background,
                 }}
               >
                 <View
@@ -2111,7 +2112,7 @@ export default function SettingsScreen() {
                   <Ionicons
                     name={githubCopilotConnected ? 'checkmark-circle' : 'ellipse-outline'}
                     size={20}
-                    color={githubCopilotConnected ? theme.colors.success : theme.colors.textMuted}
+                    color={githubCopilotConnected ? n.colors.success : n.colors.textMuted}
                   />
                   <Text
                     style={[
@@ -2119,8 +2120,8 @@ export default function SettingsScreen() {
                       {
                         flex: 1,
                         color: githubCopilotConnected
-                          ? theme.colors.success
-                          : theme.colors.textMuted,
+                          ? n.colors.success
+                          : n.colors.textMuted,
                       },
                     ]}
                   >
@@ -2148,7 +2149,7 @@ export default function SettingsScreen() {
                       accessibilityLabel="Validate GitHub Copilot connection"
                     >
                       {testingGitHubCopilotOAuth ? (
-                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                        <ActivityIndicator size="small" color={n.colors.accent} />
                       ) : (
                         <Ionicons
                           name={
@@ -2161,10 +2162,10 @@ export default function SettingsScreen() {
                           size={20}
                           color={
                             githubCopilotOAuthTestResult === 'ok'
-                              ? theme.colors.success
+                              ? n.colors.success
                               : githubCopilotOAuthTestResult === 'fail'
-                                ? theme.colors.error
-                                : theme.colors.primary
+                                ? n.colors.error
+                                : n.colors.accent
                           }
                         />
                       )}
@@ -2173,13 +2174,13 @@ export default function SettingsScreen() {
                       <TouchableOpacity
                         style={[
                           styles.validateBtn,
-                          { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                          { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
                         ]}
                         onPress={disconnectGitHubCopilot}
                         activeOpacity={0.8}
                       >
                         <Text
-                          style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}
+                          style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
                         >
                           Disconnect
                         </Text>
@@ -2188,17 +2189,17 @@ export default function SettingsScreen() {
                       <TouchableOpacity
                         style={[
                           styles.validateBtn,
-                          { paddingHorizontal: 16, backgroundColor: theme.colors.primary + '22' },
+                          { paddingHorizontal: 16, backgroundColor: n.colors.accent + '22' },
                         ]}
                         onPress={connectGitHubCopilot}
                         disabled={githubCopilotConnecting}
                         activeOpacity={0.8}
                       >
                         {githubCopilotConnecting ? (
-                          <ActivityIndicator size="small" color={theme.colors.primary} />
+                          <ActivityIndicator size="small" color={n.colors.accent} />
                         ) : (
                           <Text
-                            style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 13 }}
+                            style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
                           >
                             Connect
                           </Text>
@@ -2211,7 +2212,7 @@ export default function SettingsScreen() {
               <Text style={[styles.hint, { marginTop: 8 }]}>
                 Validate (pulse icon): checks SecureStore token + a minimal Copilot API call. Full
                 trace in Metro:{' '}
-                <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                <Text style={{ fontFamily: 'Inter_400Regular' }}>
                   [SETTINGS_VALIDATE][github_copilot]
                 </Text>
               </Text>
@@ -2258,18 +2259,18 @@ export default function SettingsScreen() {
                 value={gitlabOauthClientId}
                 onChangeText={setGitlabOauthClientId}
                 placeholder="Your GitLab OAuth Application ID"
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={n.colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 editable={!gitlabDuoConnecting}
                 style={{
                   marginTop: 8,
                   borderWidth: 1,
-                  borderColor: theme.colors.border,
+                  borderColor: n.colors.border,
                   borderRadius: 10,
                   paddingHorizontal: 12,
                   paddingVertical: 10,
-                  color: theme.colors.textPrimary,
+                  color: n.colors.textPrimary,
                   fontSize: 15,
                 }}
               />
@@ -2283,7 +2284,7 @@ export default function SettingsScreen() {
                 value={gitlabOauthClientSecret}
                 onChangeText={setGitlabOauthClientSecret}
                 placeholder="OAuth application secret"
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={n.colors.textMuted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 secureTextEntry
@@ -2291,11 +2292,11 @@ export default function SettingsScreen() {
                 style={{
                   marginTop: 8,
                   borderWidth: 1,
-                  borderColor: theme.colors.border,
+                  borderColor: n.colors.border,
                   borderRadius: 10,
                   paddingHorizontal: 12,
                   paddingVertical: 10,
-                  color: theme.colors.textPrimary,
+                  color: n.colors.textPrimary,
                   fontSize: 15,
                 }}
               />
@@ -2304,9 +2305,9 @@ export default function SettingsScreen() {
                   marginTop: 12,
                   padding: 12,
                   borderWidth: 1,
-                  borderColor: theme.colors.border,
+                  borderColor: n.colors.border,
                   borderRadius: 12,
-                  backgroundColor: theme.colors.background,
+                  backgroundColor: n.colors.background,
                 }}
               >
                 <View
@@ -2319,14 +2320,14 @@ export default function SettingsScreen() {
                   <Ionicons
                     name={gitlabDuoConnected ? 'checkmark-circle' : 'ellipse-outline'}
                     size={20}
-                    color={gitlabDuoConnected ? theme.colors.success : theme.colors.textMuted}
+                    color={gitlabDuoConnected ? n.colors.success : n.colors.textMuted}
                   />
                   <Text
                     style={[
                       styles.label,
                       {
                         flex: 1,
-                        color: gitlabDuoConnected ? theme.colors.success : theme.colors.textMuted,
+                        color: gitlabDuoConnected ? n.colors.success : n.colors.textMuted,
                       },
                     ]}
                   >
@@ -2354,7 +2355,7 @@ export default function SettingsScreen() {
                       accessibilityLabel="Validate GitLab Duo connection"
                     >
                       {testingGitLabDuoOAuth ? (
-                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                        <ActivityIndicator size="small" color={n.colors.accent} />
                       ) : (
                         <Ionicons
                           name={
@@ -2367,10 +2368,10 @@ export default function SettingsScreen() {
                           size={20}
                           color={
                             gitlabDuoOAuthTestResult === 'ok'
-                              ? theme.colors.success
+                              ? n.colors.success
                               : gitlabDuoOAuthTestResult === 'fail'
-                                ? theme.colors.error
-                                : theme.colors.primary
+                                ? n.colors.error
+                                : n.colors.accent
                           }
                         />
                       )}
@@ -2379,13 +2380,13 @@ export default function SettingsScreen() {
                       <TouchableOpacity
                         style={[
                           styles.validateBtn,
-                          { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                          { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
                         ]}
                         onPress={disconnectGitLabDuo}
                         activeOpacity={0.8}
                       >
                         <Text
-                          style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}
+                          style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
                         >
                           Disconnect
                         </Text>
@@ -2395,18 +2396,18 @@ export default function SettingsScreen() {
                         <TouchableOpacity
                           style={[
                             styles.validateBtn,
-                            { paddingHorizontal: 12, backgroundColor: theme.colors.primary + '22' },
+                            { paddingHorizontal: 12, backgroundColor: n.colors.accent + '22' },
                           ]}
                           onPress={connectGitLabDuo}
                           disabled={gitlabDuoConnecting}
                           activeOpacity={0.8}
                         >
                           {gitlabDuoConnecting ? (
-                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <ActivityIndicator size="small" color={n.colors.accent} />
                           ) : (
                             <Text
                               style={{
-                                color: theme.colors.primary,
+                                color: n.colors.accent,
                                 fontWeight: '600',
                                 fontSize: 13,
                               }}
@@ -2418,7 +2419,7 @@ export default function SettingsScreen() {
                         <TouchableOpacity
                           style={[
                             styles.validateBtn,
-                            { paddingHorizontal: 12, backgroundColor: theme.colors.border + '44' },
+                            { paddingHorizontal: 12, backgroundColor: n.colors.border + '44' },
                           ]}
                           onPress={() => setGitlabPasteModalVisible(true)}
                           disabled={gitlabDuoConnecting}
@@ -2426,7 +2427,7 @@ export default function SettingsScreen() {
                         >
                           <Text
                             style={{
-                              color: theme.colors.textPrimary,
+                              color: n.colors.textPrimary,
                               fontWeight: '600',
                               fontSize: 13,
                             }}
@@ -2441,11 +2442,11 @@ export default function SettingsScreen() {
               </View>
               <Text style={[styles.hint, { marginTop: 8 }]}>
                 Validate (pulse icon): checks OAuth token +{' '}
-                <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                <Text style={{ fontFamily: 'Inter_400Regular' }}>
                   POST {getGitLabInstanceUrl()}/api/v4/chat/completions
                 </Text>
                 . Metro:{' '}
-                <Text style={{ fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }}>
+                <Text style={{ fontFamily: 'Inter_400Regular' }}>
                   [SETTINGS_VALIDATE][gitlab_duo]
                 </Text>
               </Text>
@@ -2484,8 +2485,8 @@ export default function SettingsScreen() {
                     style={styles.dropdownBackdrop}
                     onPress={() => setGitlabPasteModalVisible(false)}
                   >
+                    <LinearSurface padded={false} style={[styles.dropdownSheet, { minWidth: '88%' }]}>
                     <Pressable
-                      style={[styles.dropdownSheet, { minWidth: '88%' }]}
                       onPress={(e) => e.stopPropagation()}
                     >
                       <Text style={styles.dropdownSheetTitle}>Paste GitLab callback URL</Text>
@@ -2497,16 +2498,16 @@ export default function SettingsScreen() {
                         value={gitlabPasteUrl}
                         onChangeText={setGitlabPasteUrl}
                         placeholder="guru-study://oauth/gitlab?code=..."
-                        placeholderTextColor={theme.colors.textMuted}
+                        placeholderTextColor={n.colors.textMuted}
                         autoCapitalize="none"
                         autoCorrect={false}
                         multiline
                         style={{
                           borderWidth: 1,
-                          borderColor: theme.colors.border,
+                          borderColor: n.colors.border,
                           borderRadius: 10,
                           padding: 12,
-                          color: theme.colors.textPrimary,
+                          color: n.colors.textPrimary,
                           minHeight: 88,
                           textAlignVertical: 'top',
                         }}
@@ -2523,7 +2524,7 @@ export default function SettingsScreen() {
                           onPress={() => setGitlabPasteModalVisible(false)}
                           style={{ paddingVertical: 10, paddingHorizontal: 14 }}
                         >
-                          <Text style={{ color: theme.colors.textMuted, fontWeight: '600' }}>
+                          <Text style={{ color: n.colors.textMuted, fontWeight: '600' }}>
                             Cancel
                           </Text>
                         </TouchableOpacity>
@@ -2533,20 +2534,21 @@ export default function SettingsScreen() {
                           style={{
                             paddingVertical: 10,
                             paddingHorizontal: 16,
-                            backgroundColor: theme.colors.primary + '33',
+                            backgroundColor: n.colors.accent + '33',
                             borderRadius: 10,
                           }}
                         >
                           {gitlabPasteSubmitting ? (
-                            <ActivityIndicator size="small" color={theme.colors.primary} />
+                            <ActivityIndicator size="small" color={n.colors.accent} />
                           ) : (
-                            <Text style={{ color: theme.colors.primary, fontWeight: '700' }}>
+                            <Text style={{ color: n.colors.accent, fontWeight: '700' }}>
                               Apply
                             </Text>
                           )}
                         </TouchableOpacity>
                       </View>
                     </Pressable>
+                    </LinearSurface>
                   </Pressable>
                 </KeyboardAvoidingView>
               </Modal>
@@ -2569,10 +2571,10 @@ export default function SettingsScreen() {
                       fontSize: 28,
                       fontWeight: '700',
                       textAlign: 'center',
-                      color: theme.colors.primary,
+                      color: n.colors.accent,
                       letterSpacing: 4,
                       marginVertical: 8,
-                      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+                      fontFamily: 'Inter_400Regular',
                     }}
                     selectable
                   >
@@ -2587,7 +2589,7 @@ export default function SettingsScreen() {
                       marginTop: 4,
                     }}
                   >
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                     <Text style={[styles.hint, { marginTop: 0 }]}>
                       Waiting for authorization...
                     </Text>
@@ -2599,7 +2601,7 @@ export default function SettingsScreen() {
                   >
                     <Text
                       style={{
-                        color: theme.colors.primary,
+                        color: n.colors.accent,
                         textDecorationLine: 'underline',
                         fontSize: 13,
                       }}
@@ -2614,9 +2616,9 @@ export default function SettingsScreen() {
                   marginTop: 12,
                   padding: 12,
                   borderWidth: 1,
-                  borderColor: theme.colors.border,
+                  borderColor: n.colors.border,
                   borderRadius: 12,
-                  backgroundColor: theme.colors.background,
+                  backgroundColor: n.colors.background,
                 }}
               >
                 <View
@@ -2629,14 +2631,14 @@ export default function SettingsScreen() {
                   <Ionicons
                     name={poeConnected ? 'checkmark-circle' : 'ellipse-outline'}
                     size={20}
-                    color={poeConnected ? theme.colors.success : theme.colors.textMuted}
+                    color={poeConnected ? n.colors.success : n.colors.textMuted}
                   />
                   <Text
                     style={[
                       styles.label,
                       {
                         flex: 1,
-                        color: poeConnected ? theme.colors.success : theme.colors.textMuted,
+                        color: poeConnected ? n.colors.success : n.colors.textMuted,
                       },
                     ]}
                   >
@@ -2646,12 +2648,12 @@ export default function SettingsScreen() {
                     <TouchableOpacity
                       style={[
                         styles.validateBtn,
-                        { backgroundColor: theme.colors.error + '22', paddingHorizontal: 16 },
+                        { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
                       ]}
                       onPress={disconnectPoe}
                       activeOpacity={0.8}
                     >
-                      <Text style={{ color: theme.colors.error, fontWeight: '600', fontSize: 13 }}>
+                      <Text style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}>
                         Disconnect
                       </Text>
                     </TouchableOpacity>
@@ -2659,17 +2661,17 @@ export default function SettingsScreen() {
                     <TouchableOpacity
                       style={[
                         styles.validateBtn,
-                        { paddingHorizontal: 16, backgroundColor: theme.colors.primary + '22' },
+                        { paddingHorizontal: 16, backgroundColor: n.colors.accent + '22' },
                       ]}
                       onPress={connectPoe}
                       disabled={poeConnecting}
                       activeOpacity={0.8}
                     >
                       {poeConnecting ? (
-                        <ActivityIndicator size="small" color={theme.colors.primary} />
+                        <ActivityIndicator size="small" color={n.colors.accent} />
                       ) : (
                         <Text
-                          style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 13 }}
+                          style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
                         >
                           Connect
                         </Text>
@@ -2688,7 +2690,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="gsk_..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={groqKey}
                   onChangeText={(value) => {
                     setGroqKey(value);
@@ -2713,7 +2715,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingGroqKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -2726,10 +2728,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         groqValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : groqValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -2743,7 +2745,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="GitHub PAT (Models read)"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={githubModelsPat}
                   onChangeText={(value) => {
                     setGithubModelsPat(value);
@@ -2768,7 +2770,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingGithubPat ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -2781,10 +2783,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         githubValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : githubValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -2798,7 +2800,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="sk-or-v1-..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={orKey}
                   onChangeText={(value) => {
                     setOrKey(value);
@@ -2823,7 +2825,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingOpenRouterKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -2836,10 +2838,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         openRouterValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : openRouterValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -2851,7 +2853,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="kilo_..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={kiloApiKey}
                   onChangeText={(value) => {
                     setKiloApiKey(value);
@@ -2876,7 +2878,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingKiloKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -2889,10 +2891,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         kiloValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : kiloValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -2906,7 +2908,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="sk-..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={deepseekKey}
                   onChangeText={(value) => {
                     setDeepseekKey(value);
@@ -2931,7 +2933,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingDeepseekKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -2944,10 +2946,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         deepseekValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : deepseekValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -2959,7 +2961,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="sk-..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={agentRouterKey}
                   onChangeText={(value) => {
                     setAgentRouterKey(value);
@@ -2984,7 +2986,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingAgentRouterKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -2997,10 +2999,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         agentRouterValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : agentRouterValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -3012,7 +3014,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="AIza..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={geminiKey}
                   onChangeText={(value) => {
                     setGeminiKey(value);
@@ -3037,7 +3039,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingGeminiKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -3050,10 +3052,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         geminiValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : geminiValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -3074,8 +3076,8 @@ export default function SettingsScreen() {
                 <Switch
                   value={preferGeminiStructuredJson}
                   onValueChange={setPreferGeminiStructuredJson}
-                  trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-                  thumbColor={theme.colors.textPrimary}
+                  trackColor={{ true: n.colors.accent, false: n.colors.border }}
+                  thumbColor={n.colors.textPrimary}
                 />
               </View>
               <Label text="Deepgram" />
@@ -3083,7 +3085,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="dg_..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={deepgramApiKey}
                   onChangeText={(value) => {
                     setDeepgramApiKey(value);
@@ -3108,7 +3110,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingDeepgramKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -3121,10 +3123,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         deepgramValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : deepgramValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -3138,7 +3140,7 @@ export default function SettingsScreen() {
                 <TextInput
                   style={[styles.input, styles.apiKeyInput]}
                   placeholder="Account ID (32-char hex)"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={cfAccountId}
                   onChangeText={(value) => {
                     setCfAccountId(value);
@@ -3161,7 +3163,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingCloudflare ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -3174,10 +3176,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         cloudflareValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : cloudflareValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -3186,7 +3188,7 @@ export default function SettingsScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="API Token (Workers AI read)"
-                placeholderTextColor={theme.colors.textMuted}
+                placeholderTextColor={n.colors.textMuted}
                 value={cfApiToken}
                 onChangeText={(value) => {
                   setCfApiToken(value);
@@ -3248,16 +3250,16 @@ export default function SettingsScreen() {
                   }
                 })();
                 return (
-                  <View key={id} style={[styles.providerRow, !hasKey && { opacity: 0.45 }]}>
+                  <LinearSurface padded={false} key={id} style={[styles.providerRow, !hasKey && { opacity: 0.45 }]}>
                     <Text style={styles.providerIndex}>{index + 1}</Text>
                     <View
                       style={[
                         styles.providerDot,
-                        { backgroundColor: hasKey ? theme.colors.success : theme.colors.textMuted },
+                        { backgroundColor: hasKey ? n.colors.success : n.colors.textMuted },
                       ]}
                     />
                     <Text
-                      style={[styles.providerName, { color: theme.colors.textPrimary }]}
+                      style={[styles.providerName, { color: n.colors.textPrimary }]}
                       numberOfLines={2}
                     >
                       {PROVIDER_DISPLAY_NAMES[id]}
@@ -3277,7 +3279,7 @@ export default function SettingsScreen() {
                         <Ionicons
                           name="play-skip-back"
                           size={16}
-                          color={theme.colors.textPrimary}
+                          color={n.colors.textPrimary}
                         />
                       </Pressable>
                       <TouchableOpacity
@@ -3289,7 +3291,7 @@ export default function SettingsScreen() {
                         ]}
                         activeOpacity={0.6}
                       >
-                        <Ionicons name="chevron-up" size={18} color={theme.colors.textPrimary} />
+                        <Ionicons name="chevron-up" size={18} color={n.colors.textPrimary} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         disabled={index === providerOrder.length - 1}
@@ -3300,7 +3302,7 @@ export default function SettingsScreen() {
                         ]}
                         activeOpacity={0.6}
                       >
-                        <Ionicons name="chevron-down" size={18} color={theme.colors.textPrimary} />
+                        <Ionicons name="chevron-down" size={18} color={n.colors.textPrimary} />
                       </TouchableOpacity>
                       <Pressable
                         disabled={index === providerOrder.length - 1}
@@ -3318,11 +3320,11 @@ export default function SettingsScreen() {
                         <Ionicons
                           name="play-skip-forward"
                           size={16}
-                          color={theme.colors.textPrimary}
+                          color={n.colors.textPrimary}
                         />
                       </Pressable>
                     </View>
-                  </View>
+                  </LinearSurface>
                 );
               })}
               <TouchableOpacity
@@ -3359,7 +3361,7 @@ export default function SettingsScreen() {
                     falValidationStatus === 'fail' && styles.inputError,
                   ]}
                   placeholder="fal key"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={falApiKey}
                   onChangeText={(value) => {
                     setFalApiKey(value);
@@ -3381,7 +3383,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingFalKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -3394,10 +3396,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         falValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : falValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -3416,7 +3418,7 @@ export default function SettingsScreen() {
                     braveValidationStatus === 'fail' && styles.inputError,
                   ]}
                   placeholder="brave key"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={braveSearchApiKey}
                   onChangeText={(value) => {
                     setBraveSearchApiKey(value);
@@ -3438,7 +3440,7 @@ export default function SettingsScreen() {
                   activeOpacity={0.8}
                 >
                   {testingBraveSearchKey ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
+                    <ActivityIndicator size="small" color={n.colors.accent} />
                   ) : (
                     <Ionicons
                       name={
@@ -3451,10 +3453,10 @@ export default function SettingsScreen() {
                       size={20}
                       color={
                         braveValidationStatus === 'ok'
-                          ? theme.colors.success
+                          ? n.colors.success
                           : braveValidationStatus === 'fail'
-                            ? theme.colors.error
-                            : theme.colors.primary
+                            ? n.colors.error
+                            : n.colors.accent
                       }
                     />
                   )}
@@ -3547,7 +3549,7 @@ export default function SettingsScreen() {
                 <Ionicons
                   name="download-outline"
                   size={18}
-                  color={theme.colors.textPrimary}
+                  color={n.colors.textPrimary}
                   style={{ marginRight: 8 }}
                 />
                 <Text style={styles.localModelBtnText}>Manage Local AI Models</Text>
@@ -3619,12 +3621,12 @@ export default function SettingsScreen() {
             <TouchableOpacity
               style={[
                 styles.testBtn,
-                { marginTop: 0, marginBottom: 16, borderColor: theme.colors.successTintSoft },
+                { marginTop: 0, marginBottom: 16, borderColor: 'rgba(63,185,80,0.08)' },
               ]}
               onPress={() => navigation.navigate('DeviceLink')}
               activeOpacity={0.8}
             >
-              <Text style={[styles.testBtnText, { color: theme.colors.success }]}>
+              <Text style={[styles.testBtnText, { color: n.colors.success }]}>
                 📱 Link Another Device (Sync)
               </Text>
             </TouchableOpacity>
@@ -3632,7 +3634,7 @@ export default function SettingsScreen() {
             <TextInput
               style={styles.input}
               placeholder="Dr. ..."
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
               value={name}
               onChangeText={setName}
             />
@@ -3644,14 +3646,14 @@ export default function SettingsScreen() {
               style={styles.input}
               value={inicetDate}
               onChangeText={setInicetDate}
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
             <Label text="NEET-PG date (YYYY-MM-DD)" />
             <TextInput
               style={styles.input}
               value={neetDate}
               onChangeText={setNeetDate}
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
             <TouchableOpacity
               style={[styles.autoFetchBtn, fetchingDates && styles.autoFetchBtnDisabled]}
@@ -3660,7 +3662,7 @@ export default function SettingsScreen() {
               activeOpacity={0.8}
             >
               {fetchingDates ? (
-                <ActivityIndicator size="small" color={theme.colors.primary} />
+                <ActivityIndicator size="small" color={n.colors.accent} />
               ) : (
                 <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
               )}
@@ -3670,8 +3672,8 @@ export default function SettingsScreen() {
                 style={[
                   styles.hint,
                   fetchDatesMsg.startsWith('✅')
-                    ? { color: theme.colors.success }
-                    : { color: theme.colors.error },
+                    ? { color: n.colors.success }
+                    : { color: n.colors.error },
                 ]}
               >
                 {fetchDatesMsg}
@@ -3691,7 +3693,7 @@ export default function SettingsScreen() {
               value={dbmciClassStartDate}
               onChangeText={setDbmciClassStartDate}
               placeholder="e.g. 2025-01-06"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
               autoCapitalize="none"
             />
             <Text style={styles.hint}>
@@ -3704,7 +3706,7 @@ export default function SettingsScreen() {
               value={btrStartDate}
               onChangeText={setBtrStartDate}
               placeholder="e.g. 2025-09-01"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
               autoCapitalize="none"
             />
             <Text style={styles.hint}>
@@ -3748,7 +3750,7 @@ export default function SettingsScreen() {
               value={sessionLength}
               onChangeText={setSessionLength}
               keyboardType="number-pad"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
             <Label text="Daily study goal (minutes)" />
             <TextInput
@@ -3756,7 +3758,7 @@ export default function SettingsScreen() {
               value={dailyGoal}
               onChangeText={setDailyGoal}
               keyboardType="number-pad"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
             <View style={[styles.switchRow, { marginTop: 16 }]}>
               <View style={{ flex: 1, paddingRight: 8 }}>
@@ -3769,8 +3771,8 @@ export default function SettingsScreen() {
               <Switch
                 value={strictMode}
                 onValueChange={setStrictMode}
-                trackColor={{ true: theme.colors.error, false: theme.colors.border }}
-                thumbColor={theme.colors.textPrimary}
+                trackColor={{ true: n.colors.error, false: n.colors.border }}
+                thumbColor={n.colors.textPrimary}
               />
             </View>
           </SectionToggle>
@@ -3791,8 +3793,8 @@ export default function SettingsScreen() {
               <Switch
                 value={notifs}
                 onValueChange={setNotifs}
-                trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-                thumbColor={theme.colors.textPrimary}
+                trackColor={{ true: n.colors.accent, false: n.colors.border }}
+                thumbColor={n.colors.textPrimary}
               />
             </View>
             <Label text="Reminder hour (0–23, e.g. 7 = 7:30 AM)" />
@@ -3801,7 +3803,7 @@ export default function SettingsScreen() {
               value={notifHour}
               onChangeText={setNotifHour}
               keyboardType="number-pad"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
             <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
             <Label text="Guru presence frequency" />
@@ -3843,8 +3845,8 @@ export default function SettingsScreen() {
               <Switch
                 value={bodyDoubling}
                 onValueChange={setBodyDoubling}
-                trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-                thumbColor={theme.colors.textPrimary}
+                trackColor={{ true: n.colors.accent, false: n.colors.border }}
+                thumbColor={n.colors.textPrimary}
               />
             </View>
           </SectionToggle>
@@ -3935,7 +3937,7 @@ export default function SettingsScreen() {
               value={idleTimeout}
               onChangeText={setIdleTimeout}
               keyboardType="number-pad"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
             <Label text="Break duration between topics (minutes)" />
             <TextInput
@@ -3943,7 +3945,7 @@ export default function SettingsScreen() {
               value={breakDuration}
               onChangeText={setBreakDuration}
               keyboardType="number-pad"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
             />
           </SectionToggle>
 
@@ -3963,8 +3965,8 @@ export default function SettingsScreen() {
               <Switch
                 value={pomodoroEnabled}
                 onValueChange={setPomodoroEnabled}
-                trackColor={{ true: theme.colors.primary, false: theme.colors.border }}
-                thumbColor={theme.colors.textPrimary}
+                trackColor={{ true: n.colors.accent, false: n.colors.border }}
+                thumbColor={n.colors.textPrimary}
               />
             </View>
             <Text
@@ -3972,10 +3974,10 @@ export default function SettingsScreen() {
                 styles.hint,
                 {
                   color: pomodoroLectureQuizReady
-                    ? theme.colors.success
+                    ? n.colors.success
                     : pomodoroEnabled
-                      ? theme.colors.error
-                      : theme.colors.textMuted,
+                      ? n.colors.error
+                      : n.colors.textMuted,
                 },
               ]}
             >
@@ -4012,16 +4014,16 @@ export default function SettingsScreen() {
                     styles.typeChip,
                     {
                       backgroundColor: item.ready
-                        ? theme.colors.success + '18'
-                        : theme.colors.error + '12',
-                      borderColor: item.ready ? theme.colors.success : theme.colors.error,
+                        ? n.colors.success + '18'
+                        : n.colors.error + '12',
+                      borderColor: item.ready ? n.colors.success : n.colors.error,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.typeChipText,
-                      { color: item.ready ? theme.colors.success : theme.colors.error },
+                      { color: item.ready ? n.colors.success : n.colors.error },
                     ]}
                   >
                     {item.label}
@@ -4035,7 +4037,7 @@ export default function SettingsScreen() {
               value={pomodoroInterval}
               onChangeText={setPomodoroInterval}
               keyboardType="number-pad"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
               editable={pomodoroEnabled}
             />
             <View style={styles.modelChipRow}>
@@ -4094,7 +4096,7 @@ export default function SettingsScreen() {
               Forces fresh generation of all key points, quizzes, stories, etc.
             </Text>
             <TouchableOpacity
-              style={[styles.dangerBtn, { borderColor: theme.colors.errorTintSoft, marginTop: 10 }]}
+              style={[styles.dangerBtn, { borderColor: 'rgba(241,76,76,0.08)', marginTop: 10 }]}
               onPress={() =>
                 Alert.alert(
                   'Reset all progress?',
@@ -4115,7 +4117,7 @@ export default function SettingsScreen() {
               }
               activeOpacity={0.8}
             >
-              <Text style={[styles.dangerBtnText, { color: theme.colors.error }]}>
+              <Text style={[styles.dangerBtnText, { color: n.colors.error }]}>
                 Reset All Progress
               </Text>
             </TouchableOpacity>
@@ -4161,7 +4163,7 @@ export default function SettingsScreen() {
                 }}
               >
                 {backupBusy ? (
-                  <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                  <ActivityIndicator size="small" color={n.colors.textPrimary} />
                 ) : (
                   <Text style={styles.backupBtnText}>Create Full Backup</Text>
                 )}
@@ -4169,7 +4171,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={[
                   styles.backupBtn,
-                  { borderColor: theme.colors.successTintSoft },
+                  { borderColor: 'rgba(63,185,80,0.08)' },
                   backupBusy && styles.saveBtnDisabled,
                 ]}
                 disabled={backupBusy}
@@ -4200,7 +4202,7 @@ export default function SettingsScreen() {
                   );
                 }}
               >
-                <Text style={[styles.backupBtnText, { color: theme.colors.success }]}>
+                <Text style={[styles.backupBtnText, { color: n.colors.success }]}>
                   Restore from Backup
                 </Text>
               </TouchableOpacity>
@@ -4307,15 +4309,15 @@ export default function SettingsScreen() {
               value={gdriveWebClientId}
               onChangeText={setGdriveWebClientId}
               placeholder="Your Google Web Client ID"
-              placeholderTextColor={theme.colors.textMuted}
+              placeholderTextColor={n.colors.textMuted}
               autoCapitalize="none"
               autoCorrect={false}
               editable={!backupBusy}
               style={{
                 borderWidth: 1,
-                borderColor: theme.colors.border,
-                backgroundColor: theme.colors.surface,
-                color: theme.colors.textPrimary,
+                borderColor: n.colors.border,
+                backgroundColor: n.colors.surface,
+                color: n.colors.textPrimary,
                 borderRadius: 12,
                 paddingHorizontal: 12,
                 paddingVertical: 12,
@@ -4482,7 +4484,7 @@ export default function SettingsScreen() {
               }
             >
               {maintenanceBusy === 'retry' ? (
-                <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
                 <Text style={styles.maintenanceBtnText}>Retry failed lecture processing</Text>
               )}
@@ -4508,7 +4510,7 @@ export default function SettingsScreen() {
               }
             >
               {maintenanceBusy === 'legacy' ? (
-                <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
                 <Text style={styles.maintenanceBtnText}>Repair legacy lecture notes</Text>
               )}
@@ -4534,7 +4536,7 @@ export default function SettingsScreen() {
               }
             >
               {maintenanceBusy === 'transcripts' ? (
-                <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
                 <Text style={styles.maintenanceBtnText}>Recover orphan transcripts</Text>
               )}
@@ -4560,7 +4562,7 @@ export default function SettingsScreen() {
               }
             >
               {maintenanceBusy === 'recordings' ? (
-                <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
                 <Text style={styles.maintenanceBtnText}>Recover orphan recordings</Text>
               )}
@@ -4569,7 +4571,7 @@ export default function SettingsScreen() {
 
           {saving && (
             <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
-              <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+              <ActivityIndicator size="small" color={n.colors.textPrimary} />
               <Text style={[styles.saveBtnText, { marginLeft: 8 }]}>Auto-saving…</Text>
             </View>
           )}
@@ -4642,7 +4644,7 @@ function ModelDropdown({
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
-          <View style={styles.dropdownSheet}>
+          <LinearSurface padded={false} style={styles.dropdownSheet}>
             <Text style={styles.dropdownSheetTitle}>{label}</Text>
             <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
               {options.map((opt, idx) => {
@@ -4673,7 +4675,7 @@ function ModelDropdown({
                 );
               })}
             </ScrollView>
-          </View>
+          </LinearSurface>
         </Pressable>
       </Modal>
     </>
@@ -4682,16 +4684,16 @@ function ModelDropdown({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  safe: { flex: 1, backgroundColor: theme.colors.background },
-  content: { padding: theme.spacing.lg, paddingBottom: 60 },
+  safe: { flex: 1, backgroundColor: n.colors.background },
+  content: { padding: n.spacing.lg, paddingBottom: 60 },
   title: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 26,
     fontWeight: '900',
     marginBottom: 20,
     marginTop: 8,
   },
-  section: { marginBottom: theme.spacing.md },
+  section: { marginBottom: n.spacing.md },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -4701,7 +4703,7 @@ const styles = StyleSheet.create({
   sectionHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: n.spacing.md,
     flex: 1,
   },
   sectionIconWrap: {
@@ -4713,40 +4715,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   sectionTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
   categoryLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
-    marginTop: theme.spacing.lg,
-    marginBottom: theme.spacing.xs,
+    marginTop: n.spacing.lg,
+    marginBottom: n.spacing.xs,
   },
   sectionContent: {
-    backgroundColor: theme.colors.surface,
     borderRadius: 16,
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
   },
-  label: { color: theme.colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 8 },
+  label: { color: n.colors.textSecondary, fontSize: 13, marginBottom: 6, marginTop: 8 },
   input: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 10,
     padding: 12,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     marginBottom: 4,
   },
   apiKeyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   apiKeyInput: { flex: 1, marginBottom: 0 },
-  inputSuccess: { borderColor: theme.colors.success },
-  inputError: { borderColor: theme.colors.error },
+  inputSuccess: { borderColor: n.colors.success },
+  inputError: { borderColor: n.colors.error },
   validateBtn: {
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -4754,27 +4755,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minWidth: 52,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
+    borderColor: n.colors.borderLight,
   },
   validateBtnSuccess: {
-    backgroundColor: theme.colors.successSurface,
-    borderColor: theme.colors.success,
+    backgroundColor: n.colors.successSurface,
+    borderColor: n.colors.success,
   },
-  validateBtnError: { backgroundColor: theme.colors.errorSurface, borderColor: theme.colors.error },
+  validateBtnError: { backgroundColor: n.colors.errorSurface, borderColor: n.colors.error },
   validateBtnOk: {
-    backgroundColor: theme.colors.successSurface,
-    borderColor: theme.colors.success,
+    backgroundColor: n.colors.successSurface,
+    borderColor: n.colors.success,
   },
   validateBtnFail: {
-    backgroundColor: theme.colors.errorSurface,
-    borderColor: theme.colors.error,
+    backgroundColor: n.colors.errorSurface,
+    borderColor: n.colors.error,
   },
-  validateBtnTesting: { backgroundColor: theme.colors.card, borderColor: theme.colors.primary },
-  validateBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
+  validateBtnTesting: { backgroundColor: n.colors.card, borderColor: n.colors.accent },
+  validateBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   validationMsg: { fontSize: 12, marginTop: 6, marginBottom: 2 },
-  validationSuccess: { color: theme.colors.success },
-  validationError: { color: theme.colors.error },
-  hint: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 4 },
+  validationSuccess: { color: n.colors.success },
+  validationError: { color: n.colors.error },
+  hint: { color: n.colors.textMuted, fontSize: 12, marginBottom: 4 },
   subSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -4782,30 +4783,30 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   subSectionLabel: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
   },
   subSectionDivider: {
     height: 1,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     marginVertical: 14,
   },
   localModelBtn: {
     marginTop: 12,
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     padding: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  localModelBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
+  localModelBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   localAiStatusText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -4820,68 +4821,68 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   localAiEnabledHint: {
-    color: theme.colors.success,
+    color: n.colors.success,
     marginBottom: 8,
   },
   localAiWarningHint: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     marginTop: 4,
   },
   localAiModelName: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontWeight: '700',
   },
   localAiModelMissing: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '600',
   },
   localAiActiveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: theme.colors.success,
+    backgroundColor: n.colors.success,
     marginLeft: 12,
     flexShrink: 0,
   },
   autoFetchBtn: {
     marginTop: 10,
-    backgroundColor: theme.colors.card,
+    backgroundColor: n.colors.card,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: n.colors.borderHighlight,
   },
   autoFetchBtnDisabled: { opacity: 0.5 },
-  autoFetchBtnText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
+  autoFetchBtnText: { color: n.colors.accent, fontSize: 13, fontWeight: '600' },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   switchLabel: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '600',
     fontSize: 15,
     marginBottom: 2,
   },
   testBtn: {
     marginTop: 12,
-    backgroundColor: theme.colors.card,
+    backgroundColor: n.colors.card,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: n.colors.borderHighlight,
   },
-  testBtnText: { color: theme.colors.primary, fontWeight: '600', fontSize: 14 },
+  testBtnText: { color: n.colors.accent, fontWeight: '600', fontSize: 14 },
   providerRow: {
     flexDirection: 'row' as const,
     alignItems: 'flex-start' as const,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
     marginBottom: 4,
   },
   providerIndex: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 13,
     width: 20,
     lineHeight: 20,
@@ -4902,14 +4903,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   providerActionBtnDisabled: { opacity: 0.25 },
-  providerActionBtnPressed: { backgroundColor: theme.colors.card },
+  providerActionBtnPressed: { backgroundColor: n.colors.card },
   saveBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: 'rgba(109,153,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(130,170,255,0.24)',
     borderRadius: 16,
     padding: 18,
     alignItems: 'center',
@@ -4917,21 +4920,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row' as const,
     marginTop: 8,
   },
-  saveBtnDisabled: { backgroundColor: theme.colors.border },
-  saveBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 17 },
+  saveBtnDisabled: { opacity: 0.5 },
+  saveBtnText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 17 },
   backupRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
   backupBtn: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
-  backupBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
+  backupBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
   backupDate: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     textAlign: 'center',
     fontStyle: 'italic',
@@ -4949,21 +4952,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 16,
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   frequencyChipActive: {
-    backgroundColor: theme.colors.primaryTintMedium,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.borderHighlight,
+    borderColor: n.colors.accent,
   },
   frequencyChipText: {
     fontSize: 13,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '500',
   },
   frequencyChipTextActive: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontWeight: '700',
   },
   guruMemoryInput: {
@@ -4986,22 +4989,22 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   freqBtn: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   freqBtnActive: {
-    backgroundColor: theme.colors.primaryTintSoft,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.primaryTintSoft,
+    borderColor: n.colors.accent,
   },
-  freqText: { color: theme.colors.textSecondary, fontSize: 12, fontWeight: '600' },
-  freqTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  freqText: { color: n.colors.textSecondary, fontSize: 12, fontWeight: '600' },
+  freqTextActive: { color: n.colors.accent, fontWeight: '700' },
   footer: {
-    color: theme.colors.borderLight,
+    color: n.colors.borderLight,
     fontSize: 11,
     textAlign: 'center',
     marginTop: 24,
@@ -5009,75 +5012,74 @@ const styles = StyleSheet.create({
   },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   typeChip: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
   },
   typeChipBlocked: {
-    backgroundColor: theme.colors.errorSurface,
-    borderColor: theme.colors.errorTintSoft,
+    backgroundColor: n.colors.errorSurface,
+    borderColor: 'rgba(241,76,76,0.08)',
   },
-  typeChipLocked: { borderColor: theme.colors.primaryTintMedium, opacity: 0.5 },
-  typeChipText: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '600' },
-  typeChipTextBlocked: { color: theme.colors.error },
-  typeChipX: { color: theme.colors.error, fontSize: 11 },
+  typeChipLocked: { borderColor: n.colors.borderHighlight, opacity: 0.5 },
+  typeChipText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '600' },
+  typeChipTextBlocked: { color: n.colors.error },
+  typeChipX: { color: n.colors.error, fontSize: 11 },
   clearBtn: { marginTop: 10, padding: 10, alignItems: 'center' },
-  clearBtnText: { color: theme.colors.textMuted, fontSize: 13 },
+  clearBtnText: { color: n.colors.textMuted, fontSize: 13 },
   maintenanceBtn: {
     marginTop: 10,
-    backgroundColor: theme.colors.card,
-    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
+    borderColor: 'rgba(255,255,255,0.14)',
   },
-  maintenanceBtnText: { color: theme.colors.textPrimary, fontWeight: '700', fontSize: 14 },
+  maintenanceBtnText: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 14 },
   dangerBtn: {
-    backgroundColor: theme.colors.background,
-    borderRadius: 10,
+    backgroundColor: n.colors.errorSurface,
+    borderRadius: 14,
     padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
+    borderColor: n.colors.error,
   },
-  dangerBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
+  dangerBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
   modelSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     marginBottom: 8,
   },
-  modelSelectorText: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  modelSelectorArrow: { color: theme.colors.textMuted, fontSize: 12 },
+  modelSelectorText: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  modelSelectorArrow: { color: n.colors.textMuted, fontSize: 12 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: theme.colors.backdropStrong,
+    backgroundColor: 'rgba(0,0,0,0.82)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: theme.colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '60%',
   },
   modalTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
-    marginBottom: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
     textAlign: 'center',
   },
   modelItem: {
@@ -5086,70 +5088,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight,
+    borderBottomColor: n.colors.borderLight,
   },
   modelItemActive: {
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     borderBottomWidth: 0,
   },
-  modelItemText: { color: theme.colors.textSecondary, fontSize: 15 },
-  modelItemTextActive: { color: theme.colors.primary, fontWeight: '700' },
-  checkMark: { color: theme.colors.primary, fontWeight: 'bold' },
+  modelItemText: { color: n.colors.textSecondary, fontSize: 15 },
+  modelItemTextActive: { color: n.colors.accent, fontWeight: '700' },
+  checkMark: { color: n.colors.accent, fontWeight: 'bold' },
   closeBtn: {
-    marginTop: theme.spacing.lg,
+    marginTop: n.spacing.lg,
     padding: 14,
     alignItems: 'center',
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     borderRadius: 12,
   },
-  closeBtnText: { color: theme.colors.textPrimary, fontWeight: '600' },
+  closeBtnText: { color: n.colors.textPrimary, fontWeight: '600' },
   // Diagnostics
   permRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: n.colors.border,
   },
-  permLabel: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  permLabel: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
   permStatus: { fontSize: 12, marginTop: 2 },
-  permOk: { color: theme.colors.success },
-  permError: { color: theme.colors.error },
+  permOk: { color: n.colors.success },
+  permError: { color: n.colors.error },
   fixBtn: {
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  fixBtnText: { color: theme.colors.primary, fontSize: 12, fontWeight: '800' },
+  fixBtnText: { color: n.colors.accent, fontSize: 12, fontWeight: '800' },
   diagBtn: { marginTop: 12, alignItems: 'center', padding: 10 },
-  diagBtnText: { color: theme.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
+  diagBtnText: { color: n.colors.textMuted, fontSize: 13, textDecorationLine: 'underline' },
   // Dropdown styles
   dropdownTrigger: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginTop: 6,
     marginBottom: 8,
   },
   dropdownValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
     flex: 1,
   },
-  dropdownArrow: { color: theme.colors.textMuted, fontSize: 16, marginLeft: 8 },
+  dropdownArrow: { color: n.colors.textMuted, fontSize: 16, marginLeft: 8 },
   dropdownBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -5157,22 +5159,21 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   dropdownSheet: {
-    backgroundColor: theme.colors.surface,
     borderRadius: 16,
     paddingVertical: 12,
     maxHeight: '80%',
   },
   dropdownSheetTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     paddingHorizontal: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: n.colors.border,
   },
   dropdownGroupLabel: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,
@@ -5188,8 +5189,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  dropdownItemActive: { backgroundColor: theme.colors.primaryTintSoft },
-  dropdownItemText: { color: theme.colors.textPrimary, fontSize: 14, lineHeight: 20, flex: 1 },
-  dropdownItemTextActive: { color: theme.colors.primary, fontWeight: '700' },
-  dropdownCheck: { color: theme.colors.primary, fontSize: 16, fontWeight: '700', marginLeft: 8 },
+  dropdownItemActive: { backgroundColor: n.colors.primaryTintSoft },
+  dropdownItemText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 20, flex: 1 },
+  dropdownItemTextActive: { color: n.colors.accent, fontWeight: '700' },
+  dropdownCheck: { color: n.colors.accent, fontSize: 16, fontWeight: '700', marginLeft: 8 },
 });

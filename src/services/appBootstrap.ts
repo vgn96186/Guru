@@ -204,12 +204,8 @@ async function restoreGuruBackup(guruFilePath: string, source: string): Promise<
  * Resolves the initial navigation route from DB (async). Keeps the UI thread responsive.
  */
 export async function resolveInitialRoute(): Promise<InitialRoute> {
-  const [todayLog, profile] = await Promise.all([
-    dailyLogRepository.getDailyLog(),
-    profileRepository.getProfile(),
-  ]);
+  const todayLog = await dailyLogRepository.getDailyLog();
   if (todayLog?.checkedIn) return 'Tabs';
-  if ((profile?.quickStartStreak ?? 0) >= 3) return 'Tabs';
   return 'CheckIn';
 }
 

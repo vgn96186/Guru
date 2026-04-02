@@ -41,6 +41,7 @@ jest.mock('react-native-reanimated', () => {
     Easing: {
       ease: (t: number) => t,
       sine: (t: number) => t,
+      bezier: () => (t: number) => t,
       inOut: (fn: (t: number) => number) => fn,
       out: (fn: (t: number) => number) => fn,
     },

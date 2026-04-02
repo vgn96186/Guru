@@ -3,7 +3,7 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import { useAppStore } from '../store/useAppStore';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 export default function FocusAudioPlayer() {
     const isAudioEnabled = useAppStore(s => s.profile?.focusAudioEnabled);
@@ -70,7 +70,7 @@ export default function FocusAudioPlayer() {
             <Ionicons
                 name={isAudioEnabled ? "headset" : "headset-outline"}
                 size={24}
-                color={isAudioEnabled ? theme.colors.primary : theme.colors.textMuted}
+                color={isAudioEnabled ? n.colors.accent : n.colors.textMuted}
             />
         </TouchableOpacity>
     );
@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     button: {
         padding: 8,
         borderRadius: 20,
-        backgroundColor: theme.colors.surface,
+        backgroundColor: n.colors.surface,
         borderWidth: 1,
-        borderColor: theme.colors.borderLight,
+        borderColor: n.colors.borderLight,
     }
 });

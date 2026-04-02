@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import * as Haptics from 'expo-haptics';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 const POSITION_CHECK_INTERVAL = 1000; // Check every second
@@ -119,7 +119,7 @@ export default function BedLockScreen() {
   if (phase === 'detecting') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
           <ActivityIndicator size="large" color="#6C63FF" />
           <Text style={styles.detectingText}>Detecting position...</Text>
@@ -131,7 +131,7 @@ export default function BedLockScreen() {
   if (phase === 'lying') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
           <Text style={styles.shameEmoji}>😴</Text>
           <Text style={styles.shameTitle}>You're Lying Down</Text>
@@ -163,7 +163,7 @@ export default function BedLockScreen() {
   if (phase === 'situp' || phase === 'stand') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { transform: [{ translateX: shakeAnim }] }]}>
             <Text style={styles.progressEmoji}>💪</Text>

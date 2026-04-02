@@ -2,7 +2,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getAllSubjects } from '../db/queries/topics';
 import type { Subject } from '../types';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface Props {
   detectedSubjectName?: string | null;
@@ -46,7 +46,7 @@ export default function SubjectSelectionCard({
       )}
       {isLoading ? (
         <View style={styles.loadingRow}>
-          <ActivityIndicator color={theme.colors.primary} size="small" />
+          <ActivityIndicator color={n.colors.accent} size="small" />
           <Text style={styles.loadingText}>Loading subjects…</Text>
         </View>
       ) : (
@@ -80,23 +80,23 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.warning + '66',
-    backgroundColor: theme.colors.warningSurface,
+    borderColor: n.colors.warning + '66',
+    backgroundColor: 'rgba(217,119,6,0.1)',
     gap: 10,
   },
   title: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '800',
   },
   body: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
   },
   detectedText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '600',
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   loadingText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
   },
@@ -121,20 +121,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
-    backgroundColor: theme.colors.panel,
+    borderColor: n.colors.borderLight,
+    backgroundColor: n.colors.surface,
   },
   chipSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primaryTint,
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.primaryTintSoft,
   },
   chipText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
   },
   chipTextSelected: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
   },
 });

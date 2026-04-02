@@ -15,7 +15,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Animated, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 export type ToastType = 'info' | 'success' | 'error' | 'warning';
 
@@ -53,10 +53,10 @@ export function showToast(
 }
 
 const COLORS: Record<ToastType, string> = {
-  info: theme.colors.primary,
-  success: theme.colors.success,
-  error: theme.colors.error,
-  warning: theme.colors.warning,
+  info: n.colors.accent,
+  success: n.colors.success,
+  error: n.colors.error,
+  warning: n.colors.warning,
 };
 
 const WIDTH = Dimensions.get('window').width - 32;

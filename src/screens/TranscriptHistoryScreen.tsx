@@ -23,6 +23,7 @@ import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/nativ
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Clipboard from '@react-native-clipboard/clipboard';
+import LinearSurface from '../components/primitives/LinearSurface';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
@@ -35,7 +36,7 @@ import {
   getLectureNoteById,
   type LectureHistoryItem,
 } from '../db/queries/aiCache';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { CONFIDENCE_LABELS } from '../constants/gamification';
 import { loadTranscriptFromFile } from '../services/transcriptStorage';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
@@ -55,6 +56,7 @@ import {
   transcribeLectureRecordingToNote,
   type LectureManagerFilter,
 } from '../services/lecture/lectureManager';
+import BannerSearchBar from '../components/BannerSearchBar';
 import ScreenHeader from '../components/ScreenHeader';
 import TranscriptionSettingsPanel from '../components/TranscriptionSettingsPanel';
 import SubjectChip from '../components/SubjectChip';
@@ -140,7 +142,7 @@ function TranscriptSection({ transcript }: { transcript: string }) {
             color: '#aaa',
             fontSize: 13,
             lineHeight: 20,
-            fontFamily: 'monospace',
+            fontFamily: 'Inter_400Regular',
             backgroundColor: '#0D0D0D',
             padding: 12,
             borderRadius: 8,
@@ -280,7 +282,7 @@ const audioStyles = StyleSheet.create({
   progressBar: { height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#6C63FF' },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  timeText: { color: '#888', fontSize: 10, fontFamily: 'monospace' },
+  timeText: { color: '#888', fontSize: 10, fontFamily: 'Inter_400Regular' },
 });
 
 export default function TranscriptHistoryScreen() {
@@ -652,12 +654,21 @@ export default function TranscriptHistoryScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScreenHeader
         title="Transcript Vault"
         subtitle="Search, review, and manage captured lectures."
         onBackPress={() => navigation.navigate('NotesHub')}
-      />
+        searchElement={
+          <BannerSearchBar
+            value={searchQuery}
+            onChangeText={handleSearch}
+            placeholder="Search transcripts, topics, concepts..."
+            containerStyle={styles.headerSearchRight}
+          />
+        }
+      >
+      </ScreenHeader>
       {isSelectionMode && (
         <View style={styles.selectionModeBanner}>
           <Text style={styles.selectionModeBannerText}>
@@ -669,25 +680,6 @@ export default function TranscriptHistoryScreen() {
         </View>
       )}
       <TranscriptionSettingsPanel />
-
-      {/* Search bar */}
-      <View style={styles.searchRow}>
-        <Ionicons name="search" size={20} color="#888" />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search transcripts, topics, concepts..."
-          placeholderTextColor={theme.colors.textMuted}
-          value={searchQuery}
-          onChangeText={handleSearch}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => handleSearch('')}>
-            <Ionicons name="close-circle" size={20} color="#888" />
-          </TouchableOpacity>
-        )}
-      </View>
 
       {/* Header stats */}
       <View style={styles.statsBar}>
@@ -714,7 +706,7 @@ export default function TranscriptHistoryScreen() {
       {/* Empty state */}
       {visibleNotes.length === 0 && !searchQuery && (
         <View style={styles.emptyState}>
-          <Ionicons name="document-text-outline" size={64} color={theme.colors.textMuted} />
+          <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
           <Text style={styles.emptyTitle}>
             {isFilterActive ? 'No Lectures Match This Filter' : 'No Transcripts Yet'}
           </Text>
@@ -729,7 +721,7 @@ export default function TranscriptHistoryScreen() {
       {/* No results */}
       {visibleNotes.length === 0 && searchQuery && (
         <View style={styles.emptyState}>
-          <Ionicons name="search-outline" size={48} color={theme.colors.textMuted} />
+          <Ionicons name="search-outline" size={48} color={n.colors.textMuted} />
           <Text style={styles.emptyTitle}>No Results</Text>
           <Text style={styles.emptySubtitle}>No transcripts match "{searchQuery}"</Text>
         </View>
@@ -793,7 +785,7 @@ export default function TranscriptHistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            tintColor={theme.colors.textPrimary}
+            tintColor={n.colors.textPrimary}
           />
         }
       />
@@ -818,7 +810,7 @@ export default function TranscriptHistoryScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Rename transcript"
                 >
-                  <Ionicons name="create-outline" size={18} color={theme.colors.primaryLight} />
+                  <Ionicons name="create-outline" size={18} color={n.colors.accent} />
                   <Text style={styles.headerActionText}>Rename</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -827,8 +819,8 @@ export default function TranscriptHistoryScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Delete transcript"
                 >
-                  <Ionicons name="trash-outline" size={18} color={theme.colors.error} />
-                  <Text style={[styles.headerActionText, { color: theme.colors.error }]}>
+                  <Ionicons name="trash-outline" size={18} color={n.colors.error} />
+                  <Text style={[styles.headerActionText, { color: n.colors.error }]}>
                     Delete
                   </Text>
                 </TouchableOpacity>
@@ -838,7 +830,7 @@ export default function TranscriptHistoryScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Close"
                 >
-                  <Ionicons name="close" size={22} color={theme.colors.textPrimary} />
+                  <Ionicons name="close" size={22} color={n.colors.textPrimary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -863,10 +855,10 @@ export default function TranscriptHistoryScreen() {
                     {
                       backgroundColor:
                         (selectedNote?.confidence ?? 2) === 3
-                          ? theme.colors.success
+                          ? n.colors.success
                           : (selectedNote?.confidence ?? 2) === 2
-                            ? theme.colors.warning
-                            : theme.colors.error,
+                            ? n.colors.warning
+                            : n.colors.error,
                       alignSelf: 'flex-start',
                       marginTop: 8,
                     },
@@ -884,7 +876,7 @@ export default function TranscriptHistoryScreen() {
                     value={renameText}
                     onChangeText={setRenameText}
                     placeholder="Enter title"
-                    placeholderTextColor={theme.colors.textMuted}
+                    placeholderTextColor={n.colors.textMuted}
                     autoFocus
                   />
                   <View style={styles.renameActions}>
@@ -927,7 +919,7 @@ export default function TranscriptHistoryScreen() {
                   onPress={handleGenerateAiOutput}
                   disabled={isManagerBusy}
                 >
-                  <Ionicons name="sparkles-outline" size={18} color={theme.colors.primaryLight} />
+                  <Ionicons name="sparkles-outline" size={18} color={n.colors.accent} />
                   <Text style={styles.managerActionText}>
                     {selectedHasRecordingOnly
                       ? 'Transcribe Audio'
@@ -944,7 +936,7 @@ export default function TranscriptHistoryScreen() {
                   onPress={handleCopyTranscript}
                   disabled={isManagerBusy}
                 >
-                  <Ionicons name="copy-outline" size={18} color={theme.colors.textPrimary} />
+                  <Ionicons name="copy-outline" size={18} color={n.colors.textPrimary} />
                   <Text style={styles.managerActionText}>Copy Transcript</Text>
                 </TouchableOpacity>
                 {selectedNote?.recordingPath ? (
@@ -956,7 +948,7 @@ export default function TranscriptHistoryScreen() {
                     onPress={handleRemoveRecording}
                     disabled={isManagerBusy}
                   >
-                    <Ionicons name="trash-outline" size={18} color={theme.colors.warning} />
+                    <Ionicons name="trash-outline" size={18} color={n.colors.warning} />
                     <Text style={styles.managerActionText}>Delete Recording</Text>
                   </TouchableOpacity>
                 ) : null}
@@ -969,7 +961,7 @@ export default function TranscriptHistoryScreen() {
                     onPress={handleClearAiNote}
                     disabled={isManagerBusy}
                   >
-                    <Ionicons name="document-text-outline" size={18} color={theme.colors.error} />
+                    <Ionicons name="document-text-outline" size={18} color={n.colors.error} />
                     <Text style={styles.managerActionText}>Clear AI Note</Text>
                   </TouchableOpacity>
                 ) : null}
@@ -993,13 +985,13 @@ export default function TranscriptHistoryScreen() {
                         setReaderContent(selectedNote.note);
                       }}
                     >
-                      <Ionicons name="book-outline" size={16} color={theme.colors.primary} />
+                      <Ionicons name="book-outline" size={16} color={n.colors.accent} />
                       <Text style={styles.readerOpenText}>Read</Text>
                     </TouchableOpacity>
                   </View>
-                  <View style={styles.studyNoteCard}>
+                  <LinearSurface padded={false} style={styles.studyNoteCard}>
                     <MarkdownRender content={selectedNote.note} />
-                  </View>
+                  </LinearSurface>
                 </View>
               )}
 
@@ -1023,7 +1015,7 @@ export default function TranscriptHistoryScreen() {
                         setReaderContent(text || 'No transcript available.');
                       }}
                     >
-                      <Ionicons name="book-outline" size={16} color={theme.colors.primary} />
+                      <Ionicons name="book-outline" size={16} color={n.colors.accent} />
                       <Text style={styles.readerOpenText}>Read Full</Text>
                     </TouchableOpacity>
                   </View>
@@ -1044,7 +1036,7 @@ export default function TranscriptHistoryScreen() {
         <View style={styles.readerContainer}>
           <View style={styles.readerHeader}>
             <TouchableOpacity onPress={() => setReaderContent(null)} style={styles.readerCloseBtn}>
-              <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
+              <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.readerHeaderTitle} numberOfLines={2}>
               {readerTitle}
@@ -1058,7 +1050,7 @@ export default function TranscriptHistoryScreen() {
               }}
               style={styles.readerCopyBtn}
             >
-              <Ionicons name="copy-outline" size={20} color={theme.colors.textMuted} />
+              <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -1127,15 +1119,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
   },
   sortBtnActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '22',
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.accent + '22',
   },
-  sortBtnText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '600' },
-  sortBtnTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  sortBtnText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '600' },
+  sortBtnTextActive: { color: n.colors.accent, fontWeight: '700' },
   filterBar: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1152,11 +1144,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#181A27',
   },
   filterChipActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '22',
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.accent + '22',
   },
   filterChipText: { color: '#B5B8CF', fontSize: 12, fontWeight: '600' },
-  filterChipTextActive: { color: theme.colors.primaryLight, fontWeight: '700' },
+  filterChipTextActive: { color: n.colors.accent, fontWeight: '700' },
 
   noteCard: {
     backgroundColor: '#1E1E1E',
@@ -1295,7 +1287,7 @@ const styles = StyleSheet.create({
   modalScroll: { padding: 16, flexGrow: 1 },
   modalMeta: { marginBottom: 16 },
   customTitleText: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
-  modalMetaText: { color: theme.colors.textSecondary, fontSize: 13 },
+  modalMetaText: { color: n.colors.textSecondary, fontSize: 13 },
   renameCard: {
     backgroundColor: '#222',
     borderRadius: 12,
@@ -1325,15 +1317,17 @@ const styles = StyleSheet.create({
   renameCancelBtn: { paddingHorizontal: 12, paddingVertical: 8 },
   renameCancelText: { color: '#999', fontSize: 13, fontWeight: '600' },
   renameSaveBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: 'rgba(109,153,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(130,170,255,0.24)',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  renameSaveText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  renameSaveText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   modalSection: { marginBottom: 20 },
   modalSectionTitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -1354,25 +1348,22 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#35384D',
-    backgroundColor: '#1D1F2C',
+    borderColor: 'rgba(255,255,255,0.14)',
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   managerActionBtnDisabled: {
     opacity: 0.55,
   },
   managerActionText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
     flexShrink: 1,
   },
   studyNoteCard: {
-    backgroundColor: theme.colors.panel,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    borderRadius: n.radius.lg,
+    paddingHorizontal: n.spacing.lg,
+    paddingVertical: n.spacing.md,
   },
   modalText: { color: '#ddd', fontSize: 15, lineHeight: 22 },
   topicsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
@@ -1391,7 +1382,7 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 14,
     lineHeight: 22,
-    fontFamily: 'monospace',
+    fontFamily: 'Inter_400Regular',
     backgroundColor: '#0D0D0D',
     padding: 12,
     borderRadius: 8,
@@ -1400,14 +1391,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.primary + '22',
+    backgroundColor: n.colors.accent + '22',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.primary + '55',
+    borderBottomColor: n.colors.accent + '55',
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
-  selectionModeBannerText: { color: theme.colors.primary, fontSize: 13, fontWeight: '600' },
-  selectionModeCancelText: { color: theme.colors.primary, fontSize: 13, fontWeight: '800' },
+  selectionModeBannerText: { color: n.colors.accent, fontSize: 13, fontWeight: '600' },
+  selectionModeCancelText: { color: n.colors.accent, fontSize: 13, fontWeight: '800' },
+  headerSearchRight: { marginTop: 0 },
   readerOpenBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1415,9 +1407,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
-    backgroundColor: theme.colors.primary + '18',
+    backgroundColor: n.colors.accent + '18',
   },
-  readerOpenText: { color: theme.colors.primary, fontSize: 12, fontWeight: '700' },
+  readerOpenText: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
   readerContainer: { flex: 1, backgroundColor: '#0A0A0A' },
   readerHeader: {
     flexDirection: 'row',

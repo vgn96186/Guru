@@ -26,12 +26,14 @@ import { markTopicsFromLecture } from '../services/transcription/matching';
 import { getDb } from '../db/database';
 import { showToast } from '../components/Toast';
 import { resolveLectureSubjectRequirement } from '../services/lecture/lectureSubjectRequirement';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import ConfidenceSelector from '../components/ConfidenceSelector';
 import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import ScreenHeader from '../components/ScreenHeader';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 export default function ManualNoteCreationScreen(
   _props: NativeStackScreenProps<MenuStackParamList, 'ManualNoteCreation'>,
@@ -136,7 +138,7 @@ export default function ManualNoteCreationScreen(
     const { analysis, note } = result;
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => setResult(null)} style={styles.backBtn}>
             <Text style={styles.backText}>← Edit</Text>
@@ -168,24 +170,19 @@ export default function ManualNoteCreationScreen(
           />
 
           <Text style={styles.sectionLabel}>GENERATED NOTES</Text>
-          <View style={styles.noteCard}>
+          <LinearSurface padded={false} style={styles.noteCard}>
             <Text style={styles.noteText}>{note}</Text>
-          </View>
+          </LinearSurface>
         </ScrollView>
 
         <View style={styles.footer}>
-          <TouchableOpacity
+          <LinearButton
+            variant="glassTinted"
             style={[styles.saveBtn, isSaving && { opacity: 0.6 }]}
             onPress={handleSave}
             disabled={isSaving || (subjectSelectionRequired && !selectedSubjectName)}
-            activeOpacity={0.8}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.saveBtnText}>Save to Notes Vault</Text>
-            )}
-          </TouchableOpacity>
+            label={isSaving ? 'Saving…' : 'Save to Notes Vault'}
+          />
         </View>
       </SafeAreaView>
     );
@@ -194,7 +191,7 @@ export default function ManualNoteCreationScreen(
   // ── Input view ─────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <View style={styles.screenHeaderWrap}>
         <ScreenHeader
           title="Paste Transcript"
@@ -212,22 +209,18 @@ export default function ManualNoteCreationScreen(
           style={styles.input}
           multiline
           placeholder="Paste transcript here..."
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={n.colors.textMuted}
           value={transcript}
           onChangeText={setTranscript}
           editable={!isProcessing}
         />
-        <TouchableOpacity
+        <LinearButton
+          variant="glassTinted"
           style={[styles.btn, (!transcript.trim() || isProcessing) && styles.btnDisabled]}
           onPress={handleGenerate}
           disabled={!transcript.trim() || isProcessing}
-        >
-          {isProcessing ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.btnText}>Generate Notes</Text>
-          )}
-        </TouchableOpacity>
+          label={isProcessing ? 'Generating Notes…' : 'Generate Notes'}
+        />
         {isProcessing && (
           <Text style={styles.processingText}>Analyzing transcript and building notes...</Text>
         )}
@@ -244,29 +237,29 @@ export default function ManualNoteCreationScreen(
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.divider,
+    borderBottomColor: n.colors.border,
   },
   backBtn: { marginRight: 16 },
-  backText: { color: theme.colors.primary, fontSize: 16 },
+  backText: { color: n.colors.accent, fontSize: 16 },
   title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   content: { padding: 16, paddingBottom: 120, gap: 4 },
   screenHeaderWrap: { paddingHorizontal: 16, paddingTop: 8 },
   label: { color: '#FFF', fontSize: 15, marginBottom: 6 },
   formatHint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 17,
     marginBottom: 12,
     fontStyle: 'italic',
   },
   input: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     color: '#FFF',
     borderRadius: 10,
     padding: 16,
@@ -275,26 +268,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   btn: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 10,
-    alignItems: 'center',
+    minHeight: 56,
   },
   btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   processingText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     textAlign: 'center',
     marginTop: 16,
     fontSize: 14,
   },
   cancelInlineBtn: { marginTop: 16, alignItems: 'center', padding: 12 },
-  cancelInlineText: { color: theme.colors.textSecondary, fontSize: 15, fontWeight: '600' },
+  cancelInlineText: { color: n.colors.textSecondary, fontSize: 15, fontWeight: '600' },
   sectionLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -302,19 +291,11 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   noteCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
   },
-  noteText: { color: theme.colors.textPrimary, fontSize: 14, lineHeight: 22 },
-  footer: { padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.divider },
+  noteText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 22 },
+  footer: { padding: 16, borderTopWidth: 1, borderTopColor: n.colors.border },
   saveBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
+    minHeight: 56,
   },
-  saveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });

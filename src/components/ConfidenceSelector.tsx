@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 const LABELS: Record<1 | 2 | 3, string> = { 1: 'Introduced', 2: 'Understood', 3: 'Confident' };
 const COLORS: Record<1 | 2 | 3, string> = {
-  1: theme.colors.error,
-  2: theme.colors.warning,
-  3: theme.colors.success,
+  1: n.colors.error,
+  2: n.colors.warning,
+  3: n.colors.success,
 };
 
 interface Props {
@@ -44,9 +44,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     paddingVertical: 10,
     alignItems: 'center',
   },
-  optionText: { color: theme.colors.textMuted, fontSize: 13, fontWeight: '700' },
+  optionText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '700' },
 });

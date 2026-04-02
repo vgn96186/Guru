@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Switch } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface StudyPreferencesSectionProps {
   strictMode: boolean;
@@ -50,6 +50,6 @@ export default React.memo(StudyPreferencesSection);
 const styles = StyleSheet.create({
   container: { gap: 16 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  label: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  hint: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 2, paddingRight: 10 },
+  label: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 2, paddingRight: 10 },
 });

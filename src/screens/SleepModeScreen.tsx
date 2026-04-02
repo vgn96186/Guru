@@ -18,7 +18,7 @@ import * as Notifications from 'expo-notifications';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { generateWakeUpMessage } from '../services/aiService';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'SleepMode'>;
@@ -221,7 +221,7 @@ export default function SleepModeScreen() {
   if (alarmRinging) {
     return (
       <View style={styles.alarmContainer}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <Animated.View style={[styles.alarmOverlay, { opacity: fadeAnim }]} />
         <Text style={styles.alarmTime}>{timeString}</Text>
         <Text style={styles.alarmTitle}>Good Morning, Doctor.</Text>
@@ -240,14 +240,14 @@ export default function SleepModeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
         <View style={styles.topSection}>
           <View style={styles.modeBadge}>
             <View
               style={[
                 styles.modeDot,
-                { backgroundColor: isTracking ? theme.colors.success : theme.colors.primaryLight },
+                { backgroundColor: isTracking ? n.colors.success : n.colors.accent },
               ]}
             />
             <Text style={styles.modeBadgeText}>
@@ -360,7 +360,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   modeBadgeText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
@@ -368,14 +368,14 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   dateText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     lineHeight: 20,
     letterSpacing: 0.3,
     marginBottom: 18,
   },
   clock: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 88,
     lineHeight: 94,
     fontWeight: '900',
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   infoEyebrow: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 11,
     lineHeight: 16,
     fontWeight: '800',
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   infoTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 24,
     lineHeight: 30,
     fontWeight: '800',
@@ -429,19 +429,19 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   infoPillText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
   },
   infoBody: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     textAlign: 'center',
   },
   infoHint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   timePickerText: { color: '#fff', fontSize: 24, fontWeight: '400' },
   timePickerVal: {
@@ -477,12 +477,12 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     alignItems: 'center',
   },
   toggleBtnActive: { backgroundColor: '#2A0A0A', borderColor: '#F44336' },
   toggleBtnText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontWeight: '800',
     fontSize: 16,
     lineHeight: 22,
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
 
   backBtn: { marginTop: 20, padding: 12 },
-  backBtnText: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
+  backBtnText: { color: n.colors.textSecondary, fontSize: 14, lineHeight: 20 },
 
   alarmContainer: {
     flex: 1,
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   alarmTime: { color: '#fff', fontSize: 64, fontWeight: '900', marginBottom: 16 },
   alarmTitle: { color: '#fff', fontSize: 24, lineHeight: 30, fontWeight: '800', marginBottom: 8 },
   alarmSub: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     lineHeight: 22,
     textAlign: 'center',
@@ -529,10 +529,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#1A1A24',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   snoozeBtnText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: '700',

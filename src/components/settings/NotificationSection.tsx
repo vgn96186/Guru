@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, Switch, TouchableOpacity } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface NotificationSectionProps {
   enabled: boolean;
@@ -63,40 +63,40 @@ export default React.memo(NotificationSection);
 const styles = StyleSheet.create({
   container: { gap: 12 },
   switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  label: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700' },
-  hint: { color: theme.colors.textSecondary, fontSize: 11, marginTop: 2 },
+  label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
+  hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 2 },
   input: {
-    backgroundColor: theme.colors.surface,
-    color: theme.colors.textPrimary,
+    backgroundColor: n.colors.surface,
+    color: n.colors.textPrimary,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     fontSize: 14,
   },
-  inputError: { borderColor: theme.colors.error },
-  errorText: { color: theme.colors.error, fontSize: 11 },
+  inputError: { borderColor: n.colors.error },
+  errorText: { color: n.colors.error, fontSize: 11 },
   frequencyRow: { flexDirection: 'row', gap: 8 },
   freqBtn: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  freqBtnActive: { backgroundColor: `${theme.colors.primary}22`, borderColor: theme.colors.primary },
-  freqText: { color: theme.colors.textSecondary, fontSize: 12, fontWeight: '600' },
-  freqTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  freqBtnActive: { backgroundColor: `${n.colors.accent}22`, borderColor: n.colors.accent },
+  freqText: { color: n.colors.textSecondary, fontSize: 12, fontWeight: '600' },
+  freqTextActive: { color: n.colors.accent, fontWeight: '700' },
   testBtn: {
     marginTop: 8,
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  testBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 13 },
+  testBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 13 },
 });

@@ -23,7 +23,7 @@ import { navigationRef } from '../navigation/navigationRef';
 import { showToast } from '../components/Toast';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { MS_PER_DAY } from '../constants/time';
 import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
@@ -773,7 +773,7 @@ export default function StudyPlanScreen() {
   if (isLoading && !summary) {
     return (
       <SafeAreaView style={styles.safe} testID="plan-screen">
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color="#6C63FF" />
           <Text style={styles.loadingText}>Building your study plan...</Text>
@@ -785,7 +785,7 @@ export default function StudyPlanScreen() {
   if (loadError && !summary) {
     return (
       <SafeAreaView style={styles.safe} testID="plan-screen">
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.loadingWrap}>
           <Text style={styles.errorTitle}>Could not load study plan</Text>
           <Text style={styles.errorText}>{loadError}</Text>
@@ -820,7 +820,7 @@ export default function StudyPlanScreen() {
 
   return (
     <SafeAreaView style={styles.safe} testID="plan-screen">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <ResponsiveContainer>
           <View style={styles.header}>
@@ -1120,11 +1120,11 @@ export default function StudyPlanScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   content: { padding: 20, paddingBottom: 60 },
   header: { marginBottom: 24 },
   title: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 4 },
-  subtitle: { color: theme.colors.textSecondary, fontSize: 14 },
+  subtitle: { color: n.colors.textSecondary, fontSize: 14 },
   modeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
   resourceRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
   modeChip: {
@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
   },
   cardWarning: { borderColor: '#F44336', backgroundColor: '#2A0A0A' },
   cardTitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1181,7 +1181,7 @@ const styles = StyleSheet.create({
   },
   cardRow: { flexDirection: 'row', alignItems: 'baseline', gap: 8, marginBottom: 4 },
   cardValue: { color: '#fff', fontSize: 32, fontWeight: '900' },
-  cardLabel: { color: theme.colors.textMuted, fontSize: 14, fontWeight: '600' },
+  cardLabel: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
   cardSub: { color: '#CCC', fontSize: 14, marginBottom: 16, fontStyle: 'italic' },
   cardMeta: { color: '#97A2B8', fontSize: 12, lineHeight: 18, marginTop: -8, marginBottom: 16 },
   loadHighlightBox: {
@@ -1227,7 +1227,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   progressBarFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 3 },
-  progressLabel: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18 },
+  progressLabel: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
   horizonNote: {
     color: '#FFE1A6',
     fontSize: 12,
@@ -1237,7 +1237,7 @@ const styles = StyleSheet.create({
   },
 
   sectionTitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1,
@@ -1256,7 +1256,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   dayLabel: { color: '#fff', fontSize: 18, fontWeight: '700' },
-  dayMeta: { color: theme.colors.textMuted, fontSize: 12 },
+  dayMeta: { color: n.colors.textMuted, fontSize: 12 },
 
   topicRow: {
     flexDirection: 'row',
@@ -1274,8 +1274,8 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
   topicName: { color: '#E0E0E0', fontSize: 15, lineHeight: 21, fontWeight: '600' },
   topicNameCompleted: { textDecorationLine: 'line-through', color: '#A8D9B2' },
-  topicSub: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
-  topicTime: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' },
+  topicSub: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18, marginTop: 2 },
+  topicTime: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
   startHint: { color: '#6C63FF', fontSize: 12, marginTop: 2 },
   completedLabel: { color: '#63C27D', fontSize: 12, fontWeight: '800', marginTop: 4 },
   reasonRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
@@ -1291,36 +1291,36 @@ const styles = StyleSheet.create({
 
   tagReview: {
     fontSize: 12,
-    color: theme.colors.success,
+    color: n.colors.success,
     fontWeight: '900',
-    backgroundColor: theme.colors.successTintSoft,
+    backgroundColor: 'rgba(63,185,80,0.08)',
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
   },
   tagDeep: {
     fontSize: 12,
-    color: theme.colors.error,
+    color: n.colors.error,
     fontWeight: '900',
-    backgroundColor: theme.colors.errorTintSoft,
+    backgroundColor: 'rgba(241,76,76,0.08)',
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
   },
   tagNew: {
     fontSize: 12,
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontWeight: '900',
-    backgroundColor: theme.colors.primaryTintSoft,
+    backgroundColor: n.colors.primaryTintSoft,
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
   },
   tagHighYield: {
     fontSize: 12,
-    color: theme.colors.textInverse,
+    color: n.colors.textInverse,
     fontWeight: '900',
-    backgroundColor: theme.colors.accentAlt,
+    backgroundColor: n.colors.warning,
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRadius: 4,
@@ -1335,9 +1335,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptySectionTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  emptySectionSub: { color: theme.colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
+  emptySectionSub: { color: n.colors.textMuted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   previewMeta: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     marginBottom: 10,
   },
@@ -1359,7 +1359,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   loadingText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     marginTop: 12,
     fontSize: 14,
   },
@@ -1371,7 +1371,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   errorText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -1406,7 +1406,7 @@ const dbmciStyles = StyleSheet.create({
     marginBottom: 2,
   },
   subtitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     marginBottom: 12,
   },
@@ -1439,7 +1439,7 @@ const dbmciStyles = StyleSheet.create({
     fontWeight: '600',
   },
   topicCount: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     marginTop: 1,
   },
@@ -1448,7 +1448,7 @@ const dbmciStyles = StyleSheet.create({
     marginLeft: 8,
   },
   days: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
@@ -1507,7 +1507,7 @@ const liveStyles = StyleSheet.create({
     fontWeight: '700',
   },
   bannerHint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     marginTop: 4,
     lineHeight: 17,
@@ -1551,7 +1551,7 @@ const liveStyles = StyleSheet.create({
     flex: 1,
   },
   subjectMeta: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
   },
 });
@@ -1561,7 +1561,7 @@ const masteryStyles = StyleSheet.create({
   legendRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { color: theme.colors.textMuted, fontSize: 11 },
+  legendText: { color: n.colors.textMuted, fontSize: 11 },
   barTrack: {
     height: 6,
     backgroundColor: '#2A2A38',
@@ -1583,7 +1583,7 @@ const masteryStyles = StyleSheet.create({
     marginBottom: 16,
   },
   funnelTitle: { color: '#fff', fontSize: 15, fontWeight: '800', marginBottom: 4 },
-  funnelSub: { color: theme.colors.textMuted, fontSize: 12, marginBottom: 12, lineHeight: 17 },
+  funnelSub: { color: n.colors.textMuted, fontSize: 12, marginBottom: 12, lineHeight: 17 },
   funnelBar: {
     height: 10,
     borderRadius: 5,
@@ -1711,7 +1711,7 @@ const masteryStyles = StyleSheet.create({
     padding: 12,
   },
   capacityLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
@@ -1764,5 +1764,5 @@ const urgencyStyles = StyleSheet.create({
     marginBottom: 4,
   },
   boxValue: { color: '#fff', fontSize: 18, fontWeight: '900' },
-  hint: { color: theme.colors.textMuted, fontSize: 12, lineHeight: 17 },
+  hint: { color: n.colors.textMuted, fontSize: 12, lineHeight: 17 },
 });

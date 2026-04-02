@@ -14,7 +14,7 @@ import { useAppStore } from '../store/useAppStore';
 import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import {
   deleteLocalModelFile,
   getLocalModelFilePath,
@@ -258,7 +258,7 @@ export default function LocalModelScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content}>
         <ResponsiveContainer>
           <ScreenHeader
@@ -437,7 +437,7 @@ export default function LocalModelScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
+  container: { flex: 1, backgroundColor: n.colors.background },
   content: { padding: 20, paddingBottom: 60 },
   screenHeader: { marginBottom: 24 },
   screenHeaderTitle: { fontSize: 24, fontWeight: '800' },

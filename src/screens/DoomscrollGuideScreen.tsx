@@ -22,7 +22,7 @@ import {
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import type { HarassmentTone } from '../types';
 
 const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
@@ -73,7 +73,7 @@ export default function DoomscrollGuideScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.container}>
         <ResponsiveContainer style={{ alignItems: 'center' }}>
           <Text style={styles.emoji}>📱</Text>

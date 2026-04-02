@@ -18,7 +18,7 @@ import { dailyLogRepository } from '../db/repositories';
 import * as Haptics from 'expo-haptics';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 const MAX_OPENS_BEFORE_SHAME = 3;
 const DELAY_SECONDS = 30;
@@ -144,13 +144,13 @@ export default function DoomscrollInterceptor() {
       title: 'Really?',
       subtitle: "You've opened {app} {count} times today without studying.",
       quote: 'Your future patients are watching.',
-      color: theme.colors.primary,
+      color: n.colors.accent,
     },
     {
       title: 'PATHETIC',
       subtitle: "{count} attempts to avoid studying. You're better than this.",
       quote: 'The algorithm is winning. Fight back.',
-      color: theme.colors.error,
+      color: n.colors.error,
     },
     {
       title: 'DISAPPOINTMENT',
@@ -196,7 +196,7 @@ export default function DoomscrollInterceptor() {
   if (!isBlocking) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
             <View style={styles.standbyIconContainer}>
@@ -242,7 +242,7 @@ export default function DoomscrollInterceptor() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: '#0A0A14' }]}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <Animated.View
           style={[
@@ -397,20 +397,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 32,
     borderWidth: 2,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
   },
   standbyEmoji: {
     fontSize: 48,
   },
   standbyTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 16,
     textAlign: 'center',
   },
   standbySubtitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   shameSubtitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   quoteText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 18,
     fontStyle: 'italic',
     textAlign: 'center',
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   countdownLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 1,
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     borderRadius: 60,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 3,
-    borderColor: theme.colors.error,
+    borderColor: n.colors.error,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
@@ -513,7 +513,7 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   countdownUnit: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     fontWeight: '600',
     position: 'absolute',
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   },
 
   countdownHint: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontStyle: 'italic',
   },
@@ -549,13 +549,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   unlockedText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 4,
   },
   unlockedSubtext: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     fontStyle: 'italic',
   },
@@ -570,16 +570,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   primaryButton: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
+    borderColor: n.colors.accent,
   },
   secondaryButton: {
     backgroundColor: 'transparent',
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   dangerButton: {
-    backgroundColor: theme.colors.error,
-    borderColor: theme.colors.error,
+    backgroundColor: n.colors.error,
+    borderColor: n.colors.error,
   },
   disabledButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -592,7 +592,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   secondaryButtonText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   disabledButtonText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
   },
 
   // Stats
@@ -622,13 +622,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   statValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 24,
     fontWeight: '900',
     marginBottom: 4,
   },
   statLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -647,12 +647,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   statsText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   statsSub: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },

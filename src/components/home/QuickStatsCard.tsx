@@ -2,7 +2,8 @@ import React, { useCallback, useState } from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
+import LinearSurface from '../primitives/LinearSurface';
 import { profileRepository } from '../../db/repositories';
 import { useAppStore } from '../../store/useAppStore';
 
@@ -34,7 +35,7 @@ export default React.memo(function QuickStatsCard({
   const progressClamped = Math.min(100, Math.max(0, progressPercent));
   const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100;
   const done = progressClamped >= 100;
-  const ringColor = done ? theme.colors.success : theme.colors.primary;
+  const ringColor = done ? n.colors.success : n.colors.accent;
   const minutesLeft = Math.max(0, Math.min(dailyGoal, dailyGoal - todayMinutes));
 
   const handleGoalChange = useCallback(async (minutes: number) => {
@@ -44,8 +45,9 @@ export default React.memo(function QuickStatsCard({
   }, []);
 
   return (
-    <View
+    <LinearSurface
       style={[styles.card, done && styles.cardDone]}
+      borderColor={done ? `${n.colors.success}55` : 'rgba(255,255,255,0.10)'}
       accessibilityRole="summary"
       accessibilityLabel={`Daily progress: ${progressClamped} percent. ${
         done ? 'Goal reached' : `${minutesLeft} minutes left`
@@ -55,9 +57,9 @@ export default React.memo(function QuickStatsCard({
         <Ionicons
           name="speedometer-outline"
           size={18}
-          color={done ? theme.colors.success : theme.colors.primary}
+          color={done ? n.colors.success : n.colors.accent}
         />
-        <Text style={[styles.label, done && { color: theme.colors.success }]}>DAILY PROGRESS</Text>
+        <Text style={[styles.label, done && { color: n.colors.success }]}>DAILY PROGRESS</Text>
       </View>
 
       <View style={styles.progressRow}>
@@ -67,7 +69,7 @@ export default React.memo(function QuickStatsCard({
               cx={RING_SIZE / 2}
               cy={RING_SIZE / 2}
               r={RADIUS}
-              stroke={done ? theme.colors.successTintSoft : theme.colors.primaryTintSoft}
+              stroke={done ? 'rgba(63,185,80,0.08)' : n.colors.primaryTintSoft}
               strokeWidth={STROKE_WIDTH}
               fill="transparent"
             />
@@ -86,7 +88,7 @@ export default React.memo(function QuickStatsCard({
             />
           </Svg>
           <View style={[StyleSheet.absoluteFill, styles.ringLabel]} pointerEvents="none">
-            <Text style={[styles.ringPercent, done && { color: theme.colors.success }]}>
+            <Text style={[styles.ringPercent, done && { color: n.colors.success }]}>
               {progressClamped}%
             </Text>
           </View>
@@ -100,7 +102,7 @@ export default React.memo(function QuickStatsCard({
           <Pressable onPress={() => setShowGoalPicker((v) => !v)} hitSlop={8}>
             {done ? (
               <View style={styles.doneRow}>
-                <Ionicons name="checkmark-circle" size={14} color={theme.colors.success} />
+                <Ionicons name="checkmark-circle" size={14} color={n.colors.success} />
                 <Text style={styles.doneLabel}>Goal reached</Text>
               </View>
             ) : (
@@ -111,7 +113,7 @@ export default React.memo(function QuickStatsCard({
                   onPress={() => setShowGoalPicker((v) => !v)}
                   hitSlop={6}
                 >
-                  <Ionicons name="flag" size={11} color={theme.colors.primary} />
+                  <Ionicons name="flag" size={11} color={n.colors.accent} />
                   <Text style={styles.goalBadgeText}>{dailyGoal}m</Text>
                 </Pressable>
                 {showGoalPicker &&
@@ -130,23 +132,23 @@ export default React.memo(function QuickStatsCard({
         <MetaChip
           label={`${streak}d streak`}
           icon="flame"
-          color={theme.colors.warning}
-          bgColor={theme.colors.warningTintSoft}
+          color={n.colors.warning}
+          bgColor={'rgba(217,119,6,0.08)'}
         />
         <MetaChip
           label={`Lv ${level}`}
           icon="flash"
-          color={theme.colors.primary}
-          bgColor={theme.colors.primaryTintSoft}
+          color={n.colors.accent}
+          bgColor={n.colors.primaryTintSoft}
         />
         <MetaChip
           label={`${completedSessions} session${completedSessions === 1 ? '' : 's'}`}
           icon="checkmark-done"
-          color={theme.colors.info}
+          color={n.colors.accent}
           bgColor="rgba(33, 150, 243, 0.13)"
         />
       </View>
-    </View>
+    </LinearSurface>
   );
 });
 
@@ -171,31 +173,23 @@ function MetaChip({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    marginBottom: n.spacing.lg,
     flex: 1,
     justifyContent: 'space-between',
   },
   cardDone: {
-    borderColor: theme.colors.success,
-    shadowColor: theme.colors.success,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
+    backgroundColor: 'transparent',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: theme.spacing.md,
+    marginBottom: n.spacing.md,
   },
   label: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '800',
     fontSize: 11,
     letterSpacing: 1.5,
@@ -203,18 +197,18 @@ const styles = StyleSheet.create({
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.spacing.md,
+    gap: n.spacing.md,
   },
   ringWrap: { width: RING_SIZE, height: RING_SIZE },
   ringLabel: { alignItems: 'center', justifyContent: 'center' },
   ringPercent: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '900',
     fontSize: 18,
   },
   copy: { flex: 1 },
   minutesBig: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 26,
     fontWeight: '900',
     letterSpacing: -0.5,
@@ -223,10 +217,10 @@ const styles = StyleSheet.create({
   minutesUnit: {
     fontSize: 15,
     fontWeight: '600',
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
   },
   minutesLeft: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -237,7 +231,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   doneLabel: {
-    color: theme.colors.success,
+    color: n.colors.success,
     fontSize: 13,
     fontWeight: '700',
   },
@@ -251,45 +245,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.primaryTintSoft,
-    borderRadius: theme.borderRadius.full,
+    backgroundColor: n.colors.primaryTintSoft,
+    borderRadius: n.radius.full,
     paddingHorizontal: 9,
     paddingVertical: 4,
   },
   goalBadgeActive: {
     borderWidth: 1.5,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.accent,
   },
   goalBadgeText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '800',
   },
   goalChip: {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.full,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.full,
     paddingHorizontal: 12,
     paddingVertical: 4,
   },
   goalChipText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: theme.spacing.md,
-    paddingTop: theme.spacing.md,
+    marginTop: n.spacing.md,
+    paddingTop: n.spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
+    borderTopColor: 'rgba(255,255,255,0.08)',
   },
   metaChip: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: theme.borderRadius.full,
+    borderRadius: n.radius.full,
     paddingHorizontal: 10,
     paddingVertical: 8,
     gap: 5,

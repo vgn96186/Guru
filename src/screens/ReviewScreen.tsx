@@ -1,3 +1,4 @@
+import LinearSurface from '../components/primitives/LinearSurface';
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
@@ -335,7 +336,7 @@ export default function ReviewScreen() {
           </View>
         )}
 
-        <View style={styles.cardContainer} {...panResponder.panHandlers}>
+        <LinearSurface style={styles.cardContainer} {...panResponder.panHandlers} padded={false}>
           <Animated.View style={[styles.cardWrap, { transform: [{ translateX: panXY.x }] }]}>
             {/* Front */}
             <Animated.View style={[styles.card, frontAnimatedStyle]}>
@@ -377,7 +378,7 @@ export default function ReviewScreen() {
               />
             )}
           </Animated.View>
-        </View>
+        </LinearSurface>
 
         {showSwipeHint && (
           <View style={styles.swipeHintBanner}>
@@ -526,7 +527,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: theme.colors.borderLight,
-    backgroundColor: theme.colors.surface,
+    
   },
   chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
   chipDisabled: { opacity: 0.4 },
@@ -546,7 +547,7 @@ const styles = StyleSheet.create({
   cardWrap: { flex: 1 },
 
   card: {
-    backgroundColor: theme.colors.surface,
+    
     borderRadius: 20,
     padding: 30,
     justifyContent: 'center',
@@ -636,7 +637,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
+    
   },
   rateLabel: { fontWeight: '800', fontSize: 14, marginBottom: 4 },
   rateDays: { color: theme.colors.textMuted, fontSize: 11 },

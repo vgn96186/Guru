@@ -18,10 +18,12 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useFocusEffect } from '@react-navigation/native';
+import BannerSearchBar from '../components/BannerSearchBar';
 import ScreenHeader from '../components/ScreenHeader';
 import { ImageLightbox } from '../components/ImageLightbox';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import LinearSurface from '../components/primitives/LinearSurface';
 import {
   listGeneratedStudyImages,
   type GeneratedStudyImageContextType,
@@ -182,7 +184,7 @@ export default function ImageVaultScreen() {
               accessibilityRole="button"
               accessibilityLabel="Copy image prompt"
             >
-              <Ionicons name="copy-outline" size={15} color={theme.colors.textMuted} />
+              <Ionicons name="copy-outline" size={15} color={n.colors.textMuted} />
             </TouchableOpacity>
           </View>
         </View>
@@ -193,7 +195,7 @@ export default function ImageVaultScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.flex}>
         <FlatList
           data={visibleImages}
@@ -211,39 +213,29 @@ export default function ImageVaultScreen() {
                 containerStyle={styles.headerCompact}
                 titleStyle={styles.headerTitleCompact}
                 subtitleStyle={styles.headerSubtitleCompact}
-              />
+                searchElement={
+                  <BannerSearchBar
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder="Search topic, prompt, provider..."
+                  />
+                }
+              >
+              </ScreenHeader>
 
               <View style={styles.summaryRow}>
-                <View style={styles.summaryCard}>
+                <LinearSurface compact padded={false} style={styles.summaryCard}>
                   <Text style={styles.summaryValue}>{images.length}</Text>
                   <Text style={styles.summaryLabel}>Total</Text>
-                </View>
-                <View style={styles.summaryCard}>
+                </LinearSurface>
+                <LinearSurface compact padded={false} style={styles.summaryCard}>
                   <Text style={styles.summaryValue}>{illustrationCount}</Text>
                   <Text style={styles.summaryLabel}>Illustrations</Text>
-                </View>
-                <View style={styles.summaryCard}>
+                </LinearSurface>
+                <LinearSurface compact padded={false} style={styles.summaryCard}>
                   <Text style={styles.summaryValue}>{chartCount}</Text>
                   <Text style={styles.summaryLabel}>Charts</Text>
-                </View>
-              </View>
-
-              <View style={styles.searchRow}>
-                <Ionicons name="search" size={18} color={theme.colors.textMuted} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Search topic, prompt, provider..."
-                  placeholderTextColor={theme.colors.textMuted}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-                {searchQuery ? (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Ionicons name="close-circle" size={18} color={theme.colors.textMuted} />
-                  </TouchableOpacity>
-                ) : null}
+                </LinearSurface>
               </View>
 
               <View style={styles.resultsRow}>
@@ -323,7 +315,7 @@ export default function ImageVaultScreen() {
           }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="images-outline" size={48} color={theme.colors.textMuted} />
+              <Ionicons name="images-outline" size={48} color={n.colors.textMuted} />
               <Text style={styles.emptyTitle}>
                 {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
                   ? 'No matching images'
@@ -340,7 +332,7 @@ export default function ImageVaultScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={theme.colors.textPrimary}
+              tintColor={n.colors.textPrimary}
             />
           }
         />
@@ -352,7 +344,7 @@ export default function ImageVaultScreen() {
           onRequestClose={() => setSelectedImage(null)}
         >
           <View style={styles.detailOverlay}>
-            <View style={styles.detailSheet}>
+            <LinearSurface padded={false} style={styles.detailSheet}>
               <View style={styles.detailHeader}>
                 <Text style={styles.detailTitle} numberOfLines={2}>
                   {selectedImage?.topicName ?? ''}
@@ -363,7 +355,7 @@ export default function ImageVaultScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Close image details"
                 >
-                  <Ionicons name="close" size={20} color={theme.colors.textPrimary} />
+                  <Ionicons name="close" size={20} color={n.colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
@@ -399,14 +391,14 @@ export default function ImageVaultScreen() {
                       </View>
                     </View>
 
-                    <View style={styles.detailInfoCard}>
+                    <LinearSurface padded={false} style={styles.detailInfoCard}>
                       <Text style={styles.detailInfoLabel}>Provider</Text>
                       <Text style={styles.detailInfoValue}>
                         {selectedImage.provider} • {selectedImage.modelUsed}
                       </Text>
-                    </View>
+                    </LinearSurface>
 
-                    <View style={styles.promptCard}>
+                    <LinearSurface padded={false} style={styles.promptCard}>
                       <View style={styles.promptHeader}>
                         <Text style={styles.promptTitle}>Prompt</Text>
                         <TouchableOpacity
@@ -418,17 +410,17 @@ export default function ImageVaultScreen() {
                           <Ionicons
                             name="copy-outline"
                             size={15}
-                            color={theme.colors.textSecondary}
+                            color={n.colors.textSecondary}
                           />
                           <Text style={styles.promptCopyText}>Copy</Text>
                         </TouchableOpacity>
                       </View>
                       <Text style={styles.promptText}>{selectedImage.prompt}</Text>
-                    </View>
+                    </LinearSurface>
                   </>
                 ) : null}
               </ScrollView>
-            </View>
+            </LinearSurface>
           </View>
         </Modal>
 
@@ -445,7 +437,7 @@ export default function ImageVaultScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
   },
   flex: {
     flex: 1,
@@ -469,21 +461,18 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: n.radius.md,
     paddingVertical: 10,
     alignItems: 'center',
   },
   summaryValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '800',
   },
   summaryLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
@@ -491,17 +480,17 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.md,
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     gap: 8,
   },
   searchInput: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     padding: 0,
@@ -519,13 +508,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   resultsTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',
   },
   resultsSubtitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 2,
@@ -534,12 +523,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: theme.colors.primary + '14',
+    backgroundColor: n.colors.accent + '14',
     borderWidth: 1,
-    borderColor: theme.colors.primary + '32',
+    borderColor: n.colors.accent + '32',
   },
   clearFiltersText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
@@ -557,22 +546,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 999,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   filterBtnActive: {
-    backgroundColor: `${theme.colors.primary}1A`,
-    borderColor: `${theme.colors.primary}55`,
+    backgroundColor: `${n.colors.accent}1A`,
+    borderColor: `${n.colors.accent}55`,
   },
   filterBtnText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
   },
   filterBtnTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
   },
   list: {
     paddingHorizontal: 16,
@@ -584,21 +573,21 @@ const styles = StyleSheet.create({
   },
   card: {
     flexBasis: '48%',
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     overflow: 'hidden',
     marginBottom: 12,
   },
   cardPressed: {
-    opacity: theme.alpha.pressed,
+    opacity: n.alpha.pressed,
     transform: [{ scale: 0.99 }],
   },
   thumbnail: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
   },
   cardBody: {
     padding: 12,
@@ -613,9 +602,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   illustrationChip: {
     backgroundColor: 'rgba(108, 156, 255, 0.12)',
@@ -626,19 +615,19 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 193, 7, 0.35)',
   },
   metaChipText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 10,
     lineHeight: 14,
     fontWeight: '700',
   },
   cardTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     fontWeight: '800',
     lineHeight: 19,
   },
   cardMeta: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     lineHeight: 16,
   },
@@ -648,7 +637,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardDate: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     lineHeight: 16,
   },
@@ -658,7 +647,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
   },
   empty: {
     flex: 1,
@@ -667,13 +656,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
     marginTop: 16,
   },
   emptySubtitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -682,16 +671,12 @@ const styles = StyleSheet.create({
   detailOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: theme.colors.overlay,
+    backgroundColor: 'rgba(2,2,4,0.72)',
     padding: 12,
   },
   detailSheet: {
     maxHeight: '88%',
-    backgroundColor: theme.colors.surface,
     borderRadius: 22,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: 'hidden',
   },
   detailHeader: {
     flexDirection: 'row',
@@ -703,7 +688,7 @@ const styles = StyleSheet.create({
   },
   detailTitle: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 26,
@@ -714,7 +699,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
   },
   detailScrollContent: {
     padding: 16,
@@ -725,7 +710,7 @@ const styles = StyleSheet.create({
   detailImageWrap: {
     borderRadius: 18,
     overflow: 'hidden',
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
   },
   detailImage: {
     width: '100%',
@@ -740,42 +725,36 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   detailChipText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 11,
     lineHeight: 16,
     fontWeight: '700',
   },
   detailInfoCard: {
-    backgroundColor: theme.colors.surfaceAlt,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     gap: 6,
   },
   detailInfoLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     lineHeight: 16,
     fontWeight: '700',
     letterSpacing: 0.6,
   },
   detailInfoValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
   },
   promptCard: {
-    backgroundColor: theme.colors.surfaceAlt,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     padding: 14,
     gap: 10,
   },
@@ -785,7 +764,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   promptTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '800',
   },
@@ -795,13 +774,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   promptCopyText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '700',
   },
   promptText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 20,
   },

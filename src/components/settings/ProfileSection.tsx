@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface ProfileSectionProps {
   name: string;
@@ -40,7 +40,7 @@ function ProfileSection({
         value={name}
         onChangeText={onNameChange}
         placeholder="Dr. ..."
-        placeholderTextColor={theme.colors.textMuted}
+        placeholderTextColor={n.colors.textMuted}
       />
     </View>
   );
@@ -50,27 +50,27 @@ export default React.memo(ProfileSection);
 
 const styles = StyleSheet.create({
   container: { gap: 12 },
-  syncWarning: { color: theme.colors.error, fontSize: 12, marginBottom: 8 },
+  syncWarning: { color: n.colors.error, fontSize: 12, marginBottom: 8 },
   linkBtn: {
-    backgroundColor: theme.colors.surfaceAlt,
+    backgroundColor: n.colors.surface,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     marginBottom: 8,
   },
   disabledBtn: { opacity: 0.5 },
-  linkBtnText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
-  disabledText: { color: theme.colors.textSecondary },
-  label: { color: theme.colors.textPrimary, fontSize: 13, fontWeight: '700' },
+  linkBtnText: { color: n.colors.accent, fontWeight: '700', fontSize: 14 },
+  disabledText: { color: n.colors.textSecondary },
+  label: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   input: {
-    backgroundColor: theme.colors.surface,
-    color: theme.colors.textPrimary,
+    backgroundColor: n.colors.surface,
+    color: n.colors.textPrimary,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     fontSize: 14,
   },
 });

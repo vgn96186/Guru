@@ -28,12 +28,14 @@ import * as Haptics from 'expo-haptics';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { z } from 'zod';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
+import BannerSearchBar from '../components/BannerSearchBar';
 import { MarkdownRender } from '../components/MarkdownRender';
 import ScreenHeader from '../components/ScreenHeader';
 import SubjectChip from '../components/SubjectChip';
 import TopicPillRow from '../components/TopicPillRow';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import {
   getLectureHistory,
   deleteLectureNote,
@@ -573,7 +575,7 @@ export default function NotesVaultScreen() {
             <Ionicons
               name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
               size={22}
-              color={isSelected ? theme.colors.primary : theme.colors.textMuted}
+              color={isSelected ? n.colors.accent : n.colors.textMuted}
             />
           </View>
         )}
@@ -640,7 +642,7 @@ export default function NotesVaultScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.flex}>
         <ScreenHeader
           title="Notes Vault"
@@ -648,7 +650,15 @@ export default function NotesVaultScreen() {
           containerStyle={styles.headerCompact}
           titleStyle={styles.headerTitleCompact}
           subtitleStyle={styles.headerSubtitleCompact}
-        />
+          searchElement={
+            <BannerSearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search notes, topics, subjects..."
+            />
+          }
+        >
+        </ScreenHeader>
 
         {/* Selection banner */}
         {isSelectionMode && (
@@ -666,25 +676,6 @@ export default function NotesVaultScreen() {
           </View>
         )}
 
-        {/* Search */}
-        <View style={styles.searchRow}>
-          <Ionicons name="search" size={20} color="#888" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search notes, topics, subjects..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery ? (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color="#888" />
-            </TouchableOpacity>
-          ) : null}
-        </View>
-
         {hasQuickActions && (
           <View style={styles.quickActionsSection}>
             <ScrollView
@@ -700,7 +691,7 @@ export default function NotesVaultScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Ask Guru using current notes"
                 >
-                  <Ionicons name="sparkles-outline" size={15} color={theme.colors.primaryLight} />
+                  <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
                   <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Ask Guru
                   </Text>
@@ -717,7 +708,7 @@ export default function NotesVaultScreen() {
                   <Ionicons
                     name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
                     size={15}
-                    color={isSortMenuOpen ? theme.colors.primaryLight : theme.colors.textSecondary}
+                    color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
                   />
                   <Text style={styles.quickActionText}>
                     Sort <Text style={styles.quickActionValue}>{currentSortLabel}</Text>
@@ -741,8 +732,8 @@ export default function NotesVaultScreen() {
                     size={15}
                     color={
                       subjectFilter !== 'all' || topicFilter !== 'all' || isFilterMenuOpen
-                        ? theme.colors.primaryLight
-                        : theme.colors.textSecondary
+                        ? n.colors.accent
+                        : n.colors.textSecondary
                     }
                   />
                   <Text style={styles.quickActionText}>
@@ -764,7 +755,7 @@ export default function NotesVaultScreen() {
                   style={[styles.quickActionChip, styles.quickActionChipError]}
                   onPress={handleDeleteJunk}
                 >
-                  <Ionicons name="trash-outline" size={15} color={theme.colors.error} />
+                  <Ionicons name="trash-outline" size={15} color={n.colors.error} />
                   <Text style={[styles.quickActionText, styles.quickActionTextError]}>
                     Clean {junkNotes.length}
                   </Text>
@@ -776,7 +767,7 @@ export default function NotesVaultScreen() {
                   style={[styles.quickActionChip, styles.quickActionChipWarning]}
                   onPress={handleDeleteDuplicates}
                 >
-                  <Ionicons name="copy-outline" size={15} color={theme.colors.warning} />
+                  <Ionicons name="copy-outline" size={15} color={n.colors.warning} />
                   <Text style={[styles.quickActionText, styles.quickActionTextWarning]}>
                     Duplicates {duplicateIds.size}
                   </Text>
@@ -788,7 +779,7 @@ export default function NotesVaultScreen() {
                   style={[styles.quickActionChip, styles.quickActionChipPrimary]}
                   onPress={handleRelabel}
                 >
-                  <Ionicons name="sparkles-outline" size={15} color={theme.colors.primaryLight} />
+                  <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
                   <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Label {unlabeledNotes.length}
                   </Text>
@@ -800,7 +791,7 @@ export default function NotesVaultScreen() {
                   style={[styles.quickActionChip, styles.quickActionChipPrimary]}
                   onPress={handleFixBadTitles}
                 >
-                  <Ionicons name="create-outline" size={15} color={theme.colors.primaryLight} />
+                  <Ionicons name="create-outline" size={15} color={n.colors.accent} />
                   <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Fix Titles {badTitleNotes.length}
                   </Text>
@@ -809,7 +800,7 @@ export default function NotesVaultScreen() {
 
               {relabelProgress && (
                 <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
-                  <ActivityIndicator size="small" color={theme.colors.primaryLight} />
+                  <ActivityIndicator size="small" color={n.colors.accent} />
                   <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Labeling {relabelProgress}
                   </Text>
@@ -821,7 +812,7 @@ export default function NotesVaultScreen() {
 
         {notes.length > 0 && !searchQuery && isSortMenuOpen && (
           <View style={styles.sortSection}>
-            <View style={styles.sortMenu}>
+            <LinearSurface padded={false} compact style={styles.sortMenu}>
               {SORT_OPTIONS.map((option) => (
                 <TouchableOpacity
                   key={option.value}
@@ -840,18 +831,18 @@ export default function NotesVaultScreen() {
                     {option.label}
                   </Text>
                   {sortBy === option.value ? (
-                    <Ionicons name="checkmark" size={16} color={theme.colors.primaryLight} />
+                    <Ionicons name="checkmark" size={16} color={n.colors.accent} />
                   ) : null}
                 </TouchableOpacity>
               ))}
-            </View>
+            </LinearSurface>
           </View>
         )}
 
         {/* List */}
         {visibleNotes.length === 0 ? (
           <View style={styles.empty}>
-            <Ionicons name="document-text-outline" size={48} color={theme.colors.textMuted} />
+            <Ionicons name="document-text-outline" size={48} color={n.colors.textMuted} />
             <Text style={styles.emptyTitle}>{searchQuery ? 'No Results' : 'No Notes Yet'}</Text>
             <Text style={styles.emptySubtitle}>
               {searchQuery
@@ -871,7 +862,7 @@ export default function NotesVaultScreen() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                tintColor={theme.colors.textPrimary}
+                tintColor={n.colors.textPrimary}
               />
             }
           />
@@ -885,7 +876,7 @@ export default function NotesVaultScreen() {
         >
           <View style={styles.sheetOverlay}>
             <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
-            <View style={styles.sheetCard}>
+            <LinearSurface padded={false} style={styles.sheetCard}>
               <View style={styles.sheetHeader}>
                 <View style={styles.sheetHeaderCopy}>
                   <Text style={styles.sheetTitle}>Filter Notes</Text>
@@ -895,7 +886,7 @@ export default function NotesVaultScreen() {
                   style={styles.sheetCloseBtn}
                   onPress={() => setIsFilterMenuOpen(false)}
                 >
-                  <Ionicons name="close" size={18} color={theme.colors.textMuted} />
+                  <Ionicons name="close" size={18} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </View>
 
@@ -937,13 +928,13 @@ export default function NotesVaultScreen() {
                         <Ionicons
                           name="radio-button-on"
                           size={18}
-                          color={theme.colors.primaryLight}
+                          color={n.colors.accent}
                         />
                       ) : (
                         <Ionicons
                           name="radio-button-off"
                           size={18}
-                          color={theme.colors.textMuted}
+                          color={n.colors.textMuted}
                         />
                       )}
                     </TouchableOpacity>
@@ -968,13 +959,13 @@ export default function NotesVaultScreen() {
                           <Ionicons
                             name="radio-button-on"
                             size={18}
-                            color={theme.colors.primaryLight}
+                            color={n.colors.accent}
                           />
                         ) : (
                           <Ionicons
                             name="radio-button-off"
                             size={18}
-                            color={theme.colors.textMuted}
+                            color={n.colors.textMuted}
                           />
                         )}
                       </TouchableOpacity>
@@ -1004,13 +995,13 @@ export default function NotesVaultScreen() {
                         <Ionicons
                           name="radio-button-on"
                           size={18}
-                          color={theme.colors.primaryLight}
+                          color={n.colors.accent}
                         />
                       ) : (
                         <Ionicons
                           name="radio-button-off"
                           size={18}
-                          color={theme.colors.textMuted}
+                          color={n.colors.textMuted}
                         />
                       )}
                     </TouchableOpacity>
@@ -1035,13 +1026,13 @@ export default function NotesVaultScreen() {
                           <Ionicons
                             name="radio-button-on"
                             size={18}
-                            color={theme.colors.primaryLight}
+                            color={n.colors.accent}
                           />
                         ) : (
                           <Ionicons
                             name="radio-button-off"
                             size={18}
-                            color={theme.colors.textMuted}
+                            color={n.colors.textMuted}
                           />
                         )}
                       </TouchableOpacity>
@@ -1049,7 +1040,7 @@ export default function NotesVaultScreen() {
                   </View>
                 </View>
               </ScrollView>
-            </View>
+            </LinearSurface>
           </View>
         </Modal>
 
@@ -1071,7 +1062,7 @@ export default function NotesVaultScreen() {
                 }}
                 style={styles.readerCloseBtn}
               >
-                <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
+                <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
               </TouchableOpacity>
               <Text style={styles.readerHeaderTitle} numberOfLines={3}>
                 {readerTitle}
@@ -1085,7 +1076,7 @@ export default function NotesVaultScreen() {
                 }}
                 style={styles.readerCopyBtn}
               >
-                <Ionicons name="copy-outline" size={20} color={theme.colors.textMuted} />
+                <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
               </TouchableOpacity>
             </View>
             {readerNote ? (
@@ -1096,7 +1087,7 @@ export default function NotesVaultScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Ask Guru from this note"
               >
-                <Ionicons name="sparkles-outline" size={16} color={theme.colors.primaryLight} />
+                <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
                 <Text style={styles.readerAskGuruText}>Ask Guru From This Note</Text>
               </TouchableOpacity>
             ) : null}
@@ -1115,7 +1106,7 @@ export default function NotesVaultScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   flex: { flex: 1 },
   list: { padding: 16, paddingBottom: 40 },
   headerCompact: {
@@ -1136,10 +1127,10 @@ const styles = StyleSheet.create({
     gap: 12,
     marginHorizontal: 16,
     marginBottom: 10,
-    backgroundColor: theme.colors.primary + '12',
+    backgroundColor: n.colors.accent + '12',
     borderWidth: 1,
-    borderColor: theme.colors.primary + '35',
-    borderRadius: theme.borderRadius.md,
+    borderColor: n.colors.accent + '35',
+    borderRadius: n.radius.md,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
@@ -1147,13 +1138,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   askGuruBannerTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 20,
     fontWeight: '800',
   },
   askGuruBannerSubtitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
@@ -1161,16 +1152,13 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surface,
     marginHorizontal: 16,
     marginTop: 0,
     marginBottom: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     paddingHorizontal: 12,
     paddingVertical: 8,
     minHeight: 44,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     gap: 8,
   },
   quickActionsSection: {
@@ -1184,43 +1172,40 @@ const styles = StyleSheet.create({
   quickActionChip: {
     minHeight: 34,
     borderRadius: 999,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
   },
   quickActionChipPrimary: {
-    backgroundColor: theme.colors.primary + '10',
-    borderColor: theme.colors.primary + '35',
+    backgroundColor: n.colors.accent + '10',
+    borderColor: n.colors.accent + '35',
   },
   quickActionChipWarning: {
-    backgroundColor: theme.colors.warning + '10',
-    borderColor: theme.colors.warning + '30',
+    backgroundColor: n.colors.warning + '10',
+    borderColor: n.colors.warning + '30',
   },
   quickActionChipError: {
-    backgroundColor: theme.colors.error + '10',
-    borderColor: theme.colors.error + '30',
+    backgroundColor: n.colors.error + '10',
+    borderColor: n.colors.error + '30',
   },
   quickActionText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
   },
   quickActionTextPrimary: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
   },
   quickActionTextWarning: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
   },
   quickActionTextError: {
-    color: theme.colors.error,
+    color: n.colors.error,
   },
   quickActionValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '800',
@@ -1231,10 +1216,10 @@ const styles = StyleSheet.create({
   },
   filterTrigger: {
     minHeight: 48,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: n.radius.md,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -1243,21 +1228,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   filterTriggerActive: {
-    borderColor: theme.colors.primary + '55',
-    backgroundColor: theme.colors.primary + '10',
+    borderColor: n.colors.accent + '55',
+    backgroundColor: n.colors.accent + '10',
   },
   filterTriggerCopy: {
     flex: 1,
     minWidth: 0,
   },
   filterTriggerLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
   },
   filterTriggerValue: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
@@ -1265,7 +1250,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 20,
     minWidth: 0,
@@ -1277,10 +1262,10 @@ const styles = StyleSheet.create({
   },
   sortTrigger: {
     minHeight: 44,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: n.radius.md,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -1289,11 +1274,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sortTriggerActive: {
-    borderColor: theme.colors.primary + '55',
-    backgroundColor: theme.colors.primary + '10',
+    borderColor: n.colors.accent + '55',
+    backgroundColor: n.colors.accent + '10',
   },
   sortTriggerLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
@@ -1305,17 +1290,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   sortTriggerValue: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '800',
   },
   sortMenu: {
     marginTop: 8,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: n.radius.md,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     overflow: 'hidden',
   },
   sortOption: {
@@ -1328,29 +1313,29 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sortOptionActive: {
-    backgroundColor: theme.colors.primary + '12',
+    backgroundColor: n.colors.accent + '12',
   },
   sortOptionText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
   },
   sortOptionTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontWeight: '700',
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.md,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   cardSelected: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '12',
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.accent + '12',
   },
   selectIcon: { position: 'absolute', top: 10, right: 10, zIndex: 2 },
   cardHeader: {
@@ -1378,7 +1363,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
   },
   titleText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
@@ -1392,19 +1377,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   topicPill: {
-    backgroundColor: theme.colors.surfaceAlt,
-    color: theme.colors.textMuted,
+    backgroundColor: n.colors.surface,
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 17,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     overflow: 'hidden',
   },
   moreBadge: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     paddingHorizontal: 6,
     paddingVertical: 4,
@@ -1426,21 +1411,21 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   confidenceBadgeLight: {
-    color: theme.colors.error,
-    backgroundColor: theme.colors.errorTintSoft,
-    borderColor: theme.colors.error + '55',
+    color: n.colors.error,
+    backgroundColor: 'rgba(241,76,76,0.08)',
+    borderColor: n.colors.error + '55',
   },
   confidenceBadgeMid: {
-    color: theme.colors.warning,
-    backgroundColor: theme.colors.warningTintSoft,
-    borderColor: theme.colors.warning + '55',
+    color: n.colors.warning,
+    backgroundColor: 'rgba(217,119,6,0.08)',
+    borderColor: n.colors.warning + '55',
   },
   confidenceBadgeStrong: {
-    color: theme.colors.success,
-    backgroundColor: theme.colors.successTintSoft,
-    borderColor: theme.colors.success + '55',
+    color: n.colors.success,
+    backgroundColor: 'rgba(63,185,80,0.08)',
+    borderColor: n.colors.success + '55',
   },
-  wordCount: { color: theme.colors.textMuted, fontSize: 12 },
+  wordCount: { color: n.colors.textMuted, fontSize: 12 },
   appBadge: { color: '#666', fontSize: 12 },
   empty: {
     flex: 1,
@@ -1449,14 +1434,14 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   emptyTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     marginTop: 16,
     marginBottom: 8,
   },
   emptySubtitle: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 20,
@@ -1465,58 +1450,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: theme.colors.error + '12',
+    backgroundColor: n.colors.error + '12',
     marginHorizontal: 16,
     marginBottom: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.error + '30',
+    borderColor: n.colors.error + '30',
   },
   dupeBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: theme.colors.warning + '12',
+    backgroundColor: n.colors.warning + '12',
     marginHorizontal: 16,
     marginBottom: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.warning + '30',
+    borderColor: n.colors.warning + '30',
   },
   relabelBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: theme.colors.primary + '12',
+    backgroundColor: n.colors.accent + '12',
     marginHorizontal: 16,
     marginBottom: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '30',
+    borderColor: n.colors.accent + '30',
   },
   bannerText: {
     flex: 1,
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
     minWidth: 0,
   },
-  bannerActionError: { color: theme.colors.error, fontSize: 13, lineHeight: 18, fontWeight: '800' },
+  bannerActionError: { color: n.colors.error, fontSize: 13, lineHeight: 18, fontWeight: '800' },
   bannerActionWarning: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',
   },
   bannerActionPrimary: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '800',
@@ -1526,16 +1511,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    backgroundColor: theme.colors.primary + '18',
+    backgroundColor: n.colors.accent + '18',
     marginHorizontal: 16,
     marginBottom: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.primary + '40',
+    borderColor: n.colors.accent + '40',
   },
-  selectionText: { color: theme.colors.primary, fontSize: 14, lineHeight: 20, fontWeight: '700' },
+  selectionText: { color: n.colors.accent, fontSize: 14, lineHeight: 20, fontWeight: '700' },
   selectionActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1545,7 +1530,7 @@ const styles = StyleSheet.create({
   },
   selectionCancelBtn: { paddingHorizontal: 12, paddingVertical: 6 },
   selectionCancelText: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
@@ -1554,7 +1539,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: theme.colors.error,
+    backgroundColor: n.colors.error,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
@@ -1569,14 +1554,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   sheetCard: {
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderBottomWidth: 0,
     maxHeight: '82%',
     paddingTop: 12,
+    overflow: 'hidden',
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -1591,13 +1574,13 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   sheetTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 18,
     lineHeight: 24,
     fontWeight: '800',
   },
   sheetSubtitle: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
     marginTop: 4,
@@ -1608,7 +1591,7 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
   },
   clearFiltersBtn: {
     alignSelf: 'flex-start',
@@ -1617,12 +1600,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: theme.colors.primary + '14',
+    backgroundColor: n.colors.accent + '14',
     borderWidth: 1,
-    borderColor: theme.colors.primary + '32',
+    borderColor: n.colors.accent + '32',
   },
   clearFiltersText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
@@ -1639,7 +1622,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sheetSectionTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 20,
     fontWeight: '800',
@@ -1649,10 +1632,10 @@ const styles = StyleSheet.create({
   },
   sheetOption: {
     minHeight: 46,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.surface,
+    borderRadius: n.radius.md,
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -1661,35 +1644,35 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   sheetOptionActive: {
-    borderColor: theme.colors.primary + '50',
-    backgroundColor: theme.colors.primary + '12',
+    borderColor: n.colors.accent + '50',
+    backgroundColor: n.colors.accent + '12',
   },
   sheetOptionText: {
     flex: 1,
     minWidth: 0,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '600',
   },
   sheetOptionTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontWeight: '700',
   },
-  readerContainer: { flex: 1, backgroundColor: theme.colors.background },
+  readerContainer: { flex: 1, backgroundColor: n.colors.background },
   readerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    borderBottomColor: n.colors.border,
     gap: 10,
   },
   readerCloseBtn: { padding: 6 },
   readerHeaderTitle: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: '700',
@@ -1708,12 +1691,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 999,
-    backgroundColor: theme.colors.primary + '16',
+    backgroundColor: n.colors.accent + '16',
     borderWidth: 1,
-    borderColor: theme.colors.primary + '35',
+    borderColor: n.colors.accent + '35',
   },
   readerAskGuruText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '800',
   },

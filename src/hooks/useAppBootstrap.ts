@@ -5,8 +5,7 @@ import { useAppStore } from '../store/useAppStore';
 import { syncExamDatesIfStale } from '../services/examDateSyncService';
 import { refreshAccountabilityNotificationsSafely } from '../services/notificationService';
 import { navigationRef } from '../navigation/navigationRef';
-import { dailyLogRepository, profileRepository } from '../db/repositories';
-import { invalidatePlanCache } from '../services/studyPlanner';
+import { profileRepository } from '../db/repositories';
 import { BUNDLED_GROQ_KEY, BUNDLED_HF_TOKEN, BUNDLED_OPENROUTER_KEY } from '../config/appConfig';
 import { maybePromptOverlayPermissionOnStartup } from '../services/appLauncher/overlayStartupPrompt';
 import { useAppStateTransition } from './useAppStateTransition';
@@ -24,7 +23,6 @@ import { resetDbSingleton } from '../db/database';
 export function useAppBootstrap(onFatalError?: (message: string) => void): void {
   const loadProfile = useAppStore((s) => s.loadProfile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
-  const setDailyAvailability = useAppStore((s) => s.setDailyAvailability);
   const initialized = useRef(false);
 
   useEffect(() => {
@@ -68,18 +66,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       const state = useAppStore.getState();
       const profile = state.profile;
 
-      // 2. Auto-skip check-in for repeat Quick Start users
-      if (!state.hasCheckedInToday && (profile?.quickStartStreak ?? 0) >= 3) {
-        await dailyLogRepository.checkinToday('good');
-        setDailyAvailability(30);
-        await profileRepository.updateProfile({
-          quickStartStreak: (profile?.quickStartStreak ?? 0) + 1,
-        });
-        invalidatePlanCache();
-        await refreshProfile();
-      }
-
-      // 3. Seed bundled API keys into the profile on first run.
+      // 2. Seed bundled API keys into the profile on first run.
       //    This makes bundled defaults persist across Expo + bare RN builds without copy/paste.
       const bundledGroq = BUNDLED_GROQ_KEY.trim();
       const bundledHf = BUNDLED_HF_TOKEN.trim();
@@ -174,7 +161,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
     return () => {
       sub.remove();
     };
-  }, [loadProfile, onFatalError, refreshProfile, setDailyAvailability]);
+  }, [loadProfile, onFatalError, refreshProfile]);
 }
 
 /**

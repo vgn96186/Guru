@@ -2,11 +2,13 @@ import React from 'react';
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { MenuStackParamList } from '../navigation/types';
+import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import BannerIconButton from '../components/BannerIconButton';
+import ScreenHeader from '../components/ScreenHeader';
 
 type Nav = NativeStackNavigationProp<MenuStackParamList, 'MenuHome'>;
 
@@ -17,6 +19,13 @@ const PRIMARY_DESTINATIONS: Array<{
   icon: keyof typeof Ionicons.glyphMap;
   tint: string;
 }> = [
+  {
+    route: 'StudyPlan',
+    title: 'Study Plan',
+    subtitle: 'Daily agenda, buckets, and next best moves.',
+    icon: 'calendar-outline',
+    tint: n.colors.accent,
+  },
   {
     route: 'Stats',
     title: 'Stats',
@@ -29,7 +38,7 @@ const PRIMARY_DESTINATIONS: Array<{
     title: 'Flashcards',
     subtitle: 'Spaced repetition: High-yield recall for due topics.',
     icon: 'albums-outline',
-    tint: theme.colors.primary,
+    tint: n.colors.accent,
   },
   {
     route: 'MindMap',
@@ -77,50 +86,30 @@ const PRIMARY_DESTINATIONS: Array<{
 
 export default function MenuScreen() {
   const navigation = useNavigation<Nav>();
+  const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
 
   return (
     <SafeAreaView style={styles.safe} testID="menu-screen">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.hero}>
-            <View style={styles.heroHeaderRow}>
-              <Text style={styles.kicker}>MENU</Text>
-              <Pressable
-                style={({ pressed }) => [styles.settingsBtn, pressed && styles.cardPressed]}
+          <ScreenHeader
+            title="Menu"
+            subtitle="Use this hub for planning, stats, notes, and deeper configuration. Fast actions live in the center Action Hub."
+            showBack
+            onBackPress={() => tabsNavigation?.navigate('HomeTab')}
+            rightElement={
+              <BannerIconButton
                 onPress={() => navigation.navigate('Settings' as never)}
                 accessibilityRole="button"
                 accessibilityLabel="Open settings"
               >
-                <Ionicons name="settings-sharp" size={24} color={theme.colors.textSecondary} />
-              </Pressable>
-            </View>
-            <Text style={styles.title}>Everything important in one place.</Text>
-            <Text style={styles.subtitle}>
-              Use this hub for planning, stats, notes, and deeper configuration. Fast actions live
-              in the center Action Hub.
-            </Text>
-          </View>
+                <Ionicons name="settings-sharp" size={18} color={n.colors.textSecondary} />
+              </BannerIconButton>
+            }
+          />
 
           <View style={styles.destinations}>
-            <Pressable
-              style={({ pressed }) => [styles.planBanner, pressed && styles.cardPressed]}
-              onPress={() => navigation.navigate('StudyPlan' as never)}
-              accessibilityRole="button"
-              accessibilityLabel="Open Plan"
-            >
-              <View style={styles.planBannerIconWrap}>
-                <Ionicons name="calendar" size={24} color="#6C63FF" />
-              </View>
-              <View style={styles.planBannerText}>
-                <Text style={styles.planBannerTitle}>Study Plan</Text>
-                <Text style={styles.planBannerSubtitle}>
-                  Daily agenda, buckets, and next best moves
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
-            </Pressable>
-
             <View style={styles.grid}>
               {PRIMARY_DESTINATIONS.map((item) => (
                 <Pressable
@@ -141,9 +130,8 @@ export default function MenuScreen() {
                   </View>
                   <View style={styles.listTextContent}>
                     <Text style={styles.listTitle}>{item.title}</Text>
-                    <Text style={styles.listSubtitle}>{item.subtitle}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={20} color={theme.colors.textMuted} />
+                  <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
                 </Pressable>
               ))}
             </View>
@@ -157,126 +145,51 @@ export default function MenuScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
   },
   flex: {
     flex: 1,
   },
   content: {
-    padding: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxxl,
-    gap: theme.spacing.xl,
+    paddingHorizontal: n.spacing.md,
+    paddingTop: n.spacing.sm,
+    paddingBottom: 56,
+    gap: n.spacing.lg,
   },
   destinations: {
-    gap: theme.spacing.md,
-  },
-  hero: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  heroHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  settingsBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  kicker: {
-    color: theme.colors.primaryLight,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.6,
-  },
-  title: {
-    color: theme.colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '900',
-    lineHeight: 34,
-  },
-  subtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 22,
-    marginTop: theme.spacing.md,
-  },
-  planBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  planBannerIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(108, 99, 255, 0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  planBannerText: { flex: 1 },
-  planBannerTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  planBannerSubtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-    marginTop: 2,
+    gap: n.spacing.sm,
   },
   grid: {
-    gap: theme.spacing.md,
+    gap: 0,
   },
   cardPressed: {
-    opacity: theme.alpha.pressed,
-    transform: [{ scale: 0.99 }],
+    opacity: n.alpha.pressed,
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.surfaceAlt,
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.lg,
-    gap: theme.spacing.md,
+    backgroundColor: 'transparent',
+    borderRadius: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: n.colors.border,
+    paddingVertical: n.spacing.sm,
+    paddingHorizontal: n.spacing.xs,
+    gap: n.spacing.sm,
   },
   listIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: n.radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   listTextContent: {
     flex: 1,
   },
   listTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  listSubtitle: {
-    color: theme.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 2,
+    ...n.typography.label,
+    color: n.colors.textPrimary,
+    fontSize: 14,
   },
 });

@@ -168,6 +168,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     gitlab_oauth_client_id?: string;
     gitlab_duo_preferred_model?: string;
     poe_connected?: number;
+    gdrive_web_client_id?: string;
     gdrive_connected?: number;
     gdrive_email?: string;
     gdrive_last_sync_at?: string | null;

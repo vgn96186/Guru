@@ -20,10 +20,12 @@ import {
   deleteLectureNote,
   type LectureHistoryItem,
 } from '../db/queries/aiCache';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import type { Subject } from '../types';
 import { buildLectureDisplayTitle } from '../services/lecture/lectureIdentity';
+import BannerSearchBar from '../components/BannerSearchBar';
+import ScreenHeader from '../components/ScreenHeader';
 
 interface TopicNoteResult {
   type: 'topic';
@@ -312,21 +314,21 @@ export default function NotesSearchScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Text style={styles.back}>←</Text>
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            placeholder="Search notes & transcripts..."
-            placeholderTextColor={theme.colors.textMuted}
-            value={query}
-            onChangeText={search}
-            autoFocus
-          />
-        </View>
+        <ScreenHeader
+          title="Notes Search"
+          subtitle="Search notes, transcripts, and saved lecture material."
+          searchElement={
+            <BannerSearchBar
+              value={query}
+              onChangeText={search}
+              placeholder="Search notes & transcripts..."
+              autoFocus
+            />
+          }
+        >
+        </ScreenHeader>
         <FlatList
           data={results}
           ListHeaderComponent={

@@ -52,6 +52,18 @@ import kotlin.math.sin
 
 enum class FocusState { NEUTRAL, FOCUSED, DISTRACTED, DROWSY, ABSENT }
 
+private object OverlayTheme {
+    // Aligned with src/theme/linearTheme.ts
+    val surface = Color.parseColor("#050505")
+    val surfaceElevated = Color.parseColor("#232327")
+    val textPrimary = Color.parseColor("#F2F2F2")
+    val textMuted = Color.parseColor("#8A8A8E")
+    val accent = Color.parseColor("#5E6AD2")
+    val success = Color.parseColor("#3FB950")
+    val warning = Color.parseColor("#D97706")
+    val error = Color.parseColor("#F14C4C")
+}
+
 /**
  * Floating overlay bubble that acts as a virtual study companion (body double)
  * while the user watches a lecture in another app.
@@ -426,7 +438,7 @@ class OverlayService : Service(), LifecycleOwner {
             gravity = Gravity.CENTER_HORIZONTAL
             layoutParams = LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT)
             background = android.graphics.drawable.GradientDrawable().apply {
-                setColor(Color.parseColor("#121214")) // Very dark premium black
+                setColor(OverlayTheme.surface)
                 cornerRadius = dpToPx(32, context).toFloat()
             }
         }
@@ -444,7 +456,7 @@ class OverlayService : Service(), LifecycleOwner {
         private val recDot = View(context).apply {
             background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(Color.parseColor("#FF453A"))
+                setColor(OverlayTheme.error)
             }
             layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(12, context), dpToPx(12, context)).apply {
                 bottomMargin = dpToPx(14, context)
@@ -454,7 +466,7 @@ class OverlayService : Service(), LifecycleOwner {
         private val timerText = android.widget.TextView(context).apply {
             text = "00:00"
             textSize = 15f
-            setTextColor(Color.WHITE)
+            setTextColor(OverlayTheme.textPrimary)
             setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL))
             letterSpacing = 0.05f
             layoutParams = android.widget.LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply {
@@ -465,7 +477,7 @@ class OverlayService : Service(), LifecycleOwner {
         private val headerText = android.widget.TextView(context).apply {
             text = appLabel.take(7).uppercase()
             textSize = 9f
-            setTextColor(Color.parseColor("#8E8E93"))
+            setTextColor(OverlayTheme.textMuted)
             setTypeface(android.graphics.Typeface.create("sans-serif-bold", android.graphics.Typeface.BOLD))
             letterSpacing = 0.1f
             maxLines = 1
@@ -476,7 +488,7 @@ class OverlayService : Service(), LifecycleOwner {
         private val statusText = android.widget.TextView(context).apply {
             text = "RECORDING"
             textSize = 9f
-            setTextColor(Color.parseColor("#34C759"))
+            setTextColor(OverlayTheme.success)
             setTypeface(android.graphics.Typeface.create("sans-serif-bold", android.graphics.Typeface.BOLD))
             letterSpacing = 0.1f
             gravity = Gravity.CENTER
@@ -500,12 +512,12 @@ class OverlayService : Service(), LifecycleOwner {
         private val pauseBtn = android.widget.TextView(context).apply {
             text = "II"
             textSize = 14f
-            setTextColor(Color.WHITE)
+            setTextColor(OverlayTheme.textPrimary)
             setTypeface(android.graphics.Typeface.create("sans-serif-black", android.graphics.Typeface.BOLD))
             gravity = Gravity.CENTER
             background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(Color.parseColor("#2C2C2E"))
+                setColor(OverlayTheme.surfaceElevated)
             }
             layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(44, context), dpToPx(44, context)).apply {
                 bottomMargin = dpToPx(12, context)
@@ -524,11 +536,11 @@ class OverlayService : Service(), LifecycleOwner {
         private val finishBtn = android.widget.TextView(context).apply {
             text = "■"
             textSize = 16f
-            setTextColor(Color.WHITE)
+            setTextColor(OverlayTheme.textPrimary)
             gravity = Gravity.CENTER
             background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(Color.parseColor("#FF453A"))
+                setColor(OverlayTheme.error)
             }
             layoutParams = android.widget.LinearLayout.LayoutParams(dpToPx(44, context), dpToPx(44, context))
             setOnClickListener {
@@ -624,10 +636,10 @@ class OverlayService : Service(), LifecycleOwner {
             isRecordingPaused = paused
             pauseBtn.text = if (paused) "▶" else "II"
             statusText.text = if (paused) "PAUSED" else "RECORDING"
-            statusText.setTextColor(if (paused) Color.parseColor("#8E8E93") else Color.parseColor("#34C759"))
+            statusText.setTextColor(if (paused) OverlayTheme.textMuted else OverlayTheme.success)
             recDot.background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(if (paused) Color.parseColor("#8E8E93") else Color.parseColor("#FF453A"))
+                setColor(if (paused) OverlayTheme.textMuted else OverlayTheme.error)
             }
             recDot.alpha = 1f
         }
@@ -730,11 +742,11 @@ class OverlayService : Service(), LifecycleOwner {
         }
 
         private fun getStateColor(s: FocusState): Int = when (s) {
-            FocusState.FOCUSED    -> Color.parseColor("#34C759") // iOS green
-            FocusState.DISTRACTED -> Color.parseColor("#FF9500") // iOS orange
-            FocusState.DROWSY     -> Color.parseColor("#FFCC00") // iOS yellow
-            FocusState.ABSENT     -> Color.parseColor("#FF3B30") // iOS red
-            FocusState.NEUTRAL    -> Color.parseColor("#8A7CFF") // Deep purple
+            FocusState.FOCUSED    -> OverlayTheme.success
+            FocusState.DISTRACTED -> OverlayTheme.warning
+            FocusState.DROWSY     -> OverlayTheme.warning
+            FocusState.ABSENT     -> OverlayTheme.error
+            FocusState.NEUTRAL    -> OverlayTheme.accent
         }
 
         private fun interpolateColor(f: Int, t: Int, p: Float): Int {
@@ -761,7 +773,7 @@ class OverlayService : Service(), LifecycleOwner {
             
             var finalColor = color
             if (System.currentTimeMillis() < milestoneFlashUntil) {
-                finalColor = interpolateColor(color, Color.parseColor("#D500F9"), breathe)
+                finalColor = interpolateColor(color, OverlayTheme.accent, breathe)
             }
 
             // The mainContainer handles the inner capsule background now. We only draw the glowing bounding box.

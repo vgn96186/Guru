@@ -28,8 +28,11 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
+import LinearSurface from '../components/primitives/LinearSurface';
 import type { ChatStackParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import BannerIconButton from '../components/BannerIconButton';
+import ScreenHeader from '../components/ScreenHeader';
 import {
   chatWithGuruGroundedStreaming,
   type MedicalGroundingSource,
@@ -61,7 +64,7 @@ import {
   guruChatPickerNameForOpenRouterSlug,
 } from '../services/ai/guruChatModelPreference';
 import { useLiveGuruChatModels } from '../hooks/useLiveGuruChatModels';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import {
   listGeneratedStudyImagesForTopic,
   type GeneratedStudyImageRecord,
@@ -136,36 +139,36 @@ function getRuntimeStatusTone(args: {
 }) {
   if (args.isActive) {
     return {
-      backgroundColor: theme.colors.primaryTintSoft,
-      borderColor: theme.colors.primaryLight,
-      dotColor: theme.colors.primary,
-      textColor: theme.colors.primary,
+      backgroundColor: n.colors.primaryTintSoft,
+      borderColor: n.colors.accent,
+      dotColor: n.colors.accent,
+      textColor: n.colors.accent,
     };
   }
 
   if (args.hasError) {
     return {
-      backgroundColor: theme.colors.errorTintSoft,
-      borderColor: theme.colors.error,
-      dotColor: theme.colors.error,
-      textColor: theme.colors.textSecondary,
+      backgroundColor: 'rgba(241,76,76,0.08)',
+      borderColor: n.colors.error,
+      dotColor: n.colors.error,
+      textColor: n.colors.textSecondary,
     };
   }
 
   if (args.hasLastModel) {
     return {
-      backgroundColor: theme.colors.successTintSoft,
-      borderColor: theme.colors.success,
-      dotColor: theme.colors.success,
-      textColor: theme.colors.textSecondary,
+      backgroundColor: 'rgba(63,185,80,0.08)',
+      borderColor: n.colors.success,
+      dotColor: n.colors.success,
+      textColor: n.colors.textSecondary,
     };
   }
 
   return {
-    backgroundColor: theme.colors.surfaceAlt,
-    borderColor: theme.colors.border,
-    dotColor: theme.colors.textMuted,
-    textColor: theme.colors.textMuted,
+    backgroundColor: n.colors.surface,
+    borderColor: n.colors.border,
+    dotColor: n.colors.textMuted,
+    textColor: n.colors.textMuted,
   };
 }
 
@@ -497,7 +500,7 @@ function MessageSources({
   return (
     <View style={styles.sourcesWrap}>
       <View style={styles.sourcesHeader}>
-        <Ionicons name="documents-outline" size={13} color={theme.colors.primaryLight} />
+        <Ionicons name="documents-outline" size={13} color={n.colors.accent} />
         <Text style={styles.sourcesLabel}>Sources ({sources.length})</Text>
       </View>
       {sources.map((source, index) => (
@@ -518,7 +521,7 @@ function MessageSources({
           <Pressable
             style={({ pressed }) => [styles.sourceBodyPress, pressed && styles.pressed]}
             onPress={() => openSource(source.url)}
-            android_ripple={{ color: `${theme.colors.primary}22` }}
+            android_ripple={{ color: `${n.colors.accent}22` }}
           >
             <Text style={styles.sourceTitle} numberOfLines={2}>
               {source.title}
@@ -535,7 +538,7 @@ function MessageSources({
             accessibilityRole="button"
             accessibilityLabel="Open source in browser"
           >
-            <Ionicons name="open-outline" size={13} color={theme.colors.textMuted} />
+            <Ionicons name="open-outline" size={13} color={n.colors.textMuted} />
           </Pressable>
         </View>
       ))}
@@ -1379,7 +1382,7 @@ export default function GuruChatScreen() {
         return (
           <View style={[styles.msgRow, styles.msgRowGuru]}>
             <View style={styles.guruAvatarTiny}>
-              <Ionicons name="sparkles" size={11} color={theme.colors.primary} />
+              <Ionicons name="sparkles" size={11} color={n.colors.accent} />
             </View>
             <View style={[styles.msgContent, styles.msgContentGuru]}>
               <View style={[styles.messageStack, styles.messageStackGuru]}>
@@ -1417,7 +1420,7 @@ export default function GuruChatScreen() {
         >
           {message.role === 'guru' ? (
             <View style={styles.guruAvatarTiny}>
-              <Ionicons name="sparkles" size={11} color={theme.colors.primary} />
+              <Ionicons name="sparkles" size={11} color={n.colors.accent} />
             </View>
           ) : null}
 
@@ -1568,7 +1571,7 @@ export default function GuruChatScreen() {
                         <Ionicons
                           name="refresh-outline"
                           size={15}
-                          color={theme.colors.textPrimary}
+                          color={n.colors.textPrimary}
                         />
                       </Pressable>
                     ) : null}
@@ -1578,7 +1581,7 @@ export default function GuruChatScreen() {
                       accessibilityRole="button"
                       accessibilityLabel="Copy response"
                     >
-                      <Ionicons name="copy-outline" size={15} color={theme.colors.primaryLight} />
+                      <Ionicons name="copy-outline" size={15} color={n.colors.accent} />
                     </Pressable>
                     {hasSources ? (
                       <Pressable
@@ -1599,7 +1602,7 @@ export default function GuruChatScreen() {
                           name="link-outline"
                           size={15}
                           color={
-                            sourcesExpanded ? theme.colors.textPrimary : theme.colors.primaryLight
+                            sourcesExpanded ? n.colors.textPrimary : n.colors.accent
                           }
                         />
                       </Pressable>
@@ -1622,14 +1625,14 @@ export default function GuruChatScreen() {
                           }
                         >
                           {isGenerating ? (
-                            <ActivityIndicator size="small" color={theme.colors.textPrimary} />
+                            <ActivityIndicator size="small" color={n.colors.textPrimary} />
                           ) : (
                             <Ionicons
                               name={
                                 style === 'illustration' ? 'image-outline' : 'git-network-outline'
                               }
                               size={15}
-                              color={theme.colors.primaryLight}
+                              color={n.colors.accent}
                             />
                           )}
                         </Pressable>
@@ -1638,7 +1641,7 @@ export default function GuruChatScreen() {
                   </View>
                   {imageJobKey?.startsWith(`${message.id}:`) ? (
                     <View style={styles.responseStatusRow}>
-                      <ActivityIndicator size="small" color={theme.colors.primaryLight} />
+                      <ActivityIndicator size="small" color={n.colors.accent} />
                       <Text style={styles.responseStatusText}>
                         {imageJobKey.endsWith(':chart')
                           ? 'Generating chart...'
@@ -1668,7 +1671,7 @@ export default function GuruChatScreen() {
 
   return (
     <SafeAreaView style={styles.safe} testID="guru-chat-screen">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1677,68 +1680,38 @@ export default function GuruChatScreen() {
       >
         <ResponsiveContainer style={styles.flex}>
           <View style={styles.headerWrap}>
-            <View style={styles.header}>
-              {navigation.canGoBack() ? (
-                <Pressable
-                  style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}
-                  android_ripple={{ color: '#ffffff14', radius: 22 }}
-                  onPress={() => navigation.goBack()}
-                  accessibilityRole="button"
-                  accessibilityLabel="Go back"
-                >
-                  <Ionicons name="arrow-back" size={20} color="#D7DBE8" />
-                </Pressable>
-              ) : (
-                <View style={styles.iconBtn} />
-              )}
-
-              <View style={styles.headerCenter}>
-                <Text style={styles.title}>Guru Chat</Text>
-                <Text style={styles.headerSubtitle} numberOfLines={2}>
-                  {currentThread && currentThread.title !== topicName
-                    ? currentThread.title
-                    : isGeneralChat
-                      ? 'Medical assistant'
-                      : topicName}
-                </Text>
-              </View>
-
-              <View style={styles.headerActions}>
-                <Pressable
-                  style={({ pressed }) => [styles.newChatBtn, pressed && styles.pressed]}
-                  android_ripple={{ color: '#ffffff14', radius: 22 }}
-                  onPress={() => setShowHistoryDrawer(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Open chat history"
-                >
-                  <Ionicons
-                    name="reorder-three-outline"
-                    size={18}
-                    color={theme.colors.primaryLight}
-                  />
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [styles.newChatBtn, pressed && styles.pressed]}
-                  android_ripple={{ color: '#ffffff14', radius: 22 }}
-                  onPress={startNewChat}
-                  accessibilityRole="button"
-                  accessibilityLabel="New chat"
-                >
-                  <Ionicons name="create-outline" size={18} color={theme.colors.primaryLight} />
-                </Pressable>
-                <Pressable
-                  style={({ pressed }) => [styles.newChatBtn, pressed && styles.pressed]}
-                  android_ripple={{ color: '#ffffff14', radius: 22 }}
-                  onPress={() =>
-                    navigation.getParent()?.navigate('MenuTab', { screen: 'Settings' })
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Open settings"
-                >
-                  <Ionicons name="settings-sharp" size={18} color={theme.colors.textSecondary} />
-                </Pressable>
-              </View>
-            </View>
+            <ScreenHeader
+              title="Guru Chat"
+              subtitle={
+                currentThread && currentThread.title !== topicName
+                  ? currentThread.title
+                  : isGeneralChat
+                    ? 'Medical assistant'
+                    : topicName
+              }
+              onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
+              rightElement={
+                <View style={styles.headerActions}>
+                  <BannerIconButton
+                    onPress={() => setShowHistoryDrawer(true)}
+                    accessibilityLabel="Open chat history"
+                  >
+                    <Ionicons name="reorder-three-outline" size={18} color={n.colors.accent} />
+                  </BannerIconButton>
+                  <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
+                    <Ionicons name="create-outline" size={18} color={n.colors.accent} />
+                  </BannerIconButton>
+                  <BannerIconButton
+                    onPress={() =>
+                      navigation.getParent()?.navigate('MenuTab', { screen: 'Settings' })
+                    }
+                    accessibilityLabel="Open settings"
+                  >
+                    <Ionicons name="settings-sharp" size={18} color={n.colors.textSecondary} />
+                  </BannerIconButton>
+                </View>
+              }
+            />
           </View>
 
           {showHistoryDrawer ? (
@@ -1747,14 +1720,14 @@ export default function GuruChatScreen() {
                 style={styles.historyBackdrop}
                 onPress={() => setShowHistoryDrawer(false)}
               />
-              <View style={styles.historyDrawer}>
+              <LinearSurface padded={false} style={styles.historyDrawer}>
                 <View style={styles.historyHeader}>
                   <Text style={styles.historyTitle}>Chat History</Text>
                   <Pressable
                     style={({ pressed }) => [styles.historyCloseBtn, pressed && styles.pressed]}
                     onPress={() => setShowHistoryDrawer(false)}
                   >
-                    <Ionicons name="close" size={18} color={theme.colors.textMuted} />
+                    <Ionicons name="close" size={18} color={n.colors.textMuted} />
                   </Pressable>
                 </View>
 
@@ -1764,7 +1737,7 @@ export default function GuruChatScreen() {
                     void createAndSwitchToNewThread();
                   }}
                 >
-                  <Ionicons name="add-outline" size={18} color={theme.colors.primaryLight} />
+                  <Ionicons name="add-outline" size={18} color={n.colors.accent} />
                   <Text style={styles.historyNewBtnText}>New Chat</Text>
                 </Pressable>
 
@@ -1817,7 +1790,7 @@ export default function GuruChatScreen() {
                               <Ionicons
                                 name="pencil-outline"
                                 size={14}
-                                color={theme.colors.primaryLight}
+                                color={n.colors.accent}
                               />
                             </Pressable>
                             <Pressable
@@ -1833,7 +1806,7 @@ export default function GuruChatScreen() {
                               <Ionicons
                                 name="trash-outline"
                                 size={14}
-                                color={theme.colors.textMuted}
+                                color={n.colors.textMuted}
                               />
                             </Pressable>
                           </View>
@@ -1847,7 +1820,7 @@ export default function GuruChatScreen() {
                     </View>
                   }
                 />
-              </View>
+              </LinearSurface>
             </View>
           ) : null}
 
@@ -1860,14 +1833,14 @@ export default function GuruChatScreen() {
                   setRenameDraft('');
                 }}
               />
-              <View style={styles.renameSheet}>
+              <LinearSurface padded={false} borderColor={n.colors.borderHighlight} style={styles.renameSheet}>
                 <Text style={styles.renameTitle}>Rename Chat</Text>
                 <TextInput
                   style={styles.renameInput}
                   value={renameDraft}
                   onChangeText={setRenameDraft}
                   placeholder="Chat title"
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   autoFocus
                   maxLength={80}
                 />
@@ -1894,7 +1867,7 @@ export default function GuruChatScreen() {
                     <Text style={styles.renameBtnTextPrimary}>Save</Text>
                   </Pressable>
                 </View>
-              </View>
+              </LinearSurface>
             </View>
           ) : null}
 
@@ -1942,7 +1915,7 @@ export default function GuruChatScreen() {
                         chosenModel === model.id && styles.modelItemActive,
                         pressed && styles.pressed,
                       ]}
-                      android_ripple={{ color: `${theme.colors.primary}22` }}
+                      android_ripple={{ color: `${n.colors.accent}22` }}
                       onPress={() => {
                         if (messages.length > 0 && model.id !== chosenModel) {
                           Alert.alert(
@@ -1974,7 +1947,7 @@ export default function GuruChatScreen() {
                         {model.name}
                       </Text>
                       {chosenModel === model.id ? (
-                        <Ionicons name="checkmark-circle" size={18} color={theme.colors.primary} />
+                        <Ionicons name="checkmark-circle" size={18} color={n.colors.accent} />
                       ) : null}
                     </Pressable>
                   )}
@@ -1996,14 +1969,14 @@ export default function GuruChatScreen() {
                 <Ionicons
                   name="library-outline"
                   size={14}
-                  color={theme.colors.primary}
+                  color={n.colors.accent}
                   style={styles.bannerIcon}
                 />
                 <Text style={styles.infoText}>
                   Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
                 </Text>
                 <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
-                  <Ionicons name="close" size={14} color={theme.colors.textMuted} />
+                  <Ionicons name="close" size={14} color={n.colors.textMuted} />
                 </Pressable>
               </View>
             ) : null}
@@ -2014,7 +1987,7 @@ export default function GuruChatScreen() {
                   <View style={styles.emptyPanel}>
                     <View style={styles.heroRow}>
                       <View style={styles.guruAvatarLarge}>
-                        <Ionicons name="sparkles" size={20} color={theme.colors.primary} />
+                        <Ionicons name="sparkles" size={20} color={n.colors.accent} />
                       </View>
                       <View style={styles.heroCopy}>
                         <Text style={styles.emptyTitle}>
@@ -2039,7 +2012,7 @@ export default function GuruChatScreen() {
                         <Pressable
                           key={starter.text}
                           style={({ pressed }) => [styles.starterChip, pressed && styles.pressed]}
-                          android_ripple={{ color: `${theme.colors.primary}22` }}
+                          android_ripple={{ color: `${n.colors.accent}22` }}
                           onPress={() => handleSend(starter.text)}
                           disabled={loading}
                         >
@@ -2047,7 +2020,7 @@ export default function GuruChatScreen() {
                             <Ionicons
                               name={starter.icon as keyof typeof Ionicons.glyphMap}
                               size={14}
-                              color={theme.colors.primary}
+                              color={n.colors.accent}
                             />
                           </View>
                           <Text style={styles.starterChipText} numberOfLines={3}>
@@ -2098,26 +2071,26 @@ export default function GuruChatScreen() {
             <View
               style={[styles.composerWrap, keyboardInset > 0 && { marginBottom: keyboardInset }]}
             >
-              <Pressable
-                style={styles.modelSelectorRow}
-                onPress={() => {
-                  setPickerTab(currentModelGroup);
-                  setShowModelPicker(true);
-                }}
-                accessibilityRole="button"
-                accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
-              >
-                <View style={styles.modelDot} />
-                <Text style={styles.modelSelectorText} numberOfLines={1}>
-                  {currentModelLabel}
-                </Text>
-                <Ionicons name="chevron-down" size={10} color={theme.colors.textMuted} />
-              </Pressable>
               <View style={styles.inputRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.modelIconBtn,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    setPickerTab(currentModelGroup);
+                    setShowModelPicker(true);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
+                >
+                  <View style={styles.modelDot} />
+                  <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
+                </Pressable>
                 <TextInput
                   style={styles.input}
                   placeholder="Ask Guru anything..."
-                  placeholderTextColor={theme.colors.textMuted}
+                  placeholderTextColor={n.colors.textMuted}
                   value={input}
                   autoFocus={!!route.params?.autoFocusComposer}
                   onChangeText={setInput}
@@ -2126,7 +2099,7 @@ export default function GuruChatScreen() {
                   multiline={false}
                   blurOnSubmit={false}
                   maxLength={1000}
-                  selectionColor={theme.colors.primaryLight}
+                  selectionColor={n.colors.accent}
                 />
                 <Pressable
                   style={({ pressed }) => [
@@ -2143,7 +2116,7 @@ export default function GuruChatScreen() {
                   <Ionicons
                     name={loading ? 'ellipse-outline' : 'send'}
                     size={18}
-                    color={theme.colors.textPrimary}
+                    color={n.colors.textPrimary}
                   />
                 </Pressable>
               </View>
@@ -2163,19 +2136,19 @@ export default function GuruChatScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
   },
   flex: {
     flex: 1,
   },
   pressed: {
-    opacity: theme.alpha.pressed,
+    opacity: n.alpha.pressed,
     transform: [{ scale: 0.98 }],
   },
   headerWrap: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingHorizontal: n.spacing.md,
+    paddingTop: n.spacing.sm,
+    paddingBottom: n.spacing.xs,
   },
   header: {
     flexDirection: 'row',
@@ -2185,14 +2158,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
+    width: 34,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 14,
-    backgroundColor: '#111621',
-    borderWidth: 1,
-    borderColor: '#21283A',
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerCenter: {
     flex: 1,
@@ -2205,25 +2178,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
   },
   headerSubtitle: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
+    ...n.typography.caption,
+    color: n.colors.textMuted,
     marginTop: 1,
   },
   newChatBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#111621',
-    borderWidth: 1,
-    borderColor: '#2A3350',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   historyOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -2231,100 +2202,98 @@ const styles = StyleSheet.create({
   },
   historyBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.38)',
+    backgroundColor: 'rgba(2, 4, 8, 0.52)',
   },
   historyDrawer: {
     position: 'absolute',
     top: 0,
     bottom: 0,
     left: 0,
-    width: '80%',
+    width: '82%',
     maxWidth: 340,
-    backgroundColor: '#0F141D',
-    borderRightWidth: 1,
-    borderRightColor: '#20283A',
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: 'rgba(255, 255, 255, 0.08)',
     paddingTop: 58,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingBottom: 18,
+    backgroundColor: 'rgba(5, 5, 5, 0.98)',
   },
   historyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   historyTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
   },
   historyCloseBtn: {
     width: 34,
     height: 34,
-    borderRadius: 10,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#141B27',
-    borderWidth: 1,
-    borderColor: '#20283A',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
   },
   historyNewBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    borderRadius: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    backgroundColor: '#141B27',
-    borderWidth: 1,
-    borderColor: '#26314A',
+    borderRadius: n.radius.md,
+    paddingVertical: 13,
+    marginBottom: 14,
+    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.2)',
   },
   historyNewBtnText: {
-    color: theme.colors.primaryLight,
-    fontSize: 13,
-    fontWeight: '700',
+    ...n.typography.label,
+    color: n.colors.accent,
   },
   historyList: {
     flex: 1,
   },
   historyListContent: {
-    gap: 8,
+    gap: 0,
     paddingBottom: 20,
   },
   historyItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    borderRadius: 16,
-    padding: 12,
-    backgroundColor: '#121926',
-    borderWidth: 1,
-    borderColor: '#20283A',
+    borderRadius: n.radius.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    backgroundColor: 'transparent',
+    marginBottom: 2,
   },
   historyItemActive: {
-    borderColor: theme.colors.primaryLight,
-    backgroundColor: '#172033',
+    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.18)',
   },
   historyItemMain: {
     flex: 1,
     minWidth: 0,
   },
   historyItemTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
+    ...n.typography.label,
+    color: n.colors.textPrimary,
     lineHeight: 20,
   },
   historyItemTopic: {
-    color: '#8E99B1',
-    fontSize: 12,
+    ...n.typography.caption,
+    color: n.colors.textSecondary,
     lineHeight: 18,
     marginTop: 2,
   },
   historyItemPreview: {
-    color: '#6F7A93',
-    fontSize: 12,
+    ...n.typography.caption,
+    color: n.colors.textMuted,
     lineHeight: 19,
     marginTop: 6,
   },
@@ -2333,7 +2302,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   historyItemTime: {
-    color: '#6F7A93',
+    color: n.colors.textMuted,
     fontSize: 10,
     fontWeight: '600',
   },
@@ -2345,20 +2314,20 @@ const styles = StyleSheet.create({
   historyActionBtn: {
     width: 28,
     height: 28,
-    borderRadius: 10,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0E1521',
-    borderWidth: 1,
-    borderColor: '#20283A',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   historyEmpty: {
     paddingVertical: 28,
     alignItems: 'center',
   },
   historyEmptyText: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
+    ...n.typography.caption,
+    color: n.colors.textMuted,
   },
   sheetOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -2367,28 +2336,38 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: theme.colors.backdropStrong,
+    backgroundColor: 'rgba(2, 4, 8, 0.56)',
   },
   sheetContent: {
-    backgroundColor: '#101018',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: 'rgba(8, 10, 16, 0.94)',
+    borderRadius: 20,
     paddingTop: 16,
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    maxHeight: '70%',
+    paddingBottom: 16,
+    maxHeight: '74%',
+    width: '94%',
+    maxWidth: 560,
+    alignSelf: 'center',
+    marginBottom: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
   },
   sheetTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
-    marginBottom: 12,
+    ...n.typography.label,
+    color: n.colors.textPrimary,
+    marginBottom: 14,
     textAlign: 'center',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
+    fontSize: 14,
   },
   warningText: {
-    color: '#FFD58A',
-    fontSize: 12,
+    ...n.typography.caption,
+    color: n.colors.warning,
     lineHeight: 18,
     marginBottom: 16,
     textAlign: 'center',
@@ -2398,25 +2377,28 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tabStripContent: {
-    gap: 8,
+    gap: 4,
     paddingHorizontal: 2,
   },
   tabChip: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
     backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
   },
   tabChipActive: {
-    backgroundColor: '#1E1A3A',
+    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+    borderColor: 'rgba(94, 106, 210, 0.25)',
   },
   tabChipText: {
-    color: '#4A506A',
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
   },
   tabChipTextActive: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
   },
   modelList: {
     maxHeight: 320,
@@ -2425,52 +2407,60 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 11,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    marginBottom: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: n.radius.sm,
+    marginBottom: 2,
   },
   modelItemActive: {
-    backgroundColor: '#1E1A3A',
+    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.2)',
   },
   modelItemText: {
-    color: '#7A8199',
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
   modelItemTextActive: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
   },
   closeBtn: {
     marginTop: 10,
-    padding: 12,
+    paddingVertical: 12,
     alignItems: 'center',
-    borderRadius: 12,
+    borderRadius: n.radius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
   },
   closeBtnText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '600',
     fontSize: 13,
   },
   renameSheet: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    padding: 20,
-    gap: 14,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 24,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 24,
+    elevation: 20,
   },
   renameTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
+    ...n.typography.sectionTitle,
+    color: n.colors.textPrimary,
     textAlign: 'center',
   },
   renameInput: {
-    backgroundColor: '#0E1521',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#20283A',
-    color: theme.colors.textPrimary,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: n.radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    color: n.colors.textPrimary,
     fontSize: 15,
     paddingHorizontal: 14,
     paddingVertical: 12,
@@ -2481,67 +2471,76 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   renameBtn: {
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    borderRadius: n.radius.sm,
+    paddingHorizontal: 18,
     paddingVertical: 12,
-    backgroundColor: '#141B27',
-    borderWidth: 1,
-    borderColor: '#20283A',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
   },
   renameBtnPrimary: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
+    borderColor: n.colors.accent,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   renameBtnText: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
   },
   renameBtnTextPrimary: {
-    color: theme.colors.textPrimary,
+    color: '#fff',
     fontSize: 13,
     fontWeight: '800',
   },
   contentWrap: {
     flex: 1,
-    paddingHorizontal: 14,
-    paddingBottom: 14,
-    gap: 10,
+    paddingHorizontal: n.spacing.sm,
+    paddingBottom: n.spacing.sm,
+    gap: 0,
   },
   infoBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 16,
-    backgroundColor: '#111722',
-    borderWidth: 1,
-    borderColor: '#222A3B',
+    marginHorizontal: 4,
+    marginTop: 4,
+    borderRadius: n.radius.md,
+    backgroundColor: 'rgba(94, 106, 210, 0.06)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.15)',
   },
   bannerIcon: {
     marginTop: 0,
   },
   infoText: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    lineHeight: 18,
+    ...n.typography.caption,
+    color: n.colors.textSecondary,
     flex: 1,
   },
   chatSurface: {
     flex: 1,
-    borderRadius: 26,
-    backgroundColor: '#0D1017',
+    borderRadius: n.radius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.015)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+    marginTop: 6,
     overflow: 'hidden',
   },
   messages: {
     flex: 1,
   },
   messagesContent: {
-    paddingHorizontal: 6,
-    paddingTop: 10,
-    paddingBottom: 16,
-    gap: 12,
+    paddingHorizontal: n.spacing.xs,
+    paddingTop: n.spacing.sm,
+    paddingBottom: n.spacing.md,
+    gap: n.spacing.sm,
     flexGrow: 1,
     justifyContent: 'flex-end',
   },
@@ -2559,13 +2558,18 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#1C1B39',
-    borderWidth: 1,
-    borderColor: theme.colors.primaryLight,
+    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
     marginBottom: 4,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 2,
   },
   msgContent: {
     flex: 1,
@@ -2619,58 +2623,64 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   msgAuthor: {
-    color: theme.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '800',
+    ...n.typography.caption,
+    color: n.colors.textPrimary,
   },
   msgMetaDivider: {
     color: '#66718C',
     fontSize: 11,
   },
   msgMetaText: {
-    color: '#7A849D',
-    fontSize: 11,
-    fontWeight: '500',
+    ...n.typography.meta,
+    color: n.colors.textSecondary,
   },
   msgModelPill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: '#141A2A',
-    borderWidth: 1,
-    borderColor: '#27314B',
+    backgroundColor: 'rgba(94, 106, 210, 0.08)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.18)',
   },
   msgModelPillText: {
-    color: '#90A3D8',
+    color: n.colors.accent,
     fontSize: 10,
     fontWeight: '700',
   },
   bubble: {
     alignSelf: 'flex-start',
     minWidth: 0,
-    borderRadius: 20,
-    paddingHorizontal: 13,
+    borderRadius: 18,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
   },
   userBubble: {
-    backgroundColor: '#26315F',
-    borderColor: '#4252A0',
-    borderBottomRightRadius: 8,
+    backgroundColor: 'rgba(94, 106, 210, 0.14)',
+    borderColor: 'rgba(94, 106, 210, 0.35)',
+    borderBottomRightRadius: 6,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
   },
   guruBubble: {
-    backgroundColor: '#121723',
-    borderColor: '#232A3C',
-    borderBottomLeftRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderBottomLeftRadius: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.12)',
   },
   typingBubble: {
     paddingVertical: 16,
     paddingHorizontal: 18,
   },
   bubbleText: {
-    color: '#A9B2C6',
-    fontSize: 17,
-    lineHeight: 28,
+    ...n.typography.body,
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: '400',
     includeFontPadding: false,
     flexShrink: 1,
@@ -2685,20 +2695,21 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   guruFormattedText: {
-    color: '#A9B2C6',
-    fontSize: 17,
-    lineHeight: 28,
+    ...n.typography.body,
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: '400',
     minWidth: 0,
     includeFontPadding: false,
     paddingRight: 4,
   },
   guruStrongText: {
-    color: '#E2D27A',
+    color: n.colors.accent,
     fontWeight: '800',
   },
   userBubbleText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '600',
     paddingRight: 4,
   },
@@ -2720,18 +2731,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#121827',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#263049',
-    paddingHorizontal: 11,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: 12,
     paddingVertical: 8,
   },
   imageActionChipBusy: {
     opacity: 0.7,
   },
   imageActionText: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -2754,10 +2765,15 @@ const styles = StyleSheet.create({
   generatedImage: {
     width: 220,
     height: 220,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   generatedImageInline: {
     width: 176,
@@ -2770,10 +2786,10 @@ const styles = StyleSheet.create({
   sourcesWrap: {
     width: '100%',
     marginTop: 8,
-    borderRadius: 16,
-    backgroundColor: '#101520',
-    borderWidth: 1,
-    borderColor: '#20283A',
+    borderRadius: n.radius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
     overflow: 'hidden',
   },
   sourcesHeader: {
@@ -2783,10 +2799,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 8,
-    backgroundColor: '#12192A',
+    backgroundColor: 'rgba(94, 106, 210, 0.04)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: n.colors.border,
   },
   sourcesLabel: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '800',
   },
@@ -2795,43 +2813,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderTopWidth: 1,
-    borderTopColor: '#1D2334',
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   sourceNumBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: '#1B2340',
+    backgroundColor: 'rgba(94, 106, 210, 0.12)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   sourceNum: {
-    color: theme.colors.primaryLight,
+    color: n.colors.accent,
     fontSize: 11,
     fontWeight: '800',
   },
   sourceImage: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     flexShrink: 0,
-    backgroundColor: theme.colors.surfaceAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: n.colors.surfaceHover,
   },
   sourceBodyPress: {
     flex: 1,
     minWidth: 0,
   },
   sourceTitle: {
-    color: '#A4AEC2',
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
   },
   sourceMeta: {
-    color: '#727C95',
+    color: n.colors.textMuted,
     fontSize: 11,
     marginTop: 2,
   },
@@ -2851,22 +2873,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   responseStatusText: {
-    color: '#7E8AA6',
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '600',
   },
   responseActionBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
-    height: 28,
-    borderRadius: 10,
-    backgroundColor: '#101520',
-    borderWidth: 1,
-    borderColor: '#20283A',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   responseActionBtnActive: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: 'rgba(94, 106, 210, 0.12)',
+    borderColor: 'rgba(94, 106, 210, 0.3)',
   },
   dotsRow: {
     flexDirection: 'row',
@@ -2878,178 +2901,199 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
   },
   emptyWrap: {
     flex: 1,
     justifyContent: 'center',
-    padding: 10,
+    padding: 16,
   },
   emptyPanel: {
-    borderRadius: 24,
+    borderRadius: n.radius.lg,
     padding: 20,
-    backgroundColor: '#111621',
-    borderWidth: 1,
-    borderColor: '#20283A',
-    gap: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+    gap: 20,
   },
   heroRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
   },
   heroCopy: {
     flex: 1,
   },
   guruAvatarLarge: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1E1D42',
-    borderWidth: 1,
-    borderColor: theme.colors.primaryLight,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(94, 106, 210, 0.12)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 4,
   },
   emptyTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 24,
-    fontWeight: '900',
+    ...n.typography.title,
+    color: n.colors.textPrimary,
+    fontSize: 22,
   },
   emptyHint: {
-    color: theme.colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 21,
-    marginTop: 6,
+    ...n.typography.bodySmall,
+    color: n.colors.textMuted,
+    lineHeight: 20,
+    marginTop: 4,
   },
   sessionSummaryInline: {
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: '#101928',
-    borderWidth: 1,
-    borderColor: '#243047',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: n.radius.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
   },
   sessionSummaryInlineText: {
-    color: '#99A4BA',
-    fontSize: 13,
-    lineHeight: 20,
+    ...n.typography.caption,
+    color: n.colors.textSecondary,
+    lineHeight: 19,
   },
   starterGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
   starterChip: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#24304A',
-    backgroundColor: '#0F1521',
-    paddingHorizontal: 12,
+    borderRadius: n.radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    paddingHorizontal: 14,
     paddingVertical: 12,
     flexBasis: '47%',
     flexGrow: 1,
   },
   starterIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#1A2340',
+    backgroundColor: 'rgba(94, 106, 210, 0.1)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(94, 106, 210, 0.2)',
   },
   starterChipText: {
-    color: '#9EA8BE',
-    fontSize: 13,
+    color: n.colors.textSecondary,
+    fontSize: 12,
     flex: 1,
-    lineHeight: 20,
+    lineHeight: 17,
+    fontWeight: '500',
   },
   composerWrap: {
-    gap: 0,
-    paddingTop: 0,
-    paddingHorizontal: 12,
-    paddingBottom: 6,
-    borderRadius: 20,
-    backgroundColor: '#0E1219',
-    borderWidth: 1,
-    borderColor: '#1B2332',
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: n.radius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.025)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
+    marginHorizontal: 4,
+    marginBottom: 4,
   },
   quickActionsCenterWrap: {
     alignItems: 'center',
-    paddingVertical: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
   },
   quickActionsCenter: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
-    maxWidth: '92%',
+    gap: 6,
+    maxWidth: '96%',
   },
   quickActionChip: {
     alignItems: 'center',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#20283A',
-    backgroundColor: '#141B27',
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
   },
   quickActionChipDisabled: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   quickActionText: {
-    color: '#A1ABC1',
+    color: n.colors.textSecondary,
     fontSize: 12,
-    fontWeight: '700',
-  },
-  modelSelectorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 2,
-  },
-  modelDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.primary,
-  },
-  modelSelectorText: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.2,
+  },
+  modelIconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 2,
+    flexShrink: 0,
+  },
+  modelDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: n.colors.accent,
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
   },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    paddingHorizontal: 4,
   },
   input: {
     flex: 1,
-    minHeight: 40,
-    color: theme.colors.textPrimary,
+    minHeight: 42,
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 20,
-    paddingHorizontal: 0,
+    paddingHorizontal: 4,
     paddingVertical: 8,
     textAlignVertical: 'center',
   },
   sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.primary,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#5E6AD2',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   sendBtnDisabled: {
-    backgroundColor: '#232838',
-    borderColor: '#2E3446',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: n.colors.border,
     shadowOpacity: 0,
     elevation: 0,
   },

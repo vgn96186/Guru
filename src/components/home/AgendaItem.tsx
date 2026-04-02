@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 
 interface AgendaItemProps {
   time: string;
@@ -13,9 +13,9 @@ interface AgendaItemProps {
 }
 
 const TYPE_COLORS = {
-  new: theme.colors.primary,
-  review: theme.colors.success,
-  deep_dive: theme.colors.error,
+  new: n.colors.accent,
+  review: n.colors.success,
+  deep_dive: n.colors.error,
 } as const;
 
 const TYPE_LABELS = {
@@ -76,28 +76,29 @@ export default React.memo(function AgendaItem({
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 14,
     alignItems: 'stretch',
   },
   timeWrap: {
     width: 40,
     alignItems: 'flex-end',
     justifyContent: 'center',
-    marginRight: theme.spacing.md,
+    marginRight: n.spacing.md,
   },
   timeText: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   card: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderRadius: theme.borderRadius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: theme.colors.primary,
+    paddingVertical: 10,
+    paddingLeft: 14,
+    paddingRight: 8,
+    borderRadius: 4,
+    borderLeftWidth: 2,
+    borderLeftColor: n.colors.accent,
   },
   cardTop: {
     flexDirection: 'row',
@@ -107,19 +108,19 @@ const styles = StyleSheet.create({
   },
   title: {
     flex: 1,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   yieldBadge: {
-    backgroundColor: theme.colors.warningTintSoft,
+    backgroundColor: 'rgba(217,119,6,0.08)',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
   },
   yieldText: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontSize: 9,
     fontWeight: '900',
     letterSpacing: 0.5,
@@ -136,27 +137,21 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   dot: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 10,
   },
   subject: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '500',
   },
   rationaleChip: {
-    marginTop: 8,
+    marginTop: 5,
     alignSelf: 'flex-start',
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    backgroundColor: theme.colors.primaryTintSoft,
-    borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
   },
   rationaleText: {
-    color: theme.colors.primary,
+    color: n.colors.textMuted,
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });

@@ -8,7 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import AppText from './AppText';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface Props {
   topics: string[];
@@ -70,13 +70,13 @@ const styles = StyleSheet.create({
   scrollRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap', minWidth: 0 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, minWidth: 0 },
   pill: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    color: theme.colors.textPrimary,
+    borderColor: n.colors.border,
+    color: n.colors.textPrimary,
     alignSelf: 'flex-start',
     flexShrink: 1,
     maxWidth: '100%',

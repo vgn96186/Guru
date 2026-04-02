@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { theme } from '../../constants/theme';
+import { linearTheme as n } from '../../theme/linearTheme';
 import type { ContentType, Subject } from '../../types';
 
 interface ContentPreferencesSectionProps {
@@ -81,30 +81,30 @@ export default React.memo(ContentPreferencesSection);
 const styles = StyleSheet.create({
   container: { gap: 12 },
   subTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 14,
     lineHeight: 20,
     fontWeight: '700',
     marginTop: 4,
   },
-  hint: { color: theme.colors.textSecondary, fontSize: 11, lineHeight: 16, marginBottom: 4 },
+  hint: { color: n.colors.textSecondary, fontSize: 11, lineHeight: 16, marginBottom: 4 },
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  chipText: { color: theme.colors.textSecondary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
-  chipBlocked: { backgroundColor: `${theme.colors.error}22`, borderColor: theme.colors.error },
-  chipTextBlocked: { color: theme.colors.error },
+  chipText: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  chipBlocked: { backgroundColor: `${n.colors.error}22`, borderColor: n.colors.error },
+  chipTextBlocked: { color: n.colors.error },
   chipLocked: { opacity: 0.5 },
-  chipX: { color: theme.colors.error, fontSize: 10, lineHeight: 14, marginLeft: 4 },
+  chipX: { color: n.colors.error, fontSize: 10, lineHeight: 14, marginLeft: 4 },
   clearBtn: { padding: 8, alignItems: 'center' },
-  clearBtnText: { color: theme.colors.primary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
-  divider: { height: 1, backgroundColor: theme.colors.divider, marginVertical: 8 },
+  clearBtnText: { color: n.colors.accent, fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  divider: { height: 1, backgroundColor: n.colors.border, marginVertical: 8 },
 });

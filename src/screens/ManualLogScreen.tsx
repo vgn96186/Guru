@@ -16,13 +16,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { getAllSubjects, getTopicsBySubject, updateTopicProgress } from '../db/queries/topics';
 import { createSession, endSession } from '../db/queries/sessions';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { STREAK_MIN_MINUTES } from '../constants/gamification';
 import { profileRepository } from '../db/repositories';
 import { useAppStore } from '../store/useAppStore';
 import { EXTERNAL_APPS } from '../constants/externalApps';
 import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import LinearButton from '../components/primitives/LinearButton';
 
 type Nav = NativeStackNavigationProp<any, 'ManualLog'>;
 type Route = RouteProp<any, 'ManualLog'>;
@@ -111,7 +112,7 @@ export default function ManualLogScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content} keyboardDismissMode="on-drag">
         <ResponsiveContainer>
           <Text style={styles.title}>Log External Study</Text>
@@ -160,7 +161,7 @@ export default function ManualLogScreen() {
                 <Text
                   style={[
                     styles.subjectText,
-                    selectedSubjectId === s.id && { color: theme.colors.textInverse },
+                    selectedSubjectId === s.id && { color: n.colors.textInverse },
                   ]}
                 >
                   {s.shortCode}
@@ -183,7 +184,7 @@ export default function ManualLogScreen() {
                     style={[
                       styles.subjectChip,
                       styles.topicChip,
-                      selectedTopicId === t.id && { backgroundColor: theme.colors.primary },
+                      selectedTopicId === t.id && { backgroundColor: n.colors.accent },
                     ]}
                     onPress={() => setSelectedTopicId(t.id === selectedTopicId ? null : t.id)}
                     accessibilityRole="button"
@@ -193,7 +194,7 @@ export default function ManualLogScreen() {
                     <Text
                       style={[
                         styles.subjectText,
-                        selectedTopicId === t.id && { color: theme.colors.textPrimary },
+                        selectedTopicId === t.id && { color: n.colors.textPrimary },
                       ]}
                       numberOfLines={1}
                       ellipsizeMode="tail"
@@ -210,7 +211,7 @@ export default function ManualLogScreen() {
           <TextInput
             style={styles.input}
             placeholder="e.g. Heart Failure"
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={n.colors.textMuted}
             value={topicName}
             onChangeText={setTopicName}
           />
@@ -250,20 +251,20 @@ export default function ManualLogScreen() {
             onChangeText={setDuration}
             keyboardType="number-pad"
             placeholder="45"
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={n.colors.textMuted}
           />
 
-          <TouchableOpacity
+          <LinearButton
+            variant="glassTinted"
             style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
             onPress={handleSubmit}
             disabled={submitting}
             accessibilityRole="button"
             accessibilityLabel={`Log session, ${parseInt(duration || '0') * 10} XP`}
-          >
-            <Text style={styles.submitText}>
-              {submitting ? 'Logging...' : `Log Session (+${parseInt(duration || '0') * 10} XP)`}
-            </Text>
-          </TouchableOpacity>
+            label={
+              submitting ? 'Logging…' : `Log Session (+${parseInt(duration || '0') * 10} XP)`
+            }
+          />
         </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
@@ -271,12 +272,12 @@ export default function ManualLogScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   content: { padding: 20, paddingBottom: 40 },
-  title: { color: theme.colors.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  subtitle: { color: theme.colors.textSecondary, fontSize: 14, marginBottom: 24, lineHeight: 20 },
+  title: { color: n.colors.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  subtitle: { color: n.colors.textSecondary, fontSize: 14, marginBottom: 24, lineHeight: 20 },
   label: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700',
     marginBottom: 10,
@@ -285,61 +286,57 @@ const styles = StyleSheet.create({
   appGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   appBtn: {
     width: '30%',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   appBtnActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primaryTintSoft,
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.primaryTintSoft,
   },
   appIcon: { fontSize: 24, marginBottom: 4 },
-  appName: { color: theme.colors.textSecondary, fontSize: 11, fontWeight: '600' },
-  appNameActive: { color: theme.colors.textPrimary },
+  appName: { color: n.colors.textSecondary, fontSize: 11, fontWeight: '600' },
+  appNameActive: { color: n.colors.textPrimary },
   subjectScroll: { flexDirection: 'row', marginBottom: 20 },
   durationScroll: { flexDirection: 'row', marginBottom: 12, marginTop: 4 },
   durationChip: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
-  durationChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-  durationText: { color: theme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  durationTextActive: { color: theme.colors.textPrimary, fontWeight: '700' },
+  durationChipActive: { backgroundColor: n.colors.accent, borderColor: n.colors.accent },
+  durationText: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+  durationTextActive: { color: n.colors.textPrimary, fontWeight: '700' },
   subjectChip: {
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderRadius: 20,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: n.colors.surface,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
   },
   topicChip: { maxWidth: 200 },
-  subjectText: { color: theme.colors.textPrimary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  subjectText: { color: n.colors.textPrimary, fontSize: 12, lineHeight: 18, fontWeight: '600' },
   input: {
-    backgroundColor: theme.colors.inputBg,
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 14,
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     marginBottom: 10,
   },
   submitBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 16,
-    padding: 18,
-    alignItems: 'center',
+    minHeight: 58,
     marginTop: 24,
   },
-  submitText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
 });

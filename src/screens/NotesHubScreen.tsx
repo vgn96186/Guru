@@ -16,7 +16,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import type { MenuStackParamList, TabParamList } from '../navigation/types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
+import LinearSurface from '../components/primitives/LinearSurface';
 import { MS_PER_DAY } from '../constants/time';
 import { getDb } from '../db/database';
 import { getLectureHistory, type LectureHistoryItem } from '../db/queries/aiCache';
@@ -306,14 +307,14 @@ export default function NotesHubScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
           {isRecoveringBackground ? (
-            <View style={styles.recoveryGhostRow} pointerEvents="none">
-              <ActivityIndicator size="small" color={theme.colors.textMuted} />
+            <LinearSurface padded={false} style={styles.recoveryGhostRow} pointerEvents="none">
+              <ActivityIndicator size="small" color={n.colors.textMuted} />
               <Text style={styles.recoveryGhostText}>Recovering unsaved session…</Text>
-            </View>
+            </LinearSurface>
           ) : null}
           <View style={styles.headerRow}>
             <TouchableOpacity
@@ -323,7 +324,7 @@ export default function NotesHubScreen() {
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="arrow-back" size={20} color={theme.colors.textPrimary} />
+              <Ionicons name="arrow-back" size={20} color={n.colors.textPrimary} />
             </TouchableOpacity>
             <View style={styles.headerTextWrap}>
               <Text style={styles.kicker}>KNOWLEDGE VAULT</Text>
@@ -337,7 +338,7 @@ export default function NotesHubScreen() {
           {pendingSessions.length > 0 && (
             <View style={styles.pendingSection}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.warning }]}>
+                <Text style={[styles.sectionTitle, { color: n.colors.warning }]}>
                   Unprocessed Recordings ({pendingSessions.length})
                 </Text>
               </View>
@@ -438,7 +439,7 @@ export default function NotesHubScreen() {
               accessibilityRole="button"
               accessibilityLabel="Search all notes"
             >
-              <Ionicons name="search" size={20} color={theme.colors.background} />
+              <Ionicons name="search" size={20} color={n.colors.background} />
               <Text style={styles.actionPrimaryTitle}>Search all notes</Text>
               <Text style={styles.actionPrimarySub}>
                 Find any concept across transcripts and saved topic notes.
@@ -452,7 +453,7 @@ export default function NotesHubScreen() {
               accessibilityRole="button"
               accessibilityLabel="Transcript Vault"
             >
-              <Ionicons name="document-text-outline" size={20} color={theme.colors.primaryLight} />
+              <Ionicons name="document-text-outline" size={20} color={n.colors.accent} />
               <Text style={styles.actionTitle}>Transcript Vault</Text>
               <Text style={styles.actionSub}>
                 Browse lecture notes, raw transcripts, and search your vault.
@@ -471,7 +472,7 @@ export default function NotesHubScreen() {
               accessibilityRole="button"
               accessibilityLabel="Ask Guru"
             >
-              <Ionicons name="medkit-outline" size={20} color={theme.colors.success} />
+              <Ionicons name="medkit-outline" size={20} color={n.colors.success} />
               <Text style={styles.actionTitle}>Ask Guru</Text>
               <Text style={styles.actionSub}>
                 Use your notes as a launch point for grounded medical questions.
@@ -486,7 +487,7 @@ export default function NotesHubScreen() {
               accessibilityRole="button"
               accessibilityLabel={isTranscribingUpload ? 'Transcribing' : 'Upload audio'}
             >
-              <Ionicons name="cloud-upload-outline" size={20} color={theme.colors.warning} />
+              <Ionicons name="cloud-upload-outline" size={20} color={n.colors.warning} />
               <Text style={styles.actionTitle}>
                 {isTranscribingUpload ? 'Transcribing...' : 'Upload Audio'}
               </Text>
@@ -502,7 +503,7 @@ export default function NotesHubScreen() {
               accessibilityRole="button"
               accessibilityLabel="Paste transcript"
             >
-              <Ionicons name="clipboard-outline" size={20} color={theme.colors.accent} />
+              <Ionicons name="clipboard-outline" size={20} color={n.colors.error} />
               <Text style={styles.actionTitle}>Paste Transcript</Text>
               <Text style={styles.actionSub}>
                 Manually enter text to generate formatted medical notes.
@@ -512,7 +513,7 @@ export default function NotesHubScreen() {
 
           {emptyState ? (
             <View style={styles.emptyCard}>
-              <Ionicons name="library-outline" size={28} color={theme.colors.primary} />
+              <Ionicons name="library-outline" size={28} color={n.colors.accent} />
               <Text style={styles.emptyTitle}>No saved notes yet</Text>
               <Text style={styles.emptySub}>
                 Lecture returns and topic note edits will show up here once they are saved.
@@ -575,7 +576,7 @@ export default function NotesHubScreen() {
                       ) : (
                         <View />
                       )}
-                      <Ionicons name="chevron-forward" size={16} color={theme.colors.textMuted} />
+                      <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                     </View>
                   </TouchableOpacity>
                 ))
@@ -628,7 +629,7 @@ export default function NotesHubScreen() {
         onRequestClose={() => setUploadResult(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
+          <LinearSurface padded={false} style={styles.modalSheet}>
             <Text style={styles.modalTitle}>Lecture Transcribed</Text>
 
             {uploadResult && uploadResult.topics.length > 0 ? (
@@ -689,7 +690,7 @@ export default function NotesHubScreen() {
             >
               <Text style={styles.modalDismissText}>Discard</Text>
             </TouchableOpacity>
-          </View>
+          </LinearSurface>
         </View>
       </Modal>
     </SafeAreaView>
@@ -697,7 +698,7 @@ export default function NotesHubScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   content: { padding: 16, paddingBottom: 40, gap: 16 },
   pendingSection: { gap: 10, marginBottom: 8 },
   pendingList: { maxHeight: 220 },
@@ -744,15 +745,12 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    backgroundColor: theme.colors.surfaceAlt,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     marginBottom: 4,
   },
   recoveryGhostText: {
     fontSize: 13,
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontWeight: '600',
   },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 14, marginBottom: 8 },
@@ -892,17 +890,16 @@ const styles = StyleSheet.create({
   // Upload review modal
   modalOverlay: { flex: 1, backgroundColor: '#000000aa', justifyContent: 'flex-end' },
   modalSheet: {
-    backgroundColor: theme.colors.panel,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
     paddingBottom: 36,
     gap: 12,
   },
-  modalTitle: { color: theme.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 4 },
-  modalSummary: { color: theme.colors.textSecondary, fontSize: 14, lineHeight: 21 },
+  modalTitle: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 4 },
+  modalSummary: { color: n.colors.textSecondary, fontSize: 14, lineHeight: 21 },
   modalSectionLabel: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
@@ -910,9 +907,9 @@ const styles = StyleSheet.create({
   },
   noTopicsBlock: { alignItems: 'center', paddingVertical: 24, gap: 8 },
   noTopicsIcon: { fontSize: 36 },
-  noTopicsText: { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center' },
+  noTopicsText: { color: n.colors.textMuted, fontSize: 13, textAlign: 'center' },
   modalSaveBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -920,5 +917,5 @@ const styles = StyleSheet.create({
   },
   modalSaveBtnText: { color: '#fff', fontWeight: '800', fontSize: 15 },
   modalDismissBtn: { alignItems: 'center', paddingVertical: 8 },
-  modalDismissText: { color: theme.colors.textMuted, fontSize: 14 },
+  modalDismissText: { color: n.colors.textMuted, fontSize: 14 },
 });

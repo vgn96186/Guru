@@ -16,7 +16,7 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { DEFAULT_HF_TRANSCRIPTION_MODEL } from '../config/appConfig';
 import { profileRepository } from '../db/repositories';
 import { updateUserProfile } from '../db/queries/progress';
@@ -154,12 +154,12 @@ export default function TranscriptionSettingsPanel({
     <View style={[s.wrapper, embedded && s.wrapperEmbedded]}>
       {!embedded ? (
         <TouchableOpacity style={s.toggleRow} onPress={toggleExpanded} activeOpacity={0.7}>
-          <Ionicons name="settings-outline" size={16} color={theme.colors.textMuted} />
+          <Ionicons name="settings-outline" size={16} color={n.colors.textMuted} />
           <Text style={s.toggleText}>Transcription Settings</Text>
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}
             size={16}
-            color={theme.colors.textMuted}
+            color={n.colors.textMuted}
           />
         </TouchableOpacity>
       ) : null}
@@ -199,7 +199,7 @@ export default function TranscriptionSettingsPanel({
           <TextInput
             style={s.input}
             placeholder="gsk_..."
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={n.colors.textMuted}
             value={groqKey}
             onChangeText={(v) => {
               setGroqKey(v);
@@ -219,7 +219,7 @@ export default function TranscriptionSettingsPanel({
           <TextInput
             style={s.input}
             placeholder="hf_..."
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={n.colors.textMuted}
             value={hfToken}
             onChangeText={(v) => {
               setHfToken(v);
@@ -236,7 +236,7 @@ export default function TranscriptionSettingsPanel({
         <TextInput
           style={[s.input, { marginBottom: 8 }]}
           placeholder={DEFAULT_HF_TRANSCRIPTION_MODEL}
-          placeholderTextColor={theme.colors.textMuted}
+          placeholderTextColor={n.colors.textMuted}
           value={hfModel}
           onChangeText={(v) => {
             setHfModel(v);
@@ -252,7 +252,7 @@ export default function TranscriptionSettingsPanel({
           <TextInput
             style={s.input}
             placeholder="dg_..."
-            placeholderTextColor={theme.colors.textMuted}
+            placeholderTextColor={n.colors.textMuted}
             value={deepgramKey}
             onChangeText={(v) => {
               setDeepgramKey(v);
@@ -287,7 +287,7 @@ function TestButton({
       disabled={testing}
     >
       {testing ? (
-        <ActivityIndicator size="small" color={theme.colors.primary} />
+        <ActivityIndicator size="small" color={n.colors.accent} />
       ) : (
         <Ionicons
           name={
@@ -300,10 +300,10 @@ function TestButton({
           size={18}
           color={
             result === 'ok'
-              ? theme.colors.success
+              ? n.colors.success
               : result === 'fail'
-                ? theme.colors.error
-                : theme.colors.primary
+                ? n.colors.error
+                : n.colors.accent
           }
         />
       )}
@@ -316,10 +316,10 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.md,
+    backgroundColor: n.colors.surface,
+    borderRadius: n.radius.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     overflow: 'hidden',
   },
   wrapperEmbedded: {
@@ -340,7 +340,7 @@ const s = StyleSheet.create({
   },
   toggleText: {
     flex: 1,
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 13,
     fontWeight: '600',
   },
@@ -355,7 +355,7 @@ const s = StyleSheet.create({
     overflow: 'visible',
   },
   label: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -364,7 +364,7 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   hint: {
-    color: theme.colors.textMuted,
+    color: n.colors.textMuted,
     fontSize: 11,
     marginTop: 2,
     marginBottom: 4,
@@ -379,15 +379,15 @@ const s = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.card,
   },
   providerBtnActive: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '22',
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.accent + '22',
   },
-  providerText: { color: theme.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  providerTextActive: { color: theme.colors.primary, fontWeight: '700' },
+  providerText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
+  providerTextActive: { color: n.colors.accent, fontWeight: '700' },
   keyRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -395,11 +395,11 @@ const s = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.sm,
+    backgroundColor: n.colors.card,
+    borderRadius: n.radius.sm,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    color: theme.colors.textPrimary,
+    borderColor: n.colors.border,
+    color: n.colors.textPrimary,
     fontSize: 13,
     paddingHorizontal: 10,
     paddingVertical: 8,
@@ -408,18 +408,18 @@ const s = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: theme.colors.card,
+    backgroundColor: n.colors.card,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   testBtnOk: {
-    borderColor: theme.colors.success + '66',
-    backgroundColor: theme.colors.success + '15',
+    borderColor: n.colors.success + '66',
+    backgroundColor: n.colors.success + '15',
   },
   testBtnFail: {
-    borderColor: theme.colors.error + '66',
-    backgroundColor: theme.colors.error + '15',
+    borderColor: n.colors.error + '66',
+    backgroundColor: n.colors.error + '15',
   },
 });

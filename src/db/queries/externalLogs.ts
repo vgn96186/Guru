@@ -302,6 +302,7 @@ export async function getTodaysExternalStudyMinutes(): Promise<number> {
       `SELECT COALESCE(SUM(duration_minutes), 0) AS total_minutes
        FROM external_app_logs
        WHERE returned_at IS NOT NULL
+         AND transcription_status = 'completed'
          AND returned_at >= ?`,
       [startOfDay.getTime()],
     );
@@ -409,7 +410,7 @@ export async function getSessionsNeedingNoteEnhancement(): Promise<ExternalAppLo
 export async function getTotalExternalStudyMinutes(): Promise<number> {
   const db = getDb();
   const r = await db.getFirstAsync<{ total: number }>(
-    'SELECT COALESCE(SUM(duration_minutes), 0) as total FROM external_app_logs WHERE duration_minutes IS NOT NULL AND duration_minutes > 0',
+    "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM external_app_logs WHERE duration_minutes IS NOT NULL AND duration_minutes > 0 AND transcription_status = 'completed'",
   );
   return r?.total ?? 0;
 }

@@ -82,6 +82,10 @@ import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
 import { navigationRef } from './navigationRef';
+import {
+  TAB_NAVIGATOR_PERFORMANCE_PROPS,
+  TAB_NAVIGATOR_SCREEN_OPTIONS,
+} from './tabNavigatorOptions';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -451,9 +455,10 @@ export default function TabNavigator() {
   return (
     <View style={styles.flex}>
       <Tab.Navigator
+        {...TAB_NAVIGATOR_PERFORMANCE_PROPS}
         screenOptions={({ route }) => ({
           headerShown: false,
-          freezeOnBlur: true,
+          ...TAB_NAVIGATOR_SCREEN_OPTIONS,
           tabBarHideOnKeyboard: true,
           tabBarShowLabel: true,
           tabBarLabelStyle: {

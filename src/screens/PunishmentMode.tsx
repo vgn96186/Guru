@@ -26,7 +26,7 @@ const GUILT_CHECK_INTERVAL = 60 * 1000; // Check every minute
 
 export default function PunishmentMode() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { profile } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
   const [isActive, setIsActive] = useState(true);
   const [minutesIdle, setMinutesIdle] = useState(0);
   const [shameLevel, setShameLevel] = useState(0);

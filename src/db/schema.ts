@@ -383,6 +383,43 @@ CREATE TABLE IF NOT EXISTS lecture_schedule_progress (
   UNIQUE(batch_id, lecture_index)
 )`;
 
+// ── Mind Maps ─────────────────────────────────────────────────────
+
+export const CREATE_MIND_MAPS = `
+CREATE TABLE IF NOT EXISTS mind_maps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  viewport_json TEXT NOT NULL DEFAULT '{"x":0,"y":0,"scale":1}',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`;
+
+export const CREATE_MIND_MAP_NODES = `
+CREATE TABLE IF NOT EXISTS mind_map_nodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  map_id INTEGER NOT NULL REFERENCES mind_maps(id) ON DELETE CASCADE,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  label TEXT NOT NULL,
+  x REAL NOT NULL DEFAULT 0,
+  y REAL NOT NULL DEFAULT 0,
+  color TEXT,
+  is_center INTEGER NOT NULL DEFAULT 0,
+  ai_generated INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+)`;
+
+export const CREATE_MIND_MAP_EDGES = `
+CREATE TABLE IF NOT EXISTS mind_map_edges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  map_id INTEGER NOT NULL REFERENCES mind_maps(id) ON DELETE CASCADE,
+  source_node_id INTEGER NOT NULL REFERENCES mind_map_nodes(id) ON DELETE CASCADE,
+  target_node_id INTEGER NOT NULL REFERENCES mind_map_nodes(id) ON DELETE CASCADE,
+  label TEXT,
+  created_at INTEGER NOT NULL
+)`;
+
 // ── Performance Indexes ───────────────────────────────────────────
 export const DB_INDEXES = [
   // Spaced repetition lookups (HomeScreen agenda)
@@ -426,6 +463,11 @@ export const DB_INDEXES = [
   `CREATE INDEX IF NOT EXISTS idx_qb_review ON question_bank(next_review_at, is_mastered)`,
   `CREATE INDEX IF NOT EXISTS idx_qb_bookmarked ON question_bank(is_bookmarked)`,
   `CREATE UNIQUE INDEX IF NOT EXISTS idx_qb_dedup ON question_bank(question)`,
+  // Mind maps
+  `CREATE INDEX IF NOT EXISTS idx_mind_map_nodes_map ON mind_map_nodes(map_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_mind_map_edges_map ON mind_map_edges(map_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_mind_map_edges_source ON mind_map_edges(source_node_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_mind_map_edges_target ON mind_map_edges(target_node_id)`,
 ];
 
 export const ALL_SCHEMAS = [
@@ -450,4 +492,7 @@ export const ALL_SCHEMAS = [
   CREATE_AI_CACHE_STANDALONE,
   CREATE_QUESTION_BANK,
   CREATE_LECTURE_SCHEDULE_PROGRESS,
+  CREATE_MIND_MAPS,
+  CREATE_MIND_MAP_NODES,
+  CREATE_MIND_MAP_EDGES,
 ];

@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
+  InteractionManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -525,12 +526,16 @@ export default function StudyPlanScreen() {
   const [loadError, setLoadError] = useState<string | null>(null);
   /** Override daily capacity for just this screen session (not persisted). */
   const [capacityOverrideMinutes, setCapacityOverrideMinutes] = useState<number | null>(null);
-  const { profile, setStudyResourceMode } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
+  const setStudyResourceMode = useAppStore((s) => s.setStudyResourceMode);
   const resourceMode = profile?.studyResourceMode ?? 'hybrid';
 
   useFocusEffect(
     useCallback(() => {
-      refreshPlan();
+      const task = InteractionManager.runAfterInteractions(() => {
+        void refreshPlan();
+      });
+      return () => task.cancel();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [planMode, resourceMode, capacityOverrideMinutes]),
   );

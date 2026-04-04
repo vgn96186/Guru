@@ -463,7 +463,10 @@ export default function SessionScreen() {
     // Master Timer
     timerRef.current = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
-      if (!isPausedRef.current && !useSessionStore.getState().isOnBreak) {
+      const state = useSessionStore.getState();
+      const isStudyingState =
+        state.sessionState === 'studying' || state.sessionState === 'topic_done';
+      if (!isPausedRef.current && !state.isOnBreak && isStudyingState) {
         setActiveElapsedSeconds((prev) => prev + 1);
         incrementActiveStudyDuration(1);
       }
@@ -965,7 +968,8 @@ export default function SessionScreen() {
                   <LinearSurface
                     key={i.topic.id}
                     style={[styles.revealTopic, { borderLeftColor: topicColor }]}
-                   padded={false}>
+                    padded={false}
+                  >
                     <LinearSurface style={styles.revealTopicRow} padded={false}>
                       <View style={[styles.revealInitial, { backgroundColor: topicColor + '22' }]}>
                         <Text style={[styles.revealInitialText, { color: topicColor }]}>
@@ -1579,7 +1583,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: 10,
-    
   },
   headerLeft: { flex: 1, minWidth: 0, marginRight: 12 },
   headerRight: { flexDirection: 'row', alignItems: 'center', paddingTop: 4 },
@@ -1635,7 +1638,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 60,
     right: 16,
-    
+
     borderRadius: 12,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -1729,7 +1732,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   revealGuruCard: {
-    
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.lg,
     borderLeftWidth: 3,
@@ -1761,7 +1763,6 @@ const styles = StyleSheet.create({
   },
   revealTopicList: { width: '100%', marginBottom: 20 },
   revealTopic: {
-    
     borderRadius: theme.borderRadius.sm,
     borderLeftWidth: 3,
     marginBottom: 8,
@@ -1862,7 +1863,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   summaryCard: {
-    
     borderRadius: 16,
     padding: 20,
     marginBottom: theme.spacing.xl,
@@ -1898,7 +1898,6 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   doneSecondaryBtn: {
-    
     borderRadius: 16,
     paddingHorizontal: 40,
     paddingVertical: theme.spacing.lg,
@@ -1919,7 +1918,7 @@ const styles = StyleSheet.create({
   warmupScoreCard: {
     alignItems: 'center',
     marginBottom: 16,
-    
+
     borderRadius: theme.borderRadius.lg,
     paddingVertical: 16,
     paddingHorizontal: 32,
@@ -1973,7 +1972,6 @@ const styles = StyleSheet.create({
   },
   retryBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
   manualBtn: {
-    
     borderRadius: 14,
     paddingHorizontal: 40,
     paddingVertical: 14,

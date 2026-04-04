@@ -961,7 +961,57 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_guru_chat_session_memory_thread ON guru_ch
 )`,
     description: 'Track completed lectures per coaching batch (BTR, DBMCI One)',
   },
+  // ── Mind Maps ────────────────────────────────────────────────────────────────
+  {
+    version: 151,
+    sql: `CREATE TABLE IF NOT EXISTS mind_maps (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  viewport_json TEXT NOT NULL DEFAULT '{"x":0,"y":0,"scale":1}',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+)`,
+    description: 'Create mind_maps table for persistent infinite-canvas mind maps',
+  },
+  {
+    version: 152,
+    sql: `CREATE TABLE IF NOT EXISTS mind_map_nodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  map_id INTEGER NOT NULL REFERENCES mind_maps(id) ON DELETE CASCADE,
+  topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL,
+  label TEXT NOT NULL,
+  x REAL NOT NULL DEFAULT 0,
+  y REAL NOT NULL DEFAULT 0,
+  color TEXT,
+  is_center INTEGER NOT NULL DEFAULT 0,
+  ai_generated INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+)`,
+    description: 'Create mind_map_nodes table for nodes on the canvas',
+  },
+  {
+    version: 153,
+    sql: `CREATE TABLE IF NOT EXISTS mind_map_edges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  map_id INTEGER NOT NULL REFERENCES mind_maps(id) ON DELETE CASCADE,
+  source_node_id INTEGER NOT NULL REFERENCES mind_map_nodes(id) ON DELETE CASCADE,
+  target_node_id INTEGER NOT NULL REFERENCES mind_map_nodes(id) ON DELETE CASCADE,
+  label TEXT,
+  created_at INTEGER NOT NULL
+)`,
+    description: 'Create mind_map_edges table for connections between nodes',
+  },
+  {
+    version: 154,
+    sql: `CREATE INDEX IF NOT EXISTS idx_mind_map_nodes_map ON mind_map_nodes(map_id);
+CREATE INDEX IF NOT EXISTS idx_mind_map_edges_map ON mind_map_edges(map_id);
+CREATE INDEX IF NOT EXISTS idx_mind_map_edges_source ON mind_map_edges(source_node_id);
+CREATE INDEX IF NOT EXISTS idx_mind_map_edges_target ON mind_map_edges(target_node_id)`,
+    description: 'Add indexes for mind map lookups',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 150;
+export const LATEST_VERSION = 154;

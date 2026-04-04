@@ -86,7 +86,7 @@ export type MenuStackParamList = {
   StudyPlan: undefined;
   Stats: undefined;
   Flashcards: { topicId?: number } | undefined;
-  MindMap: undefined;
+  MindMap: { topicName?: string; subjectId?: number; mapId?: number } | undefined;
   Settings: undefined;
   DeviceLink: undefined;
   NotesHub: undefined;

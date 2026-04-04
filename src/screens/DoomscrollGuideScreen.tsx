@@ -33,7 +33,8 @@ const TONE_OPTIONS: { tone: HarassmentTone; icon: string; label: string }[] = [
 
 export default function DoomscrollGuideScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { profile, refreshProfile } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [harassmentActive, setHarassmentActive] = useState(false);
   const [selectedTone, setSelectedTone] = useState<HarassmentTone>(
     profile?.harassmentTone ?? 'shame',

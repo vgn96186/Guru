@@ -76,8 +76,11 @@ const WHISPER_MODELS = [
 ];
 
 export default function LocalModelScreen() {
-  const { profile, setUseLocalModel, setLocalModelPath, setUseLocalWhisper, setLocalWhisperPath } =
-    useAppStore();
+  const profile = useAppStore((s) => s.profile);
+  const setUseLocalModel = useAppStore((s) => s.setUseLocalModel);
+  const setLocalModelPath = useAppStore((s) => s.setLocalModelPath);
+  const setUseLocalWhisper = useAppStore((s) => s.setUseLocalWhisper);
+  const setLocalWhisperPath = useAppStore((s) => s.setLocalWhisperPath);
   const localLlmWarning = getLocalLlmRamWarning();
   const localLlmBlocked = !isLocalLlmAllowedOnThisDevice();
 

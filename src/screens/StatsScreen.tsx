@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  InteractionManager,
   View,
   Text,
   StyleSheet,
@@ -30,6 +31,23 @@ import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
 
 export default function StatsScreen() {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
+  if (!ready) {
+    return <LoadingOrb message="Preparing stats..." />;
+  }
+
+  return <StatsScreenContent />;
+}
+
+function StatsScreenContent() {
   const navigation = useNavigation<any>();
   const profile = useAppStore((s) => s.profile);
   const [loading, setLoading] = useState(true);
@@ -58,7 +76,10 @@ export default function StatsScreen() {
 
   // Reload stats every time screen gains focus (not just on mount)
   const loadStatsCb = useCallback(() => {
-    loadStats();
+    const task = InteractionManager.runAfterInteractions(() => {
+      void loadStats();
+    });
+    return () => task.cancel();
   }, []);
   useFocusEffect(loadStatsCb);
 
@@ -184,7 +205,11 @@ export default function StatsScreen() {
           ) : null}
 
           {/* The Big Projection Card */}
-          <LinearSurface padded={false} borderColor={n.colors.borderHighlight} style={styles.projectionCard}>
+          <LinearSurface
+            padded={false}
+            borderColor={n.colors.borderHighlight}
+            style={styles.projectionCard}
+          >
             <View style={styles.projectionRow}>
               <View style={styles.projectionStat}>
                 <Text style={styles.projectionVal}>{stats.coveragePercent}%</Text>
@@ -226,7 +251,10 @@ export default function StatsScreen() {
           </LinearSurface>
 
           {/* Consistency Card utilizing unused getActivityHistory metric */}
-          <LinearSurface padded={false} style={[styles.absoluteCard, { backgroundColor: n.colors.successSurface }]}>
+          <LinearSurface
+            padded={false}
+            style={[styles.absoluteCard, { backgroundColor: n.colors.successSurface }]}
+          >
             <Text style={[styles.absoluteTitle, { color: n.colors.success }]}>
               30-Day Consistency
             </Text>
@@ -237,7 +265,10 @@ export default function StatsScreen() {
           </LinearSurface>
 
           {/* Streak Card */}
-          <LinearSurface padded={false} style={[styles.absoluteCard, { backgroundColor: 'rgba(217,119,6,0.1)' }]}>
+          <LinearSurface
+            padded={false}
+            style={[styles.absoluteCard, { backgroundColor: 'rgba(217,119,6,0.1)' }]}
+          >
             <View style={styles.streakRow}>
               <Text style={styles.streakEmoji}>🔥</Text>
               <View style={{ flex: 1 }}>
@@ -293,9 +324,7 @@ export default function StatsScreen() {
                       style={[
                         styles.weekChangeBadge,
                         {
-                          backgroundColor: isUp
-                            ? n.colors.successSurface
-                            : n.colors.errorSurface,
+                          backgroundColor: isUp ? n.colors.successSurface : n.colors.errorSurface,
                         },
                       ]}
                     >
@@ -393,7 +422,11 @@ export default function StatsScreen() {
 
           {/* Mastered Topics Boost */}
           {stats.masteredCount > 0 && (
-            <LinearSurface padded={false} borderColor="rgba(217,119,6,0.18)" style={styles.masteredCard}>
+            <LinearSurface
+              padded={false}
+              borderColor="rgba(217,119,6,0.18)"
+              style={styles.masteredCard}
+            >
               <Text style={styles.masteredEmoji}>🔥</Text>
               <View style={styles.masteredInfo}>
                 <Text style={styles.masteredTitle}>
@@ -471,11 +504,7 @@ function WeeklySparkline({
           const barH = Math.max(2, Math.round((mins / maxMins) * chartHeight));
           const x = i * (barWidth + gap);
           const isToday = i === 6;
-          const fill = isToday
-            ? n.colors.accent
-            : mins > 0
-              ? n.colors.success
-              : n.colors.border;
+          const fill = isToday ? n.colors.accent : mins > 0 ? n.colors.success : n.colors.border;
           const label = DAY_LETTERS[(todayDow - (6 - i) + 7) % 7];
           return (
             <React.Fragment key={i}>

@@ -37,7 +37,7 @@ const RATINGS = [
 export default function FlashcardsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
   const route = useRoute<RouteProp<MenuStackParamList, 'Flashcards'>>();
-  const { refreshProfile } = useAppStore();
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [cards, setCards] = useState<FlashcardsContent['cards']>([]);
@@ -209,7 +209,11 @@ export default function FlashcardsScreen() {
         <ScreenHeader
           title={currentTopic?.name ?? 'Flashcards'}
           subtitle={currentTopic?.subjectName}
-          rightElement={<Text style={styles.progressText}>{currentIdx + 1}/{queue.length}</Text>}
+          rightElement={
+            <Text style={styles.progressText}>
+              {currentIdx + 1}/{queue.length}
+            </Text>
+          }
         />
 
         <View style={styles.cardArea}>

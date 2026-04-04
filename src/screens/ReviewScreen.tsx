@@ -50,7 +50,8 @@ function getAutoContentType(confidence: number): ContentType {
 
 export default function ReviewScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { profile, refreshProfile } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
+  const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -527,7 +528,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
     borderColor: theme.colors.borderLight,
-    
   },
   chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
   chipDisabled: { opacity: 0.4 },
@@ -547,7 +547,6 @@ const styles = StyleSheet.create({
   cardWrap: { flex: 1 },
 
   card: {
-    
     borderRadius: 20,
     padding: 30,
     justifyContent: 'center',
@@ -637,7 +636,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
-    
   },
   rateLabel: { fontWeight: '800', fontSize: 14, marginBottom: 4 },
   rateDays: { color: theme.colors.textMuted, fontSize: 11 },

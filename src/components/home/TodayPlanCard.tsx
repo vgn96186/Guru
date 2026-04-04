@@ -43,7 +43,9 @@ function tasksToAgenda(tasks: TodayTask[]): DailyAgenda {
 
 export default function TodayPlanCard() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const { profile, todayPlan, setTodayPlan } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
+  const todayPlan = useAppStore((s) => s.todayPlan);
+  const setTodayPlan = useAppStore((s) => s.setTodayPlan);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {

@@ -8,9 +8,10 @@ import {
   markNemesisTopics,
   getHighPriorityUnseenTopics,
 } from '../db/queries/topics';
-import { getCompletedSessionCount } from '../db/queries/sessions';
+import { getCompletedSessionCount, getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTodaysExternalStudyMinutes } from '../db/queries/externalLogs';
 import { getTodaysAgendaWithTimes } from '../services/studyPlanner';
+import { profileRepository } from '../db/repositories';
 
 // Mock the dependencies
 jest.mock('react-native', () => ({
@@ -30,6 +31,9 @@ jest.mock('../db/repositories', () => ({
   dailyLogRepository: {
     getDailyLog: jest.fn(),
   },
+  profileRepository: {
+    getProfile: jest.fn(),
+  },
 }));
 
 jest.mock('../db/queries/topics', () => ({
@@ -41,6 +45,7 @@ jest.mock('../db/queries/topics', () => ({
 
 jest.mock('../db/queries/sessions', () => ({
   getCompletedSessionCount: jest.fn(),
+  getCompletedTopicIdsBetween: jest.fn(),
 }));
 
 jest.mock('../db/queries/externalLogs', () => ({
@@ -52,10 +57,69 @@ jest.mock('../services/studyPlanner', () => ({
   invalidatePlanCache: jest.fn(),
 }));
 
+jest.mock('../services/databaseEvents', () => ({
+  DB_EVENT_KEYS: {
+    PROGRESS_UPDATED: 'PROGRESS_UPDATED',
+    PROFILE_UPDATED: 'PROFILE_UPDATED',
+    LECTURE_SAVED: 'LECTURE_SAVED',
+  },
+  dbEvents: {
+    on: jest.fn(),
+    off: jest.fn(),
+  },
+}));
+
 describe('useHomeDashboardData', () => {
-  const mockWeakTopics = [{ id: '1', title: 'Topic 1', progress: 0.5 }];
-  const mockDueTopics = [{ id: '2', title: 'Topic 2', progress: 0.8 }];
-  const mockTodayTasks = [{ id: '3', title: 'Task 1', startTime: '10:00' }];
+  const mockWeakTopics = [
+    {
+      id: 1,
+      name: 'Topic 1',
+      subjectName: 'Medicine',
+      inicetPriority: 8,
+      progress: {
+        confidence: 1,
+        wrongCount: 0,
+        isNemesis: false,
+        status: 'seen',
+        fsrsDue: null,
+      },
+    },
+  ];
+  const mockDueTopics = [
+    {
+      id: 2,
+      name: 'Topic 2',
+      subjectName: 'Surgery',
+      inicetPriority: 9,
+      progress: {
+        confidence: 2,
+        wrongCount: 0,
+        isNemesis: false,
+        status: 'reviewed',
+        fsrsDue: '2026-04-03T00:00:00.000Z',
+      },
+    },
+  ];
+  const mockTodayTasks = [
+    {
+      topic: {
+        id: 3,
+        name: 'Task 1',
+        subjectName: 'Pathology',
+        inicetPriority: 7,
+        progress: {
+          confidence: 0,
+          wrongCount: 0,
+          isNemesis: false,
+          status: 'unseen',
+          fsrsDue: null,
+        },
+      },
+      type: 'study',
+      duration: 30,
+      timeLabel: '10:00 - 10:30',
+    },
+  ];
   const mockCompletedSessions = 5;
   const mockDailyLog = { totalMinutes: 120 };
   const mockExternalMinutes = 35;
@@ -69,9 +133,11 @@ describe('useHomeDashboardData', () => {
     (getHighPriorityUnseenTopics as jest.Mock).mockResolvedValue([]);
     (getWeakestTopics as jest.Mock).mockResolvedValue(mockWeakTopics);
     (getTopicsDueForReview as jest.Mock).mockResolvedValue(mockDueTopics);
+    (getCompletedTopicIdsBetween as jest.Mock).mockResolvedValue([]);
     (getTodaysAgendaWithTimes as jest.Mock).mockResolvedValue(mockTodayTasks);
     (getCompletedSessionCount as jest.Mock).mockResolvedValue(mockCompletedSessions);
     (dailyLogRepository.getDailyLog as jest.Mock).mockResolvedValue(mockDailyLog);
+    (profileRepository.getProfile as jest.Mock).mockResolvedValue({});
     (getTodaysExternalStudyMinutes as jest.Mock).mockResolvedValue(mockExternalMinutes);
 
     (InteractionManager.runAfterInteractions as jest.Mock).mockImplementation((cb) => {

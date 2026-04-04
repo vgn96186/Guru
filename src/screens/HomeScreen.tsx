@@ -262,11 +262,15 @@ export default function HomeScreen() {
 }
 
 function HomeScreenContent() {
+  const HOME_FOCUS_RELOAD_THROTTLE_MS = 15_000;
   const { width, height } = useWindowDimensions();
   const isTabletLandscape = width >= 900 && width > height;
   const navigation = useNavigation<Nav>();
   const tabsNavigation = navigation.getParent<NavigationProp<TabParamList>>();
-  const { profile, levelInfo, todayPlan, setTodayPlan } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
+  const levelInfo = useAppStore((s) => s.levelInfo);
+  const todayPlan = useAppStore((s) => s.todayPlan);
+  const setTodayPlan = useAppStore((s) => s.setTodayPlan);
 
   const {
     weakTopics,
@@ -283,6 +287,7 @@ function HomeScreenContent() {
   const [sessionResumeValid, setSessionResumeValid] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
   const flameScale = useRef(new Animated.Value(1)).current;
+  const lastHomeFocusReloadAtRef = useRef(0);
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation | null = null;
@@ -307,7 +312,11 @@ function HomeScreenContent() {
   useFocusEffect(
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
-        reloadHomeDashboard({ silent: true });
+        const now = Date.now();
+        if (now - lastHomeFocusReloadAtRef.current > HOME_FOCUS_RELOAD_THROTTLE_MS) {
+          lastHomeFocusReloadAtRef.current = now;
+          void reloadHomeDashboard({ silent: true });
+        }
         // Validate that the Zustand session ID still exists in SQLite
         const { sessionId, sessionState } = useSessionStore.getState();
         if (sessionId && sessionState !== 'session_done') {

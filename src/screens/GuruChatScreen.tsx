@@ -624,7 +624,7 @@ function GuruChatScreenContent() {
   const requestedThreadId = route.params?.threadId;
   const groundingTitle = route.params?.groundingTitle;
   const groundingContext = route.params?.groundingContext;
-  const { profile } = useAppStore();
+  const profile = useAppStore((s) => s.profile);
   const flatListRef = useRef<FlatList<ChatItem>>(null);
 
   const isGeneralChat = !route.params?.topicName || topicName === 'General Medicine';

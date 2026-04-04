@@ -86,7 +86,10 @@ describe('unifiedBackupService', () => {
       const mockWrite = FileSystem.writeAsStringAsync as jest.Mock;
       const mockDelete = FileSystem.deleteAsync as jest.Mock;
 
-      mockGetInfo.mockResolvedValue({ exists: true, size: 1024 });
+      mockGetInfo.mockImplementation((path: string) => {
+        if (path.includes('neet_study.db')) return Promise.resolve({ exists: true, size: 1024 });
+        return Promise.resolve({ exists: false, size: 0 });
+      });
       mockReadDir.mockResolvedValue([]);
       mockMakeDir.mockResolvedValue(undefined);
       mockCopy.mockResolvedValue(undefined);
@@ -428,10 +431,11 @@ describe('unifiedBackupService', () => {
       const { unzip } = require('react-native-zip-archive');
       unzip.mockResolvedValue('/mock/cache/extracted/');
 
+      mockDelete.mockClear();
       await cleanupOldBackups(5);
 
-      // Should delete 5 old backups
-      expect(mockDelete).toHaveBeenCalledTimes(5);
+      // 10 validations (with cleanup) + 5 actual deletions
+      expect(mockDelete).toHaveBeenCalledTimes(15);
     });
   });
 

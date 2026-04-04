@@ -60,7 +60,7 @@ export default React.memo(function SubjectCard({
     onPress();
   }
 
-  const pct = coverage.total > 0 ? Math.round((coverage.seen / coverage.total) * 100) : 0;
+  const pct = coverage.total === 0 ? 0 : Math.round((coverage.seen / coverage.total) * 100);
 
   const progressWidth = useSharedValue(pct);
 

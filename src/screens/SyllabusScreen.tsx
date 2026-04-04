@@ -70,6 +70,7 @@ const SORT_OPTIONS: Array<{ key: SubjectSortMode; label: string }> = [
 
 const EMPTY_COVERAGE = { total: 0, seen: 0 };
 const EMPTY_METRICS: SubjectMetrics = { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
+const SYLLABUS_FOCUS_RELOAD_THROTTLE_MS = 15_000;
 
 /** Premium skeleton matching the split SubjectCard layout */
 function SyllabusSkeleton() {
@@ -273,6 +274,8 @@ function SyllabusScreenContent() {
   const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const isFocusedRef = useRef(isFocused);
+  const lastLoadedAtRef = useRef(0);
+  const lastLoadedSortModeRef = useRef<SubjectSortMode>(sortMode);
   const navLockRef = useRef(false);
   const navUnlockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -353,14 +356,24 @@ function SyllabusScreenContent() {
     setSubjectMetrics(metricMap);
     setPendingSuggestions(suggestions);
     setIsInitialLoad(false);
+    lastLoadedAtRef.current = Date.now();
+    lastLoadedSortModeRef.current = sortMode;
   }, [sortMode]);
 
   useEffect(() => {
     if (isFocused) {
       unlockNavigation();
-      // No InteractionManager needed — the entire component only mounts
-      // after the tab-switch animation completes (deferred by the shell).
-      loadData();
+      const shouldReload =
+        isInitialLoad ||
+        lastLoadedSortModeRef.current !== sortMode ||
+        Date.now() - lastLoadedAtRef.current > SYLLABUS_FOCUS_RELOAD_THROTTLE_MS;
+      if (!shouldReload) {
+        return;
+      }
+      const task = InteractionManager.runAfterInteractions(() => {
+        void loadData();
+      });
+      return () => task.cancel();
     }
   }, [isFocused, sortMode, loadData, unlockNavigation]);
 
@@ -373,7 +386,12 @@ function SyllabusScreenContent() {
   }, []);
 
   useEffect(() => {
-    const onProgressOrLecture = () => void loadData();
+    const onProgressOrLecture = () => {
+      const task = InteractionManager.runAfterInteractions(() => {
+        void loadData();
+      });
+      return task;
+    };
     dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
     return () => {

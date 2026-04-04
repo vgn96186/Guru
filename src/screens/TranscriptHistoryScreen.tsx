@@ -126,30 +126,27 @@ function TranscriptSection({ transcript }: { transcript: string }) {
         style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
         activeOpacity={0.7}
       >
-        <Text style={{ color: '#888', fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+        <Text
+          style={{
+            color: n.colors.textMuted,
+            fontSize: 12,
+            textTransform: 'uppercase',
+            letterSpacing: 1,
+          }}
+        >
           Raw Transcript
         </Text>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
-          color="#888"
+          color={n.colors.textMuted}
           style={{ marginLeft: 6 }}
         />
       </TouchableOpacity>
       {expanded && (
-        <Text
-          style={{
-            color: '#aaa',
-            fontSize: 13,
-            lineHeight: 20,
-            fontFamily: 'Inter_400Regular',
-            backgroundColor: '#0D0D0D',
-            padding: 12,
-            borderRadius: 8,
-          }}
-        >
-          {content}
-        </Text>
+        <LinearSurface padded={false} style={styles.transcriptCard}>
+          <Text style={styles.transcriptText}>{content}</Text>
+        </LinearSurface>
       )}
     </View>
   );
@@ -215,9 +212,9 @@ function AudioPlayer({ uri }: { uri: string }) {
   };
 
   return (
-    <View style={audioStyles.container}>
+    <LinearSurface padded={false} style={audioStyles.container}>
       <TouchableOpacity onPress={handlePlayPause} style={audioStyles.playBtn}>
-        <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color="#fff" />
+        <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color={n.colors.textInverse} />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => void jumpBy(-10000)} style={audioStyles.jumpBtn}>
         <Text style={audioStyles.jumpBtnText}>-10s</Text>
@@ -247,7 +244,7 @@ function AudioPlayer({ uri }: { uri: string }) {
       <TouchableOpacity onPress={() => void jumpBy(10000)} style={audioStyles.jumpBtn}>
         <Text style={audioStyles.jumpBtnText}>+10s</Text>
       </TouchableOpacity>
-    </View>
+    </LinearSurface>
   );
 }
 
@@ -255,11 +252,8 @@ const audioStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1A1A1A',
     padding: 12,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
     marginBottom: 20,
     gap: 12,
   },
@@ -267,7 +261,7 @@ const audioStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -275,14 +269,21 @@ const audioStyles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 10,
-    backgroundColor: '#23233A',
+    backgroundColor: n.colors.surface,
+    borderWidth: 1,
+    borderColor: n.colors.border,
   },
-  jumpBtnText: { color: '#D4D4F7', fontSize: 11, fontWeight: '700' },
+  jumpBtnText: { color: n.colors.textPrimary, fontSize: 11, fontWeight: '700' },
   progressWrap: { flex: 1, gap: 4 },
-  progressBar: { height: 4, backgroundColor: '#333', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#6C63FF' },
+  progressBar: {
+    height: 4,
+    backgroundColor: n.colors.surface,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: n.colors.accent },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  timeText: { color: '#888', fontSize: 10, fontFamily: 'Inter_400Regular' },
+  timeText: { color: n.colors.textMuted, fontSize: 10, fontFamily: 'Inter_400Regular' },
 });
 
 export default function TranscriptHistoryScreen() {
@@ -560,7 +561,6 @@ export default function TranscriptHistoryScreen() {
     const subjectLabel = resolveLectureSubjectLabel(item);
     return (
       <TouchableOpacity
-        style={[styles.noteCard, isSelected && styles.noteCardSelected]}
         onLongPress={() => handleLongPressItem(item.id)}
         delayLongPress={220}
         onPress={() => {
@@ -574,80 +574,85 @@ export default function TranscriptHistoryScreen() {
         }}
         activeOpacity={0.7}
       >
-        {isSelectionMode && (
-          <View style={styles.selectionTickWrap}>
-            <Ionicons
-              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-              size={22}
-              color={isSelected ? '#6C63FF' : '#666'}
-            />
-          </View>
-        )}
-        <View style={styles.noteHeader}>
-          <SubjectChip
-            subject={subjectLabel}
-            color="#fff"
-            backgroundColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
-            borderColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
-            style={styles.subjectChip}
-          />
-          <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
-        </View>
-
-        {item.appName && <Text style={styles.appBadge}>via {item.appName}</Text>}
-
-        <Text style={styles.summaryText} numberOfLines={3}>
-          {getLectureTitle(item)}
-        </Text>
-        <Text style={styles.summaryPreviewText} numberOfLines={3}>
-          {item.summary || extractFirstLine(item.note)}
-        </Text>
-        <View style={styles.statusRow}>
-          {item.recordingPath ? <Text style={styles.statusBadge}>Recording</Text> : null}
-          {item.transcript ? <Text style={styles.statusBadge}>Transcript</Text> : null}
-          {lectureNeedsAiNote(item) ? (
-            <Text style={styles.statusBadgeWarn}>Needs AI Note</Text>
-          ) : null}
-          {lectureNeedsReview(item) ? (
-            <Text style={styles.statusBadgeWarn}>Needs Review</Text>
-          ) : null}
-        </View>
-
-        <View style={styles.noteFooter}>
-          {item.topics.length > 0 && (
-            <TopicPillRow
-              topics={item.topics}
-              wrap
-              maxVisible={3}
-              rowStyle={styles.topicsRow}
-              pillStyle={styles.topicPill}
-              moreBadgeStyle={styles.moreBadge}
-            />
+        <LinearSurface
+          padded={false}
+          style={[styles.noteCard, isSelected && styles.noteCardSelected]}
+        >
+          {isSelectionMode && (
+            <View style={styles.selectionTickWrap}>
+              <Ionicons
+                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                size={22}
+                color={isSelected ? n.colors.accent : n.colors.textMuted}
+              />
+            </View>
           )}
-          <View style={styles.metaRow}>
-            {item.durationMinutes ? (
-              <Text style={styles.metaText}>
-                <Ionicons name="time-outline" size={12} color="#888" />{' '}
-                {formatDuration(item.durationMinutes)}
-              </Text>
-            ) : null}
-            <Text
-              style={[
-                styles.confidenceBadge,
-                {
-                  backgroundColor:
-                    item.confidence === 3
-                      ? '#4CAF50'
-                      : item.confidence === 2
-                        ? '#FF9800'
-                        : '#F44336',
-                },
-              ]}
-            >
-              {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
-            </Text>
+          <View style={styles.noteHeader}>
+            <SubjectChip
+              subject={subjectLabel}
+              color="#fff"
+              backgroundColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+              borderColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+              style={styles.subjectChip}
+            />
+            <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
           </View>
-        </View>
+
+          {item.appName && <Text style={styles.appBadge}>via {item.appName}</Text>}
+
+          <Text style={styles.summaryText} numberOfLines={3}>
+            {getLectureTitle(item)}
+          </Text>
+          <Text style={styles.summaryPreviewText} numberOfLines={3}>
+            {item.summary || extractFirstLine(item.note)}
+          </Text>
+          <View style={styles.statusRow}>
+            {item.recordingPath ? <Text style={styles.statusBadge}>Recording</Text> : null}
+            {item.transcript ? <Text style={styles.statusBadge}>Transcript</Text> : null}
+            {lectureNeedsAiNote(item) ? (
+              <Text style={styles.statusBadgeWarn}>Needs AI Note</Text>
+            ) : null}
+            {lectureNeedsReview(item) ? (
+              <Text style={styles.statusBadgeWarn}>Needs Review</Text>
+            ) : null}
+          </View>
+
+          <View style={styles.noteFooter}>
+            {item.topics.length > 0 && (
+              <TopicPillRow
+                topics={item.topics}
+                wrap
+                maxVisible={3}
+                rowStyle={styles.topicsRow}
+                pillStyle={styles.topicPill}
+                moreBadgeStyle={styles.moreBadge}
+              />
+            )}
+            <View style={styles.metaRow}>
+              {item.durationMinutes ? (
+                <Text style={styles.metaText}>
+                  <Ionicons name="time-outline" size={12} color={n.colors.textMuted} />{' '}
+                  {formatDuration(item.durationMinutes)}
+                </Text>
+              ) : null}
+              <Text
+                style={[
+                  styles.confidenceBadge,
+                  {
+                    backgroundColor:
+                      item.confidence === 3
+                        ? n.colors.success
+                        : item.confidence === 2
+                          ? n.colors.warning
+                          : n.colors.error,
+                  },
+                ]}
+              >
+                {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
+              </Text>
+            </View>
+          </View>
+        </LinearSurface>
       </TouchableOpacity>
     );
   };
@@ -667,24 +672,23 @@ export default function TranscriptHistoryScreen() {
             containerStyle={styles.headerSearchRight}
           />
         }
-      >
-      </ScreenHeader>
+      ></ScreenHeader>
       {isSelectionMode && (
-        <View style={styles.selectionModeBanner}>
+        <LinearSurface padded={false} style={styles.selectionModeBanner}>
           <Text style={styles.selectionModeBannerText}>
             ✓ Selection mode — {selectedIds.length} selected · Long-press to add
           </Text>
           <TouchableOpacity onPress={cancelSelection}>
             <Text style={styles.selectionModeCancelText}>Cancel</Text>
           </TouchableOpacity>
-        </View>
+        </LinearSurface>
       )}
       <TranscriptionSettingsPanel />
 
       {/* Header stats */}
       <View style={styles.statsBar}>
         {isSelectionMode ? (
-          <View style={styles.selectionBar}>
+          <LinearSurface padded={false} style={styles.selectionBar}>
             <Text style={styles.selectionText}>{selectedIds.length} selected</Text>
             <View style={styles.selectionActions}>
               <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
@@ -695,7 +699,7 @@ export default function TranscriptHistoryScreen() {
                 <Text style={styles.selectionDeleteText}>Delete</Text>
               </TouchableOpacity>
             </View>
-          </View>
+          </LinearSurface>
         ) : (
           <Text style={styles.statsText}>
             {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''} shown
@@ -798,7 +802,7 @@ export default function TranscriptHistoryScreen() {
         onRequestClose={() => setSelectedNote(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <LinearSurface padded={false} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle} numberOfLines={2}>
                 {selectedNote ? resolveLectureSubjectLabel(selectedNote) : 'Lecture'} Transcript
@@ -820,9 +824,7 @@ export default function TranscriptHistoryScreen() {
                   accessibilityLabel="Delete transcript"
                 >
                   <Ionicons name="trash-outline" size={18} color={n.colors.error} />
-                  <Text style={[styles.headerActionText, { color: n.colors.error }]}>
-                    Delete
-                  </Text>
+                  <Text style={[styles.headerActionText, { color: n.colors.error }]}>Delete</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerActionBtn}
@@ -869,7 +871,7 @@ export default function TranscriptHistoryScreen() {
               </View>
 
               {showRenameEditor && (
-                <View style={styles.renameCard}>
+                <LinearSurface padded={false} style={styles.renameCard}>
                   <Text style={styles.renameLabel}>Rename transcript</Text>
                   <TextInput
                     style={styles.renameInput}
@@ -890,7 +892,7 @@ export default function TranscriptHistoryScreen() {
                       <Text style={styles.renameSaveText}>Save</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </LinearSurface>
               )}
 
               {/* Topics */}
@@ -1023,7 +1025,7 @@ export default function TranscriptHistoryScreen() {
                 </View>
               )}
             </ScrollView>
-          </View>
+          </LinearSurface>
         </View>
       </Modal>
 
@@ -1034,7 +1036,7 @@ export default function TranscriptHistoryScreen() {
         onRequestClose={() => setReaderContent(null)}
       >
         <View style={styles.readerContainer}>
-          <View style={styles.readerHeader}>
+          <LinearSurface padded={false} style={styles.readerHeader}>
             <TouchableOpacity onPress={() => setReaderContent(null)} style={styles.readerCloseBtn}>
               <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
             </TouchableOpacity>
@@ -1052,7 +1054,7 @@ export default function TranscriptHistoryScreen() {
             >
               <Ionicons name="copy-outline" size={20} color={n.colors.textMuted} />
             </TouchableOpacity>
-          </View>
+          </LinearSurface>
           <ScrollView
             style={styles.readerScroll}
             contentContainerStyle={styles.readerScrollContent}
@@ -1067,7 +1069,7 @@ export default function TranscriptHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: n.colors.background },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1091,17 +1093,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
   },
-  statsText: { color: '#888', fontSize: 13 },
+  statsText: { color: n.colors.textMuted, fontSize: 13 },
   selectionBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  selectionText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  selectionText: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '700' },
   selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   selectionCancelBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-  selectionCancelText: { color: '#999', fontSize: 13, fontWeight: '600' },
+  selectionCancelText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '600' },
   selectionDeleteBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1111,7 +1115,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
-  selectionDeleteText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  selectionDeleteText: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '700' },
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
   sortBar: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 8, gap: 8 },
   sortBtn: {
@@ -1140,26 +1144,25 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#2E314B',
-    backgroundColor: '#181A27',
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.surface,
   },
   filterChipActive: {
     borderColor: n.colors.accent,
     backgroundColor: n.colors.accent + '22',
   },
-  filterChipText: { color: '#B5B8CF', fontSize: 12, fontWeight: '600' },
+  filterChipText: { color: n.colors.textSecondary, fontSize: 12, fontWeight: '600' },
   filterChipTextActive: { color: n.colors.accent, fontWeight: '700' },
 
   noteCard: {
-    backgroundColor: '#1E1E1E',
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
   },
   noteCardSelected: {
     borderWidth: 1,
-    borderColor: '#6C63FF',
-    backgroundColor: '#232038',
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.primaryTintSoft,
   },
   selectionTickWrap: {
     position: 'absolute',
@@ -1182,7 +1185,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   dateText: {
-    color: '#888',
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 16,
     flexShrink: 1,
@@ -1190,13 +1193,18 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     minWidth: 72,
   },
-  appBadge: { color: '#666', fontSize: 11, marginBottom: 6 },
-  summaryText: { color: '#ddd', fontSize: 15, lineHeight: 22, marginBottom: 10 },
-  summaryPreviewText: { color: '#8f8fa8', fontSize: 13, lineHeight: 20, marginBottom: 10 },
+  appBadge: { color: n.colors.textMuted, fontSize: 11, marginBottom: 6 },
+  summaryText: { color: n.colors.textPrimary, fontSize: 15, lineHeight: 22, marginBottom: 10 },
+  summaryPreviewText: {
+    color: n.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 10,
+  },
   statusRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   statusBadge: {
-    backgroundColor: '#263145',
-    color: '#C7D4F5',
+    backgroundColor: n.colors.surface,
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
@@ -1206,8 +1214,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   statusBadgeWarn: {
-    backgroundColor: '#453118',
-    color: '#FFD18A',
+    backgroundColor: `${n.colors.warning}18`,
+    color: n.colors.warning,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '700',
@@ -1219,8 +1227,8 @@ const styles = StyleSheet.create({
   noteFooter: {},
   topicsRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
   topicPill: {
-    backgroundColor: '#333',
-    color: '#aaa',
+    backgroundColor: n.colors.surface,
+    color: n.colors.textSecondary,
     fontSize: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -1229,9 +1237,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     overflow: 'hidden',
   },
-  moreBadge: { color: '#666', fontSize: 11, marginLeft: 4, alignSelf: 'center' },
+  moreBadge: { color: n.colors.textMuted, fontSize: 11, marginLeft: 4, alignSelf: 'center' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  metaText: { color: '#888', fontSize: 12, lineHeight: 18 },
+  metaText: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
   confidenceBadge: {
     fontSize: 12,
     lineHeight: 18,
@@ -1250,8 +1258,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     paddingBottom: 100,
   },
-  emptyTitle: { color: '#fff', fontSize: 18, fontWeight: '600', marginTop: 16 },
-  emptySubtitle: { color: '#888', fontSize: 14, textAlign: 'center', marginTop: 8 },
+  emptyTitle: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '600', marginTop: 16 },
+  emptySubtitle: { color: n.colors.textMuted, fontSize: 14, textAlign: 'center', marginTop: 8 },
 
   // Modal
   modalOverlay: {
@@ -1260,7 +1268,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#1A1A1A',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '90%',
@@ -1272,9 +1279,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    borderBottomColor: n.colors.border,
   },
-  modalTitle: { color: '#fff', fontSize: 18, fontWeight: '600', flex: 1, lineHeight: 24 },
+  modalTitle: {
+    color: n.colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 24,
+  },
   modalHeaderActions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 10 },
   headerActionBtn: {
     flexDirection: 'row',
@@ -1286,31 +1299,33 @@ const styles = StyleSheet.create({
   headerActionText: { color: '#A09CF7', fontSize: 12, fontWeight: '600' },
   modalScroll: { padding: 16, flexGrow: 1 },
   modalMeta: { marginBottom: 16 },
-  customTitleText: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  customTitleText: {
+    color: n.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
   modalMetaText: { color: n.colors.textSecondary, fontSize: 13 },
   renameCard: {
-    backgroundColor: '#222',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
     padding: 12,
     marginBottom: 16,
   },
   renameLabel: {
-    color: '#bbb',
+    color: n.colors.textSecondary,
     fontSize: 12,
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
   renameInput: {
-    backgroundColor: '#111',
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: '#3A3A3A',
+    borderColor: n.colors.border,
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 15,
   },
   renameActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
@@ -1368,8 +1383,8 @@ const styles = StyleSheet.create({
   modalText: { color: '#ddd', fontSize: 15, lineHeight: 22 },
   topicsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   topicPillLarge: {
-    backgroundColor: '#333',
-    color: '#fff',
+    backgroundColor: n.colors.surface,
+    color: n.colors.textPrimary,
     fontSize: 13,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1379,12 +1394,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   transcriptText: {
-    color: '#aaa',
+    color: n.colors.textSecondary,
     fontSize: 14,
     lineHeight: 22,
     fontFamily: 'Inter_400Regular',
-    backgroundColor: '#0D0D0D',
     padding: 12,
+    borderRadius: 8,
+  },
+  transcriptCard: {
     borderRadius: 8,
   },
   selectionModeBanner: {
@@ -1410,18 +1427,23 @@ const styles = StyleSheet.create({
     backgroundColor: n.colors.accent + '18',
   },
   readerOpenText: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
-  readerContainer: { flex: 1, backgroundColor: '#0A0A0A' },
+  readerContainer: { flex: 1, backgroundColor: n.colors.background },
   readerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#222',
-    backgroundColor: '#111',
+    borderBottomColor: n.colors.border,
   },
   readerCloseBtn: { padding: 6, marginRight: 8 },
-  readerHeaderTitle: { flex: 1, color: '#fff', fontSize: 16, fontWeight: '700', lineHeight: 22 },
+  readerHeaderTitle: {
+    flex: 1,
+    color: n.colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
   readerCopyBtn: { padding: 8 },
   readerScroll: { flex: 1 },
   readerScrollContent: { padding: 20, paddingBottom: 60 },

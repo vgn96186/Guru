@@ -62,6 +62,9 @@ const styles = StyleSheet.create({
   centered: {
     textAlign: 'center',
   },
+  truncated: {
+    flexShrink: 1,
+  },
 });
 
 export default function LinearText({
@@ -85,6 +88,7 @@ export default function LinearText({
         variantStyles[variant],
         toneStyles[tone],
         centered && styles.centered,
+        truncate && styles.truncated,
         style,
       ]}
     />

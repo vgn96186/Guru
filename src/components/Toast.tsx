@@ -52,11 +52,34 @@ export function showToast(
   }
 }
 
-const COLORS: Record<ToastType, string> = {
-  info: n.colors.accent,
-  success: n.colors.success,
-  error: n.colors.error,
-  warning: n.colors.warning,
+const TOAST_STYLES: Record<
+  ToastType,
+  { borderColor: string; backgroundColor: string; textColor: string; hintColor: string }
+> = {
+  info: {
+    borderColor: `${n.colors.accent}66`,
+    backgroundColor: `${n.colors.accent}1A`,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+  },
+  success: {
+    borderColor: `${n.colors.success}66`,
+    backgroundColor: `${n.colors.success}1A`,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+  },
+  error: {
+    borderColor: `${n.colors.error}66`,
+    backgroundColor: `${n.colors.error}1A`,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+  },
+  warning: {
+    borderColor: `${n.colors.warning}66`,
+    backgroundColor: `${n.colors.warning}1A`,
+    textColor: n.colors.textPrimary,
+    hintColor: n.colors.textSecondary,
+  },
 };
 
 const WIDTH = Dimensions.get('window').width - 32;
@@ -65,6 +88,7 @@ const ToastItem = React.memo(
   ({ payload, onDone }: { payload: ToastPayload; onDone: () => void }) => {
     const opacity = useRef(new Animated.Value(0)).current;
     const translateY = useRef(new Animated.Value(-20)).current;
+    const palette = TOAST_STYLES[payload.type];
 
     useEffect(() => {
       if (payload.type === 'error') {
@@ -95,7 +119,12 @@ const ToastItem = React.memo(
       <Animated.View
         style={[
           styles.toast,
-          { backgroundColor: COLORS[payload.type], opacity, transform: [{ translateY }] },
+          {
+            backgroundColor: palette.backgroundColor,
+            borderColor: palette.borderColor,
+            opacity,
+            transform: [{ translateY }],
+          },
         ]}
       >
         <TouchableOpacity
@@ -109,10 +138,12 @@ const ToastItem = React.memo(
           accessibilityRole={payload.onPress ? 'button' : 'alert'}
           accessibilityHint={payload.onPress ? 'Double tap to act' : undefined}
         >
-          <Text style={styles.text} numberOfLines={3}>
+          <Text style={[styles.text, { color: palette.textColor }]} numberOfLines={3}>
             {payload.message}
           </Text>
-          {payload.onPress && <Text style={styles.tapHint}>Tap to act</Text>}
+          {payload.onPress && (
+            <Text style={[styles.tapHint, { color: palette.hintColor }]}>Tap to act</Text>
+          )}
         </TouchableOpacity>
       </Animated.View>
     );
@@ -163,23 +194,18 @@ const styles = StyleSheet.create({
     width: WIDTH,
     borderRadius: 12,
     marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 8,
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   inner: {
     padding: 14,
   },
   text: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
   },
   tapHint: {
-    color: 'rgba(255,255,255,0.75)',
     fontSize: 12,
     marginTop: 4,
   },

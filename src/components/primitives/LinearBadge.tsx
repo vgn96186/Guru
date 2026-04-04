@@ -10,7 +10,12 @@ interface LinearBadgeProps extends ViewProps {
   variant?: LinearBadgeVariant;
 }
 
-export default function LinearBadge({ label, variant = 'default', style, ...props }: LinearBadgeProps) {
+export default function LinearBadge({
+  label,
+  variant = 'default',
+  style,
+  ...props
+}: LinearBadgeProps) {
   return (
     <View style={[styles.base, variantStyles[variant], style]} {...props}>
       <LinearText variant="badge" style={[styles.text, textStyles[variant]]}>
@@ -37,24 +42,24 @@ const styles = StyleSheet.create({
 
 const variantStyles = StyleSheet.create({
   default: {
-    backgroundColor: linearTheme.colors.surfaceHover,
+    backgroundColor: linearTheme.colors.surface,
     borderColor: linearTheme.colors.border,
   },
   accent: {
-    backgroundColor: `${linearTheme.colors.accent}20`,
-    borderColor: `${linearTheme.colors.accent}40`,
+    backgroundColor: `${linearTheme.colors.accent}16`,
+    borderColor: `${linearTheme.colors.accent}52`,
   },
   success: {
-    backgroundColor: `${linearTheme.colors.success}20`,
-    borderColor: `${linearTheme.colors.success}40`,
+    backgroundColor: `${linearTheme.colors.success}16`,
+    borderColor: `${linearTheme.colors.success}52`,
   },
   warning: {
-    backgroundColor: `${linearTheme.colors.warning}20`,
-    borderColor: `${linearTheme.colors.warning}40`,
+    backgroundColor: `${linearTheme.colors.warning}16`,
+    borderColor: `${linearTheme.colors.warning}52`,
   },
   error: {
-    backgroundColor: `${linearTheme.colors.error}20`,
-    borderColor: `${linearTheme.colors.error}40`,
+    backgroundColor: `${linearTheme.colors.error}16`,
+    borderColor: `${linearTheme.colors.error}52`,
   },
 });
 

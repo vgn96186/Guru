@@ -5,9 +5,9 @@ import { linearTheme } from '../../theme/linearTheme';
 
 // Hoisted constants — created once, shared across all instances
 const GRADIENT_COLORS = [
-  'rgba(255,255,255,0.03)',
-  'rgba(255,255,255,0.008)',
-  'rgba(255,255,255,0)',
+  linearTheme.colors.surfaceGradientStart,
+  linearTheme.colors.surfaceGradientMid,
+  linearTheme.colors.surfaceGradientEnd,
 ] as const;
 const GRADIENT_LOCATIONS = [0, 0.4, 1] as const;
 const GRADIENT_START = { x: 0, y: 0 } as const;
@@ -51,6 +51,7 @@ export default function LinearSurface({
         style={StyleSheet.absoluteFill}
       />
       <View pointerEvents="none" style={styles.frostLayer} />
+      <View pointerEvents="none" style={styles.tintLayer} />
       <View pointerEvents="none" style={styles.topEdge} />
       <View style={contentStyle}>{children}</View>
     </View>
@@ -76,11 +77,16 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+    backgroundColor: linearTheme.colors.borderHighlight,
   },
   frostLayer: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.006)',
+    backgroundColor: linearTheme.colors.surfaceInset,
+  },
+  tintLayer: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: linearTheme.colors.surfaceTint,
+    opacity: 0.36,
   },
   content: {
     padding: 0,

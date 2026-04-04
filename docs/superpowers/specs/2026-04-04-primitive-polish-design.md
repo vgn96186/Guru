@@ -20,6 +20,8 @@ This makes screen-by-screen migration slower because the foundation itself is no
 - No navigation or information architecture changes.
 - No API redesign unless a tiny prop addition is required to avoid duplication.
 - No large behavior changes to interactions beyond visual polish and consistency.
+- No new blur libraries, runtime-heavy effects, or extra visual dependencies.
+- No downstream screen touchups except where a target shared component cannot preserve its current contract.
 
 ## Recommended Approach
 
@@ -80,6 +82,7 @@ This is the best balance between visible improvement and regression risk.
 - Normalize surface-related tokens so components stop mixing token-based colors with hardcoded dark fills.
 - Tighten border/highlight/tint values so the system reads as one family.
 - Keep token names stable unless a missing token is clearly necessary.
+- Cap token churn: prefer adjusting existing tokens; add new tokens only for a cross-component need that appears in at least two target components.
 
 ### `LinearSurface`
 
@@ -88,7 +91,7 @@ This is the best balance between visible improvement and regression risk.
   - cleaner frost layer
   - more deliberate top-edge highlight
   - consistent compact/default padding and radius behavior
-- Preserve the current public API if possible.
+- Preserve the current public API.
 
 ### `LinearButton`
 
@@ -117,16 +120,19 @@ This is the best balance between visible improvement and regression risk.
 
 - Replace the hardcoded opaque shell with a primitive-aligned surface treatment.
 - Keep search ergonomics unchanged.
+- Preserve current height, icon sizing, focus behavior, and text input hit area.
 
 #### `ScreenBannerFrame` and `ScreenHeader`
 
 - Remove one-off background recipes where possible.
 - Make header containers and back buttons feel like the same design family as surfaces and buttons.
+- Preserve safe-area behavior, header height, back-button hit target, and current icon sizing.
 
 #### `Toast`
 
 - Replace heavy solid alert blocks with tinted glass feedback surfaces.
 - Preserve severity distinction and readability.
+- Preserve toast timing, placement, touch handling, and semantic mapping of success/warning/error states.
 
 #### `TopicPillRow`, `SubjectCard`, `SubjectSelectionCard`
 
@@ -139,7 +145,7 @@ Follow focused TDD for behavior-sensitive primitive updates.
 
 1. Add or update targeted tests for any primitive behavior change that affects variants, states, or token usage.
 2. Run Jest in single-thread mode for only the affected unit tests first.
-3. Run a targeted TypeScript check if edits change prop types or exported contracts.
+3. If exported contracts change, run the repo’s full typecheck command: `npm run typecheck`.
 4. Avoid broad suite runs until the polish pass is stable.
 
 ## Verification Commands
@@ -147,17 +153,18 @@ Follow focused TDD for behavior-sensitive primitive updates.
 Use existing project conventions and force Jest single-threaded.
 
 ```bash
-npx jest --runInBand src/components/**/*.unit.test.tsx
+npm run test:unit -- --runTestsByPath <touched-test-file>
 npm run typecheck
 ```
 
-If the repo has more focused commands for the touched files, prefer those first.
+Prefer file-scoped runs over broad `src/components/**` Jest sweeps because this repo treats most component UI coverage as low-value compared with focused unit checks plus Detox.
 
 ## Risks
 
 - Shared chrome may have subtle layout dependencies on current padding or border widths.
 - Toast and header updates can expose contrast issues quickly because they appear across many screens.
 - Small primitive API changes can cascade widely; avoid them unless clearly justified.
+- Android render cost can regress if the polish adds wrappers or expensive visual effects; keep the implementation lightweight and gradient-based.
 
 ## Success Criteria
 
@@ -165,3 +172,5 @@ If the repo has more focused commands for the touched files, prefer those first.
 - Shared chrome no longer stands out as old opaque UI against migrated screens.
 - Existing screen layouts remain intact without requiring broad refactors.
 - Targeted tests pass and no primitive contract is broken.
+- No new hardcoded opaque shell colors are introduced in target files when an existing `linearTheme` token can be used.
+- No public primitive API changes are introduced unless explicitly documented in the diff.

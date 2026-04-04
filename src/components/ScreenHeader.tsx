@@ -3,6 +3,7 @@ import { StyleSheet, View, type StyleProp, type TextStyle, type ViewStyle } from
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { usePersistentScreenBanner } from './PersistentScreenBanner';
 import ScreenBannerFrame from './ScreenBannerFrame';
+import { linearTheme as n } from '../theme/linearTheme';
 
 interface ScreenHeaderProps {
   title: string;
@@ -111,9 +112,9 @@ export default function ScreenHeader({
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 16,
+    marginBottom: n.spacing.md,
   },
   spacer: {
-    marginBottom: 16,
+    marginBottom: n.spacing.md,
   },
 });

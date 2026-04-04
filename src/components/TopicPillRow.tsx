@@ -70,12 +70,12 @@ const styles = StyleSheet.create({
   scrollRow: { flexDirection: 'row', gap: 8, flexWrap: 'nowrap', minWidth: 0 },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, minWidth: 0 },
   pill: {
-    backgroundColor: n.colors.surface,
-    borderRadius: 16,
+    backgroundColor: n.colors.card,
+    borderRadius: n.radius.full,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderWidth: 1,
-    borderColor: n.colors.border,
+    borderColor: n.colors.borderHighlight,
     color: n.colors.textPrimary,
     alignSelf: 'flex-start',
     flexShrink: 1,
@@ -84,5 +84,6 @@ const styles = StyleSheet.create({
   moreBadge: {
     alignSelf: 'center',
     paddingHorizontal: 4,
+    color: n.colors.textSecondary,
   },
 });

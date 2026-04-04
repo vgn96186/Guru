@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  StyleSheet,
-  TouchableOpacity,
-  View,
-  type StyleProp,
-  type TextStyle,
-} from 'react-native';
+import { StyleSheet, TouchableOpacity, View, type StyleProp, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { linearTheme as n } from '../theme/linearTheme';
 import AppText from './AppText';
@@ -56,7 +50,11 @@ export default function ScreenBannerFrame({
           <View style={styles.backSpacer} />
         )}
         <View style={styles.copy}>
-          <AppText style={[styles.title, titleStyle]} numberOfLines={titleNumberOfLines} variant="sectionTitle">
+          <AppText
+            style={[styles.title, titleStyle]}
+            numberOfLines={titleNumberOfLines}
+            variant="sectionTitle"
+          >
             {title}
           </AppText>
           {subtitle ? (
@@ -80,7 +78,7 @@ export default function ScreenBannerFrame({
 const styles = StyleSheet.create({
   surface: {
     borderColor: n.colors.borderHighlight,
-    backgroundColor: 'rgba(255,255,255,0.03)',
+    backgroundColor: n.colors.card,
   },
   row: {
     flexDirection: 'row',
@@ -95,9 +93,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: n.colors.surfaceHover,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
+    borderColor: n.colors.borderHighlight,
   },
   backSpacer: {
     width: 54,

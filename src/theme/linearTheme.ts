@@ -2,17 +2,19 @@ export const linearTheme = {
   colors: {
     // Structural
     background: '#000000', // True black for the base
-    surface: '#050505',    // Near-true-black cards
-    surfaceHover: '#0A0A0A',
-    card: '#070707',
-    cardHover: '#0C0C0C',
-    border: 'rgba(255, 255, 255, 0.08)', // The secret to the look
-    borderHighlight: 'rgba(255, 255, 255, 0.12)', // For top edges
+    surface: 'rgba(255, 255, 255, 0.035)',
+    surfaceHover: 'rgba(255, 255, 255, 0.055)',
+    card: 'rgba(255, 255, 255, 0.045)',
+    cardHover: 'rgba(255, 255, 255, 0.07)',
+    border: 'rgba(255, 255, 255, 0.10)',
+    borderHighlight: 'rgba(255, 255, 255, 0.16)',
 
     // Gradients (using opacity steps against the #111111 surface)
-    surfaceGradientStart: 'rgba(255, 255, 255, 0.04)',
-    surfaceGradientMid: 'rgba(255, 255, 255, 0.01)',
+    surfaceGradientStart: 'rgba(255, 255, 255, 0.06)',
+    surfaceGradientMid: 'rgba(255, 255, 255, 0.02)',
     surfaceGradientEnd: 'transparent',
+    surfaceInset: 'rgba(255, 255, 255, 0.018)',
+    surfaceTint: 'rgba(94, 106, 210, 0.08)',
 
     // Text
     textPrimary: '#F2F2F2',
@@ -28,7 +30,7 @@ export const linearTheme = {
     successSurface: 'rgba(63, 185, 80, 0.1)',
     errorSurface: 'rgba(241, 76, 76, 0.1)',
     borderLight: 'rgba(255, 255, 255, 0.15)',
-    primaryTintSoft: 'rgba(94, 106, 210, 0.1)',
+    primaryTintSoft: 'rgba(94, 106, 210, 0.12)',
   },
 
   spacing: {

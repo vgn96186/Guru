@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { getAllSubjects } from '../db/queries/topics';
 import type { Subject } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearSurface from './primitives/LinearSurface';
 
 interface Props {
   detectedSubjectName?: string | null;
@@ -36,7 +37,7 @@ export default function SubjectSelectionCard({
   }, []);
 
   return (
-    <View style={styles.card}>
+    <LinearSurface padded={false} borderColor={`${n.colors.warning}55`} style={styles.card}>
       <Text style={styles.title}>Subject required</Text>
       <Text style={styles.body}>
         Choose the lecture subject before saving so topics get filed correctly.
@@ -70,7 +71,7 @@ export default function SubjectSelectionCard({
           })}
         </View>
       )}
-    </View>
+    </LinearSurface>
   );
 }
 
@@ -78,10 +79,6 @@ const styles = StyleSheet.create({
   card: {
     marginTop: 16,
     padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: n.colors.warning + '66',
-    backgroundColor: 'rgba(217,119,6,0.1)',
     gap: 10,
   },
   title: {
@@ -121,8 +118,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: n.colors.borderLight,
-    backgroundColor: n.colors.surface,
+    borderColor: n.colors.borderHighlight,
+    backgroundColor: n.colors.card,
   },
   chipSelected: {
     borderColor: n.colors.accent,

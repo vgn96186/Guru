@@ -8,23 +8,20 @@ interface LinearDividerProps extends ViewProps {
 
 export default function LinearDivider({ vertical = false, style, ...props }: LinearDividerProps) {
   return (
-    <View
-      style={[styles.base, vertical ? styles.vertical : styles.horizontal, style]}
-      {...props}
-    />
+    <View style={[styles.base, vertical ? styles.vertical : styles.horizontal, style]} {...props} />
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: linearTheme.colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.07)',
   },
   horizontal: {
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     width: '100%',
   },
   vertical: {
-    width: 1,
+    width: StyleSheet.hairlineWidth,
     height: '100%',
   },
 });

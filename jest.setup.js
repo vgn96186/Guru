@@ -47,6 +47,17 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success' },
 }));
 
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const LinearGradient = ({ children, ...props }) =>
+    React.createElement('LinearGradient', props, children);
+  return {
+    __esModule: true,
+    LinearGradient,
+    default: LinearGradient,
+  };
+});
+
 jest.mock('react-native-reanimated', () => {
   try {
     const mock = require('react-native-reanimated/mock');
@@ -56,8 +67,10 @@ jest.mock('react-native-reanimated', () => {
       Easing: {
         ...existingEasing,
         linear: existingEasing.linear ?? ((x) => x),
+        inOut: existingEasing.inOut ?? ((fn) => fn),
         bezier: existingEasing.bezier ?? (() => (x) => x),
       },
+      useAnimatedStyle: mock.useAnimatedStyle ?? (() => ({})),
     };
   } catch {
     const React = require('react');
@@ -69,10 +82,12 @@ jest.mock('react-native-reanimated', () => {
         createAnimatedComponent: (C) => C,
       },
       useSharedValue: (init) => ({ value: init }),
+      useAnimatedStyle: () => ({}),
       useAnimatedProps: () => ({}),
       withTiming: (to) => to,
       Easing: {
         linear: (x) => x,
+        inOut: (fn) => fn,
         bezier: () => (x) => x,
       },
       interpolateColor: () => '#000000',
@@ -103,8 +118,7 @@ jest.mock('react-native', () => {
   const ScrollView = ({ children, ...props }) => React.createElement('ScrollView', props, children);
   const TouchableOpacity = ({ children, ...props }) =>
     React.createElement('TouchableOpacity', props, children);
-  const Pressable = ({ children, ...props }) =>
-    React.createElement('Pressable', props, children);
+  const Pressable = ({ children, ...props }) => React.createElement('Pressable', props, children);
   const TextInput = (props) => React.createElement('TextInput', props);
   const ActivityIndicator = (props) => React.createElement('ActivityIndicator', props);
   const Switch = (props) => React.createElement('Switch', props);

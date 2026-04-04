@@ -95,7 +95,7 @@ export default function BannerSearchBar({
 
   return (
     <Animated.View style={[styles.wrap, animatedStyle, containerStyle]}>
-      <View style={styles.container}>
+      <View style={[styles.container, isOpen && styles.containerOpen]}>
         <TouchableOpacity
           onPress={handleIconPress}
           activeOpacity={0.8}
@@ -148,10 +148,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 18,
     paddingHorizontal: 4,
-    backgroundColor: '#0A0B10',
+    backgroundColor: n.colors.card,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: n.colors.border,
+  },
+  containerOpen: {
+    backgroundColor: n.colors.surfaceHover,
+    borderColor: n.colors.borderHighlight,
   },
   searchIconBtn: {
     width: 28,

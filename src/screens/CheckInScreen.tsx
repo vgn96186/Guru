@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, StatusBar, ScrollView } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Animated, StatusBar, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +15,10 @@ import { requestAllPermissions } from '../services/appPermissions';
 import { linearTheme as n } from '../theme/linearTheme';
 import { MS_PER_DAY } from '../constants/time';
 import { ResponsiveContainer } from '../hooks/useResponsive';
+import LinearBadge from '../components/primitives/LinearBadge';
+import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'CheckIn'>;
 
@@ -130,79 +133,114 @@ export default function CheckInScreen() {
           showsVerticalScrollIndicator={false}
         >
           {step === 'mood' ? (
-            <Animated.View style={[styles.container, { opacity: fadeIn }]}> 
+            <Animated.View style={[styles.container, { opacity: fadeIn }]}>
               <View style={styles.headerRow}>
                 <View style={styles.headerTextWrap}>
-                  <Text style={styles.greeting}>Good {getTimeOfDay()}, {profile?.displayName ?? 'Doctor'}</Text>
-                  <Text style={styles.motivation}>{getMotivationalMessage()}</Text>
+                  <LinearText variant="title" style={styles.greeting}>
+                    Good {getTimeOfDay()}, {profile?.displayName ?? 'Doctor'}
+                  </LinearText>
+                  <LinearText variant="bodySmall" tone="secondary" style={styles.motivation}>
+                    {getMotivationalMessage()}
+                  </LinearText>
                 </View>
                 {(profile?.streakCurrent ?? 0) > 0 && (
-                  <View style={styles.streakPill}>
+                  <LinearBadge
+                    label={`${profile?.streakCurrent ?? 0}d`}
+                    variant="warning"
+                    style={styles.streakPill}
+                  >
                     <Ionicons name="flame-outline" size={13} color={n.colors.warning} />
-                    <Text style={styles.streakText}>{profile?.streakCurrent ?? 0}d</Text>
-                  </View>
+                  </LinearBadge>
                 )}
               </View>
 
               <View style={styles.examStrip}>
-                <View style={styles.examInline}>
+                <LinearSurface padded={false} style={styles.examInline}>
                   <Ionicons name="medkit-outline" size={14} color={n.colors.accent} />
-                  <Text style={styles.examLabel}>INICET</Text>
-                  <Text style={styles.examValue}>{daysToInicet}d</Text>
-                </View>
-                <View style={styles.examInline}>
+                  <LinearText variant="badge" tone="muted" style={styles.examLabel}>
+                    INICET
+                  </LinearText>
+                  <LinearText variant="label" style={styles.examValue}>
+                    {daysToInicet}d
+                  </LinearText>
+                </LinearSurface>
+                <LinearSurface padded={false} style={styles.examInline}>
                   <Ionicons name="pulse-outline" size={14} color={n.colors.warning} />
-                  <Text style={styles.examLabel}>NEET PG</Text>
-                  <Text style={styles.examValue}>{daysToNeet}d</Text>
-                </View>
+                  <LinearText variant="badge" tone="muted" style={styles.examLabel}>
+                    NEET PG
+                  </LinearText>
+                  <LinearText variant="label" style={styles.examValue}>
+                    {daysToNeet}d
+                  </LinearText>
+                </LinearSurface>
               </View>
 
-              <Text style={styles.question}>How are you feeling right now?</Text>
+              <LinearText variant="sectionTitle" style={styles.question}>
+                How are you feeling right now?
+              </LinearText>
 
-              <TouchableOpacity
+              <LinearSurface
                 testID="quick-start-btn"
                 style={[styles.quickStartRow, submitting && styles.disabled]}
-                onPress={handleQuickStart}
-                disabled={submitting}
-                accessibilityRole="button"
-                accessibilityLabel="Quick start with default 30 minute session"
               >
-                <Ionicons name="rocket-outline" size={18} color={n.colors.accent} />
-                <View style={styles.quickTextWrap}>
-                  <Text style={styles.quickTitle}>Quick Start</Text>
-                  <Text style={styles.quickSub}>Skip check-in, start 30 min</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
-              </TouchableOpacity>
+                <LinearButton
+                  label="Quick Start"
+                  variant="glassTinted"
+                  style={styles.quickStartButton}
+                  textStyle={styles.quickTitle}
+                  onPress={handleQuickStart}
+                  disabled={submitting}
+                  accessibilityLabel="Quick start with default 30 minute session"
+                  leftIcon={
+                    <Ionicons name="rocket-outline" size={18} color={n.colors.textPrimary} />
+                  }
+                  rightIcon={
+                    <Ionicons name="chevron-forward" size={18} color={n.colors.textPrimary} />
+                  }
+                />
+                <LinearText variant="caption" tone="secondary" style={styles.quickSub}>
+                  Skip check-in, start 30 min
+                </LinearText>
+              </LinearSurface>
 
-              <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}> 
+              <Animated.View style={[styles.moodGrid, { opacity: fadeOut }]}>
                 {MOODS.map((mood) => {
                   const info = MOOD_LABELS[mood];
                   const isYesterday = mood === yesterdayMood;
                   return (
                     <TouchableOpacity
                       key={mood}
-                      style={[
-                        styles.moodChip,
-                        isYesterday && styles.moodChipYesterday,
-                        selectedMood === mood && styles.moodChipSelected,
-                      ]}
                       onPress={() => handleMoodSelect(mood)}
                       activeOpacity={n.alpha.pressed}
                       accessibilityRole="button"
                       accessibilityLabel={info.label + ' mood'}
                       testID={`mood-${mood}`}
                     >
-                      <Ionicons name={MOOD_ICONS[mood]} size={16} color={n.colors.accent} />
-                      <Text style={styles.moodLabel}>{info.label}</Text>
-                      {isYesterday && <Text style={styles.yesterdayTag}>Yesterday</Text>}
+                      <LinearSurface
+                        padded={false}
+                        style={[
+                          styles.moodChip,
+                          isYesterday && styles.moodChipYesterday,
+                          selectedMood === mood && styles.moodChipSelected,
+                        ]}
+                      >
+                        <Ionicons name={MOOD_ICONS[mood]} size={16} color={n.colors.accent} />
+                        <LinearText variant="label" style={styles.moodLabel}>
+                          {info.label}
+                        </LinearText>
+                        {isYesterday && (
+                          <LinearText variant="badge" tone="accent" style={styles.yesterdayTag}>
+                            Yesterday
+                          </LinearText>
+                        )}
+                      </LinearSurface>
                     </TouchableOpacity>
                   );
                 })}
               </Animated.View>
             </Animated.View>
           ) : (
-            <Animated.View style={[styles.container, { opacity: fadeOut }]}> 
+            <Animated.View style={[styles.container, { opacity: fadeOut }]}>
               <TouchableOpacity
                 onPress={() => {
                   setStep('mood');
@@ -213,11 +251,17 @@ export default function CheckInScreen() {
                 accessibilityLabel="Go back and change mood"
               >
                 <Ionicons name="arrow-back" size={14} color={n.colors.textMuted} />
-                <Text style={styles.backBtnText}>Change Mood</Text>
+                <LinearText variant="bodySmall" tone="muted" style={styles.backBtnText}>
+                  Change Mood
+                </LinearText>
               </TouchableOpacity>
 
-              <Text style={styles.question}>How much time do you have right now?</Text>
-              <Text style={styles.subHeading}>Choose one to build today's plan.</Text>
+              <LinearText variant="sectionTitle" style={styles.question}>
+                How much time do you have right now?
+              </LinearText>
+              <LinearText variant="bodySmall" tone="secondary" style={styles.subHeading}>
+                Choose one to build today&apos;s plan.
+              </LinearText>
 
               <View style={styles.timeList}>
                 <TimeOption
@@ -272,7 +316,6 @@ function TimeOption({
 }) {
   return (
     <TouchableOpacity
-      style={[styles.timeRow, disabled && styles.disabled]}
       onPress={onPress}
       activeOpacity={n.alpha.pressed}
       disabled={disabled}
@@ -280,14 +323,20 @@ function TimeOption({
       accessibilityRole="button"
       accessibilityLabel={`${label} option, ${sub}`}
     >
-      <View style={styles.timeLeading}>
-        <Ionicons name={icon} size={18} color={n.colors.accent} />
-      </View>
-      <View style={styles.timeTextWrap}>
-        <Text style={styles.timeLabel}>{label}</Text>
-        <Text style={styles.timeSub}>{sub}</Text>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
+      <LinearSurface padded={false} style={[styles.timeRow, disabled && styles.disabled]}>
+        <View style={styles.timeLeading}>
+          <Ionicons name={icon} size={18} color={n.colors.accent} />
+        </View>
+        <View style={styles.timeTextWrap}>
+          <LinearText variant="body" style={styles.timeLabel}>
+            {label}
+          </LinearText>
+          <LinearText variant="caption" tone="secondary" style={styles.timeSub}>
+            {sub}
+          </LinearText>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
+      </LinearSurface>
     </TouchableOpacity>
   );
 }
@@ -310,17 +359,7 @@ const styles = StyleSheet.create({
   greeting: { color: n.colors.textPrimary, fontSize: 24, fontWeight: '800' },
   motivation: { color: n.colors.textSecondary, fontSize: 13, marginTop: 6, lineHeight: 18 },
 
-  streakPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: n.colors.warning,
-    backgroundColor: "rgba(217,119,6,0.08)",
-  },
+  streakPill: { paddingLeft: 10, paddingRight: 10 },
   streakText: { color: n.colors.warning, fontSize: 11, fontWeight: '700' },
 
   examStrip: {
@@ -328,17 +367,14 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 12,
     marginBottom: 14,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.border,
   },
   examInline: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 2,
-    paddingVertical: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   examLabel: { color: n.colors.textMuted, fontSize: 11, fontWeight: '700' },
   examValue: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '800', marginLeft: 'auto' },
@@ -347,49 +383,47 @@ const styles = StyleSheet.create({
   subHeading: { color: n.colors.textSecondary, fontSize: 13, marginBottom: 12 },
 
   quickStartRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.borderHighlight,
-    paddingHorizontal: 2,
-    paddingVertical: 10,
+    padding: 12,
     marginBottom: 12,
   },
+  quickStartButton: { width: '100%' },
   quickTextWrap: { flex: 1 },
-  quickTitle: { color: n.colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  quickSub: { color: n.colors.textSecondary, fontSize: 12, marginTop: 1 },
+  quickTitle: { fontSize: 15, fontWeight: '800' },
+  quickSub: { marginTop: 8 },
 
-  moodGrid: { gap: 2, paddingBottom: 6 },
+  moodGrid: { gap: 10, paddingBottom: 6 },
   moodChip: {
     width: '100%',
     minHeight: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.border,
-    paddingHorizontal: 2,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  moodChipYesterday: { borderBottomColor: n.colors.borderHighlight },
+  moodChipYesterday: { borderColor: n.colors.borderHighlight },
   moodChipSelected: {
-    borderBottomColor: n.colors.accent,
+    borderColor: `${n.colors.accent}77`,
+    backgroundColor: n.colors.primaryTintSoft,
   },
-  moodLabel: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '700', flex: 1 },
-  yesterdayTag: { color: n.colors.accent, fontSize: 10, fontWeight: '700' },
+  moodLabel: { flex: 1 },
+  yesterdayTag: {},
 
-  backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginBottom: 12 },
+  backBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
   backBtnText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },
 
-  timeList: { gap: 2 },
+  timeList: { gap: 10 },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: n.colors.border,
-    paddingHorizontal: 2,
-    paddingVertical: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     minHeight: 58,
   },
   timeLeading: {
@@ -402,8 +436,8 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   timeTextWrap: { flex: 1, minWidth: 0 },
-  timeLabel: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '700' },
-  timeSub: { color: n.colors.textSecondary, fontSize: 12, marginTop: 1 },
+  timeLabel: {},
+  timeSub: { marginTop: 1 },
 
   disabled: { opacity: 0.6 },
 });

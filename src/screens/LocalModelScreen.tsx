@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Alert,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, StatusBar, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAppStore } from '../store/useAppStore';
@@ -15,6 +7,10 @@ import ScreenHeader from '../components/ScreenHeader';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { getLocalLlmRamWarning, isLocalLlmAllowedOnThisDevice } from '../services/deviceMemory';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearDivider from '../components/primitives/LinearDivider';
+import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 import {
   deleteLocalModelFile,
   getLocalModelFilePath,
@@ -140,7 +136,7 @@ export default function LocalModelScreen() {
       setExistingWhisperFiles(whisperFound);
     }
     scanForExistingFiles();
-  }, [localModelPath, localWhisperPath]);
+  }, [localModelPath, localWhisperPath, setLocalModelPath, setLocalWhisperPath]);
 
   // Validate that stored paths still point to real files
   useEffect(() => {
@@ -160,9 +156,19 @@ export default function LocalModelScreen() {
         }
       });
     }
-  }, [localModelPath, localWhisperPath]);
+  }, [
+    localModelPath,
+    localWhisperPath,
+    setLocalModelPath,
+    setLocalWhisperPath,
+    setUseLocalModel,
+    setUseLocalWhisper,
+  ]);
 
-  const handleDownload = async (model: any, type: 'llm' | 'whisper') => {
+  const handleDownload = async (
+    model: { id: string; name: string; url: string; desc: string },
+    type: 'llm' | 'whisper',
+  ) => {
     try {
       const isLlm = type === 'llm';
       if (isLlm) {
@@ -207,8 +213,8 @@ export default function LocalModelScreen() {
       } else {
         throw new Error('Download failed');
       }
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Failed to download model');
+    } catch (e: unknown) {
+      Alert.alert('Error', e instanceof Error ? e.message : 'Failed to download model');
     } finally {
       if (type === 'llm') {
         setDownloadingLlm(false);
@@ -270,26 +276,43 @@ export default function LocalModelScreen() {
             containerStyle={styles.screenHeader}
             titleStyle={styles.screenHeaderTitle}
           />
-          <Text style={styles.sectionHeader}>🧠 Study AI (Text Model)</Text>
-          <Text style={styles.desc}>Powers flashcards, summaries, and quizzes offline.</Text>
+          <LinearText variant="title" style={styles.sectionHeader}>
+            Study AI (Text Model)
+          </LinearText>
+          <LinearText variant="body" tone="secondary" style={styles.desc}>
+            Powers flashcards, summaries, and quizzes offline.
+          </LinearText>
           {localLlmWarning ? (
-            <View style={styles.warningCard}>
-              <Text style={styles.warningTitle}>Low-RAM guardrail active</Text>
-              <Text style={styles.warningText}>{localLlmWarning}</Text>
-            </View>
+            <LinearSurface padded={false} style={styles.warningCard}>
+              <LinearText variant="label" tone="warning" style={styles.warningTitle}>
+                Low-RAM guardrail active
+              </LinearText>
+              <LinearText variant="bodySmall" tone="secondary" style={styles.warningText}>
+                {localLlmWarning}
+              </LinearText>
+            </LinearSurface>
           ) : null}
 
           {isLlmDownloaded ? (
-            <View style={styles.card}>
+            <LinearSurface padded={false} style={styles.card}>
               <View style={styles.statusBox}>
-                <Text style={styles.statusText}>✅ Model is downloaded and ready</Text>
-                <Text style={styles.modelName}>{localModelPath.split('/').pop()}</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.toggleBtn,
-                    useLocalModel && styles.toggleBtnActive,
-                    localLlmBlocked && styles.toggleBtnDisabled,
-                  ]}
+                <LinearText variant="label" tone="success" style={styles.statusText}>
+                  Model is downloaded and ready
+                </LinearText>
+                <LinearText variant="sectionTitle" style={styles.modelName}>
+                  {localModelPath.split('/').pop()}
+                </LinearText>
+                <LinearButton
+                  label={
+                    localLlmBlocked
+                      ? 'Needs >= 4 GB RAM'
+                      : useLocalModel
+                        ? 'Local Text AI Enabled'
+                        : 'Enable Local Text AI'
+                  }
+                  variant={useLocalModel && !localLlmBlocked ? 'primary' : 'glass'}
+                  style={[styles.toggleBtn, localLlmBlocked && styles.toggleBtnDisabled]}
+                  textStyle={[localLlmBlocked && styles.toggleBtnTextDisabled]}
                   onPress={() => {
                     if (localLlmBlocked) {
                       Alert.alert(
@@ -300,137 +323,146 @@ export default function LocalModelScreen() {
                     }
                     setUseLocalModel(!useLocalModel);
                   }}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.toggleBtnText,
-                      useLocalModel && styles.toggleBtnTextActive,
-                      localLlmBlocked && styles.toggleBtnTextDisabled,
-                    ]}
-                  >
-                    {localLlmBlocked
-                      ? 'Needs >= 4 GB RAM'
-                      : useLocalModel
-                        ? 'Local Text AI Enabled'
-                        : 'Enable Local Text AI'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete('llm')}>
-                  <Text style={styles.deleteBtnText}>Delete LLM</Text>
-                </TouchableOpacity>
+                />
+                <LinearButton
+                  label="Delete LLM"
+                  variant="ghost"
+                  style={styles.deleteBtn}
+                  textStyle={styles.deleteBtnText}
+                  onPress={() => handleDelete('llm')}
+                />
               </View>
-            </View>
+            </LinearSurface>
           ) : downloadingLlm ? (
-            <View style={styles.card}>
+            <LinearSurface padded={false} style={styles.card}>
               <View style={styles.downloadBox}>
-                <Text style={styles.progressText}>
+                <LinearText variant="bodySmall" style={styles.progressText}>
                   Downloading: {Math.round(progressLlm * 100)}%
-                </Text>
+                </LinearText>
                 <View style={styles.progressBarBg}>
                   <View style={[styles.progressBarFill, { width: `${progressLlm * 100}%` }]} />
                 </View>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => cancelDownload('llm')}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
+                <LinearButton
+                  label="Cancel"
+                  variant="ghost"
+                  style={styles.cancelBtn}
+                  textStyle={styles.cancelBtnText}
+                  onPress={() => cancelDownload('llm')}
+                />
               </View>
-            </View>
+            </LinearSurface>
           ) : (
             RECOMMENDED_MODELS.map((model) => (
-              <View key={model.id} style={[styles.card, { marginBottom: 16 }]}>
-                <Text style={styles.modelName}>{model.name}</Text>
-                <Text style={styles.modelDesc}>{model.desc}</Text>
+              <LinearSurface key={model.id} padded={false} style={[styles.card, styles.modelCard]}>
+                <LinearText variant="sectionTitle" style={styles.modelName}>
+                  {model.name}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.modelDesc}>
+                  {model.desc}
+                </LinearText>
                 {existingLlmFiles.has(model.id) ? (
-                  <TouchableOpacity
-                    style={[styles.downloadBtn, { backgroundColor: '#2196F3' }]}
-                    onPress={() => handleDownload(model, 'llm')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.downloadBtnText}>✅ On Device — Use This</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
+                  <LinearButton
+                    label="On Device - Use This"
+                    variant="glassTinted"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'llm')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.downloadBtnText}>⬇️ Download</Text>
-                  </TouchableOpacity>
+                    leftIcon={<Text style={styles.buttonEmoji}>✅</Text>}
+                  />
+                ) : (
+                  <LinearButton
+                    label="Download"
+                    style={styles.downloadBtn}
+                    variant="primary"
+                    onPress={() => handleDownload(model, 'llm')}
+                    leftIcon={<Text style={styles.buttonEmoji}>⬇️</Text>}
+                  />
                 )}
-              </View>
+              </LinearSurface>
             ))
           )}
 
-          <View style={styles.divider} />
+          <LinearDivider style={styles.divider} />
 
-          <Text style={styles.sectionHeader}>🎙️ Transcriber (Whisper Model)</Text>
-          <Text style={styles.desc}>
+          <LinearText variant="title" style={styles.sectionHeader}>
+            Transcriber (Whisper Model)
+          </LinearText>
+          <LinearText variant="body" tone="secondary" style={styles.desc}>
             Powers offline audio transcription for Hostage Mode automatically. Only
             `whisper.cpp`-compatible files work here; Hugging Face Whisper Turbo is available as a
             cloud provider in Settings.
-          </Text>
+          </LinearText>
 
           {isWhisperDownloaded ? (
-            <View style={styles.card}>
+            <LinearSurface padded={false} style={styles.card}>
               <View style={styles.statusBox}>
-                <Text style={styles.statusText}>✅ Whisper is downloaded</Text>
-                <Text style={styles.modelName}>{localWhisperPath.split('/').pop()}</Text>
-                <TouchableOpacity
-                  style={[styles.toggleBtn, useLocalWhisper && styles.toggleBtnActive]}
+                <LinearText variant="label" tone="success" style={styles.statusText}>
+                  Whisper is downloaded
+                </LinearText>
+                <LinearText variant="sectionTitle" style={styles.modelName}>
+                  {localWhisperPath.split('/').pop()}
+                </LinearText>
+                <LinearButton
+                  label={
+                    useLocalWhisper ? 'Local Transcription Enabled' : 'Enable Local Transcription'
+                  }
+                  variant={useLocalWhisper ? 'primary' : 'glass'}
+                  style={styles.toggleBtn}
                   onPress={() => setUseLocalWhisper(!useLocalWhisper)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[styles.toggleBtnText, useLocalWhisper && styles.toggleBtnTextActive]}
-                  >
-                    {useLocalWhisper ? 'Local Transcription Enabled' : 'Enable Local Transcription'}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete('whisper')}>
-                  <Text style={styles.deleteBtnText}>Delete Whisper</Text>
-                </TouchableOpacity>
+                />
+                <LinearButton
+                  label="Delete Whisper"
+                  variant="ghost"
+                  style={styles.deleteBtn}
+                  textStyle={styles.deleteBtnText}
+                  onPress={() => handleDelete('whisper')}
+                />
               </View>
-            </View>
+            </LinearSurface>
           ) : downloadingWhisper ? (
-            <View style={styles.card}>
+            <LinearSurface padded={false} style={styles.card}>
               <View style={styles.downloadBox}>
-                <Text style={styles.progressText}>
+                <LinearText variant="bodySmall" style={styles.progressText}>
                   Downloading: {Math.round(progressWhisper * 100)}%
-                </Text>
+                </LinearText>
                 <View style={styles.progressBarBg}>
                   <View style={[styles.progressBarFill, { width: `${progressWhisper * 100}%` }]} />
                 </View>
-                <TouchableOpacity
+                <LinearButton
+                  label="Cancel"
+                  variant="ghost"
                   style={styles.cancelBtn}
+                  textStyle={styles.cancelBtnText}
                   onPress={() => cancelDownload('whisper')}
-                >
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
+                />
               </View>
-            </View>
+            </LinearSurface>
           ) : (
             WHISPER_MODELS.map((model) => (
-              <View key={model.id} style={[styles.card, { marginBottom: 16 }]}>
-                <Text style={styles.modelName}>{model.name}</Text>
-                <Text style={styles.modelDesc}>{model.desc}</Text>
+              <LinearSurface key={model.id} padded={false} style={[styles.card, styles.modelCard]}>
+                <LinearText variant="sectionTitle" style={styles.modelName}>
+                  {model.name}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" style={styles.modelDesc}>
+                  {model.desc}
+                </LinearText>
                 {existingWhisperFiles.has(model.id) ? (
-                  <TouchableOpacity
-                    style={[styles.downloadBtn, { backgroundColor: '#2196F3' }]}
-                    onPress={() => handleDownload(model, 'whisper')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.downloadBtnText}>✅ On Device — Use This</Text>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
+                  <LinearButton
+                    label="On Device - Use This"
+                    variant="glassTinted"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'whisper')}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.downloadBtnText}>⬇️ Download</Text>
-                  </TouchableOpacity>
+                    leftIcon={<Text style={styles.buttonEmoji}>✅</Text>}
+                  />
+                ) : (
+                  <LinearButton
+                    label="Download"
+                    style={styles.downloadBtn}
+                    variant="primary"
+                    onPress={() => handleDownload(model, 'whisper')}
+                    leftIcon={<Text style={styles.buttonEmoji}>⬇️</Text>}
+                  />
                 )}
-              </View>
+              </LinearSurface>
             ))
           )}
         </ResponsiveContainer>
@@ -444,57 +476,44 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 60 },
   screenHeader: { marginBottom: 24 },
   screenHeaderTitle: { fontSize: 24, fontWeight: '800' },
-  sectionHeader: { color: '#FFF', fontSize: 22, fontWeight: '900', marginBottom: 8 },
-  divider: { height: 1, backgroundColor: '#2A2A38', marginVertical: 30 },
-  desc: { color: '#AAA', fontSize: 15, lineHeight: 22, marginBottom: 20 },
+  sectionHeader: { marginBottom: 8 },
+  divider: { marginVertical: 30 },
+  desc: { lineHeight: 22, marginBottom: 20 },
   warningCard: {
-    backgroundColor: '#2A1F10',
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#A56D1F',
     marginBottom: 16,
   },
-  warningTitle: { color: '#FFD58A', fontSize: 15, fontWeight: '800', marginBottom: 6 },
-  warningText: { color: '#F6D7A8', fontSize: 13, lineHeight: 19 },
+  warningTitle: { marginBottom: 6 },
+  warningText: { lineHeight: 19 },
   card: {
-    backgroundColor: '#1A1A22',
     borderRadius: 12,
     padding: 20,
-    borderWidth: 1,
-    borderColor: '#333',
   },
-  modelName: { fontSize: 18, fontWeight: '600', color: '#FFF', marginBottom: 6 },
-  modelDesc: { fontSize: 14, color: '#888', marginBottom: 20 },
-  downloadBtn: { backgroundColor: '#4CAF50', padding: 14, borderRadius: 8, alignItems: 'center' },
-  downloadBtnText: { color: '#FFF', fontWeight: '600', fontSize: 16 },
+  modelCard: { marginBottom: 16 },
+  modelName: { marginBottom: 6 },
+  modelDesc: { marginBottom: 20 },
+  downloadBtn: { borderRadius: 10 },
+  buttonEmoji: { fontSize: 14 },
   downloadBox: { marginTop: 10 },
-  progressText: { color: '#FFF', marginBottom: 8, fontSize: 14, fontWeight: '500' },
+  progressText: { marginBottom: 8 },
   progressBarBg: {
     height: 8,
-    backgroundColor: '#333',
+    backgroundColor: n.colors.surface,
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 12,
   },
-  progressBarFill: { height: '100%', backgroundColor: '#4CAF50' },
-  cancelBtn: { padding: 10, alignItems: 'center' },
-  cancelBtnText: { color: '#FF5252', fontWeight: '600' },
+  progressBarFill: { height: '100%', backgroundColor: n.colors.success },
+  cancelBtn: {},
+  cancelBtnText: { color: n.colors.error },
   statusBox: { marginTop: 10 },
-  statusText: { color: '#4CAF50', fontWeight: '600', marginBottom: 20 },
+  statusText: { marginBottom: 20 },
   toggleBtn: {
-    padding: 14,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#555',
-    alignItems: 'center',
     marginBottom: 8,
   },
-  toggleBtnActive: { backgroundColor: '#4CAF50', borderColor: '#4CAF50' },
-  toggleBtnDisabled: { backgroundColor: '#2F2F35', borderColor: '#3A3A3F' },
-  toggleBtnText: { color: '#888', fontWeight: '700', fontSize: 16 },
-  toggleBtnTextActive: { color: '#FFF' },
+  toggleBtnDisabled: { opacity: 0.6 },
   toggleBtnTextDisabled: { color: '#B79C72' },
-  deleteBtn: { padding: 12, alignItems: 'center' },
-  deleteBtnText: { color: '#FF5252', fontWeight: '600', fontSize: 14 },
+  deleteBtn: {},
+  deleteBtnText: { color: n.colors.error },
 });

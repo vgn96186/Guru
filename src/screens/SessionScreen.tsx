@@ -1,4 +1,8 @@
+import LinearBadge from '../components/primitives/LinearBadge';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearDivider from '../components/primitives/LinearDivider';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
@@ -58,6 +62,7 @@ import { useGuruPresence } from '../hooks/useGuruPresence';
 import { useAppStateTransition } from '../hooks/useAppStateTransition';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Session'>;
 type Route = RouteProp<HomeStackParamList, 'Session'>;
@@ -71,13 +76,14 @@ function IconCircle({ name, color, size = 56 }: { name: string; color: string; s
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: color + '22',
+        backgroundColor: n.colors.card,
+        borderWidth: 1,
+        borderColor: `${color}44`,
         alignItems: 'center',
         justifyContent: 'center',
-        ...theme.shadows.glow(color),
       }}
     >
-      <Ionicons name={name as any} size={size * 0.5} color={color} />
+      <Ionicons name={name as keyof typeof Ionicons.glyphMap} size={size * 0.5} color={color} />
     </View>
   );
 }
@@ -168,7 +174,6 @@ export default function SessionScreen() {
   };
 
   // ── Store State (Selective Subscriptions) ──
-  const sessionId = useSessionStore((s) => s.sessionId);
   const sessionState = useSessionStore((s) => s.sessionState);
   const agenda = useSessionStore((s) => s.agenda);
   const currentItemIndex = useSessionStore((s) => s.currentItemIndex);
@@ -178,8 +183,6 @@ export default function SessionScreen() {
   const isLoadingContent = useSessionStore((s) => s.isLoadingContent);
   const completedTopicIds = useSessionStore((s) => s.completedTopicIds);
   const quizResults = useSessionStore((s) => s.quizResults);
-  const startedAt = useSessionStore((s) => s.startedAt);
-  const activeStudyDuration = useSessionStore((s) => s.activeStudyDuration);
   const isOnBreak = useSessionStore((s) => s.isOnBreak);
   const breakCountdown = useSessionStore((s) => s.breakCountdown);
   const isPaused = useSessionStore((s) => s.isPaused);
@@ -210,7 +213,7 @@ export default function SessionScreen() {
   const refreshProfile = useAppStore((s) => s.refreshProfile);
 
   // UI State
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [, setElapsedSeconds] = useState(0);
   const [activeElapsedSeconds, setActiveElapsedSeconds] = useState(0);
   const [aiError, setAiError] = useState<string | null>(null);
   const [contentRetryPending, setContentRetryPending] = useState(false);
@@ -313,9 +316,10 @@ export default function SessionScreen() {
       );
       invalidatePlanCache();
       setSessionState('session_done');
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('[Session] finishSession error:', e);
-      Alert.alert('Session Error', 'Could not save session progress properly: ' + e.message);
+      const message = e instanceof Error ? e.message : 'Unknown session error';
+      Alert.alert('Session Error', 'Could not save session progress properly: ' + message);
       navigation.navigate('Home');
     } finally {
       finishSessionLockRef.current = false;
@@ -407,7 +411,7 @@ export default function SessionScreen() {
           }, 3000);
         }
         return;
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (attempt < PLANNING_AUTO_RETRY_DELAYS_MS.length) {
           const delay = PLANNING_AUTO_RETRY_DELAYS_MS[attempt];
           if (__DEV__) {
@@ -415,13 +419,13 @@ export default function SessionScreen() {
               `[Session] Planning failed (attempt ${attempt + 1}/${
                 PLANNING_AUTO_RETRY_DELAYS_MS.length + 1
               }), retrying in ${delay}ms:`,
-              e?.message,
+              e instanceof Error ? e.message : String(e),
             );
           }
           await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
-        setAiError(e?.message ?? 'Could not plan session');
+        setAiError(e instanceof Error ? e.message : 'Could not plan session');
       }
     }
   }, [
@@ -811,23 +815,25 @@ export default function SessionScreen() {
     );
   }, []);
 
-  const handleSkipToNextTopic = useCallback(() => {
-    nextTopicNoBreak();
-  }, [nextTopicNoBreak]);
-
   // ── Render Path ──
 
   if (aiError && sessionState !== 'session_done') {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.errorContainer}>
           <IconCircle name="alert-circle" color={theme.colors.error} size={56} />
-          <Text style={styles.errorTitle}>AI Unavailable</Text>
-          <View style={styles.errorMsgCard}>
-            <Text style={styles.errorMsg}>{aiError}</Text>
-          </View>
-          <TouchableOpacity
+          <LinearText variant="title" centered style={styles.errorTitle}>
+            AI Unavailable
+          </LinearText>
+          <LinearSurface style={styles.errorMsgCard} padded={false}>
+            <LinearText variant="body" tone="secondary" centered style={styles.errorMsg}>
+              {aiError}
+            </LinearText>
+          </LinearSurface>
+          <LinearButton
+            label="Retry AI"
+            variant="primary"
             style={styles.retryBtn}
             onPress={() => {
               if (contentRetryTimer.current) {
@@ -840,24 +846,22 @@ export default function SessionScreen() {
               if (!agenda) startPlanning();
               else setCurrentContent(null);
             }}
-          >
-            <View style={styles.btnRow}>
-              <Ionicons name="reload" size={16} color={theme.colors.textPrimary} />
-              <Text style={styles.retryBtnText}>Retry AI</Text>
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.manualBtn} onPress={handleContinueWithoutAi}>
-            <View style={styles.btnRow}>
-              <Ionicons name="book-outline" size={16} color={theme.colors.textPrimary} />
-              <Text style={styles.manualBtnText}>
-                {agenda ? 'Continue Without AI' : 'Start Manual Review'}
-              </Text>
-            </View>
-          </TouchableOpacity>
+            leftIcon={<Ionicons name="reload" size={16} color={n.colors.textInverse} />}
+          />
+          <LinearButton
+            label={agenda ? 'Continue Without AI' : 'Start Manual Review'}
+            variant="glass"
+            style={styles.manualBtn}
+            textStyle={styles.manualBtnText}
+            onPress={handleContinueWithoutAi}
+            leftIcon={<Ionicons name="book-outline" size={16} color={n.colors.textPrimary} />}
+          />
           <TouchableOpacity style={styles.leaveBtn} onPress={() => navigation.goBack()}>
             <View style={styles.btnRow}>
               <Ionicons name="arrow-back" size={14} color={theme.colors.textMuted} />
-              <Text style={styles.leaveBtnText}>Leave Session</Text>
+              <LinearText variant="bodySmall" tone="muted" style={styles.leaveBtnText}>
+                Leave Session
+              </LinearText>
             </View>
           </TouchableOpacity>
         </ResponsiveContainer>
@@ -868,10 +872,12 @@ export default function SessionScreen() {
   if (sessionState === 'planning') {
     return (
       <SafeAreaView style={styles.safe} testID="session-planning">
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.planningContainer}>
           <LoadingOrb message="Guru is planning your session..." />
-          <Text style={styles.planningSubtext}>This usually takes a few seconds</Text>
+          <LinearText variant="caption" tone="muted" style={styles.planningSubtext}>
+            This usually takes a few seconds
+          </LinearText>
         </View>
       </SafeAreaView>
     );
@@ -917,7 +923,7 @@ export default function SessionScreen() {
 
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ScrollView
           contentContainerStyle={styles.revealScroll}
           showsVerticalScrollIndicator={false}
@@ -931,16 +937,19 @@ export default function SessionScreen() {
                   <Text style={styles.revealFocus} numberOfLines={2} ellipsizeMode="tail">
                     {title}
                   </Text>
-                  <View
-                    style={[
-                      styles.revealModeChip,
-                      { backgroundColor: modeChip.bg, borderColor: modeChip.border },
-                    ]}
-                  >
-                    <Text style={[styles.revealModeChipText, { color: modeChip.fg }]}>
-                      {modeChip.label}
-                    </Text>
-                  </View>
+                  <LinearBadge
+                    label={modeChip.label}
+                    variant={
+                      modeChip.label === 'DEEP'
+                        ? 'error'
+                        : modeChip.label === 'SPRINT'
+                          ? 'accent'
+                          : modeChip.label === 'GENTLE'
+                            ? 'warning'
+                            : 'default'
+                    }
+                    style={styles.revealModeChip}
+                  />
                 </View>
                 <Text style={styles.revealMeta}>
                   {uniqueTopicCount} topic{uniqueTopicCount !== 1 ? 's' : ''} · {totalCards} card
@@ -1077,7 +1086,7 @@ export default function SessionScreen() {
     const nextItem = agenda?.items[currentItemIndex + 1];
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.topicDoneContainer}>
           <IconCircle name="checkmark-circle" color={theme.colors.success} size={64} />
           <Text style={styles.topicDoneName} numberOfLines={2} ellipsizeMode="tail">
@@ -1120,7 +1129,7 @@ export default function SessionScreen() {
 
   return (
     <SafeAreaView style={styles.safe} testID="session-studying">
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <View style={styles.storyBarContainer}>
           <View style={[styles.storyBarFill, { width: `${timeProgressPercent}%` }]} />
@@ -1129,73 +1138,47 @@ export default function SessionScreen() {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.phaseRow}>
-              <View
-                style={[
-                  styles.phaseBadge,
+              <LinearBadge
+                label={
                   isPaused
-                    ? styles.phaseBadgeWarn
-                    : isOnBreak
-                      ? styles.phaseBadgeAccent
-                      : sessionState === 'studying'
-                        ? null
-                        : styles.phaseBadgeSuccess,
-                ]}
-              >
-                <Ionicons
-                  name={
-                    isPaused
-                      ? 'pause'
-                      : isOnBreak
-                        ? 'cafe-outline'
-                        : sessionState === 'studying'
-                          ? 'book-outline'
-                          : 'checkmark-circle'
-                  }
-                  size={11}
-                  color={
-                    isPaused
-                      ? theme.colors.warning
-                      : isOnBreak
-                        ? theme.colors.accent
-                        : sessionState === 'studying'
-                          ? theme.colors.primary
-                          : theme.colors.success
-                  }
-                />
-                <Text
-                  style={[
-                    styles.phaseBadgeText,
-                    isPaused
-                      ? { color: theme.colors.warning }
-                      : isOnBreak
-                        ? { color: theme.colors.accent }
-                        : sessionState !== 'studying'
-                          ? { color: theme.colors.success }
-                          : null,
-                  ]}
-                >
-                  {isPaused
                     ? 'Paused'
                     : isOnBreak
                       ? 'Break'
                       : sessionState === 'studying'
                         ? 'Studying'
-                        : 'Done'}
-                </Text>
-              </View>
-              <Text style={styles.topicProgress}>
+                        : 'Done'
+                }
+                variant={
+                  isPaused
+                    ? 'warning'
+                    : isOnBreak
+                      ? 'accent'
+                      : sessionState === 'studying'
+                        ? 'default'
+                        : 'success'
+                }
+                style={styles.phaseBadge}
+              />
+              <LinearText variant="meta" tone="secondary" style={styles.topicProgress}>
                 Topic {currentItemIndex + 1}/{agenda?.items.length ?? 0}
-              </Text>
+              </LinearText>
             </View>
-            <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
+            <LinearText
+              variant="sectionTitle"
+              style={styles.topicName}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
               {curItem.topic.name}
-            </Text>
-            <Text style={styles.subjectTag}>{curItem.topic.subjectCode}</Text>
-            <Text style={styles.aiSourceLine}>
+            </LinearText>
+            <LinearText variant="caption" tone="accent" style={styles.subjectTag}>
+              {curItem.topic.subjectCode}
+            </LinearText>
+            <LinearText variant="meta" tone="muted" style={styles.aiSourceLine}>
               {isLoadingContent
                 ? 'AI · fetching card'
                 : formatSessionModelLabel(currentContent?.modelUsed)}
-            </Text>
+            </LinearText>
           </View>
           <View style={styles.headerRight}>
             {isStudying && (
@@ -1208,19 +1191,19 @@ export default function SessionScreen() {
                 setPaused(next);
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }}
-              style={styles.pauseBtn}
+              style={styles.headerIconButton}
               accessibilityRole="button"
               accessibilityLabel={isPaused ? 'Resume session' : 'Pause session'}
             >
-              <Ionicons name={isPaused ? 'play' : 'pause'} size={18} color={theme.colors.primary} />
+              <Ionicons name={isPaused ? 'play' : 'pause'} size={18} color={n.colors.accent} />
             </Pressable>
             <Pressable
               onPress={() => setMenuVisible(true)}
-              style={styles.menuBtn}
+              style={styles.headerIconButton}
               accessibilityRole="button"
               accessibilityLabel="Session menu"
             >
-              <Ionicons name="ellipsis-horizontal" size={20} color={theme.colors.textSecondary} />
+              <Ionicons name="ellipsis-horizontal" size={20} color={n.colors.textSecondary} />
             </Pressable>
           </View>
         </View>
@@ -1233,7 +1216,7 @@ export default function SessionScreen() {
               onPress={() => setMenuVisible(false)}
               activeOpacity={1}
             />
-            <View style={styles.menuDropdown}>
+            <LinearSurface style={styles.menuDropdown} padded={false}>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
@@ -1242,9 +1225,11 @@ export default function SessionScreen() {
                 }}
               >
                 <Text style={styles.menuItemEmoji}>🚩</Text>
-                <Text style={styles.menuItemText}>Mark for Review</Text>
+                <LinearText variant="bodySmall" style={styles.menuItemText}>
+                  Mark for Review
+                </LinearText>
               </TouchableOpacity>
-              <View style={styles.menuDivider} />
+              <LinearDivider style={styles.menuDivider} />
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
@@ -1253,9 +1238,11 @@ export default function SessionScreen() {
                 }}
               >
                 <Text style={styles.menuItemEmoji}>🆘</Text>
-                <Text style={styles.menuItemText}>Downgrade to Sprint</Text>
+                <LinearText variant="bodySmall" style={styles.menuItemText}>
+                  Downgrade to Sprint
+                </LinearText>
               </TouchableOpacity>
-              <View style={styles.menuDivider} />
+              <LinearDivider style={styles.menuDivider} />
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
@@ -1264,17 +1251,21 @@ export default function SessionScreen() {
                 }}
               >
                 <Text style={styles.menuItemEmoji}>🚪</Text>
-                <Text style={[styles.menuItemText, { color: theme.colors.error }]}>
+                <LinearText variant="bodySmall" tone="error" style={styles.menuItemText}>
                   End Session
-                </Text>
+                </LinearText>
               </TouchableOpacity>
-            </View>
+            </LinearSurface>
           </View>
         )}
 
         {currentMessage && isStudying && !showPausedOverlay && (
-          <Animated.View style={[styles.guruToast, { opacity: toastOpacity }]}>
-            <Text style={styles.guruToastText}>{currentMessage}</Text>
+          <Animated.View style={{ opacity: toastOpacity }}>
+            <LinearSurface style={styles.guruToast} padded={false}>
+              <LinearText variant="bodySmall" tone="accent" style={styles.guruToastText}>
+                {currentMessage}
+              </LinearText>
+            </LinearSurface>
           </Animated.View>
         )}
 
@@ -1301,15 +1292,17 @@ export default function SessionScreen() {
                       !isUnlocked && styles.contentTabLocked,
                     ]}
                   >
-                    <Text style={styles.contentTabText}>{CONTENT_TYPE_LABELS[ct]}</Text>
+                    <LinearText variant="chip" style={styles.contentTabText}>
+                      {CONTENT_TYPE_LABELS[ct]}
+                    </LinearText>
                   </TouchableOpacity>
                 );
               })}
             </View>
           </ScrollView>
-          <Text style={styles.cardCountText}>
+          <LinearText variant="meta" tone="muted" style={styles.cardCountText}>
             {currentContentIndex + 1}/{curItem.contentTypes.length}
-          </Text>
+          </LinearText>
         </View>
 
         <View style={styles.contentArea} {...panHandlers}>
@@ -1355,36 +1348,45 @@ export default function SessionScreen() {
               },
             ]}
           >
-            <Text style={styles.xpPopText}>+{showXp} XP</Text>
+            <LinearSurface style={styles.xpPopSurface} padded={false}>
+              <LinearText variant="label" style={styles.xpPopText}>
+                +{showXp} XP
+              </LinearText>
+            </LinearSurface>
           </Animated.View>
         </View>
 
         {showPausedOverlay && (
           <View style={styles.pausedOverlay}>
-            <View style={styles.pausedContent}>
+            <LinearSurface style={styles.pausedContent}>
               <Ionicons
                 name="pause-circle"
                 size={64}
-                color={theme.colors.primary}
+                color={n.colors.accent}
                 style={{ marginBottom: 16 }}
               />
-              <Text style={styles.pausedText}>Study Session Paused</Text>
-              <Text style={styles.pausedSubText}>
+              <LinearText variant="title" centered style={styles.pausedText}>
+                Study Session Paused
+              </LinearText>
+              <LinearText variant="body" tone="secondary" centered style={styles.pausedSubText}>
                 Keep the momentum going, Doctor!{'\n'}Ready to dive back in?
-              </Text>
+              </LinearText>
               <View style={styles.pausedActions}>
-                <TouchableOpacity
-                  style={[styles.resumeOverlayBtn, styles.resumeBtn]}
+                <LinearButton
+                  label="Resume Studying"
+                  variant="primary"
+                  style={styles.resumeOverlayBtn}
                   onPress={() => {
                     isManuallyPausedRef.current = false;
                     setPaused(false);
                   }}
-                >
-                  <Ionicons name="play" size={20} color={theme.colors.textPrimary} />
-                  <Text style={styles.resumeOverlayBtnText}>Resume Studying</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
+                  leftIcon={<Ionicons name="play" size={18} color={n.colors.textInverse} />}
+                />
+                <LinearButton
+                  label="End Session"
+                  variant="glassTinted"
                   style={[styles.resumeOverlayBtn, styles.endBtn]}
+                  textStyle={styles.resumeOverlayBtnText}
                   onPress={() => {
                     Alert.alert(
                       'End Session?',
@@ -1401,12 +1403,10 @@ export default function SessionScreen() {
                       ],
                     );
                   }}
-                >
-                  <Ionicons name="stop" size={20} color={theme.colors.textPrimary} />
-                  <Text style={styles.resumeOverlayBtnText}>End Session</Text>
-                </TouchableOpacity>
+                  leftIcon={<Ionicons name="stop" size={18} color={n.colors.textPrimary} />}
+                />
               </View>
-            </View>
+            </LinearSurface>
           </View>
         )}
         <BrainDumpFab />
@@ -1418,7 +1418,7 @@ export default function SessionScreen() {
 function WarmUpMomentumScreen({
   correctTotal,
   answeredTotal,
-  mood,
+  mood: _mood,
   onMCQBlock,
   onContinue,
   onLecture,
@@ -1441,45 +1441,74 @@ function WarmUpMomentumScreen({
   }, []);
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <Animated.View
         style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}
       >
         <IconCircle name="flash" color={theme.colors.accentAlt} size={64} />
-        <Text style={styles.doneTitle}>Nice work, Doctor.</Text>
+        <LinearText variant="title" centered style={styles.doneTitle}>
+          Nice work, Doctor.
+        </LinearText>
         {answeredTotal > 0 ? (
-          <View style={styles.warmupScoreCard}>
-            <Text style={[styles.warmupScoreNumber, { color: scoreColor }]}>{pct}%</Text>
-            <Text style={styles.warmupScoreFraction}>
+          <LinearSurface style={styles.warmupScoreCard}>
+            <LinearText
+              variant="display"
+              centered
+              style={[styles.warmupScoreNumber, { color: scoreColor }]}
+            >
+              {pct}%
+            </LinearText>
+            <LinearText
+              variant="bodySmall"
+              tone="secondary"
+              centered
+              style={styles.warmupScoreFraction}
+            >
               {correctTotal}/{answeredTotal} correct
-            </Text>
-          </View>
+            </LinearText>
+          </LinearSurface>
         ) : (
-          <Text style={styles.doneStat}>Session complete</Text>
+          <LinearText variant="body" tone="secondary" centered style={styles.doneStat}>
+            Session complete
+          </LinearText>
         )}
-        <Text style={[styles.doneStat, { marginBottom: 24 }]}>What's next?</Text>
-        <TouchableOpacity style={styles.doneBtn} onPress={onLecture}>
-          <View style={styles.btnRow}>
-            <Ionicons name="videocam-outline" size={18} color={theme.colors.textPrimary} />
-            <Text style={styles.doneBtnText}>Watch a lecture</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.doneSecondaryBtn} onPress={onMCQBlock}>
-          <View style={styles.btnRow}>
-            <Ionicons name="list-outline" size={18} color={theme.colors.textPrimary} />
-            <Text style={styles.doneSecondaryBtnText}>50 MCQ Block</Text>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.doneSecondaryBtn} onPress={onContinue}>
-          <View style={styles.btnRow}>
-            <Ionicons name="book-outline" size={18} color={theme.colors.textPrimary} />
-            <Text style={styles.doneSecondaryBtnText}>Continue studying</Text>
-          </View>
-        </TouchableOpacity>
+        <LinearText
+          variant="body"
+          tone="secondary"
+          centered
+          style={[styles.doneStat, { marginBottom: 24 }]}
+        >
+          What&apos;s next?
+        </LinearText>
+        <LinearButton
+          label="Watch a lecture"
+          variant="primary"
+          style={styles.doneBtn}
+          onPress={onLecture}
+          leftIcon={<Ionicons name="videocam-outline" size={18} color={n.colors.textInverse} />}
+        />
+        <LinearButton
+          label="50 MCQ Block"
+          variant="glass"
+          style={styles.doneSecondaryBtn}
+          textStyle={styles.doneSecondaryBtnText}
+          onPress={onMCQBlock}
+          leftIcon={<Ionicons name="list-outline" size={18} color={n.colors.textPrimary} />}
+        />
+        <LinearButton
+          label="Continue studying"
+          variant="glass"
+          style={styles.doneSecondaryBtn}
+          textStyle={styles.doneSecondaryBtnText}
+          onPress={onContinue}
+          leftIcon={<Ionicons name="book-outline" size={18} color={n.colors.textPrimary} />}
+        />
         <TouchableOpacity style={styles.leaveBtn} onPress={onDone}>
           <View style={styles.btnRow}>
             <Ionicons name="hand-left-outline" size={14} color={theme.colors.textMuted} />
-            <Text style={styles.leaveBtnText}>That's enough for now</Text>
+            <LinearText variant="bodySmall" tone="muted" style={styles.leaveBtnText}>
+              That&apos;s enough for now
+            </LinearText>
           </View>
         </TouchableOpacity>
       </Animated.View>
@@ -1505,13 +1534,15 @@ function SessionDoneScreen({
   }, []);
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <Animated.View
         style={[styles.doneContainer, { opacity: fade, transform: [{ translateY: slide }] }]}
         testID="session-done"
       >
         <IconCircle name="trophy" color={theme.colors.accentAlt} size={64} />
-        <Text style={styles.doneTitle}>Session Complete!</Text>
+        <LinearText variant="title" centered style={styles.doneTitle}>
+          Session Complete!
+        </LinearText>
         <LinearSurface style={styles.summaryCard} padded={false}>
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
@@ -1521,8 +1552,12 @@ function SessionDoneScreen({
                 color={theme.colors.textMuted}
                 style={{ marginBottom: 4 }}
               />
-              <Text style={styles.summaryValue}>{completedCount}</Text>
-              <Text style={styles.summaryLabel}>Topics</Text>
+              <LinearText variant="display" centered style={styles.summaryValue}>
+                {completedCount}
+              </LinearText>
+              <LinearText variant="caption" tone="secondary" centered style={styles.summaryLabel}>
+                Topics
+              </LinearText>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
@@ -1532,8 +1567,12 @@ function SessionDoneScreen({
                 color={theme.colors.textMuted}
                 style={{ marginBottom: 4 }}
               />
-              <Text style={styles.summaryValue}>{mins}</Text>
-              <Text style={styles.summaryLabel}>Minutes</Text>
+              <LinearText variant="display" centered style={styles.summaryValue}>
+                {mins}
+              </LinearText>
+              <LinearText variant="caption" tone="secondary" centered style={styles.summaryLabel}>
+                Minutes
+              </LinearText>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryItem}>
@@ -1543,16 +1582,26 @@ function SessionDoneScreen({
                 color={theme.colors.accentAlt}
                 style={{ marginBottom: 4 }}
               />
-              <Text style={[styles.summaryValue, { color: theme.colors.accentAlt }]}>
+              <LinearText
+                variant="display"
+                centered
+                style={[styles.summaryValue, { color: theme.colors.accentAlt }]}
+              >
                 +{xpTotal}
-              </Text>
-              <Text style={styles.summaryLabel}>XP</Text>
+              </LinearText>
+              <LinearText variant="caption" tone="secondary" centered style={styles.summaryLabel}>
+                XP
+              </LinearText>
             </View>
           </View>
         </LinearSurface>
-        <TouchableOpacity style={styles.doneBtn} onPress={onClose} testID="back-to-home-btn">
-          <Text style={styles.doneBtnText}>Back to Home</Text>
-        </TouchableOpacity>
+        <LinearButton
+          label="Back to Home"
+          variant="primary"
+          style={styles.doneBtn}
+          onPress={onClose}
+          testID="back-to-home-btn"
+        />
       </Animated.View>
     </SafeAreaView>
   );
@@ -1587,24 +1636,8 @@ const styles = StyleSheet.create({
   headerLeft: { flex: 1, minWidth: 0, marginRight: 12 },
   headerRight: { flexDirection: 'row', alignItems: 'center', paddingTop: 4 },
   topicProgress: { color: theme.colors.textSecondary, fontSize: 11, marginBottom: 2 },
-  phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  phaseBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: theme.colors.primaryTintSoft,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  phaseBadgeText: {
-    color: theme.colors.primary,
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  phaseBadgeWarn: { backgroundColor: theme.colors.warningTintSoft },
-  phaseBadgeAccent: { backgroundColor: theme.colors.primaryTintSoft },
-  phaseBadgeSuccess: { backgroundColor: theme.colors.successTintSoft },
+  phaseRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
+  phaseBadge: { marginRight: 2 },
   topicName: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18, lineHeight: 24 },
   subjectTag: { color: theme.colors.primary, fontSize: 12, marginTop: 2 },
   aiSourceLine: {
@@ -1614,18 +1647,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     lineHeight: 15,
   },
-  pauseBtn: {
-    backgroundColor: theme.colors.border,
-    borderRadius: 10,
-    marginLeft: 6,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuBtn: {
-    backgroundColor: theme.colors.border,
-    borderRadius: 10,
+  headerIconButton: {
+    backgroundColor: n.colors.card,
+    borderRadius: n.radius.md,
+    borderWidth: 1,
+    borderColor: n.colors.border,
     marginLeft: 6,
     width: 44,
     height: 44,
@@ -1638,17 +1664,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 60,
     right: 16,
-
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     paddingVertical: 4,
     minWidth: 200,
-    elevation: 12,
-    shadowColor: theme.colors.textInverse,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    shadowOpacity: 0.4,
   },
   menuItem: {
     flexDirection: 'row',
@@ -1840,10 +1858,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 16,
     right: theme.spacing.xl,
-    backgroundColor: theme.colors.primary,
-    borderRadius: 20,
+  },
+  xpPopSurface: {
+    borderRadius: n.radius.full,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: 8,
+    borderColor: `${n.colors.accent}55`,
   },
   xpPopText: { color: theme.colors.textPrimary, fontWeight: '900', fontSize: 18 },
   doneContainer: {
@@ -2000,15 +2020,9 @@ const styles = StyleSheet.create({
     top: 130,
     left: theme.spacing.lg,
     right: theme.spacing.lg,
-    backgroundColor: theme.colors.card,
     borderRadius: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: theme.colors.primary,
-    borderWidth: 1,
-    borderColor: theme.colors.primaryTintMedium,
     padding: 12,
     zIndex: 50,
-    elevation: 8,
   },
   guruToastText: {
     color: theme.colors.primaryLight,
@@ -2026,6 +2040,8 @@ const styles = StyleSheet.create({
   pausedContent: {
     alignItems: 'center',
     paddingHorizontal: 32,
+    width: '100%',
+    maxWidth: 420,
   },
   pausedText: {
     color: theme.colors.textPrimary,

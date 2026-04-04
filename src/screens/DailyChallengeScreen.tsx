@@ -22,6 +22,9 @@ import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 import ScreenHeader from '../components/ScreenHeader';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'DailyChallenge'>;
@@ -40,7 +43,6 @@ const XP_PER_CORRECT = 60;
 
 export default function DailyChallengeScreen() {
   const navigation = useNavigation<Nav>();
-  const profile = useAppStore((s) => s.profile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [questions, setQuestions] = useState<ChallengeQuestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function DailyChallengeScreen() {
         useNativeDriver: false,
       }).start();
     }
-  }, [currentIdx, questions.length]);
+  }, [currentIdx, questions.length, progressAnim]);
 
   async function loadQuestions() {
     setLoading(true);
@@ -191,7 +193,9 @@ export default function DailyChallengeScreen() {
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#6C63FF" />
-            <Text style={styles.loadingText}>{loadingMsg}</Text>
+            <LinearText variant="body" tone="secondary" centered style={styles.loadingText}>
+              {loadingMsg}
+            </LinearText>
             {loadingProgress.total > 0 && (
               <View style={styles.loadingProgressContainer}>
                 <View style={styles.loadingProgressBg}>
@@ -223,25 +227,28 @@ export default function DailyChallengeScreen() {
         <ResponsiveContainer>
           <View style={styles.doneContainer}>
             <Text style={styles.doneEmoji}>{pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '📚'}</Text>
-            <Text style={styles.doneGrade}>{grade}</Text>
-            <Text style={styles.doneScore}>
+            <LinearText variant="title" centered style={styles.doneGrade}>
+              {grade}
+            </LinearText>
+            <LinearText variant="body" tone="secondary" centered style={styles.doneScore}>
               {score} / {questions.length} correct
-            </Text>
-            <View style={styles.xpBadge}>
-              <Text style={styles.xpText}>+{totalXp} XP earned</Text>
-            </View>
+            </LinearText>
+            <LinearSurface padded={false} style={styles.xpBadge}>
+              <LinearText variant="sectionTitle" tone="accent" centered style={styles.xpText}>
+                +{totalXp} XP earned
+              </LinearText>
+            </LinearSurface>
             {wrongTopics.length > 0 && (
-              <Text style={styles.doneSub}>
+              <LinearText variant="bodySmall" tone="secondary" centered style={styles.doneSub}>
                 {wrongTopics.length} topic{wrongTopics.length > 1 ? 's' : ''} added to review queue
-              </Text>
+              </LinearText>
             )}
-            <TouchableOpacity
+            <LinearButton
+              label="Back to Home"
+              variant="primary"
               style={styles.doneBtn}
               onPress={() => navigation.goBack()}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.doneBtnText}>Back to Home</Text>
-            </TouchableOpacity>
+            />
           </View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -253,15 +260,15 @@ export default function DailyChallengeScreen() {
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>
+            <LinearText variant="body" tone="secondary" centered style={styles.loadingText}>
               No topics due for review yet.{'\n'}Keep studying to unlock challenges!
-            </Text>
-            <TouchableOpacity
+            </LinearText>
+            <LinearButton
+              label="Go Back"
+              variant="primary"
               style={[styles.doneBtn, { marginTop: 24 }]}
               onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.doneBtnText}>Go Back</Text>
-            </TouchableOpacity>
+            />
           </View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -275,13 +282,15 @@ export default function DailyChallengeScreen() {
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Something went wrong loading the challenge.</Text>
-            <TouchableOpacity
+            <LinearText variant="body" tone="secondary" centered style={styles.loadingText}>
+              Something went wrong loading the challenge.
+            </LinearText>
+            <LinearButton
+              label="Go Back"
+              variant="primary"
               style={[styles.doneBtn, { marginTop: 24 }]}
               onPress={() => navigation.goBack()}
-            >
-              <Text style={styles.doneBtnText}>Go Back</Text>
-            </TouchableOpacity>
+            />
           </View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -296,7 +305,11 @@ export default function DailyChallengeScreen() {
         <ScreenHeader
           title="Daily Challenge"
           subtitle="Five quick questions from your weakest and due topics."
-          rightElement={<Text style={styles.headerScore}>{score}/{currentIdx + 1}</Text>}
+          rightElement={
+            <LinearText variant="label" tone="accent" style={styles.headerScore}>
+              {score}/{currentIdx + 1}
+            </LinearText>
+          }
         />
 
         {/* Progress bar */}
@@ -313,17 +326,21 @@ export default function DailyChallengeScreen() {
             ]}
           />
         </View>
-        <Text style={styles.questionCount}>
+        <LinearText variant="meta" tone="muted" style={styles.questionCount}>
           {currentIdx + 1} of {questions.length}
-        </Text>
+        </LinearText>
 
         {/* Topic label */}
-        <View style={styles.topicBadge}>
-          <Text style={styles.topicText}>{q.topicName}</Text>
-        </View>
+        <LinearSurface padded={false} style={styles.topicBadge}>
+          <LinearText variant="badge" tone="accent" style={styles.topicText}>
+            {q.topicName}
+          </LinearText>
+        </LinearSurface>
 
         {/* Question */}
-        <Text style={styles.questionText}>{q.question}</Text>
+        <LinearText variant="sectionTitle" style={styles.questionText}>
+          {q.question}
+        </LinearText>
 
         {/* Options */}
         <View style={styles.optionsContainer}>
@@ -332,23 +349,31 @@ export default function DailyChallengeScreen() {
             let border = '#2A2A38';
             if (selected !== null) {
               if (idx === q.correctIndex) {
-                bg = '#1A2A1A';
-                border = '#4CAF50';
+                bg = `${n.colors.success}18`;
+                border = n.colors.success;
               } else if (idx === selected) {
-                bg = '#2A0A0A';
-                border = '#F44336';
+                bg = `${n.colors.error}18`;
+                border = n.colors.error;
               }
             }
             return (
               <TouchableOpacity
                 key={idx}
-                style={[styles.option, { backgroundColor: bg, borderColor: border }]}
                 onPress={() => handleSelect(idx)}
                 activeOpacity={0.8}
                 disabled={selected !== null}
               >
-                <Text style={styles.optionLetter}>{String.fromCharCode(65 + idx)}</Text>
-                <Text style={styles.optionText}>{opt}</Text>
+                <LinearSurface
+                  padded={false}
+                  style={[styles.option, { backgroundColor: bg, borderColor: border }]}
+                >
+                  <LinearText variant="label" tone="accent" style={styles.optionLetter}>
+                    {String.fromCharCode(65 + idx)}
+                  </LinearText>
+                  <LinearText variant="bodySmall" style={styles.optionText}>
+                    {opt}
+                  </LinearText>
+                </LinearSurface>
               </TouchableOpacity>
             );
           })}
@@ -363,17 +388,19 @@ export default function DailyChallengeScreen() {
               { opacity: feedbackOpacity },
             ]}
           >
-            <TouchableOpacity onPress={handleNextQuestion} activeOpacity={0.8}>
-              <Text style={styles.feedbackLabel}>
-                {isCorrect ? '✅ Correct!' : '❌ Wrong'}{' '}
-                <Text style={{ color: '#9E9E9E', fontSize: 11, fontWeight: '500' }}>
-                  Tap to continue ➔
-                </Text>
-              </Text>
-              <View style={{ marginTop: 8 }}>
-                <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
-              </View>
-            </TouchableOpacity>
+            <LinearSurface padded={false} style={styles.feedbackCard}>
+              <TouchableOpacity onPress={handleNextQuestion} activeOpacity={0.8}>
+                <LinearText variant="bodySmall" style={styles.feedbackLabel}>
+                  {isCorrect ? '✅ Correct!' : '❌ Wrong'}{' '}
+                  <Text style={{ color: '#9E9E9E', fontSize: 11, fontWeight: '500' }}>
+                    Tap to continue ➔
+                  </Text>
+                </LinearText>
+                <View style={{ marginTop: 8 }}>
+                  <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
+                </View>
+              </TouchableOpacity>
+            </LinearSurface>
           </Animated.View>
         )}
       </ResponsiveContainer>
@@ -382,72 +409,37 @@ export default function DailyChallengeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   loadingContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
-  loadingText: {
-    color: '#9E9E9E',
-    fontSize: 15,
-    marginTop: 16,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  loadingText: { marginTop: 16, lineHeight: 22 },
   loadingProgressContainer: { width: '80%', marginTop: 20 },
-  loadingProgressBg: { height: 6, backgroundColor: '#1A1A24', borderRadius: 3, overflow: 'hidden' },
-  loadingProgressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 3 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
+  loadingProgressBg: {
+    height: 6,
+    backgroundColor: n.colors.surface,
+    borderRadius: 3,
+    overflow: 'hidden',
   },
-  closeBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  closeText: { color: '#555', fontSize: 16 },
-  headerTitle: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  headerScore: {
-    color: '#6C63FF',
-    fontWeight: '700',
-    fontSize: 15,
-    minWidth: 36,
-    textAlign: 'right',
-  },
+  loadingProgressFill: { height: '100%', backgroundColor: n.colors.accent, borderRadius: 3 },
+  headerScore: { minWidth: 36, textAlign: 'right' },
   progressTrack: {
     height: 4,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     marginHorizontal: 16,
     borderRadius: 2,
     overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 2 },
-  questionCount: {
-    color: '#555',
-    fontSize: 11,
-    textAlign: 'right',
-    marginRight: 16,
-    marginTop: 4,
-    marginBottom: 16,
-  },
+  progressFill: { height: '100%', backgroundColor: n.colors.accent, borderRadius: 2 },
+  questionCount: { textAlign: 'right', marginRight: 16, marginTop: 4, marginBottom: 16 },
   topicBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#1A1A2E',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 4,
     marginHorizontal: 16,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#6C63FF44',
   },
-  topicText: { color: '#6C63FF', fontSize: 11, fontWeight: '700' },
-  questionText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '700',
-    lineHeight: 26,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
+  topicText: {},
+  questionText: { lineHeight: 26, paddingHorizontal: 16, marginBottom: 20 },
   optionsContainer: { paddingHorizontal: 16, gap: 10 },
   option: {
     flexDirection: 'row',
@@ -456,41 +448,29 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1.5,
   },
-  optionLetter: { color: '#6C63FF', fontWeight: '800', fontSize: 14, width: 22 },
-  optionText: { color: '#E0E0E0', fontSize: 14, flex: 1, lineHeight: 20 },
+  optionLetter: { width: 22 },
+  optionText: { flex: 1, lineHeight: 20 },
   feedback: {
     position: 'absolute',
     bottom: 20,
     left: 16,
     right: 16,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
   },
-  feedbackCorrect: { backgroundColor: '#0D2010', borderColor: '#4CAF50' },
-  feedbackWrong: { backgroundColor: '#200D0D', borderColor: '#F44336' },
-  feedbackLabel: { color: '#fff', fontWeight: '800', fontSize: 14, marginBottom: 4 },
-  feedbackExpl: { color: '#9E9E9E', fontSize: 13, lineHeight: 18 },
+  feedbackCard: { borderRadius: 14, padding: 14 },
+  feedbackCorrect: {},
+  feedbackWrong: {},
+  feedbackLabel: { marginBottom: 4 },
   doneContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   doneEmoji: { fontSize: 72, marginBottom: 16 },
-  doneGrade: { color: '#fff', fontSize: 26, fontWeight: '900', marginBottom: 8 },
-  doneScore: { color: '#9E9E9E', fontSize: 18, marginBottom: 24 },
+  doneGrade: { marginBottom: 8 },
+  doneScore: { marginBottom: 24 },
   xpBadge: {
-    backgroundColor: '#1A1A2E',
     borderRadius: 12,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#6C63FF',
     marginBottom: 12,
   },
-  xpText: { color: '#6C63FF', fontWeight: '900', fontSize: 20 },
-  doneSub: { color: '#9E9E9E', fontSize: 13, marginBottom: 32, textAlign: 'center' },
-  doneBtn: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 14,
-    paddingHorizontal: 40,
-    paddingVertical: 16,
-  },
-  doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  xpText: {},
+  doneSub: { marginBottom: 32 },
+  doneBtn: { minWidth: 220 },
 });

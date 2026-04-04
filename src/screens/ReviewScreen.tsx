@@ -1,8 +1,10 @@
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearBadge from '../components/primitives/LinearBadge';
+import LinearText from '../components/primitives/LinearText';
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -24,16 +26,16 @@ import { useAppStore } from '../store/useAppStore';
 import type { TopicWithProgress, AIContent, ContentType } from '../types';
 import LoadingOrb from '../components/LoadingOrb';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
 
 // Spaced Repetition Ratings
 const RATINGS = [
-  { label: 'Again', days: 1, confidence: 1, color: theme.colors.error },
-  { label: 'Hard', days: 3, confidence: 2, color: theme.colors.warning },
-  { label: 'Good', days: 7, confidence: 3, color: theme.colors.success },
-  { label: 'Easy', days: 14, confidence: 4, color: theme.colors.info },
+  { label: 'Again', days: 1, confidence: 1, color: n.colors.error },
+  { label: 'Hard', days: 3, confidence: 2, color: n.colors.warning },
+  { label: 'Good', days: 7, confidence: 3, color: n.colors.success },
+  { label: 'Easy', days: 14, confidence: 4, color: n.colors.accent },
 ];
 
 const CONTENT_CHIPS: { type: ContentType; label: string; icon: string }[] = [
@@ -50,7 +52,6 @@ function getAutoContentType(confidence: number): ContentType {
 
 export default function ReviewScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
-  const profile = useAppStore((s) => s.profile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const [queue, setQueue] = useState<TopicWithProgress[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -97,7 +98,7 @@ export default function ReviewScreen() {
       duration: 300,
       useNativeDriver: false,
     }).start();
-  }, [currentIdx, queue.length]);
+  }, [currentIdx, progressAnim, queue.length]);
 
   // Reset state on topic change and fetch with auto type
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function ReviewScreen() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [currentTopic?.id]);
+  }, [currentTopic, flipAnim, panXY]);
 
   // Re-fetch when user selects a specific content type
   useEffect(() => {
@@ -129,7 +130,7 @@ export default function ReviewScreen() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [selectedContentType]);
+  }, [currentTopic, selectedContentType]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -222,12 +223,14 @@ export default function ReviewScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <Text style={styles.emoji}>🎉</Text>
-          <Text style={styles.title}>All caught up!</Text>
-          <Text style={styles.sub}>No topics due for review right now.</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
-            <Text style={styles.btnText}>Back</Text>
-          </TouchableOpacity>
+          <LinearText style={styles.emoji}>🎉</LinearText>
+          <LinearText variant="title" centered style={styles.title}>
+            All caught up!
+          </LinearText>
+          <LinearText variant="body" tone="secondary" centered style={styles.sub}>
+            No topics due for review right now.
+          </LinearText>
+          <LinearButton label="Back" variant="glassTinted" onPress={() => navigation.goBack()} />
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -265,18 +268,16 @@ export default function ReviewScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
 
       <ResponsiveContainer>
         <View style={styles.header}>
-          <Text style={styles.progress}>
+          <LinearText variant="caption" tone="secondary" style={styles.progress}>
             Card {currentIdx + 1} / {queue.length} · ~{Math.ceil((queue.length - currentIdx) * 0.5)}{' '}
             min left
-          </Text>
+          </LinearText>
           {currentTopic.progress.isNemesis && (
-            <View style={styles.nemesisBadge}>
-              <Text style={styles.nemesisBadgeText}>⚔️ NEMESIS (+50 XP)</Text>
-            </View>
+            <LinearBadge label="NEMESIS (+50 XP)" variant="error" />
           )}
           <TouchableOpacity
             accessibilityRole="button"
@@ -287,7 +288,9 @@ export default function ReviewScreen() {
               navigation.goBack();
             }}
           >
-            <Text style={styles.close}>✕</Text>
+            <LinearText variant="sectionTitle" style={styles.close}>
+              ✕
+            </LinearText>
           </TouchableOpacity>
         </View>
 
@@ -327,10 +330,17 @@ export default function ReviewScreen() {
                   }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                  <LinearText
+                    variant="caption"
+                    style={[styles.chipText, isActive && styles.chipTextActive]}
+                  >
                     {chip.icon} {chip.label}
-                  </Text>
-                  {isAuto && <Text style={styles.autoBadge}>AUTO</Text>}
+                  </LinearText>
+                  {isAuto && (
+                    <LinearText variant="badge" tone="accent" style={styles.autoBadge}>
+                      AUTO
+                    </LinearText>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -341,10 +351,18 @@ export default function ReviewScreen() {
           <Animated.View style={[styles.cardWrap, { transform: [{ translateX: panXY.x }] }]}>
             {/* Front */}
             <Animated.View style={[styles.card, frontAnimatedStyle]}>
-              <Text style={styles.label}>TOPIC</Text>
-              <Text style={styles.topic}>{currentTopic.name}</Text>
-              <Text style={styles.subject}>{currentTopic.subjectName}</Text>
-              <Text style={styles.tapHint}>Tap to flip</Text>
+              <LinearText variant="caption" tone="muted" style={styles.label}>
+                TOPIC
+              </LinearText>
+              <LinearText variant="title" centered style={styles.topic}>
+                {currentTopic.name}
+              </LinearText>
+              <LinearText variant="body" tone="accent" centered style={styles.subject}>
+                {currentTopic.subjectName}
+              </LinearText>
+              <LinearText variant="caption" tone="muted" centered style={styles.tapHint}>
+                Tap to flip
+              </LinearText>
             </Animated.View>
 
             {/* Back — scrollable */}
@@ -362,10 +380,14 @@ export default function ReviewScreen() {
             {isFlipped && (
               <>
                 <View style={styles.swipeHintLeft} pointerEvents="none">
-                  <Text style={styles.swipeHintText}>← Again</Text>
+                  <LinearText variant="caption" style={styles.swipeHintText}>
+                    ← Again
+                  </LinearText>
                 </View>
                 <View style={styles.swipeHintRight} pointerEvents="none">
-                  <Text style={styles.swipeHintText}>Good →</Text>
+                  <LinearText variant="caption" style={styles.swipeHintText}>
+                    Good →
+                  </LinearText>
                 </View>
               </>
             )}
@@ -383,9 +405,14 @@ export default function ReviewScreen() {
 
         {showSwipeHint && (
           <View style={styles.swipeHintBanner}>
-            <Text style={styles.swipeHintBannerText}>
+            <LinearText
+              variant="bodySmall"
+              tone="muted"
+              centered
+              style={styles.swipeHintBannerText}
+            >
               Swipe left: Again · Swipe right: Good · Swipe up: Easy
-            </Text>
+            </LinearText>
           </View>
         )}
 
@@ -394,23 +421,25 @@ export default function ReviewScreen() {
           {isFlipped ? (
             <View style={styles.ratings}>
               {RATINGS.map((r) => (
-                <TouchableOpacity
+                <LinearButton
                   key={r.label}
                   style={[styles.rateBtn, { borderColor: r.color }]}
                   onPress={() => handleRate(r)}
-                  hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
                   accessibilityRole="button"
                   accessibilityLabel={`Rate ${r.label}, next review in ${r.days} days`}
-                >
-                  <Text style={[styles.rateLabel, { color: r.color }]}>{r.label}</Text>
-                  <Text style={styles.rateDays}>in {r.days}d</Text>
-                </TouchableOpacity>
+                  label={`${r.label}`}
+                  variant="glass"
+                  textStyle={[styles.rateLabel, { color: r.color }]}
+                  rightIcon={
+                    <LinearText variant="caption" tone="muted" style={styles.rateDays}>
+                      in {r.days}d
+                    </LinearText>
+                  }
+                />
               ))}
             </View>
           ) : (
-            <TouchableOpacity style={styles.flipBtn} onPress={handleFlip}>
-              <Text style={styles.flipText}>Show Answer</Text>
-            </TouchableOpacity>
+            <LinearButton style={styles.flipBtn} label="Show Answer" onPress={handleFlip} />
           )}
         </View>
       </ResponsiveContainer>
@@ -419,18 +448,29 @@ export default function ReviewScreen() {
 }
 
 function renderBackContent(content: AIContent | null) {
-  if (!content) return <Text style={styles.error}>Could not load content.</Text>;
+  if (!content)
+    return (
+      <LinearText variant="bodySmall" tone="error" style={styles.error}>
+        Could not load content.
+      </LinearText>
+    );
 
   if (content.type === 'keypoints' && Array.isArray(content.points)) {
     return (
       <View>
-        <Text style={styles.label}>KEY POINTS</Text>
+        <LinearText variant="caption" tone="muted" style={styles.label}>
+          KEY POINTS
+        </LinearText>
         {content.points.map((p, i) => (
-          <Text key={i} style={styles.point}>
+          <LinearText key={i} variant="body" tone="secondary" style={styles.point}>
             • {p}
-          </Text>
+          </LinearText>
         ))}
-        {content.memoryHook ? <Text style={styles.hook}>💡 {content.memoryHook}</Text> : null}
+        {content.memoryHook ? (
+          <LinearText variant="bodySmall" tone="warning" style={styles.hook}>
+            💡 {content.memoryHook}
+          </LinearText>
+        ) : null}
       </View>
     );
   }
@@ -438,14 +478,22 @@ function renderBackContent(content: AIContent | null) {
   if (content.type === 'mnemonic') {
     return (
       <View>
-        <Text style={styles.label}>MNEMONIC</Text>
-        <Text style={styles.mnemonicText}>{content.mnemonic}</Text>
+        <LinearText variant="caption" tone="muted" style={styles.label}>
+          MNEMONIC
+        </LinearText>
+        <LinearText variant="sectionTitle" tone="accent" style={styles.mnemonicText}>
+          {content.mnemonic}
+        </LinearText>
         {content.expansion.map((e, i) => (
-          <Text key={i} style={styles.point}>
+          <LinearText key={i} variant="body" tone="secondary" style={styles.point}>
             • {e}
-          </Text>
+          </LinearText>
         ))}
-        {content.tip ? <Text style={styles.hook}>💡 {content.tip}</Text> : null}
+        {content.tip ? (
+          <LinearText variant="bodySmall" tone="warning" style={styles.hook}>
+            💡 {content.tip}
+          </LinearText>
+        ) : null}
       </View>
     );
   }
@@ -454,14 +502,20 @@ function renderBackContent(content: AIContent | null) {
     const q = content.questions[0];
     return (
       <View>
-        <Text style={styles.label}>QUICK QUIZ</Text>
-        <Text style={styles.quizQ}>{q.question}</Text>
+        <LinearText variant="caption" tone="muted" style={styles.label}>
+          QUICK QUIZ
+        </LinearText>
+        <LinearText variant="body" style={styles.quizQ}>
+          {q.question}
+        </LinearText>
         {q.options.map((opt, i) => (
-          <Text key={i} style={styles.point}>
+          <LinearText key={i} variant="body" tone="secondary" style={styles.point}>
             {String.fromCharCode(65 + i)}. {opt}
-          </Text>
+          </LinearText>
         ))}
-        <Text style={styles.hook}>✓ {q.options[q.correctIndex]}</Text>
+        <LinearText variant="bodySmall" tone="warning" style={styles.hook}>
+          ✓ {q.options[q.correctIndex]}
+        </LinearText>
         {q.explanation ? (
           <View style={{ marginTop: 8 }}>
             <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
@@ -471,11 +525,15 @@ function renderBackContent(content: AIContent | null) {
     );
   }
 
-  return <Text style={styles.error}>Could not load content.</Text>;
+  return (
+    <LinearText variant="bodySmall" tone="error" style={styles.error}>
+      Could not load content.
+    </LinearText>
+  );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   header: {
     flexDirection: 'row',
@@ -483,41 +541,20 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
-  progress: { color: theme.colors.textMuted, fontWeight: '700' },
-  nemesisBadge: {
-    backgroundColor: theme.colors.errorTintSoft,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: theme.colors.error,
-  },
-  nemesisBadgeText: {
-    color: theme.colors.error,
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  close: { color: theme.colors.textPrimary, fontSize: 20 },
+  progress: { fontWeight: '700' },
+  close: { fontSize: 20 },
   emoji: { fontSize: 60, marginBottom: 20 },
-  title: { color: theme.colors.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  sub: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 30, textAlign: 'center' },
-  btn: {
-    backgroundColor: theme.colors.borderLight,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  btnText: { color: theme.colors.textPrimary, fontWeight: '700' },
+  title: { marginBottom: 8 },
+  sub: { marginBottom: 30 },
 
   // Progress bar
   progressBarBg: {
     height: 3,
-    backgroundColor: theme.colors.border,
+    backgroundColor: n.colors.border,
     marginHorizontal: 16,
     borderRadius: 2,
   },
-  progressBarFill: { height: 3, backgroundColor: theme.colors.primary, borderRadius: 2 },
+  progressBarFill: { height: 3, backgroundColor: n.colors.accent, borderRadius: 2 },
 
   // Content type chips
   chipRow: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingTop: 10 },
@@ -526,15 +563,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 7,
     borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: theme.colors.borderLight,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.card,
   },
-  chipActive: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryTintSoft },
+  chipActive: { borderColor: `${n.colors.accent}66`, backgroundColor: n.colors.primaryTintSoft },
   chipDisabled: { opacity: 0.4 },
-  chipText: { color: theme.colors.textMuted, fontSize: 11, lineHeight: 16, fontWeight: '700' },
-  chipTextActive: { color: theme.colors.primary },
+  chipText: { fontSize: 11, lineHeight: 16, fontWeight: '700', color: n.colors.textMuted },
+  chipTextActive: { color: n.colors.textPrimary },
   autoBadge: {
-    color: theme.colors.primary,
     fontSize: 8,
     lineHeight: 12,
     fontWeight: '900',
@@ -552,12 +589,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: theme.colors.borderLight,
+    borderColor: n.colors.borderHighlight,
     backfaceVisibility: 'hidden',
   },
   cardBack: {
-    backgroundColor: theme.colors.panelAlt,
-    borderColor: theme.colors.primary,
+    backgroundColor: n.colors.card,
+    borderColor: `${n.colors.accent}55`,
     alignItems: 'flex-start',
     justifyContent: 'flex-start',
     padding: 0,
@@ -570,7 +607,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 8,
     top: '45%',
-    backgroundColor: 'rgba(244,67,54,0.15)',
+    backgroundColor: `${n.colors.error}16`,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -579,64 +616,33 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 8,
     top: '45%',
-    backgroundColor: 'rgba(46,204,113,0.15)',
+    backgroundColor: `${n.colors.success}16`,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 4,
   },
-  swipeHintText: { color: theme.colors.textPrimary, fontSize: 11, fontWeight: '700', opacity: 0.5 },
+  swipeHintText: { color: n.colors.textPrimary, fontSize: 11, fontWeight: '700', opacity: 0.65 },
 
-  label: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 1,
-    marginBottom: 20,
-  },
-  topic: {
-    color: theme.colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  subject: { color: theme.colors.primary, fontSize: 16, fontWeight: '600' },
-  tapHint: { color: theme.colors.textMuted, marginTop: 40, fontSize: 12 },
-  point: { color: theme.colors.textSecondary, fontSize: 16, marginBottom: 12, lineHeight: 22 },
-  hook: { color: theme.colors.warning, fontSize: 14, marginTop: 12, fontStyle: 'italic' },
+  label: { letterSpacing: 1, marginBottom: 20 },
+  topic: { marginBottom: 10 },
+  subject: {},
+  tapHint: { marginTop: 40 },
+  point: { marginBottom: 12 },
+  hook: { marginTop: 12, fontStyle: 'italic' },
   mnemonicText: {
-    color: theme.colors.primary,
-    fontSize: 20,
-    fontWeight: '800',
     marginBottom: 16,
-    lineHeight: 28,
   },
-  quizQ: {
-    color: theme.colors.textPrimary,
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 16,
-    lineHeight: 24,
-  },
+  quizQ: { marginBottom: 16 },
   swipeHintBanner: { alignItems: 'center', marginTop: 4, marginBottom: -8 },
-  swipeHintBannerText: { color: theme.colors.textMuted, fontSize: 13, textAlign: 'center' },
-  error: { color: theme.colors.error },
+  swipeHintBannerText: {},
+  error: {},
   controls: { padding: 20, height: 120 },
-  flipBtn: {
-    backgroundColor: theme.colors.primary,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  flipText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
+  flipBtn: {},
   ratings: { flexDirection: 'row', gap: 10 },
   rateBtn: {
     flex: 1,
-    borderWidth: 2,
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
+    paddingHorizontal: 10,
   },
-  rateLabel: { fontWeight: '800', fontSize: 14, marginBottom: 4 },
-  rateDays: { color: theme.colors.textMuted, fontSize: 11 },
+  rateLabel: { fontWeight: '800', fontSize: 14 },
+  rateDays: { fontSize: 11 },
 });

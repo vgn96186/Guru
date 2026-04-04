@@ -1,7 +1,9 @@
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearBadge from '../components/primitives/LinearBadge';
+import LinearText from '../components/primitives/LinearText';
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   FlatList,
@@ -17,7 +19,7 @@ import type { HomeStackParamList } from '../navigation/types';
 import { getCachedQuestionCount, getMockQuestions, type MockQuestion } from '../db/queries/aiCache';
 import { saveBulkQuestions } from '../db/queries/questionBank';
 import { MarkdownRender } from '../components/MarkdownRender';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { emphasizeHighYieldMarkdown } from '../utils/highlightMarkdown';
@@ -38,7 +40,6 @@ export default function MockTestScreen() {
   const [availableCount, setAvailableCount] = useState(0);
   const [selectedCount, setSelectedCount] = useState(20);
   const [selected, setSelected] = useState<number | null>(null);
-  const [revealed, setRevealed] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -71,7 +72,6 @@ export default function MockTestScreen() {
     setAnswers(new Array(subset.length).fill(null));
     setCurrent(0);
     setSelected(null);
-    setRevealed(false);
     setElapsedSeconds(0);
     setPhase('test');
   }
@@ -106,7 +106,7 @@ export default function MockTestScreen() {
       return true;
     });
     return () => handler.remove();
-  }, [phase, answers]);
+  }, [phase, answers, navigation]);
 
   function handleOptionSelect(idx: number) {
     setSelected(idx);
@@ -153,32 +153,47 @@ export default function MockTestScreen() {
       const ans = answers[index];
       const isCorrect = ans === item.correctIndex;
       const isSkipped = ans === null || ans === -1;
-      const borderColor = isSkipped ? '#555' : isCorrect ? '#4CAF50' : '#F44336';
+      const borderColor = isSkipped
+        ? n.colors.borderHighlight
+        : isCorrect
+          ? n.colors.success
+          : n.colors.error;
 
       return (
-        <View style={[styles.reviewRow, { borderLeftColor: borderColor }]}>
+        <LinearSurface
+          compact
+          padded={false}
+          style={[styles.reviewRow, { borderLeftColor: borderColor }]}
+        >
           <View style={styles.reviewHeader}>
-            <Text style={styles.reviewNum}>Q{index + 1}</Text>
-            <Text style={[styles.reviewStatus, { color: borderColor }]}>
+            <LinearText variant="caption" tone="secondary">
+              Q{index + 1}
+            </LinearText>
+            <LinearText variant="label" style={[styles.reviewStatus, { color: borderColor }]}>
               {isSkipped ? 'Skipped' : isCorrect ? `+${CORRECT_MARKS}` : `${WRONG_MARKS}`}
-            </Text>
+            </LinearText>
           </View>
-          <Text style={styles.reviewQ}>{item.question}</Text>
-          <Text style={styles.reviewTopic}>
+          <LinearText variant="bodySmall" style={styles.reviewQ}>
+            {item.question}
+          </LinearText>
+          <LinearText variant="caption" tone="accent" style={styles.reviewTopic}>
             {item.subjectName} · {item.topicName}
-          </Text>
+          </LinearText>
           {!isSkipped && ans !== null && ans >= 0 && ans < item.options.length && (
-            <Text style={[styles.reviewAns, { color: isCorrect ? '#4CAF50' : '#F44336' }]}>
+            <LinearText
+              variant="caption"
+              style={[styles.reviewAns, { color: isCorrect ? n.colors.success : n.colors.error }]}
+            >
               Your answer: {item.options[ans]}
-            </Text>
+            </LinearText>
           )}
-          <Text style={styles.reviewCorrect}>
+          <LinearText variant="caption" tone="success" style={styles.reviewCorrect}>
             Correct: {item.options[item.correctIndex] ?? '—'}
-          </Text>
+          </LinearText>
           <View style={styles.reviewExplainWrap}>
             <MarkdownRender content={emphasizeHighYieldMarkdown(item.explanation)} compact />
           </View>
-        </View>
+        </LinearSurface>
       );
     },
     [answers],
@@ -189,17 +204,17 @@ export default function MockTestScreen() {
     if (availableCount === 0) {
       return (
         <SafeAreaView style={styles.safe}>
-          <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+          <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
           <ResponsiveContainer style={styles.emptyContainer}>
-            <Text style={styles.emptyEmoji}>🧪</Text>
-            <Text style={styles.emptyTitle}>No Questions Yet</Text>
-            <Text style={styles.emptyMsg}>
+            <LinearText style={styles.emptyEmoji}>🧪</LinearText>
+            <LinearText variant="title" centered style={styles.emptyTitle}>
+              No Questions Yet
+            </LinearText>
+            <LinearText variant="body" tone="secondary" centered style={styles.emptyMsg}>
               Guru generates quiz questions during your study sessions. Complete a few sessions to
               build up your question bank!
-            </Text>
-            <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
-              <Text style={styles.doneBtnText}>Back</Text>
-            </TouchableOpacity>
+            </LinearText>
+            <LinearButton label="Back" variant="glassTinted" onPress={() => navigation.goBack()} />
           </ResponsiveContainer>
         </SafeAreaView>
       );
@@ -207,13 +222,19 @@ export default function MockTestScreen() {
 
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.setupContainer}>
-          <Text style={styles.setupEmoji}>📝</Text>
-          <Text style={styles.setupTitle}>Mock Test</Text>
-          <Text style={styles.setupSub}>{availableCount} questions available in your bank.</Text>
+          <LinearText style={styles.setupEmoji}>📝</LinearText>
+          <LinearText variant="title" centered style={styles.setupTitle}>
+            Mock Test
+          </LinearText>
+          <LinearText variant="body" tone="secondary" centered style={styles.setupSub}>
+            {availableCount} questions available in your bank.
+          </LinearText>
 
-          <Text style={styles.setupLabel}>How many questions?</Text>
+          <LinearText variant="sectionTitle" centered style={styles.setupLabel}>
+            How many questions?
+          </LinearText>
           <View style={styles.countGrid}>
             {[10, 20, 50, 100].map((c) => {
               const isUnlocked = c <= availableCount;
@@ -229,7 +250,7 @@ export default function MockTestScreen() {
                   disabled={!isUnlocked}
                   onPress={() => setSelectedCount(c)}
                 >
-                  <Text
+                  <LinearText
                     style={[
                       styles.countBtnText,
                       selectedCount === c && styles.countBtnTextActive,
@@ -237,8 +258,12 @@ export default function MockTestScreen() {
                     ]}
                   >
                     {c}
-                  </Text>
-                  {!isUnlocked && <Text style={styles.lockHint}>+{needsMore} more</Text>}
+                  </LinearText>
+                  {!isUnlocked && (
+                    <LinearText variant="caption" tone="accent" style={styles.lockHint}>
+                      +{needsMore} more
+                    </LinearText>
+                  )}
                 </TouchableOpacity>
               );
             })}
@@ -246,20 +271,18 @@ export default function MockTestScreen() {
               style={[styles.countBtn, selectedCount === availableCount && styles.countBtnActive]}
               onPress={() => setSelectedCount(availableCount)}
             >
-              <Text
+              <LinearText
                 style={[
                   styles.countBtnText,
                   selectedCount === availableCount && styles.countBtnTextActive,
                 ]}
               >
                 Max ({availableCount})
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.startBtn} onPress={() => startTest(selectedCount)}>
-            <Text style={styles.startBtnText}>Start Test</Text>
-          </TouchableOpacity>
+          <LinearButton label="Start Test" onPress={() => startTest(selectedCount)} />
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -268,11 +291,11 @@ export default function MockTestScreen() {
   // ── Results ────────────────────────────────────────────────────
   if (phase === 'results') {
     const { correct, wrong, skipped, score, maxScore, pct } = resultSummary;
-    const scoreColor = pct >= 60 ? '#4CAF50' : pct >= 40 ? '#FF9800' : '#F44336';
+    const scoreColor = pct >= 60 ? n.colors.success : pct >= 40 ? n.colors.warning : n.colors.error;
 
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <FlatList
           data={[...questions].sort((a, b) => {
             const aIdx = questions.indexOf(a);
@@ -299,48 +322,89 @@ export default function MockTestScreen() {
           removeClippedSubviews
           ListHeaderComponent={
             <ResponsiveContainer>
-              <Text style={styles.resultsTitle}>Test Complete</Text>
-              <View style={styles.scoreCircle}>
-                <Text style={[styles.scoreNum, { color: scoreColor }]}>{score}</Text>
-                <Text style={styles.scoreMax}>/ {maxScore}</Text>
-                <Text style={[styles.scorePct, { color: scoreColor }]}>{pct}%</Text>
-              </View>
+              <LinearText variant="title" centered style={styles.resultsTitle}>
+                Test Complete
+              </LinearText>
+              <LinearSurface style={styles.scoreCircle}>
+                <LinearText
+                  variant="display"
+                  centered
+                  style={[styles.scoreNum, { color: scoreColor }]}
+                >
+                  {score}
+                </LinearText>
+                <LinearText variant="bodySmall" tone="secondary" centered style={styles.scoreMax}>
+                  / {maxScore}
+                </LinearText>
+                <LinearText
+                  variant="sectionTitle"
+                  centered
+                  style={[styles.scorePct, { color: scoreColor }]}
+                >
+                  {pct}%
+                </LinearText>
+              </LinearSurface>
 
               <View style={styles.scoreBreakdown}>
-                <View style={styles.scoreCell}>
-                  <Text style={[styles.scoreCellNum, { color: '#4CAF50' }]}>{correct}</Text>
-                  <Text style={styles.scoreCellLabel}>Correct +{correct * CORRECT_MARKS}</Text>
-                </View>
-                <View style={styles.scoreCell}>
-                  <Text style={[styles.scoreCellNum, { color: '#F44336' }]}>{wrong}</Text>
-                  <Text style={styles.scoreCellLabel}>Wrong {wrong * WRONG_MARKS}</Text>
-                </View>
-                <View style={styles.scoreCell}>
-                  <Text style={[styles.scoreCellNum, { color: '#9E9E9E' }]}>{skipped}</Text>
-                  <Text style={styles.scoreCellLabel}>Skipped +0</Text>
-                </View>
+                <LinearSurface compact style={styles.scoreCell}>
+                  <LinearText variant="title" centered tone="success" style={styles.scoreCellNum}>
+                    {correct}
+                  </LinearText>
+                  <LinearText
+                    variant="caption"
+                    tone="secondary"
+                    centered
+                    style={styles.scoreCellLabel}
+                  >
+                    Correct +{correct * CORRECT_MARKS}
+                  </LinearText>
+                </LinearSurface>
+                <LinearSurface compact style={styles.scoreCell}>
+                  <LinearText variant="title" centered tone="error" style={styles.scoreCellNum}>
+                    {wrong}
+                  </LinearText>
+                  <LinearText
+                    variant="caption"
+                    tone="secondary"
+                    centered
+                    style={styles.scoreCellLabel}
+                  >
+                    Wrong {wrong * WRONG_MARKS}
+                  </LinearText>
+                </LinearSurface>
+                <LinearSurface compact style={styles.scoreCell}>
+                  <LinearText variant="title" centered tone="secondary" style={styles.scoreCellNum}>
+                    {skipped}
+                  </LinearText>
+                  <LinearText
+                    variant="caption"
+                    tone="secondary"
+                    centered
+                    style={styles.scoreCellLabel}
+                  >
+                    Skipped +0
+                  </LinearText>
+                </LinearSurface>
               </View>
 
-              <Text style={styles.markingNote}>
+              <LinearText variant="caption" tone="muted" centered style={styles.markingNote}>
                 NEET Marking: +4 correct · -1 wrong · 0 skipped
-              </Text>
+              </LinearText>
 
               {elapsedSeconds > 0 && (
-                <Text style={styles.markingNote}>
+                <LinearText variant="caption" tone="muted" centered style={styles.markingNote}>
                   Total time: {Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s · Avg{' '}
                   {Math.round(elapsedSeconds / Math.max(1, questions.length))}s per question
-                </Text>
+                </LinearText>
               )}
 
               {/* Question review — wrong answers shown first */}
-              <Text style={styles.reviewTitle}>Review</Text>
+              <LinearText variant="caption" tone="muted" style={styles.reviewTitle}>
+                Review
+              </LinearText>
             </ResponsiveContainer>
           }
-          ListFooterComponent={
-            <TouchableOpacity style={styles.doneBtn} onPress={() => navigation.goBack()}>
-              <Text style={styles.doneBtnText}>Done</Text>
-            </TouchableOpacity>
-          }
+          ListFooterComponent={<LinearButton label="Done" onPress={() => navigation.goBack()} />}
         />
       </SafeAreaView>
     );
@@ -354,19 +418,19 @@ export default function MockTestScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
 
-      <View style={styles.header}>
-        <Text style={styles.headerNum}>
+      <LinearSurface compact padded={false} style={styles.header}>
+        <LinearText variant="label" tone="accent" style={styles.headerNum}>
           Q {current + 1} / {questions.length}
-        </Text>
-        <Text style={styles.headerTopic}>
+        </LinearText>
+        <LinearText variant="caption" tone="secondary" style={styles.headerTopic}>
           {q.subjectName} · {q.topicName}
-        </Text>
-        <Text style={styles.timerText}>
+        </LinearText>
+        <LinearText variant="label" tone="warning" style={styles.timerText}>
           ⏱ {Math.floor(elapsedSeconds / 60)}:{(elapsedSeconds % 60).toString().padStart(2, '0')}
-        </Text>
-      </View>
+        </LinearText>
+      </LinearSurface>
 
       {/* Progress bar */}
       <View style={styles.progressTrack}>
@@ -375,12 +439,14 @@ export default function MockTestScreen() {
 
       <ScrollView contentContainerStyle={styles.testContent}>
         <ResponsiveContainer>
-          <Text style={styles.question}>{q.question}</Text>
+          <LinearText variant="sectionTitle" style={styles.question}>
+            {q.question}
+          </LinearText>
 
           {q.options.map((opt, idx) => {
             const isSelected = idx === selected;
-            const bg = isSelected ? '#1A1A3A' : '#1A1A24';
-            const border = isSelected ? '#6C63FF' : '#2A2A38';
+            const bg = isSelected ? n.colors.primaryTintSoft : n.colors.card;
+            const border = isSelected ? `${n.colors.accent}66` : n.colors.border;
 
             return (
               <TouchableOpacity
@@ -389,31 +455,36 @@ export default function MockTestScreen() {
                 onPress={() => handleOptionSelect(idx)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.optionLetter}>{['A', 'B', 'C', 'D'][idx]}</Text>
-                <Text style={styles.optionText}>{opt}</Text>
+                <LinearText variant="label" tone="secondary" style={styles.optionLetter}>
+                  {['A', 'B', 'C', 'D'][idx]}
+                </LinearText>
+                <LinearText variant="body" style={styles.optionText}>
+                  {opt}
+                </LinearText>
               </TouchableOpacity>
             );
           })}
 
           <View style={styles.markingBadge}>
-            <Text style={styles.markingText}>
-              +{CORRECT_MARKS} correct · {WRONG_MARKS} wrong · 0 skip
-            </Text>
+            <LinearBadge
+              label={`+${CORRECT_MARKS} correct · ${WRONG_MARKS} wrong · 0 skip`}
+              variant="default"
+            />
           </View>
 
-          <TouchableOpacity
-            style={[styles.confirmBtn, selected === null && styles.confirmBtnSkip]}
-            onPress={handleNext}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.confirmBtnText}>
-              {selected !== null
+          <LinearButton
+            label={
+              selected !== null
                 ? current + 1 < questions.length
-                  ? 'Next Question →'
+                  ? 'Next Question'
                   : 'See Results'
-                : 'Skip Question'}
-            </Text>
-          </TouchableOpacity>
+                : 'Skip Question'
+            }
+            variant={selected !== null ? 'primary' : 'glass'}
+            onPress={handleNext}
+            rightIcon={selected !== null ? null : undefined}
+            style={styles.confirmBtn}
+          />
         </ResponsiveContainer>
       </ScrollView>
     </SafeAreaView>
@@ -421,139 +492,91 @@ export default function MockTestScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#1A1A24',
     gap: 8,
+    marginHorizontal: 16,
+    marginTop: 12,
   },
-  headerNum: { color: '#6C63FF', fontWeight: '800', fontSize: 16 },
-  headerTopic: { flex: 1, color: '#9E9E9E', fontSize: 13 },
-  timerText: { color: '#FF9800', fontWeight: '800', fontSize: 14 },
-  skipBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#2A2A38',
-    borderRadius: 8,
+  headerNum: { fontWeight: '800' },
+  headerTopic: { flex: 1 },
+  timerText: { fontWeight: '800' },
+  progressTrack: {
+    height: 3,
+    backgroundColor: n.colors.border,
+    marginHorizontal: 16,
+    marginTop: 10,
   },
-  skipBtnText: { color: '#9E9E9E', fontSize: 13, fontWeight: '600' },
-  progressTrack: { height: 3, backgroundColor: '#2A2A38' },
-  progressFill: { height: '100%', backgroundColor: '#6C63FF' },
+  progressFill: { height: '100%', backgroundColor: n.colors.accent },
   testContent: { padding: 16, paddingBottom: 40 },
-  question: { color: '#fff', fontSize: 16, fontWeight: '600', lineHeight: 24, marginBottom: 20 },
+  question: { marginBottom: 20 },
   option: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: 14,
-    borderRadius: 12,
-    borderWidth: 1.5,
+    borderRadius: n.radius.md,
+    borderWidth: 1,
     marginBottom: 10,
   },
-  optionLetter: { color: '#9E9E9E', fontWeight: '800', fontSize: 15, marginRight: 10, width: 16 },
-  optionText: { flex: 1, fontSize: 15, lineHeight: 22 },
-  explanation: {
-    backgroundColor: '#1A1A2E',
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 12,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#6C63FF44',
-  },
-  explanationTitle: { color: '#6C63FF', fontWeight: '700', fontSize: 14, marginBottom: 6 },
-  explanationText: { color: '#ccc', fontSize: 14, lineHeight: 20 },
+  optionLetter: { marginRight: 10, width: 16 },
+  optionText: { flex: 1 },
   markingBadge: { alignItems: 'center', marginVertical: 10 },
-  markingText: { color: '#555', fontSize: 13 },
-  confirmBtn: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  confirmBtnSkip: { backgroundColor: '#2A2A38' },
-  confirmBtnText: { color: '#fff', fontWeight: '800', fontSize: 17 },
+  confirmBtn: { marginTop: 8 },
   // Results
   resultsContent: { padding: 16, paddingBottom: 60 },
   resultsTitle: {
-    color: '#fff',
-    fontSize: 28,
-    fontWeight: '900',
-    textAlign: 'center',
     marginBottom: 20,
     marginTop: 8,
   },
   scoreCircle: {
     alignItems: 'center',
-    backgroundColor: '#1A1A24',
-    borderRadius: 24,
-    padding: 24,
+    paddingVertical: 24,
     marginBottom: 16,
   },
-  scoreNum: { fontSize: 56, fontWeight: '900' },
-  scoreMax: { color: '#9E9E9E', fontSize: 16 },
-  scorePct: { fontSize: 22, fontWeight: '700', marginTop: 4 },
+  scoreNum: {},
+  scoreMax: {},
+  scorePct: { marginTop: 4 },
   scoreBreakdown: { flexDirection: 'row', gap: 10, marginBottom: 12 },
   scoreCell: {
     flex: 1,
-    backgroundColor: '#1A1A24',
-    borderRadius: 12,
-    padding: 14,
     alignItems: 'center',
   },
-  scoreCellNum: { fontSize: 26, fontWeight: '900' },
-  scoreCellLabel: { color: '#9E9E9E', fontSize: 12, marginTop: 4, textAlign: 'center' },
-  markingNote: { color: '#555', fontSize: 12, textAlign: 'center', marginBottom: 20 },
+  scoreCellNum: {},
+  scoreCellLabel: { marginTop: 4 },
+  markingNote: { marginBottom: 20 },
   reviewTitle: {
-    color: '#9E9E9E',
-    fontSize: 12,
-    fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 12,
   },
   reviewRow: {
-    backgroundColor: '#1A1A24',
-    borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderLeftWidth: 4,
   },
   reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  reviewNum: { color: '#9E9E9E', fontWeight: '700', fontSize: 12 },
-  reviewStatus: { fontWeight: '800', fontSize: 14 },
-  reviewQ: { color: '#fff', fontSize: 14, lineHeight: 20, marginBottom: 6 },
-  reviewTopic: { color: '#6C63FF', fontSize: 12, marginBottom: 6 },
-  reviewAns: { fontSize: 12, marginBottom: 2 },
-  reviewCorrect: { color: '#4CAF50', fontSize: 12, marginBottom: 4 },
+  reviewStatus: {},
+  reviewQ: { marginBottom: 6 },
+  reviewTopic: { marginBottom: 6 },
+  reviewAns: { marginBottom: 2 },
+  reviewCorrect: { marginBottom: 4 },
   reviewExplainWrap: { marginTop: 6 },
-  doneBtn: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 14,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  doneBtnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
   // Empty state
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emptyEmoji: { fontSize: 56, marginBottom: 16 },
-  emptyTitle: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 8 },
+  emptyTitle: { marginBottom: 8 },
   emptyMsg: {
-    color: '#9E9E9E',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 22,
     marginBottom: 32,
   },
   setupContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   setupEmoji: { fontSize: 56, marginBottom: 16 },
-  setupTitle: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 8 },
-  setupSub: { color: '#9E9E9E', fontSize: 15, marginBottom: 40, textAlign: 'center' },
-  setupLabel: { color: '#fff', fontSize: 16, fontWeight: '700', marginBottom: 16 },
+  setupTitle: { marginBottom: 8 },
+  setupSub: { marginBottom: 40 },
+  setupLabel: { marginBottom: 16 },
   countGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -562,27 +585,22 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   countBtn: {
-    backgroundColor: '#1A1A24',
-    borderRadius: 12,
+    backgroundColor: n.colors.card,
+    borderRadius: n.radius.md,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderWidth: 2,
-    borderColor: '#2A2A38',
+    borderWidth: 1,
+    borderColor: n.colors.border,
     minWidth: 70,
     alignItems: 'center',
   },
-  countBtnActive: { borderColor: '#6C63FF', backgroundColor: '#1A1A3A' },
-  countBtnLocked: { borderColor: '#333', backgroundColor: '#0F0F14', opacity: 0.7 },
-  countBtnText: { color: '#9E9E9E', fontWeight: '700', fontSize: 15 },
-  countBtnTextActive: { color: '#fff' },
-  countBtnTextLocked: { color: '#555' },
-  lockHint: { color: '#6C63FF', fontSize: 11, marginTop: 4 },
-  startBtn: {
-    backgroundColor: '#6C63FF',
-    borderRadius: 16,
-    paddingHorizontal: 48,
-    paddingVertical: 18,
-    elevation: 4,
+  countBtnActive: {
+    borderColor: `${n.colors.accent}66`,
+    backgroundColor: n.colors.primaryTintSoft,
   },
-  startBtnText: { color: '#fff', fontWeight: '800', fontSize: 18, letterSpacing: 0.5 },
+  countBtnLocked: { borderColor: n.colors.border, backgroundColor: n.colors.surface, opacity: 0.7 },
+  countBtnText: { color: n.colors.textSecondary, fontWeight: '700', fontSize: 15 },
+  countBtnTextActive: { color: n.colors.textPrimary },
+  countBtnTextLocked: { color: n.colors.textMuted },
+  lockHint: { marginTop: 4 },
 });

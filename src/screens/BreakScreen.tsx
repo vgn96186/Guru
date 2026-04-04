@@ -1,9 +1,11 @@
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearButton from '../components/primitives/LinearButton';
+import LinearBadge from '../components/primitives/LinearBadge';
+import LinearText from '../components/primitives/LinearText';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   BackHandler,
@@ -18,7 +20,7 @@ import type { QuizContent, TopicWithProgress } from '../types';
 import GuruChatOverlay from '../components/GuruChatOverlay';
 import VisualTimer from '../components/VisualTimer';
 import { useAppStore } from '../store/useAppStore';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 
 interface Props {
@@ -143,43 +145,52 @@ export default function BreakScreen({
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
         {/* Break header */}
-        <View style={styles.timerSection}>
-          <Text style={styles.breakLabel}>ACTIVE BREAK</Text>
+        <LinearSurface style={styles.timerSection}>
+          <LinearBadge label="ACTIVE BREAK" variant="success" />
           {profile?.visualTimersEnabled ? (
             <View style={{ marginVertical: 16 }}>
               <VisualTimer totalSeconds={duration} remainingSeconds={countdown} size={160} />
             </View>
           ) : (
             <>
-              <Text style={styles.breakTimer}>
+              <LinearText variant="display" centered style={styles.breakTimer}>
                 {mins}:{secs.toString().padStart(2, '0')}
-              </Text>
+              </LinearText>
               <View style={styles.progressTrack}>
                 <View style={[styles.progressFill, { width: `${pct}%` }]} />
               </View>
             </>
           )}
-          <Text style={styles.breakSubtext}>Stay in the app — session continues automatically</Text>
-        </View>
+          <LinearText variant="caption" tone="muted" centered style={styles.breakSubtext}>
+            Stay in the app — session continues automatically
+          </LinearText>
+        </LinearSurface>
 
         {/* Quick quiz during break */}
         {quizQuestion && (
-          <View style={styles.quizSection}>
-            <Text style={styles.quizLabel}>⚡ Quick fire — stay sharp:</Text>
-            <Text style={styles.quizQuestion}>{quizQuestion.question}</Text>
+          <LinearSurface style={styles.quizSection}>
+            <LinearText variant="caption" tone="warning" style={styles.quizLabel}>
+              Quick fire — stay sharp
+            </LinearText>
+            <LinearText variant="body" style={styles.quizQuestion}>
+              {quizQuestion.question}
+            </LinearText>
             {quizQuestion.options.map((opt, idx) => {
               const anim = getOptionAnim(idx);
               const isCorrectOption = idx === quizQuestion.correct;
               const bgColor = anim.bg.interpolate({
                 inputRange: [0, 1],
-                outputRange: ['#1A1A24', isCorrectOption ? '#1A2A1A' : '#2A0A0A'],
+                outputRange: [
+                  n.colors.card,
+                  isCorrectOption ? `${n.colors.success}16` : `${n.colors.error}16`,
+                ],
               });
               const borderColor = anim.border.interpolate({
                 inputRange: [0, 1],
-                outputRange: ['#2A2A38', isCorrectOption ? '#4CAF50' : '#F44336'],
+                outputRange: [n.colors.border, isCorrectOption ? n.colors.success : n.colors.error],
               });
               return (
                 <Animated.View
@@ -193,53 +204,55 @@ export default function BreakScreen({
                     accessibilityRole="button"
                     accessibilityLabel={`Answer option ${idx + 1}: ${opt}`}
                   >
-                    <Text style={styles.optionText}>{opt}</Text>
+                    <LinearText variant="bodySmall" style={styles.optionText}>
+                      {opt}
+                    </LinearText>
                   </TouchableOpacity>
                 </Animated.View>
               );
             })}
             {selected !== null && (
-              <Text style={styles.result}>
+              <LinearText variant="bodySmall" tone="secondary" centered style={styles.result}>
                 {selected === quizQuestion.correct
                   ? '✅ Correct! +20 XP'
                   : `❌ Answer: Option ${quizQuestion.correct + 1}`}
-              </Text>
+              </LinearText>
             )}
-          </View>
+          </LinearSurface>
         )}
 
         {!quizQuestion && (
           <View style={styles.idleSection}>
-            <Text style={styles.idleEmoji}>🧘</Text>
-            <Text style={styles.idleText}>Take a deep breath.</Text>
-            <Text style={styles.idleText2}>Session resumes automatically.</Text>
+            <LinearText style={styles.idleEmoji}>🧘</LinearText>
+            <LinearText variant="sectionTitle" centered style={styles.idleText}>
+              Take a deep breath.
+            </LinearText>
+            <LinearText variant="bodySmall" tone="secondary" centered style={styles.idleText2}>
+              Session resumes automatically.
+            </LinearText>
           </View>
         )}
 
         {/* Emergency continue */}
         {countdown > 0 && (
-          <TouchableOpacity
+          <LinearButton
+            variant="glass"
             style={styles.forceBtn}
             onPress={onDone}
-            activeOpacity={0.8}
             accessibilityRole="button"
             accessibilityLabel={`I'm ready now, ${mins} minutes ${secs} seconds left`}
-          >
-            <Text style={styles.forceBtnText}>
-              I'm ready now ({mins}:{secs.toString().padStart(2, '0')} left)
-            </Text>
-          </TouchableOpacity>
+            label={`I'm ready now (${mins}:${secs.toString().padStart(2, '0')} left)`}
+          />
         )}
 
-        <TouchableOpacity
+        <LinearButton
+          variant="glassTinted"
           style={styles.askGuruBtn}
           onPress={() => setChatOpen(true)}
-          activeOpacity={0.8}
           accessibilityRole="button"
           accessibilityLabel="Ask Guru a question"
-        >
-          <Text style={styles.askGuruText}>Ask Guru a question</Text>
-        </TouchableOpacity>
+          label="Ask Guru a question"
+        />
 
         {onEndSession && (
           <TouchableOpacity
@@ -253,9 +266,9 @@ export default function BreakScreen({
             accessibilityRole="button"
             accessibilityLabel="End session early"
           >
-            <Text style={{ color: '#F44336', fontSize: 13, fontWeight: '600' }}>
+            <LinearText variant="label" tone="error">
               End Session Early
-            </Text>
+            </LinearText>
           </TouchableOpacity>
         )}
       </ResponsiveContainer>
@@ -269,48 +282,30 @@ export default function BreakScreen({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0A0A0F' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   container: { flex: 1, padding: 24 },
   timerSection: { alignItems: 'center', paddingVertical: 32 },
-  breakLabel: {
-    color: '#4CAF50',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  breakTimer: { color: '#fff', fontSize: 56, fontWeight: '900', marginBottom: 16 },
+  breakTimer: { marginBottom: 16 },
   progressTrack: {
     width: '100%',
     height: 6,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.border,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 8,
   },
-  progressFill: { height: '100%', backgroundColor: '#4CAF50', borderRadius: 3 },
-  breakSubtext: { color: '#555', fontSize: 12, textAlign: 'center' },
-  quizSection: { backgroundColor: '#1A1A24', borderRadius: 16, padding: 16, marginTop: 8 },
-  quizLabel: { color: '#FF9800', fontSize: 12, fontWeight: '700', marginBottom: 10 },
-  quizQuestion: { color: '#fff', fontSize: 14, lineHeight: 20, marginBottom: 12 },
-  option: { borderRadius: 10, marginBottom: 6, borderWidth: 1.5, overflow: 'hidden' },
-  optionText: { color: '#E0E0E0', fontSize: 13 },
-  result: { color: '#9E9E9E', fontSize: 13, marginTop: 8, textAlign: 'center' },
+  progressFill: { height: '100%', backgroundColor: n.colors.success, borderRadius: 3 },
+  breakSubtext: {},
+  quizSection: { marginTop: 8 },
+  quizLabel: { marginBottom: 10, textTransform: 'uppercase', letterSpacing: 1 },
+  quizQuestion: { marginBottom: 12 },
+  option: { borderRadius: n.radius.md, marginBottom: 6, borderWidth: 1, overflow: 'hidden' },
+  optionText: {},
+  result: { marginTop: 8 },
   idleSection: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   idleEmoji: { fontSize: 48, marginBottom: 12 },
-  idleText: { color: '#fff', fontSize: 18, fontWeight: '600', marginBottom: 4 },
-  idleText2: { color: '#9E9E9E', fontSize: 14 },
-  forceBtn: { padding: 16, alignItems: 'center' },
-  forceBtnText: { color: '#555', fontSize: 13 },
-  askGuruBtn: {
-    backgroundColor: '#1A1A2E',
-    borderWidth: 1,
-    borderColor: '#6C63FF66',
-    borderRadius: 12,
-    padding: 12,
-    alignItems: 'center',
-    marginHorizontal: 24,
-    marginBottom: 8,
-  },
-  askGuruText: { color: '#6C63FF', fontWeight: '700', fontSize: 14 },
+  idleText: { marginBottom: 4 },
+  idleText2: {},
+  forceBtn: { marginTop: 8 },
+  askGuruBtn: { marginHorizontal: 24, marginBottom: 8 },
 });

@@ -11,7 +11,6 @@ import {
   BackHandler,
   Alert,
   Vibration,
-  Platform,
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -31,15 +30,11 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import type { HomeStackParamList } from '../navigation/types';
 import { STREAK_MIN_MINUTES } from '../constants/gamification';
-import { getAllSubjects, getTopicsBySubject, getTopicById } from '../db/queries/topics';
-import {
-  saveLectureTranscript,
-  getLectureTranscriptsBySubject,
-  saveLectureNote,
-} from '../db/queries/aiCache';
+import { getAllSubjects, getTopicsBySubject } from '../db/queries/topics';
+import { saveLectureTranscript, saveLectureNote } from '../db/queries/aiCache';
 import { createSession, endSession, updateSessionProgress } from '../db/queries/sessions';
 import { profileRepository } from '../db/repositories';
-import { theme } from '../constants/theme';
+import { linearTheme as n } from '../theme/linearTheme';
 import { useAppStore } from '../store/useAppStore';
 import { sendImmediateNag } from '../services/notificationService';
 import { connectToRoom, sendSyncMessage } from '../services/deviceSyncService';
@@ -60,8 +55,6 @@ const PROOF_OF_LIFE_INTERVAL = 15 * 60; // 15 mins
 const PROOF_OF_LIFE_GRACE = 60; // 60 secs to respond
 const PROOF_OF_LIFE_WARNING = 30; // warn 30s before trigger
 const AUTO_SCRIBE_CHUNK_MS = 3 * 60 * 1000;
-const MAX_RECORDING_RETRIES = 3;
-const RECORDING_RETRY_DELAY = 2000;
 const STATE_SAVE_DEBOUNCE = 2000;
 const STATE_SAVE_CHECKPOINT = 30;
 
@@ -106,7 +99,7 @@ export default function LectureModeScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef<number | null>(null);
   const isHydratedRef = useRef(false);
-  const backHandlerRef = useRef<any>(null);
+  const backHandlerRef = useRef<ReturnType<typeof BackHandler.addEventListener> | null>(null);
   const proofOfLifeTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartTimeRef = useRef<number>(0);
   const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -256,13 +249,13 @@ export default function LectureModeScreen() {
         },
       );
     }
-  }, [elapsed]);
+  }, [elapsed, notes, refreshProfile]);
 
   // ── Lifecycle & Data ─────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!profile) refreshProfile();
-  }, [profile]);
+  }, [profile, refreshProfile]);
 
   useEffect(() => {
     shouldContinueAutoScribeRef.current = isRecordingEnabled && !onBreak;
@@ -291,7 +284,7 @@ export default function LectureModeScreen() {
 
   useEffect(() => {
     if (profile?.syncCode) {
-      const unsubscribe = connectToRoom(profile.syncCode, (msg: any) => {
+      const unsubscribe = connectToRoom(profile.syncCode, (msg: { type?: string }) => {
         if (msg.type === 'DOOMSCROLL_DETECTED') {
           setPartnerDoomscrolling(true);
           Vibration.vibrate([0, 500, 200, 500, 200, 1000]);
@@ -421,7 +414,7 @@ export default function LectureModeScreen() {
         pulseLoop.stop();
       };
     }
-  }, [proofOfLifeActive]);
+  }, [proofOfLifeActive, proofGlowAnim, proofPulseAnim]);
 
   const stopLecture = useCallback(async () => {
     if (timerRef.current) {
@@ -657,6 +650,9 @@ export default function LectureModeScreen() {
         void startRecording();
       }
     }
+    // `applyLectureAnalysis` is a stable local helper for this screen flow; keeping it
+    // out of the dependency list avoids a declaration-order cycle in this file.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recording, elapsed, recordingRetryCount, startRecording]);
 
   useEffect(() => {
@@ -945,17 +941,17 @@ export default function LectureModeScreen() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: theme.colors.error,
+            backgroundColor: n.colors.error,
             zIndex: 999,
             justifyContent: 'center',
             alignItems: 'center',
-            padding: theme.spacing.xxl,
+            padding: 40,
           }}
         >
           <Text style={{ fontSize: 80, marginBottom: 20 }}>📱❌</Text>
           <Text
             style={{
-              color: theme.colors.textPrimary,
+              color: n.colors.textPrimary,
               fontSize: 32,
               fontWeight: '900',
               textAlign: 'center',
@@ -966,7 +962,7 @@ export default function LectureModeScreen() {
           </Text>
           <Text
             style={{
-              color: theme.colors.textPrimary,
+              color: n.colors.textPrimary,
               fontSize: 20,
               textAlign: 'center',
               marginTop: 20,
@@ -978,7 +974,7 @@ export default function LectureModeScreen() {
       )}
       <StatusBar
         barStyle="light-content"
-        backgroundColor={proofOfLifeActive ? theme.colors.errorSurface : theme.colors.background}
+        backgroundColor={proofOfLifeActive ? n.colors.errorSurface : n.colors.background}
       />
       <ResponsiveContainer>
         <View style={styles.header}>
@@ -995,27 +991,30 @@ export default function LectureModeScreen() {
 
         <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
           {focusState !== 'focused' && !onBreak && (
-            <View style={[styles.hostageInfo, { borderColor: theme.colors.error }]}>
+            <LinearSurface
+              padded={false}
+              style={[styles.hostageInfo, { borderColor: n.colors.error }]}
+            >
               <Text style={styles.hostageEmoji}>👀</Text>
-              <Text style={[styles.hostageText, { color: theme.colors.error }]}>
+              <Text style={[styles.hostageText, { color: n.colors.error }]}>
                 Face not detected or distracted! Look at your study materials!
               </Text>
-            </View>
+            </LinearSurface>
           )}
 
           {/* Hostage Instructions */}
           {!proofOfLifeActive && elapsed < 60 && (
-            <View style={styles.hostageInfo}>
+            <LinearSurface padded={false} style={styles.hostageInfo}>
               <Text style={styles.hostageEmoji}>📱❌</Text>
               <Text style={styles.hostageText}>
                 Put this phone face up on your desk. Watch the lecture on your tablet. If you close
                 this app to doomscroll, your phone will scream at you.
               </Text>
-            </View>
+            </LinearSurface>
           )}
 
           {/* Timer */}
-          <View
+          <LinearSurface
             style={[styles.timerBox, proofOfLifeActive && styles.timerBoxWarn]}
             testID="lecture-timer"
           >
@@ -1028,15 +1027,15 @@ export default function LectureModeScreen() {
             >
               {mins}:{secs.toString().padStart(2, '0')}
             </Text>
-          </View>
+          </LinearSurface>
 
           {/* Pre-warning 30s before proof of life */}
           {proofWarningActive && !proofOfLifeActive && (
-            <View style={styles.proofWarnBanner}>
+            <LinearSurface padded={false} style={styles.proofWarnBanner}>
               <Text style={styles.proofWarnText}>
                 ⚠️ Listening check in 30s — get ready to type!
               </Text>
-            </View>
+            </LinearSurface>
           )}
 
           {/* Proof of Life Challenge - Enhanced with animation */}
@@ -1116,14 +1115,14 @@ export default function LectureModeScreen() {
               </View>
             </View>
           ) : (
-            <View style={styles.selectedSubject}>
+            <LinearSurface padded={false} style={styles.selectedSubject}>
               <Text style={styles.selectedSubjectText}>
                 {subjects.find((s) => s.id === selectedSubjectId)?.name}
               </Text>
               <TouchableOpacity onPress={() => setSelectedSubjectId(null)}>
                 <Text style={styles.changeBtn}>Change</Text>
               </TouchableOpacity>
-            </View>
+            </LinearSurface>
           )}
 
           {/* Note input */}
@@ -1141,9 +1140,7 @@ export default function LectureModeScreen() {
               </Text>
             </View>
             {isTranscribing && (
-              <Text style={{ color: theme.colors.textInverse, fontSize: 11 }}>
-                Processing chunk...
-              </Text>
+              <Text style={{ color: n.colors.textInverse, fontSize: 11 }}>Processing chunk...</Text>
             )}
           </TouchableOpacity>
 
@@ -1168,9 +1165,7 @@ export default function LectureModeScreen() {
                   ? 'Type here immediately to dismiss alarm...'
                   : "Type a key concept to prove you're listening..."
               }
-              placeholderTextColor={
-                proofOfLifeActive ? theme.colors.error + 'AA' : theme.colors.textMuted
-              }
+              placeholderTextColor={proofOfLifeActive ? n.colors.error + 'AA' : n.colors.textMuted}
               multiline
               value={currentNote}
               onChangeText={setCurrentNote}
@@ -1215,19 +1210,19 @@ export default function LectureModeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: theme.colors.background },
-  safeWarn: { backgroundColor: theme.colors.errorSurface },
+  safe: { flex: 1, backgroundColor: n.colors.background },
+  safeWarn: { backgroundColor: n.colors.errorSurface },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
     paddingTop: 20,
   },
   backBtn: { padding: 4 },
-  backText: { color: theme.colors.error, fontSize: 16, fontWeight: '700' },
+  backText: { color: n.colors.error, fontSize: 16, fontWeight: '700' },
   headerTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '900',
     fontSize: 17,
     textTransform: 'uppercase',
@@ -1235,35 +1230,31 @@ const styles = StyleSheet.create({
   },
   placeholder: { width: 60 },
   scroll: { flex: 1 },
-  content: { padding: theme.spacing.lg, paddingBottom: 60 },
+  content: { padding: n.spacing.lg, paddingBottom: 60 },
 
   hostageInfo: {
-    
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
     marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
   hostageEmoji: { fontSize: 28, marginRight: 12 },
-  hostageText: { color: theme.colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 },
+  hostageText: { color: n.colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 },
 
   timerBox: {
     alignItems: 'center',
-    
     borderRadius: 20,
-    padding: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
+    padding: n.spacing.xl,
+    marginBottom: n.spacing.xl,
   },
   timerBoxWarn: {
-    backgroundColor: theme.colors.errorSurface,
     borderWidth: 2,
-    borderColor: theme.colors.error,
+    borderColor: n.colors.error,
   },
   timerLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     marginBottom: 6,
     fontWeight: '700',
@@ -1271,21 +1262,21 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   timer: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '900',
     fontSize: 52,
     fontVariant: ['tabular-nums'],
   },
-  timerWarn: { color: theme.colors.error },
+  timerWarn: { color: n.colors.error },
 
   proofOfLifeBox: {
-    backgroundColor: theme.colors.errorSurface,
+    backgroundColor: n.colors.errorSurface,
     borderRadius: 20,
-    padding: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
+    padding: n.spacing.xl,
+    marginBottom: n.spacing.xl,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: theme.colors.error,
+    borderColor: n.colors.error,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -1296,10 +1287,10 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: theme.colors.errorTintSoft,
+    backgroundColor: `${n.colors.error}22`,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
     position: 'relative',
   },
   proofPulseRing: {
@@ -1314,7 +1305,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   proofTitle: {
-    color: theme.colors.error,
+    color: n.colors.error,
     fontWeight: '900',
     fontSize: 20,
     marginBottom: 8,
@@ -1322,7 +1313,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   proofSub: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     textAlign: 'center',
     fontWeight: '600',
     fontSize: 14,
@@ -1337,31 +1328,31 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: theme.colors.errorSurface,
+    backgroundColor: n.colors.errorSurface,
     borderWidth: 3,
-    borderColor: theme.colors.error,
+    borderColor: n.colors.error,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   proofTimerText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 36,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
   },
   proofTimerTextUrgent: {
-    color: theme.colors.error,
+    color: n.colors.error,
   },
   proofTimerLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
   proofWarning: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 13,
     textAlign: 'center',
     fontStyle: 'italic',
@@ -1371,7 +1362,7 @@ const styles = StyleSheet.create({
 
   subjectSection: { marginBottom: 20 },
   sectionLabel: {
-    color: theme.colors.textSecondary,
+    color: n.colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
@@ -1384,125 +1375,126 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1.5,
-    
+    backgroundColor: n.colors.card,
   },
   subjectChipText: { fontWeight: '700', fontSize: 13, lineHeight: 18 },
   selectedSubject: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-    
-    padding: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
+    padding: n.spacing.lg,
     borderRadius: 12,
   },
-  selectedSubjectText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 16 },
-  changeBtn: { color: theme.colors.primary, fontSize: 14, fontWeight: '700' },
+  selectedSubjectText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 16 },
+  changeBtn: { color: n.colors.accent, fontSize: 14, fontWeight: '700' },
 
   transcribeBtn: {
-    
-    padding: theme.spacing.lg,
+    backgroundColor: n.colors.card,
+    padding: n.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: theme.colors.primary,
+    borderColor: n.colors.border,
     marginBottom: 12,
     alignItems: 'center',
   },
   transcribeBtnActive: {
-    backgroundColor: theme.colors.errorSurface,
-    borderColor: theme.colors.error,
+    backgroundColor: n.colors.errorSurface,
+    borderColor: n.colors.error,
   },
-  transcribeBtnText: { color: theme.colors.primary, fontWeight: '800', fontSize: 14 },
+  transcribeBtnText: { color: n.colors.accent, fontWeight: '800', fontSize: 14 },
   importTranscribeBtn: { marginTop: -4 },
 
   noteSection: { marginBottom: 20 },
   noteInput: {
-    
     borderRadius: 12,
-    padding: theme.spacing.lg,
-    color: theme.colors.textPrimary,
+    padding: n.spacing.lg,
+    color: n.colors.textPrimary,
     fontSize: 16,
     minHeight: 100,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.card,
     marginBottom: 12,
   },
   noteInputWarn: {
-    backgroundColor: theme.colors.errorSurface,
-    borderColor: theme.colors.error,
+    backgroundColor: n.colors.errorSurface,
+    borderColor: n.colors.error,
     borderWidth: 2,
   },
   noteInputActive: {
-    borderColor: theme.colors.success,
+    borderColor: n.colors.success,
     borderWidth: 2,
   },
   saveBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 12,
-    padding: theme.spacing.lg,
+    padding: n.spacing.lg,
     alignItems: 'center',
   },
-  saveBtnDisabled: { backgroundColor: theme.colors.border },
-  saveBtnWarn: { backgroundColor: theme.colors.error },
+  saveBtnDisabled: { backgroundColor: n.colors.border },
+  saveBtnWarn: { backgroundColor: n.colors.error },
   saveBtnText: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 16,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
 
-  breakTriggerBtn: { padding: theme.spacing.lg, alignItems: 'center', marginTop: 8 },
-  breakTriggerText: { color: theme.colors.textSecondary, fontWeight: '700', fontSize: 14 },
+  breakTriggerBtn: { padding: n.spacing.lg, alignItems: 'center', marginTop: 8 },
+  breakTriggerText: { color: n.colors.textSecondary, fontWeight: '700', fontSize: 14 },
 
   savedNotes: { marginTop: 8 },
   noteRow: {
     flexDirection: 'row',
     marginBottom: 8,
-    
+    backgroundColor: n.colors.card,
     padding: 12,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: n.colors.border,
   },
   noteDot: {
-    color: theme.colors.primary,
+    color: n.colors.accent,
     fontSize: 20,
     marginRight: 8,
     lineHeight: 22,
     fontWeight: '900',
   },
-  noteText: { color: theme.colors.textPrimary, fontSize: 14, flex: 1, lineHeight: 22 },
+  noteText: { color: n.colors.textPrimary, fontSize: 14, flex: 1, lineHeight: 22 },
 
   resumeContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: theme.colors.background,
+    backgroundColor: n.colors.background,
   },
   resumeTitle: {
-    color: theme.colors.textPrimary,
+    color: n.colors.textPrimary,
     fontSize: 24,
     fontWeight: '800',
-    marginBottom: theme.spacing.lg,
+    marginBottom: n.spacing.lg,
   },
-  resumeTimer: { color: theme.colors.primary, fontSize: 80, fontWeight: '900', marginBottom: 40 },
+  resumeTimer: { color: n.colors.accent, fontSize: 80, fontWeight: '900', marginBottom: 40 },
   resumeBtn: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: n.colors.accent,
     borderRadius: 16,
     paddingHorizontal: 40,
-    paddingVertical: theme.spacing.lg,
+    paddingVertical: n.spacing.lg,
   },
-  resumeBtnText: { color: theme.colors.textPrimary, fontWeight: '800', fontSize: 18 },
+  resumeBtnText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 18 },
   proofWarnBanner: {
-    backgroundColor: theme.colors.warningSurface,
+    backgroundColor: `${n.colors.warning}12`,
     borderRadius: 10,
     padding: 12,
     borderWidth: 1,
-    borderColor: theme.colors.warning,
+    borderColor: n.colors.warning,
     marginBottom: 12,
   },
   proofWarnText: {
-    color: theme.colors.warning,
+    color: n.colors.warning,
     fontWeight: '700',
     fontSize: 13,
     textAlign: 'center',
@@ -1511,6 +1503,6 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: theme.colors.error,
+    backgroundColor: n.colors.error,
   },
 });

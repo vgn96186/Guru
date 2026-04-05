@@ -39,6 +39,8 @@ jest.mock('../databaseEvents', () => ({
 }));
 
 jest.mock('../../db/queries/externalLogs', () => ({
+  appendSessionPipelineEvent: jest.fn(),
+  updateSessionPipelineTelemetry: jest.fn(),
   updateSessionRecordingPath: jest.fn(),
 }));
 
@@ -183,5 +185,4 @@ describe('persistence service', () => {
       ).rejects.toThrow('DB Error');
     });
   });
-
 });

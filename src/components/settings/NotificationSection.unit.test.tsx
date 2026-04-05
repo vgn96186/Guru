@@ -20,16 +20,16 @@ describe('NotificationSection', () => {
 
   it('renders correctly with default props', () => {
     const { getByText, getByDisplayValue } = render(<NotificationSection {...defaultProps} />);
-    
+
     expect(getByText("Enable Guru's reminders")).toBeTruthy();
-    expect(getByText("Personalized daily accountability messages")).toBeTruthy();
+    expect(getByText('Personalized daily accountability messages')).toBeTruthy();
     expect(getByDisplayValue('7')).toBeTruthy();
-    
+
     expect(getByText('Rare')).toBeTruthy();
     expect(getByText('Normal')).toBeTruthy();
     expect(getByText('Frequent')).toBeTruthy();
     expect(getByText('Off')).toBeTruthy();
-    
+
     expect(getByText('Schedule Notifications Now')).toBeTruthy();
   });
 
@@ -37,7 +37,9 @@ describe('NotificationSection', () => {
     const { getByRole } = render(<NotificationSection {...defaultProps} />);
     // In React Native, Switch might be found by role 'switch' or just use the component.
     // RNTL fireEvent.valueChange for Switch.
-    const switchComponent = render(<NotificationSection {...defaultProps} />).UNSAFE_getByType(require('react-native').Switch);
+    const switchComponent = render(<NotificationSection {...defaultProps} />).UNSAFE_getByType(
+      require('react-native').Switch,
+    );
     fireEvent(switchComponent, 'valueChange', false);
     expect(defaultProps.onEnabledChange).toHaveBeenCalledWith(false);
   });
@@ -71,7 +73,7 @@ describe('NotificationSection', () => {
     const activeText = getByText('Frequent');
     // StyleSheet is mocked to return the object itself, and flatten is mocked to merge them.
     // In RNTL, we can check the props.style of the rendered component.
-    expect(activeText.props.style).toContainEqual({ color: '#6C63FF', fontWeight: '700' });
+    expect(activeText.props.style).toContainEqual({ color: '#5E6AD2', fontWeight: '700' });
   });
 
   it('uses number-pad keyboard for hour input', () => {

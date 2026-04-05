@@ -53,7 +53,9 @@ export default function LinearButton({
       accessibilityRole="button"
     >
       <View style={styles.contentRow}>
-        {leftIcon ? <View style={styles.iconSlot}>{leftIcon}</View> : null}
+        {leftIcon != null || rightIcon != null ? (
+          <View style={styles.iconSlot}>{leftIcon}</View>
+        ) : null}
         <View style={styles.labelWrap}>
           <LinearText
             variant="label"
@@ -63,7 +65,9 @@ export default function LinearButton({
             {label}
           </LinearText>
         </View>
-        {rightIcon ? <View style={styles.iconSlot}>{rightIcon}</View> : null}
+        {leftIcon != null || rightIcon != null ? (
+          <View style={styles.iconSlot}>{rightIcon}</View>
+        ) : null}
       </View>
     </Pressable>
   );

@@ -15,35 +15,31 @@ describe('PermissionRow', () => {
 
   it('renders correctly when status is granted', () => {
     const { getByText, queryByText } = render(<PermissionRow {...defaultProps} />);
-    
+
     expect(getByText('Camera')).toBeTruthy();
     expect(getByText('Granted')).toBeTruthy();
     expect(queryByText('Fix')).toBeNull();
-    
-    // Check color for granted (theme.colors.success is #4CAF50)
+
+    // Check color for granted
     const statusText = getByText('Granted');
-    expect(statusText.props.style).toContainEqual({ color: '#4CAF50' });
+    expect(statusText.props.style).toContainEqual({ color: '#3FB950' });
   });
 
   it('renders correctly when status is denied', () => {
-    const { getByText } = render(
-      <PermissionRow {...defaultProps} status="denied" />
-    );
-    
+    const { getByText } = render(<PermissionRow {...defaultProps} status="denied" />);
+
     expect(getByText('Camera')).toBeTruthy();
     expect(getByText('Missing')).toBeTruthy();
     expect(getByText('Fix')).toBeTruthy();
-    
-    // Check color for denied (theme.colors.error is #F44336)
+
+    // Check color for denied
     const statusText = getByText('Missing');
-    expect(statusText.props.style).toContainEqual({ color: '#F44336' });
+    expect(statusText.props.style).toContainEqual({ color: '#F14C4C' });
   });
 
   it('triggers onFix when Fix button is pressed', () => {
-    const { getByText } = render(
-      <PermissionRow {...defaultProps} status="denied" />
-    );
-    
+    const { getByText } = render(<PermissionRow {...defaultProps} status="denied" />);
+
     fireEvent.press(getByText('Fix'));
     expect(defaultProps.onFix).toHaveBeenCalledTimes(1);
   });

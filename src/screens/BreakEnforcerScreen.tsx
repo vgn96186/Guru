@@ -33,14 +33,16 @@ export default function BreakEnforcerScreen() {
     navigation.navigate('Tabs');
   }, [navigation]);
 
+  // Arm push notifications once on mount with the initial duration
   useEffect(() => {
-    // 1. Arm the push notifications in case they background the app
-    scheduleBreakEndAlarms(timeLeft);
+    scheduleBreakEndAlarms(route.params.durationSeconds ?? 300);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // 2. Block back button
+  useEffect(() => {
+    // Block back button
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => true);
 
-    // 3. Listen for Tablet resuming lecture
+    // Listen for Tablet resuming lecture
     let unsubscribeSync = () => {};
     if (profile?.syncCode) {
       unsubscribeSync = connectToRoom(profile.syncCode, (msg) => {
@@ -50,7 +52,7 @@ export default function BreakEnforcerScreen() {
       });
     }
 
-    // 4. Local Countdown
+    // Local Countdown — uses functional setTimeLeft so timeLeft is not a dep
     const timer = setInterval(() => {
       setTimeLeft((prev: number) => {
         if (prev <= 1) {
@@ -68,7 +70,7 @@ export default function BreakEnforcerScreen() {
       unsubscribeSync();
       if (vibIntervalRef.current) clearInterval(vibIntervalRef.current);
     };
-  }, [profile?.syncCode, handleReturnToLecture, triggerMeltdown, timeLeft]);
+  }, [profile?.syncCode, handleReturnToLecture, triggerMeltdown]);
 
   const [showFallback, setShowFallback] = useState(false);
 

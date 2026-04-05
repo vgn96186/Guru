@@ -101,6 +101,7 @@ export function useLecturePipeline({
   const transcriptionRunIdRef = useRef(0);
   const lastProgressSignatureRef = useRef('');
   const progressHeartbeatAtRef = useRef(0);
+  const stallCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const hasLocalWhisper = !!(profile?.useLocalWhisper && profile?.localWhisperPath);
   const hasHuggingFace = !!(profile?.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN);
@@ -224,16 +225,18 @@ Summary: ${result.lectureSummary}`;
       detail: 'Checking the recording and selecting the transcription path',
       percent: 4,
     });
-    const stallCheckId = setInterval(() => {
+    stallCheckIntervalRef.current = setInterval(() => {
       if (runId !== transcriptionRunIdRef.current || cancelRequestedRef.current) {
-        clearInterval(stallCheckId);
+        clearInterval(stallCheckIntervalRef.current!);
+        stallCheckIntervalRef.current = null;
         return;
       }
       if (Date.now() - progressHeartbeatAtRef.current < TRANSCRIPTION_STALL_TIMEOUT_MS) {
         return;
       }
 
-      clearInterval(stallCheckId);
+      clearInterval(stallCheckIntervalRef.current!);
+      stallCheckIntervalRef.current = null;
       transcriptionRunIdRef.current += 1;
       setActiveStage(null);
       setStageMessage('');
@@ -281,7 +284,10 @@ Summary: ${result.lectureSummary}`;
           handlePipelineProgress(progress);
         },
       });
-      clearInterval(stallCheckId);
+      if (stallCheckIntervalRef.current) {
+        clearInterval(stallCheckIntervalRef.current);
+        stallCheckIntervalRef.current = null;
+      }
 
       if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
         if (!visible)
@@ -322,7 +328,10 @@ Summary: ${result.lectureSummary}`;
         generateQuiz(result);
       }
     } catch (e: any) {
-      clearInterval(stallCheckId);
+      if (stallCheckIntervalRef.current) {
+        clearInterval(stallCheckIntervalRef.current);
+        stallCheckIntervalRef.current = null;
+      }
       if (!visible || cancelRequestedRef.current || runId !== transcriptionRunIdRef.current) {
         return;
       }
@@ -552,7 +561,16 @@ Summary: ${result.lectureSummary}`;
       void updateSessionTranscriptionStatus(logId, 'failed', 'No transcription engine configured');
       setPhase('error');
     }
-  }, [visible, recordingPath, groqKey, hasHuggingFace, hasLocalWhisper, canTranscribe, logId]);
+  }, [
+    visible,
+    recordingPath,
+    groqKey,
+    hasHuggingFace,
+    hasLocalWhisper,
+    canTranscribe,
+    logId,
+    appName,
+  ]);
 
   useEffect(() => {
     if (!visible) {
@@ -585,6 +603,10 @@ Summary: ${result.lectureSummary}`;
       transcriptionStartedRef.current = false;
       autoStartTimeoutFiredRef.current = false;
       cancelRequestedRef.current = false;
+      if (stallCheckIntervalRef.current) {
+        clearInterval(stallCheckIntervalRef.current);
+        stallCheckIntervalRef.current = null;
+      }
     }
   }, [visible]);
 

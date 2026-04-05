@@ -37,6 +37,13 @@ export default function PunishmentMode() {
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
+  const snoozeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current);
+    };
+  }, []);
 
   // Initialize idle tracking
   useEffect(() => {
@@ -208,7 +215,8 @@ export default function PunishmentMode() {
   function handleSnooze() {
     setShowGuiltScreen(false);
     // Snooze for 10 minutes
-    setTimeout(() => setShowGuiltScreen(true), 10 * 60 * 1000);
+    if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current);
+    snoozeTimerRef.current = setTimeout(() => setShowGuiltScreen(true), 10 * 60 * 1000);
   }
 
   if (!showGuiltScreen || !currentShame) {

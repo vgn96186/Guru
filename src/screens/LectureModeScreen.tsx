@@ -96,6 +96,7 @@ export default function LectureModeScreen() {
   const previousRecordingEnabledRef = useRef(false);
 
   const [partnerDoomscrolling, setPartnerDoomscrolling] = useState(false);
+  const partnerDoomscrollingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const sessionIdRef = useRef<number | null>(null);
   const isHydratedRef = useRef(false);
@@ -293,7 +294,12 @@ export default function LectureModeScreen() {
         if (msg.type === 'DOOMSCROLL_DETECTED') {
           setPartnerDoomscrolling(true);
           Vibration.vibrate([0, 500, 200, 500, 200, 1000]);
-          setTimeout(() => setPartnerDoomscrolling(false), 10000); // Hide after 10s
+          if (partnerDoomscrollingTimerRef.current)
+            clearTimeout(partnerDoomscrollingTimerRef.current);
+          partnerDoomscrollingTimerRef.current = setTimeout(() => {
+            setPartnerDoomscrolling(false);
+            partnerDoomscrollingTimerRef.current = null;
+          }, 10000);
         }
       });
 
@@ -305,6 +311,10 @@ export default function LectureModeScreen() {
       return () => {
         sendSyncMessage({ type: 'LECTURE_STOPPED' });
         unsubscribe();
+        if (partnerDoomscrollingTimerRef.current) {
+          clearTimeout(partnerDoomscrollingTimerRef.current);
+          partnerDoomscrollingTimerRef.current = null;
+        }
       };
     }
   }, [profile?.syncCode, selectedSubjectId]);

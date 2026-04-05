@@ -107,6 +107,7 @@ export function useLectureReturnRecovery({
   onPomodoroBreak,
 }: UseLectureReturnRecoveryParams) {
   const handledReturnLogRef = useRef<number | null>(null);
+  const sessionCheckInProgressRef = useRef(false);
   const lastRecoveryAttemptRef = useRef(0);
   const lastPomodoroBreakLogRef = useRef<number | null>(null);
 
@@ -145,6 +146,8 @@ export function useLectureReturnRecovery({
 
   const checkForReturnedSession = useCallback(
     async (showPrompt: boolean) => {
+      if (sessionCheckInProgressRef.current) return;
+      sessionCheckInProgressRef.current = true;
       try {
         const session = await getIncompleteExternalSession();
         if (!session || handledReturnLogRef.current === session.id) return;
@@ -327,6 +330,8 @@ export function useLectureReturnRecovery({
       } catch (err) {
         console.error('[Home] Error in checkForReturnedSession:', err);
         showToast("Couldn't process your lecture recording. Try opening the app again.", 'error');
+      } finally {
+        sessionCheckInProgressRef.current = false;
       }
     },
     [onRecovered],

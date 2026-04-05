@@ -104,6 +104,11 @@ export default function LectureModeScreen() {
   const recordingStartTimeRef = useRef<number>(0);
   const saveStateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedSnapshotRef = useRef<string>('');
+  const elapsedRef = useRef(elapsed);
+
+  useEffect(() => {
+    elapsedRef.current = elapsed;
+  }, [elapsed]);
 
   const { focusState } = useFaceTracking();
 
@@ -363,10 +368,10 @@ export default function LectureModeScreen() {
 
   // Proof of Life Countdown - with proper cleanup and animations
   useEffect(() => {
-    if (proofOfLifeActive && proofOfLifeCountdown > 0) {
+    if (proofOfLifeActive) {
       proofOfLifeTimerRef.current = setInterval(() => {
         setProofOfLifeCountdown((c) => {
-          if (c <= 1) {
+          if (c === 1) {
             // FAILED PROOF OF LIFE
             sendImmediateNag(
               '🚨 WAKE UP',
@@ -375,6 +380,7 @@ export default function LectureModeScreen() {
             Vibration.vibrate(1000);
             return 0;
           }
+          if (c <= 0) return 0;
           return c - 1;
         });
       }, 1000);
@@ -386,7 +392,7 @@ export default function LectureModeScreen() {
         }
       };
     }
-  }, [proofOfLifeActive, proofOfLifeCountdown]);
+  }, [proofOfLifeActive]);
 
   // Animations for proof of life warning
   useEffect(() => {
@@ -574,20 +580,21 @@ export default function LectureModeScreen() {
   }, []);
 
   const processRecording = useCallback(async () => {
-    if (!recording) {
+    const currentRec = recordingRef.current;
+    if (!currentRec) {
       if (__DEV__) console.log('[LectureMode] No recording instance to process');
       return;
     }
     setIsTranscribing(true);
 
     try {
-      const status = await recording.getStatusAsync();
+      const status = await currentRec.getStatusAsync();
       if (!status.canRecord) {
         if (__DEV__) console.warn('[LectureMode] Recording instance is not active');
       }
 
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
+      await currentRec.stopAndUnloadAsync();
+      const uri = currentRec.getURI();
       const recordingDuration = (Date.now() - recordingStartTimeRef.current) / 1000;
 
       if (__DEV__) {
@@ -646,14 +653,14 @@ export default function LectureModeScreen() {
     } finally {
       setIsTranscribing(false);
       setRecordingRetryCount(0);
-      if (shouldContinueAutoScribeRef.current && elapsed > 0) {
+      if (shouldContinueAutoScribeRef.current && elapsedRef.current > 0) {
         void startRecording();
       }
     }
     // `applyLectureAnalysis` is a stable local helper for this screen flow; keeping it
     // out of the dependency list avoids a declaration-order cycle in this file.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recording, elapsed, recordingRetryCount, startRecording]);
+  }, [recordingRetryCount, startRecording]);
 
   useEffect(() => {
     if (!isRecordingEnabled || onBreak || isTranscribing) return;

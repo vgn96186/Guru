@@ -73,35 +73,49 @@ export default function BedLockScreen() {
 
   // Pulsing animation for lying phase
   useEffect(() => {
+    let anim: Animated.CompositeAnimation | null = null;
+    let shameInterval: NodeJS.Timeout | null = null;
+
     if (phase === 'lying') {
-      Animated.loop(
+      anim = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
           Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
         ]),
-      ).start();
+      );
+      anim.start();
 
       // Vibration pattern for shame
-      const shameInterval = setInterval(() => {
+      shameInterval = setInterval(() => {
         Vibration.vibrate([0, 500, 200, 500]);
         setShameCount((c) => c + 1);
       }, 5000);
-
-      return () => clearInterval(shameInterval);
     }
+
+    return () => {
+      if (anim) anim.stop();
+      if (shameInterval) clearInterval(shameInterval);
+    };
   }, [phase]);
 
   // Shake animation for encouragement
   useEffect(() => {
+    let anim: Animated.CompositeAnimation | null = null;
+
     if (phase === 'situp' || phase === 'stand') {
-      Animated.loop(
+      anim = Animated.loop(
         Animated.sequence([
           Animated.timing(shakeAnim, { toValue: 5, duration: 100, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: -5, duration: 100, useNativeDriver: true }),
           Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
         ]),
-      ).start();
+      );
+      anim.start();
     }
+
+    return () => {
+      if (anim) anim.stop();
+    };
   }, [phase]);
 
   function handleForceUnlock() {

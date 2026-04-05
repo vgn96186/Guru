@@ -40,6 +40,13 @@ export default function DoomscrollInterceptor() {
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(1)).current;
+  const delayTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (delayTimerRef.current) clearInterval(delayTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     dailyLogRepository.getDailyLog().then((log) => setSessionCount(log?.sessionCount ?? 0));
@@ -77,12 +84,14 @@ export default function DoomscrollInterceptor() {
 
   function startDelayTimer() {
     let remaining = DELAY_SECONDS;
-    const timer = setInterval(() => {
+    if (delayTimerRef.current) clearInterval(delayTimerRef.current);
+    delayTimerRef.current = setInterval(() => {
       remaining -= 1;
       setDelayRemaining(remaining);
 
       if (remaining <= 0) {
-        clearInterval(timer);
+        if (delayTimerRef.current) clearInterval(delayTimerRef.current);
+        delayTimerRef.current = null;
       }
     }, 1000);
   }

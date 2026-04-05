@@ -241,9 +241,16 @@ export default function SessionScreen() {
   const isStudying = sessionState === 'studying' && !isOnBreak && !isPaused;
 
   const topicNames = useMemo(() => agenda?.items?.map((i) => i.topic.name) ?? [], [agenda]);
+  const currentTopic = agenda?.items?.[currentItemIndex]?.topic;
+  const currentTopicName = currentTopic?.name ?? null;
+  const currentTopicIdentity = currentTopic
+    ? `${currentTopic.subjectName}::${currentTopic.id}`
+    : null;
 
   const { currentMessage, presencePulse, toastOpacity, triggerEvent } = useGuruPresence({
-    topicNames,
+    currentTopicIdentity,
+    currentTopicName,
+    allTopicNames: topicNames,
     isActive: isStudying && (profile?.bodyDoublingEnabled ?? true),
     frequency: profile?.guruFrequency ?? 'normal',
   });
@@ -464,8 +471,10 @@ export default function SessionScreen() {
       resetSession();
       void startPlanning();
     }
+  }, [resume, resetSession, startPlanning, setSessionState]);
 
-    // Master Timer
+  // Master Timer Effect
+  useEffect(() => {
     timerRef.current = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
       const state = useSessionStore.getState();
@@ -478,10 +487,22 @@ export default function SessionScreen() {
     }, 1000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (agendaRevealTimeoutRef.current) clearTimeout(agendaRevealTimeoutRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [resume, resetSession, startPlanning, incrementActiveStudyDuration, setSessionState]);
+  }, [incrementActiveStudyDuration]);
+
+  // Cleanup pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (agendaRevealTimeoutRef.current) {
+        clearTimeout(agendaRevealTimeoutRef.current);
+        agendaRevealTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Break Timer Effect
   useEffect(() => {

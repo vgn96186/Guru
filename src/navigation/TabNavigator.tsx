@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Animated,
@@ -87,6 +87,7 @@ import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
 import { navigationRef } from './navigationRef';
 import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
+import { getDeepestFocusedRouteName, isActionHubAllowedForRoute } from './tabUiVisibility';
 
 const Tab = createMaterialTopTabNavigator<TabParamList>();
 
@@ -220,15 +221,25 @@ function CustomTabBar({
   dueCount,
   isActionHubOpen,
   onToggleActionHub,
+  onCloseActionHub,
   bottomInset,
 }: {
   tabBarProps: MaterialTopTabBarProps;
   dueCount: number;
   isActionHubOpen: boolean;
   onToggleActionHub: () => void;
+  onCloseActionHub: () => void;
   bottomInset: number;
 }) {
   const { state, navigation } = tabBarProps;
+  const activeLeafRouteName = useMemo(() => getDeepestFocusedRouteName(state), [state]);
+  const actionHubEnabled = isActionHubAllowedForRoute(activeLeafRouteName);
+
+  useEffect(() => {
+    if (!actionHubEnabled && isActionHubOpen) {
+      onCloseActionHub();
+    }
+  }, [actionHubEnabled, isActionHubOpen, onCloseActionHub]);
 
   // Insert FAB at position 2 (between Syllabus and Chat)
   const leftTabs = TAB_ITEMS.slice(0, 2);
@@ -284,21 +295,31 @@ function CustomTabBar({
 
       {/* Center FAB */}
       <Pressable
-        style={({ pressed }) => [styles.fabSlot, pressed && styles.actionPressed]}
-        onPress={onToggleActionHub}
+        style={({ pressed }) => [
+          styles.fabSlot,
+          !actionHubEnabled && styles.fabSlotDisabled,
+          pressed && actionHubEnabled && styles.actionPressed,
+        ]}
+        onPress={actionHubEnabled ? onToggleActionHub : undefined}
+        disabled={!actionHubEnabled}
         testID="action-hub-toggle"
         accessibilityRole="button"
-        accessibilityLabel="Open action hub"
-        accessibilityHint="Opens the quick actions sheet"
+        accessibilityLabel={actionHubEnabled ? 'Open action hub' : 'Action hub unavailable here'}
+        accessibilityHint={
+          actionHubEnabled
+            ? 'Opens the quick actions sheet'
+            : 'Return to a main tab screen to use quick actions'
+        }
+        accessibilityState={{ disabled: !actionHubEnabled }}
       >
         <View style={styles.fabButton}>
           <Ionicons
             name={isActionHubOpen ? 'close' : 'add'}
             size={26}
-            color={n.colors.textPrimary}
+            color={actionHubEnabled ? n.colors.textPrimary : n.colors.textMuted}
           />
         </View>
-        <Text style={styles.fabLabel}>Actions</Text>
+        <Text style={[styles.fabLabel, !actionHubEnabled && styles.fabLabelDisabled]}>Actions</Text>
       </Pressable>
 
       {rightTabs.map((tab, i) => {
@@ -594,6 +615,7 @@ export default function TabNavigator() {
             dueCount={dueCount}
             isActionHubOpen={isActionHubOpen}
             onToggleActionHub={() => setIsActionHubOpen((v) => !v)}
+            onCloseActionHub={() => setIsActionHubOpen(false)}
             bottomInset={bottomInset}
           />
         )}
@@ -632,6 +654,7 @@ export default function TabNavigator() {
         </Animated.View>
         <Animated.View
           {...sheetPanResponder.panHandlers}
+          pointerEvents={isActionHubOpen ? 'auto' : 'none'}
           style={[
             styles.sheet,
             {
@@ -921,6 +944,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  fabSlotDisabled: {
+    opacity: 0.45,
+  },
   fabButton: {
     width: 48,
     height: 48,
@@ -937,6 +963,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 4,
     letterSpacing: 0,
+  },
+  fabLabelDisabled: {
+    color: n.colors.textMuted,
   },
   customTabBar: {
     flexDirection: 'row',

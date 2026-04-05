@@ -85,28 +85,48 @@ export async function getTouchedSubjectIds(): Promise<Set<number>> {
 /**
  * Get the next lecture for each active batch.
  * Returns one NextLectureInfo per batch that has remaining lectures.
+ *
+ * Auto-advancement is NON-LINEAR: each subject is checked independently.
+ * A lecture is auto-completed if ≥90% of its subject's leaf topics are
+ * non-unseen (catches bulk "Mark Watched" actions at 100% while ignoring
+ * scattered MCQ/session activity which is typically <20%).
  */
 export async function getNextLectures(): Promise<NextLectureInfo[]> {
   const results: NextLectureInfo[] = [];
-  const touchedSubjectIds = await getTouchedSubjectIds();
+  const db = getDb();
+
+  // Per-subject: count leaf topics and how many are non-unseen
+  const stats = await db.getAllAsync<{
+    subject_id: number;
+    total: number;
+    studied: number;
+  }>(`
+    SELECT t.subject_id,
+           COUNT(*) as total,
+           SUM(CASE WHEN COALESCE(tp.status, 'unseen') != 'unseen' THEN 1 ELSE 0 END) as studied
+    FROM topics t
+    LEFT JOIN topic_progress tp ON tp.topic_id = t.id
+    WHERE t.parent_topic_id IS NOT NULL
+    GROUP BY t.subject_id
+  `);
+
+  const AUTO_COMPLETE_THRESHOLD = 0.9;
+  const watchedSubjectIds = new Set<number>();
+  for (const s of stats) {
+    if (s.total > 0 && s.studied / s.total >= AUTO_COMPLETE_THRESHOLD) {
+      watchedSubjectIds.add(s.subject_id);
+    }
+  }
 
   for (const batch of LECTURE_BATCHES) {
     const explicitCompleted = await getCompletedLectures(batch.id);
     const completedSet = new Set<number>(explicitCompleted);
 
-    // ── Intelligent Auto-Advancement ──
-    // If the user has touched a subject in the sequence, assume lectures before it are done.
-    // We stop inferring leaps if they hit a subject they haven't touched (unless explicitly marked).
+    // Non-linear: independently check each lecture's subject.
+    // No linear break — handles out-of-order lecture watching correctly.
     for (const lect of batch.lectures) {
-      if (touchedSubjectIds.has(lect.subjectId)) {
-        for (let i = 1; i < lect.index; i++) {
-          completedSet.add(i);
-        }
-      } else if (!completedSet.has(lect.index)) {
-        // If they haven't touched this subject AND haven't explicitly check-marked it done,
-        // we halt the auto-advancement leap here. This prevents random MCQ activity
-        // from jumping the schedule 15 subjects ahead.
-        break;
+      if (watchedSubjectIds.has(lect.subjectId)) {
+        completedSet.add(lect.index);
       }
     }
 
@@ -127,6 +147,19 @@ export async function getNextLectures(): Promise<NextLectureInfo[]> {
   }
 
   return results;
+}
+
+/**
+ * Find the lecture index for a subject within a batch.
+ * Returns undefined if the batch or subject is not found.
+ */
+export function getLectureIndexForSubject(
+  batchId: LectureBatchId,
+  subjectId: number,
+): number | undefined {
+  const batch = getBatchById(batchId);
+  if (!batch) return undefined;
+  return batch.lectures.find((l) => l.subjectId === subjectId)?.index;
 }
 
 /**

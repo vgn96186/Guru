@@ -8,7 +8,9 @@ const mockRefreshProfile = jest.fn();
 const mockSetDailyAvailability = jest.fn();
 const mockAddNotificationResponseReceivedListener = jest.fn(() => ({ remove: jest.fn() }));
 const mockLinkingGetInitialUrl = jest.fn().mockResolvedValue(null);
-const mockLinkingAddEventListener = jest.fn(() => ({ remove: jest.fn() }));
+const mockLinkingAddEventListener = jest.fn<unknown, ['url', (event: { url: string }) => void]>(
+  () => ({ remove: jest.fn() }),
+);
 type StoreSelector = Parameters<typeof useAppStore>[0];
 
 jest.mock('expo-notifications', () => ({
@@ -108,7 +110,10 @@ describe('useAppBootstrap', () => {
     });
     Object.defineProperty(Linking, 'addEventListener', {
       configurable: true,
-      value: (...args: unknown[]) => mockLinkingAddEventListener(...args),
+      value: (type: 'url', handler: (event: { url: string }) => void) =>
+        mockLinkingAddEventListener(type, handler) as unknown as ReturnType<
+          NonNullable<typeof Linking.addEventListener>
+        >,
     });
     alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(jest.fn());
   });

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -28,6 +28,12 @@ import { MS_PER_DAY } from '../constants/time';
 import { Ionicons } from '@expo/vector-icons';
 import { getCompletedTopicIdsBetween } from '../db/queries/sessions';
 import { getTopicsDueForReview, getAllTopicsWithProgress } from '../db/queries/topics';
+import {
+  getCompletedLectures,
+  markLectureCompleted,
+  unmarkLectureCompleted,
+  getLectureIndexForSubject,
+} from '../db/queries/lectureSchedule';
 import { getDb } from '../db/database';
 import type { TopicWithProgress, StudyResourceMode } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
@@ -183,8 +189,30 @@ function BTRProgressCard({
   onRefresh: () => void;
 }) {
   const subjects = [...SUBJECTS_SEED].sort((a, b) => a.displayOrder - b.displayOrder);
+  // BTR-specific lecture completion (from lecture_schedule_progress table)
+  const [btrCompletedIndices, setBtrCompletedIndices] = useState<Set<number>>(new Set());
 
-  // Per-subject mastery pipeline counts
+  const loadBtrCompletion = useCallback(async () => {
+    try {
+      const indices = await getCompletedLectures('btr');
+      setBtrCompletedIndices(new Set(indices));
+    } catch (e) {
+      console.warn('[BTRProgress] Failed to load completions:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadBtrCompletion();
+  }, [loadBtrCompletion]);
+
+  // Build a map: subjectId → BTR lecture index
+  const subjectToBtrIndex = new Map<number, number>();
+  for (const s of subjects) {
+    const idx = getLectureIndexForSubject('btr', s.id);
+    if (idx !== undefined) subjectToBtrIndex.set(s.id, idx);
+  }
+
+  // Per-subject mastery pipeline counts (global topic_progress)
   type SubjectStats = {
     unseen: number;
     seen: number;
@@ -207,13 +235,13 @@ function BTRProgressCard({
     else stats.unseen++;
   }
 
-  const overallSeen = [...subjectStats.values()].reduce(
-    (s, v) => s + v.seen + v.reviewed + v.mastered,
-    0,
-  );
-  const overallTotal = [...subjectStats.values()].reduce((s, v) => s + v.total, 0);
+  // BTR-specific counts (based on lecture_schedule_progress, not global topic stats)
+  const btrWatchedCount = btrCompletedIndices.size;
+  const btrTotalLectures = subjectToBtrIndex.size; // 19
   const overallMastered = [...subjectStats.values()].reduce((s, v) => s + v.mastered, 0);
+  const overallTotal = [...subjectStats.values()].reduce((s, v) => s + v.total, 0);
 
+  /** Mark a subject as BTR-watched: sets topic_progress AND lecture_schedule_progress. */
   const handleMarkDone = async (subjectId: number) => {
     try {
       const db = getDb();
@@ -227,10 +255,16 @@ function BTRProgressCard({
          AND status = 'unseen'`,
         [now, subjectId],
       );
+      // Also record BTR lecture as completed
+      const lectIndex = getLectureIndexForSubject('btr', subjectId);
+      if (lectIndex !== undefined) {
+        await markLectureCompleted('btr', lectIndex);
+      }
       showToast(
-        'Subject marked as done (watched). Now quiz these topics to make them stick.',
+        'BTR lecture marked as watched. Guru will now queue these topics for quiz and review.',
         'success',
       );
+      void loadBtrCompletion();
       onRefresh();
     } catch (err) {
       console.error('[BTR] Mark done failed:', err);
@@ -238,11 +272,28 @@ function BTRProgressCard({
     }
   };
 
+  /** Unmark a subject's BTR lecture (does NOT reset topic_progress). */
+  const handleUnmark = async (subjectId: number) => {
+    try {
+      const lectIndex = getLectureIndexForSubject('btr', subjectId);
+      if (lectIndex !== undefined) {
+        await unmarkLectureCompleted('btr', lectIndex);
+      }
+      showToast('BTR lecture unmarked.', 'success');
+      void loadBtrCompletion();
+      onRefresh();
+    } catch (err) {
+      console.error('[BTR] Unmark failed:', err);
+      showToast('Failed to unmark', 'error');
+    }
+  };
+
   return (
     <LinearSurface style={dbmciStyles.card}>
-      <LinearText style={dbmciStyles.title}>📊 BTR — Mastery Progress</LinearText>
+      <LinearText style={dbmciStyles.title}>📊 BTR — Lecture Progress</LinearText>
       <LinearText style={dbmciStyles.subtitle}>
-        {overallSeen}/{overallTotal} watched · {overallMastered} mastered · Watching ≠ Learning
+        {btrWatchedCount}/{btrTotalLectures} BTR lectures watched · {overallMastered}/{overallTotal}{' '}
+        topics mastered
       </LinearText>
       {/* Pipeline legend */}
       <View style={masteryStyles.legendRow}>
@@ -252,7 +303,7 @@ function BTRProgressCard({
         </View>
         <View style={masteryStyles.legendItem}>
           <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.accent }]} />
-          <LinearText style={masteryStyles.legendText}>Watched</LinearText>
+          <LinearText style={masteryStyles.legendText}>Studied</LinearText>
         </View>
         <View style={masteryStyles.legendItem}>
           <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.warning }]} />
@@ -277,6 +328,12 @@ function BTRProgressCard({
         const reviewedPct = stats.total > 0 ? (stats.reviewed + stats.mastered) / stats.total : 0;
         const needsQuiz = stats.seen > 0; // watched but unquizzed
 
+        // BTR-specific: is this subject's lecture explicitly completed?
+        const btrIndex = subjectToBtrIndex.get(subject.id);
+        const isBtrWatched = btrIndex !== undefined && btrCompletedIndices.has(btrIndex);
+        // Has organic study but no BTR lecture mark
+        const hasOrganicStudyOnly = !isBtrWatched && watchedOrBetter > 0;
+
         return (
           <View
             key={subject.shortCode}
@@ -288,11 +345,21 @@ function BTRProgressCard({
             <View
               style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 4 }}
             >
-              <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
+              {/* BTR lecture status badge */}
+              {isBtrWatched ? (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color={n.colors.success}
+                  style={{ marginRight: 6 }}
+                />
+              ) : (
+                <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
+              )}
               <LinearText
                 style={[
                   dbmciStyles.subjectName,
-                  watchedOrBetter === 0 && { color: n.colors.textMuted },
+                  !isBtrWatched && watchedOrBetter === 0 && { color: n.colors.textMuted },
                 ]}
               >
                 {subject.name}
@@ -342,12 +409,36 @@ function BTRProgressCard({
                   ⚡ {stats.seen} need quiz/review
                 </LinearText>
               )}
-              {watchedOrBetter === 0 && (
+              {isBtrWatched ? (
                 <TouchableOpacity
                   onPress={() =>
                     Alert.alert(
-                      'Mark as watched?',
-                      'This marks all unseen leaf topics as "seen" for this subject. Watching ≠ mastery — Guru will then queue them for quiz and review.',
+                      'Unmark BTR lecture?',
+                      `This removes the BTR lecture marker for ${subject.name}. Topic study progress is not affected.`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Unmark',
+                          style: 'destructive',
+                          onPress: () => handleUnmark(subject.id),
+                        },
+                      ],
+                    )
+                  }
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <LinearText style={[dbmciStyles.markBtn, { color: n.colors.textMuted }]}>
+                    Unwatch
+                  </LinearText>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() =>
+                    Alert.alert(
+                      'Mark BTR lecture as watched?',
+                      hasOrganicStudyOnly
+                        ? `Some ${subject.name} topics already have study progress (from quizzes/sessions). This will mark the BTR lecture as watched and set remaining unseen topics to "seen".`
+                        : 'This marks all unseen leaf topics as "seen" for this subject. Watching ≠ mastery — Guru will then queue them for quiz and review.',
                       [
                         { text: 'Cancel', style: 'cancel' },
                         { text: 'Mark Watched', onPress: () => handleMarkDone(subject.id) },
@@ -356,7 +447,9 @@ function BTRProgressCard({
                   }
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <LinearText style={dbmciStyles.markBtn}>Mark Watched</LinearText>
+                  <LinearText style={dbmciStyles.markBtn}>
+                    {hasOrganicStudyOnly ? 'Mark BTR Lecture' : 'Mark Watched'}
+                  </LinearText>
                 </TouchableOpacity>
               )}
             </View>

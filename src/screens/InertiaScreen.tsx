@@ -56,39 +56,52 @@ export default function InertiaScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    startBreathing();
     fetchMicroWin();
     // Skip button visible immediately (was 8s delay — bad for ADHD users who need help NOW)
   }, []);
 
-  function startBreathing() {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.4,
-          duration: 4000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 4000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
-    ).start();
+  useEffect(() => {
+    let anim: Animated.CompositeAnimation | null = null;
+    let t1: NodeJS.Timeout, t2: NodeJS.Timeout, t3: NodeJS.Timeout, t4: NodeJS.Timeout;
 
-    setTimeout(() => setBreatheText('Hold...'), 4000);
-    setTimeout(() => setBreatheText('Breathe out...'), 6000);
-    setTimeout(() => setBreatheText('One more time. In...'), 10000);
+    if (phase === 'fetching' || phase === 'micro_win') {
+      anim = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 1.4,
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      anim.start();
 
-    setTimeout(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setPhase('sit_up_prompt');
-      fadeIn();
-    }, 14000);
-  }
+      t1 = setTimeout(() => setBreatheText('Hold...'), 4000);
+      t2 = setTimeout(() => setBreatheText('Breathe out...'), 6000);
+      t3 = setTimeout(() => setBreatheText('One more time. In...'), 10000);
+
+      t4 = setTimeout(() => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setPhase('sit_up_prompt');
+        fadeIn();
+      }, 14000);
+    }
+
+    return () => {
+      if (anim) anim.stop();
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, []);
 
   function fadeIn() {
     fadeAnim.setValue(0);

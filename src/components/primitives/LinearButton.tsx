@@ -53,15 +53,17 @@ export default function LinearButton({
       accessibilityRole="button"
     >
       <View style={styles.contentRow}>
-        {leftIcon ? <View style={styles.leftIcon}>{leftIcon}</View> : null}
-        <LinearText
-          variant="label"
-          tone={tone}
-          style={[styles.labelBase, isGlass && styles.glassLabel, textStyle]}
-        >
-          {label}
-        </LinearText>
-        {rightIcon ? <View style={styles.rightIcon}>{rightIcon}</View> : null}
+        {leftIcon ? <View style={styles.iconSlot}>{leftIcon}</View> : null}
+        <View style={styles.labelWrap}>
+          <LinearText
+            variant="label"
+            tone={tone}
+            style={[styles.labelBase, isGlass && styles.glassLabel, textStyle]}
+          >
+            {label}
+          </LinearText>
+        </View>
+        {rightIcon ? <View style={styles.iconSlot}>{rightIcon}</View> : null}
       </View>
     </Pressable>
   );
@@ -113,13 +115,16 @@ const styles = StyleSheet.create({
     width: '100%',
     minWidth: 0,
   },
-  leftIcon: {
+  iconSlot: {
+    width: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rightIcon: {
+  labelWrap: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 0,
   },
   labelBase: {
     textAlign: 'center',

@@ -144,6 +144,7 @@ async function initDatabaseInternal(forceSeed = false): Promise<void> {
     _db = await SQLite.openDatabaseAsync('neet_study.db');
     // Enable WAL mode for better concurrency (simultaneous reads and writes)
     await _db.execAsync('PRAGMA journal_mode = WAL');
+    await _db.execAsync('PRAGMA busy_timeout = 5000');
     _globalDb.__GURU_DB__ = _db;
   } else {
     _db = _globalDb.__GURU_DB__;

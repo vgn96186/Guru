@@ -69,6 +69,55 @@ const CENTER_COLOR = { fill: '#B5CBE6', stroke: '#1E1E1E', text: '#1E1E1E' };
 
 // ── Map List View ──────────────────────────────────────────────────────────
 
+const MapCardItem = React.memo(
+  ({
+    item,
+    onSelect,
+    onRecreate,
+    onDelete,
+  }: {
+    item: MindMap;
+    onSelect: (id: number) => void;
+    onRecreate: (id: number, title: string) => void;
+    onDelete: (id: number) => void;
+  }) => {
+    return (
+      <Pressable
+        style={({ pressed }) => [styles.mapCard, pressed && { opacity: 0.7 }]}
+        onPress={() => onSelect(item.id)}
+      >
+        <Ionicons name="git-network-outline" size={20} color={n.colors.accent} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <LinearText style={styles.mapCardTitle}>{item.title}</LinearText>
+          <LinearText style={styles.mapCardDate}>
+            {new Date(item.updatedAt).toLocaleDateString()}
+          </LinearText>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+          <TouchableOpacity
+            onPress={() => onRecreate(item.id, item.title)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="refresh-outline" size={20} color={n.colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert('Delete', `Delete "${item.title}"?`, [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => onDelete(item.id) },
+              ]);
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="trash-outline" size={20} color={n.colors.error} />
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    );
+  },
+);
+
 function MapListView({
   maps,
   onSelect,
@@ -82,6 +131,13 @@ function MapListView({
   onDelete: (id: number) => void;
   onRecreate: (id: number, title: string) => void;
 }) {
+  const renderItem = useCallback(
+    ({ item }: { item: MindMap }) => (
+      <MapCardItem item={item} onSelect={onSelect} onRecreate={onRecreate} onDelete={onDelete} />
+    ),
+    [onSelect, onRecreate, onDelete],
+  );
+
   return (
     <View style={styles.listContainer}>
       <TouchableOpacity style={styles.newMapBtn} onPress={onNew} activeOpacity={0.7}>
@@ -97,40 +153,7 @@ function MapListView({
         data={maps}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ paddingBottom: 40 }}
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [styles.mapCard, pressed && { opacity: 0.7 }]}
-            onPress={() => onSelect(item.id)}
-          >
-            <Ionicons name="git-network-outline" size={20} color={n.colors.accent} />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <LinearText style={styles.mapCardTitle}>{item.title}</LinearText>
-              <LinearText style={styles.mapCardDate}>
-                {new Date(item.updatedAt).toLocaleDateString()}
-              </LinearText>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-              <TouchableOpacity
-                onPress={() => onRecreate(item.id, item.title)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="refresh-outline" size={20} color={n.colors.textSecondary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  Alert.alert('Delete', `Delete "${item.title}"?`, [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => onDelete(item.id) },
-                  ]);
-                }}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="trash-outline" size={20} color={n.colors.error} />
-              </TouchableOpacity>
-            </View>
-          </Pressable>
-        )}
+        renderItem={renderItem}
       />
     </View>
   );
@@ -206,10 +229,20 @@ function computeFittedViewport(nodes: MindMapNode[]) {
     1,
   );
 
+  // The Animated.View is transformed as: translate(tX, tY) then scale(s).
+  // Inside it, the SVG <G> further shifts nodes by (offsetX, offsetY).
+  // A node at layout position (nx, ny) appears on screen at:
+  //   screenX = tX + (offsetX + nx) * s
+  //   screenY = tY + (offsetY + ny) * s
+  // We want the root node horizontally at ~15% of screen width,
+  // and vertically centred in the available area (below the header).
   const rootNode = nodes.find((node) => node.isCenter) ?? nodes[0];
+  const rootCanvasX = metrics.offsetX + rootNode.x;
+  const rootCanvasY = metrics.offsetY + rootNode.y;
+
   return {
-    x: SCREEN_W * 0.15 - (metrics.offsetX + rootNode.x) * scale,
-    y: SCREEN_H * 0.35 - (metrics.offsetY + rootNode.y) * scale,
+    x: SCREEN_W * 0.15 - rootCanvasX * scale,
+    y: (SCREEN_H - 120) / 2 + 60 - rootCanvasY * scale,
     scale,
   };
 }
@@ -267,7 +300,6 @@ function CanvasView({
   const nodes = data.nodes;
   const edges = data.edges;
   const canvasMetrics = useMemo(() => getCanvasMetrics(nodes), [nodes]);
-  const previousGraphRef = useRef({ nodeCount: nodes.length, edgeCount: edges.length });
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [addingThought, setAddingThought] = useState<number | null>(null);
   const [thoughtText, setThoughtText] = useState('');
@@ -280,10 +312,14 @@ function CanvasView({
   const scale = useSharedValue(1);
   const panStartX = useSharedValue(0);
   const panStartY = useSharedValue(0);
-  const pinchStartX = useSharedValue(0);
-  const pinchStartY = useSharedValue(0);
   const pinchStartScale = useSharedValue(1);
 
+  // Track whether viewport has been positioned for the current map
+  const viewportReady = useRef(false);
+  // Track the last graph shape so we can detect when nodes/edges are added
+  const lastGraphShape = useRef({ nodeCount: nodes.length, edgeCount: edges.length });
+
+  // Save viewport on unmount
   useEffect(() => {
     return () => {
       saveViewport(
@@ -298,50 +334,61 @@ function CanvasView({
     };
   }, [data.map.id, scale, translateX, translateY]);
 
+  // Position viewport: on first mount and when graph topology changes
   useEffect(() => {
     if (nodes.length === 0) {
       return;
     }
 
+    const currentShape = { nodeCount: nodes.length, edgeCount: edges.length };
     const graphChanged =
-      previousGraphRef.current.nodeCount !== nodes.length ||
-      previousGraphRef.current.edgeCount !== edges.length;
-    previousGraphRef.current = { nodeCount: nodes.length, edgeCount: edges.length };
+      lastGraphShape.current.nodeCount !== currentShape.nodeCount ||
+      lastGraphShape.current.edgeCount !== currentShape.edgeCount;
+    lastGraphShape.current = currentShape;
 
-    if (graphChanged) {
+    // If graph topology changed after initial load, re-center with animation
+    if (graphChanged && viewportReady.current) {
+      const fitted = computeFittedViewport(nodes);
+      translateX.value = withTiming(fitted.x, { duration: 250 });
+      translateY.value = withTiming(fitted.y, { duration: 250 });
+      scale.value = withTiming(fitted.scale, { duration: 250 });
+      return;
+    }
+
+    // First time: try restoring saved viewport
+    if (!viewportReady.current) {
+      viewportReady.current = true;
+
+      try {
+        const saved = JSON.parse(data.map.viewportJson);
+        if (
+          saved?.version === VIEWPORT_SCHEMA_VERSION &&
+          typeof saved?.x === 'number' &&
+          typeof saved?.y === 'number' &&
+          typeof saved?.scale === 'number'
+        ) {
+          translateX.value = saved.x;
+          translateY.value = saved.y;
+          scale.value = clamp(saved.scale, MIN_ZOOM, MAX_ZOOM);
+          return;
+        }
+      } catch {}
+
+      // No saved viewport — compute from scratch
       const fitted = computeFittedViewport(nodes);
       translateX.value = fitted.x;
       translateY.value = fitted.y;
       scale.value = fitted.scale;
-      return;
     }
-
-    try {
-      const saved = JSON.parse(data.map.viewportJson);
-      if (
-        saved?.version === VIEWPORT_SCHEMA_VERSION &&
-        typeof saved?.x === 'number' &&
-        typeof saved?.y === 'number' &&
-        typeof saved?.scale === 'number'
-      ) {
-        translateX.value = saved.x;
-        translateY.value = saved.y;
-        scale.value = clamp(saved.scale, MIN_ZOOM, MAX_ZOOM);
-        return;
-      }
-    } catch {}
-
-    const fitted = computeFittedViewport(nodes);
-    translateX.value = fitted.x;
-    translateY.value = fitted.y;
-    scale.value = fitted.scale;
-  }, [data.map.viewportJson, edges.length, nodes, scale, translateX, translateY]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes.length, edges.length]);
 
   const centerMap = useCallback(() => {
     const fitted = computeFittedViewport(nodes);
-    translateX.value = withTiming(fitted.x, { duration: 180 });
-    translateY.value = withTiming(fitted.y, { duration: 180 });
-    scale.value = withTiming(fitted.scale, { duration: 180 });
+    const timing = { duration: 300 };
+    translateX.value = withTiming(fitted.x, timing);
+    translateY.value = withTiming(fitted.y, timing);
+    scale.value = withTiming(fitted.scale, timing);
   }, [nodes, scale, translateX, translateY]);
 
   const canvasStyle = useAnimatedStyle(() => ({
@@ -373,29 +420,21 @@ function CanvasView({
       Gesture.Pinch()
         .onStart((event) => {
           pinchStartScale.value = scale.value;
-          pinchStartX.value = translateX.value;
-          pinchStartY.value = translateY.value;
-          panStartX.value = event.focalX;
-          panStartY.value = event.focalY;
+          // Store the canvas-space point under the initial focal.
+          // With transform translate(tX,tY)→scale(s), screen→canvas is:
+          //   canvasX = (screenX - tX) / s
+          panStartX.value = (event.focalX - translateX.value) / scale.value;
+          panStartY.value = (event.focalY - translateY.value) / scale.value;
         })
         .onUpdate((event) => {
           const nextScale = clamp(pinchStartScale.value * event.scale, MIN_ZOOM, MAX_ZOOM);
-          const focalWorldX = (event.focalX - pinchStartX.value) / pinchStartScale.value;
-          const focalWorldY = (event.focalY - pinchStartY.value) / pinchStartScale.value;
+          // Keep the same canvas point pinned under the (initial) focal:
+          //   screenFocal = tX + canvasX * s  →  tX = screenFocal - canvasX * s
           scale.value = nextScale;
-          translateX.value = event.focalX - focalWorldX * nextScale;
-          translateY.value = event.focalY - focalWorldY * nextScale;
+          translateX.value = event.focalX - panStartX.value * nextScale;
+          translateY.value = event.focalY - panStartY.value * nextScale;
         }),
-    [
-      panStartX,
-      panStartY,
-      pinchStartScale,
-      pinchStartX,
-      pinchStartY,
-      scale,
-      translateX,
-      translateY,
-    ],
+    [panStartX, panStartY, pinchStartScale, scale, translateX, translateY],
   );
 
   const gesture = useMemo(

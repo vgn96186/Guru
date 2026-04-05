@@ -14,6 +14,7 @@ const mockGoBack = jest.fn();
 const mockBuildSession = jest.fn();
 const mockCreateSession = jest.fn();
 const mockPrefetchTopicContent = jest.fn();
+const mockUseGuruPresence = jest.fn();
 
 jest.mock('react-native', () => {
   const React = require('react');
@@ -205,12 +206,7 @@ jest.mock('../hooks/useIdleTimer', () => ({
 }));
 
 jest.mock('../hooks/useGuruPresence', () => ({
-  useGuruPresence: () => ({
-    currentMessage: null,
-    presencePulse: null,
-    toastOpacity: null,
-    triggerEvent: jest.fn(),
-  }),
+  useGuruPresence: (...args: unknown[]) => mockUseGuruPresence(...args),
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -297,6 +293,12 @@ describe('SessionScreen', () => {
     mockPrefetchTopicContent.mockResolvedValue(undefined);
     sessionStoreState.currentContent = { type: 'quiz' };
     latestContentCardProps = undefined;
+    mockUseGuruPresence.mockReturnValue({
+      currentMessage: null,
+      presencePulse: null,
+      toastOpacity: null,
+      triggerEvent: jest.fn(),
+    });
   });
 
   it('starts planning only once on initial mount', async () => {
@@ -351,6 +353,48 @@ describe('SessionScreen', () => {
         expect.objectContaining({ id: 2, name: 'Topic 2' }),
         expect.any(Array),
         undefined,
+      );
+    });
+  });
+
+  it('scopes Guru presence messages to the current topic instead of the full agenda', async () => {
+    sessionStoreState.sessionState = 'studying';
+    sessionStoreState.currentItemIndex = 1;
+    sessionStoreState.agenda = {
+      items: [
+        {
+          topic: {
+            id: 1,
+            name: 'Topic 1',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
+          contentTypes: ['quiz'],
+        },
+        {
+          topic: {
+            id: 2,
+            name: 'Topic 2',
+            subjectName: 'Medicine',
+            progress: { status: 'unseen' },
+          },
+          contentTypes: ['keypoints'],
+        },
+      ],
+      mode: 'normal',
+      focusNote: '',
+    };
+
+    const SessionScreen = require('./SessionScreen').default;
+    render(<SessionScreen />);
+
+    await waitFor(() => {
+      expect(mockUseGuruPresence).toHaveBeenCalledWith(
+        expect.objectContaining({
+          currentTopicIdentity: 'Medicine::2',
+          currentTopicName: 'Topic 2',
+          allTopicNames: ['Topic 1', 'Topic 2'],
+        }),
       );
     });
   });

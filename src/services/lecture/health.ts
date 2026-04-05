@@ -15,6 +15,7 @@ import { runTranscriptionProviders } from '../transcription/providerFallback';
 
 let healthCheckTimer: ReturnType<typeof setInterval> | null = null;
 let evidenceCheckTimeout: ReturnType<typeof setTimeout> | null = null;
+let currentAppStateListener: import('react-native').NativeEventSubscription | null = null;
 let lastKnownFileSize = 0;
 let stalledCount = 0;
 let currentGeneration = 0;
@@ -44,10 +45,9 @@ export function startRecordingHealthCheck(
   stalledCount = 0;
   const generation = ++currentGeneration;
 
-  const appStateListener = AppState.addEventListener('change', (state) => {
+  currentAppStateListener = AppState.addEventListener('change', (state) => {
     if (state === 'background' || state === 'inactive') {
       stopRecordingHealthCheck();
-      appStateListener.remove();
     }
   });
 
@@ -158,5 +158,9 @@ export function stopRecordingHealthCheck(): void {
   if (healthCheckTimer) {
     clearInterval(healthCheckTimer);
     healthCheckTimer = null;
+  }
+  if (currentAppStateListener) {
+    currentAppStateListener.remove();
+    currentAppStateListener = null;
   }
 }

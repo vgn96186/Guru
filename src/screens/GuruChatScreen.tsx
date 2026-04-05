@@ -1763,6 +1763,106 @@ function GuruChatScreenContent() {
     ],
   );
 
+  const renderHistoryItem = useCallback(
+    ({ item }: { item: GuruChatThread }) => {
+      const isActive = item.id === currentThreadId;
+      return (
+        <Pressable
+          style={({ pressed }) => [
+            styles.historyItem,
+            isActive && styles.historyItemActive,
+            pressed && styles.pressed,
+          ]}
+          onPress={() => {
+            void openThread(item);
+          }}
+        >
+          <View style={styles.historyItemMain}>
+            <LinearText style={styles.historyItemTitle} numberOfLines={2}>
+              {item.title}
+            </LinearText>
+            <LinearText style={styles.historyItemTopic} numberOfLines={2}>
+              {item.topicName}
+            </LinearText>
+            <LinearText style={styles.historyItemPreview} numberOfLines={3}>
+              {item.lastMessagePreview || 'No messages yet'}
+            </LinearText>
+          </View>
+          <View style={styles.historyItemSide}>
+            <LinearText style={styles.historyItemTime}>{formatTime(item.lastMessageAt)}</LinearText>
+            <View style={styles.historyItemActions}>
+              <Pressable
+                style={({ pressed }) => [styles.historyActionBtn, pressed && styles.pressed]}
+                onPress={() => {
+                  setRenameThreadId(item.id);
+                  setRenameDraft(item.title);
+                  setShowHistoryDrawer(false);
+                }}
+                hitSlop={6}
+              >
+                <Ionicons name="pencil-outline" size={14} color={n.colors.accent} />
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.historyActionBtn, pressed && styles.pressed]}
+                onPress={() => {
+                  void handleDeleteThread(item);
+                }}
+                hitSlop={6}
+              >
+                <Ionicons name="trash-outline" size={14} color={n.colors.textMuted} />
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      );
+    },
+    [currentThreadId, openThread, handleDeleteThread],
+  );
+
+  const renderModelPickerItem = useCallback(
+    ({ item: model }: ListRenderItemInfo<ModelOption>) => (
+      <Pressable
+        style={({ pressed }) => [
+          styles.modelItem,
+          chosenModel === model.id && styles.modelItemActive,
+          pressed && styles.pressed,
+        ]}
+        android_ripple={{ color: `${n.colors.accent}22` }}
+        onPress={() => {
+          if (messages.length > 0 && model.id !== chosenModel) {
+            Alert.alert(
+              'Switch model?',
+              "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Switch',
+                  onPress: () => {
+                    applyChosenModel(model.id);
+                    setShowModelPicker(false);
+                  },
+                },
+              ],
+            );
+          } else {
+            applyChosenModel(model.id);
+            setShowModelPicker(false);
+          }
+        }}
+      >
+        <LinearText
+          style={[styles.modelItemText, chosenModel === model.id && styles.modelItemTextActive]}
+        >
+          {model.name}
+        </LinearText>
+        {chosenModel === model.id ? (
+          <Ionicons name="checkmark-circle" size={18} color={n.colors.accent} />
+        ) : null}
+      </Pressable>
+    ),
+    [chosenModel, messages.length, applyChosenModel],
+  );
+
   if (shouldShowGuruChatSkeleton({ isHydratingThread, isHydratingHistory })) {
     return (
       <SafeAreaView style={styles.safe} testID="guru-chat-screen">
@@ -1856,70 +1956,7 @@ function GuruChatScreenContent() {
                     keyExtractor={(item) => item.id.toString()}
                     style={styles.historyList}
                     contentContainerStyle={styles.historyListContent}
-                    renderItem={({ item }) => {
-                      const isActive = item.id === currentThreadId;
-                      return (
-                        <Pressable
-                          style={({ pressed }) => [
-                            styles.historyItem,
-                            isActive && styles.historyItemActive,
-                            pressed && styles.pressed,
-                          ]}
-                          onPress={() => {
-                            void openThread(item);
-                          }}
-                        >
-                          <View style={styles.historyItemMain}>
-                            <LinearText style={styles.historyItemTitle} numberOfLines={2}>
-                              {item.title}
-                            </LinearText>
-                            <LinearText style={styles.historyItemTopic} numberOfLines={2}>
-                              {item.topicName}
-                            </LinearText>
-                            <LinearText style={styles.historyItemPreview} numberOfLines={3}>
-                              {item.lastMessagePreview || 'No messages yet'}
-                            </LinearText>
-                          </View>
-                          <View style={styles.historyItemSide}>
-                            <LinearText style={styles.historyItemTime}>
-                              {formatTime(item.lastMessageAt)}
-                            </LinearText>
-                            <View style={styles.historyItemActions}>
-                              <Pressable
-                                style={({ pressed }) => [
-                                  styles.historyActionBtn,
-                                  pressed && styles.pressed,
-                                ]}
-                                onPress={() => {
-                                  setRenameThreadId(item.id);
-                                  setRenameDraft(item.title);
-                                  setShowHistoryDrawer(false);
-                                }}
-                                hitSlop={6}
-                              >
-                                <Ionicons name="pencil-outline" size={14} color={n.colors.accent} />
-                              </Pressable>
-                              <Pressable
-                                style={({ pressed }) => [
-                                  styles.historyActionBtn,
-                                  pressed && styles.pressed,
-                                ]}
-                                onPress={() => {
-                                  void handleDeleteThread(item);
-                                }}
-                                hitSlop={6}
-                              >
-                                <Ionicons
-                                  name="trash-outline"
-                                  size={14}
-                                  color={n.colors.textMuted}
-                                />
-                              </Pressable>
-                            </View>
-                          </View>
-                        </Pressable>
-                      );
-                    }}
+                    renderItem={renderHistoryItem}
                     ListEmptyComponent={
                       <View style={styles.historyEmpty}>
                         <LinearText style={styles.historyEmptyText}>No chats yet</LinearText>
@@ -2020,49 +2057,7 @@ function GuruChatScreenContent() {
                     data={availableModels.filter((m) => m.group === pickerTab)}
                     keyExtractor={(m) => m.id}
                     style={styles.modelList}
-                    renderItem={({ item: model }: ListRenderItemInfo<ModelOption>) => (
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.modelItem,
-                          chosenModel === model.id && styles.modelItemActive,
-                          pressed && styles.pressed,
-                        ]}
-                        android_ripple={{ color: `${n.colors.accent}22` }}
-                        onPress={() => {
-                          if (messages.length > 0 && model.id !== chosenModel) {
-                            Alert.alert(
-                              'Switch model?',
-                              "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
-                              [
-                                { text: 'Cancel', style: 'cancel' },
-                                {
-                                  text: 'Switch',
-                                  onPress: () => {
-                                    applyChosenModel(model.id);
-                                    setShowModelPicker(false);
-                                  },
-                                },
-                              ],
-                            );
-                          } else {
-                            applyChosenModel(model.id);
-                            setShowModelPicker(false);
-                          }
-                        }}
-                      >
-                        <LinearText
-                          style={[
-                            styles.modelItemText,
-                            chosenModel === model.id && styles.modelItemTextActive,
-                          ]}
-                        >
-                          {model.name}
-                        </LinearText>
-                        {chosenModel === model.id ? (
-                          <Ionicons name="checkmark-circle" size={18} color={n.colors.accent} />
-                        ) : null}
-                      </Pressable>
-                    )}
+                    renderItem={renderModelPickerItem}
                   />
 
                   <Pressable

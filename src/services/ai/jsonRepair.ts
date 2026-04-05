@@ -168,9 +168,10 @@ function repairTruncatedJson(raw: string): string {
 
 export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>): unknown {
   if (!value) return value;
+  const expectsArrayRoot = schema instanceof z.ZodArray;
 
   // Pattern 0: Single-element array wrapping ([{ ... }])
-  if (Array.isArray(value) && value.length === 1) {
+  if (Array.isArray(value) && value.length === 1 && !expectsArrayRoot) {
     return normalizeRootForSchema(value[0], schema);
   }
 
@@ -182,6 +183,12 @@ export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>):
   // Pattern 1: Single-key wrapping ({ "keypoints": { ... } } or { "subdural_hematoma": { ... } })
   if (entries.length === 1) {
     const [key, wrappedValue] = entries[0];
+
+    // When the schema expects an array root, LLMs often wrap it in one property,
+    // such as { "messages": [...] }. Unwrap that array before validating.
+    if (expectsArrayRoot && Array.isArray(wrappedValue)) {
+      return wrappedValue;
+    }
 
     // If it's an object with a 'type' property inside, unwrap
     if (wrappedValue && typeof wrappedValue === 'object' && !Array.isArray(wrappedValue)) {

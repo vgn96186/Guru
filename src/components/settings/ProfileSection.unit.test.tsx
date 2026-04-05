@@ -15,8 +15,10 @@ describe('ProfileSection', () => {
   });
 
   it('renders correctly with default props', () => {
-    const { getByText, getByDisplayValue, queryByText } = render(<ProfileSection {...defaultProps} />);
-    
+    const { getByText, getByDisplayValue, queryByText } = render(
+      <ProfileSection {...defaultProps} />,
+    );
+
     expect(getByDisplayValue('John Doe')).toBeTruthy();
     expect(getByText('📱 Link Another Device (Sync)')).toBeTruthy();
     expect(queryByText(/Tablet Sync is currently unavailable/)).toBeNull();
@@ -37,24 +39,24 @@ describe('ProfileSection', () => {
 
   it('renders sync warning and disables link button when sync is unavailable', () => {
     const { getByText, getByLabelText } = render(
-      <ProfileSection {...defaultProps} isSyncAvailable={false} />
+      <ProfileSection {...defaultProps} isSyncAvailable={false} />,
     );
-    
+
     expect(getByText(/Tablet Sync is currently unavailable/)).toBeTruthy();
-    
+
     const linkBtn = getByLabelText('Link another device for sync');
     expect(linkBtn.props.disabled).toBe(true);
   });
 
   it('applies disabled styling when sync is unavailable', () => {
     const { getByText, getByLabelText } = render(
-      <ProfileSection {...defaultProps} isSyncAvailable={false} />
+      <ProfileSection {...defaultProps} isSyncAvailable={false} />,
     );
-    
+
     const linkBtn = getByLabelText('Link another device for sync');
     const linkBtnText = getByText('📱 Link Another Device (Sync)');
-    
+
     expect(linkBtn.props.style).toContainEqual({ opacity: 0.5 });
-    expect(linkBtnText.props.style).toContainEqual({ color: '#B8B8D0' }); // theme.colors.textSecondary
+    expect(linkBtnText.props.style).toContainEqual({ color: '#A0A0A5' });
   });
 });

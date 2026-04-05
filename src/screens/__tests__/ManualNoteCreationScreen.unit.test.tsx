@@ -55,6 +55,9 @@ jest.mock('@react-navigation/native', () => ({
     goBack: mockGoBack,
     canGoBack: () => true,
   }),
+  useFocusEffect: (effect: () => void | (() => void)) => {
+    effect();
+  },
 }));
 
 describe('ManualNoteCreationScreen', () => {

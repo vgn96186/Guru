@@ -6,7 +6,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
@@ -18,6 +17,7 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -63,14 +63,14 @@ import SubjectChip from '../components/SubjectChip';
 import TopicPillRow from '../components/TopicPillRow';
 
 const SUBJECT_COLORS: Record<string, string> = {
-  Physiology: '#4CAF50',
+  Physiology: n.colors.success,
   Anatomy: '#2196F3',
   Biochemistry: '#9C27B0',
   Pathology: '#E91E63',
-  Microbiology: '#FF9800',
+  Microbiology: n.colors.warning,
   Pharmacology: '#00BCD4',
   Medicine: '#3F51B5',
-  Surgery: '#F44336',
+  Surgery: n.colors.error,
   OBG: '#E91E63',
   Pediatrics: '#8BC34A',
   Ophthalmology: '#03A9F4',
@@ -82,8 +82,8 @@ const SUBJECT_COLORS: Record<string, string> = {
   Orthopedics: '#009688',
   'Forensic Medicine': '#455A64',
   SPM: '#CDDC39',
-  Unknown: '#9E9E9E',
-  General: '#9E9E9E',
+  Unknown: n.colors.textMuted,
+  General: n.colors.textMuted,
 };
 
 /** Extract the first meaningful line from a note (skip markdown headers) */
@@ -126,7 +126,7 @@ function TranscriptSection({ transcript }: { transcript: string }) {
         style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
         activeOpacity={0.7}
       >
-        <Text
+        <LinearText
           style={{
             color: n.colors.textMuted,
             fontSize: 12,
@@ -135,7 +135,7 @@ function TranscriptSection({ transcript }: { transcript: string }) {
           }}
         >
           Raw Transcript
-        </Text>
+        </LinearText>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
@@ -145,7 +145,7 @@ function TranscriptSection({ transcript }: { transcript: string }) {
       </TouchableOpacity>
       {expanded && (
         <LinearSurface padded={false} style={styles.transcriptCard}>
-          <Text style={styles.transcriptText}>{content}</Text>
+          <LinearText style={styles.transcriptText}>{content}</LinearText>
         </LinearSurface>
       )}
     </View>
@@ -217,7 +217,7 @@ function AudioPlayer({ uri }: { uri: string }) {
         <Ionicons name={isPlaying ? 'pause' : 'play'} size={24} color={n.colors.textInverse} />
       </TouchableOpacity>
       <TouchableOpacity onPress={() => void jumpBy(-10000)} style={audioStyles.jumpBtn}>
-        <Text style={audioStyles.jumpBtnText}>-10s</Text>
+        <LinearText style={audioStyles.jumpBtnText}>-10s</LinearText>
       </TouchableOpacity>
       <View style={audioStyles.progressWrap}>
         <Pressable
@@ -237,12 +237,12 @@ function AudioPlayer({ uri }: { uri: string }) {
           />
         </Pressable>
         <View style={audioStyles.timeRow}>
-          <Text style={audioStyles.timeText}>{formatTime(position)}</Text>
-          <Text style={audioStyles.timeText}>{formatTime(duration)}</Text>
+          <LinearText style={audioStyles.timeText}>{formatTime(position)}</LinearText>
+          <LinearText style={audioStyles.timeText}>{formatTime(duration)}</LinearText>
         </View>
       </View>
       <TouchableOpacity onPress={() => void jumpBy(10000)} style={audioStyles.jumpBtn}>
-        <Text style={audioStyles.jumpBtnText}>+10s</Text>
+        <LinearText style={audioStyles.jumpBtnText}>+10s</LinearText>
       </TouchableOpacity>
     </LinearSurface>
   );
@@ -591,29 +591,33 @@ export default function TranscriptHistoryScreen() {
             <SubjectChip
               subject={subjectLabel}
               color="#fff"
-              backgroundColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
-              borderColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+              backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
+              borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
               style={styles.subjectChip}
             />
-            <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+            <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
           </View>
 
-          {item.appName && <Text style={styles.appBadge}>via {item.appName}</Text>}
+          {item.appName && <LinearText style={styles.appBadge}>via {item.appName}</LinearText>}
 
-          <Text style={styles.summaryText} numberOfLines={3}>
+          <LinearText style={styles.summaryText} numberOfLines={3}>
             {getLectureTitle(item)}
-          </Text>
-          <Text style={styles.summaryPreviewText} numberOfLines={3}>
+          </LinearText>
+          <LinearText style={styles.summaryPreviewText} numberOfLines={3}>
             {item.summary || extractFirstLine(item.note)}
-          </Text>
+          </LinearText>
           <View style={styles.statusRow}>
-            {item.recordingPath ? <Text style={styles.statusBadge}>Recording</Text> : null}
-            {item.transcript ? <Text style={styles.statusBadge}>Transcript</Text> : null}
+            {item.recordingPath ? (
+              <LinearText style={styles.statusBadge}>Recording</LinearText>
+            ) : null}
+            {item.transcript ? (
+              <LinearText style={styles.statusBadge}>Transcript</LinearText>
+            ) : null}
             {lectureNeedsAiNote(item) ? (
-              <Text style={styles.statusBadgeWarn}>Needs AI Note</Text>
+              <LinearText style={styles.statusBadgeWarn}>Needs AI Note</LinearText>
             ) : null}
             {lectureNeedsReview(item) ? (
-              <Text style={styles.statusBadgeWarn}>Needs Review</Text>
+              <LinearText style={styles.statusBadgeWarn}>Needs Review</LinearText>
             ) : null}
           </View>
 
@@ -630,12 +634,12 @@ export default function TranscriptHistoryScreen() {
             )}
             <View style={styles.metaRow}>
               {item.durationMinutes ? (
-                <Text style={styles.metaText}>
+                <LinearText style={styles.metaText}>
                   <Ionicons name="time-outline" size={12} color={n.colors.textMuted} />{' '}
                   {formatDuration(item.durationMinutes)}
-                </Text>
+                </LinearText>
               ) : null}
-              <Text
+              <LinearText
                 style={[
                   styles.confidenceBadge,
                   {
@@ -649,7 +653,7 @@ export default function TranscriptHistoryScreen() {
                 ]}
               >
                 {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
-              </Text>
+              </LinearText>
             </View>
           </View>
         </LinearSurface>
@@ -675,11 +679,11 @@ export default function TranscriptHistoryScreen() {
       ></ScreenHeader>
       {isSelectionMode && (
         <LinearSurface padded={false} style={styles.selectionModeBanner}>
-          <Text style={styles.selectionModeBannerText}>
+          <LinearText style={styles.selectionModeBannerText}>
             ✓ Selection mode — {selectedIds.length} selected · Long-press to add
-          </Text>
+          </LinearText>
           <TouchableOpacity onPress={cancelSelection}>
-            <Text style={styles.selectionModeCancelText}>Cancel</Text>
+            <LinearText style={styles.selectionModeCancelText}>Cancel</LinearText>
           </TouchableOpacity>
         </LinearSurface>
       )}
@@ -689,21 +693,21 @@ export default function TranscriptHistoryScreen() {
       <View style={styles.statsBar}>
         {isSelectionMode ? (
           <LinearSurface padded={false} style={styles.selectionBar}>
-            <Text style={styles.selectionText}>{selectedIds.length} selected</Text>
+            <LinearText style={styles.selectionText}>{selectedIds.length} selected</LinearText>
             <View style={styles.selectionActions}>
               <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <Text style={styles.selectionCancelText}>Cancel</Text>
+                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
               </TouchableOpacity>
               <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
                 <Ionicons name="trash-outline" size={14} color="#fff" />
-                <Text style={styles.selectionDeleteText}>Delete</Text>
+                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
               </TouchableOpacity>
             </View>
           </LinearSurface>
         ) : (
-          <Text style={styles.statsText}>
+          <LinearText style={styles.statsText}>
             {visibleNotes.length} of {notes.length} lecture{notes.length !== 1 ? 's' : ''} shown
-          </Text>
+          </LinearText>
         )}
       </View>
 
@@ -711,14 +715,14 @@ export default function TranscriptHistoryScreen() {
       {visibleNotes.length === 0 && !searchQuery && (
         <View style={styles.emptyState}>
           <Ionicons name="document-text-outline" size={64} color={n.colors.textMuted} />
-          <Text style={styles.emptyTitle}>
+          <LinearText style={styles.emptyTitle}>
             {isFilterActive ? 'No Lectures Match This Filter' : 'No Transcripts Yet'}
-          </Text>
-          <Text style={styles.emptySubtitle}>
+          </LinearText>
+          <LinearText style={styles.emptySubtitle}>
             {isFilterActive
               ? 'Try another filter or clear filters to see the full lecture list.'
               : 'Use a lecture app and your sessions will be transcribed and saved here for revision'}
-          </Text>
+          </LinearText>
         </View>
       )}
 
@@ -726,8 +730,8 @@ export default function TranscriptHistoryScreen() {
       {visibleNotes.length === 0 && searchQuery && (
         <View style={styles.emptyState}>
           <Ionicons name="search-outline" size={48} color={n.colors.textMuted} />
-          <Text style={styles.emptyTitle}>No Results</Text>
-          <Text style={styles.emptySubtitle}>No transcripts match "{searchQuery}"</Text>
+          <LinearText style={styles.emptyTitle}>No Results</LinearText>
+          <LinearText style={styles.emptySubtitle}>No transcripts match "{searchQuery}"</LinearText>
         </View>
       )}
 
@@ -741,9 +745,9 @@ export default function TranscriptHistoryScreen() {
               onPress={() => setSortBy(opt)}
               activeOpacity={0.7}
             >
-              <Text style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}>
+              <LinearText style={[styles.sortBtnText, sortBy === opt && styles.sortBtnTextActive]}>
                 {opt === 'date' ? 'Newest' : opt === 'subject' ? 'Subject' : 'Confidence'}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           ))}
         </View>
@@ -766,14 +770,14 @@ export default function TranscriptHistoryScreen() {
               onPress={() => setManagerFilter(value)}
               activeOpacity={0.7}
             >
-              <Text
+              <LinearText
                 style={[
                   styles.filterChipText,
                   managerFilter === value && styles.filterChipTextActive,
                 ]}
               >
                 {label}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           ))}
         </View>
@@ -804,9 +808,9 @@ export default function TranscriptHistoryScreen() {
         <View style={styles.modalOverlay}>
           <LinearSurface padded={false} style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle} numberOfLines={2}>
+              <LinearText style={styles.modalTitle} numberOfLines={2}>
                 {selectedNote ? resolveLectureSubjectLabel(selectedNote) : 'Lecture'} Transcript
-              </Text>
+              </LinearText>
               <View style={styles.modalHeaderActions}>
                 <TouchableOpacity
                   style={styles.headerActionBtn}
@@ -815,7 +819,7 @@ export default function TranscriptHistoryScreen() {
                   accessibilityLabel="Rename transcript"
                 >
                   <Ionicons name="create-outline" size={18} color={n.colors.accent} />
-                  <Text style={styles.headerActionText}>Rename</Text>
+                  <LinearText style={styles.headerActionText}>Rename</LinearText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerActionBtn}
@@ -824,7 +828,9 @@ export default function TranscriptHistoryScreen() {
                   accessibilityLabel="Delete transcript"
                 >
                   <Ionicons name="trash-outline" size={18} color={n.colors.error} />
-                  <Text style={[styles.headerActionText, { color: n.colors.error }]}>Delete</Text>
+                  <LinearText style={[styles.headerActionText, { color: n.colors.error }]}>
+                    Delete
+                  </LinearText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.headerActionBtn}
@@ -841,17 +847,19 @@ export default function TranscriptHistoryScreen() {
               {/* Meta info */}
               <View style={styles.modalMeta}>
                 {selectedNote && (
-                  <Text style={styles.customTitleText}>{getLectureTitle(selectedNote)}</Text>
+                  <LinearText style={styles.customTitleText}>
+                    {getLectureTitle(selectedNote)}
+                  </LinearText>
                 )}
                 {selectedNote?.appName && (
-                  <Text style={styles.modalMetaText}>
+                  <LinearText style={styles.modalMetaText}>
                     via {selectedNote.appName} • {formatDate(selectedNote.createdAt)}
                     {selectedNote.durationMinutes
                       ? ` • ${formatDuration(selectedNote.durationMinutes)}`
                       : ''}
-                  </Text>
+                  </LinearText>
                 )}
-                <Text
+                <LinearText
                   style={[
                     styles.confidenceBadge,
                     {
@@ -867,12 +875,12 @@ export default function TranscriptHistoryScreen() {
                   ]}
                 >
                   {CONFIDENCE_LABELS[(selectedNote?.confidence ?? 2) as 1 | 2 | 3]}
-                </Text>
+                </LinearText>
               </View>
 
               {showRenameEditor && (
                 <LinearSurface padded={false} style={styles.renameCard}>
-                  <Text style={styles.renameLabel}>Rename transcript</Text>
+                  <LinearText style={styles.renameLabel}>Rename transcript</LinearText>
                   <TextInput
                     style={styles.renameInput}
                     value={renameText}
@@ -886,10 +894,10 @@ export default function TranscriptHistoryScreen() {
                       style={styles.renameCancelBtn}
                       onPress={() => setShowRenameEditor(false)}
                     >
-                      <Text style={styles.renameCancelText}>Cancel</Text>
+                      <LinearText style={styles.renameCancelText}>Cancel</LinearText>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.renameSaveBtn} onPress={saveRename}>
-                      <Text style={styles.renameSaveText}>Save</Text>
+                      <LinearText style={styles.renameSaveText}>Save</LinearText>
                     </TouchableOpacity>
                   </View>
                 </LinearSurface>
@@ -898,12 +906,12 @@ export default function TranscriptHistoryScreen() {
               {/* Topics */}
               {selectedNote && selectedNote.topics.length > 0 && (
                 <View style={styles.modalSection}>
-                  <Text style={styles.modalSectionTitle}>Topics Covered</Text>
+                  <LinearText style={styles.modalSectionTitle}>Topics Covered</LinearText>
                   <View style={styles.topicsWrap}>
                     {selectedNote.topics.map((t, i) => (
-                      <Text key={i} style={styles.topicPillLarge}>
+                      <LinearText key={i} style={styles.topicPillLarge}>
                         {t}
-                      </Text>
+                      </LinearText>
                     ))}
                   </View>
                 </View>
@@ -922,13 +930,13 @@ export default function TranscriptHistoryScreen() {
                   disabled={isManagerBusy}
                 >
                   <Ionicons name="sparkles-outline" size={18} color={n.colors.accent} />
-                  <Text style={styles.managerActionText}>
+                  <LinearText style={styles.managerActionText}>
                     {selectedHasRecordingOnly
                       ? 'Transcribe Audio'
                       : selectedNeedsAiNote
                         ? 'Generate AI Note'
                         : 'Regenerate AI Note'}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[
@@ -939,7 +947,7 @@ export default function TranscriptHistoryScreen() {
                   disabled={isManagerBusy}
                 >
                   <Ionicons name="copy-outline" size={18} color={n.colors.textPrimary} />
-                  <Text style={styles.managerActionText}>Copy Transcript</Text>
+                  <LinearText style={styles.managerActionText}>Copy Transcript</LinearText>
                 </TouchableOpacity>
                 {selectedNote?.recordingPath ? (
                   <TouchableOpacity
@@ -951,7 +959,7 @@ export default function TranscriptHistoryScreen() {
                     disabled={isManagerBusy}
                   >
                     <Ionicons name="trash-outline" size={18} color={n.colors.warning} />
-                    <Text style={styles.managerActionText}>Delete Recording</Text>
+                    <LinearText style={styles.managerActionText}>Delete Recording</LinearText>
                   </TouchableOpacity>
                 ) : null}
                 {selectedNote?.note?.trim() ? (
@@ -964,7 +972,7 @@ export default function TranscriptHistoryScreen() {
                     disabled={isManagerBusy}
                   >
                     <Ionicons name="document-text-outline" size={18} color={n.colors.error} />
-                    <Text style={styles.managerActionText}>Clear AI Note</Text>
+                    <LinearText style={styles.managerActionText}>Clear AI Note</LinearText>
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -979,7 +987,7 @@ export default function TranscriptHistoryScreen() {
                       justifyContent: 'space-between',
                     }}
                   >
-                    <Text style={styles.modalSectionTitle}>Study Note</Text>
+                    <LinearText style={styles.modalSectionTitle}>Study Note</LinearText>
                     <TouchableOpacity
                       style={styles.readerOpenBtn}
                       onPress={() => {
@@ -988,7 +996,7 @@ export default function TranscriptHistoryScreen() {
                       }}
                     >
                       <Ionicons name="book-outline" size={16} color={n.colors.accent} />
-                      <Text style={styles.readerOpenText}>Read</Text>
+                      <LinearText style={styles.readerOpenText}>Read</LinearText>
                     </TouchableOpacity>
                   </View>
                   <LinearSurface padded={false} style={styles.studyNoteCard}>
@@ -1018,7 +1026,7 @@ export default function TranscriptHistoryScreen() {
                       }}
                     >
                       <Ionicons name="book-outline" size={16} color={n.colors.accent} />
-                      <Text style={styles.readerOpenText}>Read Full</Text>
+                      <LinearText style={styles.readerOpenText}>Read Full</LinearText>
                     </TouchableOpacity>
                   </View>
                   <TranscriptSection transcript={selectedNote.transcript} />
@@ -1040,9 +1048,9 @@ export default function TranscriptHistoryScreen() {
             <TouchableOpacity onPress={() => setReaderContent(null)} style={styles.readerCloseBtn}>
               <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.readerHeaderTitle} numberOfLines={2}>
+            <LinearText style={styles.readerHeaderTitle} numberOfLines={2}>
               {readerTitle}
-            </Text>
+            </LinearText>
             <TouchableOpacity
               onPress={() => {
                 if (readerContent) {
@@ -1073,7 +1081,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1E1E1E',
+    backgroundColor: n.colors.surface,
     margin: 16,
     marginBottom: 8,
     borderRadius: 12,
@@ -1085,7 +1093,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
-    color: '#fff',
+    color: n.colors.textPrimary,
     minHeight: 24,
     paddingVertical: 0,
   },
@@ -1110,7 +1118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#D9534F',
+    backgroundColor: n.colors.error,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -1244,7 +1252,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     fontWeight: '600',
-    color: '#fff',
+    color: n.colors.textPrimary,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -1296,7 +1304,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 4,
   },
-  headerActionText: { color: '#A09CF7', fontSize: 12, fontWeight: '600' },
+  headerActionText: { color: n.colors.accent, fontSize: 12, fontWeight: '600' },
   modalScroll: { padding: 16, flexGrow: 1 },
   modalMeta: { marginBottom: 16 },
   customTitleText: {
@@ -1330,7 +1338,7 @@ const styles = StyleSheet.create({
   },
   renameActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
   renameCancelBtn: { paddingHorizontal: 12, paddingVertical: 8 },
-  renameCancelText: { color: '#999', fontSize: 13, fontWeight: '600' },
+  renameCancelText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '600' },
   renameSaveBtn: {
     backgroundColor: 'rgba(109,153,255,0.14)',
     borderWidth: 1,
@@ -1380,7 +1388,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: n.spacing.lg,
     paddingVertical: n.spacing.md,
   },
-  modalText: { color: '#ddd', fontSize: 15, lineHeight: 22 },
+  modalText: { color: n.colors.textMuted, fontSize: 15, lineHeight: 22 },
   topicsWrap: { flexDirection: 'row', flexWrap: 'wrap' },
   topicPillLarge: {
     backgroundColor: n.colors.surface,

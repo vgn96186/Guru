@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, StatusBar } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -107,18 +108,18 @@ export default function WakeUpScreen() {
         {phase === 'breathe' && (
           <View style={styles.centerBox}>
             <View style={styles.progressRow}>
-              <Text style={styles.progressText}>
+              <LinearText style={styles.progressText}>
                 Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}
-              </Text>
+              </LinearText>
             </View>
-            <Text style={styles.title}>Morning Intercept</Text>
-            <Text style={styles.sub}>Before the dopamine hits, let's ground.</Text>
+            <LinearText style={styles.title}>Morning Intercept</LinearText>
+            <LinearText style={styles.sub}>Before the dopamine hits, let's ground.</LinearText>
 
             <View style={styles.breatheBox}>
               <Animated.View
                 style={[styles.breatheCircle, { transform: [{ scale: breatheAnim }] }]}
               />
-              <Text style={styles.breatheText}>{breatheText}</Text>
+              <LinearText style={styles.breatheText}>{breatheText}</LinearText>
             </View>
 
             <TouchableOpacity
@@ -126,7 +127,7 @@ export default function WakeUpScreen() {
               onPress={() => setPhase('ground')}
               activeOpacity={0.8}
             >
-              <Text style={styles.skipBtnText}>I'm already awake</Text>
+              <LinearText style={styles.skipBtnText}>I'm already awake</LinearText>
             </TouchableOpacity>
           </View>
         )}
@@ -134,13 +135,13 @@ export default function WakeUpScreen() {
         {phase === 'ground' && (
           <View style={styles.centerBox}>
             <View style={styles.progressRow}>
-              <Text style={styles.progressText}>
+              <LinearText style={styles.progressText}>
                 Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}
-              </Text>
+              </LinearText>
             </View>
-            <Text style={styles.emoji}>🌱</Text>
-            <Text style={styles.title}>Grounding</Text>
-            <Text style={styles.groundText}>{groundingPrompts[groundStep]}</Text>
+            <LinearText style={styles.emoji}>🌱</LinearText>
+            <LinearText style={styles.title}>Grounding</LinearText>
+            <LinearText style={styles.groundText}>{groundingPrompts[groundStep]}</LinearText>
 
             <TouchableOpacity
               style={styles.nextBtn}
@@ -152,7 +153,7 @@ export default function WakeUpScreen() {
                 }
               }}
             >
-              <Text style={styles.nextBtnText}>Done</Text>
+              <LinearText style={styles.nextBtnText}>Done</LinearText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -160,7 +161,7 @@ export default function WakeUpScreen() {
               onPress={() => setPhase('fog_check')}
               activeOpacity={0.8}
             >
-              <Text style={styles.skipBtnText}>{'Skip \u2192'}</Text>
+              <LinearText style={styles.skipBtnText}>{'Skip \u2192'}</LinearText>
             </TouchableOpacity>
           </View>
         )}
@@ -168,35 +169,35 @@ export default function WakeUpScreen() {
         {phase === 'fog_check' && (
           <View style={styles.centerBox}>
             <View style={styles.progressRow}>
-              <Text style={styles.progressText}>
+              <LinearText style={styles.progressText}>
                 Step {PHASE_LABELS[phase].step} of {PHASE_LABELS[phase].total}
-              </Text>
+              </LinearText>
             </View>
-            <Text style={styles.emoji}>🧠</Text>
-            <Text style={styles.title}>How is the brain fog today?</Text>
+            <LinearText style={styles.emoji}>🧠</LinearText>
+            <LinearText style={styles.title}>How is the brain fog today?</LinearText>
 
             <View style={styles.fogGrid}>
               <TouchableOpacity onPress={() => handleFogCheck('clear')}>
                 <LinearSurface padded={false} style={styles.fogBtn}>
-                  <Text style={styles.fogBtnEmoji}>☀️</Text>
-                  <Text style={styles.fogBtnText}>Actually Okay</Text>
-                  <Text style={styles.fogBtnSub}>Ready to start</Text>
+                  <LinearText style={styles.fogBtnEmoji}>☀️</LinearText>
+                  <LinearText style={styles.fogBtnText}>Actually Okay</LinearText>
+                  <LinearText style={styles.fogBtnSub}>Ready to start</LinearText>
                 </LinearSurface>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => handleFogCheck('hazy')}>
                 <LinearSurface padded={false} style={styles.fogBtn}>
-                  <Text style={styles.fogBtnEmoji}>🌥️</Text>
-                  <Text style={styles.fogBtnText}>A Bit Hazy</Text>
-                  <Text style={styles.fogBtnSub}>Need a slow start</Text>
+                  <LinearText style={styles.fogBtnEmoji}>🌥️</LinearText>
+                  <LinearText style={styles.fogBtnText}>A Bit Hazy</LinearText>
+                  <LinearText style={styles.fogBtnSub}>Need a slow start</LinearText>
                 </LinearSurface>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => handleFogCheck('foggy')}>
                 <LinearSurface padded={false} style={styles.fogBtn}>
-                  <Text style={styles.fogBtnEmoji}>☁️</Text>
-                  <Text style={styles.fogBtnText}>Very Foggy</Text>
-                  <Text style={styles.fogBtnSub}>Hard to think</Text>
+                  <LinearText style={styles.fogBtnEmoji}>☁️</LinearText>
+                  <LinearText style={styles.fogBtnText}>Very Foggy</LinearText>
+                  <LinearText style={styles.fogBtnSub}>Hard to think</LinearText>
                 </LinearSurface>
               </TouchableOpacity>
             </View>

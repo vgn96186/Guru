@@ -15,7 +15,6 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   useWindowDimensions,
   View,
@@ -24,15 +23,26 @@ import {
 import { ImageLightbox } from '../components/ImageLightbox';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute, useIsFocused } from '@react-navigation/native';
+import {
+  useNavigation,
+  useRoute,
+  useIsFocused,
+  type NavigationProp,
+} from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import Clipboard from '@react-native-clipboard/clipboard';
 import LinearSurface from '../components/primitives/LinearSurface';
 import type { ChatStackParamList } from '../navigation/types';
+import LinearText from '../components/primitives/LinearText';
+import LinearBadge from '../components/primitives/LinearBadge';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import BannerIconButton from '../components/BannerIconButton';
 import ScreenHeader from '../components/ScreenHeader';
+import ScreenMotion from '../motion/ScreenMotion';
+import { RevealSection } from './GuruChatRevealSection';
+import { shouldShowGuruChatSkeleton } from './guruChatLoadingState';
+import { useReducedMotion } from '../motion/useReducedMotion';
 import {
   chatWithGuruGroundedStreaming,
   type MedicalGroundingSource,
@@ -113,6 +123,8 @@ type ChatItem =
   | { id: string; type: 'typing' };
 
 const CHAT_HISTORY_LIMIT = 100;
+const GURU_CHAT_SCREEN_MOTION_TRIGGER = 'first-mount' as const;
+
 const MODEL_GROUP_ORDER: ModelOption['group'][] = [
   'Local',
   'ChatGPT Codex',
@@ -315,13 +327,18 @@ function formatTime(ts: number) {
   return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-function TypingDots() {
+function TypingDots({ active = true }: { active?: boolean }) {
+  const reducedMotion = useReducedMotion();
   const dotA = useRef(new Animated.Value(0)).current;
   const dotB = useRef(new Animated.Value(0)).current;
   const dotC = useRef(new Animated.Value(0)).current;
   const dots = useMemo(() => [dotA, dotB, dotC], [dotA, dotB, dotC]);
 
   useEffect(() => {
+    if (!active || reducedMotion) {
+      return undefined;
+    }
+
     const anims = dots.map((dot, index) =>
       Animated.loop(
         Animated.sequence([
@@ -344,7 +361,7 @@ function TypingDots() {
     );
     Animated.parallel(anims).start();
     return () => anims.forEach((anim) => anim.stop());
-  }, [dots]);
+  }, [active, dots, reducedMotion]);
 
   return (
     <View style={styles.dotsRow}>
@@ -353,12 +370,14 @@ function TypingDots() {
           key={index}
           style={[
             styles.dot,
-            {
-              transform: [
-                { translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
-              ],
-              opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
-            },
+            active && !reducedMotion
+              ? {
+                  transform: [
+                    { translateY: dot.interpolate({ inputRange: [0, 1], outputRange: [0, -5] }) },
+                  ],
+                  opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }),
+                }
+              : styles.dotStatic,
           ]}
         />
       ))}
@@ -416,26 +435,26 @@ function FormattedGuruMessage({ text }: { text: string }) {
             {lines.map((line, lineIndex) => {
               const segments = splitGuruBoldSegments(line);
               return (
-                <Text
+                <LinearText
                   key={`line-${paragraphIndex}-${lineIndex}`}
                   style={styles.guruFormattedText}
                   textBreakStrategy="simple"
                 >
                   {segments.map((segment, segmentIndex) =>
                     segment.bold ? (
-                      <Text
+                      <LinearText
                         key={`seg-${paragraphIndex}-${lineIndex}-${segmentIndex}`}
                         style={styles.guruStrongText}
                       >
                         {segment.text}
-                      </Text>
+                      </LinearText>
                     ) : (
                       <React.Fragment key={`seg-${paragraphIndex}-${lineIndex}-${segmentIndex}`}>
                         {segment.text}
                       </React.Fragment>
                     ),
                   )}
-                </Text>
+                </LinearText>
               );
             })}
           </View>
@@ -501,12 +520,12 @@ function MessageSources({
     <View style={styles.sourcesWrap}>
       <View style={styles.sourcesHeader}>
         <Ionicons name="documents-outline" size={13} color={n.colors.accent} />
-        <Text style={styles.sourcesLabel}>Sources ({sources.length})</Text>
+        <LinearText style={styles.sourcesLabel}>Sources ({sources.length})</LinearText>
       </View>
       {sources.map((source, index) => (
         <View key={`${messageId}-${source.id}`} style={styles.sourceCard}>
           <View style={styles.sourceNumBadge}>
-            <Text style={styles.sourceNum}>{index + 1}</Text>
+            <LinearText style={styles.sourceNum}>{index + 1}</LinearText>
           </View>
           {source.imageUrl ? (
             <Pressable
@@ -523,13 +542,13 @@ function MessageSources({
             onPress={() => openSource(source.url)}
             android_ripple={{ color: `${n.colors.accent}22` }}
           >
-            <Text style={styles.sourceTitle} numberOfLines={2}>
+            <LinearText style={styles.sourceTitle} numberOfLines={2}>
               {source.title}
-            </Text>
-            <Text style={styles.sourceMeta}>
+            </LinearText>
+            <LinearText style={styles.sourceMeta}>
               {source.source}
               {source.publishedAt ? `  ·  ${source.publishedAt}` : ''}
-            </Text>
+            </LinearText>
           </Pressable>
           <Pressable
             style={({ pressed }) => [pressed && styles.pressed]}
@@ -593,24 +612,6 @@ const chatSkeletonStyles = StyleSheet.create({
 });
 
 export default function GuruChatScreen() {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setReady(true);
-    });
-    return () => task.cancel();
-  }, []);
-
-  if (!ready) {
-    return (
-      <SafeAreaView style={styles.safe} testID="guru-chat-screen">
-        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <ChatSkeleton />
-      </SafeAreaView>
-    );
-  }
-
   return <GuruChatScreenContent />;
 }
 
@@ -674,6 +675,9 @@ function GuruChatScreenContent() {
   const [currentThread, setCurrentThread] = useState<GuruChatThread | null>(null);
   const [renameThreadId, setRenameThreadId] = useState<number | null>(null);
   const [renameDraft, setRenameDraft] = useState('');
+  const [entryComplete, setEntryComplete] = useState(false);
+  const [isHydratingThread, setIsHydratingThread] = useState(true);
+  const [isHydratingHistory, setIsHydratingHistory] = useState(true);
   const localLlmWarning = getLocalLlmRamWarning();
   /** Tracks Settings `guruChatDefaultModel` so we only reset picker when that changes — not on every live model list refresh. */
   const prevGuruChatDefaultRef = useRef<string | undefined>(undefined);
@@ -702,6 +706,7 @@ function GuruChatScreenContent() {
   useEffect(() => {
     let cancelled = false;
     const hydrateThread = async () => {
+      setIsHydratingThread(true);
       try {
         const thread =
           (requestedThreadId != null
@@ -717,6 +722,7 @@ function GuruChatScreenContent() {
         }
       } finally {
         if (!cancelled) {
+          setIsHydratingThread(false);
           void refreshThreads();
         }
       }
@@ -731,8 +737,10 @@ function GuruChatScreenContent() {
     if (!currentThreadId) {
       setSessionSummary('');
       setSessionStateJson('{}');
+      setIsHydratingHistory(false);
       return;
     }
+    setIsHydratingHistory(true);
     void getSessionMemoryRow(currentThreadId).then((r) => {
       setSessionSummary(r?.summaryText ?? '');
       setSessionStateJson(r?.stateJson ?? '{}');
@@ -746,6 +754,7 @@ function GuruChatScreenContent() {
   useEffect(() => {
     if (!currentThread) {
       setMessages([]);
+      setIsHydratingHistory(false);
       return;
     }
     void Promise.all([
@@ -756,6 +765,7 @@ function GuruChatScreenContent() {
         if (history.length === 0) {
           setMessages([]);
           setBannerVisible(true);
+          setIsHydratingHistory(false);
           return;
         }
 
@@ -783,10 +793,12 @@ function GuruChatScreenContent() {
           })),
         );
         setBannerVisible(false);
+        setIsHydratingHistory(false);
       })
       .catch(() => {
         // Ignore DB failures and keep the chat usable.
         setMessages([]);
+        setIsHydratingHistory(false);
       });
   }, [currentThread]);
 
@@ -1455,13 +1467,19 @@ function GuruChatScreenContent() {
             <View style={[styles.msgContent, styles.msgContentGuru]}>
               <View style={[styles.messageStack, styles.messageStackGuru]}>
                 <View style={styles.msgMetaRow}>
-                  <Text style={styles.msgAuthor}>Guru</Text>
-                  <Text style={styles.msgMetaDivider}>•</Text>
-                  <Text style={styles.msgMetaText}>Thinking...</Text>
+                  <LinearText variant="meta" style={styles.msgAuthor}>
+                    Guru
+                  </LinearText>
+                  <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
+                    •
+                  </LinearText>
+                  <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
+                    Thinking...
+                  </LinearText>
                 </View>
                 <View style={[styles.bubbleWrap, styles.bubbleWrapGuru]}>
                   <View style={[styles.bubble, styles.guruBubble, styles.typingBubble]}>
-                    <TypingDots />
+                    <TypingDots active={entryComplete} />
                   </View>
                 </View>
               </View>
@@ -1510,12 +1528,20 @@ function GuruChatScreenContent() {
                   message.role === 'user' ? styles.msgMetaRowUser : styles.msgMetaRowGuru,
                 ]}
               >
-                <Text style={styles.msgAuthor}>{message.role === 'user' ? 'You' : 'Guru'}</Text>
-                <Text style={styles.msgMetaDivider}>•</Text>
-                <Text style={styles.msgMetaText}>{formatTime(message.timestamp)}</Text>
+                <LinearText variant="meta" style={styles.msgAuthor}>
+                  {message.role === 'user' ? 'You' : 'Guru'}
+                </LinearText>
+                <LinearText variant="meta" tone="muted" style={styles.msgMetaDivider}>
+                  •
+                </LinearText>
+                <LinearText variant="meta" tone="muted" style={styles.msgMetaText}>
+                  {formatTime(message.timestamp)}
+                </LinearText>
                 {message.role === 'guru' && modelTag ? (
                   <View style={styles.msgModelPill}>
-                    <Text style={styles.msgModelPillText}>{modelTag}</Text>
+                    <LinearText variant="badge" style={styles.msgModelPillText}>
+                      {modelTag}
+                    </LinearText>
                   </View>
                 ) : null}
               </View>
@@ -1570,23 +1596,28 @@ function GuruChatScreenContent() {
                     {message.role === 'guru' ? (
                       <FormattedGuruMessage text={message.text} />
                     ) : (
-                      <Text
+                      <LinearText
+                        variant="body"
                         style={[styles.bubbleText, styles.userBubbleText]}
                         textBreakStrategy="simple"
                       >
                         {message.text}
-                      </Text>
+                      </LinearText>
                     )}
                   </View>
                 </Pressable>
               )}
 
-              <Text style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}>
+              <LinearText
+                variant="caption"
+                tone="muted"
+                style={[styles.timestamp, message.role === 'user' && styles.timestampRight]}
+              >
                 {formatTime(message.timestamp)}
                 {message.role === 'guru' && message.modelUsed
                   ? `  ·  ${message.modelUsed.split('/').pop()}`
                   : ''}
-              </Text>
+              </LinearText>
 
               {message.role === 'guru' && hasGuruImages && !showInlineGuruImages ? (
                 <View style={styles.generatedImagesWrap}>
@@ -1704,11 +1735,11 @@ function GuruChatScreenContent() {
                   {imageJobKey?.startsWith(`${message.id}:`) ? (
                     <View style={styles.responseStatusRow}>
                       <ActivityIndicator size="small" color={n.colors.accent} />
-                      <Text style={styles.responseStatusText}>
+                      <LinearText style={styles.responseStatusText}>
                         {imageJobKey.endsWith(':chart')
                           ? 'Generating chart...'
                           : 'Generating illustration...'}
-                      </Text>
+                      </LinearText>
                     </View>
                   ) : null}
                 </>
@@ -1721,6 +1752,7 @@ function GuruChatScreenContent() {
     [
       copyMessage,
       expandedSourcesMessageId,
+      entryComplete,
       handleGenerateMessageImage,
       imageJobKey,
       lastUserPrompt,
@@ -1731,6 +1763,15 @@ function GuruChatScreenContent() {
     ],
   );
 
+  if (shouldShowGuruChatSkeleton({ isHydratingThread, isHydratingHistory })) {
+    return (
+      <SafeAreaView style={styles.safe} testID="guru-chat-screen">
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ChatSkeleton />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safe} testID="guru-chat-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
@@ -1740,444 +1781,472 @@ function GuruChatScreenContent() {
         enabled={Platform.OS === 'ios'}
         keyboardVerticalOffset={0}
       >
-        <ResponsiveContainer style={styles.flex}>
-          <View style={styles.headerWrap}>
-            <ScreenHeader
-              title="Guru Chat"
-              subtitle={
-                currentThread && currentThread.title !== topicName
-                  ? currentThread.title
-                  : isGeneralChat
-                    ? 'Medical assistant'
-                    : topicName
-              }
-              onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
-              rightElement={
-                <View style={styles.headerActions}>
-                  <BannerIconButton
-                    onPress={() => setShowHistoryDrawer(true)}
-                    accessibilityLabel="Open chat history"
-                  >
-                    <Ionicons name="reorder-three-outline" size={18} color={n.colors.accent} />
-                  </BannerIconButton>
-                  <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
-                    <Ionicons name="create-outline" size={18} color={n.colors.accent} />
-                  </BannerIconButton>
-                  <BannerIconButton
-                    onPress={() =>
-                      navigation.getParent()?.navigate('MenuTab', { screen: 'Settings' })
-                    }
-                    accessibilityLabel="Open settings"
-                  >
-                    <Ionicons name="settings-sharp" size={18} color={n.colors.textSecondary} />
-                  </BannerIconButton>
-                </View>
-              }
-            />
-          </View>
-
-          {showHistoryDrawer ? (
-            <View style={styles.historyOverlay} pointerEvents="box-none">
-              <Pressable
-                style={styles.historyBackdrop}
-                onPress={() => setShowHistoryDrawer(false)}
-              />
-              <LinearSurface padded={false} style={styles.historyDrawer}>
-                <View style={styles.historyHeader}>
-                  <Text style={styles.historyTitle}>Chat History</Text>
-                  <Pressable
-                    style={({ pressed }) => [styles.historyCloseBtn, pressed && styles.pressed]}
-                    onPress={() => setShowHistoryDrawer(false)}
-                  >
-                    <Ionicons name="close" size={18} color={n.colors.textMuted} />
-                  </Pressable>
-                </View>
-
-                <Pressable
-                  style={({ pressed }) => [styles.historyNewBtn, pressed && styles.pressed]}
-                  onPress={() => {
-                    void createAndSwitchToNewThread();
-                  }}
-                >
-                  <Ionicons name="add-outline" size={18} color={n.colors.accent} />
-                  <Text style={styles.historyNewBtnText}>New Chat</Text>
-                </Pressable>
-
-                <FlatList
-                  data={threads}
-                  keyExtractor={(item) => item.id.toString()}
-                  style={styles.historyList}
-                  contentContainerStyle={styles.historyListContent}
-                  renderItem={({ item }) => {
-                    const isActive = item.id === currentThreadId;
-                    return (
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.historyItem,
-                          isActive && styles.historyItemActive,
-                          pressed && styles.pressed,
-                        ]}
-                        onPress={() => {
-                          void openThread(item);
-                        }}
+        <ScreenMotion
+          style={styles.flex}
+          trigger={GURU_CHAT_SCREEN_MOTION_TRIGGER}
+          isEntryComplete={() => setEntryComplete(true)}
+        >
+          <ResponsiveContainer style={styles.flex}>
+            <RevealSection active={entryComplete} delayMs={0}>
+              <View style={styles.headerWrap}>
+                <ScreenHeader
+                  title="Guru Chat"
+                  subtitle={
+                    currentThread && currentThread.title !== topicName
+                      ? currentThread.title
+                      : isGeneralChat
+                        ? 'Medical assistant'
+                        : topicName
+                  }
+                  onBackPress={navigation.canGoBack() ? () => navigation.goBack() : undefined}
+                  rightElement={
+                    <View style={styles.headerActions}>
+                      <BannerIconButton
+                        onPress={() => setShowHistoryDrawer(true)}
+                        accessibilityLabel="Open chat history"
                       >
-                        <View style={styles.historyItemMain}>
-                          <Text style={styles.historyItemTitle} numberOfLines={2}>
-                            {item.title}
-                          </Text>
-                          <Text style={styles.historyItemTopic} numberOfLines={2}>
-                            {item.topicName}
-                          </Text>
-                          <Text style={styles.historyItemPreview} numberOfLines={3}>
-                            {item.lastMessagePreview || 'No messages yet'}
-                          </Text>
-                        </View>
-                        <View style={styles.historyItemSide}>
-                          <Text style={styles.historyItemTime}>
-                            {formatTime(item.lastMessageAt)}
-                          </Text>
-                          <View style={styles.historyItemActions}>
-                            <Pressable
-                              style={({ pressed }) => [
-                                styles.historyActionBtn,
-                                pressed && styles.pressed,
-                              ]}
-                              onPress={() => {
-                                setRenameThreadId(item.id);
-                                setRenameDraft(item.title);
-                                setShowHistoryDrawer(false);
-                              }}
-                              hitSlop={6}
-                            >
-                              <Ionicons name="pencil-outline" size={14} color={n.colors.accent} />
-                            </Pressable>
-                            <Pressable
-                              style={({ pressed }) => [
-                                styles.historyActionBtn,
-                                pressed && styles.pressed,
-                              ]}
-                              onPress={() => {
-                                void handleDeleteThread(item);
-                              }}
-                              hitSlop={6}
-                            >
-                              <Ionicons name="trash-outline" size={14} color={n.colors.textMuted} />
-                            </Pressable>
-                          </View>
-                        </View>
-                      </Pressable>
-                    );
-                  }}
-                  ListEmptyComponent={
-                    <View style={styles.historyEmpty}>
-                      <Text style={styles.historyEmptyText}>No chats yet</Text>
+                        <Ionicons name="reorder-three-outline" size={18} color={n.colors.accent} />
+                      </BannerIconButton>
+                      <BannerIconButton onPress={startNewChat} accessibilityLabel="New chat">
+                        <Ionicons name="create-outline" size={18} color={n.colors.accent} />
+                      </BannerIconButton>
+                      <BannerIconButton
+                        onPress={() =>
+                          navigation.getParent()?.navigate('MenuTab', { screen: 'Settings' })
+                        }
+                        accessibilityLabel="Open settings"
+                      >
+                        <Ionicons name="settings-sharp" size={18} color={n.colors.textSecondary} />
+                      </BannerIconButton>
                     </View>
                   }
                 />
-              </LinearSurface>
-            </View>
-          ) : null}
-
-          {renameThreadId ? (
-            <View style={styles.sheetOverlay} pointerEvents="box-none">
-              <Pressable
-                style={styles.sheetBackdrop}
-                onPress={() => {
-                  setRenameThreadId(null);
-                  setRenameDraft('');
-                }}
-              />
-              <LinearSurface
-                padded={false}
-                borderColor={n.colors.borderHighlight}
-                style={styles.renameSheet}
-              >
-                <Text style={styles.renameTitle}>Rename Chat</Text>
-                <TextInput
-                  style={styles.renameInput}
-                  value={renameDraft}
-                  onChangeText={setRenameDraft}
-                  placeholder="Chat title"
-                  placeholderTextColor={n.colors.textMuted}
-                  autoFocus
-                  maxLength={80}
-                />
-                <View style={styles.renameActions}>
-                  <Pressable
-                    style={({ pressed }) => [styles.renameBtn, pressed && styles.pressed]}
-                    onPress={() => {
-                      setRenameThreadId(null);
-                      setRenameDraft('');
-                    }}
-                  >
-                    <Text style={styles.renameBtnText}>Cancel</Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [
-                      styles.renameBtn,
-                      styles.renameBtnPrimary,
-                      pressed && styles.pressed,
-                    ]}
-                    onPress={() => {
-                      void handleRenameThread();
-                    }}
-                  >
-                    <Text style={styles.renameBtnTextPrimary}>Save</Text>
-                  </Pressable>
-                </View>
-              </LinearSurface>
-            </View>
-          ) : null}
-
-          {showModelPicker ? (
-            <View style={styles.sheetOverlay} pointerEvents="box-none">
-              <Pressable style={styles.sheetBackdrop} onPress={() => setShowModelPicker(false)} />
-              <View style={styles.sheetContent}>
-                <Text style={styles.sheetTitle}>Choose Brain</Text>
-                {localLlmWarning ? <Text style={styles.warningText}>{localLlmWarning}</Text> : null}
-
-                {/* Provider tabs */}
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.tabStrip}
-                  contentContainerStyle={styles.tabStripContent}
-                >
-                  {visibleModelGroups.map((group) => (
-                    <Pressable
-                      key={group}
-                      style={[styles.tabChip, pickerTab === group && styles.tabChipActive]}
-                      onPress={() => setPickerTab(group)}
-                    >
-                      <Text
-                        style={[
-                          styles.tabChipText,
-                          pickerTab === group && styles.tabChipTextActive,
-                        ]}
-                      >
-                        {group}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
-
-                {/* Models for selected tab */}
-                <FlatList
-                  data={availableModels.filter((m) => m.group === pickerTab)}
-                  keyExtractor={(m) => m.id}
-                  style={styles.modelList}
-                  renderItem={({ item: model }: ListRenderItemInfo<ModelOption>) => (
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.modelItem,
-                        chosenModel === model.id && styles.modelItemActive,
-                        pressed && styles.pressed,
-                      ]}
-                      android_ripple={{ color: `${n.colors.accent}22` }}
-                      onPress={() => {
-                        if (messages.length > 0 && model.id !== chosenModel) {
-                          Alert.alert(
-                            'Switch model?',
-                            "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
-                            [
-                              { text: 'Cancel', style: 'cancel' },
-                              {
-                                text: 'Switch',
-                                onPress: () => {
-                                  applyChosenModel(model.id);
-                                  setShowModelPicker(false);
-                                },
-                              },
-                            ],
-                          );
-                        } else {
-                          applyChosenModel(model.id);
-                          setShowModelPicker(false);
-                        }
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.modelItemText,
-                          chosenModel === model.id && styles.modelItemTextActive,
-                        ]}
-                      >
-                        {model.name}
-                      </Text>
-                      {chosenModel === model.id ? (
-                        <Ionicons name="checkmark-circle" size={18} color={n.colors.accent} />
-                      ) : null}
-                    </Pressable>
-                  )}
-                />
-
-                <Pressable
-                  style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
-                  onPress={() => setShowModelPicker(false)}
-                >
-                  <Text style={styles.closeBtnText}>Cancel</Text>
-                </Pressable>
               </View>
-            </View>
-          ) : null}
+            </RevealSection>
 
-          <View style={styles.contentWrap}>
-            {bannerVisible ? (
-              <View style={styles.infoBanner}>
-                <Ionicons
-                  name="library-outline"
-                  size={14}
-                  color={n.colors.accent}
-                  style={styles.bannerIcon}
+            {showHistoryDrawer ? (
+              <View style={styles.historyOverlay} pointerEvents="box-none">
+                <Pressable
+                  style={styles.historyBackdrop}
+                  onPress={() => setShowHistoryDrawer(false)}
                 />
-                <Text style={styles.infoText}>
-                  Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
-                </Text>
-                <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
-                  <Ionicons name="close" size={14} color={n.colors.textMuted} />
-                </Pressable>
+                <LinearSurface padded={false} style={styles.historyDrawer}>
+                  <View style={styles.historyHeader}>
+                    <LinearText style={styles.historyTitle}>Chat History</LinearText>
+                    <Pressable
+                      style={({ pressed }) => [styles.historyCloseBtn, pressed && styles.pressed]}
+                      onPress={() => setShowHistoryDrawer(false)}
+                    >
+                      <Ionicons name="close" size={18} color={n.colors.textMuted} />
+                    </Pressable>
+                  </View>
+
+                  <Pressable
+                    style={({ pressed }) => [styles.historyNewBtn, pressed && styles.pressed]}
+                    onPress={() => {
+                      void createAndSwitchToNewThread();
+                    }}
+                  >
+                    <Ionicons name="add-outline" size={18} color={n.colors.accent} />
+                    <LinearText style={styles.historyNewBtnText}>New Chat</LinearText>
+                  </Pressable>
+
+                  <FlatList
+                    data={threads}
+                    keyExtractor={(item) => item.id.toString()}
+                    style={styles.historyList}
+                    contentContainerStyle={styles.historyListContent}
+                    renderItem={({ item }) => {
+                      const isActive = item.id === currentThreadId;
+                      return (
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.historyItem,
+                            isActive && styles.historyItemActive,
+                            pressed && styles.pressed,
+                          ]}
+                          onPress={() => {
+                            void openThread(item);
+                          }}
+                        >
+                          <View style={styles.historyItemMain}>
+                            <LinearText style={styles.historyItemTitle} numberOfLines={2}>
+                              {item.title}
+                            </LinearText>
+                            <LinearText style={styles.historyItemTopic} numberOfLines={2}>
+                              {item.topicName}
+                            </LinearText>
+                            <LinearText style={styles.historyItemPreview} numberOfLines={3}>
+                              {item.lastMessagePreview || 'No messages yet'}
+                            </LinearText>
+                          </View>
+                          <View style={styles.historyItemSide}>
+                            <LinearText style={styles.historyItemTime}>
+                              {formatTime(item.lastMessageAt)}
+                            </LinearText>
+                            <View style={styles.historyItemActions}>
+                              <Pressable
+                                style={({ pressed }) => [
+                                  styles.historyActionBtn,
+                                  pressed && styles.pressed,
+                                ]}
+                                onPress={() => {
+                                  setRenameThreadId(item.id);
+                                  setRenameDraft(item.title);
+                                  setShowHistoryDrawer(false);
+                                }}
+                                hitSlop={6}
+                              >
+                                <Ionicons name="pencil-outline" size={14} color={n.colors.accent} />
+                              </Pressable>
+                              <Pressable
+                                style={({ pressed }) => [
+                                  styles.historyActionBtn,
+                                  pressed && styles.pressed,
+                                ]}
+                                onPress={() => {
+                                  void handleDeleteThread(item);
+                                }}
+                                hitSlop={6}
+                              >
+                                <Ionicons
+                                  name="trash-outline"
+                                  size={14}
+                                  color={n.colors.textMuted}
+                                />
+                              </Pressable>
+                            </View>
+                          </View>
+                        </Pressable>
+                      );
+                    }}
+                    ListEmptyComponent={
+                      <View style={styles.historyEmpty}>
+                        <LinearText style={styles.historyEmptyText}>No chats yet</LinearText>
+                      </View>
+                    }
+                  />
+                </LinearSurface>
               </View>
             ) : null}
 
-            <View style={styles.chatSurface}>
-              {messages.length === 0 && !loading ? (
-                <View style={styles.emptyWrap}>
-                  <View style={styles.emptyPanel}>
-                    <View style={styles.heroRow}>
-                      <View style={styles.guruAvatarLarge}>
-                        <Ionicons name="sparkles" size={20} color={n.colors.accent} />
-                      </View>
-                      <View style={styles.heroCopy}>
-                        <Text style={styles.emptyTitle}>
-                          {isGeneralChat ? 'Ask anything medical' : `Let's work on ${topicName}`}
-                        </Text>
-                        <Text style={styles.emptyHint}>
-                          Ask a question or start with one of these prompts.
-                        </Text>
-                      </View>
-                    </View>
+            {renameThreadId ? (
+              <View style={styles.sheetOverlay} pointerEvents="box-none">
+                <Pressable
+                  style={styles.sheetBackdrop}
+                  onPress={() => {
+                    setRenameThreadId(null);
+                    setRenameDraft('');
+                  }}
+                />
+                <LinearSurface
+                  padded={false}
+                  borderColor={n.colors.borderHighlight}
+                  style={styles.renameSheet}
+                >
+                  <LinearText style={styles.renameTitle}>Rename Chat</LinearText>
+                  <TextInput
+                    style={styles.renameInput}
+                    value={renameDraft}
+                    onChangeText={setRenameDraft}
+                    placeholder="Chat title"
+                    placeholderTextColor={n.colors.textMuted}
+                    autoFocus
+                    maxLength={80}
+                  />
+                  <View style={styles.renameActions}>
+                    <Pressable
+                      style={({ pressed }) => [styles.renameBtn, pressed && styles.pressed]}
+                      onPress={() => {
+                        setRenameThreadId(null);
+                        setRenameDraft('');
+                      }}
+                    >
+                      <LinearText style={styles.renameBtnText}>Cancel</LinearText>
+                    </Pressable>
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.renameBtn,
+                        styles.renameBtnPrimary,
+                        pressed && styles.pressed,
+                      ]}
+                      onPress={() => {
+                        void handleRenameThread();
+                      }}
+                    >
+                      <LinearText style={styles.renameBtnTextPrimary}>Save</LinearText>
+                    </Pressable>
+                  </View>
+                </LinearSurface>
+              </View>
+            ) : null}
 
-                    {sessionSummary ? (
-                      <View style={styles.sessionSummaryInline}>
-                        <Text style={styles.sessionSummaryInlineText} numberOfLines={3}>
-                          {sessionSummary}
-                        </Text>
-                      </View>
-                    ) : null}
+            {showModelPicker ? (
+              <View style={styles.sheetOverlay} pointerEvents="box-none">
+                <Pressable style={styles.sheetBackdrop} onPress={() => setShowModelPicker(false)} />
+                <View style={styles.sheetContent}>
+                  <LinearText style={styles.sheetTitle}>Choose Brain</LinearText>
+                  {localLlmWarning ? (
+                    <LinearText style={styles.warningText}>{localLlmWarning}</LinearText>
+                  ) : null}
 
-                    <View style={styles.starterGrid}>
-                      {starters.map((starter) => (
-                        <Pressable
-                          key={starter.text}
-                          style={({ pressed }) => [styles.starterChip, pressed && styles.pressed]}
-                          android_ripple={{ color: `${n.colors.accent}22` }}
-                          onPress={() => handleSend(starter.text)}
-                          disabled={loading}
+                  {/* Provider tabs */}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.tabStrip}
+                    contentContainerStyle={styles.tabStripContent}
+                  >
+                    {visibleModelGroups.map((group) => (
+                      <Pressable
+                        key={group}
+                        style={[styles.tabChip, pickerTab === group && styles.tabChipActive]}
+                        onPress={() => setPickerTab(group)}
+                      >
+                        <LinearText
+                          style={[
+                            styles.tabChipText,
+                            pickerTab === group && styles.tabChipTextActive,
+                          ]}
                         >
-                          <View style={styles.starterIconWrap}>
-                            <Ionicons
-                              name={starter.icon as keyof typeof Ionicons.glyphMap}
-                              size={14}
-                              color={n.colors.accent}
-                            />
+                          {group}
+                        </LinearText>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+
+                  {/* Models for selected tab */}
+                  <FlatList
+                    data={availableModels.filter((m) => m.group === pickerTab)}
+                    keyExtractor={(m) => m.id}
+                    style={styles.modelList}
+                    renderItem={({ item: model }: ListRenderItemInfo<ModelOption>) => (
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.modelItem,
+                          chosenModel === model.id && styles.modelItemActive,
+                          pressed && styles.pressed,
+                        ]}
+                        android_ripple={{ color: `${n.colors.accent}22` }}
+                        onPress={() => {
+                          if (messages.length > 0 && model.id !== chosenModel) {
+                            Alert.alert(
+                              'Switch model?',
+                              "Switching models mid-conversation may lose context. The new model won't remember earlier messages.",
+                              [
+                                { text: 'Cancel', style: 'cancel' },
+                                {
+                                  text: 'Switch',
+                                  onPress: () => {
+                                    applyChosenModel(model.id);
+                                    setShowModelPicker(false);
+                                  },
+                                },
+                              ],
+                            );
+                          } else {
+                            applyChosenModel(model.id);
+                            setShowModelPicker(false);
+                          }
+                        }}
+                      >
+                        <LinearText
+                          style={[
+                            styles.modelItemText,
+                            chosenModel === model.id && styles.modelItemTextActive,
+                          ]}
+                        >
+                          {model.name}
+                        </LinearText>
+                        {chosenModel === model.id ? (
+                          <Ionicons name="checkmark-circle" size={18} color={n.colors.accent} />
+                        ) : null}
+                      </Pressable>
+                    )}
+                  />
+
+                  <Pressable
+                    style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+                    onPress={() => setShowModelPicker(false)}
+                  >
+                    <LinearText style={styles.closeBtnText}>Cancel</LinearText>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            <RevealSection active={entryComplete} delayMs={80} style={styles.flex}>
+              <View style={styles.contentWrap}>
+                {bannerVisible ? (
+                  <View style={styles.infoBanner}>
+                    <Ionicons
+                      name="library-outline"
+                      size={14}
+                      color={n.colors.accent}
+                      style={styles.bannerIcon}
+                    />
+                    <LinearText style={styles.infoText}>
+                      Grounded with Wikipedia, Europe PMC and PubMed. Sources are linked inline.
+                    </LinearText>
+                    <Pressable onPress={() => setBannerVisible(false)} hitSlop={8}>
+                      <Ionicons name="close" size={14} color={n.colors.textMuted} />
+                    </Pressable>
+                  </View>
+                ) : null}
+
+                <View style={styles.chatSurface}>
+                  {messages.length === 0 && !loading ? (
+                    <View style={styles.emptyWrap}>
+                      <View style={styles.emptyPanel}>
+                        <View style={styles.heroRow}>
+                          <View style={styles.guruAvatarLarge}>
+                            <Ionicons name="sparkles" size={20} color={n.colors.accent} />
                           </View>
-                          <Text style={styles.starterChipText} numberOfLines={3}>
-                            {starter.text}
-                          </Text>
-                        </Pressable>
-                      ))}
+                          <View style={styles.heroCopy}>
+                            <LinearText style={styles.emptyTitle}>
+                              {isGeneralChat
+                                ? 'Ask anything medical'
+                                : `Let's work on ${topicName}`}
+                            </LinearText>
+                            <LinearText style={styles.emptyHint}>
+                              Ask a question or start with one of these prompts.
+                            </LinearText>
+                          </View>
+                        </View>
+
+                        {sessionSummary ? (
+                          <View style={styles.sessionSummaryInline}>
+                            <LinearText style={styles.sessionSummaryInlineText} numberOfLines={3}>
+                              {sessionSummary}
+                            </LinearText>
+                          </View>
+                        ) : null}
+
+                        <View style={styles.starterGrid}>
+                          {starters.map((starter) => (
+                            <Pressable
+                              key={starter.text}
+                              style={({ pressed }) => [
+                                styles.starterChip,
+                                pressed && styles.pressed,
+                              ]}
+                              android_ripple={{ color: `${n.colors.accent}22` }}
+                              onPress={() => handleSend(starter.text)}
+                              disabled={loading}
+                            >
+                              <View style={styles.starterIconWrap}>
+                                <Ionicons
+                                  name={starter.icon as keyof typeof Ionicons.glyphMap}
+                                  size={14}
+                                  color={n.colors.accent}
+                                />
+                              </View>
+                              <LinearText style={styles.starterChipText} numberOfLines={3}>
+                                {starter.text}
+                              </LinearText>
+                            </Pressable>
+                          ))}
+                        </View>
+                      </View>
                     </View>
+                  ) : (
+                    <FlatList
+                      key={`chat-list-${viewportWidth}`}
+                      ref={flatListRef}
+                      data={chatItems}
+                      renderItem={renderMessage}
+                      keyExtractor={(item) => item.id}
+                      style={styles.messages}
+                      contentContainerStyle={styles.messagesContent}
+                      showsVerticalScrollIndicator={false}
+                      keyboardShouldPersistTaps="handled"
+                      keyboardDismissMode="on-drag"
+                      inverted
+                      maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
+                    />
+                  )}
+                </View>
+              </View>
+            </RevealSection>
+
+            <RevealSection active={entryComplete} delayMs={140}>
+              <View style={styles.composerToolsWrap}>
+                <View style={styles.quickActionsCenterWrap}>
+                  <View style={styles.quickActionsCenter}>
+                    {QUICK_REPLY_OPTIONS.map((option) => (
+                      <Pressable
+                        key={option.key}
+                        style={({ pressed }) => [
+                          styles.quickActionChip,
+                          loading && styles.quickActionChipDisabled,
+                          pressed && !loading && styles.pressed,
+                        ]}
+                        onPress={() => handleSend(option.prompt)}
+                        disabled={loading}
+                      >
+                        <LinearText style={styles.quickActionText}>{option.label}</LinearText>
+                      </Pressable>
+                    ))}
                   </View>
                 </View>
-              ) : (
-                <FlatList
-                  key={`chat-list-${viewportWidth}`}
-                  ref={flatListRef}
-                  data={chatItems}
-                  renderItem={renderMessage}
-                  keyExtractor={(item) => item.id}
-                  style={styles.messages}
-                  contentContainerStyle={styles.messagesContent}
-                  showsVerticalScrollIndicator={false}
-                  keyboardShouldPersistTaps="handled"
-                  keyboardDismissMode="on-drag"
-                  inverted
-                  maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
-                />
-              )}
-            </View>
 
-            <View style={styles.quickActionsCenterWrap}>
-              <View style={styles.quickActionsCenter}>
-                {QUICK_REPLY_OPTIONS.map((option) => (
-                  <Pressable
-                    key={option.key}
-                    style={({ pressed }) => [
-                      styles.quickActionChip,
-                      loading && styles.quickActionChipDisabled,
-                      pressed && !loading && styles.pressed,
-                    ]}
-                    onPress={() => handleSend(option.prompt)}
-                    disabled={loading}
-                  >
-                    <Text style={styles.quickActionText}>{option.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            </View>
-
-            <View
-              style={[styles.composerWrap, keyboardInset > 0 && { marginBottom: keyboardInset }]}
-            >
-              <View style={styles.inputRow}>
-                <Pressable
-                  style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
-                  onPress={() => {
-                    setPickerTab(currentModelGroup);
-                    setShowModelPicker(true);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
-                >
-                  <View style={styles.modelDot} />
-                  <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
-                </Pressable>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Ask Guru anything..."
-                  placeholderTextColor={n.colors.textMuted}
-                  value={input}
-                  autoFocus={!!route.params?.autoFocusComposer}
-                  onChangeText={setInput}
-                  onSubmitEditing={() => handleSend()}
-                  returnKeyType="send"
-                  multiline={false}
-                  blurOnSubmit={false}
-                  maxLength={1000}
-                  selectionColor={n.colors.accent}
-                />
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.sendBtn,
-                    (!input.trim() || loading) && styles.sendBtnDisabled,
-                    pressed && input.trim() && !loading && styles.pressed,
+                <View
+                  style={[
+                    styles.composerWrap,
+                    keyboardInset > 0 && { marginBottom: keyboardInset },
                   ]}
-                  android_ripple={{ color: '#ffffff18', radius: 22 }}
-                  onPress={() => handleSend()}
-                  disabled={!input.trim() || loading}
-                  accessibilityRole="button"
-                  accessibilityLabel="Send message"
                 >
-                  <Ionicons
-                    name={loading ? 'ellipse-outline' : 'send'}
-                    size={18}
-                    color={n.colors.textPrimary}
-                  />
-                </Pressable>
+                  <View style={styles.inputRow}>
+                    <Pressable
+                      style={({ pressed }) => [styles.modelIconBtn, pressed && styles.pressed]}
+                      onPress={() => {
+                        setPickerTab(currentModelGroup);
+                        setShowModelPicker(true);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Current model: ${currentModelLabel}. Tap to change.`}
+                    >
+                      <View style={styles.modelDot} />
+                      <Ionicons name="chevron-down" size={8} color={n.colors.textMuted} />
+                    </Pressable>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Ask Guru anything..."
+                      placeholderTextColor={n.colors.textMuted}
+                      value={input}
+                      autoFocus={!!route.params?.autoFocusComposer}
+                      onChangeText={setInput}
+                      onSubmitEditing={() => handleSend()}
+                      returnKeyType="send"
+                      multiline={false}
+                      blurOnSubmit={false}
+                      maxLength={1000}
+                      selectionColor={n.colors.accent}
+                    />
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.sendBtn,
+                        (!input.trim() || loading) && styles.sendBtnDisabled,
+                        pressed && input.trim() && !loading && styles.pressed,
+                      ]}
+                      android_ripple={{ color: '#ffffff18', radius: 22 }}
+                      onPress={() => handleSend()}
+                      disabled={!input.trim() || loading}
+                      accessibilityRole="button"
+                      accessibilityLabel="Send message"
+                    >
+                      <Ionicons
+                        name={loading ? 'ellipse-outline' : 'send'}
+                        size={18}
+                        color={n.colors.textPrimary}
+                      />
+                    </Pressable>
+                  </View>
+                </View>
               </View>
-            </View>
-          </View>
-        </ResponsiveContainer>
+            </RevealSection>
+          </ResponsiveContainer>
+        </ScreenMotion>
       </KeyboardAvoidingView>
       <ImageLightbox
         visible={!!lightboxUri}
@@ -2406,7 +2475,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
+    shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -2499,7 +2568,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 24,
     gap: 16,
-    shadowColor: '#000',
+    shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.5,
     shadowRadius: 24,
@@ -2548,7 +2617,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   renameBtnTextPrimary: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 13,
     fontWeight: '800',
   },
@@ -2821,10 +2890,10 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    backgroundColor: n.colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    shadowColor: '#000',
+    borderColor: n.colors.border,
+    shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -2870,15 +2939,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: n.colors.border,
   },
   sourceNumBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: 'rgba(94, 106, 210, 0.12)',
+    backgroundColor: `${n.colors.accent}16`,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.2)',
+    borderColor: `${n.colors.accent}33`,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -2938,13 +3007,13 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: n.colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: n.colors.borderHighlight,
   },
   responseActionBtnActive: {
-    backgroundColor: 'rgba(94, 106, 210, 0.12)',
-    borderColor: 'rgba(94, 106, 210, 0.3)',
+    backgroundColor: `${n.colors.accent}16`,
+    borderColor: `${n.colors.accent}52`,
   },
   dotsRow: {
     flexDirection: 'row',
@@ -2957,6 +3026,9 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 4,
     backgroundColor: n.colors.accent,
+  },
+  dotStatic: {
+    opacity: 0.55,
   },
   emptyWrap: {
     flex: 1,
@@ -2983,9 +3055,9 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(94, 106, 210, 0.12)',
+    backgroundColor: `${n.colors.accent}16`,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(94, 106, 210, 0.3)',
+    borderColor: `${n.colors.accent}52`,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#5E6AD2',
@@ -3067,6 +3139,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 4,
     paddingHorizontal: 4,
+  },
+  composerToolsWrap: {
+    gap: 4,
   },
   quickActionsCenter: {
     flexDirection: 'row',

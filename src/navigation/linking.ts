@@ -30,7 +30,6 @@ const linking: LinkingOptions<RootStackParamList> = {
               TopicDetail: 'topic-detail',
             },
           },
-          ActionHubTab: 'action',
           ChatTab: {
             screens: {
               GuruChat: 'guru-chat',

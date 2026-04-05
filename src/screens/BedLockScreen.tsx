@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -10,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -122,7 +122,7 @@ export default function BedLockScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
           <ActivityIndicator size="large" color="#6C63FF" />
-          <Text style={styles.detectingText}>Detecting position...</Text>
+          <LinearText style={styles.detectingText}>Detecting position...</LinearText>
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -133,27 +133,29 @@ export default function BedLockScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
-          <Text style={styles.shameEmoji}>😴</Text>
-          <Text style={styles.shameTitle}>You're Lying Down</Text>
-          <Text style={styles.shameSub}>
+          <LinearText style={styles.shameEmoji}>😴</LinearText>
+          <LinearText style={styles.shameTitle}>You're Lying Down</LinearText>
+          <LinearText style={styles.shameSub}>
             {shameCount > 3
               ? `Still in bed after ${shameCount} nudges. Your NEET exam doesn't care about your comfort.`
               : 'Phone detected horizontal position. Time to get up, Doctor.'}
-          </Text>
+          </LinearText>
 
           <Animated.View style={[styles.lockCircle, { transform: [{ scale: pulseAnim }] }]}>
-            <Text style={styles.lockEmoji}>🔒</Text>
-            <Text style={styles.lockText}>LOCKED</Text>
+            <LinearText style={styles.lockEmoji}>🔒</LinearText>
+            <LinearText style={styles.lockText}>LOCKED</LinearText>
           </Animated.View>
 
-          <Text style={styles.positionText}>Z-Axis: {positionZ.toFixed(2)} (need &gt; 0.7)</Text>
+          <LinearText style={styles.positionText}>
+            Z-Axis: {positionZ.toFixed(2)} (need &gt; 0.7)
+          </LinearText>
 
           <TouchableOpacity style={styles.situpBtn} onPress={handleStartSitUp}>
-            <Text style={styles.situpBtnText}>📱 I'm Sitting Up Now</Text>
+            <LinearText style={styles.situpBtnText}>📱 I'm Sitting Up Now</LinearText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cheatBtn} onPress={handleForceUnlock}>
-            <Text style={styles.cheatBtnText}>Unlock Anyway (Cheating)</Text>
+            <LinearText style={styles.cheatBtnText}>Unlock Anyway (Cheating)</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -166,18 +168,20 @@ export default function BedLockScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { transform: [{ translateX: shakeAnim }] }]}>
-            <Text style={styles.progressEmoji}>💪</Text>
-            <Text style={styles.progressTitle}>Keep Sitting Up!</Text>
-            <Text style={styles.progressSub}>Hold phone upright to unlock</Text>
+            <LinearText style={styles.progressEmoji}>💪</LinearText>
+            <LinearText style={styles.progressTitle}>Keep Sitting Up!</LinearText>
+            <LinearText style={styles.progressSub}>Hold phone upright to unlock</LinearText>
 
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: `${progress}%` }]} />
             </View>
 
-            <Text style={styles.progressPercent}>{progress}%</Text>
-            <Text style={styles.positionText}>Current: {positionZ.toFixed(2)}</Text>
+            <LinearText style={styles.progressPercent}>{progress}%</LinearText>
+            <LinearText style={styles.positionText}>Current: {positionZ.toFixed(2)}</LinearText>
 
-            {progress > 50 && <Text style={styles.encouragement}>Almost there! Stay upright!</Text>}
+            {progress > 50 && (
+              <LinearText style={styles.encouragement}>Almost there! Stay upright!</LinearText>
+            )}
           </Animated.View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -188,9 +192,11 @@ export default function BedLockScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <Text style={styles.unlockedEmoji}>🎉</Text>
-          <Text style={styles.unlockedTitle}>You're Upright!</Text>
-          <Text style={styles.unlockedSub}>The hardest part is done. Now let's study.</Text>
+          <LinearText style={styles.unlockedEmoji}>🎉</LinearText>
+          <LinearText style={styles.unlockedTitle}>You're Upright!</LinearText>
+          <LinearText style={styles.unlockedSub}>
+            The hardest part is done. Now let's study.
+          </LinearText>
 
           <TouchableOpacity
             style={styles.startBtn}
@@ -203,7 +209,7 @@ export default function BedLockScreen() {
               })
             }
           >
-            <Text style={styles.startBtnText}>Start with 1 Easy Card →</Text>
+            <LinearText style={styles.startBtnText}>Start with 1 Easy Card →</LinearText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -218,7 +224,7 @@ export default function BedLockScreen() {
               })
             }
           >
-            <Text style={styles.sprintBtnText}>⚡ 5-Min Sprint</Text>
+            <LinearText style={styles.sprintBtnText}>⚡ 5-Min Sprint</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -229,21 +235,21 @@ export default function BedLockScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
 
-  detectingText: { color: '#9E9E9E', fontSize: 16, marginTop: 20 },
+  detectingText: { color: n.colors.textMuted, fontSize: 16, marginTop: 20 },
 
   shameEmoji: { fontSize: 80, marginBottom: 20 },
   shameTitle: {
-    color: '#F44336',
+    color: n.colors.error,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 12,
     textAlign: 'center',
   },
   shameSub: {
-    color: '#9E9E9E',
+    color: n.colors.textMuted,
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
@@ -255,20 +261,20 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     borderRadius: 75,
-    backgroundColor: '#2A0A0A',
+    backgroundColor: n.colors.errorSurface,
     borderWidth: 3,
-    borderColor: '#F44336',
+    borderColor: n.colors.error,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 40,
   },
   lockEmoji: { fontSize: 48 },
-  lockText: { color: '#F44336', fontSize: 14, fontWeight: '700', marginTop: 4 },
+  lockText: { color: n.colors.error, fontSize: 14, fontWeight: '700', marginTop: 4 },
 
-  positionText: { color: '#555', fontSize: 12, marginBottom: 30 },
+  positionText: { color: n.colors.textMuted, fontSize: 12, marginBottom: 30 },
 
   situpBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 40,
     paddingVertical: 18,
     borderRadius: 16,
@@ -276,36 +282,36 @@ const styles = StyleSheet.create({
     minWidth: 250,
     alignItems: 'center',
   },
-  situpBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  situpBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800' },
 
   cheatBtn: { padding: 16 },
-  cheatBtnText: { color: '#555', fontSize: 14, textDecorationLine: 'underline' },
+  cheatBtnText: { color: n.colors.textMuted, fontSize: 14, textDecorationLine: 'underline' },
 
   progressEmoji: { fontSize: 56, marginBottom: 16 },
-  progressTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 8 },
-  progressSub: { color: '#9E9E9E', fontSize: 14, marginBottom: 40 },
+  progressTitle: { color: n.colors.textPrimary, fontSize: 24, fontWeight: '800', marginBottom: 8 },
+  progressSub: { color: n.colors.textMuted, fontSize: 14, marginBottom: 40 },
 
   progressBar: {
     width: 250,
     height: 20,
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 16,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     borderRadius: 10,
   },
-  progressPercent: { color: '#6C63FF', fontSize: 20, fontWeight: '800', marginBottom: 8 },
+  progressPercent: { color: n.colors.accent, fontSize: 20, fontWeight: '800', marginBottom: 8 },
 
-  encouragement: { color: '#4CAF50', fontSize: 16, fontWeight: '600', marginTop: 20 },
+  encouragement: { color: n.colors.success, fontSize: 16, fontWeight: '600', marginTop: 20 },
 
   unlockedEmoji: { fontSize: 72, marginBottom: 20 },
-  unlockedTitle: { color: '#4CAF50', fontSize: 32, fontWeight: '900', marginBottom: 12 },
+  unlockedTitle: { color: n.colors.success, fontSize: 32, fontWeight: '900', marginBottom: 12 },
   unlockedSub: {
-    color: '#9E9E9E',
+    color: n.colors.textMuted,
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 40,
@@ -313,7 +319,7 @@ const styles = StyleSheet.create({
   },
 
   startBtn: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: n.colors.success,
     paddingHorizontal: 40,
     paddingVertical: 20,
     borderRadius: 16,
@@ -321,15 +327,15 @@ const styles = StyleSheet.create({
     minWidth: 280,
     alignItems: 'center',
   },
-  startBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  startBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800' },
 
   sprintBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 40,
     paddingVertical: 18,
     borderRadius: 16,
     minWidth: 280,
     alignItems: 'center',
   },
-  sprintBtnText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  sprintBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800' },
 });

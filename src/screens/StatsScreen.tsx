@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   InteractionManager,
   View,
-  Text,
   StyleSheet,
   ScrollView,
   StatusBar,
@@ -10,6 +9,7 @@ import {
   useWindowDimensions,
   RefreshControl,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -188,18 +188,18 @@ function StatsScreenContent() {
 
           {stats.totalSessions === 0 ? (
             <LinearSurface padded={false} style={styles.emptyHeroCard}>
-              <Text style={styles.emptyHeroEmoji}>📊</Text>
-              <Text style={styles.emptyHeroTitle}>No study data yet</Text>
-              <Text style={styles.emptyHeroText}>
+              <LinearText style={styles.emptyHeroEmoji}>📊</LinearText>
+              <LinearText style={styles.emptyHeroTitle}>No study data yet</LinearText>
+              <LinearText style={styles.emptyHeroText}>
                 Your first session, lecture capture, or review block will unlock streaks,
                 projections, and coverage trends here.
-              </Text>
+              </LinearText>
               <TouchableOpacity
                 style={styles.emptyHeroCta}
                 onPress={() => navigation.navigate('HomeTab' as never)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.emptyHeroCtaText}>Start Your First Session →</Text>
+                <LinearText style={styles.emptyHeroCtaText}>Start Your First Session →</LinearText>
               </TouchableOpacity>
             </LinearSurface>
           ) : null}
@@ -212,33 +212,33 @@ function StatsScreenContent() {
           >
             <View style={styles.projectionRow}>
               <View style={styles.projectionStat}>
-                <Text style={styles.projectionVal}>{stats.coveragePercent}%</Text>
-                <Text style={styles.projectionLabel}>High-Yield Covered</Text>
+                <LinearText style={styles.projectionVal}>{stats.coveragePercent}%</LinearText>
+                <LinearText style={styles.projectionLabel}>High-Yield Covered</LinearText>
               </View>
               <View style={styles.projectionDivider} />
               <View style={styles.projectionStat}>
-                <Text style={[styles.projectionVal, { color: n.colors.warning }]}>
+                <LinearText style={[styles.projectionVal, { color: n.colors.warning }]}>
                   ~{stats.projectedScore}/300
-                </Text>
-                <Text style={styles.projectionLabel}>Projected INICET Score</Text>
+                </LinearText>
+                <LinearText style={styles.projectionLabel}>Projected INICET Score</LinearText>
               </View>
             </View>
-            <Text style={styles.projectionNote}>
+            <LinearText style={styles.projectionNote}>
               You can answer questions on {stats.coveragePercent}% of historically tested topics.
               Keep pushing.
-            </Text>
-            <Text style={styles.projectionFormula}>
+            </LinearText>
+            <LinearText style={styles.projectionFormula}>
               Score estimate = 50 base + (high-yield coverage % × 2.5). Covers up to 300.
-            </Text>
+            </LinearText>
           </LinearSurface>
 
           {/* Absolute Progress (Anti-Guilt) */}
           <LinearSurface padded={false} style={styles.absoluteCard}>
-            <Text style={styles.absoluteTitle}>Total Knowledge Acquired</Text>
-            <Text style={styles.absoluteBig}>
+            <LinearText style={styles.absoluteTitle}>Total Knowledge Acquired</LinearText>
+            <LinearText style={styles.absoluteBig}>
               {stats.totalCovered} / {stats.totalTopics}
-            </Text>
-            <Text style={styles.absoluteSub}>topics seen at least once</Text>
+            </LinearText>
+            <LinearText style={styles.absoluteSub}>topics seen at least once</LinearText>
 
             <View style={styles.progressBar}>
               <View
@@ -255,13 +255,13 @@ function StatsScreenContent() {
             padded={false}
             style={[styles.absoluteCard, { backgroundColor: n.colors.successSurface }]}
           >
-            <Text style={[styles.absoluteTitle, { color: n.colors.success }]}>
+            <LinearText style={[styles.absoluteTitle, { color: n.colors.success }]}>
               30-Day Consistency
-            </Text>
-            <Text style={[styles.absoluteBig, { color: n.colors.success }]}>
+            </LinearText>
+            <LinearText style={[styles.absoluteBig, { color: n.colors.success }]}>
               {stats.activeDays30} / 30 Days
-            </Text>
-            <Text style={styles.absoluteSub}>days studied in the past month</Text>
+            </LinearText>
+            <LinearText style={styles.absoluteSub}>days studied in the past month</LinearText>
           </LinearSurface>
 
           {/* Streak Card */}
@@ -270,44 +270,44 @@ function StatsScreenContent() {
             style={[styles.absoluteCard, { backgroundColor: 'rgba(217,119,6,0.1)' }]}
           >
             <View style={styles.streakRow}>
-              <Text style={styles.streakEmoji}>🔥</Text>
+              <LinearText style={styles.streakEmoji}>🔥</LinearText>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.absoluteTitle, { color: n.colors.warning }]}>
+                <LinearText style={[styles.absoluteTitle, { color: n.colors.warning }]}>
                   Current Streak
-                </Text>
-                <Text style={[styles.absoluteBig, { color: n.colors.warning }]}>
+                </LinearText>
+                <LinearText style={[styles.absoluteBig, { color: n.colors.warning }]}>
                   {stats.currentStreak} Days
-                </Text>
+                </LinearText>
               </View>
               {stats.bestStreak > stats.currentStreak && (
                 <View style={styles.bestStreakBadge}>
-                  <Text style={styles.bestStreakText}>Best: {stats.bestStreak}</Text>
+                  <LinearText style={styles.bestStreakText}>Best: {stats.bestStreak}</LinearText>
                 </View>
               )}
             </View>
             {stats.currentStreak >= 7 && (
-              <Text style={styles.streakMotivation}>
+              <LinearText style={styles.streakMotivation}>
                 {stats.currentStreak >= 30
                   ? '🏆 Legendary dedication!'
                   : stats.currentStreak >= 14
                     ? '💪 Two weeks strong!'
                     : '⭐ One week down!'}
-              </Text>
+              </LinearText>
             )}
           </LinearSurface>
 
           {/* Week-over-Week Comparison */}
           <LinearSurface padded={false} style={styles.absoluteCard}>
-            <Text style={styles.absoluteTitle}>This Week vs Last Week</Text>
+            <LinearText style={styles.absoluteTitle}>This Week vs Last Week</LinearText>
             <View style={styles.weekCompRow}>
               <View style={styles.weekCol}>
-                <Text style={styles.weekLabel}>This Week</Text>
-                <Text style={styles.weekVal}>
+                <LinearText style={styles.weekLabel}>This Week</LinearText>
+                <LinearText style={styles.weekVal}>
                   {Math.floor(stats.thisWeek.minutes / 60)}h {stats.thisWeek.minutes % 60}m
-                </Text>
-                <Text style={styles.weekSub}>
+                </LinearText>
+                <LinearText style={styles.weekSub}>
                   {stats.thisWeek.sessions} sessions · {stats.thisWeek.topics} topics
-                </Text>
+                </LinearText>
               </View>
               <View style={styles.weekDivider}>
                 {(() => {
@@ -328,26 +328,26 @@ function StatsScreenContent() {
                         },
                       ]}
                     >
-                      <Text
+                      <LinearText
                         style={[
                           styles.weekChangeText,
                           { color: isUp ? n.colors.success : n.colors.error },
                         ]}
                       >
                         {isUp ? '↑' : '↓'} {Math.abs(pct)}%
-                      </Text>
+                      </LinearText>
                     </View>
                   );
                 })()}
               </View>
               <View style={styles.weekCol}>
-                <Text style={styles.weekLabel}>Last Week</Text>
-                <Text style={[styles.weekVal, { color: n.colors.textMuted }]}>
+                <LinearText style={styles.weekLabel}>Last Week</LinearText>
+                <LinearText style={[styles.weekVal, { color: n.colors.textMuted }]}>
                   {Math.floor(stats.lastWeek.minutes / 60)}h {stats.lastWeek.minutes % 60}m
-                </Text>
-                <Text style={styles.weekSub}>
+                </LinearText>
+                <LinearText style={styles.weekSub}>
                   {stats.lastWeek.sessions} sessions · {stats.lastWeek.topics} topics
-                </Text>
+                </LinearText>
               </View>
             </View>
           </LinearSurface>
@@ -364,16 +364,16 @@ function StatsScreenContent() {
               borderColor={n.colors.borderHighlight}
               style={styles.absoluteCard}
             >
-              <Text style={[styles.absoluteTitle, { color: n.colors.accent }]}>
+              <LinearText style={[styles.absoluteTitle, { color: n.colors.accent }]}>
                 📅 Syllabus Completion Projection
-              </Text>
-              <Text style={[styles.absoluteBig, { color: n.colors.accent }]}>
+              </LinearText>
+              <LinearText style={[styles.absoluteBig, { color: n.colors.accent }]}>
                 {stats.projectedCompletionDays} days
-              </Text>
-              <Text style={styles.absoluteSub}>
+              </LinearText>
+              <LinearText style={styles.absoluteSub}>
                 At your pace of {stats.avgTopicsPerDay} topics/day (
                 {stats.totalTopics - stats.totalCovered} remaining)
-              </Text>
+              </LinearText>
               {daysToInicet > 0 && (
                 <LinearSurface
                   compact
@@ -389,7 +389,7 @@ function StatsScreenContent() {
                     },
                   ]}
                 >
-                  <Text
+                  <LinearText
                     style={{
                       color:
                         stats.projectedCompletionDays <= daysToInicet
@@ -402,7 +402,7 @@ function StatsScreenContent() {
                     {stats.projectedCompletionDays <= daysToInicet
                       ? `✅ On track! ${daysToInicet - stats.projectedCompletionDays} buffer days before INICET`
                       : `⚠️ Need ${Math.ceil((stats.totalTopics - stats.totalCovered) / daysToInicet)} topics/day to finish before INICET`}
-                  </Text>
+                  </LinearText>
                 </LinearSurface>
               )}
             </LinearSurface>
@@ -410,14 +410,14 @@ function StatsScreenContent() {
 
           {/* Time Logged Card */}
           <LinearSurface padded={false} style={styles.absoluteCard}>
-            <Text style={styles.absoluteTitle}>Time Invested</Text>
-            <Text style={styles.absoluteBig}>
+            <LinearText style={styles.absoluteTitle}>Time Invested</LinearText>
+            <LinearText style={styles.absoluteBig}>
               {Math.floor((stats.totalAppMinutes + stats.totalExternalMinutes) / 60)}h{' '}
               {(stats.totalAppMinutes + stats.totalExternalMinutes) % 60}m
-            </Text>
-            <Text style={styles.absoluteSub}>
+            </LinearText>
+            <LinearText style={styles.absoluteSub}>
               Total study time across {stats.totalSessions} sessions
-            </Text>
+            </LinearText>
           </LinearSurface>
 
           {/* Mastered Topics Boost */}
@@ -427,31 +427,31 @@ function StatsScreenContent() {
               borderColor="rgba(217,119,6,0.18)"
               style={styles.masteredCard}
             >
-              <Text style={styles.masteredEmoji}>🔥</Text>
+              <LinearText style={styles.masteredEmoji}>🔥</LinearText>
               <View style={styles.masteredInfo}>
-                <Text style={styles.masteredTitle}>
+                <LinearText style={styles.masteredTitle}>
                   You know {stats.masteredCount} topics cold.
-                </Text>
-                <Text style={styles.masteredSub}>
+                </LinearText>
+                <LinearText style={styles.masteredSub}>
                   {stats.masteredTopics.length > 0
                     ? `Including: ${stats.masteredTopics.join(', ')}${stats.masteredCount > 10 ? '...' : '.'}`
                     : 'Keep stacking strong reviews and this bank will grow quickly.'}
-                </Text>
+                </LinearText>
               </View>
             </LinearSurface>
           )}
 
           {/* Subject Breakdown */}
-          <Text style={styles.sectionTitle}>Subject Coverage</Text>
+          <LinearText style={styles.sectionTitle}>Subject Coverage</LinearText>
           <View style={styles.subjectGrid}>
             {stats.subjectBreakdown.map((sub) => (
               <LinearSurface key={sub.id} padded={false} style={styles.subjectRow}>
                 <View style={styles.subjectHeader}>
                   <View style={styles.subjectNameRow}>
                     <View style={[styles.subjectDot, { backgroundColor: sub.color }]} />
-                    <Text style={styles.subjectName}>{sub.name}</Text>
+                    <LinearText style={styles.subjectName}>{sub.name}</LinearText>
                   </View>
-                  <Text style={styles.subjectPercent}>{sub.percent}%</Text>
+                  <LinearText style={styles.subjectPercent}>{sub.percent}%</LinearText>
                 </View>
                 <View style={styles.subProgressBar}>
                   <View
@@ -461,15 +461,15 @@ function StatsScreenContent() {
                     ]}
                   />
                 </View>
-                <Text style={styles.subjectFraction}>
+                <LinearText style={styles.subjectFraction}>
                   {sub.covered} / {sub.total} topics
-                </Text>
+                </LinearText>
               </LinearSurface>
             ))}
           </View>
 
           {/* Review Calendar */}
-          <Text style={styles.sectionTitle}>Review Schedule</Text>
+          <LinearText style={styles.sectionTitle}>Review Schedule</LinearText>
           <ReviewCalendar />
 
           <View style={styles.bottomSpacer} />
@@ -498,7 +498,7 @@ function WeeklySparkline({
 
   return (
     <LinearSurface padded={false} style={[sparkStyles.card]}>
-      <Text style={sparkStyles.title}>7-Day Activity</Text>
+      <LinearText style={sparkStyles.title}>7-Day Activity</LinearText>
       <Svg width={chartWidth} height={chartHeight + 20}>
         {minutes.map((mins, i) => {
           const barH = Math.max(2, Math.round((mins / maxMins) * chartHeight));

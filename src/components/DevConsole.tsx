@@ -103,7 +103,7 @@ const LEVEL_COLORS: Record<LogEntry['level'], string> = {
   log: '#8EC5FF',
   info: '#7ED6A7',
   warn: '#FFB74D',
-  error: '#F44336',
+  error: n.colors.error,
 };
 
 const LEVEL_LABELS: Record<LogEntry['level'], string> = {
@@ -121,8 +121,7 @@ export default function DevConsole() {
 
   _showConsole = useCallback(() => setVisible(true), []);
 
-  const filtered =
-    filter === 'all' ? entries : entries.filter((e) => e.level === filter);
+  const filtered = filter === 'all' ? entries : entries.filter((e) => e.level === filter);
 
   const handleCopy = () => {
     const text = filtered
@@ -149,9 +148,7 @@ export default function DevConsole() {
                 style={[styles.filterBtn, filter === f && styles.filterBtnActive]}
                 onPress={() => setFilter(f)}
               >
-                <Text
-                  style={[styles.filterText, filter === f && styles.filterTextActive]}
-                >
+                <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
                   {f.toUpperCase()}
                 </Text>
               </TouchableOpacity>
@@ -173,7 +170,7 @@ export default function DevConsole() {
               style={[styles.actionBtn, { backgroundColor: n.colors.error }]}
               onPress={() => setVisible(false)}
             >
-              <Text style={[styles.actionText, { color: '#fff' }]}>Close</Text>
+              <Text style={[styles.actionText, { color: n.colors.textPrimary }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -183,9 +180,7 @@ export default function DevConsole() {
           style={styles.logScroll}
           onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
         >
-          {filtered.length === 0 && (
-            <Text style={styles.emptyText}>No log entries yet.</Text>
-          )}
+          {filtered.length === 0 && <Text style={styles.emptyText}>No log entries yet.</Text>}
           {filtered.map((entry) => (
             <View key={entry.id} style={styles.logRow}>
               <Text style={[styles.logLevel, { color: LEVEL_COLORS[entry.level] }]}>
@@ -220,10 +215,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#1A1A24',
+    borderBottomColor: n.colors.surface,
   },
   title: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
     marginBottom: 8,
@@ -237,18 +232,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
   },
   filterBtnActive: {
     backgroundColor: n.colors.accent,
   },
   filterText: {
-    color: '#888',
+    color: n.colors.textMuted,
     fontSize: 12,
     fontWeight: '700',
   },
   filterTextActive: {
-    color: '#fff',
+    color: n.colors.textPrimary,
   },
   actionRow: {
     flexDirection: 'row',
@@ -258,7 +253,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
   },
   actionText: {
     color: n.colors.accent,
@@ -270,7 +265,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   emptyText: {
-    color: '#555',
+    color: n.colors.textMuted,
     textAlign: 'center',
     marginTop: 40,
     fontSize: 14,
@@ -279,7 +274,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 3,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#1A1A24',
+    borderBottomColor: n.colors.surface,
   },
   logLevel: {
     width: 32,
@@ -289,13 +284,13 @@ const styles = StyleSheet.create({
   },
   logTime: {
     width: 60,
-    color: '#555',
+    color: n.colors.textMuted,
     fontSize: 10,
     fontFamily: 'Inter_400Regular',
   },
   logMsg: {
     flex: 1,
-    color: '#CCC',
+    color: n.colors.textMuted,
     fontSize: 11,
     fontFamily: 'Inter_400Regular',
     lineHeight: 16,

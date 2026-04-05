@@ -1,3 +1,4 @@
+import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
 import { LogBox, Text, TextInput, Platform } from 'react-native';
 import * as Crypto from 'expo-crypto';

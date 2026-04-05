@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   TextInput,
@@ -24,6 +23,8 @@ import { EXTERNAL_APPS } from '../constants/externalApps';
 import type { Subject, TopicWithProgress } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import LinearButton from '../components/primitives/LinearButton';
+import LinearText from '../components/primitives/LinearText';
+import LinearSurface from '../components/primitives/LinearSurface';
 
 type Nav = NativeStackNavigationProp<any, 'ManualLog'>;
 type Route = RouteProp<any, 'ManualLog'>;
@@ -115,32 +116,38 @@ export default function ManualLogScreen() {
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.content} keyboardDismissMode="on-drag">
         <ResponsiveContainer>
-          <Text style={styles.title}>Log External Study</Text>
-          <Text style={styles.subtitle}>
+          <LinearText variant="title" style={styles.title}>
+            Log External Study
+          </LinearText>
+          <LinearText variant="bodySmall" tone="secondary" style={styles.subtitle}>
             Did you watch a video on Cerebellum or solve MCQs on Marrow? Log it here to keep your
             streak alive!
-          </Text>
+          </LinearText>
 
-          <Text style={styles.label}>Which App?</Text>
+          <LinearText variant="label" tone="accent" style={styles.label}>
+            Which App?
+          </LinearText>
           <View style={styles.appGrid}>
             {EXTERNAL_APPS.map((app) => (
               <TouchableOpacity
                 key={app.id}
                 style={[styles.appBtn, selectedAppId === app.id && styles.appBtnActive]}
                 onPress={() => setSelectedAppId(app.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Select ${app.name}`}
-                accessibilityState={{ selected: selectedAppId === app.id }}
               >
-                <Text style={styles.appIcon}>{app.iconEmoji}</Text>
-                <Text style={[styles.appName, selectedAppId === app.id && styles.appNameActive]}>
+                <LinearText style={styles.appIcon}>{app.iconEmoji}</LinearText>
+                <LinearText
+                  variant="chip"
+                  style={[styles.appName, selectedAppId === app.id && styles.appNameActive]}
+                >
                   {app.name}
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             ))}
           </View>
 
-          <Text style={styles.label}>Subject (Optional)</Text>
+          <LinearText variant="label" tone="accent" style={styles.label}>
+            Subject (Optional)
+          </LinearText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -154,25 +161,23 @@ export default function ManualLogScreen() {
                   selectedSubjectId === s.id && { backgroundColor: s.colorHex },
                 ]}
                 onPress={() => setSelectedSubjectId(s.id === selectedSubjectId ? null : s.id)}
-                accessibilityRole="button"
-                accessibilityLabel={`Subject ${s.shortCode}`}
-                accessibilityState={{ selected: selectedSubjectId === s.id }}
               >
-                <Text
-                  style={[
-                    styles.subjectText,
-                    selectedSubjectId === s.id && { color: n.colors.textInverse },
-                  ]}
+                <LinearText
+                  variant="chip"
+                  tone={selectedSubjectId === s.id ? 'inverse' : 'primary'}
+                  style={styles.subjectText}
                 >
                   {s.shortCode}
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
           {subjectTopics.length > 0 && (
             <>
-              <Text style={styles.label}>Topic Studied (Optional)</Text>
+              <LinearText variant="label" tone="accent" style={styles.label}>
+                Topic Studied (Optional)
+              </LinearText>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -187,27 +192,25 @@ export default function ManualLogScreen() {
                       selectedTopicId === t.id && { backgroundColor: n.colors.accent },
                     ]}
                     onPress={() => setSelectedTopicId(t.id === selectedTopicId ? null : t.id)}
-                    accessibilityRole="button"
-                    accessibilityLabel={t.name}
-                    accessibilityState={{ selected: selectedTopicId === t.id }}
                   >
-                    <Text
-                      style={[
-                        styles.subjectText,
-                        selectedTopicId === t.id && { color: n.colors.textPrimary },
-                      ]}
+                    <LinearText
+                      variant="chip"
+                      tone={selectedTopicId === t.id ? 'inverse' : 'primary'}
+                      style={styles.subjectText}
                       numberOfLines={1}
                       ellipsizeMode="tail"
                     >
                       {t.name}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </>
           )}
 
-          <Text style={styles.label}>Topic / Chapter Name</Text>
+          <LinearText variant="label" tone="accent" style={styles.label}>
+            Topic / Chapter Name
+          </LinearText>
           <TextInput
             style={styles.input}
             placeholder="e.g. Heart Failure"
@@ -216,7 +219,9 @@ export default function ManualLogScreen() {
             onChangeText={setTopicName}
           />
 
-          <Text style={styles.label}>Duration (minutes)</Text>
+          <LinearText variant="label" tone="accent" style={styles.label}>
+            Duration (minutes)
+          </LinearText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -230,18 +235,14 @@ export default function ManualLogScreen() {
                   duration === mins.toString() && styles.durationChipActive,
                 ]}
                 onPress={() => setDuration(mins.toString())}
-                accessibilityRole="button"
-                accessibilityLabel={`${mins} minutes`}
-                accessibilityState={{ selected: duration === mins.toString() }}
               >
-                <Text
-                  style={[
-                    styles.durationText,
-                    duration === mins.toString() && styles.durationTextActive,
-                  ]}
+                <LinearText
+                  variant="chip"
+                  tone={duration === mins.toString() ? 'inverse' : 'primary'}
+                  style={styles.durationText}
                 >
                   {mins}m
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -261,9 +262,7 @@ export default function ManualLogScreen() {
             disabled={submitting}
             accessibilityRole="button"
             accessibilityLabel={`Log session, ${parseInt(duration || '0') * 10} XP`}
-            label={
-              submitting ? 'Logging…' : `Log Session (+${parseInt(duration || '0') * 10} XP)`
-            }
+            label={submitting ? 'Logging…' : `Log Session (+${parseInt(duration || '0') * 10} XP)`}
           />
         </ResponsiveContainer>
       </ScrollView>

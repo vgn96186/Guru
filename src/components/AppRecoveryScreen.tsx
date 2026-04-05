@@ -135,7 +135,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: n.colors.border,
     padding: n.spacing.xl,
-    ...{ shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 6 },
+    ...{
+      shadowColor: n.colors.background,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
+      elevation: 6,
+    },
   },
   iconWrap: {
     width: 68,

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
@@ -31,7 +32,7 @@ const PRIMARY_DESTINATIONS: Array<{
     title: 'Stats',
     subtitle: 'Progress, streaks, and weekly momentum.',
     icon: 'bar-chart-outline',
-    tint: '#FF9800',
+    tint: n.colors.warning,
   },
   {
     route: 'Flashcards',
@@ -129,7 +130,7 @@ export default function MenuScreen() {
                     <Ionicons name={item.icon} size={22} color={item.tint} />
                   </View>
                   <View style={styles.listTextContent}>
-                    <Text style={styles.listTitle}>{item.title}</Text>
+                    <LinearText style={styles.listTitle}>{item.title}</LinearText>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
                 </Pressable>

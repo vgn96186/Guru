@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -16,6 +15,7 @@ import {
   useWindowDimensions,
   Platform,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { Ionicons } from '@expo/vector-icons';
 import type {
   AIContent,
@@ -81,7 +81,7 @@ const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }
     <>
       <TouchableOpacity activeOpacity={0.85} onPress={() => setLightboxOpen(true)}>
         <Image source={{ uri: url }} style={s.questionImage} resizeMode="contain" />
-        <Text style={s.tapToEnlarge}>Tap to enlarge</Text>
+        <LinearText style={s.tapToEnlarge}>Tap to enlarge</LinearText>
       </TouchableOpacity>
       <Modal
         visible={lightboxOpen}
@@ -370,7 +370,7 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
             accessibilityRole="button"
             accessibilityLabel={flagged ? 'Unflag content' : 'Flag for review'}
           >
-            <Text style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</Text>
+            <LinearText style={s.flagBtnText}>{flagged ? '🚩 Flagged' : '🏳 Flag'}</LinearText>
           </TouchableOpacity>
         ) : (
           <View />
@@ -382,7 +382,7 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
           accessibilityRole="button"
           accessibilityLabel="Ask Guru about this topic"
         >
-          <Text style={s.askGuruText}>Ask Guru</Text>
+          <LinearText style={s.askGuruText}>Ask Guru</LinearText>
         </TouchableOpacity>
       </View>
       <GuruChatOverlay
@@ -399,31 +399,37 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
 function ConfidenceRating({ onRate }: { onRate: (n: number) => void }) {
   return (
     <View style={s.ratingContainer}>
-      <Text style={s.ratingTitle}>How well did you get this?</Text>
+      <LinearText style={s.ratingTitle}>How well did you get this?</LinearText>
       <View style={s.ratingRow}>
         <TouchableOpacity
-          style={[s.ratingBtn, { flex: 1, borderColor: '#F44336' }]}
+          style={[s.ratingBtn, { flex: 1, borderColor: n.colors.error }]}
           onPress={() => onRate(0)}
           activeOpacity={0.8}
         >
-          <Text style={[s.ratingNum, { color: '#F44336', fontSize: 15 }]}>Not yet</Text>
-          <Text style={s.ratingLabel}>😕</Text>
+          <LinearText style={[s.ratingNum, { color: n.colors.error, fontSize: 15 }]}>
+            Not yet
+          </LinearText>
+          <LinearText style={s.ratingLabel}>😕</LinearText>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[s.ratingBtn, { flex: 1, borderColor: '#FF9800' }]}
+          style={[s.ratingBtn, { flex: 1, borderColor: n.colors.warning }]}
           onPress={() => onRate(1)}
           activeOpacity={0.8}
         >
-          <Text style={[s.ratingNum, { color: '#FF9800', fontSize: 15 }]}>Will forget</Text>
-          <Text style={s.ratingLabel}>🤔</Text>
+          <LinearText style={[s.ratingNum, { color: n.colors.warning, fontSize: 15 }]}>
+            Will forget
+          </LinearText>
+          <LinearText style={s.ratingLabel}>🤔</LinearText>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[s.ratingBtn, { flex: 1, borderColor: '#4CAF50' }]}
+          style={[s.ratingBtn, { flex: 1, borderColor: n.colors.success }]}
           onPress={() => onRate(3)}
           activeOpacity={0.8}
         >
-          <Text style={[s.ratingNum, { color: '#4CAF50', fontSize: 15 }]}>Got it!</Text>
-          <Text style={s.ratingLabel}>🔥</Text>
+          <LinearText style={[s.ratingNum, { color: n.colors.success, fontSize: 15 }]}>
+            Got it!
+          </LinearText>
+          <LinearText style={s.ratingLabel}>🔥</LinearText>
         </TouchableOpacity>
       </View>
     </View>
@@ -472,13 +478,13 @@ function KeyPointsCard({
       style={s.scroll}
       contentContainerStyle={scrollContentStyle}
     >
-      <Text style={s.cardType}>KEY POINTS</Text>
+      <LinearText style={s.cardType}>KEY POINTS</LinearText>
       <AppText style={s.cardTitle} numberOfLines={3} variant="title">
         {content.topicName}
       </AppText>
-      <Text style={s.kpProgress}>
+      <LinearText style={s.kpProgress}>
         {Math.min(revealIndex + 1, content.points.length)} / {content.points.length}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
       <View style={s.pointsContainer}>
         {content.points.slice(0, revealIndex + 1).map((pt, i) => {
@@ -486,7 +492,7 @@ function KeyPointsCard({
           return (
             <View key={i} style={[s.kpCard, { borderLeftColor: color }]}>
               <View style={[s.kpNumber, { backgroundColor: color + '22' }]}>
-                <Text style={[s.kpNumberText, { color }]}>{i + 1}</Text>
+                <LinearText style={[s.kpNumberText, { color }]}>{i + 1}</LinearText>
               </View>
               <View style={s.kpContent}>
                 <StudyMarkdown content={emphasizeHighYieldMarkdown(pt)} compact />
@@ -497,7 +503,7 @@ function KeyPointsCard({
       </View>
       {isFullyRevealed && (
         <View style={s.hookBox}>
-          <Text style={s.hookLabel}>Memory Hook</Text>
+          <LinearText style={s.hookLabel}>Memory Hook</LinearText>
           <StudyMarkdown content={emphasizeHighYieldMarkdown(content.memoryHook)} compact />
         </View>
       )}
@@ -507,13 +513,13 @@ function KeyPointsCard({
           onPress={() => setRevealIndex((i) => i + 1)}
           activeOpacity={0.8}
         >
-          <Text style={s.doneBtnText}>
+          <LinearText style={s.doneBtnText}>
             Next ({revealIndex + 1}/{content.points.length})
-          </Text>
+          </LinearText>
         </TouchableOpacity>
       ) : !showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>Got it</Text>
+          <LinearText style={s.doneBtnText}>Got it</LinearText>
         </TouchableOpacity>
       ) : (
         <ConfidenceRating onRate={onDone} />
@@ -524,7 +530,7 @@ function KeyPointsCard({
         accessibilityRole="button"
         accessibilityLabel="Skip content type"
       >
-        <Text style={s.skipText}>Skip content type</Text>
+        <LinearText style={s.skipText}>Skip content type</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -562,20 +568,20 @@ function ExplainablePoint({
       <StudyMarkdown content={emphasizeHighYieldMarkdown(item)} compact />
       {explanation ? (
         <View style={s.explSection}>
-          <Text style={s.explSectionTitle}>GURU'S EXPLANATION</Text>
+          <LinearText style={s.explSectionTitle}>GURU'S EXPLANATION</LinearText>
           <StudyMarkdown content={emphasizeHighYieldMarkdown(explanation)} />
         </View>
       ) : loading ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}>
           <ActivityIndicator size="small" color={n.colors.accent} />
-          <Text style={{ color: n.colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
+          <LinearText style={{ color: n.colors.textSecondary, fontSize: 13, fontStyle: 'italic' }}>
             Explaining...
-          </Text>
+          </LinearText>
         </View>
       ) : (
         <TouchableOpacity style={s.smallExplainBtn} onPress={handleExplain} activeOpacity={0.8}>
           <Ionicons name="sparkles" size={14} color={n.colors.accent} />
-          <Text style={s.smallExplainText}>Explain this</Text>
+          <LinearText style={s.smallExplainText}>Explain this</LinearText>
         </TouchableOpacity>
       )}
     </View>
@@ -592,16 +598,16 @@ function MustKnowCard({
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>MUST KNOW</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>MUST KNOW</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
 
-      <Text style={s.mkSectionLabel}>
+      <LinearText style={s.mkSectionLabel}>
         <Ionicons name="alert-circle" size={13} color={n.colors.error} />
         {'  '}CANNOT FORGET
-      </Text>
+      </LinearText>
       <View style={s.mkList}>
         {content.mustKnow.map((item, i) => (
           <View key={i} style={[s.mkItem, { borderLeftColor: n.colors.error }]}>
@@ -610,10 +616,10 @@ function MustKnowCard({
         ))}
       </View>
 
-      <Text style={s.mkSectionLabel}>
+      <LinearText style={s.mkSectionLabel}>
         <Ionicons name="flame" size={13} color={n.colors.warning} />
         {'  '}MOST TESTED
-      </Text>
+      </LinearText>
       <View style={s.mkList}>
         {content.mostTested.map((item, i) => (
           <ExplainablePoint
@@ -626,13 +632,13 @@ function MustKnowCard({
       </View>
 
       <View style={s.mkTipBox}>
-        <Text style={s.mkTipLabel}>EXAM TIP</Text>
-        <Text style={s.mkTipText}>{content.examTip}</Text>
+        <LinearText style={s.mkTipLabel}>EXAM TIP</LinearText>
+        <LinearText style={s.mkTipText}>{content.examTip}</LinearText>
       </View>
 
       {!showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>Got it</Text>
+          <LinearText style={s.doneBtnText}>Got it</LinearText>
         </TouchableOpacity>
       ) : (
         <ConfidenceRating onRate={onDone} />
@@ -643,7 +649,7 @@ function MustKnowCard({
         accessibilityRole="button"
         accessibilityLabel="Skip content type"
       >
-        <Text style={s.skipText}>Skip content type</Text>
+        <LinearText style={s.skipText}>Skip content type</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -898,26 +904,26 @@ function QuizCard({
     >
       <View style={s.inlineLabelRow}>
         <Ionicons name="help-circle-outline" size={14} color="#6C63FF" />
-        <Text style={s.cardType}>
+        <LinearText style={s.cardType}>
           QUIZ {currentQ + 1}/{validQuestions.length}
-        </Text>
+        </LinearText>
       </View>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       {isQuizImageHttpUrl(q.imageUrl) ? <QuestionImage url={q.imageUrl!.trim()} /> : null}
-      <Text style={s.questionText}>{q.question}</Text>
+      <LinearText style={s.questionText}>{q.question}</LinearText>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
-          let bgColor = '#1A1A24';
-          let borderColor = '#2A2A38';
+          let bgColor = n.colors.surface as string;
+          let borderColor = n.colors.border as string;
           if (selected !== null) {
             if (idx === q.correctIndex) {
-              bgColor = '#1A2A1A';
-              borderColor = '#4CAF50';
+              bgColor = n.colors.successSurface as string;
+              borderColor = n.colors.success as string;
             } else if (idx === selected) {
-              bgColor = '#2A0A0A';
-              borderColor = '#F44336';
+              bgColor = n.colors.errorSurface as string;
+              borderColor = n.colors.error as string;
             }
           }
           return (
@@ -927,9 +933,9 @@ function QuizCard({
               onPress={() => handleSelect(idx)}
               activeOpacity={0.8}
             >
-              <Text style={s.optionText} numberOfLines={4}>
+              <LinearText style={s.optionText} numberOfLines={4}>
                 {opt}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           );
         })}
@@ -937,7 +943,7 @@ function QuizCard({
       {/* "I don't know" button — shown before answering */}
       {selected === null && (
         <TouchableOpacity style={s.iDontKnowBtn} onPress={handleIDontKnow} activeOpacity={0.8}>
-          <Text style={s.iDontKnowText}>I don't know — Explain this</Text>
+          <LinearText style={s.iDontKnowText}>I don't know — Explain this</LinearText>
         </TouchableOpacity>
       )}
       {showExpl && (
@@ -960,25 +966,25 @@ function QuizCard({
                     : n.colors.error
               }
             />
-            <Text style={s.explLabel}>
+            <LinearText style={s.explLabel}>
               {selected === q.correctIndex
                 ? 'Correct'
                 : selected === -1
                   ? 'Here is the answer'
                   : 'Incorrect'}
-            </Text>
+            </LinearText>
           </View>
           {/* Show the correct answer prominently when user didn't know */}
           {selected !== q.correctIndex && (
             <View style={s.correctAnswerBox}>
-              <Text style={s.correctAnswerLabel}>Correct Answer</Text>
-              <Text style={s.correctAnswerText}>{q.options[q.correctIndex]}</Text>
+              <LinearText style={s.correctAnswerLabel}>Correct Answer</LinearText>
+              <LinearText style={s.correctAnswerText}>{q.options[q.correctIndex]}</LinearText>
             </View>
           )}
           <View style={s.explSection}>
             <View style={s.inlineLabelRow}>
               <Ionicons name="reader-outline" size={14} color={n.colors.accent} />
-              <Text style={s.explSectionTitle}>Explanation</Text>
+              <LinearText style={s.explSectionTitle}>Explanation</LinearText>
             </View>
             <StudyMarkdown content={emphasizeHighYieldMarkdown(formattedExplanation)} />
           </View>
@@ -993,14 +999,14 @@ function QuizCard({
         >
           <View style={s.inlineLabelRow}>
             <Ionicons name="bulb-outline" size={14} color={n.colors.accent} />
-            <Text style={s.explainDeeperText}>Explain the broader topic</Text>
+            <LinearText style={s.explainDeeperText}>Explain the broader topic</LinearText>
           </View>
         </TouchableOpacity>
       )}
       {isLoadingDeepExpl && (
         <View style={s.deepExplLoading}>
           <ActivityIndicator size="small" color={n.colors.accent} />
-          <Text style={s.deepExplLoadingText}>Guru is explaining...</Text>
+          <LinearText style={s.deepExplLoadingText}>Guru is explaining...</LinearText>
         </View>
       )}
       {deepExplanation && (
@@ -1013,18 +1019,18 @@ function QuizCard({
         >
           <View style={s.inlineLabelRow}>
             <Ionicons name="school-outline" size={14} color={n.colors.accent} />
-            <Text style={s.explSectionTitle}>Deeper Explanation</Text>
+            <LinearText style={s.explSectionTitle}>Deeper Explanation</LinearText>
           </View>
           <StudyMarkdown content={emphasizeHighYieldMarkdown(deepExplanation)} />
         </View>
       )}
       {showExpl && (
         <TouchableOpacity style={s.doneBtn} onPress={handleNext} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>
+          <LinearText style={s.doneBtnText}>
             {currentQ < validQuestions.length - 1
               ? 'Next Question →'
               : `Done (${score}/${validQuestions.length}) →`}
-          </Text>
+          </LinearText>
         </TouchableOpacity>
       )}
       <TouchableOpacity
@@ -1033,7 +1039,7 @@ function QuizCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip quiz</Text>
+        <LinearText style={s.skipText}>Skip quiz</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1050,27 +1056,27 @@ function StoryCard({
   const scrollContentStyle = useCardScrollContentStyle(0);
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>📖 CLINICAL STORY</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>📖 CLINICAL STORY</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
       <View style={{ marginBottom: 20 }}>
         <StudyMarkdown content={emphasizeHighYieldMarkdown(content.story)} />
       </View>
       <View style={s.highlightsBox}>
-        <Text style={s.highlightsLabel}>Key concepts in this story:</Text>
+        <LinearText style={s.highlightsLabel}>Key concepts in this story:</LinearText>
         <View style={s.highlightChips}>
           {content.keyConceptHighlights.map((kw, i) => (
             <View key={i} style={s.chip}>
-              <Text style={s.chipText}>{kw}</Text>
+              <LinearText style={s.chipText}>{kw}</LinearText>
             </View>
           ))}
         </View>
       </View>
       {!showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>Read it →</Text>
+          <LinearText style={s.doneBtnText}>Read it →</LinearText>
         </TouchableOpacity>
       ) : (
         <ConfidenceRating onRate={onDone} />
@@ -1081,7 +1087,7 @@ function StoryCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip story</Text>
+        <LinearText style={s.skipText}>Skip story</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1118,13 +1124,13 @@ function MnemonicCard({
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>🧠 MNEMONIC</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>🧠 MNEMONIC</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
       <View style={s.mnemonicBox}>
-        <Text style={s.mnemonicMain}>{content.mnemonic}</Text>
+        <LinearText style={s.mnemonicMain}>{content.mnemonic}</LinearText>
       </View>
       <View style={s.expansionList}>
         {revealStep >= 1 &&
@@ -1136,7 +1142,7 @@ function MnemonicCard({
       </View>
       {revealStep >= 2 && (
         <View style={s.hookBox}>
-          <Text style={s.hookLabel}>💡 Tip</Text>
+          <LinearText style={s.hookLabel}>💡 Tip</LinearText>
           <StudyMarkdown content={emphasizeHighYieldMarkdown(content.tip)} compact />
         </View>
       )}
@@ -1146,11 +1152,13 @@ function MnemonicCard({
           onPress={() => setRevealStep((i) => i + 1)}
           activeOpacity={0.8}
         >
-          <Text style={s.doneBtnText}>{revealStep === 0 ? 'Decode it →' : 'Show tip →'}</Text>
+          <LinearText style={s.doneBtnText}>
+            {revealStep === 0 ? 'Decode it →' : 'Show tip →'}
+          </LinearText>
         </TouchableOpacity>
       ) : !showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>Got it →</Text>
+          <LinearText style={s.doneBtnText}>Got it →</LinearText>
         </TouchableOpacity>
       ) : (
         <ConfidenceRating onRate={onDone} />
@@ -1161,7 +1169,7 @@ function MnemonicCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip mnemonic</Text>
+        <LinearText style={s.skipText}>Skip mnemonic</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1226,12 +1234,12 @@ function TeachBackCard({
 
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>🎤 TEACH BACK</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>🎤 TEACH BACK</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
-      <Text style={s.questionText}>{content.prompt}</Text>
+      <LinearText style={s.questionText}>{content.prompt}</LinearText>
       {!submitted ? (
         <>
           <TextInput
@@ -1251,16 +1259,16 @@ function TeachBackCard({
             {validating ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={s.doneBtnText}>Submit to Guru →</Text>
+              <LinearText style={s.doneBtnText}>Submit to Guru →</LinearText>
             )}
           </TouchableOpacity>
         </>
       ) : (
         <>
           <View style={s.explBox}>
-            <Text style={s.explLabel}>
+            <LinearText style={s.explLabel}>
               Guru's Review (Score: {guruFeedback?.score ?? '?'} / 5):
-            </Text>
+            </LinearText>
             <View style={s.markdownBlock}>
               <StudyMarkdown
                 content={emphasizeHighYieldMarkdown(guruFeedback?.feedback ?? content.guruReaction)}
@@ -1269,7 +1277,7 @@ function TeachBackCard({
             </View>
             {guruFeedback?.missed && guruFeedback.missed.length > 0 && (
               <View style={s.missedBox}>
-                <Text style={s.missedLabel}>You missed:</Text>
+                <LinearText style={s.missedLabel}>You missed:</LinearText>
                 {guruFeedback.missed.map((m, i) => (
                   <View key={i} style={s.markdownListItem}>
                     <StudyMarkdown content={emphasizeHighYieldMarkdown(`- ${m}`)} compact />
@@ -1279,7 +1287,7 @@ function TeachBackCard({
             )}
           </View>
           <View style={s.highlightsBox}>
-            <Text style={s.highlightsLabel}>Expected key points:</Text>
+            <LinearText style={s.highlightsLabel}>Expected key points:</LinearText>
             {content.keyPointsToMention.map((pt, i) => (
               <View key={i} style={s.markdownListItem}>
                 <StudyMarkdown content={emphasizeHighYieldMarkdown(`- ${pt}`)} compact />
@@ -1300,7 +1308,7 @@ function TeachBackCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip this</Text>
+        <LinearText style={s.skipText}>Skip this</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1336,26 +1344,30 @@ function ErrorHuntCard({
   const scrollContentStyle = useCardScrollContentStyle(0);
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>🔍 ERROR HUNT</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>🔍 ERROR HUNT</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
-      <Text style={s.questionText}>Find the 2 factual errors in this paragraph:</Text>
+      <LinearText style={s.questionText}>Find the 2 factual errors in this paragraph:</LinearText>
       <View style={s.paragraphBox}>
-        <Text style={s.paragraphText}>{content.paragraph}</Text>
+        <LinearText style={s.paragraphText}>{content.paragraph}</LinearText>
       </View>
       {!revealed ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setRevealed(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>Reveal Errors →</Text>
+          <LinearText style={s.doneBtnText}>Reveal Errors →</LinearText>
         </TouchableOpacity>
       ) : (
         <>
           {content.errors.map((err, i) => (
             <View key={i} style={s.explBox}>
-              <Text style={s.explLabel}>Error {i + 1}:</Text>
-              <Text style={[s.explText, { color: '#F44336' }]}>❌ "{err.wrong}"</Text>
-              <Text style={[s.explText, { color: '#4CAF50' }]}>✅ Should be: "{err.correct}"</Text>
+              <LinearText style={s.explLabel}>Error {i + 1}:</LinearText>
+              <LinearText style={[s.explText, { color: n.colors.error }]}>
+                ❌ "{err.wrong}"
+              </LinearText>
+              <LinearText style={[s.explText, { color: n.colors.success }]}>
+                ✅ Should be: "{err.correct}"
+              </LinearText>
               <View style={{ marginTop: 4 }}>
                 <StudyMarkdown content={emphasizeHighYieldMarkdown(err.explanation)} />
               </View>
@@ -1370,7 +1382,7 @@ function ErrorHuntCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip this</Text>
+        <LinearText style={s.skipText}>Skip this</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1405,15 +1417,15 @@ function DetectiveCard({
   const scrollContentStyle = useCardScrollContentStyle(0);
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>🕵️ CLINICAL DETECTIVE</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>🕵️ CLINICAL DETECTIVE</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
       {content.clues.slice(0, revealedClues).map((clue, i) => (
         <View key={i} style={[s.clueBox, i === revealedClues - 1 && s.clueBoxNew]}>
-          <Text style={s.clueNum}>Clue {i + 1}</Text>
-          <Text style={s.clueText}>{clue}</Text>
+          <LinearText style={s.clueNum}>Clue {i + 1}</LinearText>
+          <LinearText style={s.clueText}>{clue}</LinearText>
         </View>
       ))}
       {!solved ? (
@@ -1424,20 +1436,22 @@ function DetectiveCard({
               onPress={() => setRevealedClues((c) => c + 1)}
               activeOpacity={0.8}
             >
-              <Text style={s.doneBtnText}>Reveal next clue</Text>
+              <LinearText style={s.doneBtnText}>Reveal next clue</LinearText>
             </TouchableOpacity>
           )}
           <TouchableOpacity style={s.doneBtn} onPress={() => setSolved(true)} activeOpacity={0.8}>
-            <Text style={s.doneBtnText}>I know the answer →</Text>
+            <LinearText style={s.doneBtnText}>I know the answer →</LinearText>
           </TouchableOpacity>
         </View>
       ) : (
         <>
           <View style={s.explBox}>
-            <Text style={s.explLabel}>Diagnosis:</Text>
-            <Text style={[s.explText, { color: '#4CAF50', fontSize: 18, fontWeight: '700' }]}>
+            <LinearText style={s.explLabel}>Diagnosis:</LinearText>
+            <LinearText
+              style={[s.explText, { color: n.colors.success, fontSize: 18, fontWeight: '700' }]}
+            >
               {content.answer}
-            </Text>
+            </LinearText>
             <View style={{ marginTop: 4 }}>
               <StudyMarkdown content={emphasizeHighYieldMarkdown(content.explanation)} />
             </View>
@@ -1451,7 +1465,7 @@ function DetectiveCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip case</Text>
+        <LinearText style={s.skipText}>Skip case</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1468,31 +1482,31 @@ function ManualReviewCard({
   const scrollContentStyle = useCardScrollContentStyle(0);
   return (
     <ScrollView style={s.scroll} contentContainerStyle={scrollContentStyle}>
-      <Text style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</Text>
-      <Text style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
+      <LinearText style={s.cardType}>📴 MANUAL REVIEW (OFFLINE)</LinearText>
+      <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
-      </Text>
+      </LinearText>
       <TopicImage topicName={content.topicName} />
 
       <View style={s.offlineBox}>
-        <Text style={s.offlineEmoji}>📡❌</Text>
-        <Text style={s.offlineText}>
+        <LinearText style={s.offlineEmoji}>📡❌</LinearText>
+        <LinearText style={s.offlineText}>
           Guru is offline or AI is unavailable. Spend 2-5 minutes recalling everything you know
           about this topic.
-        </Text>
+        </LinearText>
       </View>
 
-      <Text style={s.promptText}>
+      <LinearText style={s.promptText}>
         Close your eyes and try to visualize:
         {'\n'}• Classification / Types
         {'\n'}• Clinical presentation
         {'\n'}• Gold standard diagnosis
         {'\n'}• First-line treatment
-      </Text>
+      </LinearText>
 
       {!showRating ? (
         <TouchableOpacity style={s.doneBtn} onPress={() => setShowRating(true)} activeOpacity={0.8}>
-          <Text style={s.doneBtnText}>I've reviewed it →</Text>
+          <LinearText style={s.doneBtnText}>I've reviewed it →</LinearText>
         </TouchableOpacity>
       ) : (
         <ConfidenceRating onRate={onDone} />
@@ -1503,7 +1517,7 @@ function ManualReviewCard({
         accessibilityRole="button"
         accessibilityLabel="Skip"
       >
-        <Text style={s.skipText}>Skip topic</Text>
+        <LinearText style={s.skipText}>Skip topic</LinearText>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -1571,9 +1585,9 @@ function SocraticCard({
       }}
     >
       <View style={{ paddingBottom: 4 }}>
-        <Text
+        <LinearText
           style={{
-            color: '#6C63FF',
+            color: n.colors.accent,
             fontSize: 11,
             fontWeight: '800',
             letterSpacing: 1.2,
@@ -1581,27 +1595,29 @@ function SocraticCard({
           }}
         >
           QUESTION {index + 1} / {content.questions.length}
-        </Text>
+        </LinearText>
 
         <View
           style={{
-            backgroundColor: '#1A1A2E',
+            backgroundColor: n.colors.surface,
             borderRadius: 16,
             padding: 20,
             marginBottom: 20,
             borderWidth: 1,
-            borderColor: '#2A2A4A',
+            borderColor: n.colors.border,
           }}
         >
-          <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '700', lineHeight: 28 }}>
+          <LinearText
+            style={{ color: n.colors.textPrimary, fontSize: 18, fontWeight: '700', lineHeight: 28 }}
+          >
             {question.question}
-          </Text>
+          </LinearText>
         </View>
 
         {!revealed ? (
           <TouchableOpacity
             style={{
-              backgroundColor: '#6C63FF',
+              backgroundColor: n.colors.accent,
               borderRadius: 14,
               paddingVertical: 14,
               alignItems: 'center',
@@ -1610,25 +1626,27 @@ function SocraticCard({
             onPress={() => setRevealed(true)}
             activeOpacity={0.8}
           >
-            <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 15 }}>Reveal Answer</Text>
+            <LinearText style={{ color: n.colors.background, fontWeight: '800', fontSize: 15 }}>
+              Reveal Answer
+            </LinearText>
           </TouchableOpacity>
         ) : (
           <>
             <View
               style={{
-                backgroundColor: '#0D1F0D',
+                backgroundColor: n.colors.surface,
                 borderRadius: 16,
                 padding: 20,
                 marginBottom: 8,
                 borderWidth: 1,
-                borderColor: '#1E5C1E',
+                borderColor: n.colors.border,
               }}
             >
               <StudyMarkdown content={emphasizeHighYieldMarkdown(question.answer)} />
             </View>
-            <Text
+            <LinearText
               style={{
-                color: '#888',
+                color: n.colors.textSecondary,
                 fontSize: 12,
                 fontStyle: 'italic',
                 marginBottom: 20,
@@ -1636,10 +1654,10 @@ function SocraticCard({
               }}
             >
               {question.whyItMatters}
-            </Text>
-            <Text
+            </LinearText>
+            <LinearText
               style={{
-                color: '#CCC',
+                color: n.colors.textPrimary,
                 fontSize: 14,
                 fontWeight: '600',
                 textAlign: 'center',
@@ -1647,37 +1665,41 @@ function SocraticCard({
               }}
             >
               Did you know this?
-            </Text>
+            </LinearText>
             <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
               <TouchableOpacity
                 style={{
                   flex: 1,
-                  backgroundColor: '#1E3A1E',
+                  backgroundColor: `${n.colors.success}33`,
                   borderRadius: 14,
                   paddingVertical: 14,
                   alignItems: 'center',
                   borderWidth: 1,
-                  borderColor: '#2E6A2E',
+                  borderColor: n.colors.success,
                 }}
                 onPress={() => next(true)}
                 activeOpacity={0.8}
               >
-                <Text style={{ color: '#4CAF50', fontWeight: '800', fontSize: 15 }}>Yes ✓</Text>
+                <LinearText style={{ color: n.colors.success, fontWeight: '800', fontSize: 15 }}>
+                  Yes ✓
+                </LinearText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={{
                   flex: 1,
-                  backgroundColor: '#2A1A1A',
+                  backgroundColor: `${n.colors.error}33`,
                   borderRadius: 14,
                   paddingVertical: 14,
                   alignItems: 'center',
                   borderWidth: 1,
-                  borderColor: '#5C1E1E',
+                  borderColor: n.colors.error,
                 }}
                 onPress={() => next(false)}
                 activeOpacity={0.8}
               >
-                <Text style={{ color: '#EF5350', fontWeight: '800', fontSize: 15 }}>Not quite</Text>
+                <LinearText style={{ color: n.colors.error, fontWeight: '800', fontSize: 15 }}>
+                  Not quite
+                </LinearText>
               </TouchableOpacity>
             </View>
           </>
@@ -1689,7 +1711,7 @@ function SocraticCard({
           accessibilityRole="button"
           accessibilityLabel="Skip"
         >
-          <Text style={s.skipText}>Skip topic</Text>
+          <LinearText style={s.skipText}>Skip topic</LinearText>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -1707,7 +1729,7 @@ const s = StyleSheet.create({
     flexGrow: 1,
   },
   cardType: {
-    color: '#6C63FF',
+    color: n.colors.accent,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1.5,
@@ -1719,7 +1741,7 @@ const s = StyleSheet.create({
     gap: 6,
   },
   cardTitle: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 22,
     marginBottom: 20,
@@ -1732,17 +1754,17 @@ const s = StyleSheet.create({
     height: 200,
     borderRadius: 12,
     marginBottom: 20,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
   },
   questionImage: {
     width: '100%',
     height: 220,
     borderRadius: 12,
     marginBottom: 4,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
   },
   tapToEnlarge: {
-    color: '#888',
+    color: n.colors.textSecondary,
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center' as const,
@@ -1828,20 +1850,20 @@ const s = StyleSheet.create({
   },
   ratingRow: { flexDirection: 'row', justifyContent: 'center', gap: 8 },
   ratingBtn: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     minWidth: 56,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: n.colors.border,
   },
-  ratingNum: { color: '#fff', fontWeight: '800', fontSize: 18 },
+  ratingNum: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 18 },
   ratingLabel: { fontSize: 18 },
-  questionText: { color: '#E0E0E0', fontSize: 16, lineHeight: 24, marginBottom: 16 },
+  questionText: { color: n.colors.textPrimary, fontSize: 16, lineHeight: 24, marginBottom: 16 },
   optionsContainer: { gap: 8, marginBottom: 12 },
   optionBtn: { borderRadius: 12, padding: 14, borderWidth: 2, minWidth: 0 },
-  optionText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
+  optionText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 20 },
   iDontKnowBtn: {
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderRadius: 12,
@@ -1853,20 +1875,25 @@ const s = StyleSheet.create({
   },
   iDontKnowText: { color: n.colors.warning, fontWeight: '700' as const, fontSize: 15 },
   correctAnswerBox: {
-    backgroundColor: '#1A2A1A',
+    backgroundColor: `${n.colors.success}1A`,
     borderRadius: 8,
     borderLeftWidth: 3,
-    borderLeftColor: '#4CAF50',
+    borderLeftColor: n.colors.success,
     padding: 10,
     marginVertical: 8,
   },
   correctAnswerLabel: {
-    color: '#4CAF50',
+    color: n.colors.success,
     fontSize: 12,
     fontWeight: '700' as const,
     marginBottom: 4,
   },
-  correctAnswerText: { color: '#E0E0E0', fontSize: 15, fontWeight: '600' as const, lineHeight: 22 },
+  correctAnswerText: {
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600' as const,
+    lineHeight: 22,
+  },
   explSection: { marginTop: 8 },
   explSectionTitle: {
     color: n.colors.accent,
@@ -1918,7 +1945,7 @@ const s = StyleSheet.create({
     fontStyle: 'italic' as const,
   },
   explBox: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
@@ -1936,11 +1963,16 @@ const s = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 6,
   },
-  explText: { color: '#E0E0E0', fontSize: 14, lineHeight: 20 },
+  explText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 20 },
   markdownBlock: { marginTop: 2 },
   markdownListItem: { marginBottom: 4 },
-  storyText: { color: '#E0E0E0', fontSize: 15, lineHeight: 26, marginBottom: 20 },
-  highlightsBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 20 },
+  storyText: { color: n.colors.textPrimary, fontSize: 15, lineHeight: 26, marginBottom: 20 },
+  highlightsBox: {
+    backgroundColor: n.colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+  },
   highlightsLabel: {
     color: n.colors.textSecondary,
     fontSize: 12,
@@ -1949,54 +1981,59 @@ const s = StyleSheet.create({
   },
   highlightChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: {
-    backgroundColor: '#6C63FF22',
+    backgroundColor: `${n.colors.accent}22`,
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: `${n.colors.accent}44`,
   },
-  chipText: { color: '#6C63FF', fontSize: 12, lineHeight: 18, fontWeight: '600' },
+  chipText: { color: n.colors.accent, fontSize: 12, lineHeight: 18, fontWeight: '600' },
   mnemonicBox: {
-    backgroundColor: '#1A1A2E',
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#6C63FF',
+    borderColor: n.colors.accent,
   },
   mnemonicMain: {
-    color: '#6C63FF',
+    color: n.colors.accent,
     fontWeight: '900',
     fontSize: 28,
     textAlign: 'center',
     letterSpacing: 2,
   },
   expansionList: { marginBottom: 16 },
-  expansionLine: { color: '#E0E0E0', fontSize: 14, lineHeight: 24, paddingLeft: 8 },
+  expansionLine: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 24, paddingLeft: 8 },
   textInput: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderRadius: 12,
     padding: 14,
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 15,
     minHeight: 100,
     textAlignVertical: 'top',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: n.colors.border,
   },
-  paragraphBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 16, marginBottom: 16 },
-  paragraphText: { color: '#E0E0E0', fontSize: 15, lineHeight: 24 },
-  clueBox: { backgroundColor: '#1A1A24', borderRadius: 12, padding: 14, marginBottom: 8 },
-  clueBoxNew: { borderColor: '#6C63FF', borderWidth: 1 },
-  clueNum: { color: '#6C63FF', fontSize: 12, fontWeight: '700', marginBottom: 4 },
-  clueText: { color: '#E0E0E0', fontSize: 15, lineHeight: 22 },
+  paragraphBox: {
+    backgroundColor: n.colors.surface,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  paragraphText: { color: n.colors.textPrimary, fontSize: 15, lineHeight: 24 },
+  clueBox: { backgroundColor: n.colors.surface, borderRadius: 12, padding: 14, marginBottom: 8 },
+  clueBoxNew: { borderColor: n.colors.accent, borderWidth: 1 },
+  clueNum: { color: n.colors.accent, fontSize: 12, fontWeight: '700', marginBottom: 4 },
+  clueText: { color: n.colors.textPrimary, fontSize: 15, lineHeight: 22 },
   detectiveActions: { gap: 8, marginTop: 8 },
-  hintBtn: { backgroundColor: '#1A1A2E', borderWidth: 1, borderColor: '#6C63FF' },
-  missedBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#2A2A38' },
-  missedLabel: { color: '#F44336', fontSize: 12, fontWeight: '700', marginBottom: 4 },
+  hintBtn: { backgroundColor: n.colors.surface, borderWidth: 1, borderColor: n.colors.accent },
+  missedBox: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: n.colors.border },
+  missedLabel: { color: n.colors.error, fontSize: 12, fontWeight: '700', marginBottom: 4 },
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -2005,32 +2042,32 @@ const s = StyleSheet.create({
     paddingBottom: 12,
   },
   flagBtn: {
-    backgroundColor: '#1A1A2E',
-    borderColor: '#FF980044',
+    backgroundColor: n.colors.surface,
+    borderColor: `${n.colors.warning}44`,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 8,
   },
-  flagBtnActive: { backgroundColor: '#2A1A00', borderColor: '#FF9800' },
-  flagBtnText: { color: '#FF9800', fontWeight: '600', fontSize: 12 },
+  flagBtnActive: { backgroundColor: `${n.colors.warning}22`, borderColor: n.colors.warning },
+  flagBtnText: { color: n.colors.warning, fontWeight: '600', fontSize: 12 },
   askGuruBtn: {
-    backgroundColor: '#1A1A2E',
-    borderColor: '#6C63FF66',
+    backgroundColor: n.colors.surface,
+    borderColor: `${n.colors.accent}66`,
     borderWidth: 1,
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 8,
     elevation: 4,
   },
-  askGuruText: { color: '#6C63FF', fontWeight: '700', fontSize: 13 },
+  askGuruText: { color: n.colors.accent, fontWeight: '700', fontSize: 13 },
   offlineBox: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: n.colors.border,
   },
   offlineEmoji: { fontSize: 32, textAlign: 'center', marginBottom: 12 },
   offlineText: {
@@ -2040,10 +2077,10 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
   promptText: {
-    color: '#E0E0E0',
+    color: n.colors.textPrimary,
     fontSize: 15,
     lineHeight: 28,
-    backgroundColor: '#0A0A14',
+    backgroundColor: n.colors.background,
     padding: 20,
     borderRadius: 12,
     marginBottom: 32,

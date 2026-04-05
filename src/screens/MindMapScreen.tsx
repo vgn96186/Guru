@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  PanResponder,
   Dimensions,
   TouchableOpacity,
   TextInput,
@@ -13,18 +11,21 @@ import {
   Pressable,
   Modal,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import Svg, {
-  Line,
-  Circle,
+  Rect,
   G,
   Text as SvgText,
   Defs,
   LinearGradient,
   Stop,
+  Path,
+  Circle,
 } from 'react-native-svg';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { linearTheme as n } from '../theme/linearTheme';
 import {
   listMindMaps,
@@ -32,33 +33,39 @@ import {
   loadFullMindMap,
   addNode,
   addEdge,
-  updateNodePosition,
   deleteNode,
   deleteMindMap,
   bulkInsertNodesAndEdges,
+  bulkUpdateNodePositions,
   saveViewport,
   type MindMap,
   type MindMapNode,
   type MindMapEdge,
   type MindMapFull,
 } from '../db/queries/mindMaps';
-import { generateMindMap, expandNode } from '../services/mindMapAI';
+import { generateMindMap, expandNode, explainMindMapNode } from '../services/mindMapAI';
+import { layoutMindMapGraph } from '../services/mindMapLayout';
 import ScreenHeader from '../components/ScreenHeader';
+import ErrorBoundary from '../components/ErrorBoundary';
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
+const NODE_FONT_SIZE = 13;
+const CENTER_FONT_SIZE = 14;
+const PILL_PAD_X = 16;
+const PILL_PAD_Y = 12;
+const PILL_RADIUS = 6;
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const NODE_RADIUS_CENTER = 36;
-const NODE_RADIUS = 26;
-const NODE_FONT_SIZE = 11;
-const CENTER_FONT_SIZE = 13;
 
-const STATUS_COLORS: Record<string, string> = {
-  unseen: '#606080',
-  seen: '#2196F3',
-  reviewed: n.colors.accent,
-  mastered: '#4CAF50',
-};
+// NotebookLM-style solid pastels
+const BRANCH_COLORS = [
+  { fill: '#C1D8F0', stroke: 'transparent', text: '#1E1E1E' }, // Light Blue
+  { fill: '#A3D9C3', stroke: 'transparent', text: '#1E1E1E' }, // Teal
+  { fill: '#A6EAA6', stroke: 'transparent', text: '#1E1E1E' }, // Green
+  { fill: '#EAD3E3', stroke: 'transparent', text: '#1E1E1E' }, // Soft Purple
+  { fill: '#F2D3A8', stroke: 'transparent', text: '#1E1E1E' }, // Soft Orange
+];
+const CENTER_COLOR = { fill: '#B5CBE6', stroke: '#1E1E1E', text: '#1E1E1E' };
 
 // ── Map List View ──────────────────────────────────────────────────────────
 
@@ -67,22 +74,24 @@ function MapListView({
   onSelect,
   onNew,
   onDelete,
+  onRecreate,
 }: {
   maps: MindMap[];
   onSelect: (id: number) => void;
   onNew: () => void;
   onDelete: (id: number) => void;
+  onRecreate: (id: number, title: string) => void;
 }) {
   return (
     <View style={styles.listContainer}>
       <TouchableOpacity style={styles.newMapBtn} onPress={onNew} activeOpacity={0.7}>
         <Ionicons name="add-circle-outline" size={22} color={n.colors.accent} />
-        <Text style={styles.newMapBtnText}>New Mind Map</Text>
+        <LinearText style={styles.newMapBtnText}>New Mind Map</LinearText>
       </TouchableOpacity>
       {maps.length === 0 && (
-        <Text style={styles.emptyText}>
+        <LinearText style={styles.emptyText}>
           No mind maps yet. Create one to start mapping concepts.
-        </Text>
+        </LinearText>
       )}
       <FlatList
         data={maps}
@@ -92,26 +101,152 @@ function MapListView({
           <Pressable
             style={({ pressed }) => [styles.mapCard, pressed && { opacity: 0.7 }]}
             onPress={() => onSelect(item.id)}
-            onLongPress={() =>
-              Alert.alert('Delete', `Delete "${item.title}"?`, [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive', onPress: () => onDelete(item.id) },
-              ])
-            }
           >
             <Ionicons name="git-network-outline" size={20} color={n.colors.accent} />
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.mapCardTitle}>{item.title}</Text>
-              <Text style={styles.mapCardDate}>
+              <LinearText style={styles.mapCardTitle}>{item.title}</LinearText>
+              <LinearText style={styles.mapCardDate}>
                 {new Date(item.updatedAt).toLocaleDateString()}
-              </Text>
+              </LinearText>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={n.colors.textMuted} />
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={() => onRecreate(item.id, item.title)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="refresh-outline" size={20} color={n.colors.textSecondary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  Alert.alert('Delete', `Delete "${item.title}"?`, [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => onDelete(item.id) },
+                  ]);
+                }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="trash-outline" size={20} color={n.colors.error} />
+              </TouchableOpacity>
+            </View>
           </Pressable>
         )}
       />
     </View>
   );
+}
+
+const MIN_ZOOM = 0.35;
+const MAX_ZOOM = 2.4;
+const VIEWPORT_PADDING = 110;
+const VIEWPORT_SCHEMA_VERSION = 2;
+
+function clamp(value: number, min: number, max: number) {
+  'worklet';
+  return Math.min(max, Math.max(min, value));
+}
+
+function getNodeDimensions(node: Pick<MindMapNode, 'label' | 'isCenter'>) {
+  const fontSize = node.isCenter ? CENTER_FONT_SIZE : NODE_FONT_SIZE;
+  const label = node.label || 'Unknown';
+  const width = Math.max(label.length * fontSize * 0.6 + PILL_PAD_X * 2, 60);
+  const height = fontSize + PILL_PAD_Y * 2;
+  return { width, height, fontSize, label };
+}
+
+function getCanvasMetrics(nodes: MindMapNode[]) {
+  if (nodes.length === 0) {
+    return {
+      minX: 0,
+      maxX: SCREEN_W,
+      minY: 0,
+      maxY: SCREEN_H,
+      width: SCREEN_W,
+      height: SCREEN_H,
+      offsetX: VIEWPORT_PADDING,
+      offsetY: VIEWPORT_PADDING,
+    };
+  }
+
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+
+  for (const node of nodes) {
+    const { width, height } = getNodeDimensions(node);
+    minX = Math.min(minX, node.x - width / 2);
+    maxX = Math.max(maxX, node.x + width / 2);
+    minY = Math.min(minY, node.y - height / 2);
+    maxY = Math.max(maxY, node.y + height / 2);
+  }
+
+  return {
+    minX,
+    maxX,
+    minY,
+    maxY,
+    width: Math.max(maxX - minX + VIEWPORT_PADDING * 2, SCREEN_W * 1.5),
+    height: Math.max(maxY - minY + VIEWPORT_PADDING * 2, SCREEN_H * 1.5),
+    offsetX: -minX + VIEWPORT_PADDING,
+    offsetY: -minY + VIEWPORT_PADDING,
+  };
+}
+
+function computeFittedViewport(nodes: MindMapNode[]) {
+  if (nodes.length === 0) {
+    return { x: SCREEN_W / 2, y: SCREEN_H / 3, scale: 1 };
+  }
+  const metrics = getCanvasMetrics(nodes);
+  const contentWidth = metrics.width;
+  const contentHeight = metrics.height;
+  const scale = clamp(
+    Math.min(SCREEN_W / contentWidth, (SCREEN_H - 120) / contentHeight, 1),
+    MIN_ZOOM,
+    1,
+  );
+
+  const rootNode = nodes.find((node) => node.isCenter) ?? nodes[0];
+  return {
+    x: SCREEN_W * 0.15 - (metrics.offsetX + rootNode.x) * scale,
+    y: SCREEN_H * 0.35 - (metrics.offsetY + rootNode.y) * scale,
+    scale,
+  };
+}
+
+function applyAutoLayout(full: MindMapFull): { full: MindMapFull; changed: boolean } {
+  if (full.nodes.length === 0) {
+    return { full, changed: false };
+  }
+
+  const laidOutNodes = layoutMindMapGraph(full.nodes, full.edges);
+  const nodeById = new Map(laidOutNodes.map((node) => [node.id, node]));
+  let changed = false;
+
+  const nextNodes = full.nodes.map((node) => {
+    const laidOut = nodeById.get(node.id);
+    if (!laidOut) {
+      return node;
+    }
+
+    if (Math.abs(laidOut.x - node.x) > 0.5 || Math.abs(laidOut.y - node.y) > 0.5) {
+      changed = true;
+    }
+
+    return {
+      ...node,
+      x: laidOut.x,
+      y: laidOut.y,
+    };
+  });
+
+  return {
+    full: {
+      ...full,
+      nodes: nextNodes,
+    },
+    changed,
+  };
 }
 
 // ── Canvas View ────────────────────────────────────────────────────────────
@@ -120,101 +255,152 @@ function CanvasView({
   data,
   onBack,
   onRefresh,
+  onRetry,
+  onDelete,
 }: {
   data: MindMapFull;
   onBack: () => void;
   onRefresh: () => Promise<void>;
+  onRetry?: () => void;
+  onDelete?: () => void;
 }) {
-  const [nodes, setNodes] = useState<MindMapNode[]>(data.nodes);
-  const [edges, setEdges] = useState<MindMapEdge[]>(data.edges);
+  const nodes = data.nodes;
+  const edges = data.edges;
+  const canvasMetrics = useMemo(() => getCanvasMetrics(nodes), [nodes]);
+  const previousGraphRef = useRef({ nodeCount: nodes.length, edgeCount: edges.length });
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
-  const [expandingNodeId, setExpandingNodeId] = useState<number | null>(null);
   const [addingThought, setAddingThought] = useState<number | null>(null);
   const [thoughtText, setThoughtText] = useState('');
+  const [expandingNodeId, setExpandingNodeId] = useState<number | null>(null);
+  const [nodeExplanationCache, setNodeExplanationCache] = useState<Record<number, string>>({});
+  const [explanationLoadingNodeId, setExplanationLoadingNodeId] = useState<number | null>(null);
 
-  // Viewport state
-  const viewport = useRef({ x: SCREEN_W / 2, y: SCREEN_H / 3, scale: 1 });
-  const [, forceRender] = useState(0);
-  const rerender = useCallback(() => forceRender((c) => c + 1), []);
+  const translateX = useSharedValue(SCREEN_W / 2);
+  const translateY = useSharedValue(SCREEN_H / 3);
+  const scale = useSharedValue(1);
+  const panStartX = useSharedValue(0);
+  const panStartY = useSharedValue(0);
+  const pinchStartX = useSharedValue(0);
+  const pinchStartY = useSharedValue(0);
+  const pinchStartScale = useSharedValue(1);
 
-  // Pinch tracking
-  const lastPinchDist = useRef(0);
-  const lastPanPos = useRef({ x: 0, y: 0 });
-
-  useEffect(() => {
-    setNodes(data.nodes);
-    setEdges(data.edges);
-  }, [data]);
-
-  // Save viewport on unmount
   useEffect(() => {
     return () => {
-      const vp = viewport.current;
-      saveViewport(data.map.id, JSON.stringify({ x: vp.x, y: vp.y, scale: vp.scale })).catch(
-        () => {},
-      );
+      saveViewport(
+        data.map.id,
+        JSON.stringify({
+          version: VIEWPORT_SCHEMA_VERSION,
+          x: translateX.value,
+          y: translateY.value,
+          scale: scale.value,
+        }),
+      ).catch(() => {});
     };
-  }, [data.map.id]);
+  }, [data.map.id, scale, translateX, translateY]);
 
-  // Restore saved viewport
   useEffect(() => {
+    if (nodes.length === 0) {
+      return;
+    }
+
+    const graphChanged =
+      previousGraphRef.current.nodeCount !== nodes.length ||
+      previousGraphRef.current.edgeCount !== edges.length;
+    previousGraphRef.current = { nodeCount: nodes.length, edgeCount: edges.length };
+
+    if (graphChanged) {
+      const fitted = computeFittedViewport(nodes);
+      translateX.value = fitted.x;
+      translateY.value = fitted.y;
+      scale.value = fitted.scale;
+      return;
+    }
+
     try {
       const saved = JSON.parse(data.map.viewportJson);
-      if (saved.x != null) viewport.current = saved;
-      rerender();
+      if (
+        saved?.version === VIEWPORT_SCHEMA_VERSION &&
+        typeof saved?.x === 'number' &&
+        typeof saved?.y === 'number' &&
+        typeof saved?.scale === 'number'
+      ) {
+        translateX.value = saved.x;
+        translateY.value = saved.y;
+        scale.value = clamp(saved.scale, MIN_ZOOM, MAX_ZOOM);
+        return;
+      }
     } catch {}
-  }, [data.map.viewportJson, rerender]);
 
-  const panResponder = useMemo(
+    const fitted = computeFittedViewport(nodes);
+    translateX.value = fitted.x;
+    translateY.value = fitted.y;
+    scale.value = fitted.scale;
+  }, [data.map.viewportJson, edges.length, nodes, scale, translateX, translateY]);
+
+  const centerMap = useCallback(() => {
+    const fitted = computeFittedViewport(nodes);
+    translateX.value = withTiming(fitted.x, { duration: 180 });
+    translateY.value = withTiming(fitted.y, { duration: 180 });
+    scale.value = withTiming(fitted.scale, { duration: 180 });
+  }, [nodes, scale, translateX, translateY]);
+
+  const canvasStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
+  const panGesture = useMemo(
     () =>
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_, gs) =>
-          Math.abs(gs.dx) > 4 || Math.abs(gs.dy) > 4 || gs.numberActiveTouches > 1,
-        onPanResponderGrant: (evt) => {
-          const touches = evt.nativeEvent.touches;
-          if (touches.length === 2) {
-            const dx = touches[1].pageX - touches[0].pageX;
-            const dy = touches[1].pageY - touches[0].pageY;
-            lastPinchDist.current = Math.sqrt(dx * dx + dy * dy);
-          }
-          lastPanPos.current = { x: viewport.current.x, y: viewport.current.y };
-        },
-        onPanResponderMove: (evt, gs) => {
-          const touches = evt.nativeEvent.touches;
-          if (touches.length === 2) {
-            // Pinch zoom
-            const dx = touches[1].pageX - touches[0].pageX;
-            const dy = touches[1].pageY - touches[0].pageY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (lastPinchDist.current > 0) {
-              const scaleChange = dist / lastPinchDist.current;
-              viewport.current.scale = Math.max(
-                0.3,
-                Math.min(3, viewport.current.scale * scaleChange),
-              );
-            }
-            lastPinchDist.current = dist;
-          } else {
-            // Pan
-            viewport.current.x = lastPanPos.current.x + gs.dx;
-            viewport.current.y = lastPanPos.current.y + gs.dy;
-          }
-          rerender();
-        },
-        onPanResponderRelease: () => {
-          lastPinchDist.current = 0;
-        },
-      }),
-    [rerender],
+      Gesture.Pan()
+        .maxPointers(1)
+        .minDistance(4)
+        .onStart(() => {
+          panStartX.value = translateX.value;
+          panStartY.value = translateY.value;
+        })
+        .onUpdate((event) => {
+          translateX.value = panStartX.value + event.translationX;
+          translateY.value = panStartY.value + event.translationY;
+        }),
+    [panStartX, panStartY, translateX, translateY],
   );
 
-  const toScreen = useCallback(
-    (nx: number, ny: number) => ({
-      x: nx * viewport.current.scale + viewport.current.x,
-      y: ny * viewport.current.scale + viewport.current.y,
-    }),
-    [],
+  const pinchGesture = useMemo(
+    () =>
+      Gesture.Pinch()
+        .onStart((event) => {
+          pinchStartScale.value = scale.value;
+          pinchStartX.value = translateX.value;
+          pinchStartY.value = translateY.value;
+          panStartX.value = event.focalX;
+          panStartY.value = event.focalY;
+        })
+        .onUpdate((event) => {
+          const nextScale = clamp(pinchStartScale.value * event.scale, MIN_ZOOM, MAX_ZOOM);
+          const focalWorldX = (event.focalX - pinchStartX.value) / pinchStartScale.value;
+          const focalWorldY = (event.focalY - pinchStartY.value) / pinchStartScale.value;
+          scale.value = nextScale;
+          translateX.value = event.focalX - focalWorldX * nextScale;
+          translateY.value = event.focalY - focalWorldY * nextScale;
+        }),
+    [
+      panStartX,
+      panStartY,
+      pinchStartScale,
+      pinchStartX,
+      pinchStartY,
+      scale,
+      translateX,
+      translateY,
+    ],
+  );
+
+  const gesture = useMemo(
+    () => Gesture.Simultaneous(panGesture, pinchGesture),
+    [panGesture, pinchGesture],
   );
 
   const handleNodeTap = useCallback((nodeId: number) => {
@@ -223,37 +409,84 @@ function CanvasView({
     setThoughtText('');
   }, []);
 
+  useEffect(() => {
+    if (selectedNodeId == null || nodeExplanationCache[selectedNodeId]) {
+      return;
+    }
+
+    const selectedNode = nodes.find((node) => node.id === selectedNodeId);
+    if (!selectedNode) {
+      return;
+    }
+
+    const parentEdge = edges.find((edge) => edge.targetNodeId === selectedNodeId);
+    const parentNode = parentEdge
+      ? nodes.find((node) => node.id === parentEdge.sourceNodeId)
+      : undefined;
+    let cancelled = false;
+    setExplanationLoadingNodeId(selectedNodeId);
+
+    explainMindMapNode(data.map.title, selectedNode.label, parentNode?.label)
+      .then((explanation) => {
+        if (cancelled) {
+          return;
+        }
+        setNodeExplanationCache((current) => ({
+          ...current,
+          [selectedNodeId]: explanation,
+        }));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+        setNodeExplanationCache((current) => ({
+          ...current,
+          [selectedNodeId]: 'Short explanation unavailable. Tap again after a refresh.',
+        }));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setExplanationLoadingNodeId((current) => (current === selectedNodeId ? null : current));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data.map.title, edges, nodeExplanationCache, nodes, selectedNodeId]);
+
   const handleAIExpand = useCallback(
     async (nodeId: number) => {
-      const node = nodes.find((nd) => nd.id === nodeId);
-      if (!node) return;
+      const node = nodes.find((candidate) => candidate.id === nodeId);
+      if (!node) {
+        return;
+      }
+
       setExpandingNodeId(nodeId);
       setSelectedNodeId(null);
+
       try {
-        const existingLabels = nodes.map((nd) => nd.label);
-        const layout = await expandNode(node.label, existingLabels);
+        const layout = await expandNode(
+          data.map.title,
+          node.label,
+          nodes.map((candidate) => candidate.label),
+        );
+        const insertedIds: number[] = [];
 
-        // Offset layout relative to the tapped node
-        const layoutNodes = layout.nodes.slice(1).map((ln) => ({
-          label: ln.label,
-          x: node.x + ln.x,
-          y: node.y + ln.y,
-          isCenter: false,
-        }));
-        const layoutEdges = layout.edges
-          .filter((e) => e.sourceIndex > 0 && e.targetIndex > 0)
-          .map((e) => ({
-            sourceIndex: e.sourceIndex - 1,
-            targetIndex: e.targetIndex - 1,
-            label: e.label,
-          }));
+        for (const newNode of layout.nodes.slice(1)) {
+          const insertedId = await addNode(data.map.id, newNode.label, node.x, node.y, {
+            aiGenerated: true,
+          });
+          insertedIds.push(insertedId);
+        }
 
-        const newNodeIds = await bulkInsertNodesAndEdges(data.map.id, layoutNodes, layoutEdges);
+        for (const edge of layout.edges) {
+          const sourceNodeId = edge.sourceIndex === 0 ? nodeId : insertedIds[edge.sourceIndex - 1];
+          const targetNodeId = edge.targetIndex === 0 ? nodeId : insertedIds[edge.targetIndex - 1];
 
-        // Connect the first new node to the tapped node
-        if (newNodeIds.length > 0) {
-          for (const newId of newNodeIds) {
-            await addEdge(data.map.id, nodeId, newId);
+          if (sourceNodeId != null && targetNodeId != null && sourceNodeId !== targetNodeId) {
+            await addEdge(data.map.id, sourceNodeId, targetNodeId, edge.label);
           }
         }
 
@@ -264,36 +497,38 @@ function CanvasView({
         setExpandingNodeId(null);
       }
     },
-    [nodes, data.map.id, onRefresh],
+    [data.map.id, data.map.title, nodes, onRefresh],
   );
 
   const handleAddThought = useCallback(
     async (parentNodeId: number) => {
-      if (!thoughtText.trim()) return;
-      const parent = nodes.find((nd) => nd.id === parentNodeId);
-      if (!parent) return;
+      const label = thoughtText.trim();
+      if (!label) {
+        return;
+      }
 
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 140;
-      const x = parent.x + Math.cos(angle) * dist;
-      const y = parent.y + Math.sin(angle) * dist;
+      const parent = nodes.find((candidate) => candidate.id === parentNodeId);
+      if (!parent) {
+        return;
+      }
 
-      const newId = await addNode(data.map.id, thoughtText.trim(), x, y);
+      const newId = await addNode(data.map.id, label, parent.x, parent.y, { aiGenerated: false });
       await addEdge(data.map.id, parentNodeId, newId);
       setThoughtText('');
       setAddingThought(null);
       await onRefresh();
     },
-    [thoughtText, nodes, data.map.id, onRefresh],
+    [data.map.id, nodes, onRefresh, thoughtText],
   );
 
   const handleDeleteNode = useCallback(
     async (nodeId: number) => {
-      const node = nodes.find((nd) => nd.id === nodeId);
+      const node = nodes.find((candidate) => candidate.id === nodeId);
       if (node?.isCenter) {
         Alert.alert('Cannot delete', 'Center node cannot be deleted.');
         return;
       }
+
       await deleteNode(nodeId);
       setSelectedNodeId(null);
       await onRefresh();
@@ -301,136 +536,337 @@ function CanvasView({
     [nodes, onRefresh],
   );
 
-  const vp = viewport.current;
-  const selectedNode = nodes.find((nd) => nd.id === selectedNodeId);
+  const selectedNode = nodes.find((node) => node.id === selectedNodeId);
+  const selectedExplanation = selectedNodeId != null ? nodeExplanationCache[selectedNodeId] : null;
 
   return (
     <View style={styles.canvasContainer}>
-      {/* Header */}
       <View style={styles.canvasHeader}>
-        <TouchableOpacity onPress={onBack} hitSlop={12}>
+        <TouchableOpacity onPress={onBack} hitSlop={12} style={{ padding: 4 }}>
           <Ionicons name="arrow-back" size={24} color={n.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.canvasTitle} numberOfLines={1}>
+        <LinearText style={styles.canvasTitle} numberOfLines={1}>
           {data.map.title}
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* SVG Canvas */}
-      <View style={styles.svgWrap} {...panResponder.panHandlers}>
-        <Svg width={SCREEN_W} height={SCREEN_H} style={StyleSheet.absoluteFill}>
-          <Defs>
-            <LinearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="0">
-              <Stop offset="0" stopColor={n.colors.accent} stopOpacity="0.4" />
-              <Stop offset="1" stopColor={n.colors.accent} stopOpacity="0.15" />
-            </LinearGradient>
-          </Defs>
-
-          {/* Edges */}
-          {edges.map((edge) => {
-            const src = nodes.find((nd) => nd.id === edge.sourceNodeId);
-            const tgt = nodes.find((nd) => nd.id === edge.targetNodeId);
-            if (!src || !tgt) return null;
-            const s = toScreen(src.x, src.y);
-            const t = toScreen(tgt.x, tgt.y);
-            return (
-              <Line
-                key={`e-${edge.id}`}
-                x1={s.x}
-                y1={s.y}
-                x2={t.x}
-                y2={t.y}
-                stroke="url(#edgeGrad)"
-                strokeWidth={1.5 * vp.scale}
-              />
-            );
-          })}
-
-          {/* Nodes */}
-          {nodes.map((node) => {
-            const pos = toScreen(node.x, node.y);
-            const r = (node.isCenter ? NODE_RADIUS_CENTER : NODE_RADIUS) * vp.scale;
-            const fontSize =
-              (node.isCenter ? CENTER_FONT_SIZE : NODE_FONT_SIZE) * Math.max(vp.scale, 0.6);
-            const isSelected = node.id === selectedNodeId;
-            const isExpanding = node.id === expandingNodeId;
-
-            const fillColor = node.color || (node.isCenter ? n.colors.accent : '#1a1a2e');
-            const strokeColor = isSelected
-              ? n.colors.accent
-              : isExpanding
-                ? n.colors.warning
-                : 'rgba(255,255,255,0.12)';
-
-            return (
-              <G key={`n-${node.id}`} onPress={() => handleNodeTap(node.id)}>
-                <Circle
-                  cx={pos.x}
-                  cy={pos.y}
-                  r={r}
-                  fill={fillColor}
-                  stroke={strokeColor}
-                  strokeWidth={isSelected ? 2.5 : 1}
-                  opacity={isExpanding ? 0.6 : 1}
-                />
-                <SvgText
-                  x={pos.x}
-                  y={pos.y + fontSize * 0.35}
-                  textAnchor="middle"
-                  fontSize={fontSize}
-                  fill={node.isCenter ? '#fff' : n.colors.textPrimary}
-                  fontWeight={node.isCenter ? 'bold' : 'normal'}
-                >
-                  {node.label.length > 18 ? node.label.slice(0, 16) + '…' : node.label}
-                </SvgText>
-              </G>
-            );
-          })}
-        </Svg>
-
-        {/* Expanding indicator */}
-        {expandingNodeId != null && (
-          <View style={styles.expandingBanner}>
-            <ActivityIndicator size="small" color={n.colors.accent} />
-            <Text style={styles.expandingText}>AI expanding...</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Node action bar */}
-      {selectedNode && addingThought == null && (
-        <View style={styles.actionBar}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => handleAIExpand(selectedNode.id)}
-          >
-            <Ionicons name="sparkles" size={18} color={n.colors.accent} />
-            <Text style={styles.actionBtnText}>AI Expand</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => {
-              setAddingThought(selectedNode.id);
-              setSelectedNodeId(null);
-            }}
-          >
-            <Ionicons name="create-outline" size={18} color={n.colors.success} />
-            <Text style={styles.actionBtnText}>Add Thought</Text>
-          </TouchableOpacity>
-          {!selectedNode.isCenter && (
+        </LinearText>
+        <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+          {nodes.length > 0 && (
+            <TouchableOpacity onPress={centerMap} hitSlop={12}>
+              <Ionicons name="locate-outline" size={22} color={n.colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+          {onRetry && (
             <TouchableOpacity
-              style={styles.actionBtn}
-              onPress={() => handleDeleteNode(selectedNode.id)}
+              onPress={() => {
+                Alert.alert(
+                  'Remake Map',
+                  'Regenerate the entire mind map structure using AI? This will replace the current map layout.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Regenerate', style: 'destructive', onPress: onRetry },
+                  ],
+                );
+              }}
+              hitSlop={12}
             >
-              <Ionicons name="trash-outline" size={18} color={n.colors.error} />
-              <Text style={[styles.actionBtnText, { color: n.colors.error }]}>Delete</Text>
+              <Ionicons name="refresh-outline" size={22} color={n.colors.accent} />
+            </TouchableOpacity>
+          )}
+          {onDelete && (
+            <TouchableOpacity onPress={onDelete} hitSlop={12}>
+              <Ionicons name="trash-outline" size={22} color={n.colors.error} />
             </TouchableOpacity>
           )}
         </View>
+      </View>
+
+      {nodes.length === 0 && (
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={n.colors.warning}
+            style={{ marginBottom: 16 }}
+          />
+          <LinearText
+            variant="body"
+            style={{ color: n.colors.textSecondary, textAlign: 'center', marginBottom: 8 }}
+          >
+            This map has no concepts yet.
+          </LinearText>
+          <LinearText
+            variant="caption"
+            tone="muted"
+            style={{ textAlign: 'center', marginBottom: 24 }}
+          >
+            The AI generation may have failed. Tap below to try again.
+          </LinearText>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            {onRetry && (
+              <TouchableOpacity
+                onPress={onRetry}
+                style={styles.emptyStatePrimaryBtn}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="refresh" size={16} color="#fff" />
+                <LinearText variant="label" style={{ color: n.colors.textPrimary }}>
+                  Regenerate
+                </LinearText>
+              </TouchableOpacity>
+            )}
+            {onDelete && (
+              <TouchableOpacity
+                onPress={onDelete}
+                style={styles.emptyStateDeleteBtn}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="trash-outline" size={16} color={n.colors.error} />
+                <LinearText variant="label" style={{ color: n.colors.error }}>
+                  Delete Map
+                </LinearText>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       )}
 
-      {/* Add thought input */}
+      <GestureDetector gesture={gesture}>
+        <View style={styles.svgWrap}>
+          <Animated.View
+            style={[
+              styles.canvasSurface,
+              {
+                width: canvasMetrics.width,
+                height: canvasMetrics.height,
+              },
+              canvasStyle,
+            ]}
+          >
+            <Svg width={canvasMetrics.width} height={canvasMetrics.height}>
+              <Defs>
+                {BRANCH_COLORS.map((branchColor, index) => (
+                  <LinearGradient
+                    key={`bg${index}`}
+                    id={`branchGrad${index}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <Stop offset="0" stopColor={branchColor.stroke} stopOpacity="0.25" />
+                    <Stop offset="1" stopColor={branchColor.stroke} stopOpacity="0.06" />
+                  </LinearGradient>
+                ))}
+              </Defs>
+              <G transform={`translate(${canvasMetrics.offsetX}, ${canvasMetrics.offsetY})`}>
+                {edges.map((edge) => {
+                  const source = nodes.find((node) => node.id === edge.sourceNodeId);
+                  const target = nodes.find((node) => node.id === edge.targetNodeId);
+                  if (!source || !target) {
+                    return null;
+                  }
+
+                  const branchAnchorId = source.isCenter ? target.id : source.id;
+                  const branchIndex = nodes
+                    .filter((node) => !node.isCenter)
+                    .findIndex((node) => node.id === branchAnchorId);
+                  const palette = BRANCH_COLORS[Math.abs(branchIndex) % BRANCH_COLORS.length];
+                  const midX = (source.x + target.x) / 2;
+
+                  return (
+                    <Path
+                      key={`e-${edge.id}`}
+                      d={`M ${source.x} ${source.y} C ${midX} ${source.y}, ${midX} ${target.y}, ${target.x} ${target.y}`}
+                      stroke={palette.fill}
+                      strokeWidth={2}
+                      fill="none"
+                      strokeLinecap="round"
+                      opacity={0.6}
+                    />
+                  );
+                })}
+
+                {edges.map((edge) => {
+                  const target = nodes.find((node) => node.id === edge.targetNodeId);
+                  if (!target) {
+                    return null;
+                  }
+                  return (
+                    <Circle
+                      key={`dot-${edge.id}`}
+                      cx={target.x}
+                      cy={target.y}
+                      r={3}
+                      fill="rgba(255,255,255,0.3)"
+                    />
+                  );
+                })}
+
+                {nodes.map((node) => {
+                  const { width, height, fontSize, label } = getNodeDimensions(node);
+                  const isSelected = node.id === selectedNodeId;
+                  const isExpanding = node.id === expandingNodeId;
+                  const nonCenterIndex = nodes
+                    .filter((candidate) => !candidate.isCenter)
+                    .indexOf(node);
+                  const palette = node.isCenter
+                    ? CENTER_COLOR
+                    : BRANCH_COLORS[Math.abs(nonCenterIndex) % BRANCH_COLORS.length];
+                  const fillColor = node.isCenter
+                    ? palette.fill
+                    : isSelected
+                      ? '#EFEFEF'
+                      : palette.fill;
+                  const strokeColor = isSelected ? '#1E1E1E' : palette.stroke;
+
+                  return (
+                    <G
+                      key={`n-${node.id}`}
+                      onPress={() => handleNodeTap(node.id)}
+                      onLongPress={() => handleAIExpand(node.id)}
+                      delayLongPress={350}
+                    >
+                      <Rect
+                        x={node.x - width / 2 + 1.5}
+                        y={node.y - height / 2 + 2}
+                        width={width}
+                        height={height}
+                        rx={PILL_RADIUS}
+                        ry={PILL_RADIUS}
+                        fill="rgba(0,0,0,0.15)"
+                      />
+                      {isExpanding && (
+                        <Rect
+                          x={node.x - width / 2 - 4}
+                          y={node.y - height / 2 - 4}
+                          width={width + 8}
+                          height={height + 8}
+                          rx={PILL_RADIUS + 2}
+                          ry={PILL_RADIUS + 2}
+                          fill="none"
+                          stroke={n.colors.accent}
+                          strokeWidth={3}
+                          opacity={0.7}
+                        />
+                      )}
+                      <Rect
+                        x={node.x - width / 2}
+                        y={node.y - height / 2}
+                        width={width}
+                        height={height}
+                        rx={PILL_RADIUS}
+                        ry={PILL_RADIUS}
+                        fill={fillColor}
+                        stroke={strokeColor}
+                        strokeWidth={isSelected ? 2 : 1}
+                        opacity={isExpanding ? 0.5 : 1}
+                      />
+                      <SvgText
+                        x={node.x}
+                        y={node.y + fontSize * 0.35}
+                        textAnchor="middle"
+                        fontSize={fontSize}
+                        fill={palette.text}
+                        fontWeight={node.isCenter ? 'bold' : '500'}
+                        opacity={isExpanding ? 0.5 : 1}
+                      >
+                        {label}
+                      </SvgText>
+                      {!node.isCenter && !isExpanding && (
+                        <G transform={`translate(${node.x + width / 2 + 10}, ${node.y})`}>
+                          <Circle cx={0} cy={0} r={7} fill={fillColor} />
+                          <SvgText
+                            x={0}
+                            y={4}
+                            textAnchor="middle"
+                            fontSize={10}
+                            fill={palette.text}
+                            fontWeight="bold"
+                          >
+                            &gt;
+                          </SvgText>
+                        </G>
+                      )}
+                      {node.isCenter && !isExpanding && (
+                        <G transform={`translate(${node.x - width / 2 - 10}, ${node.y})`}>
+                          <Circle cx={0} cy={0} r={7} fill={fillColor} />
+                          <SvgText
+                            x={0}
+                            y={4}
+                            textAnchor="middle"
+                            fontSize={10}
+                            fill={palette.text}
+                            fontWeight="bold"
+                          >
+                            &lt;
+                          </SvgText>
+                        </G>
+                      )}
+                    </G>
+                  );
+                })}
+              </G>
+            </Svg>
+          </Animated.View>
+
+          {expandingNodeId != null && (
+            <View style={styles.expandingBanner}>
+              <ActivityIndicator size="small" color={n.colors.accent} />
+              <LinearText style={styles.expandingText}>AI expanding...</LinearText>
+            </View>
+          )}
+        </View>
+      </GestureDetector>
+
+      {selectedNode && addingThought == null && (
+        <>
+          <View style={styles.explanationCard}>
+            <View style={styles.explanationHeader}>
+              <LinearText style={styles.explanationTitle} numberOfLines={1}>
+                {selectedNode.label}
+              </LinearText>
+              {explanationLoadingNodeId === selectedNode.id && (
+                <ActivityIndicator size="small" color={n.colors.accent} />
+              )}
+            </View>
+            <LinearText style={styles.explanationBody}>
+              {selectedExplanation ??
+                'Loading a short explanation so the node makes sense at a glance.'}
+            </LinearText>
+            <LinearText style={styles.explanationHint}>Tap the node again to hide this.</LinearText>
+          </View>
+          <View style={styles.actionBar}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => handleAIExpand(selectedNode.id)}
+            >
+              <Ionicons name="sparkles" size={18} color={n.colors.accent} />
+              <LinearText style={styles.actionBtnText}>AI Expand</LinearText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              onPress={() => {
+                setAddingThought(selectedNode.id);
+                setSelectedNodeId(null);
+              }}
+            >
+              <Ionicons name="create-outline" size={18} color={n.colors.success} />
+              <LinearText style={styles.actionBtnText}>Add Thought</LinearText>
+            </TouchableOpacity>
+            {!selectedNode.isCenter && (
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => handleDeleteNode(selectedNode.id)}
+              >
+                <Ionicons name="trash-outline" size={18} color={n.colors.error} />
+                <LinearText style={[styles.actionBtnText, { color: n.colors.error }]}>
+                  Delete
+                </LinearText>
+              </TouchableOpacity>
+            )}
+          </View>
+        </>
+      )}
+
       {addingThought != null && (
         <View style={styles.thoughtBar}>
           <TextInput
@@ -463,11 +899,38 @@ function CanvasView({
 // ── Main Screen ────────────────────────────────────────────────────────────
 
 export default function MindMapScreen() {
-  const navigation = useNavigation();
   const [maps, setMaps] = useState<MindMap[]>([]);
   const [activeMapData, setActiveMapData] = useState<MindMapFull | null>(null);
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+
+  const loadMapWithLayout = useCallback(async (mapId: number) => {
+    const full = await loadFullMindMap(mapId);
+    if (!full) {
+      return null;
+    }
+
+    const normalized = applyAutoLayout(full);
+    if (normalized.changed) {
+      await bulkUpdateNodePositions(
+        full.map.id,
+        normalized.full.nodes.map((node) => ({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+        })),
+      );
+      return {
+        ...normalized.full,
+        map: {
+          ...normalized.full.map,
+          viewportJson: '',
+        },
+      };
+    }
+
+    return normalized.full;
+  }, []);
 
   const refreshList = useCallback(async () => {
     const list = await listMindMaps();
@@ -478,21 +941,109 @@ export default function MindMapScreen() {
     refreshList();
   }, [refreshList]);
 
-  const openMap = useCallback(async (mapId: number) => {
-    setLoading(true);
-    try {
-      const full = await loadFullMindMap(mapId);
-      if (full) setActiveMapData(full);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const openMap = useCallback(
+    async (mapId: number) => {
+      setLoading(true);
+      try {
+        const full = await loadMapWithLayout(mapId);
+        if (full) setActiveMapData(full);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadMapWithLayout],
+  );
+
+  const activeMapRef = useRef(activeMapData);
+  activeMapRef.current = activeMapData;
 
   const refreshActiveMap = useCallback(async () => {
-    if (!activeMapData) return;
-    const full = await loadFullMindMap(activeMapData.map.id);
+    const current = activeMapRef.current;
+    if (!current) return;
+    const full = await loadMapWithLayout(current.map.id);
     if (full) setActiveMapData(full);
-  }, [activeMapData]);
+  }, [loadMapWithLayout]);
+
+  const regenerateMap = useCallback(async () => {
+    const current = activeMapRef.current;
+    if (!current) return;
+    const mapId = current.map.id;
+    const title = current.map.title;
+    setActiveMapData(null);
+    setCreating(true);
+    try {
+      const layout = await generateMindMap(title);
+      const layoutNodes = layout.nodes.map((ln) => ({
+        label: ln.label,
+        x: ln.x,
+        y: ln.y,
+        isCenter: ln.isCenter,
+      }));
+      await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
+      await openMap(mapId);
+    } catch (err: any) {
+      Alert.alert(
+        'Regeneration Failed',
+        err.message || 'AI could not generate a mind map. Try again later.',
+      );
+    } finally {
+      setCreating(false);
+    }
+  }, [openMap]);
+
+  const deleteActiveMap = useCallback(() => {
+    const current = activeMapRef.current;
+    if (!current) return;
+    Alert.alert('Delete Map', `Are you sure you want to delete "${current.map.title}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteMindMap(current.map.id);
+          setActiveMapData(null);
+          await refreshList();
+        },
+      },
+    ]);
+  }, [refreshList]);
+
+  const recreateMapItem = useCallback(
+    async (mapId: number, title: string) => {
+      Alert.alert(
+        'Recreate Map',
+        `Are you sure you want to completely regenerate "${title}" with AI? This will replace the current map layout.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Regenerate',
+            onPress: async () => {
+              setCreating(true);
+              try {
+                const layout = await generateMindMap(title);
+                const layoutNodes = layout.nodes.map((ln) => ({
+                  label: ln.label,
+                  x: ln.x,
+                  y: ln.y,
+                  isCenter: ln.isCenter,
+                }));
+                await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
+                await refreshList();
+              } catch (err: any) {
+                Alert.alert(
+                  'Regeneration Failed',
+                  err.message || 'AI could not generate a mind map. Try again later.',
+                );
+              } finally {
+                setCreating(false);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [refreshList],
+  );
 
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [newMapTitle, setNewMapTitle] = useState('');
@@ -504,7 +1055,8 @@ export default function MindMapScreen() {
     try {
       const title = newMapTitle.trim();
       setNewMapTitle('');
-      const mapId = await createMindMap(title);
+
+      // Generate AI layout first before committing to DB
       const layout = await generateMindMap(title);
       const layoutNodes = layout.nodes.map((ln) => ({
         label: ln.label,
@@ -512,7 +1064,10 @@ export default function MindMapScreen() {
         y: ln.y,
         isCenter: ln.isCenter,
       }));
+
+      const mapId = await createMindMap(title);
       await bulkInsertNodesAndEdges(mapId, layoutNodes, layout.edges);
+
       await refreshList();
       await openMap(mapId);
     } catch (err: any) {
@@ -541,9 +1096,9 @@ export default function MindMapScreen() {
         <ScreenHeader title="Mind Map" />
         <View style={styles.centerContent}>
           <ActivityIndicator size="large" color={n.colors.accent} />
-          <Text style={styles.loadingText}>
+          <LinearText style={styles.loadingText}>
             {creating ? 'AI is mapping concepts...' : 'Loading...'}
-          </Text>
+          </LinearText>
         </View>
       </SafeAreaView>
     );
@@ -552,14 +1107,18 @@ export default function MindMapScreen() {
   if (activeMapData) {
     return (
       <SafeAreaView style={styles.root} edges={['top']}>
-        <CanvasView
-          data={activeMapData}
-          onBack={() => {
-            setActiveMapData(null);
-            refreshList();
-          }}
-          onRefresh={refreshActiveMap}
-        />
+        <ErrorBoundary>
+          <CanvasView
+            data={activeMapData}
+            onBack={() => {
+              setActiveMapData(null);
+              refreshList();
+            }}
+            onRefresh={refreshActiveMap}
+            onRetry={regenerateMap}
+            onDelete={deleteActiveMap}
+          />
+        </ErrorBoundary>
       </SafeAreaView>
     );
   }
@@ -567,14 +1126,20 @@ export default function MindMapScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <ScreenHeader title="Mind Map" />
-      <MapListView maps={maps} onSelect={openMap} onNew={handleNew} onDelete={handleDelete} />
+      <MapListView
+        maps={maps}
+        onSelect={openMap}
+        onNew={handleNew}
+        onDelete={handleDelete}
+        onRecreate={recreateMapItem}
+      />
 
       {/* New map dialog (Android-compatible) */}
       <Modal visible={showNewDialog} transparent animationType="fade">
         <View style={styles.dialogOverlay}>
           <View style={styles.dialogBox}>
-            <Text style={styles.dialogTitle}>New Mind Map</Text>
-            <Text style={styles.dialogSubtitle}>Enter a topic or concept to map:</Text>
+            <LinearText style={styles.dialogTitle}>New Mind Map</LinearText>
+            <LinearText style={styles.dialogSubtitle}>Enter a topic or concept to map:</LinearText>
             <TextInput
               style={styles.dialogInput}
               placeholder="e.g. Diabetes Mellitus"
@@ -586,10 +1151,14 @@ export default function MindMapScreen() {
             />
             <View style={styles.dialogButtons}>
               <TouchableOpacity onPress={() => setShowNewDialog(false)} style={styles.dialogBtn}>
-                <Text style={[styles.dialogBtnText, { color: n.colors.textMuted }]}>Cancel</Text>
+                <LinearText style={[styles.dialogBtnText, { color: n.colors.textMuted }]}>
+                  Cancel
+                </LinearText>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleNewConfirm} style={styles.dialogBtn}>
-                <Text style={[styles.dialogBtnText, { color: n.colors.accent }]}>Create</Text>
+                <LinearText style={[styles.dialogBtnText, { color: n.colors.accent }]}>
+                  Create
+                </LinearText>
               </TouchableOpacity>
             </View>
           </View>
@@ -692,9 +1261,67 @@ const styles = StyleSheet.create({
   svgWrap: {
     flex: 1,
     backgroundColor: n.colors.background,
+    overflow: 'hidden',
+  },
+  canvasSurface: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+  },
+  emptyStatePrimaryBtn: {
+    backgroundColor: n.colors.accent,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: n.radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  emptyStateDeleteBtn: {
+    backgroundColor: 'rgba(255,80,80,0.15)',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: n.radius.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
 
   // Action bar
+  explanationCard: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 88,
+    backgroundColor: 'rgba(7, 10, 16, 0.94)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderRadius: n.radius.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  explanationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  explanationTitle: {
+    flex: 1,
+    color: n.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  explanationBody: {
+    color: n.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  explanationHint: {
+    color: n.colors.textMuted,
+    fontSize: 11,
+  },
   actionBar: {
     position: 'absolute',
     bottom: 24,

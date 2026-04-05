@@ -8,11 +8,11 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -163,21 +163,23 @@ export default function ImageVaultScreen() {
                 item.style === 'chart' ? styles.chartChip : styles.illustrationChip,
               ]}
             >
-              <Text style={styles.metaChipText}>{STYLE_LABELS[item.style]}</Text>
+              <LinearText style={styles.metaChipText}>{STYLE_LABELS[item.style]}</LinearText>
             </View>
             <View style={styles.metaChip}>
-              <Text style={styles.metaChipText}>{CONTEXT_LABELS[item.contextType]}</Text>
+              <LinearText style={styles.metaChipText}>
+                {CONTEXT_LABELS[item.contextType]}
+              </LinearText>
             </View>
           </View>
 
-          <Text style={styles.cardTitle} numberOfLines={2}>
+          <LinearText style={styles.cardTitle} numberOfLines={2}>
             {item.topicName}
-          </Text>
-          <Text style={styles.cardMeta} numberOfLines={1}>
+          </LinearText>
+          <LinearText style={styles.cardMeta} numberOfLines={1}>
             {item.provider} • {item.modelUsed}
-          </Text>
+          </LinearText>
           <View style={styles.cardFooter}>
-            <Text style={styles.cardDate}>{formatRelativeDate(item.createdAt)}</Text>
+            <LinearText style={styles.cardDate}>{formatRelativeDate(item.createdAt)}</LinearText>
             <TouchableOpacity
               style={styles.inlineIconBtn}
               onPress={() => copyPrompt(item.prompt)}
@@ -220,32 +222,31 @@ export default function ImageVaultScreen() {
                     placeholder="Search topic, prompt, provider..."
                   />
                 }
-              >
-              </ScreenHeader>
+              ></ScreenHeader>
 
               <View style={styles.summaryRow}>
                 <LinearSurface compact padded={false} style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{images.length}</Text>
-                  <Text style={styles.summaryLabel}>Total</Text>
+                  <LinearText style={styles.summaryValue}>{images.length}</LinearText>
+                  <LinearText style={styles.summaryLabel}>Total</LinearText>
                 </LinearSurface>
                 <LinearSurface compact padded={false} style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{illustrationCount}</Text>
-                  <Text style={styles.summaryLabel}>Illustrations</Text>
+                  <LinearText style={styles.summaryValue}>{illustrationCount}</LinearText>
+                  <LinearText style={styles.summaryLabel}>Illustrations</LinearText>
                 </LinearSurface>
                 <LinearSurface compact padded={false} style={styles.summaryCard}>
-                  <Text style={styles.summaryValue}>{chartCount}</Text>
-                  <Text style={styles.summaryLabel}>Charts</Text>
+                  <LinearText style={styles.summaryValue}>{chartCount}</LinearText>
+                  <LinearText style={styles.summaryLabel}>Charts</LinearText>
                 </LinearSurface>
               </View>
 
               <View style={styles.resultsRow}>
                 <View style={styles.resultsCopy}>
-                  <Text style={styles.resultsTitle}>
+                  <LinearText style={styles.resultsTitle}>
                     {visibleImages.length} result{visibleImages.length !== 1 ? 's' : ''}
-                  </Text>
-                  <Text style={styles.resultsSubtitle} numberOfLines={1}>
+                  </LinearText>
+                  <LinearText style={styles.resultsSubtitle} numberOfLines={1}>
                     {activeFilterSummary}
-                  </Text>
+                  </LinearText>
                 </View>
                 {hasActiveFilters || hasActiveSearch ? (
                   <TouchableOpacity
@@ -256,7 +257,7 @@ export default function ImageVaultScreen() {
                       setContextFilter('all');
                     }}
                   >
-                    <Text style={styles.clearFiltersText}>Clear</Text>
+                    <LinearText style={styles.clearFiltersText}>Clear</LinearText>
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -273,14 +274,14 @@ export default function ImageVaultScreen() {
                     onPress={() => setStyleFilter(filter.id)}
                     activeOpacity={0.8}
                   >
-                    <Text
+                    <LinearText
                       style={[
                         styles.filterBtnText,
                         styleFilter === filter.id && styles.filterBtnTextActive,
                       ]}
                     >
                       {filter.label}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -300,14 +301,14 @@ export default function ImageVaultScreen() {
                     onPress={() => setContextFilter(filter.id)}
                     activeOpacity={0.8}
                   >
-                    <Text
+                    <LinearText
                       style={[
                         styles.filterBtnText,
                         contextFilter === filter.id && styles.filterBtnTextActive,
                       ]}
                     >
                       {filter.label}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -316,16 +317,16 @@ export default function ImageVaultScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="images-outline" size={48} color={n.colors.textMuted} />
-              <Text style={styles.emptyTitle}>
+              <LinearText style={styles.emptyTitle}>
                 {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
                   ? 'No matching images'
                   : 'No images yet'}
-              </Text>
-              <Text style={styles.emptySubtitle}>
+              </LinearText>
+              <LinearText style={styles.emptySubtitle}>
                 {searchQuery || styleFilter !== 'all' || contextFilter !== 'all'
                   ? 'Try a different search or filter.'
                   : 'Generate illustrations or charts from Guru Chat or topic notes and they will appear here.'}
-              </Text>
+              </LinearText>
             </View>
           }
           refreshControl={
@@ -346,9 +347,9 @@ export default function ImageVaultScreen() {
           <View style={styles.detailOverlay}>
             <LinearSurface padded={false} style={styles.detailSheet}>
               <View style={styles.detailHeader}>
-                <Text style={styles.detailTitle} numberOfLines={2}>
+                <LinearText style={styles.detailTitle} numberOfLines={2}>
                   {selectedImage?.topicName ?? ''}
-                </Text>
+                </LinearText>
                 <TouchableOpacity
                   onPress={() => setSelectedImage(null)}
                   style={styles.detailCloseBtn}
@@ -375,47 +376,43 @@ export default function ImageVaultScreen() {
 
                     <View style={styles.detailMetaWrap}>
                       <View style={styles.detailChip}>
-                        <Text style={styles.detailChipText}>
+                        <LinearText style={styles.detailChipText}>
                           {STYLE_LABELS[selectedImage.style]}
-                        </Text>
+                        </LinearText>
                       </View>
                       <View style={styles.detailChip}>
-                        <Text style={styles.detailChipText}>
+                        <LinearText style={styles.detailChipText}>
                           {CONTEXT_LABELS[selectedImage.contextType]}
-                        </Text>
+                        </LinearText>
                       </View>
                       <View style={styles.detailChip}>
-                        <Text style={styles.detailChipText}>
+                        <LinearText style={styles.detailChipText}>
                           {formatRelativeDate(selectedImage.createdAt)}
-                        </Text>
+                        </LinearText>
                       </View>
                     </View>
 
                     <LinearSurface padded={false} style={styles.detailInfoCard}>
-                      <Text style={styles.detailInfoLabel}>Provider</Text>
-                      <Text style={styles.detailInfoValue}>
+                      <LinearText style={styles.detailInfoLabel}>Provider</LinearText>
+                      <LinearText style={styles.detailInfoValue}>
                         {selectedImage.provider} • {selectedImage.modelUsed}
-                      </Text>
+                      </LinearText>
                     </LinearSurface>
 
                     <LinearSurface padded={false} style={styles.promptCard}>
                       <View style={styles.promptHeader}>
-                        <Text style={styles.promptTitle}>Prompt</Text>
+                        <LinearText style={styles.promptTitle}>Prompt</LinearText>
                         <TouchableOpacity
                           style={styles.promptCopyBtn}
                           onPress={() => copyPrompt(selectedImage.prompt)}
                           accessibilityRole="button"
                           accessibilityLabel="Copy prompt"
                         >
-                          <Ionicons
-                            name="copy-outline"
-                            size={15}
-                            color={n.colors.textSecondary}
-                          />
-                          <Text style={styles.promptCopyText}>Copy</Text>
+                          <Ionicons name="copy-outline" size={15} color={n.colors.textSecondary} />
+                          <LinearText style={styles.promptCopyText}>Copy</LinearText>
                         </TouchableOpacity>
                       </View>
-                      <Text style={styles.promptText}>{selectedImage.prompt}</Text>
+                      <LinearText style={styles.promptText}>{selectedImage.prompt}</LinearText>
                     </LinearSurface>
                   </>
                 ) : null}

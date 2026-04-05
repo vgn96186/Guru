@@ -97,10 +97,7 @@ describe('unifiedBackupService', () => {
       mockDelete.mockResolvedValue(undefined);
 
       const { zip } = require('react-native-zip-archive');
-      const { isAvailableAsync, shareAsync } = require('expo-sharing');
-
-      isAvailableAsync.mockResolvedValue(true);
-      shareAsync.mockResolvedValue(undefined);
+      const { shareBackupFileOrAlert } = require('./backupShare');
 
       // Mock the database
       const mockDb = {
@@ -117,7 +114,7 @@ describe('unifiedBackupService', () => {
       expect(mockCopy).toHaveBeenCalled();
       expect(mockWrite).toHaveBeenCalled();
       expect(zip).toHaveBeenCalled();
-      expect(shareAsync).toHaveBeenCalled();
+      expect(shareBackupFileOrAlert).toHaveBeenCalled();
     });
 
     it('should handle export failure gracefully', async () => {

@@ -15,6 +15,7 @@ import DoomscrollInterceptor from '../screens/DoomscrollInterceptor';
 import LocalModelScreen from '../screens/LocalModelScreen';
 import PomodoroQuizScreen from '../screens/PomodoroQuizScreen';
 import { PersistentScreenBannerProvider } from '../components/PersistentScreenBanner';
+import { linearTheme as n } from '../theme/linearTheme';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -23,7 +24,11 @@ export default function RootNavigator({ initialRoute }: { initialRoute: 'Tabs' |
     <PersistentScreenBannerProvider>
       <Stack.Navigator
         initialRouteName={initialRoute}
-        screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: '#000000' } }}
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          contentStyle: { backgroundColor: n.colors.background },
+        }}
       >
         <Stack.Screen name="CheckIn" component={CheckInScreen} />
         <Stack.Screen name="Tabs" component={TabNavigator} />

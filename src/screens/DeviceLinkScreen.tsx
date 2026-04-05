@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
@@ -20,6 +19,7 @@ import ScreenHeader from '../components/ScreenHeader';
 import LinearButton from '../components/primitives/LinearButton';
 import LinearSurface from '../components/primitives/LinearSurface';
 import LinearTextInput from '../components/primitives/LinearTextInput';
+import LinearText from '../components/primitives/LinearText';
 
 export default function DeviceLinkScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<MenuStackParamList>>();
@@ -59,13 +59,13 @@ export default function DeviceLinkScreen() {
             subtitle="Keep your phone and lecture device tied to the same study session."
             onBackPress={() => navigation.navigate('MenuHome')}
           />
-          <Text style={styles.emoji}>📡</Text>
-          <Text style={styles.sub}>
+          <LinearText style={styles.emoji}>📡</LinearText>
+          <LinearText style={styles.sub}>
             Watch lectures on your tablet and keep this phone synced as a hostage/remote control.
-          </Text>
+          </LinearText>
 
           <LinearSurface padded={false} style={styles.card}>
-            <Text style={styles.label}>Enter a shared Room Code on both devices:</Text>
+            <LinearText style={styles.label}>Enter a shared Room Code on both devices:</LinearText>
             <LinearTextInput
               style={styles.input}
               placeholder="e.g. NEETT2026"
@@ -80,15 +80,20 @@ export default function DeviceLinkScreen() {
               accessibilityRole="button"
               accessibilityLabel="Generate random secure code"
             >
-              <Text style={styles.generateText}>Or generate a random secure code</Text>
+              <LinearText style={styles.generateText}>Or generate a random secure code</LinearText>
             </TouchableOpacity>
 
-            <LinearSurface compact padded={false} borderColor={n.colors.error} style={styles.warningBox}>
-              <Text style={styles.warningText}>⚠️ SECURITY WARNING</Text>
-              <Text style={styles.warningSubText}>
+            <LinearSurface
+              compact
+              padded={false}
+              borderColor={n.colors.error}
+              style={styles.warningBox}
+            >
+              <LinearText style={styles.warningText}>⚠️ SECURITY WARNING</LinearText>
+              <LinearText style={styles.warningSubText}>
                 Sync uses a public MQTT broker for low-latency connection. Do not share this code or
                 discuss sensitive info.
-              </Text>
+              </LinearText>
             </LinearSurface>
           </LinearSurface>
 
@@ -107,7 +112,7 @@ export default function DeviceLinkScreen() {
             accessibilityRole="button"
             accessibilityLabel="Cancel"
           >
-            <Text style={styles.cancelBtnText}>Cancel</Text>
+            <LinearText style={styles.cancelBtnText}>Cancel</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </KeyboardAvoidingView>

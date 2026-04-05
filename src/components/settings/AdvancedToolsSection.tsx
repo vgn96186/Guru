@@ -26,18 +26,28 @@ function AdvancedToolsSection({
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>ADVANCED TOOLS</Text>
-      
+
       <View style={styles.buttonGroup}>
         <Text style={styles.groupLabel}>Database Backup (SQLite)</Text>
         <View style={styles.row}>
           <TouchableOpacity style={styles.button} onPress={onExportBackup} disabled={isExporting}>
-            {isExporting ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.buttonText}>Export .db</Text>}
+            {isExporting ? (
+              <ActivityIndicator size="small" color="#FFF" />
+            ) : (
+              <Text style={styles.buttonText}>Export .db</Text>
+            )}
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.outlineButton]} onPress={onImportBackup} disabled={isImporting}>
+          <TouchableOpacity
+            style={[styles.button, styles.outlineButton]}
+            onPress={onImportBackup}
+            disabled={isImporting}
+          >
             <Text style={[styles.buttonText, styles.outlineButtonText]}>Import .db</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.hint}>Binary backup of the entire database. Recommended for full migrations.</Text>
+        <Text style={styles.hint}>
+          Binary backup of the entire database. Recommended for full migrations.
+        </Text>
       </View>
 
       <View style={styles.buttonGroup}>
@@ -46,11 +56,16 @@ function AdvancedToolsSection({
           <TouchableOpacity style={styles.button} onPress={onExportJsonBackup}>
             <Text style={styles.buttonText}>Export JSON</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.button, styles.outlineButton]} onPress={onImportJsonBackup}>
+          <TouchableOpacity
+            style={[styles.button, styles.outlineButton]}
+            onPress={onImportJsonBackup}
+          >
             <Text style={[styles.buttonText, styles.outlineButtonText]}>Import JSON</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.hint}>Human-readable backup. Better for partial restores or sync across platforms.</Text>
+        <Text style={styles.hint}>
+          Human-readable backup. Better for partial restores or sync across platforms.
+        </Text>
       </View>
 
       <View style={styles.dangerZone}>
@@ -96,7 +111,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     height: 44,
   },
-  buttonText: { color: '#FFF', fontSize: 13, fontWeight: '700' },
+  buttonText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   outlineButton: { backgroundColor: 'transparent', borderWidth: 1, borderColor: n.colors.accent },
   outlineButtonText: { color: n.colors.accent },
   hint: { color: n.colors.textSecondary, fontSize: 11, marginTop: 6, lineHeight: 16 },
@@ -106,7 +121,13 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: n.colors.border,
   },
-  dangerLabel: { color: n.colors.error, fontSize: 12, fontWeight: '800', marginBottom: 10, textTransform: 'uppercase' },
+  dangerLabel: {
+    color: n.colors.error,
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
   dangerButton: {
     paddingVertical: 12,
     borderBottomWidth: 1,

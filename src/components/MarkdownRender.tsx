@@ -86,7 +86,7 @@ const baseTextStyle = StyleSheet.create({
 
 const markdownStyles: any = {
   body: {
-    color: '#A9B2C6',
+    color: n.colors.textMuted,
     fontSize: 17,
     lineHeight: 28,
     paddingRight: 2,
@@ -96,7 +96,7 @@ const markdownStyles: any = {
     alignSelf: 'stretch',
   },
   text: {
-    color: '#A9B2C6',
+    color: n.colors.textMuted,
     fontSize: 17,
     lineHeight: 28,
     paddingRight: 2,
@@ -104,7 +104,7 @@ const markdownStyles: any = {
     flexShrink: 1,
   },
   strong: {
-    color: '#F3DF84',
+    color: n.colors.warning,
     fontWeight: '900',
   },
   em: {

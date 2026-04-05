@@ -12,19 +12,29 @@
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Animated, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import { Animated, Text, TouchableOpacity, StyleSheet, Dimensions, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { linearTheme as n } from '../theme/linearTheme';
+import { theme } from '../constants/theme';
 
-export type ToastType = 'info' | 'success' | 'error' | 'warning';
+export type ToastType = 'info' | 'success' | 'error' | 'warning' | 'focus';
+export type ToastVariant = ToastType;
 
 interface ToastPayload {
+  title?: string;
   message: string;
   type: ToastType;
   duration: number;
   onPress?: () => void;
   id: number;
+}
+
+export interface ToastOptions {
+  title?: string;
+  message: string;
+  variant?: ToastVariant;
+  onPress?: () => void;
+  duration?: number;
 }
 
 type ToastListener = (payload: ToastPayload) => void;
@@ -39,46 +49,92 @@ let _idCounter = 0;
  * @param duration - Auto-dismiss delay in ms (default 3500).
  */
 export function showToast(
-  message: string,
+  messageOrOptions: string | ToastOptions,
   type: ToastType = 'info',
   onPress?: () => void,
   duration = 3500,
 ): void {
+  const payload =
+    typeof messageOrOptions === 'string'
+      ? {
+          message: messageOrOptions,
+          type,
+          onPress,
+          duration,
+          id: ++_idCounter,
+        }
+      : {
+          title: messageOrOptions.title,
+          message: messageOrOptions.message,
+          type: messageOrOptions.variant ?? 'info',
+          onPress: messageOrOptions.onPress,
+          duration: messageOrOptions.duration ?? 3500,
+          id: ++_idCounter,
+        };
+
   if (_listener) {
-    _listener({ message, type, duration, onPress, id: ++_idCounter });
+    _listener(payload);
   } else {
     // Fallback if ToastContainer is not mounted yet
-    console.warn(`[Toast] ${type.toUpperCase()}: ${message}`);
+    console.warn(`[Toast] ${payload.type.toUpperCase()}: ${payload.message}`);
   }
+}
+
+export function __resetToastForTests(): void {
+  _listener = null;
+  _idCounter = 0;
 }
 
 const TOAST_STYLES: Record<
   ToastType,
-  { borderColor: string; backgroundColor: string; textColor: string; hintColor: string }
+  {
+    borderColor: string;
+    backgroundColor: string;
+    textColor: string;
+    hintColor: string;
+    pillColor: string;
+    pillTextColor: string;
+  }
 > = {
   info: {
-    borderColor: `${n.colors.accent}66`,
-    backgroundColor: `${n.colors.accent}1A`,
-    textColor: n.colors.textPrimary,
-    hintColor: n.colors.textSecondary,
+    borderColor: theme.colors.info,
+    backgroundColor: theme.colors.panel,
+    textColor: theme.colors.textPrimary,
+    hintColor: theme.colors.textSecondary,
+    pillColor: theme.colors.primaryTintSoft,
+    pillTextColor: theme.colors.info,
   },
   success: {
-    borderColor: `${n.colors.success}66`,
-    backgroundColor: `${n.colors.success}1A`,
-    textColor: n.colors.textPrimary,
-    hintColor: n.colors.textSecondary,
+    borderColor: theme.colors.success,
+    backgroundColor: theme.colors.panel,
+    textColor: theme.colors.textPrimary,
+    hintColor: theme.colors.textSecondary,
+    pillColor: theme.colors.successTintSoft,
+    pillTextColor: theme.colors.success,
   },
   error: {
-    borderColor: `${n.colors.error}66`,
-    backgroundColor: `${n.colors.error}1A`,
-    textColor: n.colors.textPrimary,
-    hintColor: n.colors.textSecondary,
+    borderColor: theme.colors.error,
+    backgroundColor: theme.colors.panel,
+    textColor: theme.colors.textPrimary,
+    hintColor: theme.colors.textSecondary,
+    pillColor: theme.colors.errorTintSoft,
+    pillTextColor: theme.colors.error,
   },
   warning: {
-    borderColor: `${n.colors.warning}66`,
-    backgroundColor: `${n.colors.warning}1A`,
-    textColor: n.colors.textPrimary,
-    hintColor: n.colors.textSecondary,
+    borderColor: theme.colors.warning,
+    backgroundColor: theme.colors.panel,
+    textColor: theme.colors.textPrimary,
+    hintColor: theme.colors.textSecondary,
+    pillColor: theme.colors.warningTintSoft,
+    pillTextColor: theme.colors.warning,
+  },
+  focus: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.panel,
+    textColor: theme.colors.textPrimary,
+    hintColor: theme.colors.textSecondary,
+    pillColor: theme.colors.primaryTintSoft,
+    pillTextColor: theme.colors.primaryLight,
   },
 };
 
@@ -138,9 +194,21 @@ const ToastItem = React.memo(
           accessibilityRole={payload.onPress ? 'button' : 'alert'}
           accessibilityHint={payload.onPress ? 'Double tap to act' : undefined}
         >
-          <Text style={[styles.text, { color: palette.textColor }]} numberOfLines={3}>
-            {payload.message}
-          </Text>
+          <View style={styles.content}>
+            <View style={[styles.badge, { backgroundColor: palette.pillColor }]}>
+              <Text style={[styles.badgeText, { color: palette.pillTextColor }]}>
+                {payload.type.toUpperCase()}
+              </Text>
+            </View>
+            {payload.title ? (
+              <Text style={[styles.title, { color: palette.textColor }]} numberOfLines={2}>
+                {payload.title}
+              </Text>
+            ) : null}
+            <Text style={[styles.text, { color: palette.textColor }]} numberOfLines={3}>
+              {payload.message}
+            </Text>
+          </View>
           {payload.onPress && (
             <Text style={[styles.tapHint, { color: palette.hintColor }]}>Tap to act</Text>
           )}
@@ -192,21 +260,42 @@ const styles = StyleSheet.create({
   },
   toast: {
     width: WIDTH,
-    borderRadius: 12,
+    borderRadius: theme.borderRadius.lg,
     marginTop: 8,
     borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: theme.colors.backdropStrong,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.22,
+    shadowRadius: 18,
+    elevation: 8,
   },
   inner: {
-    padding: 14,
+    padding: theme.spacing.lg,
+  },
+  content: {
+    gap: theme.spacing.sm,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.full,
+    marginBottom: 2,
+  },
+  badgeText: {
+    ...theme.typography.captionSmall,
+    letterSpacing: 0.6,
+  },
+  title: {
+    ...theme.typography.h4,
   },
   text: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...theme.typography.bodySmall,
     lineHeight: 20,
   },
   tapHint: {
-    fontSize: 12,
-    marginTop: 4,
+    ...theme.typography.caption,
+    marginTop: theme.spacing.sm,
   },
 });

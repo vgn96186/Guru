@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -9,6 +8,7 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -166,9 +166,9 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={styles.emoji}>⚔️</Text>
-          <Text style={styles.title}>Generating Questions...</Text>
-          <Text style={styles.sub}>Preparing the boss fight...</Text>
+          <LinearText style={styles.emoji}>⚔️</LinearText>
+          <LinearText style={styles.title}>Generating Questions...</LinearText>
+          <LinearText style={styles.sub}>Preparing the boss fight...</LinearText>
         </View>
       </SafeAreaView>
     );
@@ -197,12 +197,14 @@ export default function BossBattleScreen() {
                   onPress={() => startBattle(s.name)}
                   disabled={startingBattle}
                 >
-                  <Text style={styles.subjectEmoji}>👹</Text>
-                  <Text style={[styles.subjectName, { color: s.colorHex }]}>{s.name}</Text>
-                  <Text style={[styles.qBadge, needsMore && { color: n.colors.warning }]}>
+                  <LinearText style={styles.subjectEmoji}>👹</LinearText>
+                  <LinearText style={[styles.subjectName, { color: s.colorHex }]}>
+                    {s.name}
+                  </LinearText>
+                  <LinearText style={[styles.qBadge, needsMore && { color: n.colors.warning }]}>
                     {count}/5 Qs
-                  </Text>
-                  {needsMore && <Text style={styles.qHint}>Need {5 - count} more</Text>}
+                  </LinearText>
+                  {needsMore && <LinearText style={styles.qHint}>Need {5 - count} more</LinearText>}
                 </TouchableOpacity>
               );
             })}
@@ -216,12 +218,12 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={styles.emoji}>🏆</Text>
-          <Text style={styles.title}>BOSS DEFEATED!</Text>
-          <Text style={styles.sub}>You conquered {selectedSubject}!</Text>
-          <Text style={styles.xp}>+500 XP</Text>
+          <LinearText style={styles.emoji}>🏆</LinearText>
+          <LinearText style={styles.title}>BOSS DEFEATED!</LinearText>
+          <LinearText style={styles.sub}>You conquered {selectedSubject}!</LinearText>
+          <LinearText style={styles.xp}>+500 XP</LinearText>
           <TouchableOpacity style={styles.btn} onPress={() => navigation.goBack()}>
-            <Text style={styles.btnText}>Victory Lap</Text>
+            <LinearText style={styles.btnText}>Victory Lap</LinearText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -232,14 +234,14 @@ export default function BossBattleScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={styles.emoji}>💀</Text>
-          <Text style={styles.title}>YOU DIED</Text>
-          <Text style={styles.sub}>The {selectedSubject} boss was too strong.</Text>
+          <LinearText style={styles.emoji}>💀</LinearText>
+          <LinearText style={styles.title}>YOU DIED</LinearText>
+          <LinearText style={styles.sub}>The {selectedSubject} boss was too strong.</LinearText>
           <TouchableOpacity
-            style={[styles.btn, { backgroundColor: '#F44336' }]}
+            style={[styles.btn, { backgroundColor: n.colors.error }]}
             onPress={() => setPhase('select')}
           >
-            <Text style={styles.btnText}>Try Again</Text>
+            <LinearText style={styles.btnText}>Try Again</LinearText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -258,23 +260,23 @@ export default function BossBattleScreen() {
         {/* HUD */}
         <View style={styles.hud}>
           <View style={styles.bossBar}>
-            <Text style={styles.bossName}>{selectedSubject} BOSS</Text>
+            <LinearText style={styles.bossName}>{selectedSubject} BOSS</LinearText>
             <View style={styles.hpTrack}>
               <View style={[styles.hpFill, { width: `${(bossHp / BOSS_HP) * 100}%` }]} />
             </View>
-            <Text style={styles.hpText}>
+            <LinearText style={styles.hpText}>
               {bossHp}/{BOSS_HP}
-            </Text>
+            </LinearText>
           </View>
 
           <View style={styles.playerStats}>
-            <Text style={styles.hearts}>{'❤️'.repeat(playerHp)}</Text>
+            <LinearText style={styles.hearts}>{'❤️'.repeat(playerHp)}</LinearText>
           </View>
         </View>
 
         {/* Retreat button */}
         <TouchableOpacity style={styles.retreatBtn} onPress={handleRetreat}>
-          <Text style={styles.retreatText}>↩ Retreat</Text>
+          <LinearText style={styles.retreatText}>↩ Retreat</LinearText>
         </TouchableOpacity>
 
         {/* Question or Feedback */}
@@ -282,24 +284,28 @@ export default function BossBattleScreen() {
           <ResponsiveContainer>
             {isFeedback && lastAnswer ? (
               <View style={styles.feedbackContainer}>
-                <Text style={[styles.feedbackEmoji, lastAnswer.correct && { color: '#4CAF50' }]}>
+                <LinearText
+                  style={[styles.feedbackEmoji, lastAnswer.correct && { color: n.colors.success }]}
+                >
                   {lastAnswer.correct ? '✓ Correct!' : '✗ Wrong!'}
-                </Text>
+                </LinearText>
                 {!lastAnswer.correct && (
                   <>
-                    <Text style={styles.correctAnswer}>Answer: {q.options[q.correctIndex]}</Text>
+                    <LinearText style={styles.correctAnswer}>
+                      Answer: {q.options[q.correctIndex]}
+                    </LinearText>
                     <View style={{ marginBottom: 24, paddingHorizontal: 20 }}>
                       <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
                     </View>
                   </>
                 )}
                 <TouchableOpacity style={styles.continueBtn} onPress={handleContinueAfterFeedback}>
-                  <Text style={styles.continueText}>Next →</Text>
+                  <LinearText style={styles.continueText}>Next →</LinearText>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
-                <Text style={styles.qText}>{q.question}</Text>
+                <LinearText style={styles.qText}>{q.question}</LinearText>
                 <View style={styles.options}>
                   {q.options.map((opt, i) => (
                     <TouchableOpacity
@@ -307,7 +313,7 @@ export default function BossBattleScreen() {
                       style={styles.optionBtn}
                       onPress={() => handleAnswer(i)}
                     >
-                      <Text style={styles.optionText}>{opt}</Text>
+                      <LinearText style={styles.optionText}>{opt}</LinearText>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -321,10 +327,10 @@ export default function BossBattleScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   header: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 16 },
-  back: { color: '#fff', fontSize: 24 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '900' },
+  back: { color: n.colors.textPrimary, fontSize: 24 },
+  title: { color: n.colors.textPrimary, fontSize: 22, fontWeight: '900' },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -335,7 +341,7 @@ const styles = StyleSheet.create({
   },
   subjectCard: {
     width: '45%',
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
@@ -348,21 +354,26 @@ const styles = StyleSheet.create({
   qHint: { color: n.colors.warning, fontSize: 10, marginTop: 2, textAlign: 'center' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   emoji: { fontSize: 80, marginBottom: 20 },
-  sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 20 },
-  xp: { color: '#FF9800', fontSize: 24, fontWeight: '900', marginBottom: 40 },
-  btn: { backgroundColor: '#6C63FF', paddingHorizontal: 32, paddingVertical: 16, borderRadius: 12 },
-  btnText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  sub: { color: n.colors.textMuted, fontSize: 16, textAlign: 'center', marginBottom: 20 },
+  xp: { color: n.colors.warning, fontSize: 24, fontWeight: '900', marginBottom: 40 },
+  btn: {
+    backgroundColor: n.colors.accent,
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+  },
+  btnText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 16 },
 
   battleContainer: { flex: 1, backgroundColor: '#1A0505' },
   hud: {
     padding: 16,
-    backgroundColor: '#2A0A0A',
+    backgroundColor: n.colors.errorSurface,
     borderBottomWidth: 2,
-    borderBottomColor: '#F44336',
+    borderBottomColor: n.colors.error,
   },
   bossBar: { marginBottom: 12 },
   bossName: {
-    color: '#F44336',
+    color: n.colors.error,
     fontWeight: '900',
     fontSize: 16,
     marginBottom: 4,
@@ -370,19 +381,19 @@ const styles = StyleSheet.create({
   },
   hpTrack: {
     height: 16,
-    backgroundColor: '#000',
+    backgroundColor: n.colors.background,
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#555',
+    borderColor: n.colors.textMuted,
   },
-  hpFill: { height: '100%', backgroundColor: '#F44336' },
-  hpText: { color: '#fff', fontSize: 11, position: 'absolute', right: 4, top: 20 },
+  hpFill: { height: '100%', backgroundColor: n.colors.error },
+  hpText: { color: n.colors.textPrimary, fontSize: 11, position: 'absolute', right: 4, top: 20 },
   playerStats: { alignItems: 'flex-end' },
   hearts: { fontSize: 24 },
   qContainer: { padding: 20, paddingBottom: 40 },
   qText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 18,
     fontWeight: '700',
     lineHeight: 26,
@@ -391,30 +402,30 @@ const styles = StyleSheet.create({
   },
   options: { gap: 12 },
   optionBtn: {
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#444',
   },
-  optionText: { color: '#ddd', fontSize: 15, textAlign: 'center' },
+  optionText: { color: n.colors.textMuted, fontSize: 15, textAlign: 'center' },
   retreatBtn: {
     position: 'absolute',
     top: 100,
     right: 16,
     padding: 8,
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#444',
     zIndex: 10,
   },
-  retreatText: { color: '#9E9E9E', fontSize: 12, fontWeight: '600' },
+  retreatText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
   feedbackContainer: { alignItems: 'center', paddingVertical: 20 },
-  feedbackEmoji: { fontSize: 48, marginBottom: 16, color: '#F44336' },
-  correctAnswer: { color: '#4CAF50', fontSize: 16, fontWeight: '700', marginBottom: 12 },
+  feedbackEmoji: { fontSize: 48, marginBottom: 16, color: n.colors.error },
+  correctAnswer: { color: n.colors.success, fontSize: 16, fontWeight: '700', marginBottom: 12 },
   explanation: {
-    color: '#9E9E9E',
+    color: n.colors.textMuted,
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
@@ -422,11 +433,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   continueBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 40,
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 8,
   },
-  continueText: { color: '#fff', fontWeight: '800', fontSize: 16 },
+  continueText: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 16 },
 });

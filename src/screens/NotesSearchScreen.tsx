@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   TextInput,
   FlatList,
   TouchableOpacity,
@@ -9,6 +8,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -243,20 +243,26 @@ export default function NotesSearchScreen() {
               activeOpacity={0.8}
             >
               {isSelectionMode && (
-                <Text style={styles.selectedMarker}>{isSelected ? '● Selected' : '○ Select'}</Text>
+                <LinearText style={styles.selectedMarker}>
+                  {isSelected ? '● Selected' : '○ Select'}
+                </LinearText>
               )}
               <View style={styles.lectureHeader}>
-                <Text style={styles.lectureBadge}>LECTURE</Text>
-                {lecture.appName && <Text style={styles.appName}>via {lecture.appName}</Text>}
+                <LinearText style={styles.lectureBadge}>LECTURE</LinearText>
+                {lecture.appName && (
+                  <LinearText style={styles.appName}>via {lecture.appName}</LinearText>
+                )}
               </View>
-              <Text style={styles.topic}>{getLectureTitle(lecture)}</Text>
-              <Text style={styles.note} numberOfLines={3}>
+              <LinearText style={styles.topic}>{getLectureTitle(lecture)}</LinearText>
+              <LinearText style={styles.note} numberOfLines={3}>
                 {extractPreview(lecture.note)}
-              </Text>
+              </LinearText>
               {lecture.topics.length > 0 && (
-                <Text style={styles.topicsPreview}>{lecture.topics.slice(0, 3).join(' · ')}</Text>
+                <LinearText style={styles.topicsPreview}>
+                  {lecture.topics.slice(0, 3).join(' · ')}
+                </LinearText>
               )}
-              <Text style={styles.tapHint}>Tap to view lecture notes →</Text>
+              <LinearText style={styles.tapHint}>Tap to view lecture notes →</LinearText>
             </TouchableOpacity>
             {!isSelectionMode && (
               <TouchableOpacity
@@ -264,7 +270,7 @@ export default function NotesSearchScreen() {
                 onPress={() => removeLectureNote(lecture.id)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.deletePillText}>Delete</Text>
+                <LinearText style={styles.deletePillText}>Delete</LinearText>
               </TouchableOpacity>
             )}
           </View>
@@ -290,13 +296,15 @@ export default function NotesSearchScreen() {
             activeOpacity={0.8}
           >
             {isSelectionMode && (
-              <Text style={styles.selectedMarker}>{isSelected ? '● Selected' : '○ Select'}</Text>
+              <LinearText style={styles.selectedMarker}>
+                {isSelected ? '● Selected' : '○ Select'}
+              </LinearText>
             )}
-            <Text style={styles.topic}>{item.name}</Text>
-            <Text style={styles.note} numberOfLines={3}>
+            <LinearText style={styles.topic}>{item.name}</LinearText>
+            <LinearText style={styles.note} numberOfLines={3}>
               {item.user_notes}
-            </Text>
-            <Text style={styles.tapHint}>Tap to view topic →</Text>
+            </LinearText>
+            <LinearText style={styles.tapHint}>Tap to view topic →</LinearText>
           </TouchableOpacity>
           {!isSelectionMode && (
             <TouchableOpacity
@@ -304,7 +312,7 @@ export default function NotesSearchScreen() {
               onPress={() => removeTopicNote(item.id)}
               activeOpacity={0.8}
             >
-              <Text style={styles.deletePillText}>Delete</Text>
+              <LinearText style={styles.deletePillText}>Delete</LinearText>
             </TouchableOpacity>
           )}
         </View>
@@ -327,20 +335,19 @@ export default function NotesSearchScreen() {
               autoFocus
             />
           }
-        >
-        </ScreenHeader>
+        ></ScreenHeader>
         <FlatList
           data={results}
           ListHeaderComponent={
             isSelectionMode ? (
               <View style={styles.selectionBar}>
-                <Text style={styles.selectionText}>{selectedKeys.length} selected</Text>
+                <LinearText style={styles.selectionText}>{selectedKeys.length} selected</LinearText>
                 <View style={styles.selectionActions}>
                   <TouchableOpacity onPress={clearSelection} style={styles.selectionCancelBtn}>
-                    <Text style={styles.selectionCancelText}>Cancel</Text>
+                    <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={batchDeleteSelected} style={styles.selectionDeleteBtn}>
-                    <Text style={styles.selectionDeleteText}>Delete</Text>
+                    <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -353,14 +360,16 @@ export default function NotesSearchScreen() {
           ListEmptyComponent={
             query.length > 1 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.empty}>No matches found</Text>
-                <Text style={styles.emptySub}>
+                <LinearText style={styles.empty}>No matches found</LinearText>
+                <LinearText style={styles.emptySub}>
                   Try searching for 2+ characters or different keywords
-                </Text>
+                </LinearText>
               </View>
             ) : query.length > 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptySub}>Type at least 2 characters to search</Text>
+                <LinearText style={styles.emptySub}>
+                  Type at least 2 characters to search
+                </LinearText>
               </View>
             ) : null
           }
@@ -371,7 +380,7 @@ export default function NotesSearchScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -380,32 +389,32 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#222',
   },
-  back: { color: '#fff', fontSize: 24 },
+  back: { color: n.colors.textPrimary, fontSize: 24 },
   input: {
     flex: 1,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     padding: 12,
     borderRadius: 10,
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 16,
   },
   item: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#222',
-    backgroundColor: '#0F0F14',
+    backgroundColor: n.colors.background,
   },
   rowBetween: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   resultBody: { flex: 1 },
   resultBodySelected: {
     borderWidth: 1,
-    borderColor: '#6C63FF',
+    borderColor: n.colors.accent,
     borderRadius: 10,
     padding: 10,
     margin: -10,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
   },
-  selectedMarker: { color: '#A09CF7', fontSize: 12, fontWeight: '700', marginBottom: 6 },
+  selectedMarker: { color: n.colors.accent, fontSize: 12, fontWeight: '700', marginBottom: 6 },
   deletePill: {
     borderWidth: 1,
     borderColor: '#6A3131',
@@ -415,15 +424,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   deletePillText: { color: '#F28B8B', fontSize: 12, fontWeight: '700' },
-  tapHint: { color: '#6C63FF', fontSize: 12, marginTop: 8, fontWeight: '600' },
+  tapHint: { color: n.colors.accent, fontSize: 12, marginTop: 8, fontWeight: '600' },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptySub: { color: '#666', textAlign: 'center', marginTop: 8, fontSize: 14 },
-  topic: { color: '#6C63FF', fontWeight: '700', marginBottom: 4 },
-  note: { color: '#ccc', lineHeight: 20 },
+  topic: { color: n.colors.accent, fontWeight: '700', marginBottom: 4 },
+  note: { color: n.colors.textMuted, lineHeight: 20 },
   empty: { color: '#666', textAlign: 'center', marginTop: 40 },
   lectureHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   lectureBadge: {
-    color: '#4CAF50',
+    color: n.colors.success,
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.6,
@@ -433,8 +442,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
   },
-  appName: { color: '#888', fontSize: 11 },
-  topicsPreview: { color: '#A09CF7', fontSize: 12, marginTop: 4 },
+  appName: { color: n.colors.textMuted, fontSize: 11 },
+  topicsPreview: { color: n.colors.accent, fontSize: 12, marginTop: 4 },
   selectionBar: {
     marginHorizontal: 16,
     marginTop: 12,
@@ -443,15 +452,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  selectionText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  selectionText: { color: n.colors.textPrimary, fontSize: 14, fontWeight: '700' },
   selectionActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   selectionCancelBtn: { paddingHorizontal: 10, paddingVertical: 6 },
-  selectionCancelText: { color: '#999', fontSize: 13, fontWeight: '700' },
+  selectionCancelText: { color: n.colors.textMuted, fontSize: 13, fontWeight: '700' },
   selectionDeleteBtn: {
-    backgroundColor: '#D9534F',
+    backgroundColor: n.colors.error,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 7,
   },
-  selectionDeleteText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  selectionDeleteText: { color: n.colors.textPrimary, fontSize: 12, fontWeight: '800' },
 });

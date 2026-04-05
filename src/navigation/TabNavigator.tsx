@@ -3,19 +3,23 @@ import {
   Alert,
   Animated,
   BackHandler,
+  Dimensions,
   Modal,
   PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import {
+  useNavigation,
+  useFocusEffect,
+  getFocusedRouteNameFromRoute,
+} from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type {
   ChatStackParamList,
@@ -82,12 +86,34 @@ import TopicPillRow from '../components/TopicPillRow';
 import SubjectChip from '../components/SubjectChip';
 import SubjectSelectionCard from '../components/SubjectSelectionCard';
 import { navigationRef } from './navigationRef';
-import {
-  TAB_NAVIGATOR_PERFORMANCE_PROPS,
-  TAB_NAVIGATOR_SCREEN_OPTIONS,
-} from './tabNavigatorOptions';
+import type { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
 
-const Tab = createBottomTabNavigator<TabParamList>();
+const Tab = createMaterialTopTabNavigator<TabParamList>();
+
+const TAB_ITEMS: Array<{
+  name: keyof TabParamList;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  iconFocused: keyof typeof Ionicons.glyphMap;
+  testID: string;
+}> = [
+  { name: 'HomeTab', label: 'Home', icon: 'home-outline', iconFocused: 'home', testID: 'tab-home' },
+  {
+    name: 'SyllabusTab',
+    label: 'Syllabus',
+    icon: 'grid-outline',
+    iconFocused: 'grid',
+    testID: 'tab-syllabus',
+  },
+  {
+    name: 'ChatTab',
+    label: 'Chat',
+    icon: 'chatbubbles-outline',
+    iconFocused: 'chatbubbles',
+    testID: 'tab-chat',
+  },
+  { name: 'MenuTab', label: 'Menu', icon: 'menu-outline', iconFocused: 'menu', testID: 'tab-menu' },
+];
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const SyllabusStack = createNativeStackNavigator<SyllabusStackParamList>();
 const ChatStack = createNativeStackNavigator<ChatStackParamList>();
@@ -99,8 +125,8 @@ function HomeStackNav() {
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
-        animation: 'simple_push',
-        contentStyle: { backgroundColor: '#000000' },
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: n.colors.background },
       }}
     >
       <HomeStack.Screen name="Home" component={HomeScreen} />
@@ -124,8 +150,8 @@ function SyllabusStackNav() {
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
-        animation: 'simple_push',
-        contentStyle: { backgroundColor: '#000000' },
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: n.colors.background },
       }}
     >
       <SyllabusStack.Screen name="Syllabus" component={SyllabusScreen} />
@@ -145,8 +171,8 @@ function ChatStackNav() {
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
-        animation: 'simple_push',
-        contentStyle: { backgroundColor: '#000000' },
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: n.colors.background },
       }}
     >
       <ChatStack.Screen name="GuruChat" component={GuruChatScreen} />
@@ -161,8 +187,8 @@ function MenuStackNav() {
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
-        animation: 'simple_push',
-        contentStyle: { backgroundColor: '#000000' },
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: n.colors.background },
       }}
     >
       <MenuStack.Screen name="MenuHome" component={MenuScreen} />
@@ -185,8 +211,117 @@ function MenuStackNav() {
   );
 }
 
-function ActionHubPlaceholder() {
-  return null;
+/**
+ * Custom tab bar that replicates the bottom-tabs design + center FAB.
+ * Driven by material-top-tabs state for native ViewPager transitions.
+ */
+function CustomTabBar({
+  tabBarProps,
+  dueCount,
+  isActionHubOpen,
+  onToggleActionHub,
+  bottomInset,
+}: {
+  tabBarProps: MaterialTopTabBarProps;
+  dueCount: number;
+  isActionHubOpen: boolean;
+  onToggleActionHub: () => void;
+  bottomInset: number;
+}) {
+  const { state, navigation } = tabBarProps;
+
+  // Insert FAB at position 2 (between Syllabus and Chat)
+  const leftTabs = TAB_ITEMS.slice(0, 2);
+  const rightTabs = TAB_ITEMS.slice(2);
+
+  const handleTabPress = (tabName: keyof TabParamList, isFocused: boolean) => {
+    if (isFocused) {
+      if (tabName === 'HomeTab') navigation.navigate('HomeTab', { screen: 'Home' });
+      else if (tabName === 'SyllabusTab')
+        navigation.navigate('SyllabusTab', { screen: 'Syllabus' });
+      else if (tabName === 'ChatTab') navigation.navigate('ChatTab', { screen: 'GuruChat' });
+      else if (tabName === 'MenuTab') navigation.navigate('MenuTab', { screen: 'MenuHome' });
+    } else {
+      navigation.navigate(tabName);
+    }
+  };
+
+  return (
+    <View
+      style={[
+        styles.customTabBar,
+        {
+          paddingBottom: bottomInset + 4,
+          height: 60 + bottomInset,
+        },
+      ]}
+    >
+      {leftTabs.map((tab, i) => {
+        const focused = state.index === i;
+        const color = focused ? n.colors.textPrimary : n.colors.textMuted;
+        return (
+          <Pressable
+            key={tab.name}
+            style={styles.tabItem}
+            onPress={() => navigation.navigate(tab.name)}
+            testID={tab.testID}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: focused }}
+            accessibilityLabel={`${tab.label} tab`}
+          >
+            <View>
+              <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
+              {tab.name === 'SyllabusTab' && dueCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{dueCount > 99 ? '99+' : dueCount}</Text>
+                </View>
+              )}
+            </View>
+            <Text style={[styles.tabLabel, { color }]}>{tab.label}</Text>
+          </Pressable>
+        );
+      })}
+
+      {/* Center FAB */}
+      <Pressable
+        style={({ pressed }) => [styles.fabSlot, pressed && styles.actionPressed]}
+        onPress={onToggleActionHub}
+        testID="action-hub-toggle"
+        accessibilityRole="button"
+        accessibilityLabel="Open action hub"
+        accessibilityHint="Opens the quick actions sheet"
+      >
+        <View style={styles.fabButton}>
+          <Ionicons
+            name={isActionHubOpen ? 'close' : 'add'}
+            size={26}
+            color={n.colors.textPrimary}
+          />
+        </View>
+        <Text style={styles.fabLabel}>Actions</Text>
+      </Pressable>
+
+      {rightTabs.map((tab, i) => {
+        const tabIndex = i + 2; // offset past leftTabs
+        const focused = state.index === tabIndex;
+        const color = focused ? n.colors.textPrimary : n.colors.textMuted;
+        return (
+          <Pressable
+            key={tab.name}
+            style={styles.tabItem}
+            onPress={() => handleTabPress(tab.name, focused)}
+            testID={tab.testID}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: focused }}
+            accessibilityLabel={`${tab.label} tab`}
+          >
+            <Ionicons name={focused ? tab.iconFocused : tab.icon} size={24} color={color} />
+            <Text style={[styles.tabLabel, { color }]}>{tab.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
 }
 
 const EXTERNAL_APP_ICON_MAP: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -237,11 +372,14 @@ export default function TabNavigator() {
     }, [refreshDueCount]),
   );
 
+  // Tab bar height for positioning the sheet just above it
+  const TAB_BAR_HEIGHT = 60 + bottomInset;
+
   useEffect(() => {
     Animated.spring(sheetAnim, {
       toValue: isActionHubOpen ? 1 : 0,
-      tension: 65,
-      friction: 11,
+      tension: 80,
+      friction: 12,
       useNativeDriver: true,
     }).start();
   }, [isActionHubOpen]);
@@ -289,22 +427,16 @@ export default function TabNavigator() {
   const [isSavingUpload, setIsSavingUpload] = useState(false);
   const dismissThreshold = 60;
   const dismissVelocity = 1;
-  const sheetScrollYRef = useRef(0);
   const sheetPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => false,
       onMoveShouldSetPanResponder: (_, gs) =>
-        isActionHubOpenRef.current &&
-        sheetScrollYRef.current <= 0 &&
-        gs.dy > 10 &&
-        Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+        isActionHubOpenRef.current && gs.dy > 10 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
       onMoveShouldSetPanResponderCapture: (_, gs) =>
-        isActionHubOpenRef.current &&
-        sheetScrollYRef.current <= 0 &&
-        gs.dy > 10 &&
-        Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
+        isActionHubOpenRef.current && gs.dy > 10 && Math.abs(gs.dy) > Math.abs(gs.dx) * 1.5,
       onPanResponderTerminationRequest: () => false,
       onPanResponderMove: (_, gs) => {
+        // Clamp to positive so dragging up beyond origin is ignored
         sheetDragY.setValue(Math.max(0, gs.dy));
       },
       onPanResponderRelease: (_, gs) => {
@@ -312,15 +444,15 @@ export default function TabNavigator() {
         if (shouldDismiss) {
           Animated.parallel([
             Animated.spring(sheetDragY, {
-              toValue: 800,
+              toValue: 300,
               velocity: gs.vy,
-              tension: 40,
-              friction: 8,
+              tension: 50,
+              friction: 10,
               useNativeDriver: true,
             }),
             Animated.timing(sheetAnim, {
               toValue: 0,
-              duration: 200,
+              duration: 180,
               useNativeDriver: true,
             }),
           ]).start(() => {
@@ -455,114 +587,33 @@ export default function TabNavigator() {
   return (
     <View style={styles.flex}>
       <Tab.Navigator
-        {...TAB_NAVIGATOR_PERFORMANCE_PROPS}
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          ...TAB_NAVIGATOR_SCREEN_OPTIONS,
-          tabBarHideOnKeyboard: true,
-          tabBarShowLabel: true,
-          tabBarLabelStyle: {
-            ...n.typography.caption,
-            fontSize: 10,
-            marginTop: 4,
-            letterSpacing: 0,
-          },
-          tabBarItemStyle: {
-            paddingTop: 8,
-          },
-          tabBarStyle: {
-            backgroundColor: n.colors.background,
-            borderTopColor: n.colors.borderHighlight,
-            borderTopWidth: StyleSheet.hairlineWidth,
-            paddingBottom: bottomInset + 4,
-            height: 60 + bottomInset,
-            paddingTop: 0,
-            elevation: 0,
-            shadowOpacity: 0,
-          },
-          tabBarActiveTintColor: n.colors.textPrimary,
-          tabBarInactiveTintColor: n.colors.textMuted,
-          tabBarIcon: ({ color, size, focused }) => {
-            const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
-              HomeTab: focused ? 'home' : 'home-outline',
-              SyllabusTab: focused ? 'grid' : 'grid-outline',
-              ActionHubTab: 'add',
-              ChatTab: focused ? 'chatbubbles' : 'chatbubbles-outline',
-              MenuTab: focused ? 'menu' : 'menu-outline',
-            };
-            return <Ionicons name={icons[route.name]} size={size} color={color} />;
-          },
-        })}
+        tabBarPosition="bottom"
+        tabBar={(props) => (
+          <CustomTabBar
+            tabBarProps={props}
+            dueCount={dueCount}
+            isActionHubOpen={isActionHubOpen}
+            onToggleActionHub={() => setIsActionHubOpen((v) => !v)}
+            bottomInset={bottomInset}
+          />
+        )}
+        screenOptions={{
+          lazy: true,
+          lazyPreloadDistance: 1,
+          animationEnabled: false, // Disables slide on tap (jumps instantly, cleanly)
+          swipeEnabled: true, // Re-enables native swipe gestures
+        }}
+        style={{ backgroundColor: n.colors.background }}
       >
-        <Tab.Screen
-          name="HomeTab"
-          component={HomeStackNav}
-          options={{
-            tabBarLabel: 'Home',
-            tabBarButtonTestID: 'tab-home',
-            tabBarAccessibilityLabel: 'Home tab',
-          }}
-        />
-        <Tab.Screen
-          name="SyllabusTab"
-          component={SyllabusStackNav}
-          options={{
-            tabBarLabel: 'Syllabus',
-            tabBarButtonTestID: 'tab-syllabus',
-            tabBarAccessibilityLabel: 'Syllabus tab',
-            tabBarBadge: dueCount > 0 ? dueCount : undefined,
-            tabBarBadgeStyle: { backgroundColor: n.colors.error, fontSize: 10 },
-          }}
-        />
-        <Tab.Screen
-          name="ActionHubTab"
-          component={ActionHubPlaceholder}
-          options={{
-            tabBarLabel: '',
-            tabBarAccessibilityLabel: 'Action hub',
-            tabBarButton: () => (
-              <Pressable
-                style={({ pressed }) => [styles.fabSlot, pressed && styles.actionPressed]}
-                onPress={() => setIsActionHubOpen((value) => !value)}
-                testID="action-hub-toggle"
-                accessibilityRole="button"
-                accessibilityLabel="Open action hub"
-                accessibilityHint="Opens the quick actions sheet"
-              >
-                <View style={styles.fabButton}>
-                  <Ionicons
-                    name={isActionHubOpen ? 'close' : 'add'}
-                    size={26}
-                    color={n.colors.textPrimary}
-                  />
-                </View>
-                <Text style={styles.fabLabel}>Actions</Text>
-              </Pressable>
-            ),
-          }}
-          listeners={{
-            tabPress: (event) => {
-              event.preventDefault();
-              setIsActionHubOpen((value) => !value);
-            },
-          }}
-        />
-        <Tab.Screen
-          name="ChatTab"
-          component={ChatStackNav}
-          options={{
-            tabBarLabel: 'Chat',
-            tabBarButtonTestID: 'tab-chat',
-            tabBarAccessibilityLabel: 'Guru chat tab',
-          }}
-        />
+        <Tab.Screen name="HomeTab" component={HomeStackNav} />
+        <Tab.Screen name="SyllabusTab" component={SyllabusStackNav} />
+        <Tab.Screen name="ChatTab" component={ChatStackNav} />
         <Tab.Screen
           name="MenuTab"
           component={MenuStackNav}
-          options={{
-            tabBarLabel: 'Menu',
-            tabBarButtonTestID: 'tab-menu',
-            tabBarAccessibilityLabel: 'Menu tab',
+          options={({ route }) => {
+            const routeName = getFocusedRouteNameFromRoute(route) ?? 'MenuHome';
+            return { swipeEnabled: routeName !== 'MindMap' };
           }}
         />
       </Tab.Navigator>
@@ -583,16 +634,36 @@ export default function TabNavigator() {
           {...sheetPanResponder.panHandlers}
           style={[
             styles.sheet,
-            { paddingBottom: bottomInset + theme.spacing.lg },
             {
+              paddingBottom: bottomInset + theme.spacing.lg,
+              bottom: TAB_BAR_HEIGHT + 8,
+            },
+            {
+              opacity: sheetAnim.interpolate({
+                inputRange: [0, 0.4, 1],
+                outputRange: [0, 0.9, 1],
+              }),
               transform: [
                 {
-                  translateY: Animated.add(
+                  // Drag-down offset drives toward button on dismiss
+                  translateY: sheetDragY.interpolate({
+                    inputRange: [0, 300],
+                    outputRange: [0, 120],
+                    extrapolate: 'clamp',
+                  }),
+                },
+                {
+                  // Scale from the button: starts small, springs to full
+                  scale: Animated.multiply(
                     sheetAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [800, 0],
+                      outputRange: [0.3, 1],
                     }),
-                    sheetDragY,
+                    sheetDragY.interpolate({
+                      inputRange: [0, 300],
+                      outputRange: [1, 0.6],
+                      extrapolate: 'clamp',
+                    }),
                   ),
                 },
               ],
@@ -610,20 +681,8 @@ export default function TabNavigator() {
           <View style={styles.sheetHandleHitbox}>
             <View style={styles.sheetHandle} />
           </View>
-          <ScrollView
-            style={styles.sheetScroll}
-            contentContainerStyle={styles.sheetScrollContent}
-            showsVerticalScrollIndicator={false}
-            bounces={false}
-            overScrollMode="never"
-            nestedScrollEnabled
-            onScroll={(e) => {
-              sheetScrollYRef.current = e.nativeEvent.contentOffset.y;
-            }}
-            scrollEventThrottle={16}
-          >
+          <View style={styles.sheetContent}>
             <Text style={styles.sheetEyebrow}>ACTION HUB</Text>
-            <Text style={styles.sheetTitle}>Start the next useful thing fast.</Text>
             <View style={styles.topActionRow}>
               <Pressable
                 style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
@@ -633,7 +692,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Record lecture"
               >
-                <Ionicons name="mic-outline" size={20} color={n.colors.textPrimary} />
+                <Ionicons name="mic-outline" size={18} color={n.colors.textPrimary} />
                 <Text style={styles.topActionTitle}>Record Lecture</Text>
               </Pressable>
 
@@ -645,7 +704,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Search any topic"
               >
-                <Ionicons name="search-outline" size={20} color={n.colors.textPrimary} />
+                <Ionicons name="search-outline" size={18} color={n.colors.textPrimary} />
                 <Text style={styles.topActionTitle}>Search Topics</Text>
               </Pressable>
 
@@ -657,7 +716,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open notes vault"
               >
-                <Ionicons name="library-outline" size={20} color={n.colors.textPrimary} />
+                <Ionicons name="library-outline" size={18} color={n.colors.textPrimary} />
                 <Text style={styles.topActionTitle}>Notes Vault</Text>
               </Pressable>
             </View>
@@ -665,12 +724,34 @@ export default function TabNavigator() {
             <View style={styles.manualActionsContainer}>
               <Pressable
                 style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
+                onPress={() => openRoute('HomeTab', 'DailyChallenge')}
+                testID="action-hub-daily-challenge"
+                accessibilityRole="button"
+                accessibilityLabel="Open daily challenge"
+              >
+                <Ionicons name="flash-outline" size={15} color={n.colors.textSecondary} />
+                <Text style={styles.manualActionText}>Daily Challenge</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
+                onPress={() => openRoute('HomeTab', 'BossBattle')}
+                testID="action-hub-boss-battle"
+                accessibilityRole="button"
+                accessibilityLabel="Open boss battle"
+              >
+                <Ionicons name="shield-half-outline" size={15} color={n.colors.textSecondary} />
+                <Text style={styles.manualActionText}>Boss Battle</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [styles.topActionTile, pressed && styles.actionPressed]}
                 onPress={() => openRoute('MenuTab', 'RecordingVault')}
                 testID="action-hub-recording-vault"
                 accessibilityRole="button"
                 accessibilityLabel="Open recording vault"
               >
-                <Ionicons name="mic-outline" size={16} color={n.colors.textSecondary} />
+                <Ionicons name="mic-outline" size={15} color={n.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Upload Audio</Text>
               </Pressable>
 
@@ -681,7 +762,7 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Open transcript vault"
               >
-                <Ionicons name="clipboard-outline" size={16} color={n.colors.textSecondary} />
+                <Ionicons name="clipboard-outline" size={15} color={n.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Transcript Tools</Text>
               </Pressable>
 
@@ -692,16 +773,13 @@ export default function TabNavigator() {
                 accessibilityRole="button"
                 accessibilityLabel="Review parked thoughts"
               >
-                <Ionicons name="bulb-outline" size={16} color={n.colors.textSecondary} />
+                <Ionicons name="bulb-outline" size={15} color={n.colors.textSecondary} />
                 <Text style={styles.manualActionText}>Parked thoughts</Text>
               </Pressable>
             </View>
 
             <View style={styles.externalHeader}>
               <Text style={styles.externalTitle}>Launch External App</Text>
-              <Text style={styles.externalSubtitle}>
-                Speaker capture and overlay stay wired into the flow.
-              </Text>
             </View>
             <View style={styles.externalGrid}>
               {EXTERNAL_APPS.slice(0, 6).map((app) => (
@@ -722,7 +800,7 @@ export default function TabNavigator() {
                   >
                     <Ionicons
                       name={EXTERNAL_APP_ICON_MAP[app.id] ?? 'apps-outline'}
-                      size={26}
+                      size={22}
                       color={app.color}
                     />
                   </View>
@@ -732,7 +810,7 @@ export default function TabNavigator() {
                 </Pressable>
               ))}
             </View>
-          </ScrollView>
+          </View>
         </Animated.View>
       </View>
 
@@ -836,6 +914,7 @@ export default function TabNavigator() {
 const styles = StyleSheet.create({
   flex: {
     flex: 1,
+    backgroundColor: n.colors.background,
   },
   fabSlot: {
     flex: 1,
@@ -859,9 +938,48 @@ const styles = StyleSheet.create({
     marginTop: 4,
     letterSpacing: 0,
   },
+  customTabBar: {
+    flexDirection: 'row',
+    backgroundColor: n.colors.background,
+    borderTopColor: n.colors.borderHighlight,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 0,
+    elevation: 0,
+    alignItems: 'center',
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 8,
+  },
+  tabLabel: {
+    ...n.typography.caption,
+    fontSize: 10,
+    marginTop: 4,
+    letterSpacing: 0,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    backgroundColor: n.colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: n.colors.textPrimary,
+    fontSize: 10,
+    fontWeight: '700',
+  },
   sheetRoot: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -923,18 +1041,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   sheet: {
+    position: 'absolute',
     backgroundColor: 'rgba(2, 2, 4, 0.97)',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: n.spacing.lg,
     paddingTop: n.spacing.sm,
-    maxHeight: '85%',
-    width: '98%',
+    maxHeight: Dimensions.get('window').height * 0.65,
+    width: '94%',
     maxWidth: 680,
     alignSelf: 'center',
-    marginBottom: 8,
     overflow: 'hidden',
   },
   sheetGlassLayer: {
@@ -946,35 +1063,28 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255,255,255,0.10)',
   },
-  sheetScroll: {
-    flexGrow: 0,
-  },
   sheetHandleHitbox: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingTop: 6,
+    paddingBottom: 8,
   },
   sheetHandle: {
-    width: 44,
-    height: 5,
+    width: 36,
+    height: 4,
     borderRadius: 999,
     backgroundColor: n.colors.textMuted,
-    opacity: 0.55,
+    opacity: 0.45,
   },
-  sheetScrollContent: {
-    gap: n.spacing.md,
-    paddingBottom: n.spacing.md,
+  sheetContent: {
+    gap: 10,
+    paddingBottom: 12,
   },
   sheetEyebrow: {
     ...n.typography.meta,
     color: n.colors.textSecondary,
-    fontSize: 11,
+    fontSize: 10,
     letterSpacing: 1.6,
-  },
-  sheetTitle: {
-    ...n.typography.title,
-    color: n.colors.textPrimary,
   },
   topActionRow: {
     flexDirection: 'column',
@@ -982,30 +1092,31 @@ const styles = StyleSheet.create({
   },
   topActionTile: {
     width: '100%',
-    minHeight: 44,
+    minHeight: 38,
     backgroundColor: 'transparent',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: n.colors.border,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'flex-start',
-    gap: n.spacing.sm,
-    paddingVertical: n.spacing.sm,
+    gap: 8,
+    paddingVertical: 8,
     paddingHorizontal: 0,
   },
   topActionTitle: {
     ...n.typography.body,
     color: n.colors.textPrimary,
+    fontSize: 14,
     textAlign: 'left',
   },
   manualActionsContainer: {
     flexDirection: 'column',
     gap: 0,
-    marginTop: 0,
   },
   manualActionText: {
     ...n.typography.bodySmall,
     color: n.colors.textSecondary,
+    fontSize: 13,
     textAlign: 'left',
   },
   primaryAction: {
@@ -1045,15 +1156,13 @@ const styles = StyleSheet.create({
     color: n.colors.textSecondary,
   },
   externalHeader: {
-    gap: 4,
+    gap: 2,
   },
   externalTitle: {
-    ...n.typography.sectionTitle,
-    color: n.colors.textPrimary,
-  },
-  externalSubtitle: {
-    ...n.typography.bodySmall,
+    ...n.typography.meta,
     color: n.colors.textSecondary,
+    fontSize: 10,
+    letterSpacing: 1.6,
   },
   externalGrid: {
     flexDirection: 'row',
@@ -1069,9 +1178,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   externalIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: n.colors.borderHighlight,
     backgroundColor: n.colors.surfaceHover,
@@ -1083,8 +1192,8 @@ const styles = StyleSheet.create({
     color: n.colors.textSecondary,
     textAlign: 'center',
     width: '100%',
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 10,
+    lineHeight: 13,
     letterSpacing: 0,
   },
 });

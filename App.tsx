@@ -16,8 +16,10 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import AppRecoveryScreen from './src/components/AppRecoveryScreen';
 import BootTransition from './src/components/BootTransition';
 import { InstallModelProgressOverlay } from './src/components/InstallModelProgressOverlay';
+import { DialogHost } from './src/components/DialogHost';
 import { ToastContainer } from './src/components/Toast';
 import DevConsole, { installDevConsoleInterceptors } from './src/components/DevConsole';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { enableFreeze, enableScreens } from 'react-native-screens';
 import { navigationRef } from './src/navigation/navigationRef';
@@ -44,9 +46,8 @@ const defaultInterTextStyle: NonNullable<React.ComponentProps<typeof Text>['styl
   fontFamily: 'Inter_400Regular',
 };
 
-const appendDefaultTextStyle = (
-  style: React.ComponentProps<typeof Text>['style'] | undefined,
-) => (style ? [defaultInterTextStyle, style] : defaultInterTextStyle);
+const appendDefaultTextStyle = (style: React.ComponentProps<typeof Text>['style'] | undefined) =>
+  style ? [defaultInterTextStyle, style] : defaultInterTextStyle;
 
 textComponent.defaultProps = {
   ...textComponent.defaultProps,
@@ -81,15 +82,22 @@ function AppContent({
   useAppBootstrap(onFatalError);
 
   return (
-    <NavigationContainer ref={navigationRef} linking={linking} theme={{
-      ...DarkTheme,
-      colors: { ...DarkTheme.colors, background: '#000000', card: '#000000' },
-    }}>
-      <RootNavigator initialRoute={initialRoute} />
-      <InstallModelProgressOverlay />
+    <>
       <ToastContainer />
-      <DevConsole />
-    </NavigationContainer>
+      <DialogHost />
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+        theme={{
+          ...DarkTheme,
+          colors: { ...DarkTheme.colors, background: '#000000', card: '#000000' },
+        }}
+      >
+        <RootNavigator initialRoute={initialRoute} />
+        <InstallModelProgressOverlay />
+        <DevConsole />
+      </NavigationContainer>
+    </>
   );
 }
 
@@ -131,43 +139,49 @@ function AppShell({
 
   if (error || fontError) {
     return (
-      <SafeAreaProvider>
-        <AppRecoveryScreen
-          title="Startup error"
-          message="Guru could not finish launching. Your local study data should still be safe on this device."
-          detail={error || fontError?.message || 'Font loading failed'}
-          statusLabel="Startup recovery"
-          primaryLabel="Reload App"
-          primaryAccessibilityLabel="Reload app"
-          onPrimary={onReload}
-          secondaryLabel="Try Launch Again"
-          secondaryAccessibilityLabel="Retry startup"
-          onSecondary={onRetry}
-          tips={[
-            'Reload the app for a clean restart, or retry launch without leaving the app.',
-            'If this keeps happening, the failure is likely in startup setup rather than your saved notes or progress.',
-          ]}
-        />
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <AppRecoveryScreen
+            title="Startup error"
+            message="Guru could not finish launching. Your local study data should still be safe on this device."
+            detail={error || fontError?.message || 'Font loading failed'}
+            statusLabel="Startup recovery"
+            primaryLabel="Reload App"
+            primaryAccessibilityLabel="Reload app"
+            onPrimary={onReload}
+            secondaryLabel="Try Launch Again"
+            secondaryAccessibilityLabel="Retry startup"
+            onSecondary={onRetry}
+            tips={[
+              'Reload the app for a clean restart, or retry launch without leaving the app.',
+              'If this keeps happening, the failure is likely in startup setup rather than your saved notes or progress.',
+            ]}
+          />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   if (!isCompletelyReady || initialRoute === null) {
     return (
-      <SafeAreaProvider>
-        <View style={styles.loadingContainer} />
-        <BootTransition />
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <View style={styles.loadingContainer} />
+          <BootTransition />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
   return (
-    <SafeAreaProvider>
-      <ErrorBoundary>
-        <AppContent initialRoute={initialRoute} onFatalError={onFatalError} />
-      </ErrorBoundary>
-      <BootTransition />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <ErrorBoundary>
+          <AppContent initialRoute={initialRoute} onFatalError={onFatalError} />
+        </ErrorBoundary>
+        <BootTransition />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -203,24 +217,26 @@ export default function App() {
 
   if (runtimeError) {
     return (
-      <SafeAreaProvider>
-        <AppRecoveryScreen
-          title="Something went wrong"
-          message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
-          detail={runtimeError}
-          statusLabel="App recovery"
-          primaryLabel="Reload App"
-          primaryAccessibilityLabel="Reload app"
-          onPrimary={reloadApp}
-          secondaryLabel="Try App Again"
-          secondaryAccessibilityLabel="Retry app"
-          onSecondary={retryApp}
-          tips={[
-            'Reload the app for a clean restart, or remount the app once without leaving this screen.',
-            'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
-          ]}
-        />
-      </SafeAreaProvider>
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <AppRecoveryScreen
+            title="Something went wrong"
+            message="Guru hit a startup task failure outside the render tree, so the usual crash boundary could not show first."
+            detail={runtimeError}
+            statusLabel="App recovery"
+            primaryLabel="Reload App"
+            primaryAccessibilityLabel="Reload app"
+            onPrimary={reloadApp}
+            secondaryLabel="Try App Again"
+            secondaryAccessibilityLabel="Retry app"
+            onSecondary={retryApp}
+            tips={[
+              'Reload the app for a clean restart, or remount the app once without leaving this screen.',
+              'This path now surfaces async startup failures instead of letting them disappear as silent crashes.',
+            ]}
+          />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
     );
   }
 
@@ -235,6 +251,9 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
     backgroundColor: theme.colors.background,

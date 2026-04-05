@@ -1,6 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, View, Text, StyleSheet } from 'react-native';
 import { linearTheme as n } from '../../theme/linearTheme';
+import { cardPressTiming } from '../../motion/presets';
 
 interface AgendaItemProps {
   time: string;
@@ -15,7 +16,7 @@ interface AgendaItemProps {
 const TYPE_COLORS = {
   new: n.colors.accent,
   review: n.colors.success,
-  deep_dive: n.colors.error,
+  deep_dive: n.colors.warning,
 } as const;
 
 const TYPE_LABELS = {
@@ -34,42 +35,69 @@ export default React.memo(function AgendaItem({
   onPress,
 }: AgendaItemProps) {
   const accent = TYPE_COLORS[type];
+  const pressScale = useRef(new Animated.Value(1)).current;
+  const pressOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    pressScale.setValue(1);
+    pressOpacity.setValue(1);
+  }, [pressOpacity, pressScale]);
+
+  const animatePress = (pressed: boolean) => {
+    Animated.parallel([
+      Animated.timing(pressScale, {
+        toValue: pressed ? 0.99 : 1,
+        duration: pressed ? cardPressTiming.in : cardPressTiming.out,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pressOpacity, {
+        toValue: pressed ? 0.88 : 1,
+        duration: pressed ? cardPressTiming.in : cardPressTiming.out,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   return (
-    <TouchableOpacity
+    <Pressable
+      onPressIn={() => animatePress(true)}
+      onPressOut={() => animatePress(false)}
       style={styles.row}
       onPress={onPress}
-      activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`Open ${title}`}
       accessibilityHint={`${type} task for ${subjectName}`}
     >
-      <View style={styles.timeWrap}>
-        <Text style={styles.timeText}>{time}</Text>
-      </View>
-      <View style={[styles.card, { borderLeftColor: accent }]}>
-        <View style={styles.cardTop}>
-          <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
-            {title}
-          </Text>
-          {priority >= 8 && (
-            <View style={styles.yieldBadge}>
-              <Text style={styles.yieldText}>HY</Text>
-            </View>
-          )}
+      <Animated.View
+        style={[styles.pressSurface, { opacity: pressOpacity, transform: [{ scale: pressScale }] }]}
+      >
+        <View style={styles.timeWrap}>
+          <Text style={styles.timeText}>{time}</Text>
         </View>
-        <View style={styles.meta}>
-          <Text style={[styles.typeBadge, { color: accent }]}>{TYPE_LABELS[type]}</Text>
-          <Text style={styles.dot}>·</Text>
-          <Text style={styles.subject}>{subjectName}</Text>
-        </View>
-        {rationale ? (
-          <View style={styles.rationaleChip}>
-            <Text style={styles.rationaleText}>{rationale}</Text>
+        <View style={[styles.card, { borderLeftColor: accent }]}>
+          <View style={styles.cardTop}>
+            <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+              {title}
+            </Text>
+            {priority >= 8 && (
+              <View style={styles.yieldBadge}>
+                <Text style={styles.yieldText}>HY</Text>
+              </View>
+            )}
           </View>
-        ) : null}
-      </View>
-    </TouchableOpacity>
+          <View style={styles.meta}>
+            <Text style={[styles.typeBadge, { color: accent }]}>{TYPE_LABELS[type]}</Text>
+            <Text style={styles.dot}>·</Text>
+            <Text style={styles.subject}>{subjectName}</Text>
+          </View>
+          {rationale ? (
+            <View style={styles.rationaleChip}>
+              <Text style={styles.rationaleText}>{rationale}</Text>
+            </View>
+          ) : null}
+        </View>
+      </Animated.View>
+    </Pressable>
   );
 });
 
@@ -78,6 +106,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 14,
     alignItems: 'stretch',
+  },
+  pressSurface: {
+    flex: 1,
+    flexDirection: 'row',
   },
   timeWrap: {
     width: 40,

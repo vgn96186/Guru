@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -346,9 +345,9 @@ export default function NotesHubScreen() {
           {pendingSessions.length > 0 && (
             <View style={styles.pendingSection}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: n.colors.warning }]}>
+                <LinearText style={[styles.sectionTitle, { color: n.colors.warning }]}>
                   Unprocessed Recordings ({pendingSessions.length})
-                </Text>
+                </LinearText>
               </View>
               <ScrollView style={styles.pendingList} nestedScrollEnabled>
                 {pendingSessions.map((session) => (
@@ -362,9 +361,9 @@ export default function NotesHubScreen() {
                       </LinearText>
                       <LinearText variant="caption" tone="warning" style={styles.pendingStatus}>
                         Status:{' '}
-                        <Text style={{ fontWeight: '700' }}>
+                        <LinearText style={{ fontWeight: '700' }}>
                           {session.transcriptionStatus?.toUpperCase()}
-                        </Text>
+                        </LinearText>
                       </LinearText>
                       {session.pipelineTelemetry?.currentMessage ? (
                         <LinearText variant="caption" style={styles.pendingStage}>
@@ -414,7 +413,7 @@ export default function NotesHubScreen() {
                     </View>
                     <View style={styles.pendingActions}>
                       <TouchableOpacity
-                        style={[styles.miniActionBtn, { backgroundColor: '#333' }]}
+                        style={[styles.miniActionBtn, { backgroundColor: n.colors.border }]}
                         onPress={() => handlePlayPending(session)}
                       >
                         <Ionicons
@@ -760,7 +759,7 @@ export default function NotesHubScreen() {
               </>
             ) : (
               <View style={styles.noTopicsBlock}>
-                <Text style={styles.noTopicsIcon}>🔇</Text>
+                <LinearText style={styles.noTopicsIcon}>🔇</LinearText>
                 <LinearText variant="bodySmall" tone="muted" centered style={styles.noTopicsText}>
                   No medical topics detected in this recording.
                 </LinearText>
@@ -816,14 +815,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   pendingInfo: { flex: 1, minWidth: 0, gap: 2 },
-  pendingAppName: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  pendingAppName: { color: n.colors.textPrimary, fontSize: 15, fontWeight: '700' },
   pendingDate: { color: '#9A9AAC', fontSize: 12 },
   pendingStatus: { color: '#FFB74D', fontSize: 12, marginTop: 2 },
   pendingStage: { color: '#E8E8F0', fontSize: 12, marginTop: 4, fontWeight: '600' },
   pendingDetail: { color: '#B7B7C7', fontSize: 12, lineHeight: 18 },
   pendingEvents: { marginTop: 6, gap: 2 },
   pendingEventText: { color: '#8F8FA7', fontSize: 11, lineHeight: 16 },
-  pendingError: { color: '#EF5350', fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
+  pendingError: { color: n.colors.error, fontSize: 12, lineHeight: 18, fontStyle: 'italic' },
   pendingActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   miniActionBtn: {
     width: 36,

@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -110,11 +110,11 @@ export default function PomodoroQuizScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
           <ActivityIndicator size="large" color={n.colors.accent} />
-          <Text style={styles.loadingText}>
+          <LinearText style={styles.loadingText}>
             {isExternalLectureMode
               ? 'Preparing your live lecture break quiz...'
               : 'Generating quick break quiz...'}
-          </Text>
+          </LinearText>
         </View>
       </SafeAreaView>
     );
@@ -125,21 +125,21 @@ export default function PomodoroQuizScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
-          <Text style={styles.emoji}>☕</Text>
-          <Text style={styles.title}>Take a Break!</Text>
-          <Text style={styles.sub}>
+          <LinearText style={styles.emoji}>☕</LinearText>
+          <LinearText style={styles.title}>Take a Break!</LinearText>
+          <LinearText style={styles.sub}>
             {isExternalLectureMode
               ? 'The live lecture quiz is still warming up. Stretch, breathe, then head back in.'
               : 'No topics due right now. Stretch, breathe, and get ready for more.'}
-          </Text>
+          </LinearText>
           <TouchableOpacity
             style={styles.btn}
             onPress={handleReturn}
             accessibilityLabel="Return to lecture"
           >
-            <Text style={styles.btnText}>
+            <LinearText style={styles.btnText}>
               {isExternalLectureMode ? 'Back to Lecture' : 'Return to Lecture'}
-            </Text>
+            </LinearText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -151,21 +151,21 @@ export default function PomodoroQuizScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.center}>
-          <Text style={styles.emoji}>🧠</Text>
-          <Text style={styles.title}>Break Complete</Text>
-          <Text style={styles.sub}>
+          <LinearText style={styles.emoji}>🧠</LinearText>
+          <LinearText style={styles.title}>Break Complete</LinearText>
+          <LinearText style={styles.sub}>
             {isExternalLectureMode
               ? `You got ${score} / ${questions.length} right. Jump back into ${breakPayload?.appName ?? 'the lecture'} when you're ready.`
               : 'You took a 20-minute milestone break.'}
-          </Text>
+          </LinearText>
           <TouchableOpacity
             style={styles.btn}
             onPress={handleReturn}
             accessibilityLabel="Return to lecture"
           >
-            <Text style={styles.btnText}>
+            <LinearText style={styles.btnText}>
               {isExternalLectureMode ? 'Back to Lecture' : 'Return to Lecture'}
-            </Text>
+            </LinearText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -182,32 +182,32 @@ export default function PomodoroQuizScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.header}>
+        <LinearText style={styles.header}>
           {isExternalLectureMode ? 'Live Lecture Pomodoro Break' : 'Pomodoro Break'}
-        </Text>
-        <Text style={styles.topicName}>
+        </LinearText>
+        <LinearText style={styles.topicName}>
           {isExternalLectureMode
             ? `${breakPayload?.appName ?? 'Lecture'}${breakPayload?.subject ? ` • ${breakPayload.subject}` : ''}`
             : topic?.name}
-        </Text>
+        </LinearText>
 
         {isExternalLectureMode && (
           <LinearSurface padded={false} style={styles.contextCard}>
             {breakPayload?.summary ? (
               <>
-                <Text style={styles.contextLabel}>What The Lecture Is Covering</Text>
-                <Text style={styles.contextSummary}>{breakPayload.summary}</Text>
+                <LinearText style={styles.contextLabel}>What The Lecture Is Covering</LinearText>
+                <LinearText style={styles.contextSummary}>{breakPayload.summary}</LinearText>
               </>
             ) : null}
             {breakPayload?.keyConcepts?.length ? (
               <>
-                <Text style={[styles.contextLabel, styles.contextLabelSpacing]}>
+                <LinearText style={[styles.contextLabel, styles.contextLabelSpacing]}>
                   Key Points Before You Continue
-                </Text>
+                </LinearText>
                 {breakPayload.keyConcepts.map((concept) => (
                   <View key={concept} style={styles.keyConceptRow}>
-                    <Text style={styles.keyConceptBullet}>•</Text>
-                    <Text style={styles.keyConceptText}>{concept}</Text>
+                    <LinearText style={styles.keyConceptBullet}>•</LinearText>
+                    <LinearText style={styles.keyConceptText}>{concept}</LinearText>
                   </View>
                 ))}
               </>
@@ -216,12 +216,12 @@ export default function PomodoroQuizScreen() {
         )}
 
         {questions.length > 1 ? (
-          <Text style={styles.progressText}>
+          <LinearText style={styles.progressText}>
             Question {currentQuestionIndex + 1} / {questions.length}
-          </Text>
+          </LinearText>
         ) : null}
 
-        <Text style={styles.question}>{question.question}</Text>
+        <LinearText style={styles.question}>{question.question}</LinearText>
 
         <View style={styles.options}>
           {question.options.map((opt: string, idx: number) => {
@@ -230,10 +230,10 @@ export default function PomodoroQuizScreen() {
             if (selected !== null) {
               if (idx === question.correctIndex) {
                 bg = '#1A2A1A';
-                border = '#4CAF50';
+                border = n.colors.success;
               } else if (idx === selected) {
-                bg = '#2A0A0A';
-                border = '#F44336';
+                bg = n.colors.errorSurface;
+                border = n.colors.error;
               }
             }
             return (
@@ -247,8 +247,8 @@ export default function PomodoroQuizScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ disabled: selected !== null }}
               >
-                <Text style={styles.optionLetter}>{String.fromCharCode(65 + idx)}</Text>
-                <Text style={styles.optionText}>{opt}</Text>
+                <LinearText style={styles.optionLetter}>{String.fromCharCode(65 + idx)}</LinearText>
+                <LinearText style={styles.optionText}>{opt}</LinearText>
               </TouchableOpacity>
             );
           })}
@@ -258,7 +258,9 @@ export default function PomodoroQuizScreen() {
           <View
             style={[styles.feedback, isCorrect ? styles.feedbackCorrect : styles.feedbackWrong]}
           >
-            <Text style={styles.feedbackLabel}>{isCorrect ? '✅ Correct!' : '❌ Incorrect'}</Text>
+            <LinearText style={styles.feedbackLabel}>
+              {isCorrect ? '✅ Correct!' : '❌ Incorrect'}
+            </LinearText>
             <View style={{ marginTop: 12 }}>
               <MarkdownRender content={emphasizeHighYieldMarkdown(question.explanation)} compact />
             </View>
@@ -269,9 +271,9 @@ export default function PomodoroQuizScreen() {
                 currentQuestionIndex < questions.length - 1 ? 'Next question' : 'Finish break quiz'
               }
             >
-              <Text style={styles.nextBtnText}>
+              <LinearText style={styles.nextBtnText}>
                 {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Break'}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
           </View>
         )}
@@ -300,7 +302,7 @@ const styles = StyleSheet.create({
     minHeight: 48,
     justifyContent: 'center',
   },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  btnText: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '700' },
   container: { flexGrow: 1, padding: 24, paddingBottom: 40 },
   header: {
     color: n.colors.accent,
@@ -366,9 +368,9 @@ const styles = StyleSheet.create({
   optionLetter: { color: n.colors.accent, fontWeight: '800', fontSize: 16, width: 24 },
   optionText: { color: n.colors.textPrimary, fontSize: 16, flex: 1, lineHeight: 22 },
   feedback: { marginTop: 24, padding: 16, borderRadius: 12, borderWidth: 1 },
-  feedbackCorrect: { backgroundColor: '#0D2010', borderColor: '#4CAF50' },
-  feedbackWrong: { backgroundColor: '#200D0D', borderColor: '#F44336' },
-  feedbackLabel: { color: '#fff', fontWeight: '800', fontSize: 16, marginBottom: 8 },
+  feedbackCorrect: { backgroundColor: '#0D2010', borderColor: n.colors.success },
+  feedbackWrong: { backgroundColor: '#200D0D', borderColor: n.colors.error },
+  feedbackLabel: { color: n.colors.textPrimary, fontWeight: '800', fontSize: 16, marginBottom: 8 },
   nextBtn: {
     marginTop: 18,
     backgroundColor: n.colors.accent,
@@ -377,7 +379,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nextBtnText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 15,
     fontWeight: '800',
   },

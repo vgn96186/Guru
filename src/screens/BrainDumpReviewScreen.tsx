@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -64,14 +65,14 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer>
         <View style={styles.header}>
-          <Text style={styles.title}>Parked Thoughts</Text>
-          <Text style={styles.subtitle}>You safely deferred these while studying.</Text>
+          <LinearText style={styles.title}>Parked Thoughts</LinearText>
+          <LinearText style={styles.subtitle}>You safely deferred these while studying.</LinearText>
         </View>
 
         {dumps.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="checkmark-circle-outline" size={64} color="#4CAF50" />
-            <Text style={styles.emptyText}>No thoughts parked this session.</Text>
+            <LinearText style={styles.emptyText}>No thoughts parked this session.</LinearText>
           </View>
         ) : (
           <FlatList
@@ -87,7 +88,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
                     color="#6C63FF"
                     style={styles.icon}
                   />
-                  <Text style={styles.cardText}>{item.note}</Text>
+                  <LinearText style={styles.cardText}>{item.note}</LinearText>
                 </View>
                 <TouchableOpacity
                   style={styles.deleteOneBtn}
@@ -111,7 +112,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
               accessibilityLabel="Clear all parked thoughts"
             >
               <Ionicons name="trash-outline" size={20} color={n.colors.error} />
-              <Text style={styles.clearText}>Clear All</Text>
+              <LinearText style={styles.clearText}>Clear All</LinearText>
             </TouchableOpacity>
           )}
 
@@ -121,7 +122,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Done"
           >
-            <Text style={styles.doneText}>Done</Text>
+            <LinearText style={styles.doneText}>Done</LinearText>
           </TouchableOpacity>
         </View>
       </ResponsiveContainer>
@@ -132,7 +133,7 @@ export default function BrainDumpReviewScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F0F14',
+    backgroundColor: n.colors.background,
     padding: 20,
   },
   header: {
@@ -141,12 +142,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#FFF',
+    color: n.colors.textPrimary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: '#9E9E9E',
+    color: n.colors.textMuted,
   },
   emptyContainer: {
     flex: 1,
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#9E9E9E',
+    color: n.colors.textMuted,
     fontSize: 18,
     marginTop: 16,
   },
@@ -162,14 +163,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   card: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderRadius: 16,
     padding: 20,
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333344',
+    borderColor: n.colors.border,
   },
   cardContent: {
     flex: 1,
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   cardText: {
-    color: '#FFF',
+    color: n.colors.textPrimary,
     fontSize: 16,
     flex: 1,
     lineHeight: 24,
@@ -192,7 +193,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#2A1A1D',
+    backgroundColor: n.colors.errorSurface,
   },
   actions: {
     flexDirection: 'row',
@@ -205,13 +206,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#332222',
+    backgroundColor: n.colors.errorSurface,
     padding: 16,
     borderRadius: 16,
     gap: 8,
   },
   clearText: {
-    color: '#F44336',
+    color: n.colors.error,
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -219,12 +220,12 @@ const styles = StyleSheet.create({
     flex: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     padding: 16,
     borderRadius: 16,
   },
   doneText: {
-    color: '#FFF',
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: 'bold',
   },

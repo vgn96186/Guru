@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Easing,
-  StatusBar,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Animated, Easing, StatusBar } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -223,16 +216,16 @@ export default function SleepModeScreen() {
       <View style={styles.alarmContainer}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <Animated.View style={[styles.alarmOverlay, { opacity: fadeAnim }]} />
-        <Text style={styles.alarmTime}>{timeString}</Text>
-        <Text style={styles.alarmTitle}>Good Morning, Doctor.</Text>
-        <Text style={styles.alarmSub}>Time to rise and build some momentum.</Text>
+        <LinearText style={styles.alarmTime}>{timeString}</LinearText>
+        <LinearText style={styles.alarmTitle}>Good Morning, Doctor.</LinearText>
+        <LinearText style={styles.alarmSub}>Time to rise and build some momentum.</LinearText>
 
         <TouchableOpacity style={styles.stopBtn} onPress={stopAlarm} activeOpacity={0.8}>
-          <Text style={styles.stopBtnText}>I'M AWAKE</Text>
+          <LinearText style={styles.stopBtnText}>I'M AWAKE</LinearText>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze} activeOpacity={0.8}>
-          <Text style={styles.snoozeBtnText}>Snooze (9 min)</Text>
+          <LinearText style={styles.snoozeBtnText}>Snooze (9 min)</LinearText>
         </TouchableOpacity>
       </View>
     );
@@ -250,38 +243,40 @@ export default function SleepModeScreen() {
                 { backgroundColor: isTracking ? n.colors.success : n.colors.accent },
               ]}
             />
-            <Text style={styles.modeBadgeText}>
+            <LinearText style={styles.modeBadgeText}>
               {isTracking ? 'Nightstand Active' : 'Nightstand Mode'}
-            </Text>
+            </LinearText>
           </View>
-          <Text style={styles.dateText}>{dateString}</Text>
-          <Text style={styles.clock}>{timeString}</Text>
+          <LinearText style={styles.dateText}>{dateString}</LinearText>
+          <LinearText style={styles.clock}>{timeString}</LinearText>
         </View>
 
         <View style={styles.bottomSection}>
           {isTracking ? (
             <View style={styles.infoCard}>
-              <Text style={styles.infoEyebrow}>WAKE PLAN</Text>
-              <Text style={styles.infoTitle}>Alarm at {activeAlarmLabel}</Text>
+              <LinearText style={styles.infoEyebrow}>WAKE PLAN</LinearText>
+              <LinearText style={styles.infoTitle}>Alarm at {activeAlarmLabel}</LinearText>
               <View style={styles.infoPillRow}>
                 {remainingLabel ? (
                   <View style={styles.infoPill}>
-                    <Text style={styles.infoPillText}>{remainingLabel}</Text>
+                    <LinearText style={styles.infoPillText}>{remainingLabel}</LinearText>
                   </View>
                 ) : null}
                 <View style={styles.infoPill}>
-                  <Text style={styles.infoPillText}>{movementCount} movements tracked</Text>
+                  <LinearText style={styles.infoPillText}>
+                    {movementCount} movements tracked
+                  </LinearText>
                 </View>
               </View>
-              <Text style={styles.infoBody}>
+              <LinearText style={styles.infoBody}>
                 Screen stays awake all night. Leave the phone on your nightstand or face down so
                 movement detection can catch a lighter sleep phase.
-              </Text>
+              </LinearText>
             </View>
           ) : (
             <View style={styles.infoCard}>
-              <Text style={styles.infoEyebrow}>WAKE PLAN</Text>
-              <Text style={styles.infoTitle}>Wake me in</Text>
+              <LinearText style={styles.infoEyebrow}>WAKE PLAN</LinearText>
+              <LinearText style={styles.infoTitle}>Wake me in</LinearText>
               <View style={styles.timePickerRow}>
                 <TouchableOpacity
                   style={styles.timePickerBtn}
@@ -289,22 +284,24 @@ export default function SleepModeScreen() {
                   accessibilityRole="button"
                   accessibilityLabel="Decrease wake interval"
                 >
-                  <Text style={styles.timePickerText}>-</Text>
+                  <LinearText style={styles.timePickerText}>-</LinearText>
                 </TouchableOpacity>
-                <Text style={styles.timePickerVal}>{hoursLabel}</Text>
+                <LinearText style={styles.timePickerVal}>{hoursLabel}</LinearText>
                 <TouchableOpacity
                   style={styles.timePickerBtn}
                   onPress={() => setHoursToAdd(Math.min(12, hoursToAdd + 1))}
                   accessibilityRole="button"
                   accessibilityLabel="Increase wake interval"
                 >
-                  <Text style={styles.timePickerText}>+</Text>
+                  <LinearText style={styles.timePickerText}>+</LinearText>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.infoBody}>Alarm will ring at {projectedAlarmLabel}</Text>
-              <Text style={styles.infoHint}>
+              <LinearText style={styles.infoBody}>
+                Alarm will ring at {projectedAlarmLabel}
+              </LinearText>
+              <LinearText style={styles.infoHint}>
                 Best for bedside charging with the phone left still and visible.
-              </Text>
+              </LinearText>
             </View>
           )}
 
@@ -313,14 +310,14 @@ export default function SleepModeScreen() {
             onPress={toggleTracking}
             activeOpacity={0.85}
           >
-            <Text style={styles.toggleBtnText}>
+            <LinearText style={styles.toggleBtnText}>
               {isTracking ? 'Cancel Alarm' : 'Start Sleep Tracking'}
-            </Text>
+            </LinearText>
           </TouchableOpacity>
 
           {!isTracking && (
             <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-              <Text style={styles.backBtnText}>Exit</Text>
+              <LinearText style={styles.backBtnText}>Exit</LinearText>
             </TouchableOpacity>
           )}
         </View>
@@ -330,7 +327,7 @@ export default function SleepModeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#000' }, // Pure black for OLED screens
+  safe: { flex: 1, backgroundColor: n.colors.background }, // Pure black for OLED screens
   container: {
     flex: 1,
     justifyContent: 'space-between',
@@ -449,7 +446,7 @@ const styles = StyleSheet.create({
   },
   timePickerRow: { flexDirection: 'row', alignItems: 'center', gap: 20 },
   timePickerBtn: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -458,9 +455,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: n.colors.border,
   },
-  timePickerText: { color: '#fff', fontSize: 24, fontWeight: '400' },
+  timePickerText: { color: n.colors.textPrimary, fontSize: 24, fontWeight: '400' },
   timePickerVal: {
-    color: '#6C63FF',
+    color: n.colors.accent,
     fontSize: 20,
     fontWeight: '800',
     lineHeight: 28,
@@ -472,7 +469,7 @@ const styles = StyleSheet.create({
 
   toggleBtn: {
     width: '100%',
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     paddingHorizontal: 32,
     paddingVertical: 18,
     borderRadius: 18,
@@ -480,7 +477,7 @@ const styles = StyleSheet.create({
     borderColor: n.colors.border,
     alignItems: 'center',
   },
-  toggleBtnActive: { backgroundColor: '#2A0A0A', borderColor: '#F44336' },
+  toggleBtnActive: { backgroundColor: n.colors.errorSurface, borderColor: n.colors.error },
   toggleBtnText: {
     color: n.colors.textSecondary,
     fontWeight: '800',
@@ -494,14 +491,20 @@ const styles = StyleSheet.create({
 
   alarmContainer: {
     flex: 1,
-    backgroundColor: '#0F0F14',
+    backgroundColor: n.colors.background,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
   },
   alarmOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: '#6C63FF22' },
-  alarmTime: { color: '#fff', fontSize: 64, fontWeight: '900', marginBottom: 16 },
-  alarmTitle: { color: '#fff', fontSize: 24, lineHeight: 30, fontWeight: '800', marginBottom: 8 },
+  alarmTime: { color: n.colors.textPrimary, fontSize: 64, fontWeight: '900', marginBottom: 16 },
+  alarmTitle: {
+    color: n.colors.textPrimary,
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
   alarmSub: {
     color: n.colors.textSecondary,
     fontSize: 16,
@@ -511,23 +514,29 @@ const styles = StyleSheet.create({
   },
 
   stopBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 40,
     paddingVertical: 20,
     borderRadius: 20,
     elevation: 8,
-    shadowColor: '#6C63FF',
+    shadowColor: n.colors.accent,
     shadowOpacity: 0.5,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     marginBottom: 20,
   },
-  stopBtnText: { color: '#fff', fontSize: 20, lineHeight: 26, fontWeight: '900', letterSpacing: 2 },
+  stopBtnText: {
+    color: n.colors.textPrimary,
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
   snoozeBtn: {
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
     borderColor: n.colors.border,
   },

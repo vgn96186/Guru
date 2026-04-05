@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -36,6 +35,7 @@ import { DBMCI_SUBJECT_ORDER, DBMCI_WORKLOAD_OVERRIDES } from '../services/study
 import { SUBJECTS_SEED } from '../constants/syllabus';
 import { getCurrentLecturePosition } from '../services/lecturePositionService';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 
 const SUBJECT_MAP = new Map(SUBJECTS_SEED.map((s) => [s.shortCode, s]));
 const DBMCI_TOTAL_DAYS = 137;
@@ -61,10 +61,10 @@ function LiveClassBanner({
   if (!startDate) {
     return (
       <LinearSurface compact style={liveStyles.banner}>
-        <Text style={liveStyles.bannerTitle}>📺 {batchLabel} Live Batch</Text>
-        <Text style={liveStyles.bannerHint}>
+        <LinearText style={liveStyles.bannerTitle}>📺 {batchLabel} Live Batch</LinearText>
+        <LinearText style={liveStyles.bannerHint}>
           Set your batch start date in Settings → Study Plan to unlock daily lecture tracking.
-        </Text>
+        </LinearText>
       </LinearSurface>
     );
   }
@@ -75,10 +75,10 @@ function LiveClassBanner({
   if (pos.isComplete) {
     return (
       <LinearSurface compact style={liveStyles.banner}>
-        <Text style={liveStyles.bannerTitle}>🎓 {batchLabel} — Complete!</Text>
-        <Text style={liveStyles.bannerHint}>
+        <LinearText style={liveStyles.bannerTitle}>🎓 {batchLabel} — Complete!</LinearText>
+        <LinearText style={liveStyles.bannerHint}>
           All {pos.totalDays} teaching days covered. Focus on revision and mocks.
-        </Text>
+        </LinearText>
       </LinearSurface>
     );
   }
@@ -97,10 +97,10 @@ function LiveClassBanner({
   return (
     <LinearSurface compact style={liveStyles.banner}>
       <View style={liveStyles.bannerRow}>
-        <Text style={liveStyles.bannerTitle}>📺 {batchLabel}</Text>
-        <Text style={liveStyles.bannerDay}>
+        <LinearText style={liveStyles.bannerTitle}>📺 {batchLabel}</LinearText>
+        <LinearText style={liveStyles.bannerDay}>
           Day {dayNumber}/{totalDays}
-        </Text>
+        </LinearText>
       </View>
 
       {/* Progress bar */}
@@ -111,24 +111,24 @@ function LiveClassBanner({
       {/* Current subject */}
       <View style={liveStyles.subjectRow}>
         <View style={liveStyles.subjectBadge}>
-          <Text style={liveStyles.subjectBadgeText}>NOW</Text>
+          <LinearText style={liveStyles.subjectBadgeText}>NOW</LinearText>
         </View>
-        <Text style={liveStyles.subjectName}>{currentBlock.subjectName}</Text>
-        <Text style={liveStyles.subjectMeta}>
+        <LinearText style={liveStyles.subjectName}>{currentBlock.subjectName}</LinearText>
+        <LinearText style={liveStyles.subjectMeta}>
           Day {dayInSubject}/{currentBlock.days} · {daysLeftInSubject}d left
-        </Text>
+        </LinearText>
       </View>
 
       {/* Next subject */}
       {nextBlock && (
         <View style={liveStyles.subjectRow}>
           <View style={[liveStyles.subjectBadge, liveStyles.subjectBadgeNext]}>
-            <Text style={liveStyles.subjectBadgeText}>NEXT</Text>
+            <LinearText style={liveStyles.subjectBadgeText}>NEXT</LinearText>
           </View>
-          <Text style={[liveStyles.subjectName, { color: n.colors.textMuted }]}>
+          <LinearText style={[liveStyles.subjectName, { color: n.colors.textMuted }]}>
             {nextBlock.subjectName}
-          </Text>
-          <Text style={liveStyles.subjectMeta}>{nextBlock.days}d</Text>
+          </LinearText>
+          <LinearText style={liveStyles.subjectMeta}>{nextBlock.days}d</LinearText>
         </View>
       )}
     </LinearSurface>
@@ -144,10 +144,10 @@ function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
 
   return (
     <LinearSurface style={dbmciStyles.card}>
-      <Text style={dbmciStyles.title}>📋 DBMCI One — Study Sequence</Text>
-      <Text style={dbmciStyles.subtitle}>
+      <LinearText style={dbmciStyles.title}>📋 DBMCI One — Study Sequence</LinearText>
+      <LinearText style={dbmciStyles.subtitle}>
         Follow this order · {DBMCI_TOTAL_DAYS} lecture days · Topics auto-tracked from recordings
-      </Text>
+      </LinearText>
       {DBMCI_SUBJECT_ORDER.map((code, idx) => {
         const subject = SUBJECT_MAP.get(code);
         if (!subject) return null;
@@ -157,14 +157,16 @@ function DBMCISyllabusCard({ allTopics }: { allTopics: TopicWithProgress[] }) {
 
         return (
           <View key={code} style={dbmciStyles.row}>
-            <Text style={[dbmciStyles.idx, { color: subject.colorHex }]}>{idx + 1}</Text>
+            <LinearText style={[dbmciStyles.idx, { color: subject.colorHex }]}>
+              {idx + 1}
+            </LinearText>
             <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
             <View style={dbmciStyles.rowContent}>
-              <Text style={dbmciStyles.subjectName}>{subject.name}</Text>
-              <Text style={dbmciStyles.topicCount}>{topicCount} topics</Text>
+              <LinearText style={dbmciStyles.subjectName}>{subject.name}</LinearText>
+              <LinearText style={dbmciStyles.topicCount}>{topicCount} topics</LinearText>
             </View>
             <View style={dbmciStyles.meta}>
-              <Text style={dbmciStyles.days}>{days}d</Text>
+              <LinearText style={dbmciStyles.days}>{days}d</LinearText>
             </View>
           </View>
         );
@@ -238,27 +240,27 @@ function BTRProgressCard({
 
   return (
     <LinearSurface style={dbmciStyles.card}>
-      <Text style={dbmciStyles.title}>📊 BTR — Mastery Progress</Text>
-      <Text style={dbmciStyles.subtitle}>
+      <LinearText style={dbmciStyles.title}>📊 BTR — Mastery Progress</LinearText>
+      <LinearText style={dbmciStyles.subtitle}>
         {overallSeen}/{overallTotal} watched · {overallMastered} mastered · Watching ≠ Learning
-      </Text>
+      </LinearText>
       {/* Pipeline legend */}
       <View style={masteryStyles.legendRow}>
         <View style={masteryStyles.legendItem}>
           <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.textMuted }]} />
-          <Text style={masteryStyles.legendText}>Unseen</Text>
+          <LinearText style={masteryStyles.legendText}>Unseen</LinearText>
         </View>
         <View style={masteryStyles.legendItem}>
           <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.accent }]} />
-          <Text style={masteryStyles.legendText}>Watched</Text>
+          <LinearText style={masteryStyles.legendText}>Watched</LinearText>
         </View>
         <View style={masteryStyles.legendItem}>
           <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.warning }]} />
-          <Text style={masteryStyles.legendText}>Reviewed</Text>
+          <LinearText style={masteryStyles.legendText}>Reviewed</LinearText>
         </View>
         <View style={masteryStyles.legendItem}>
           <View style={[masteryStyles.legendDot, { backgroundColor: n.colors.success }]} />
-          <Text style={masteryStyles.legendText}>Mastered</Text>
+          <LinearText style={masteryStyles.legendText}>Mastered</LinearText>
         </View>
       </View>
       {subjects.map((subject) => {
@@ -287,18 +289,18 @@ function BTRProgressCard({
               style={{ flexDirection: 'row', alignItems: 'center', width: '100%', marginBottom: 4 }}
             >
               <View style={[dbmciStyles.dot, { backgroundColor: subject.colorHex }]} />
-              <Text
+              <LinearText
                 style={[
                   dbmciStyles.subjectName,
                   watchedOrBetter === 0 && { color: n.colors.textMuted },
                 ]}
               >
                 {subject.name}
-              </Text>
+              </LinearText>
               {stats.total > 0 && (
-                <Text style={[dbmciStyles.days, { marginLeft: 'auto' }]}>
+                <LinearText style={[dbmciStyles.days, { marginLeft: 'auto' }]}>
                   {stats.mastered}/{stats.total}
-                </Text>
+                </LinearText>
               )}
             </View>
             {/* Stacked pipeline bar */}
@@ -336,7 +338,9 @@ function BTRProgressCard({
             {/* Action row */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 8 }}>
               {needsQuiz && (
-                <Text style={masteryStyles.quizNudge}>⚡ {stats.seen} need quiz/review</Text>
+                <LinearText style={masteryStyles.quizNudge}>
+                  ⚡ {stats.seen} need quiz/review
+                </LinearText>
               )}
               {watchedOrBetter === 0 && (
                 <TouchableOpacity
@@ -352,7 +356,7 @@ function BTRProgressCard({
                   }
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Text style={dbmciStyles.markBtn}>Mark Watched</Text>
+                  <LinearText style={dbmciStyles.markBtn}>Mark Watched</LinearText>
                 </TouchableOpacity>
               )}
             </View>
@@ -389,18 +393,18 @@ function MasteryFunnelCard({ summary }: { summary: StudyPlanSummary }) {
         {bar(summary.unseenCount, n.colors.border)}
       </View>
       <View style={masteryStyles.funnelLegendRow}>
-        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.success }]}>
+        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.success }]}>
           {summary.masteredCount}
-        </Text>
-        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.warning }]}>
+        </LinearText>
+        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.warning }]}>
           {summary.reviewedCount}
-        </Text>
-        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.accent }]}>
+        </LinearText>
+        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.accent }]}>
           {summary.seenNeedingQuizCount}
-        </Text>
-        <Text style={[masteryStyles.funnelLegendItem, { color: n.colors.textMuted }]}>
+        </LinearText>
+        <LinearText style={[masteryStyles.funnelLegendItem, { color: n.colors.textMuted }]}>
           {summary.unseenCount}
-        </Text>
+        </LinearText>
       </View>
     </View>
   );
@@ -412,7 +416,7 @@ function BacklogBanner({ summary }: { summary: StudyPlanSummary }) {
   const severe = summary.overdueBacklogDays > 4;
   return (
     <View style={masteryStyles.backlogBanner}>
-      <Text
+      <LinearText
         style={[
           masteryStyles.backlogBannerText,
           { color: severe ? n.colors.error : n.colors.warning },
@@ -420,7 +424,7 @@ function BacklogBanner({ summary }: { summary: StudyPlanSummary }) {
       >
         {summary.overdueBacklogDays}d overdue reviews
         {severe ? ' — new topics throttled' : ' — clear before new topics'}
-      </Text>
+      </LinearText>
     </View>
   );
 }
@@ -458,9 +462,9 @@ function FoundationRepairQueueCard({
         onPress={onStartFoundation}
         activeOpacity={0.8}
       >
-        <Text style={masteryStyles.foundationPrimaryBtnText}>
+        <LinearText style={masteryStyles.foundationPrimaryBtnText}>
           Repair {foundationToday.length} weak
-        </Text>
+        </LinearText>
       </TouchableOpacity>
       {summary.seenNeedingQuizCount > 0 && (
         <TouchableOpacity
@@ -468,9 +472,9 @@ function FoundationRepairQueueCard({
           onPress={onStartQuizRecovery}
           activeOpacity={0.8}
         >
-          <Text style={masteryStyles.foundationGhostBtnText}>
+          <LinearText style={masteryStyles.foundationGhostBtnText}>
             Quiz {summary.seenNeedingQuizCount} watched
-          </Text>
+          </LinearText>
         </TouchableOpacity>
       )}
     </View>
@@ -481,8 +485,8 @@ function FoundationRepairQueueCard({
 function UrgencyCell({ summary }: { summary: StudyPlanSummary }) {
   return (
     <View style={styles.summaryCell}>
-      <Text style={styles.summaryValue}>{summary.daysRemaining}d</Text>
-      <Text style={styles.summaryLabel}>{summary.targetExam}</Text>
+      <LinearText style={styles.summaryValue}>{summary.daysRemaining}d</LinearText>
+      <LinearText style={styles.summaryLabel}>{summary.targetExam}</LinearText>
     </View>
   );
 }
@@ -661,21 +665,23 @@ export default function StudyPlanScreen() {
         <View style={[styles.dot, { backgroundColor: item.topic.subjectColor }]} />
         <View style={{ flex: 1 }}>
           <View style={styles.topicNameRow}>
-            {item.type === 'review' && <Text style={styles.tagReview}>REV</Text>}
-            {item.type === 'deep_dive' && <Text style={styles.tagDeep}>DEEP</Text>}
-            {item.type === 'study' && <Text style={styles.tagNew}>NEW</Text>}
-            {item.topic.inicetPriority >= 8 && <Text style={styles.tagHighYield}>HY</Text>}
-            <Text
+            {item.type === 'review' && <LinearText style={styles.tagReview}>REV</LinearText>}
+            {item.type === 'deep_dive' && <LinearText style={styles.tagDeep}>DEEP</LinearText>}
+            {item.type === 'study' && <LinearText style={styles.tagNew}>NEW</LinearText>}
+            {item.topic.inicetPriority >= 8 && (
+              <LinearText style={styles.tagHighYield}>HY</LinearText>
+            )}
+            <LinearText
               style={[styles.topicName, isCompleted && styles.topicNameCompleted]}
               numberOfLines={2}
               ellipsizeMode="tail"
             >
               {item.topic.name}
-            </Text>
+            </LinearText>
           </View>
-          <Text style={styles.topicSub}>
+          <LinearText style={styles.topicSub}>
             {item.topic.subjectName} · P{item.topic.inicetPriority} · {item.duration}m
-          </Text>
+          </LinearText>
         </View>
         {isCompleted ? (
           <Ionicons name="checkmark-circle" size={16} color={n.colors.success} />
@@ -692,7 +698,7 @@ export default function StudyPlanScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="large" color={n.colors.accent} />
-          <Text style={styles.loadingText}>Building your study plan...</Text>
+          <LinearText style={styles.loadingText}>Building your study plan...</LinearText>
         </View>
       </SafeAreaView>
     );
@@ -703,10 +709,10 @@ export default function StudyPlanScreen() {
       <SafeAreaView style={styles.safe} testID="plan-screen">
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.loadingWrap}>
-          <Text style={styles.errorTitle}>Could not load study plan</Text>
-          <Text style={styles.errorText}>{loadError}</Text>
+          <LinearText style={styles.errorTitle}>Could not load study plan</LinearText>
+          <LinearText style={styles.errorText}>{loadError}</LinearText>
           <TouchableOpacity style={styles.retryButton} onPress={refreshPlan} activeOpacity={0.8}>
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <LinearText style={styles.retryButtonText}>Retry</LinearText>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -756,14 +762,14 @@ export default function StudyPlanScreen() {
                   accessibilityLabel={`Plan mode: ${mode.label}`}
                   accessibilityState={{ selected: planMode === mode.key }}
                 >
-                  <Text
+                  <LinearText
                     style={[
                       styles.modeChipText,
                       planMode === mode.key && styles.modeChipTextActive,
                     ]}
                   >
                     {mode.label}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -781,14 +787,14 @@ export default function StudyPlanScreen() {
                   accessibilityLabel={`Resource: ${mode.label}`}
                   accessibilityState={{ selected: resourceMode === mode.key }}
                 >
-                  <Text
+                  <LinearText
                     style={[
                       styles.resourceChipText,
                       resourceMode === mode.key && styles.resourceChipTextActive,
                     ]}
                   >
                     {mode.label}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -798,18 +804,20 @@ export default function StudyPlanScreen() {
           <LinearSurface compact style={styles.dashboardCard}>
             <View style={styles.summaryStrip}>
               <View style={styles.summaryCell}>
-                <Text style={styles.summaryValue}>{requiredHoursDisplay}</Text>
-                <Text style={styles.summaryLabel}>per day</Text>
+                <LinearText style={styles.summaryValue}>{requiredHoursDisplay}</LinearText>
+                <LinearText style={styles.summaryLabel}>per day</LinearText>
               </View>
               <View style={styles.summaryDivider} />
               <UrgencyCell summary={summary} />
               <View style={styles.summaryDivider} />
               <View style={styles.summaryCell}>
-                <Text style={styles.summaryValue}>{summary.bufferDays}d</Text>
-                <Text style={styles.summaryLabel}>buffer</Text>
+                <LinearText style={styles.summaryValue}>{summary.bufferDays}d</LinearText>
+                <LinearText style={styles.summaryLabel}>buffer</LinearText>
               </View>
             </View>
-            {!summary.feasible && <Text style={styles.warningHint}>{summary.message}</Text>}
+            {!summary.feasible && (
+              <LinearText style={styles.warningHint}>{summary.message}</LinearText>
+            )}
             <MasteryFunnelCard summary={summary} />
           </LinearSurface>
 
@@ -825,14 +833,14 @@ export default function StudyPlanScreen() {
                     onPress={() => setCapacityOverrideMinutes(active ? null : opt.minutes)}
                     activeOpacity={0.8}
                   >
-                    <Text
+                    <LinearText
                       style={[
                         masteryStyles.capacityChipText,
                         active && masteryStyles.capacityChipTextActive,
                       ]}
                     >
                       {opt.label}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 );
               })}
@@ -879,61 +887,63 @@ export default function StudyPlanScreen() {
           )}
 
           {/* ── Today ── */}
-          <Text style={styles.sectionTitle}>Today</Text>
+          <LinearText style={styles.sectionTitle}>Today</LinearText>
           {todayPlan && todayPlan.items.length > 0 ? (
             <View style={styles.dayBlock}>
               <View style={styles.dayHeader}>
-                <Text style={styles.dayLabel}>{todayPlan.dayLabel}</Text>
-                <Text style={styles.dayMeta}>
+                <LinearText style={styles.dayLabel}>{todayPlan.dayLabel}</LinearText>
+                <LinearText style={styles.dayMeta}>
                   {Math.round(todayPlan.totalMinutes / 60)}h · {todayPlan.items.length} tasks
-                </Text>
+                </LinearText>
               </View>
               {todayPlan.items.map((_, idx) => renderPlanRow(todayPlan, idx, completedTodayIds))}
               {todayPlan.isRestDay && (
                 <View style={styles.restBox}>
-                  <Text style={styles.restText}>Rest Day / Catch Up</Text>
+                  <LinearText style={styles.restText}>Rest Day / Catch Up</LinearText>
                 </View>
               )}
             </View>
           ) : (
             <View style={styles.emptySection}>
-              <Text style={styles.emptySectionTitle}>Nothing queued</Text>
-              <Text style={styles.emptySectionSub}>
+              <LinearText style={styles.emptySectionTitle}>Nothing queued</LinearText>
+              <LinearText style={styles.emptySectionSub}>
                 Switch plan modes or open syllabus to generate targets.
-              </Text>
+              </LinearText>
             </View>
           )}
 
           {/* ── This Week ── */}
-          <Text style={styles.sectionTitle}>This Week</Text>
+          <LinearText style={styles.sectionTitle}>This Week</LinearText>
           {weekPlans.map((day, i) => (
             <View key={i} style={styles.dayBlock}>
               <View style={styles.dayHeader}>
-                <Text style={styles.dayLabel}>{day.dayLabel}</Text>
-                <Text style={styles.dayMeta}>
+                <LinearText style={styles.dayLabel}>{day.dayLabel}</LinearText>
+                <LinearText style={styles.dayMeta}>
                   {Math.round(day.totalMinutes / 60)}h · {day.items.length} tasks
-                </Text>
+                </LinearText>
               </View>
               {day.items.map((_, idx) => renderPlanRow(day, idx, completedWeekIds))}
               {day.isRestDay && (
                 <View style={styles.restBox}>
-                  <Text style={styles.restText}>Rest Day / Catch Up</Text>
+                  <LinearText style={styles.restText}>Rest Day / Catch Up</LinearText>
                 </View>
               )}
             </View>
           ))}
 
           {/* ── Overdue ── */}
-          <Text style={styles.sectionTitle}>Overdue</Text>
+          <LinearText style={styles.sectionTitle}>Overdue</LinearText>
           {missedTopics.length > 0 ? (
             <View style={styles.dayBlock}>
               <View style={styles.dayHeader}>
-                <Text style={[styles.dayLabel, { color: n.colors.warning }]}>
+                <LinearText style={[styles.dayLabel, { color: n.colors.warning }]}>
                   {missedTotalCount} review{missedTotalCount === 1 ? '' : 's'} due
-                </Text>
+                </LinearText>
               </View>
               {missedTotalCount > missedTopics.length && (
-                <Text style={styles.previewMeta}>Showing first {missedTopics.length}</Text>
+                <LinearText style={styles.previewMeta}>
+                  Showing first {missedTopics.length}
+                </LinearText>
               )}
               {missedTopics.map((topic) => (
                 <TouchableOpacity
@@ -944,12 +954,12 @@ export default function StudyPlanScreen() {
                 >
                   <View style={[styles.dot, { backgroundColor: topic.subjectColor }]} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
+                    <LinearText style={styles.topicName} numberOfLines={2} ellipsizeMode="tail">
                       {topic.name}
-                    </Text>
-                    <Text style={styles.topicSub}>
+                    </LinearText>
+                    <LinearText style={styles.topicSub}>
                       {topic.subjectName} · {topic.progress.fsrsDue?.slice(5, 10) ?? 'overdue'}
-                    </Text>
+                    </LinearText>
                   </View>
                   <Ionicons name="chevron-forward" size={14} color={n.colors.textMuted} />
                 </TouchableOpacity>
@@ -957,8 +967,8 @@ export default function StudyPlanScreen() {
             </View>
           ) : (
             <View style={styles.emptySection}>
-              <Text style={styles.emptySectionTitle}>All clear</Text>
-              <Text style={styles.emptySectionSub}>No overdue reviews right now.</Text>
+              <LinearText style={styles.emptySectionTitle}>All clear</LinearText>
+              <LinearText style={styles.emptySectionSub}>No overdue reviews right now.</LinearText>
             </View>
           )}
         </ResponsiveContainer>

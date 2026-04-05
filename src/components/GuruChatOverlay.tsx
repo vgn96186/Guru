@@ -397,7 +397,7 @@ export default function GuruChatOverlay({
                   <Ionicons
                     name="arrow-up"
                     size={20}
-                    color={!input.trim() ? n.colors.textMuted : '#fff'}
+                    color={!input.trim() ? n.colors.textMuted : n.colors.textPrimary}
                   />
                 )}
               </TouchableOpacity>
@@ -426,7 +426,7 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255, 255, 255, 0.08)',
     borderBottomWidth: 0,
-    shadowColor: '#000',
+    shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: -12 },
     shadowOpacity: 0.5,
     shadowRadius: 28,
@@ -666,7 +666,7 @@ const s = StyleSheet.create({
     elevation: 3,
   },
   retryBtnText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 12,
     fontWeight: '700',
   },

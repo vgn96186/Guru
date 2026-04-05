@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   Image,
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -10,6 +9,7 @@ import {
   PanResponder,
   ScrollView,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -169,10 +169,10 @@ export default function FlashcardsScreen() {
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
           <Ionicons name="sparkles" size={60} color={n.colors.accent} />
-          <Text style={styles.title}>All Caught Up!</Text>
-          <Text style={styles.sub}>Finished all reviews for now</Text>
+          <LinearText style={styles.title}>All Caught Up!</LinearText>
+          <LinearText style={styles.sub}>Finished all reviews for now</LinearText>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
-            <Text style={styles.btnText}>Back to Menu</Text>
+            <LinearText style={styles.btnText}>Back to Menu</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -210,9 +210,9 @@ export default function FlashcardsScreen() {
           title={currentTopic?.name ?? 'Flashcards'}
           subtitle={currentTopic?.subjectName}
           rightElement={
-            <Text style={styles.progressText}>
+            <LinearText style={styles.progressText}>
               {currentIdx + 1}/{queue.length}
-            </Text>
+            </LinearText>
           }
         />
 
@@ -224,7 +224,7 @@ export default function FlashcardsScreen() {
               <Animated.View style={[styles.cardWrap, { transform: [{ translateX: panXY.x }] }]}>
                 {/* Front */}
                 <Animated.View style={[styles.card, frontAnimatedStyle]}>
-                  <Text style={styles.cardLabel}>QUESTION</Text>
+                  <LinearText style={styles.cardLabel}>QUESTION</LinearText>
                   {currentCard.imageUrl ? (
                     <Image
                       source={{ uri: currentCard.imageUrl }}
@@ -232,15 +232,17 @@ export default function FlashcardsScreen() {
                       resizeMode="contain"
                     />
                   ) : null}
-                  <Text style={styles.cardContent}>{currentCard.front}</Text>
+                  <LinearText style={styles.cardContent}>{currentCard.front}</LinearText>
                   <TouchableOpacity style={styles.tapToReveal} onPress={handleFlip}>
-                    <Text style={styles.tapText}>Tap to reveal</Text>
+                    <LinearText style={styles.tapText}>Tap to reveal</LinearText>
                   </TouchableOpacity>
                 </Animated.View>
 
                 {/* Back */}
                 <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-                  <Text style={[styles.cardLabel, { color: n.colors.accent }]}>ANSWER</Text>
+                  <LinearText style={[styles.cardLabel, { color: n.colors.accent }]}>
+                    ANSWER
+                  </LinearText>
                   <ScrollView showsVerticalScrollIndicator={false} centerContent>
                     {currentCard.imageUrl ? (
                       <Image
@@ -249,11 +251,11 @@ export default function FlashcardsScreen() {
                         resizeMode="contain"
                       />
                     ) : null}
-                    <Text style={styles.cardContent}>{currentCard.back}</Text>
+                    <LinearText style={styles.cardContent}>{currentCard.back}</LinearText>
                   </ScrollView>
                   {!isLastCard && isFlipped && (
                     <TouchableOpacity style={styles.nextCardBtn} onPress={handleNextCard}>
-                      <Text style={styles.nextCardText}>Next Card →</Text>
+                      <LinearText style={styles.nextCardText}>Next Card →</LinearText>
                     </TouchableOpacity>
                   )}
                 </Animated.View>
@@ -269,7 +271,7 @@ export default function FlashcardsScreen() {
               </Animated.View>
             </View>
           ) : (
-            <Text style={styles.errorText}>No cards found for this topic.</Text>
+            <LinearText style={styles.errorText}>No cards found for this topic.</LinearText>
           )}
         </View>
 
@@ -285,15 +287,15 @@ export default function FlashcardsScreen() {
                   ]}
                   onPress={() => handleRate(r)}
                 >
-                  <Text style={[styles.rateText, { color: r.color }]}>{r.label}</Text>
+                  <LinearText style={[styles.rateText, { color: r.color }]}>{r.label}</LinearText>
                 </TouchableOpacity>
               ))}
             </View>
           ) : (
             <View style={styles.metaInfo}>
-              <Text style={styles.cardCounter}>
+              <LinearText style={styles.cardCounter}>
                 Card {cardIdx + 1} of {cards.length}
-              </Text>
+              </LinearText>
             </View>
           )}
         </View>
@@ -327,7 +329,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: n.colors.border,
-    shadowColor: '#000',
+    shadowColor: n.colors.background,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 10,

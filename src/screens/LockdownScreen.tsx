@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Text, StyleSheet, TouchableOpacity, BackHandler, Alert, StatusBar } from 'react-native';
+import { StyleSheet, TouchableOpacity, BackHandler, Alert, StatusBar } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -55,18 +56,18 @@ export default function LockdownScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
-        <Text style={styles.emoji}>🔒</Text>
-        <Text style={styles.title}>FOCUS TIMER</Text>
-        <Text style={styles.sub}>Stay focused for this block. You've got this.</Text>
+        <LinearText style={styles.emoji}>🔒</LinearText>
+        <LinearText style={styles.title}>FOCUS TIMER</LinearText>
+        <LinearText style={styles.sub}>Stay focused for this block. You've got this.</LinearText>
 
-        <Text style={styles.timer}>
+        <LinearText style={styles.timer}>
           {mins.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
-        </Text>
+        </LinearText>
 
         {attempts > 0 && (
-          <Text style={styles.shameText}>
+          <LinearText style={styles.shameText}>
             {messages[Math.min(attempts - 1, messages.length - 1)]}
-          </Text>
+          </LinearText>
         )}
 
         <LinearButton
@@ -105,7 +106,7 @@ export default function LockdownScreen() {
           accessibilityRole="button"
           accessibilityLabel="Force exit lockdown"
         >
-          <Text style={styles.exitBtnText}>Force Exit</Text>
+          <LinearText style={styles.exitBtnText}>Force Exit</LinearText>
         </TouchableOpacity>
       </ResponsiveContainer>
     </SafeAreaView>
@@ -117,23 +118,29 @@ const styles = StyleSheet.create({
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 64, marginBottom: 24 },
   title: {
-    color: '#FF9800',
+    color: n.colors.warning,
     fontSize: 32,
     fontWeight: '900',
     letterSpacing: 2,
     marginBottom: 12,
     textAlign: 'center',
   },
-  sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48, lineHeight: 24 },
+  sub: {
+    color: n.colors.textMuted,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 48,
+    lineHeight: 24,
+  },
   timer: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 72,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
     marginBottom: 48,
   },
   shameText: {
-    color: '#FF9800',
+    color: n.colors.warning,
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',

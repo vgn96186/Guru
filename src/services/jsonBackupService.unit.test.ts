@@ -1,9 +1,9 @@
 import { exportJsonBackup, importJsonBackup } from './jsonBackupService';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { Alert } from 'react-native';
 import { getDb } from '../db/database';
 import { getAiCacheDb } from '../db/aiCacheDatabase';
+import { showToast } from '../components/Toast';
 
 jest.mock('expo-file-system/legacy', () => ({
   cacheDirectory: 'file:///mock-cache/',
@@ -20,10 +20,8 @@ jest.mock('expo-document-picker', () => ({
   getDocumentAsync: jest.fn(),
 }));
 
-jest.mock('react-native', () => ({
-  Alert: {
-    alert: jest.fn(),
-  },
+jest.mock('../components/Toast', () => ({
+  showToast: jest.fn(),
 }));
 
 jest.mock('../db/database', () => ({
@@ -309,10 +307,10 @@ describe('jsonBackupService', () => {
         filePath,
         expect.objectContaining({ mimeType: 'application/json' }),
       );
-      expect(Alert.alert).not.toHaveBeenCalled();
+      expect(showToast).not.toHaveBeenCalled();
     });
 
-    it('should show an alert with file path when sharing is not available', async () => {
+    it('should show a themed toast with file path when sharing is not available', async () => {
       (Sharing.isAvailableAsync as jest.Mock).mockResolvedValue(false);
 
       const result = await exportJsonBackup();
@@ -322,7 +320,13 @@ describe('jsonBackupService', () => {
       expect(Sharing.shareAsync).not.toHaveBeenCalled();
 
       const [filePath] = (FileSystem.writeAsStringAsync as jest.Mock).mock.calls[0];
-      expect(Alert.alert).toHaveBeenCalledWith('Backup saved', expect.stringContaining(filePath));
+      expect(showToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Backup saved',
+          message: expect.stringContaining(filePath),
+          variant: 'success',
+        }),
+      );
     });
 
     it('should return false if sharing fails', async () => {

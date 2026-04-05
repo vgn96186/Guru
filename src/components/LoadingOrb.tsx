@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Defs, RadialGradient, Stop, Circle, Ellipse } from 'react-native-svg';
 import { linearTheme as n } from '../theme/linearTheme';
+import LinearText from './primitives/LinearText';
 
 interface Props {
   message?: string;
@@ -81,7 +82,10 @@ function getRandomVariation(message: string): string {
   return variations[Math.floor(Math.random() * variations.length)];
 }
 
-export default React.memo(function LoadingOrb({ message = 'Hey there! Let me think...', size = 180 }: Props) {
+export default React.memo(function LoadingOrb({
+  message = 'Hey there! Let me think...',
+  size = 180,
+}: Props) {
   const [displayMessage, setDisplayMessage] = React.useState(message);
   const lastMessageRef = useRef(message);
 
@@ -116,7 +120,6 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
   const highlightTranslateY = useSharedValue(0);
   const highlightOpacity = useSharedValue(0.45);
 
-
   useEffect(() => {
     const normalCore = { duration: 1800, easing: Easing.inOut(Easing.ease) };
     const normalEmit = { duration: 3500, easing: Easing.out(Easing.quad) };
@@ -139,17 +142,16 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
     // Ring 3 — outer ripple
     scaleRing3.value = withDelay(
       2400,
-      withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false)
+      withRepeat(withTiming(6.5, { ...normalEmit, duration: 4000 }), -1, false),
     );
     opacityRing3.value = withDelay(
       2400,
-      withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false)
+      withRepeat(withTiming(0, { ...normalEmit, duration: 4000 }), -1, false),
     );
 
     // Specular highlight — subtle shift synced to breathing
     highlightTranslateY.value = withRepeat(withTiming(2, normalCore), -1, true);
     highlightOpacity.value = withRepeat(withTiming(0.55, normalCore), -1, true);
-
   }, []);
 
   const styleCore = useAnimatedStyle(() => ({
@@ -179,11 +181,9 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
     opacity: highlightOpacity.value,
   }));
 
-
   return (
     <View style={styles.container}>
       <View style={[styles.orbWrapper, { width: size, height: size, marginBottom: 0 }]}>
-        
         {/* Ripple rings */}
         <Animated.View style={[styles.rippleRing, styleRing3]} />
         <Animated.View style={[styles.rippleRing, styleRing2]} />
@@ -246,7 +246,13 @@ export default React.memo(function LoadingOrb({ message = 'Hey there! Let me thi
           </Animated.View>
         </Animated.View>
       </View>
-
+      {displayMessage && (
+        <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
+          <LinearText variant="caption" tone="muted" centered style={{ letterSpacing: 0.5 }}>
+            {displayMessage}
+          </LinearText>
+        </View>
+      )}
     </View>
   );
 });

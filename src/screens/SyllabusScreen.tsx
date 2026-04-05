@@ -33,6 +33,10 @@ import {
 import { syncVaultSeedTopics, getDb } from '../db/database';
 import { dbEvents, DB_EVENT_KEYS } from '../services/databaseEvents';
 import SubjectCard from '../components/SubjectCard';
+import { showDialog } from '../components/dialogService';
+import ScreenMotion from '../motion/ScreenMotion';
+import StaggeredEntrance from '../motion/StaggeredEntrance';
+import { showToast } from '../components/Toast';
 import type { Subject } from '../types';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import * as Haptics from 'expo-haptics';
@@ -41,6 +45,8 @@ import BannerSearchBar from '../components/BannerSearchBar';
 import { linearTheme as n } from '../theme/linearTheme';
 import ScreenHeader from '../components/ScreenHeader';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearBadge from '../components/primitives/LinearBadge';
+import LinearText from '../components/primitives/LinearText';
 type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'Syllabus'>;
 
 type SubjectSortMode = 'weight' | 'due' | 'coverage' | 'high_yield';
@@ -71,57 +77,15 @@ const SORT_OPTIONS: Array<{ key: SubjectSortMode; label: string }> = [
 const EMPTY_COVERAGE = { total: 0, seen: 0 };
 const EMPTY_METRICS: SubjectMetrics = { due: 0, highYield: 0, unseen: 0, withNotes: 0, weak: 0 };
 const SYLLABUS_FOCUS_RELOAD_THROTTLE_MS = 15_000;
+const SYLLABUS_SCREEN_MOTION_TRIGGER = 'first-mount' as const;
+// The screen chrome above the list already fills most of the first viewport.
+// Animate only the first few visible cards; everything else renders statically.
+const FIRST_VISIBLE_SUBJECT_CARD_LIMIT = 3;
 
 /** Premium skeleton matching the split SubjectCard layout */
 function SyllabusSkeleton() {
   return (
     <View style={skeletonStyles.container}>
-      {/* Header Skeleton */}
-      <View style={skeletonStyles.headerRow}>
-        <View style={skeletonStyles.headerTitle} />
-        <View style={skeletonStyles.headerActions} />
-      </View>
-
-      {/* Hero Surface Skeleton */}
-      <View style={skeletonStyles.heroSurface}>
-        <View style={[skeletonStyles.bar, { width: '40%', marginBottom: 12 }]} />
-        <View style={skeletonStyles.heroMain}>
-          <View style={skeletonStyles.heroStats} />
-          <View style={skeletonStyles.heroTrack} />
-        </View>
-      </View>
-
-      {/* Grid Controls Skeleton */}
-      <View style={skeletonStyles.controls}>
-        <View
-          style={{
-            width: 80,
-            height: 28,
-            backgroundColor: n.colors.border,
-            borderRadius: 8,
-            opacity: 0.3,
-          }}
-        />
-        <View
-          style={{
-            width: 80,
-            height: 28,
-            backgroundColor: n.colors.border,
-            borderRadius: 8,
-            opacity: 0.2,
-          }}
-        />
-        <View
-          style={{
-            width: 80,
-            height: 28,
-            backgroundColor: n.colors.border,
-            borderRadius: 8,
-            opacity: 0.2,
-          }}
-        />
-      </View>
-
       {/* Cards List Skeleton */}
       {Array.from({ length: 4 }).map((_, i) => (
         <View key={i} style={skeletonStyles.card}>
@@ -141,60 +105,9 @@ function SyllabusSkeleton() {
 
 const skeletonStyles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: n.colors.background,
     paddingHorizontal: n.spacing.md,
-    paddingTop: 16,
+    paddingTop: 8,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  headerTitle: {
-    width: 120,
-    height: 24,
-    backgroundColor: n.colors.border,
-    borderRadius: 4,
-    opacity: 0.5,
-  },
-  headerActions: {
-    width: 80,
-    height: 32,
-    backgroundColor: n.colors.border,
-    borderRadius: 16,
-    opacity: 0.3,
-  },
-
-  heroSurface: {
-    height: 100,
-    backgroundColor: n.colors.surface,
-    borderRadius: n.radius.md,
-    borderWidth: 1,
-    borderColor: n.colors.border,
-    padding: 16,
-    marginBottom: 20,
-    opacity: 0.6,
-  },
-  heroMain: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  heroStats: {
-    width: 80,
-    height: 36,
-    backgroundColor: n.colors.border,
-    borderRadius: 6,
-    opacity: 0.4,
-  },
-  heroTrack: {
-    flex: 1,
-    height: 12,
-    backgroundColor: n.colors.border,
-    borderRadius: 6,
-    opacity: 0.3,
-  },
-
-  controls: { flexDirection: 'row', gap: 8, marginBottom: 16 },
-
   card: {
     flexDirection: 'row',
     height: 90,
@@ -229,31 +142,7 @@ const skeletonStyles = StyleSheet.create({
     width: '100%',
   },
 });
-/**
- * Shell wrapper — renders only a lightweight skeleton during the tab-switch
- * animation, then mounts the full SyllabusScreen content after the transition
- * settles. This prevents heavy hook/component initialization from competing
- * with React Navigation's animation frames.
- */
 export default function SyllabusScreen() {
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setReady(true);
-    });
-    return () => task.cancel();
-  }, []);
-
-  if (!ready) {
-    return (
-      <SafeAreaView style={styles.safe} testID="syllabus-screen">
-        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-        <SyllabusSkeleton />
-      </SafeAreaView>
-    );
-  }
-
   return <SyllabusScreenContent />;
 }
 
@@ -273,7 +162,9 @@ function SyllabusScreenContent() {
   const [pendingSuggestions, setPendingSuggestions] = useState<TopicSuggestion[]>([]);
   const [suggestionBusyId, setSuggestionBusyId] = useState<number | null>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [entryComplete, setEntryComplete] = useState(false);
   const isFocusedRef = useRef(isFocused);
+  const entryCompleteRef = useRef(entryComplete);
   const lastLoadedAtRef = useRef(0);
   const lastLoadedSortModeRef = useRef<SubjectSortMode>(sortMode);
   const navLockRef = useRef(false);
@@ -300,6 +191,10 @@ function SyllabusScreenContent() {
   useEffect(() => {
     isFocusedRef.current = isFocused;
   }, [isFocused]);
+
+  useEffect(() => {
+    entryCompleteRef.current = entryComplete;
+  }, [entryComplete]);
 
   const loadData = useCallback(async () => {
     const [subs, combinedRows, suggestions] = await Promise.all([
@@ -370,10 +265,10 @@ function SyllabusScreenContent() {
       if (!shouldReload) {
         return;
       }
-      const task = InteractionManager.runAfterInteractions(() => {
+      const timer = setTimeout(() => {
         void loadData();
-      });
-      return () => task.cancel();
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [isFocused, sortMode, loadData, unlockNavigation]);
 
@@ -387,10 +282,10 @@ function SyllabusScreenContent() {
 
   useEffect(() => {
     const onProgressOrLecture = () => {
-      const task = InteractionManager.runAfterInteractions(() => {
+      const timer = setTimeout(() => {
         void loadData();
-      });
-      return task;
+      }, 150);
+      return timer;
     };
     dbEvents.on(DB_EVENT_KEYS.PROGRESS_UPDATED, onProgressOrLecture);
     dbEvents.on(DB_EVENT_KEYS.LECTURE_SAVED, onProgressOrLecture);
@@ -446,28 +341,38 @@ function SyllabusScreenContent() {
   }, [searchQuery]);
 
   async function handleManualSync() {
-    Alert.alert(
-      'Re-check syllabus topics?',
-      'This will safely sync new syllabus and vault topics without deleting your progress.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sync',
-          onPress: async () => {
-            setRefreshing(true);
-            try {
-              await syncVaultSeedTopics();
-              await loadData();
-              Alert.alert('Synced', 'Guru successfully re-checked your topics. 😏');
-            } catch (e: any) {
-              Alert.alert('Sync failed', e.message);
-            } finally {
-              setRefreshing(false);
-            }
-          },
-        },
+    const result = await showDialog({
+      title: 'Re-check syllabus topics?',
+      message:
+        'This will safely sync new syllabus and vault topics without deleting your progress.',
+      variant: 'focus',
+      actions: [
+        { id: 'cancel', label: 'Cancel', variant: 'secondary' },
+        { id: 'sync', label: 'Sync', variant: 'primary' },
       ],
-    );
+      allowDismiss: true,
+    });
+
+    if (result !== 'sync') return;
+
+    setRefreshing(true);
+    try {
+      await syncVaultSeedTopics();
+      await loadData();
+      showToast({
+        title: 'Synced',
+        message: 'Guru successfully re-checked your topics. 😏',
+        variant: 'success',
+      });
+    } catch (e: any) {
+      showToast({
+        title: 'Sync failed',
+        message: e?.message ?? 'Unknown error',
+        variant: 'error',
+      });
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   async function handleApproveSuggestion(suggestion: TopicSuggestion) {
@@ -475,14 +380,19 @@ function SyllabusScreenContent() {
     try {
       const topicId = await approveTopicSuggestion(suggestion.id);
       await loadData();
-      Alert.alert(
-        'Topic approved',
-        topicId
+      showToast({
+        title: 'Topic approved',
+        message: topicId
           ? `"${suggestion.name}" is now part of ${suggestion.subjectName}.`
           : `"${suggestion.name}" was already available.`,
-      );
+        variant: 'success',
+      });
     } catch (e: any) {
-      Alert.alert('Approval failed', e?.message ?? 'Unknown error');
+      showToast({
+        title: 'Approval failed',
+        message: e?.message ?? 'Unknown error',
+        variant: 'error',
+      });
     } finally {
       setSuggestionBusyId(null);
     }
@@ -493,8 +403,17 @@ function SyllabusScreenContent() {
     try {
       await rejectTopicSuggestion(suggestion.id);
       await loadData();
+      showToast({
+        title: 'Suggestion rejected',
+        message: `"${suggestion.name}" will stay out of the syllabus.`,
+        variant: 'info',
+      });
     } catch (e: any) {
-      Alert.alert('Reject failed', e?.message ?? 'Unknown error');
+      showToast({
+        title: 'Reject failed',
+        message: e?.message ?? 'Unknown error',
+        variant: 'error',
+      });
     } finally {
       setSuggestionBusyId(null);
     }
@@ -590,8 +509,8 @@ function SyllabusScreenContent() {
   const handleSubjectPressRef = useRef(handleSubjectPress);
   handleSubjectPressRef.current = handleSubjectPress;
 
-  const renderSubjectItem = useCallback(
-    ({ item }: { item: Subject }) => (
+  const renderSubjectItem = useCallback(({ item, index }: { item: Subject; index: number }) => {
+    const card = (
       <SubjectCard
         subject={item}
         coverage={coverageRef.current.get(item.id) ?? EMPTY_COVERAGE}
@@ -599,15 +518,26 @@ function SyllabusScreenContent() {
         matchingTopicsCount={searchMatchCountsRef.current.get(item.id)}
         onPress={() => handleSubjectPressRef.current(item)}
       />
-    ),
-    [],
-  );
+    );
+
+    if (index >= FIRST_VISIBLE_SUBJECT_CARD_LIMIT) {
+      return card;
+    }
+
+    return (
+      <StaggeredEntrance index={index + 3} disabled={!entryCompleteRef.current}>
+        {card}
+      </StaggeredEntrance>
+    );
+  }, []);
 
   const listHeaderComponent = useMemo(() => {
     if (searchLower.length < 2 || topicResults.length === 0) return null;
     return (
       <View style={styles.topicResultsSection}>
-        <Text style={styles.topicResultsLabel}>Direct Topic Matches</Text>
+        <LinearText variant="label" tone="muted" style={styles.topicResultsLabel}>
+          Direct Topic Matches
+        </LinearText>
         {topicResults.map((topic) => (
           <TouchableOpacity
             key={`topic-${topic.id}`}
@@ -617,16 +547,22 @@ function SyllabusScreenContent() {
             <LinearSurface compact padded={false} style={styles.topicResultCard}>
               <View style={[styles.topicResultDot, { backgroundColor: topic.color_hex }]} />
               <View style={styles.topicResultCopy}>
-                <Text style={styles.topicResultName} numberOfLines={2}>
+                <LinearText variant="label" style={styles.topicResultName} truncate>
                   {topic.name}
-                </Text>
-                <Text style={styles.topicResultSubject}>{topic.subject_name}</Text>
+                </LinearText>
+                <LinearText variant="caption" tone="muted" style={styles.topicResultSubject}>
+                  {topic.subject_name}
+                </LinearText>
               </View>
-              <Text style={styles.topicResultAction}>Open</Text>
+              <LinearText variant="caption" tone="muted" style={styles.topicResultAction}>
+                Open
+              </LinearText>
             </LinearSurface>
           </TouchableOpacity>
         ))}
-        <Text style={styles.topicResultsDivider}>Matching Subjects</Text>
+        <LinearText variant="label" tone="muted" style={styles.topicResultsDivider}>
+          Matching Subjects
+        </LinearText>
       </View>
     );
   }, [searchLower.length, topicResults, handleTopicResultPress]);
@@ -636,6 +572,9 @@ function SyllabusScreenContent() {
   const prevPct = useRef(0);
 
   useEffect(() => {
+    if (!entryComplete) {
+      return;
+    }
     const increased = overallPct > prevPct.current;
     prevPct.current = overallPct;
 
@@ -649,7 +588,7 @@ function SyllabusScreenContent() {
     if (increased && overallPct > 0 && overallPct % 10 === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
-  }, [overallPct, progressWidth]);
+  }, [overallPct, progressWidth, entryComplete]);
 
   const progressAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -660,220 +599,272 @@ function SyllabusScreenContent() {
   return (
     <SafeAreaView style={styles.safe} testID="syllabus-screen">
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ResponsiveContainer>
-        <ScreenHeader
-          title="Syllabus"
-          subtitle={
-            seenTopics === 0
-              ? 'Open any subject to start building coverage.'
-              : 'Track coverage, due topics, and high-yield gaps across all subjects.'
-          }
-          searchElement={
-            <BannerSearchBar
-              value={searchInput}
-              onChangeText={setSearchInput}
-              placeholder="Search subjects or topics..."
-            />
-          }
-          rightElement={
-            <View style={styles.headerActions}>
-              <BannerIconButton
-                onPress={handleManualSync}
-                disabled={refreshing}
-                accessibilityRole="button"
-                accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
-              >
-                {refreshing ? (
-                  <ActivityIndicator size="small" color={n.colors.textSecondary} />
-                ) : (
-                  <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
-                )}
-              </BannerIconButton>
-              <BannerIconButton
-                onPress={() => navigation.navigate('Settings' as never)}
-                accessibilityRole="button"
-                accessibilityLabel="Open settings"
-              >
-                <Ionicons name="settings-sharp" size={17} color={n.colors.textSecondary} />
-              </BannerIconButton>
-            </View>
-          }
-        ></ScreenHeader>
-        <LinearSurface compact style={styles.heroSurface}>
-          <View style={styles.heroColumn}>
-            <Text style={styles.heroEyebrow}>Overall Syllabus</Text>
-
-            <View style={styles.heroMainRow}>
-              <View style={styles.heroStatsRow}>
-                <Text style={styles.heroStatsCount}>{seenTopics}</Text>
-                <Text style={styles.heroStatsTotal}>/ {totalTopics > 0 ? totalTopics : '-'}</Text>
-              </View>
-
-              <View style={styles.heroProgressTrackMain}>
-                <ReAnimated.View
-                  style={[
-                    styles.heroProgressFillMain,
-                    progressAnimatedStyle,
-                    overallPct >= 50 && { backgroundColor: n.colors.success },
-                  ]}
+      <ScreenMotion
+        style={styles.motionShell}
+        trigger={SYLLABUS_SCREEN_MOTION_TRIGGER}
+        isEntryComplete={() => setEntryComplete(true)}
+      >
+        <ResponsiveContainer style={styles.content}>
+          <StaggeredEntrance index={0} disabled={!entryComplete}>
+            <ScreenHeader
+              title="Syllabus"
+              subtitle={
+                seenTopics === 0
+                  ? 'Open any subject to start building coverage.'
+                  : 'Track coverage, due topics, and high-yield gaps across all subjects.'
+              }
+              titleStyle={styles.headerTitle}
+              subtitleStyle={styles.subtitle}
+              searchElement={
+                <BannerSearchBar
+                  value={searchInput}
+                  onChangeText={setSearchInput}
+                  placeholder="Search subjects or topics..."
                 />
-              </View>
+              }
+              rightElement={
+                <View style={styles.headerActions}>
+                  <BannerIconButton
+                    onPress={handleManualSync}
+                    disabled={refreshing}
+                    accessibilityRole="button"
+                    accessibilityLabel={refreshing ? 'Syncing' : 'Refresh syllabus'}
+                  >
+                    {refreshing ? (
+                      <ActivityIndicator size="small" color={n.colors.textSecondary} />
+                    ) : (
+                      <Ionicons name="sync-outline" size={17} color={n.colors.textSecondary} />
+                    )}
+                  </BannerIconButton>
+                  <BannerIconButton
+                    onPress={() => navigation.navigate('Settings' as never)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open settings"
+                  >
+                    <Ionicons name="settings-sharp" size={17} color={n.colors.textSecondary} />
+                  </BannerIconButton>
+                </View>
+              }
+            ></ScreenHeader>
+          </StaggeredEntrance>
 
-              <Text style={[styles.heroPctMain, overallPct >= 50 && { color: n.colors.success }]}>
-                {overallPct}%
-              </Text>
-            </View>
+          <StaggeredEntrance index={1} disabled={!entryComplete}>
+            <LinearSurface compact style={styles.heroSurface}>
+              <View style={styles.heroColumn}>
+                <LinearText variant="meta" tone="muted" style={styles.heroEyebrow}>
+                  Overall Syllabus
+                </LinearText>
 
-            {seenTopics > 0 ? (
-              <View style={styles.heroBadgesRow}>
-                {totalDue > 0 ? (
-                  <View style={styles.badgeDue}>
-                    <Text style={styles.labelDue}>Due {totalDue}</Text>
+                <View style={styles.heroMainRow}>
+                  <View style={styles.heroStatsRow}>
+                    <LinearText variant="display" style={styles.heroStatsCount}>
+                      {seenTopics}
+                    </LinearText>
+                    <LinearText variant="body" tone="muted" style={styles.heroStatsTotal}>
+                      / {totalTopics > 0 ? totalTopics : '-'}
+                    </LinearText>
                   </View>
-                ) : null}
-                {totalHighYield > 0 ? (
-                  <View style={styles.badgeHY}>
-                    <Text style={styles.labelHY}>HY {totalHighYield}</Text>
-                  </View>
-                ) : null}
-                {totalWithNotes > 0 ? (
-                  <View style={styles.badgeNotes}>
-                    <Text style={styles.labelNotes}>Notes {totalWithNotes}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ) : (
-              <Text style={styles.metaLabelEmpty}>Complete topics to unlock stats.</Text>
-            )}
-          </View>
-        </LinearSurface>
-        <View style={styles.controls}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.sortContentContainer}
-          >
-            {SORT_OPTIONS.map((option) => (
-              <TouchableOpacity
-                key={option.key}
-                style={[styles.sortChip, sortMode === option.key && styles.sortChipActive]}
-                onPress={() => setSortMode(option.key)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={`Sort by ${option.label}`}
-                accessibilityState={{ selected: sortMode === option.key }}
-              >
-                <Text
-                  style={[
-                    styles.sortChipText,
-                    sortMode === option.key && styles.sortChipTextActive,
-                  ]}
-                >
-                  {option.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-        {pendingSuggestions.length > 0 ? (
-          <View style={styles.suggestionSection}>
-            <Text style={styles.suggestionTitle}>Lecture Topic Suggestions</Text>
-            <Text style={styles.suggestionSubtitle}>
-              Review unmatched lecture topics before adding them to the syllabus.
-            </Text>
-            {pendingSuggestions.slice(0, 6).map((suggestion) => {
-              const busy = suggestionBusyId === suggestion.id;
-              return (
-                <LinearSurface key={suggestion.id} compact style={styles.suggestionCard}>
-                  <View style={styles.suggestionHeader}>
-                    <View
+
+                  <View style={styles.heroProgressTrackMain}>
+                    <ReAnimated.View
                       style={[
-                        styles.suggestionDot,
-                        { backgroundColor: suggestion.subjectColor || n.colors.accent },
+                        styles.heroProgressFillMain,
+                        progressAnimatedStyle,
+                        overallPct >= 50 && { backgroundColor: n.colors.success },
                       ]}
                     />
-                    <View style={styles.suggestionCopy}>
-                      <Text style={styles.suggestionName}>{suggestion.name}</Text>
-                      <Text style={styles.suggestionMeta}>
-                        {suggestion.subjectName} · seen {suggestion.mentionCount} time
-                        {suggestion.mentionCount > 1 ? 's' : ''}
-                      </Text>
-                    </View>
                   </View>
-                  {suggestion.sourceSummary ? (
-                    <Text style={styles.suggestionSummary} numberOfLines={2}>
-                      {suggestion.sourceSummary}
-                    </Text>
-                  ) : null}
-                  <View style={styles.suggestionActions}>
-                    <TouchableOpacity
-                      style={[styles.suggestionActionBtn, styles.suggestionRejectBtn]}
-                      disabled={busy}
-                      onPress={() => handleRejectSuggestion(suggestion)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={styles.suggestionRejectText}>Reject</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.suggestionActionBtn, styles.suggestionApproveBtn]}
-                      disabled={busy}
-                      onPress={() => handleApproveSuggestion(suggestion)}
-                      activeOpacity={0.8}
-                    >
-                      {busy ? (
-                        <ActivityIndicator size="small" color={n.colors.textPrimary} />
-                      ) : (
-                        <Text style={styles.suggestionApproveText}>Add to syllabus</Text>
-                      )}
-                    </TouchableOpacity>
+
+                  <LinearText
+                    variant="title"
+                    style={[styles.heroPctMain, overallPct >= 50 && { color: n.colors.success }]}
+                  >
+                    {overallPct}%
+                  </LinearText>
+                </View>
+
+                {seenTopics > 0 ? (
+                  <View style={styles.heroBadgesRow}>
+                    {totalDue > 0 ? (
+                      <View style={styles.badgeDue}>
+                        <LinearText variant="chip" style={styles.labelDue}>
+                          Due {totalDue}
+                        </LinearText>
+                      </View>
+                    ) : null}
+                    {totalHighYield > 0 ? (
+                      <View style={styles.badgeHY}>
+                        <LinearText variant="chip" style={styles.labelHY}>
+                          HY {totalHighYield}
+                        </LinearText>
+                      </View>
+                    ) : null}
+                    {totalWithNotes > 0 ? (
+                      <View style={styles.badgeNotes}>
+                        <LinearText variant="chip" style={styles.labelNotes}>
+                          Notes {totalWithNotes}
+                        </LinearText>
+                      </View>
+                    ) : null}
                   </View>
-                </LinearSurface>
-              );
-            })}
-          </View>
-        ) : null}
-        {isInitialLoad ? (
-          <SyllabusSkeleton />
-        ) : (
-          <FlatList
-            data={filteredSubjects}
-            keyExtractor={keyExtractor}
-            keyboardDismissMode="on-drag"
-            contentContainerStyle={styles.list}
-            removeClippedSubviews={true}
-            initialNumToRender={6}
-            maxToRenderPerBatch={6}
-            windowSize={5}
-            updateCellsBatchingPeriod={50}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await loadData();
-              setRefreshing(false);
-            }}
-            refreshing={refreshing}
-            ListHeaderComponent={listHeaderComponent}
-            ListEmptyComponent={
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>
-                  {searchLower.length >= 2
-                    ? 'No subjects or topics matched'
-                    : 'No subjects matched'}
-                </Text>
-                <Text style={styles.emptySub}>
-                  Try a different subject name, short code, or topic keyword.
-                </Text>
+                ) : (
+                  <LinearText variant="caption" tone="muted" style={styles.metaLabelEmpty}>
+                    Complete topics to unlock stats.
+                  </LinearText>
+                )}
               </View>
-            }
-            renderItem={renderSubjectItem}
-          />
-        )}
-      </ResponsiveContainer>
+            </LinearSurface>
+          </StaggeredEntrance>
+
+          <StaggeredEntrance index={2} disabled={!entryComplete}>
+            <View style={styles.controls}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.sortContentContainer}
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <TouchableOpacity
+                    key={option.key}
+                    style={[styles.sortChip, sortMode === option.key && styles.sortChipActive]}
+                    onPress={() => setSortMode(option.key)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sort by ${option.label}`}
+                    accessibilityState={{ selected: sortMode === option.key }}
+                  >
+                    <LinearText
+                      variant="caption"
+                      style={[
+                        styles.sortChipText,
+                        sortMode === option.key && styles.sortChipTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </LinearText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </StaggeredEntrance>
+
+          {pendingSuggestions.length > 0 ? (
+            <View style={styles.suggestionSection}>
+              <LinearText variant="label" style={styles.suggestionTitle}>
+                Lecture Topic Suggestions
+              </LinearText>
+              <LinearText variant="caption" tone="muted" style={styles.suggestionSubtitle}>
+                Review unmatched lecture topics before adding them to the syllabus.
+              </LinearText>
+              {pendingSuggestions.slice(0, 6).map((suggestion) => {
+                const busy = suggestionBusyId === suggestion.id;
+                return (
+                  <LinearSurface key={suggestion.id} compact style={styles.suggestionCard}>
+                    <View style={styles.suggestionHeader}>
+                      <View
+                        style={[
+                          styles.suggestionDot,
+                          { backgroundColor: suggestion.subjectColor || n.colors.accent },
+                        ]}
+                      />
+                      <View style={styles.suggestionCopy}>
+                        <LinearText variant="label" style={styles.suggestionName}>
+                          {suggestion.name}
+                        </LinearText>
+                        <LinearText variant="caption" tone="muted" style={styles.suggestionMeta}>
+                          {suggestion.subjectName} · seen {suggestion.mentionCount} time
+                          {suggestion.mentionCount > 1 ? 's' : ''}
+                        </LinearText>
+                      </View>
+                    </View>
+                    {suggestion.sourceSummary ? (
+                      <LinearText
+                        variant="caption"
+                        tone="secondary"
+                        style={styles.suggestionSummary}
+                        numberOfLines={2}
+                      >
+                        {suggestion.sourceSummary}
+                      </LinearText>
+                    ) : null}
+                    <View style={styles.suggestionActions}>
+                      <TouchableOpacity
+                        style={[styles.suggestionActionBtn, styles.suggestionRejectBtn]}
+                        disabled={busy}
+                        onPress={() => handleRejectSuggestion(suggestion)}
+                        activeOpacity={0.8}
+                      >
+                        <LinearText variant="caption" style={styles.suggestionRejectText}>
+                          Reject
+                        </LinearText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.suggestionActionBtn, styles.suggestionApproveBtn]}
+                        disabled={busy}
+                        onPress={() => handleApproveSuggestion(suggestion)}
+                        activeOpacity={0.8}
+                      >
+                        {busy ? (
+                          <ActivityIndicator size="small" color={n.colors.textPrimary} />
+                        ) : (
+                          <LinearText variant="caption" style={styles.suggestionApproveText}>
+                            Add to syllabus
+                          </LinearText>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </LinearSurface>
+                );
+              })}
+            </View>
+          ) : null}
+
+          {isInitialLoad ? (
+            <SyllabusSkeleton />
+          ) : (
+            <FlatList
+              data={filteredSubjects}
+              extraData={entryComplete}
+              keyExtractor={keyExtractor}
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={styles.list}
+              removeClippedSubviews={true}
+              initialNumToRender={6}
+              maxToRenderPerBatch={6}
+              windowSize={5}
+              updateCellsBatchingPeriod={50}
+              onRefresh={async () => {
+                setRefreshing(true);
+                await loadData();
+                setRefreshing(false);
+              }}
+              refreshing={refreshing}
+              ListHeaderComponent={listHeaderComponent}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <LinearText variant="body" tone="secondary" style={styles.emptyTitle}>
+                    {searchLower.length >= 2
+                      ? 'No subjects or topics matched'
+                      : 'No subjects matched'}
+                  </LinearText>
+                  <LinearText variant="caption" tone="muted" style={styles.emptySub}>
+                    Try a different subject name, short code, or topic keyword.
+                  </LinearText>
+                </View>
+              }
+              renderItem={renderSubjectItem}
+            />
+          )}
+        </ResponsiveContainer>
+      </ScreenMotion>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
+  motionShell: { flex: 1 },
+  content: { flex: 1 },
   header: {
     paddingHorizontal: n.spacing.md,
     paddingTop: n.spacing.sm,
@@ -894,17 +885,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    ...n.typography.title,
-    color: n.colors.textPrimary,
-    fontSize: 20,
-    lineHeight: 26,
-  },
+  headerTitle: { fontSize: 24, fontWeight: '800' },
   subtitle: {
-    ...n.typography.caption,
-    color: n.colors.textMuted,
-    lineHeight: 17,
-    marginBottom: 2,
+    lineHeight: 18,
+    marginBottom: 4,
   },
   heroSurface: {
     marginTop: 4,
@@ -912,22 +896,16 @@ const styles = StyleSheet.create({
   },
   heroColumn: { gap: 8 },
   heroEyebrow: {
-    fontSize: 11,
-    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    color: n.colors.textMuted,
   },
 
   heroMainRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   heroStatsRow: { flexDirection: 'row', alignItems: 'baseline', flexShrink: 0 },
   heroStatsCount: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: n.colors.textPrimary,
     letterSpacing: -0.5,
   },
-  heroStatsTotal: { fontSize: 16, fontWeight: '700', color: n.colors.textMuted, marginLeft: 4 },
+  heroStatsTotal: { marginLeft: 4 },
 
   heroProgressTrackMain: {
     flex: 1,
@@ -938,7 +916,7 @@ const styles = StyleSheet.create({
   },
   heroProgressFillMain: { height: '100%', borderRadius: 6, backgroundColor: n.colors.accent },
 
-  heroPctMain: { fontSize: 24, fontWeight: '800', color: n.colors.accent, flexShrink: 0 },
+  heroPctMain: { flexShrink: 0 },
   heroBadgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
 
   badgeDue: {
@@ -959,14 +937,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  labelDue: { fontSize: 10, color: n.colors.error, fontWeight: '800' },
-  labelHY: { fontSize: 10, color: n.colors.warning, fontWeight: '800' },
-  labelNotes: { fontSize: 10, color: n.colors.accent, fontWeight: '800' },
+  labelDue: { color: n.colors.error },
+  labelHY: { color: n.colors.warning },
+  labelNotes: { color: n.colors.accent },
   metaLabelEmpty: {
-    fontSize: 12,
-    color: n.colors.textMuted,
     fontStyle: 'italic',
-    fontWeight: '500',
   },
   controls: {
     paddingHorizontal: n.spacing.md,
@@ -997,8 +972,8 @@ const styles = StyleSheet.create({
     backgroundColor: n.colors.primaryTintSoft,
     borderColor: n.colors.accent,
   },
-  sortChipText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  sortChipTextActive: { color: n.colors.accent, fontSize: 12, fontWeight: '700' },
+  sortChipText: {},
+  sortChipTextActive: { color: n.colors.accent },
   list: { paddingHorizontal: n.spacing.md, paddingTop: n.spacing.sm, paddingBottom: 40, gap: 8 },
   suggestionSection: {
     paddingHorizontal: n.spacing.md,
@@ -1048,9 +1023,6 @@ const styles = StyleSheet.create({
   suggestionRejectText: { color: n.colors.textMuted, fontSize: 12, fontWeight: '600' },
   topicResultsSection: { marginBottom: 8, gap: 6 },
   topicResultsLabel: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '700',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom: 8,
@@ -1064,27 +1036,17 @@ const styles = StyleSheet.create({
   topicResultDot: { width: 8, height: 8, borderRadius: 4, marginRight: 12 },
   topicResultCopy: { flex: 1, marginRight: 12 },
   topicResultName: {
-    color: n.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '600',
     marginBottom: 2,
   },
-  topicResultSubject: { color: n.colors.textMuted, fontSize: 11 },
-  topicResultAction: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-  },
+  topicResultSubject: {},
+  topicResultAction: {},
   topicResultsDivider: {
-    color: n.colors.textMuted,
-    fontSize: 10,
-    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginTop: 8,
     marginBottom: 4,
   },
   emptyState: { alignItems: 'center', paddingVertical: 48 },
-  emptyTitle: { color: n.colors.textSecondary, fontSize: 15, fontWeight: '600' },
-  emptySub: { color: n.colors.textMuted, fontSize: 12, marginTop: 4 },
+  emptyTitle: { marginBottom: 4 },
+  emptySub: { textAlign: 'center' },
 });

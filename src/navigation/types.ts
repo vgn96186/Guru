@@ -103,7 +103,6 @@ export type MenuStackParamList = {
 export type TabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
   SyllabusTab: NavigatorScreenParams<SyllabusStackParamList> | undefined;
-  ActionHubTab: undefined;
   ChatTab: NavigatorScreenParams<ChatStackParamList> | undefined;
   MenuTab: NavigatorScreenParams<MenuStackParamList> | undefined;
 };

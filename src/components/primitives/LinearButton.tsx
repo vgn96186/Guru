@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   glassTinted: {
     borderWidth: 1,
-    borderColor: `${linearTheme.colors.accent}55`,
+    borderColor: `${linearTheme.colors.accent}70`,
     backgroundColor: linearTheme.colors.primaryTintSoft,
   },
   pressed: {
@@ -110,6 +110,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: linearTheme.spacing.sm,
+    width: '100%',
+    minWidth: 0,
   },
   leftIcon: {
     alignItems: 'center',
@@ -121,6 +123,8 @@ const styles = StyleSheet.create({
   },
   labelBase: {
     textAlign: 'center',
+    flexShrink: 1,
+    minWidth: 0,
   },
   glassLabel: {
     fontSize: 15,

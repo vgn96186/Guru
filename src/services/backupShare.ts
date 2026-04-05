@@ -1,5 +1,5 @@
 import * as Sharing from 'expo-sharing';
-import { Alert } from 'react-native';
+import { showToast } from '../components/Toast';
 
 export async function shareBackupFileOrAlert(
   filePath: string,
@@ -18,9 +18,17 @@ export async function shareBackupFileOrAlert(
   }
 
   if (options.unavailableAlert) {
-    Alert.alert(options.unavailableAlert.title, options.unavailableAlert.message);
+    showToast({
+      title: options.unavailableAlert.title,
+      message: options.unavailableAlert.message,
+      variant: options.unavailableAlert.title.toLowerCase() === 'error' ? 'error' : 'info',
+    });
   } else {
-    Alert.alert('Backup saved', `File written to:\n${filePath}`);
+    showToast({
+      title: 'Backup saved',
+      message: `File written to:\n${filePath}`,
+      variant: 'success',
+    });
   }
   return true;
 }

@@ -1,0 +1,435 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
+import LinearSurface from '../primitives/LinearSurface';
+import { linearTheme as n } from '../../theme/linearTheme';
+import { useReducedMotion } from '../../motion';
+import { profileRepository } from '../../db/repositories';
+import { useAppStore } from '../../store/useAppStore';
+
+type CompactQuickStatsBarProps = {
+  progressPercent: number;
+  todayMinutes: number;
+  dailyGoal: number;
+  streak: number;
+  level: number;
+  completedSessions: number;
+};
+
+const GOAL_PRESETS = [30, 60, 90, 120, 180, 240];
+const RING_SIZE = 50;
+const STROKE_WIDTH = 5;
+const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
+const GOAL_OVERLAY_WIDTH = 236;
+
+export default function CompactQuickStatsBar({
+  progressPercent,
+  todayMinutes,
+  dailyGoal,
+  streak,
+  level,
+  completedSessions,
+}: CompactQuickStatsBarProps) {
+  const [showGoalPicker, setShowGoalPicker] = useState(false);
+  const [goalPillFrame, setGoalPillFrame] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const [statsShellWidth, setStatsShellWidth] = useState(0);
+  const flameScale = useRef(new Animated.Value(1)).current;
+  const flameLift = useRef(new Animated.Value(0)).current;
+  const emberScale = useRef(new Animated.Value(0.92)).current;
+  const emberLift = useRef(new Animated.Value(1.4)).current;
+  const emberOpacity = useRef(new Animated.Value(0.34)).current;
+  const glowOpacity = useRef(new Animated.Value(0.72)).current;
+  const glowScale = useRef(new Animated.Value(1)).current;
+  const reducedMotion = useReducedMotion();
+  const progressClamped = Math.min(100, Math.max(0, Math.round(progressPercent)));
+  const goalOptions = GOAL_PRESETS.filter((minutes) => minutes !== dailyGoal);
+  const goalOverlayPosition = useMemo(() => {
+    if (!goalPillFrame) {
+      return {
+        left: Math.max(8, statsShellWidth - GOAL_OVERLAY_WIDTH - 12),
+        top: 8,
+      };
+    }
+    const maxLeft = Math.max(8, statsShellWidth - GOAL_OVERLAY_WIDTH - 8);
+    const anchoredLeft = goalPillFrame.x + goalPillFrame.width - GOAL_OVERLAY_WIDTH;
+    return {
+      left: Math.max(8, Math.min(anchoredLeft, maxLeft)),
+      top: Math.max(0, goalPillFrame.y - 6),
+    };
+  }, [goalPillFrame, statsShellWidth]);
+
+  const handleGoalChange = useCallback(async (minutes: number) => {
+    await profileRepository.updateProfile({ dailyGoalMinutes: minutes });
+    useAppStore.getState().refreshProfile?.();
+    setShowGoalPicker(false);
+  }, []);
+
+  const handleStatsShellLayout = useCallback((event: LayoutChangeEvent) => {
+    setStatsShellWidth(event.nativeEvent.layout.width);
+  }, []);
+
+  const handleGoalPillLayout = useCallback((event: LayoutChangeEvent) => {
+    setGoalPillFrame(event.nativeEvent.layout);
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      flameScale.setValue(1);
+      flameLift.setValue(0);
+      emberScale.setValue(0.96);
+      emberLift.setValue(1);
+      emberOpacity.setValue(0.38);
+      glowOpacity.setValue(0.78);
+      glowScale.setValue(1);
+      return undefined;
+    }
+
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(flameScale, { toValue: 1.08, duration: 240, useNativeDriver: true }),
+          Animated.timing(flameLift, { toValue: -1.2, duration: 240, useNativeDriver: true }),
+          Animated.timing(emberScale, { toValue: 1.02, duration: 240, useNativeDriver: true }),
+          Animated.timing(emberLift, { toValue: 0.2, duration: 240, useNativeDriver: true }),
+          Animated.timing(emberOpacity, { toValue: 0.5, duration: 240, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.94, duration: 240, useNativeDriver: true }),
+          Animated.timing(glowScale, { toValue: 1.08, duration: 240, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(flameScale, { toValue: 0.97, duration: 200, useNativeDriver: true }),
+          Animated.timing(flameLift, { toValue: 0.4, duration: 200, useNativeDriver: true }),
+          Animated.timing(emberScale, { toValue: 0.88, duration: 200, useNativeDriver: true }),
+          Animated.timing(emberLift, { toValue: 1.8, duration: 200, useNativeDriver: true }),
+          Animated.timing(emberOpacity, { toValue: 0.22, duration: 200, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.62, duration: 200, useNativeDriver: true }),
+          Animated.timing(glowScale, { toValue: 0.94, duration: 200, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(flameScale, { toValue: 1.03, duration: 260, useNativeDriver: true }),
+          Animated.timing(flameLift, { toValue: -0.4, duration: 260, useNativeDriver: true }),
+          Animated.timing(emberScale, { toValue: 0.98, duration: 260, useNativeDriver: true }),
+          Animated.timing(emberLift, { toValue: 0.8, duration: 260, useNativeDriver: true }),
+          Animated.timing(emberOpacity, { toValue: 0.42, duration: 260, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.8, duration: 260, useNativeDriver: true }),
+          Animated.timing(glowScale, { toValue: 1.02, duration: 260, useNativeDriver: true }),
+        ]),
+        Animated.parallel([
+          Animated.timing(flameScale, { toValue: 1, duration: 820, useNativeDriver: true }),
+          Animated.timing(flameLift, { toValue: 0, duration: 820, useNativeDriver: true }),
+          Animated.timing(emberScale, { toValue: 0.92, duration: 820, useNativeDriver: true }),
+          Animated.timing(emberLift, { toValue: 1.4, duration: 820, useNativeDriver: true }),
+          Animated.timing(emberOpacity, { toValue: 0.34, duration: 820, useNativeDriver: true }),
+          Animated.timing(glowOpacity, { toValue: 0.72, duration: 820, useNativeDriver: true }),
+          Animated.timing(glowScale, { toValue: 1, duration: 820, useNativeDriver: true }),
+        ]),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [
+    emberLift,
+    emberOpacity,
+    emberScale,
+    flameLift,
+    flameScale,
+    glowOpacity,
+    glowScale,
+    reducedMotion,
+  ]);
+
+  return (
+    <View style={styles.statsShell} onLayout={handleStatsShellLayout}>
+      <LinearSurface
+        compact
+        style={styles.statsBar}
+        accessibilityRole="summary"
+        accessibilityLabel={`Daily progress ${progressClamped} percent. ${todayMinutes} of ${dailyGoal} minutes completed. ${streak} day streak. Level ${level}. ${completedSessions} sessions done.`}
+      >
+        <View style={styles.statsBarContent}>
+          <View style={styles.statsBarItemCenter}>
+            <View style={styles.statsRingWrap}>
+              <Svg width={RING_SIZE} height={RING_SIZE}>
+                <Circle
+                  cx={RING_SIZE / 2}
+                  cy={RING_SIZE / 2}
+                  r={RADIUS}
+                  stroke={n.colors.border}
+                  strokeWidth={STROKE_WIDTH}
+                  fill="none"
+                />
+                <Circle
+                  cx={RING_SIZE / 2}
+                  cy={RING_SIZE / 2}
+                  r={RADIUS}
+                  stroke={n.colors.accent}
+                  strokeWidth={STROKE_WIDTH}
+                  fill="none"
+                  strokeDasharray={`${CIRCUMFERENCE}`}
+                  strokeDashoffset={CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100}
+                  strokeLinecap="round"
+                  rotation="-90"
+                  origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
+                />
+              </Svg>
+              <Text style={styles.ringPercentText}>{progressClamped}%</Text>
+            </View>
+            <View style={styles.progressMeta}>
+              <View style={styles.progressSummaryRow}>
+                <Text style={styles.statsLabelStrong}>{todayMinutes}/</Text>
+                <Pressable
+                  onLayout={handleGoalPillLayout}
+                  style={({ pressed }) => [
+                    styles.goalPill,
+                    showGoalPicker && styles.goalPillActive,
+                    pressed && styles.goalPillPressed,
+                  ]}
+                  onPress={() => setShowGoalPicker((value) => !value)}
+                  hitSlop={6}
+                >
+                  <Text style={styles.goalPillText}>{dailyGoal}m</Text>
+                  <Ionicons
+                    name={showGoalPicker ? 'chevron-back' : 'chevron-down'}
+                    size={11}
+                    color={n.colors.accent}
+                  />
+                </Pressable>
+              </View>
+            </View>
+          </View>
+          <View style={styles.statsBarDivider} />
+          <View style={styles.statsBarItemCenter}>
+            <View style={styles.streakIconWrap}>
+              <Animated.View
+                style={[
+                  styles.streakGlow,
+                  {
+                    opacity: glowOpacity,
+                    transform: [{ scale: glowScale }],
+                  },
+                ]}
+              />
+              <Animated.View
+                testID="streak-flame-ember"
+                style={[
+                  styles.emberLayer,
+                  {
+                    opacity: emberOpacity,
+                    transform: [{ translateY: emberLift }, { scale: emberScale }],
+                  },
+                ]}
+              >
+                <Ionicons name="flame" size={24} color="#F59E0B" />
+              </Animated.View>
+              <Animated.View
+                style={[
+                  styles.flameLayer,
+                  {
+                    transform: [{ translateY: flameLift }, { scale: flameScale }],
+                  },
+                ]}
+              >
+                <Ionicons name="flame" size={30} color={n.colors.warning} />
+              </Animated.View>
+            </View>
+            <View style={styles.streakReadout}>
+              <Text style={styles.streakValue}>{streak}</Text>
+              <Text style={styles.streakUnit}>days</Text>
+            </View>
+            <Text style={styles.statsLabel}>streak</Text>
+          </View>
+          <View style={styles.statsBarDivider} />
+          <View style={styles.statsBarItemCenter}>
+            <Text style={styles.statsValue}>Level {level}</Text>
+            <Text style={styles.statsLabel}>{completedSessions} done</Text>
+          </View>
+        </View>
+      </LinearSurface>
+      {showGoalPicker && goalOverlayPosition ? (
+        <View
+          testID="goal-overlay"
+          style={[
+            styles.goalPickerRow,
+            { left: goalOverlayPosition.left, top: goalOverlayPosition.top },
+          ]}
+        >
+          {goalOptions.map((minutes) => (
+            <Pressable
+              key={minutes}
+              style={({ pressed }) => [styles.goalChip, pressed && styles.goalChipPressed]}
+              onPress={() => handleGoalChange(minutes)}
+            >
+              <Text style={styles.goalChipText}>{minutes}m</Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  statsShell: {
+    position: 'relative',
+    overflow: 'visible',
+    zIndex: 4,
+  },
+  statsBar: {
+    marginBottom: n.spacing.md,
+    alignSelf: 'center',
+    width: '85%',
+    maxWidth: 360,
+  },
+  statsBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+  },
+  statsRingWrap: {
+    width: RING_SIZE,
+    height: RING_SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ringPercentText: {
+    position: 'absolute',
+    color: n.colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  progressMeta: {
+    marginTop: 2,
+    alignItems: 'center',
+    minHeight: 36,
+    justifyContent: 'flex-start',
+  },
+  progressSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statsLabelStrong: {
+    color: n.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  goalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: n.radius.full,
+    backgroundColor: n.colors.primaryTintSoft,
+    borderWidth: 1,
+    borderColor: `${n.colors.accent}44`,
+  },
+  goalPillActive: {
+    borderColor: `${n.colors.accent}88`,
+    backgroundColor: `${n.colors.accent}22`,
+  },
+  goalPillPressed: {
+    opacity: 0.85,
+  },
+  goalPillText: {
+    color: n.colors.accent,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  goalPickerRow: {
+    position: 'absolute',
+    width: GOAL_OVERLAY_WIDTH,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    gap: 4,
+    zIndex: 12,
+    elevation: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    borderRadius: n.radius.full,
+    backgroundColor: 'rgba(6,6,6,0.99)',
+    borderWidth: 1,
+    borderColor: `${n.colors.accent}55`,
+  },
+  goalChip: {
+    minWidth: 38,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: n.radius.full,
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    borderWidth: 1,
+    borderColor: n.colors.borderLight,
+  },
+  goalChipPressed: {
+    opacity: 0.82,
+  },
+  goalChipText: {
+    color: n.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  streakIconWrap: {
+    width: 38,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  streakGlow: {
+    position: 'absolute',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(217,119,6,0.16)',
+  },
+  emberLayer: {
+    position: 'absolute',
+  },
+  flameLayer: {
+    position: 'absolute',
+  },
+  streakReadout: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 3,
+  },
+  streakValue: {
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: -0.2,
+  },
+  streakUnit: {
+    color: n.colors.warning,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  statsBarItemCenter: {
+    alignItems: 'center',
+    gap: 2,
+    flex: 1,
+  },
+  statsValue: {
+    color: n.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  statsLabel: {
+    color: n.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  statsBarDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
+});

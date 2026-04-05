@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
@@ -19,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 import {
   useNavigation,
   useIsFocused,
@@ -33,6 +33,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as Notifications from 'expo-notifications';
 import { Audio } from 'expo-av';
 import { canDrawOverlays, requestOverlayPermission } from '../../modules/app-launcher';
+import { showDialog } from '../components/dialogService';
 import { useAppStore } from '../store/useAppStore';
 import {
   updateUserProfile,
@@ -47,6 +48,7 @@ import {
 } from '../services/notificationService';
 import { getDb, runInTransaction } from '../db/database';
 import { fetchExamDates } from '../services/aiService';
+import { showToast } from '../components/Toast';
 import {
   testGroqConnection,
   testHuggingFaceConnection,
@@ -441,7 +443,7 @@ export default function SettingsScreen() {
             >
               <Ionicons name={icon} size={18} color={tint} />
             </View>
-            <Text style={styles.sectionTitle}>{title}</Text>
+            <LinearText style={styles.sectionTitle}>{title}</LinearText>
           </View>
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -449,7 +451,11 @@ export default function SettingsScreen() {
             color={n.colors.textMuted}
           />
         </TouchableOpacity>
-        {isExpanded && <LinearSurface padded={false} style={styles.sectionContent}>{children}</LinearSurface>}
+        {isExpanded && (
+          <LinearSurface padded={false} style={styles.sectionContent}>
+            {children}
+          </LinearSurface>
+        )}
       </View>
     );
   }
@@ -478,7 +484,7 @@ export default function SettingsScreen() {
           }
           activeOpacity={0.8}
         >
-          <Text style={styles.subSectionLabel}>{title}</Text>
+          <LinearText style={styles.subSectionLabel}>{title}</LinearText>
           <Ionicons
             name={isExpanded ? 'chevron-up' : 'chevron-down'}
             size={14}
@@ -1716,7 +1722,7 @@ export default function SettingsScreen() {
             onBackPress={() => navigation.navigate('MenuHome')}
           />
 
-          <Text style={styles.categoryLabel}>AI & PROVIDERS</Text>
+          <LinearText style={styles.categoryLabel}>AI & PROVIDERS</LinearText>
           <SectionToggle
             id="ai_config"
             title="AI Configuration"
@@ -1725,7 +1731,9 @@ export default function SettingsScreen() {
           >
             {/* ── Chat Model ─────────────────────────────── */}
             <SubSectionToggle id="ai_chat_model" title="CHAT MODEL">
-              <Text style={styles.hint}>Default model for Guru Chat (changeable per session).</Text>
+              <LinearText style={styles.hint}>
+                Default model for Guru Chat (changeable per session).
+              </LinearText>
               <View style={styles.liveModelsRefreshRow}>
                 <TouchableOpacity
                   style={[styles.testBtn, { marginBottom: 0, flexShrink: 1 }]}
@@ -1733,11 +1741,11 @@ export default function SettingsScreen() {
                   disabled={liveGuruChatModels.loading}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.testBtnText}>
+                  <LinearText style={styles.testBtnText}>
                     {liveGuruChatModels.loading
                       ? 'Loading live models…'
                       : 'Refresh live model lists'}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
                 {liveGuruChatModels.loading && (
                   <ActivityIndicator size="small" color={n.colors.accent} />
@@ -1827,9 +1835,9 @@ export default function SettingsScreen() {
             {/* ── Memory ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_memory" title="GURU MEMORY">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Persistent notes Guru uses in every chat. Session memory is built automatically.
-              </Text>
+              </LinearText>
               <TextInput
                 style={[styles.input, styles.guruMemoryInput]}
                 placeholder="e.g. INICET May 2026 · weak in renal · prefers concise answers"
@@ -1845,21 +1853,21 @@ export default function SettingsScreen() {
             {/* ── ChatGPT OAuth ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="chatgpt_oauth" title="CHATGPT (SUBSCRIPTION)">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Connect your ChatGPT Plus/Pro subscription through the Codex flow. Guru follows the
                 Codex models page and currently starts with GPT-5.4, then GPT-5.4-mini, before older
                 Codex alternatives.
-              </Text>
-              <Text style={styles.hint}>
+              </LinearText>
+              <LinearText style={styles.hint}>
                 Primary is tried first. Secondary is only tried if primary fails before producing a
                 response. Disable either slot here to skip it entirely.
-              </Text>
+              </LinearText>
               {chatgptConnectingSlot && chatgptDeviceCode ? (
                 <View style={{ marginTop: 8 }}>
-                  <Text style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
+                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
                     Enter this code at openai.com:
-                  </Text>
-                  <Text
+                  </LinearText>
+                  <LinearText
                     style={{
                       fontSize: 28,
                       fontWeight: '700',
@@ -1872,7 +1880,7 @@ export default function SettingsScreen() {
                     selectable
                   >
                     {chatgptDeviceCode.user_code}
-                  </Text>
+                  </LinearText>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -1883,17 +1891,17 @@ export default function SettingsScreen() {
                     }}
                   >
                     <ActivityIndicator size="small" color={n.colors.accent} />
-                    <Text style={[styles.hint, { marginTop: 0 }]}>
+                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
                       Waiting for authorization for the{' '}
                       {chatgptConnectingSlot === 'primary' ? 'primary' : 'secondary'} account...
-                    </Text>
+                    </LinearText>
                   </View>
                   <TouchableOpacity
                     style={{ marginTop: 12, alignSelf: 'center' }}
                     onPress={() => Linking.openURL(VERIFICATION_URL)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <LinearText
                       style={{
                         color: n.colors.accent,
                         textDecorationLine: 'underline',
@@ -1901,7 +1909,7 @@ export default function SettingsScreen() {
                       }}
                     >
                       Open login page again
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -1923,14 +1931,14 @@ export default function SettingsScreen() {
                   >
                     <View style={styles.switchRow}>
                       <View style={{ flex: 1, paddingRight: 12 }}>
-                        <Text style={styles.switchLabel}>
+                        <LinearText style={styles.switchLabel}>
                           {isPrimary ? 'Primary account' : 'Secondary account'}
-                        </Text>
-                        <Text style={styles.hint}>
+                        </LinearText>
+                        <LinearText style={styles.hint}>
                           {isPrimary
                             ? 'Tried first whenever ChatGPT is selected in routing.'
                             : 'Backup account used only if primary fails early.'}
-                        </Text>
+                        </LinearText>
                       </View>
                       <Switch
                         value={slotState.enabled}
@@ -1944,9 +1952,7 @@ export default function SettingsScreen() {
                           false: n.colors.border,
                           true: n.colors.borderHighlight,
                         }}
-                        thumbColor={
-                          slotState.enabled ? n.colors.accent : n.colors.textMuted
-                        }
+                        thumbColor={slotState.enabled ? n.colors.accent : n.colors.textMuted}
                       />
                     </View>
                     <View
@@ -1962,19 +1968,17 @@ export default function SettingsScreen() {
                         size={20}
                         color={slotState.connected ? n.colors.success : n.colors.textMuted}
                       />
-                      <Text
+                      <LinearText
                         style={[
                           styles.label,
                           {
                             flex: 1,
-                            color: slotState.connected
-                              ? n.colors.success
-                              : n.colors.textMuted,
+                            color: slotState.connected ? n.colors.success : n.colors.textMuted,
                           },
                         ]}
                       >
                         {slotState.connected ? 'Connected' : 'Not connected'}
-                      </Text>
+                      </LinearText>
                       {slotState.connected ? (
                         <TouchableOpacity
                           style={[
@@ -1984,11 +1988,11 @@ export default function SettingsScreen() {
                           onPress={() => disconnectChatGpt(slot)}
                           activeOpacity={0.8}
                         >
-                          <Text
+                          <LinearText
                             style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
                           >
                             Disconnect
-                          </Text>
+                          </LinearText>
                         </TouchableOpacity>
                       ) : (
                         <TouchableOpacity
@@ -2006,7 +2010,7 @@ export default function SettingsScreen() {
                           {isConnecting ? (
                             <ActivityIndicator size="small" color={n.colors.accent} />
                           ) : (
-                            <Text
+                            <LinearText
                               style={{
                                 color: n.colors.accent,
                                 fontWeight: '600',
@@ -2014,40 +2018,40 @@ export default function SettingsScreen() {
                               }}
                             >
                               Connect
-                            </Text>
+                            </LinearText>
                           )}
                         </TouchableOpacity>
                       )}
                     </View>
                     {!slotState.enabled && slotState.connected ? (
-                      <Text style={[styles.hint, { marginTop: 8 }]}>
+                      <LinearText style={[styles.hint, { marginTop: 8 }]}>
                         Disabled. This connected account will be skipped by routing until
                         re-enabled.
-                      </Text>
+                      </LinearText>
                     ) : null}
                   </View>
                 );
               })}
               {!isChatGptEnabled(chatgptAccounts) ? (
-                <Text style={[styles.hint, { marginTop: 10 }]}>
+                <LinearText style={[styles.hint, { marginTop: 10 }]}>
                   ChatGPT is currently excluded from provider routing.
-                </Text>
+                </LinearText>
               ) : null}
             </SubSectionToggle>
 
             {/* ── GitHub Copilot OAuth ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="github_copilot_oauth" title="GITHUB COPILOT (OAUTH)">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Connect your GitHub Copilot subscription through device code flow. Supports Copilot
                 Pro, Pro+, Business, and Enterprise.
-              </Text>
+              </LinearText>
               {githubCopilotConnecting && githubCopilotDeviceCode ? (
                 <View style={{ marginTop: 8 }}>
-                  <Text style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
+                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
                     Enter this code at github.com:
-                  </Text>
-                  <Text
+                  </LinearText>
+                  <LinearText
                     style={{
                       fontSize: 28,
                       fontWeight: '700',
@@ -2060,7 +2064,7 @@ export default function SettingsScreen() {
                     selectable
                   >
                     {githubCopilotDeviceCode.user_code}
-                  </Text>
+                  </LinearText>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -2071,16 +2075,16 @@ export default function SettingsScreen() {
                     }}
                   >
                     <ActivityIndicator size="small" color={n.colors.accent} />
-                    <Text style={[styles.hint, { marginTop: 0 }]}>
+                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
                       Waiting for authorization...
-                    </Text>
+                    </LinearText>
                   </View>
                   <TouchableOpacity
                     style={{ marginTop: 12, alignSelf: 'center' }}
                     onPress={() => Linking.openURL(GITHUB_VERIFICATION_URL)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <LinearText
                       style={{
                         color: n.colors.accent,
                         textDecorationLine: 'underline',
@@ -2088,7 +2092,7 @@ export default function SettingsScreen() {
                       }}
                     >
                       Open login page again
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -2114,19 +2118,17 @@ export default function SettingsScreen() {
                     size={20}
                     color={githubCopilotConnected ? n.colors.success : n.colors.textMuted}
                   />
-                  <Text
+                  <LinearText
                     style={[
                       styles.label,
                       {
                         flex: 1,
-                        color: githubCopilotConnected
-                          ? n.colors.success
-                          : n.colors.textMuted,
+                        color: githubCopilotConnected ? n.colors.success : n.colors.textMuted,
                       },
                     ]}
                   >
                     {githubCopilotConnected ? 'Connected' : 'Not connected'}
-                  </Text>
+                  </LinearText>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -2179,11 +2181,11 @@ export default function SettingsScreen() {
                         onPress={disconnectGitHubCopilot}
                         activeOpacity={0.8}
                       >
-                        <Text
+                        <LinearText
                           style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
                         >
                           Disconnect
-                        </Text>
+                        </LinearText>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
@@ -2198,30 +2200,30 @@ export default function SettingsScreen() {
                         {githubCopilotConnecting ? (
                           <ActivityIndicator size="small" color={n.colors.accent} />
                         ) : (
-                          <Text
+                          <LinearText
                             style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
                           >
                             Connect
-                          </Text>
+                          </LinearText>
                         )}
                       </TouchableOpacity>
                     )}
                   </View>
                 </View>
               </View>
-              <Text style={[styles.hint, { marginTop: 8 }]}>
+              <LinearText style={[styles.hint, { marginTop: 8 }]}>
                 Validate (pulse icon): checks SecureStore token + a minimal Copilot API call. Full
                 trace in Metro:{' '}
-                <Text style={{ fontFamily: 'Inter_400Regular' }}>
+                <LinearText style={{ fontFamily: 'Inter_400Regular' }}>
                   [SETTINGS_VALIDATE][github_copilot]
-                </Text>
-              </Text>
+                </LinearText>
+              </LinearText>
               {githubCopilotConnected ? (
                 <>
-                  <Text style={[styles.hint, { marginTop: 12 }]}>
+                  <LinearText style={[styles.hint, { marginTop: 12 }]}>
                     When Auto routing reaches GitHub Copilot, Guru tries this model first. If it
                     fails, other catalog models are tried in order.
-                  </Text>
+                  </LinearText>
                   <ModelDropdown
                     label="Preferred Copilot model"
                     value={githubCopilotPreferredModel}
@@ -2246,15 +2248,15 @@ export default function SettingsScreen() {
             {/* ── GitLab Duo OAuth ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="gitlab_duo_oauth" title="GITLAB DUO (OAUTH)">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 OAuth2 + PKCE against your GitLab instance. Add this redirect URI to your GitLab
                 OAuth application: {getRedirectUri()}
-              </Text>
-              <Text style={[styles.label, { marginTop: 12 }]}>Application ID</Text>
-              <Text style={styles.hint}>
+              </LinearText>
+              <LinearText style={[styles.label, { marginTop: 12 }]}>Application ID</LinearText>
+              <LinearText style={styles.hint}>
                 Paste from GitLab → Preferences → Applications. Overrides
                 EXPO_PUBLIC_GITLAB_CLIENT_ID when set. Scopes: read_user, ai_features.
-              </Text>
+              </LinearText>
               <TextInput
                 value={gitlabOauthClientId}
                 onChangeText={setGitlabOauthClientId}
@@ -2274,12 +2276,12 @@ export default function SettingsScreen() {
                   fontSize: 15,
                 }}
               />
-              <Text style={[styles.label, { marginTop: 12 }]}>Application secret</Text>
-              <Text style={styles.hint}>
+              <LinearText style={[styles.label, { marginTop: 12 }]}>Application secret</LinearText>
+              <LinearText style={styles.hint}>
                 Confidential apps (default on GitLab.com) require this on token exchange — paste
                 from the same Applications page. Stored only in on-device secure storage, not in
                 backups. Leave empty only if you created a non-confidential (public) OAuth app.
-              </Text>
+              </LinearText>
               <TextInput
                 value={gitlabOauthClientSecret}
                 onChangeText={setGitlabOauthClientSecret}
@@ -2322,7 +2324,7 @@ export default function SettingsScreen() {
                     size={20}
                     color={gitlabDuoConnected ? n.colors.success : n.colors.textMuted}
                   />
-                  <Text
+                  <LinearText
                     style={[
                       styles.label,
                       {
@@ -2332,7 +2334,7 @@ export default function SettingsScreen() {
                     ]}
                   >
                     {gitlabDuoConnected ? 'Connected' : 'Not connected'}
-                  </Text>
+                  </LinearText>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -2385,11 +2387,11 @@ export default function SettingsScreen() {
                         onPress={disconnectGitLabDuo}
                         activeOpacity={0.8}
                       >
-                        <Text
+                        <LinearText
                           style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
                         >
                           Disconnect
-                        </Text>
+                        </LinearText>
                       </TouchableOpacity>
                     ) : (
                       <>
@@ -2405,7 +2407,7 @@ export default function SettingsScreen() {
                           {gitlabDuoConnecting ? (
                             <ActivityIndicator size="small" color={n.colors.accent} />
                           ) : (
-                            <Text
+                            <LinearText
                               style={{
                                 color: n.colors.accent,
                                 fontWeight: '600',
@@ -2413,7 +2415,7 @@ export default function SettingsScreen() {
                               }}
                             >
                               Connect
-                            </Text>
+                            </LinearText>
                           )}
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -2425,7 +2427,7 @@ export default function SettingsScreen() {
                           disabled={gitlabDuoConnecting}
                           activeOpacity={0.8}
                         >
-                          <Text
+                          <LinearText
                             style={{
                               color: n.colors.textPrimary,
                               fontWeight: '600',
@@ -2433,27 +2435,27 @@ export default function SettingsScreen() {
                             }}
                           >
                             Paste URL
-                          </Text>
+                          </LinearText>
                         </TouchableOpacity>
                       </>
                     )}
                   </View>
                 </View>
               </View>
-              <Text style={[styles.hint, { marginTop: 8 }]}>
+              <LinearText style={[styles.hint, { marginTop: 8 }]}>
                 Validate (pulse icon): checks OAuth token +{' '}
-                <Text style={{ fontFamily: 'Inter_400Regular' }}>
+                <LinearText style={{ fontFamily: 'Inter_400Regular' }}>
                   POST {getGitLabInstanceUrl()}/api/v4/chat/completions
-                </Text>
+                </LinearText>
                 . Metro:{' '}
-                <Text style={{ fontFamily: 'Inter_400Regular' }}>
+                <LinearText style={{ fontFamily: 'Inter_400Regular' }}>
                   [SETTINGS_VALIDATE][gitlab_duo]
-                </Text>
-              </Text>
-              <Text style={[styles.hint, { marginTop: 12 }]}>
+                </LinearText>
+              </LinearText>
+              <LinearText style={[styles.hint, { marginTop: 12 }]}>
                 Default GitLab Duo model for Auto routing. If unavailable, Guru automatically tries
                 the next best model in catalog order.
-              </Text>
+              </LinearText>
               <ModelDropdown
                 label="Default GitLab Duo model"
                 value={gitlabDuoPreferredModel}
@@ -2485,69 +2487,72 @@ export default function SettingsScreen() {
                     style={styles.dropdownBackdrop}
                     onPress={() => setGitlabPasteModalVisible(false)}
                   >
-                    <LinearSurface padded={false} style={[styles.dropdownSheet, { minWidth: '88%' }]}>
-                    <Pressable
-                      onPress={(e) => e.stopPropagation()}
+                    <LinearSurface
+                      padded={false}
+                      style={[styles.dropdownSheet, { minWidth: '88%' }]}
                     >
-                      <Text style={styles.dropdownSheetTitle}>Paste GitLab callback URL</Text>
-                      <Text style={[styles.hint, { marginBottom: 8 }]}>
-                        After authorizing, paste the full guru-study://oauth/gitlab?... link (same
-                        device after tapping Connect).
-                      </Text>
-                      <TextInput
-                        value={gitlabPasteUrl}
-                        onChangeText={setGitlabPasteUrl}
-                        placeholder="guru-study://oauth/gitlab?code=..."
-                        placeholderTextColor={n.colors.textMuted}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        multiline
-                        style={{
-                          borderWidth: 1,
-                          borderColor: n.colors.border,
-                          borderRadius: 10,
-                          padding: 12,
-                          color: n.colors.textPrimary,
-                          minHeight: 88,
-                          textAlignVertical: 'top',
-                        }}
-                      />
-                      <View
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'flex-end',
-                          gap: 12,
-                          marginTop: 16,
-                        }}
-                      >
-                        <TouchableOpacity
-                          onPress={() => setGitlabPasteModalVisible(false)}
-                          style={{ paddingVertical: 10, paddingHorizontal: 14 }}
-                        >
-                          <Text style={{ color: n.colors.textMuted, fontWeight: '600' }}>
-                            Cancel
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          onPress={() => void submitGitLabPasteUrl()}
-                          disabled={gitlabPasteSubmitting}
+                      <Pressable onPress={(e) => e.stopPropagation()}>
+                        <LinearText style={styles.dropdownSheetTitle}>
+                          Paste GitLab callback URL
+                        </LinearText>
+                        <LinearText style={[styles.hint, { marginBottom: 8 }]}>
+                          After authorizing, paste the full guru-study://oauth/gitlab?... link (same
+                          device after tapping Connect).
+                        </LinearText>
+                        <TextInput
+                          value={gitlabPasteUrl}
+                          onChangeText={setGitlabPasteUrl}
+                          placeholder="guru-study://oauth/gitlab?code=..."
+                          placeholderTextColor={n.colors.textMuted}
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          multiline
                           style={{
-                            paddingVertical: 10,
-                            paddingHorizontal: 16,
-                            backgroundColor: n.colors.accent + '33',
+                            borderWidth: 1,
+                            borderColor: n.colors.border,
                             borderRadius: 10,
+                            padding: 12,
+                            color: n.colors.textPrimary,
+                            minHeight: 88,
+                            textAlignVertical: 'top',
+                          }}
+                        />
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'flex-end',
+                            gap: 12,
+                            marginTop: 16,
                           }}
                         >
-                          {gitlabPasteSubmitting ? (
-                            <ActivityIndicator size="small" color={n.colors.accent} />
-                          ) : (
-                            <Text style={{ color: n.colors.accent, fontWeight: '700' }}>
-                              Apply
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    </Pressable>
+                          <TouchableOpacity
+                            onPress={() => setGitlabPasteModalVisible(false)}
+                            style={{ paddingVertical: 10, paddingHorizontal: 14 }}
+                          >
+                            <LinearText style={{ color: n.colors.textMuted, fontWeight: '600' }}>
+                              Cancel
+                            </LinearText>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => void submitGitLabPasteUrl()}
+                            disabled={gitlabPasteSubmitting}
+                            style={{
+                              paddingVertical: 10,
+                              paddingHorizontal: 16,
+                              backgroundColor: n.colors.accent + '33',
+                              borderRadius: 10,
+                            }}
+                          >
+                            {gitlabPasteSubmitting ? (
+                              <ActivityIndicator size="small" color={n.colors.accent} />
+                            ) : (
+                              <LinearText style={{ color: n.colors.accent, fontWeight: '700' }}>
+                                Apply
+                              </LinearText>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </Pressable>
                     </LinearSurface>
                   </Pressable>
                 </KeyboardAvoidingView>
@@ -2557,16 +2562,16 @@ export default function SettingsScreen() {
             {/* ── Poe OAuth ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="poe_oauth" title="POE (OAUTH)">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Connect your Poe subscription through device code flow. Access Claude, GPT-4o,
                 Gemini and more through Poe's API.
-              </Text>
+              </LinearText>
               {poeConnecting && poeDeviceCode ? (
                 <View style={{ marginTop: 8 }}>
-                  <Text style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
+                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
                     Enter this code at poe.com:
-                  </Text>
-                  <Text
+                  </LinearText>
+                  <LinearText
                     style={{
                       fontSize: 28,
                       fontWeight: '700',
@@ -2579,7 +2584,7 @@ export default function SettingsScreen() {
                     selectable
                   >
                     {poeDeviceCode.user_code}
-                  </Text>
+                  </LinearText>
                   <View
                     style={{
                       flexDirection: 'row',
@@ -2590,16 +2595,16 @@ export default function SettingsScreen() {
                     }}
                   >
                     <ActivityIndicator size="small" color={n.colors.accent} />
-                    <Text style={[styles.hint, { marginTop: 0 }]}>
+                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
                       Waiting for authorization...
-                    </Text>
+                    </LinearText>
                   </View>
                   <TouchableOpacity
                     style={{ marginTop: 12, alignSelf: 'center' }}
                     onPress={() => Linking.openURL(POE_VERIFICATION_URL)}
                     activeOpacity={0.7}
                   >
-                    <Text
+                    <LinearText
                       style={{
                         color: n.colors.accent,
                         textDecorationLine: 'underline',
@@ -2607,7 +2612,7 @@ export default function SettingsScreen() {
                       }}
                     >
                       Open login page again
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 </View>
               ) : null}
@@ -2633,7 +2638,7 @@ export default function SettingsScreen() {
                     size={20}
                     color={poeConnected ? n.colors.success : n.colors.textMuted}
                   />
-                  <Text
+                  <LinearText
                     style={[
                       styles.label,
                       {
@@ -2643,7 +2648,7 @@ export default function SettingsScreen() {
                     ]}
                   >
                     {poeConnected ? 'Connected' : 'Not connected'}
-                  </Text>
+                  </LinearText>
                   {poeConnected ? (
                     <TouchableOpacity
                       style={[
@@ -2653,9 +2658,11 @@ export default function SettingsScreen() {
                       onPress={disconnectPoe}
                       activeOpacity={0.8}
                     >
-                      <Text style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}>
+                      <LinearText
+                        style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
+                      >
                         Disconnect
-                      </Text>
+                      </LinearText>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
@@ -2670,11 +2677,11 @@ export default function SettingsScreen() {
                       {poeConnecting ? (
                         <ActivityIndicator size="small" color={n.colors.accent} />
                       ) : (
-                        <Text
+                        <LinearText
                           style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
                         >
                           Connect
-                        </Text>
+                        </LinearText>
                       )}
                     </TouchableOpacity>
                   )}
@@ -2692,7 +2699,7 @@ export default function SettingsScreen() {
                   placeholder="gsk_..."
                   placeholderTextColor={n.colors.textMuted}
                   value={groqKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setGroqKey(value);
                     setGroqKeyTestResult(null);
                     clearProviderValidated('groq');
@@ -2737,9 +2744,9 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Transcription + AI generation. Free key at console.groq.com
-              </Text>
+              </LinearText>
               <Label text="GitHub Models" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -2747,7 +2754,7 @@ export default function SettingsScreen() {
                   placeholder="GitHub PAT (Models read)"
                   placeholderTextColor={n.colors.textMuted}
                   value={githubModelsPat}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setGithubModelsPat(value);
                     setGithubPatTestResult(null);
                     clearProviderValidated('github');
@@ -2792,9 +2799,9 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Fine-grained PAT with Models (read) scope at models.github.ai
-              </Text>
+              </LinearText>
               <Label text="OpenRouter" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -2802,7 +2809,7 @@ export default function SettingsScreen() {
                   placeholder="sk-or-v1-..."
                   placeholderTextColor={n.colors.textMuted}
                   value={orKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setOrKey(value);
                     setOpenRouterKeyTestResult(null);
                     clearProviderValidated('openrouter');
@@ -2847,7 +2854,7 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>Free model fallback. Key at openrouter.ai</Text>
+              <LinearText style={styles.hint}>Free model fallback. Key at openrouter.ai</LinearText>
               <Label text="Kilo" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -2855,7 +2862,7 @@ export default function SettingsScreen() {
                   placeholder="kilo_..."
                   placeholderTextColor={n.colors.textMuted}
                   value={kiloApiKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setKiloApiKey(value);
                     setKiloKeyTestResult(null);
                     clearProviderValidated('kilo');
@@ -2900,9 +2907,9 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Gateway at api.kilo.ai (e.g. kilo-auto/balanced, xiaomi/mimo-v2-pro)
-              </Text>
+              </LinearText>
               <Label text="DeepSeek" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -2910,7 +2917,7 @@ export default function SettingsScreen() {
                   placeholder="sk-..."
                   placeholderTextColor={n.colors.textMuted}
                   value={deepseekKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setDeepseekKey(value);
                     setDeepseekKeyTestResult(null);
                     clearProviderValidated('deepseek');
@@ -2955,7 +2962,7 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>Key at platform.deepseek.com</Text>
+              <LinearText style={styles.hint}>Key at platform.deepseek.com</LinearText>
               <Label text="AgentRouter" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -2963,7 +2970,7 @@ export default function SettingsScreen() {
                   placeholder="sk-..."
                   placeholderTextColor={n.colors.textMuted}
                   value={agentRouterKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setAgentRouterKey(value);
                     setAgentRouterKeyTestResult(null);
                     clearProviderValidated('agentrouter');
@@ -3008,7 +3015,9 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>Free proxy. Key at agentrouter.org/console/token</Text>
+              <LinearText style={styles.hint}>
+                Free proxy. Key at agentrouter.org/console/token
+              </LinearText>
               <Label text="Google Gemini" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -3016,7 +3025,7 @@ export default function SettingsScreen() {
                   placeholder="AIza..."
                   placeholderTextColor={n.colors.textMuted}
                   value={geminiKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setGeminiKey(value);
                     setGeminiKeyTestResult(null);
                     clearProviderValidated('gemini');
@@ -3061,17 +3070,17 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Chat + image models. Key at aistudio.google.com/apikey
-              </Text>
+              </LinearText>
               <View style={styles.switchRow}>
                 <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text style={styles.switchLabel}>Structured JSON (Gemini)</Text>
-                  <Text style={styles.hint}>
+                  <LinearText style={styles.switchLabel}>Structured JSON (Gemini)</LinearText>
+                  <LinearText style={styles.hint}>
                     When on, structured AI outputs (quizzes, daily plan, lecture analysis) use
                     Gemini native JSON + schema first if your Gemini key is set. Turn off to force
                     text-only parsing (for debugging).
-                  </Text>
+                  </LinearText>
                 </View>
                 <Switch
                   value={preferGeminiStructuredJson}
@@ -3087,7 +3096,7 @@ export default function SettingsScreen() {
                   placeholder="dg_..."
                   placeholderTextColor={n.colors.textMuted}
                   value={deepgramApiKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setDeepgramApiKey(value);
                     setDeepgramKeyTestResult(null);
                     clearProviderValidated('deepgram');
@@ -3132,9 +3141,9 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Live lecture quiz sidecar. Key at console.deepgram.com
-              </Text>
+              </LinearText>
               <Label text="Cloudflare Workers AI" />
               <View style={styles.apiKeyRow}>
                 <TextInput
@@ -3142,7 +3151,7 @@ export default function SettingsScreen() {
                   placeholder="Account ID (32-char hex)"
                   placeholderTextColor={n.colors.textMuted}
                   value={cfAccountId}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setCfAccountId(value);
                     setCloudflareTestResult(null);
                     clearProviderValidated('cloudflare');
@@ -3190,7 +3199,7 @@ export default function SettingsScreen() {
                 placeholder="API Token (Workers AI read)"
                 placeholderTextColor={n.colors.textMuted}
                 value={cfApiToken}
-                onChangeText={(value) => {
+                onChangeText={(value: string) => {
                   setCfApiToken(value);
                   setCloudflareTestResult(null);
                   clearProviderValidated('cloudflare');
@@ -3202,17 +3211,17 @@ export default function SettingsScreen() {
                 importantForAutofill="no"
                 textContentType="none"
               />
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Chat, images, and Whisper transcription via Cloudflare
-              </Text>
+              </LinearText>
             </SubSectionToggle>
 
             {/* ── Routing ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_routing" title="PROVIDER ROUTING">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Reorder fallback priority. First available provider is used.
-              </Text>
+              </LinearText>
               {providerOrder.map((id, index) => {
                 const hasKey = (() => {
                   switch (id) {
@@ -3250,20 +3259,24 @@ export default function SettingsScreen() {
                   }
                 })();
                 return (
-                  <LinearSurface padded={false} key={id} style={[styles.providerRow, !hasKey && { opacity: 0.45 }]}>
-                    <Text style={styles.providerIndex}>{index + 1}</Text>
+                  <LinearSurface
+                    padded={false}
+                    key={id}
+                    style={[styles.providerRow, !hasKey && { opacity: 0.45 }]}
+                  >
+                    <LinearText style={styles.providerIndex}>{index + 1}</LinearText>
                     <View
                       style={[
                         styles.providerDot,
                         { backgroundColor: hasKey ? n.colors.success : n.colors.textMuted },
                       ]}
                     />
-                    <Text
+                    <LinearText
                       style={[styles.providerName, { color: n.colors.textPrimary }]}
                       numberOfLines={2}
                     >
                       {PROVIDER_DISPLAY_NAMES[id]}
-                    </Text>
+                    </LinearText>
                     <View style={styles.providerActions}>
                       <Pressable
                         disabled={index === 0}
@@ -3276,11 +3289,7 @@ export default function SettingsScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={`Move ${PROVIDER_DISPLAY_NAMES[id]} to top`}
                       >
-                        <Ionicons
-                          name="play-skip-back"
-                          size={16}
-                          color={n.colors.textPrimary}
-                        />
+                        <Ionicons name="play-skip-back" size={16} color={n.colors.textPrimary} />
                       </Pressable>
                       <TouchableOpacity
                         disabled={index === 0}
@@ -3317,11 +3326,7 @@ export default function SettingsScreen() {
                         accessibilityRole="button"
                         accessibilityLabel={`Move ${PROVIDER_DISPLAY_NAMES[id]} to bottom`}
                       >
-                        <Ionicons
-                          name="play-skip-forward"
-                          size={16}
-                          color={n.colors.textPrimary}
-                        />
+                        <Ionicons name="play-skip-forward" size={16} color={n.colors.textPrimary} />
                       </Pressable>
                     </View>
                   </LinearSurface>
@@ -3340,18 +3345,18 @@ export default function SettingsScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.testBtnText}>Reset to Default Order</Text>
+                <LinearText style={styles.testBtnText}>Reset to Default Order</LinearText>
               </TouchableOpacity>
             </SubSectionToggle>
 
             {/* ── Image Generation ────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_image_gen" title="IMAGE GENERATION">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Diagrams and study images. fal uses a separate API key and does not reuse ChatGPT
                 Plus login.
-              </Text>
-              <Text style={styles.label}>fal API Key</Text>
+              </LinearText>
+              <LinearText style={styles.label}>fal API Key</LinearText>
               <View style={styles.apiKeyRow}>
                 <TextInput
                   style={[
@@ -3363,7 +3368,7 @@ export default function SettingsScreen() {
                   placeholder="fal key"
                   placeholderTextColor={n.colors.textMuted}
                   value={falApiKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setFalApiKey(value);
                     setFalKeyTestResult(null);
                     clearProviderValidated('fal');
@@ -3405,10 +3410,10 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Validate your fal API key with fal's model catalog endpoint.
-              </Text>
-              <Text style={styles.label}>Brave Search API Key</Text>
+              </LinearText>
+              <LinearText style={styles.label}>Brave Search API Key</LinearText>
               <View style={styles.apiKeyRow}>
                 <TextInput
                   style={[
@@ -3420,7 +3425,7 @@ export default function SettingsScreen() {
                   placeholder="brave key"
                   placeholderTextColor={n.colors.textMuted}
                   value={braveSearchApiKey}
-                  onChangeText={(value) => {
+                  onChangeText={(value: string) => {
                     setBraveSearchApiKey(value);
                     setBraveSearchKeyTestResult(null);
                     clearProviderValidated('brave');
@@ -3462,10 +3467,10 @@ export default function SettingsScreen() {
                   )}
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Optional fallback for image search when MedPix, Open-i, and Wikimedia return
                 nothing.
-              </Text>
+              </LinearText>
               <View style={styles.modelChipRow}>
                 {imageGenerationOptions.map((opt) => (
                   <TouchableOpacity
@@ -3477,14 +3482,14 @@ export default function SettingsScreen() {
                     onPress={() => setImageGenerationModel(opt.value)}
                     activeOpacity={0.8}
                   >
-                    <Text
+                    <LinearText
                       style={[
                         styles.freqText,
                         imageGenerationModel === opt.value && styles.freqTextActive,
                       ]}
                     >
                       {opt.label}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -3492,54 +3497,56 @@ export default function SettingsScreen() {
 
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_transcription" title="TRANSCRIPTION">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Configure transcription providers and keys used by Recording Vault and external
                 lecture processing.
-              </Text>
+              </LinearText>
               <TranscriptionSettingsPanel embedded />
             </SubSectionToggle>
 
             {/* ── Local AI ────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_local_ai" title="LOCAL AI">
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Run AI on-device for offline chat and local transcription.
-              </Text>
+              </LinearText>
               {localAiEnabled && (
-                <Text style={[styles.hint, styles.localAiEnabledHint]}>
+                <LinearText style={[styles.hint, styles.localAiEnabledHint]}>
                   Local AI is currently enabled.
-                </Text>
+                </LinearText>
               )}
               <View style={styles.localAiStatusRow}>
-                <Text style={[styles.localAiStatusText, styles.localAiStatusTextWrap]}>
+                <LinearText style={[styles.localAiStatusText, styles.localAiStatusTextWrap]}>
                   LLM model:{' '}
-                  <Text
+                  <LinearText
                     numberOfLines={2}
                     style={localLlmReady ? styles.localAiModelName : styles.localAiModelMissing}
                   >
                     {localLlmReady ? localLlmFileName : 'Not installed'}
-                  </Text>
-                </Text>
+                  </LinearText>
+                </LinearText>
                 {profile?.useLocalModel && localLlmReady ? (
                   <View style={styles.localAiActiveDot} />
                 ) : null}
               </View>
               <View style={styles.localAiStatusRow}>
-                <Text style={[styles.localAiStatusText, styles.localAiStatusTextWrap]}>
+                <LinearText style={[styles.localAiStatusText, styles.localAiStatusTextWrap]}>
                   Whisper model:{' '}
-                  <Text
+                  <LinearText
                     numberOfLines={2}
                     style={localWhisperReady ? styles.localAiModelName : styles.localAiModelMissing}
                   >
                     {localWhisperReady ? localWhisperFileName : 'Not installed'}
-                  </Text>
-                </Text>
+                  </LinearText>
+                </LinearText>
                 {profile?.useLocalWhisper && localWhisperReady ? (
                   <View style={styles.localAiActiveDot} />
                 ) : null}
               </View>
               {!localLlmAllowed && (
-                <Text style={[styles.hint, styles.localAiWarningHint]}>{localLlmWarning}</Text>
+                <LinearText style={[styles.hint, styles.localAiWarningHint]}>
+                  {localLlmWarning}
+                </LinearText>
               )}
               <TouchableOpacity
                 style={styles.localModelBtn}
@@ -3552,12 +3559,12 @@ export default function SettingsScreen() {
                   color={n.colors.textPrimary}
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.localModelBtnText}>Manage Local AI Models</Text>
+                <LinearText style={styles.localModelBtnText}>Manage Local AI Models</LinearText>
               </TouchableOpacity>
             </SubSectionToggle>
           </SectionToggle>
 
-          <Text style={styles.categoryLabel}>ACCOUNT</Text>
+          <LinearText style={styles.categoryLabel}>ACCOUNT</LinearText>
           <SectionToggle
             id="permissions"
             title="Permissions & Diagnostics"
@@ -3604,7 +3611,7 @@ export default function SettingsScreen() {
               />
             )}
             <TouchableOpacity style={styles.diagBtn} onPress={() => Linking.openSettings()}>
-              <Text style={styles.diagBtnText}>Open System Settings</Text>
+              <LinearText style={styles.diagBtnText}>Open System Settings</LinearText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.diagBtn, { marginTop: 8 }]}
@@ -3613,7 +3620,7 @@ export default function SettingsScreen() {
                 devConsole.show();
               }}
             >
-              <Text style={styles.diagBtnText}>Open Dev Console</Text>
+              <LinearText style={styles.diagBtnText}>Open Dev Console</LinearText>
             </TouchableOpacity>
           </SectionToggle>
 
@@ -3626,9 +3633,9 @@ export default function SettingsScreen() {
               onPress={() => navigation.navigate('DeviceLink')}
               activeOpacity={0.8}
             >
-              <Text style={[styles.testBtnText, { color: n.colors.success }]}>
+              <LinearText style={[styles.testBtnText, { color: n.colors.success }]}>
                 📱 Link Another Device (Sync)
-              </Text>
+              </LinearText>
             </TouchableOpacity>
             <Label text="Your name" />
             <TextInput
@@ -3664,11 +3671,11 @@ export default function SettingsScreen() {
               {fetchingDates ? (
                 <ActivityIndicator size="small" color={n.colors.accent} />
               ) : (
-                <Text style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</Text>
+                <LinearText style={styles.autoFetchBtnText}>🤖 Auto-fetch dates via AI</LinearText>
               )}
             </TouchableOpacity>
             {fetchDatesMsg ? (
-              <Text
+              <LinearText
                 style={[
                   styles.hint,
                   fetchDatesMsg.startsWith('✅')
@@ -3677,15 +3684,15 @@ export default function SettingsScreen() {
                 ]}
               >
                 {fetchDatesMsg}
-              </Text>
+              </LinearText>
             ) : (
-              <Text style={styles.hint}>
+              <LinearText style={styles.hint}>
                 Uses AI to estimate upcoming exam dates. Always verify on nbe.edu.in.
-              </Text>
+              </LinearText>
             )}
           </SectionToggle>
 
-          <Text style={styles.categoryLabel}>STUDY</Text>
+          <LinearText style={styles.categoryLabel}>STUDY</LinearText>
           <SectionToggle id="live_batch" title="Study Plan" icon="book-outline" tint="#2196F3">
             <Label text="DBMCI One batch start date (YYYY-MM-DD)" />
             <TextInput
@@ -3696,10 +3703,10 @@ export default function SettingsScreen() {
               placeholderTextColor={n.colors.textMuted}
               autoCapitalize="none"
             />
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Set this to unlock the live-class position tracker in the Study Plan screen. Guru will
               highlight which subject DBMCI One is covering today.
-            </Text>
+            </LinearText>
             <Label text="BTR (Back to Roots) batch start date (YYYY-MM-DD)" />
             <TextInput
               style={styles.input}
@@ -3709,10 +3716,10 @@ export default function SettingsScreen() {
               placeholderTextColor={n.colors.textMuted}
               autoCapitalize="none"
             />
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Set this when you start the BTR revision batch. Guru will align your daily revision
               queue with the current BTR subject.
-            </Text>
+            </LinearText>
             <Label text="Home novelty cooldown (hours)" />
             <View style={styles.frequencyRow}>
               {[2, 4, 6, 8, 12].map((hrs) => {
@@ -3724,19 +3731,19 @@ export default function SettingsScreen() {
                     onPress={() => setHomeNoveltyCooldownHours(String(hrs))}
                     activeOpacity={0.8}
                   >
-                    <Text
+                    <LinearText
                       style={[styles.frequencyChipText, active && styles.frequencyChipTextActive]}
                     >
                       {hrs}h
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 );
               })}
             </View>
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Controls how quickly Home repeats the same topics in DO THIS NOW and UP NEXT. Lower =
               more repetition, higher = more novelty.
-            </Text>
+            </LinearText>
           </SectionToggle>
           <SectionToggle
             id="study_prefs"
@@ -3762,11 +3769,11 @@ export default function SettingsScreen() {
             />
             <View style={[styles.switchRow, { marginTop: 16 }]}>
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.switchLabel}>Strict Mode 👮</Text>
-                <Text style={styles.hint}>
+                <LinearText style={styles.switchLabel}>Strict Mode 👮</LinearText>
+                <LinearText style={styles.hint}>
                   Nag you instantly if you leave the app or are idle. Idle time won't count towards
                   session duration.
-                </Text>
+                </LinearText>
               </View>
               <Switch
                 value={strictMode}
@@ -3785,10 +3792,10 @@ export default function SettingsScreen() {
           >
             <View style={styles.switchRow}>
               <View>
-                <Text style={styles.switchLabel}>Enable Guru's reminders</Text>
-                <Text style={styles.hint}>
+                <LinearText style={styles.switchLabel}>Enable Guru's reminders</LinearText>
+                <LinearText style={styles.hint}>
                   Guru will send personalized daily accountability messages
-                </Text>
+                </LinearText>
               </View>
               <Switch
                 value={notifs}
@@ -3805,7 +3812,7 @@ export default function SettingsScreen() {
               keyboardType="number-pad"
               placeholderTextColor={n.colors.textMuted}
             />
-            <Text style={styles.hint}>Evening nudge fires ~11 hours after this.</Text>
+            <LinearText style={styles.hint}>Evening nudge fires ~11 hours after this.</LinearText>
             <Label text="Guru presence frequency" />
             <View style={styles.frequencyRow}>
               {(['rare', 'normal', 'frequent', 'off'] as const).map((freq) => (
@@ -3814,18 +3821,20 @@ export default function SettingsScreen() {
                   style={[styles.freqBtn, guruFrequency === freq && styles.freqBtnActive]}
                   onPress={() => setGuruFrequency(freq)}
                 >
-                  <Text style={[styles.freqText, guruFrequency === freq && styles.freqTextActive]}>
+                  <LinearText
+                    style={[styles.freqText, guruFrequency === freq && styles.freqTextActive]}
+                  >
                     {freq.charAt(0).toUpperCase() + freq.slice(1)}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               How often Guru sends ambient messages during sessions. Rare: every 30min, Normal:
               every 20min, Frequent: every 10min.
-            </Text>
+            </LinearText>
             <TouchableOpacity style={styles.testBtn} onPress={testNotification} activeOpacity={0.8}>
-              <Text style={styles.testBtnText}>Schedule Notifications Now</Text>
+              <LinearText style={styles.testBtnText}>Schedule Notifications Now</LinearText>
             </TouchableOpacity>
           </SectionToggle>
 
@@ -3837,10 +3846,10 @@ export default function SettingsScreen() {
           >
             <View style={styles.switchRow}>
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.switchLabel}>Guru presence during sessions</Text>
-                <Text style={styles.hint}>
+                <LinearText style={styles.switchLabel}>Guru presence during sessions</LinearText>
+                <LinearText style={styles.hint}>
                   Ambient toast messages and pulsing dot while you study. Helps with focus.
-                </Text>
+                </LinearText>
               </View>
               <Switch
                 value={bodyDoubling}
@@ -3857,9 +3866,9 @@ export default function SettingsScreen() {
             icon="layers-outline"
             tint="#FF6B9D"
           >
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Block card types you don't want in sessions. Keypoints can't be blocked.
-            </Text>
+            </LinearText>
             <View style={styles.chipGrid}>
               {ALL_CONTENT_TYPES.map(({ type, label }) => {
                 const isBlocked = blockedTypes.includes(type);
@@ -3880,10 +3889,12 @@ export default function SettingsScreen() {
                     }}
                     activeOpacity={isLocked ? 1 : 0.8}
                   >
-                    <Text style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}>
+                    <LinearText
+                      style={[styles.typeChipText, isBlocked && styles.typeChipTextBlocked]}
+                    >
                       {label}
-                    </Text>
-                    {isBlocked && <Text style={styles.typeChipX}> ✕</Text>}
+                    </LinearText>
+                    {isBlocked && <LinearText style={styles.typeChipX}> ✕</LinearText>}
                   </TouchableOpacity>
                 );
               })}
@@ -3896,9 +3907,9 @@ export default function SettingsScreen() {
             icon="flask-outline"
             tint="#2196F3"
           >
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Pin subjects to limit sessions to those areas only. Clear all to study everything.
-            </Text>
+            </LinearText>
             <View style={styles.chipGrid}>
               {subjects.map((s) => {
                 const isFocused = focusSubjectIds.includes(s.id);
@@ -3916,16 +3927,18 @@ export default function SettingsScreen() {
                     }
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>
+                    <LinearText style={[styles.typeChipText, isFocused && { color: s.colorHex }]}>
                       {s.shortCode}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 );
               })}
             </View>
             {focusSubjectIds.length > 0 && (
               <TouchableOpacity onPress={() => setFocusSubjectIds([])} style={styles.clearBtn}>
-                <Text style={styles.clearBtnText}>Clear focus (study all subjects)</Text>
+                <LinearText style={styles.clearBtnText}>
+                  Clear focus (study all subjects)
+                </LinearText>
               </TouchableOpacity>
             )}
           </SectionToggle>
@@ -3957,10 +3970,10 @@ export default function SettingsScreen() {
           >
             <View style={styles.switchRow}>
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={styles.switchLabel}>Enable Pomodoro Suggestion</Text>
-                <Text style={styles.hint}>
+                <LinearText style={styles.switchLabel}>Enable Pomodoro Suggestion</LinearText>
+                <LinearText style={styles.hint}>
                   Auto-expand the external lecture overlay every interval to suggest a break.
-                </Text>
+                </LinearText>
               </View>
               <Switch
                 value={pomodoroEnabled}
@@ -3969,7 +3982,7 @@ export default function SettingsScreen() {
                 thumbColor={n.colors.textPrimary}
               />
             </View>
-            <Text
+            <LinearText
               style={[
                 styles.hint,
                 {
@@ -3986,7 +3999,7 @@ export default function SettingsScreen() {
                 : pomodoroEnabled
                   ? 'Currently this will only suggest a break until overlay permission, Groq, and Deepgram are configured.'
                   : 'Pomodoro break suggestions are off.'}
-            </Text>
+            </LinearText>
             {!hasPomodoroOverlayPermission && (
               <TouchableOpacity
                 style={[
@@ -3999,7 +4012,7 @@ export default function SettingsScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={styles.testBtnText}>Grant Overlay Permission</Text>
+                <LinearText style={styles.testBtnText}>Grant Overlay Permission</LinearText>
               </TouchableOpacity>
             )}
             <View style={[styles.chipGrid, { marginTop: 10 }]}>
@@ -4013,21 +4026,19 @@ export default function SettingsScreen() {
                   style={[
                     styles.typeChip,
                     {
-                      backgroundColor: item.ready
-                        ? n.colors.success + '18'
-                        : n.colors.error + '12',
+                      backgroundColor: item.ready ? n.colors.success + '18' : n.colors.error + '12',
                       borderColor: item.ready ? n.colors.success : n.colors.error,
                     },
                   ]}
                 >
-                  <Text
+                  <LinearText
                     style={[
                       styles.typeChipText,
                       { color: item.ready ? n.colors.success : n.colors.error },
                     ]}
                   >
                     {item.label}
-                  </Text>
+                  </LinearText>
                 </View>
               ))}
             </View>
@@ -4049,7 +4060,7 @@ export default function SettingsScreen() {
                   disabled={!pomodoroEnabled}
                   activeOpacity={0.8}
                 >
-                  <Text
+                  <LinearText
                     style={[
                       styles.freqText,
                       pomodoroInterval === value && styles.freqTextActive,
@@ -4057,17 +4068,17 @@ export default function SettingsScreen() {
                     ]}
                   >
                     {value}m
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Suggested: 20-30 minutes. The overlay can suggest a break without quiz data, but
               lecture-aware quiz breaks need both Groq and Deepgram.
-            </Text>
+            </LinearText>
           </SectionToggle>
 
-          <Text style={styles.categoryLabel}>STORAGE</Text>
+          <LinearText style={styles.categoryLabel}>STORAGE</LinearText>
           <SectionToggle id="data" title="Data" icon="trash-outline" tint="#F44336">
             <TouchableOpacity
               style={styles.dangerBtn}
@@ -4090,40 +4101,50 @@ export default function SettingsScreen() {
               }
               activeOpacity={0.8}
             >
-              <Text style={styles.dangerBtnText}>Clear AI Content Cache</Text>
+              <LinearText style={styles.dangerBtnText}>Clear AI Content Cache</LinearText>
             </TouchableOpacity>
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Forces fresh generation of all key points, quizzes, stories, etc.
-            </Text>
+            </LinearText>
             <TouchableOpacity
               style={[styles.dangerBtn, { borderColor: 'rgba(241,76,76,0.08)', marginTop: 10 }]}
-              onPress={() =>
-                Alert.alert(
-                  'Reset all progress?',
-                  'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
-                  [
-                    { text: 'Cancel', style: 'cancel' },
+              onPress={async () => {
+                const result = await showDialog({
+                  title: 'Reset all progress?',
+                  message:
+                    'This clears all topic progress, XP, streaks, and daily logs. This cannot be undone. Export a backup first.',
+                  variant: 'destructive',
+                  actions: [
+                    { id: 'cancel', label: 'Cancel', variant: 'secondary' },
                     {
-                      text: 'Reset',
-                      style: 'destructive',
-                      onPress: () => {
-                        resetStudyProgress();
-                        refreshProfile();
-                        Alert.alert('Reset', 'Progress has been wiped. Start fresh!');
-                      },
+                      id: 'reset-progress',
+                      label: 'Reset',
+                      variant: 'destructive',
+                      isDestructive: true,
                     },
                   ],
-                )
-              }
+                  allowDismiss: true,
+                });
+
+                if (result !== 'reset-progress') return;
+
+                resetStudyProgress();
+                refreshProfile();
+                showToast({
+                  title: 'Reset',
+                  message: 'Progress has been wiped. Start fresh!',
+                  variant: 'success',
+                });
+              }}
               activeOpacity={0.8}
             >
-              <Text style={[styles.dangerBtnText, { color: n.colors.error }]}>
+              <LinearText style={[styles.dangerBtnText, { color: n.colors.error }]}>
                 Reset All Progress
-              </Text>
+              </LinearText>
             </TouchableOpacity>
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
-            </Text>
+            </LinearText>
           </SectionToggle>
 
           <SectionToggle
@@ -4132,14 +4153,14 @@ export default function SettingsScreen() {
             icon="archive-outline"
             tint="#4CAF50"
           >
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Export your entire study data (database, transcripts, images) to a single .guru backup
               file, or restore from a previous backup.
-            </Text>
+            </LinearText>
             {(profile as any)?.lastAutoBackupAt && (
-              <Text style={styles.backupDate}>
+              <LinearText style={styles.backupDate}>
                 Last auto-backup: {new Date((profile as any).lastAutoBackupAt).toLocaleString()}
-              </Text>
+              </LinearText>
             )}
             <View style={styles.backupRow}>
               <TouchableOpacity
@@ -4165,7 +4186,7 @@ export default function SettingsScreen() {
                 {backupBusy ? (
                   <ActivityIndicator size="small" color={n.colors.textPrimary} />
                 ) : (
-                  <Text style={styles.backupBtnText}>Create Full Backup</Text>
+                  <LinearText style={styles.backupBtnText}>Create Full Backup</LinearText>
                 )}
               </TouchableOpacity>
               <TouchableOpacity
@@ -4202,15 +4223,17 @@ export default function SettingsScreen() {
                   );
                 }}
               >
-                <Text style={[styles.backupBtnText, { color: n.colors.success }]}>
+                <LinearText style={[styles.backupBtnText, { color: n.colors.success }]}>
                   Restore from Backup
-                </Text>
+                </LinearText>
               </TouchableOpacity>
             </View>
 
             <View style={styles.subSectionDivider} />
-            <Text style={styles.subSectionLabel}>Auto-Backup Frequency</Text>
-            <Text style={styles.hint}>Automatically create backups when the app starts.</Text>
+            <LinearText style={styles.subSectionLabel}>Auto-Backup Frequency</LinearText>
+            <LinearText style={styles.hint}>
+              Automatically create backups when the app starts.
+            </LinearText>
             <View style={styles.frequencyRow}>
               {(['off', 'daily', '3days', 'weekly', 'monthly'] as AutoBackupFrequency[]).map(
                 (freq) => (
@@ -4223,7 +4246,7 @@ export default function SettingsScreen() {
                     onPress={() => setAutoBackupFrequency(freq)}
                     activeOpacity={0.8}
                   >
-                    <Text
+                    <LinearText
                       style={[
                         styles.frequencyChipText,
                         autoBackupFrequency === freq && styles.frequencyChipTextActive,
@@ -4234,7 +4257,7 @@ export default function SettingsScreen() {
                         : freq === '3days'
                           ? '3 Days'
                           : freq.charAt(0).toUpperCase() + freq.slice(1)}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 ),
               )}
@@ -4274,7 +4297,7 @@ export default function SettingsScreen() {
                 );
               }}
             >
-              <Text style={styles.maintenanceBtnText}>Run Auto-Backup Now</Text>
+              <LinearText style={styles.maintenanceBtnText}>Run Auto-Backup Now</LinearText>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.maintenanceBtn, backupBusy && styles.saveBtnDisabled]}
@@ -4292,19 +4315,19 @@ export default function SettingsScreen() {
                 }
               }}
             >
-              <Text style={styles.maintenanceBtnText}>Clean Up Old Backups</Text>
+              <LinearText style={styles.maintenanceBtnText}>Clean Up Old Backups</LinearText>
             </TouchableOpacity>
 
             <View style={styles.subSectionDivider} />
-            <Text style={styles.subSectionLabel}>Google Drive Sync</Text>
-            <Text style={styles.hint}>
+            <LinearText style={styles.subSectionLabel}>Google Drive Sync</LinearText>
+            <LinearText style={styles.hint}>
               Back up to Google Drive to sync between devices and survive app reinstalls.
-            </Text>
-            <Text style={[styles.label, { marginTop: 12 }]}>Google Web Client ID</Text>
-            <Text style={styles.hint}>
+            </LinearText>
+            <LinearText style={[styles.label, { marginTop: 12 }]}>Google Web Client ID</LinearText>
+            <LinearText style={styles.hint}>
               Paste your Google OAuth Web application client ID here once. Guru stores it in your
               profile so future sign-ins do not require a rebuild.
-            </Text>
+            </LinearText>
             <TextInput
               value={gdriveWebClientId}
               onChangeText={setGdriveWebClientId}
@@ -4326,13 +4349,13 @@ export default function SettingsScreen() {
             />
             {(profile as any)?.gdriveConnected ? (
               <View>
-                <Text style={[styles.backupDate, { marginBottom: 8 }]}>
+                <LinearText style={[styles.backupDate, { marginBottom: 8 }]}>
                   Connected: {(profile as any)?.gdriveEmail || 'Google Account'}
-                </Text>
+                </LinearText>
                 {(profile as any)?.gdriveLastSyncAt && (
-                  <Text style={styles.backupDate}>
+                  <LinearText style={styles.backupDate}>
                     Last sync: {new Date((profile as any).gdriveLastSyncAt).toLocaleString()}
-                  </Text>
+                  </LinearText>
                 )}
                 <View style={styles.backupRow}>
                   <TouchableOpacity
@@ -4357,12 +4380,12 @@ export default function SettingsScreen() {
                       }
                     }}
                   >
-                    <Text style={styles.backupBtnText}>Sync Now</Text>
+                    <LinearText style={styles.backupBtnText}>Sync Now</LinearText>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
                       styles.backupBtn,
-                      { borderColor: '#FF5252' },
+                      { borderColor: n.colors.error },
                       backupBusy && styles.saveBtnDisabled,
                     ]}
                     disabled={backupBusy}
@@ -4391,7 +4414,9 @@ export default function SettingsScreen() {
                       );
                     }}
                   >
-                    <Text style={[styles.backupBtnText, { color: '#FF5252' }]}>Disconnect</Text>
+                    <LinearText style={[styles.backupBtnText, { color: n.colors.error }]}>
+                      Disconnect
+                    </LinearText>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -4448,7 +4473,7 @@ export default function SettingsScreen() {
                   }
                 }}
               >
-                <Text style={styles.backupBtnText}>Connect Google Drive</Text>
+                <LinearText style={styles.backupBtnText}>Connect Google Drive</LinearText>
               </TouchableOpacity>
             )}
           </SectionToggle>
@@ -4459,9 +4484,9 @@ export default function SettingsScreen() {
             icon="construct-outline"
             tint="#8080A0"
           >
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Run repair and recovery only when you need it instead of during startup.
-            </Text>
+            </LinearText>
             <TouchableOpacity
               style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
               disabled={maintenanceBusy !== null}
@@ -4486,7 +4511,9 @@ export default function SettingsScreen() {
               {maintenanceBusy === 'retry' ? (
                 <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
-                <Text style={styles.maintenanceBtnText}>Retry failed lecture processing</Text>
+                <LinearText style={styles.maintenanceBtnText}>
+                  Retry failed lecture processing
+                </LinearText>
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -4512,7 +4539,9 @@ export default function SettingsScreen() {
               {maintenanceBusy === 'legacy' ? (
                 <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
-                <Text style={styles.maintenanceBtnText}>Repair legacy lecture notes</Text>
+                <LinearText style={styles.maintenanceBtnText}>
+                  Repair legacy lecture notes
+                </LinearText>
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -4538,7 +4567,9 @@ export default function SettingsScreen() {
               {maintenanceBusy === 'transcripts' ? (
                 <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
-                <Text style={styles.maintenanceBtnText}>Recover orphan transcripts</Text>
+                <LinearText style={styles.maintenanceBtnText}>
+                  Recover orphan transcripts
+                </LinearText>
               )}
             </TouchableOpacity>
             <TouchableOpacity
@@ -4564,7 +4595,7 @@ export default function SettingsScreen() {
               {maintenanceBusy === 'recordings' ? (
                 <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
-                <Text style={styles.maintenanceBtnText}>Recover orphan recordings</Text>
+                <LinearText style={styles.maintenanceBtnText}>Recover orphan recordings</LinearText>
               )}
             </TouchableOpacity>
           </SectionToggle>
@@ -4572,11 +4603,11 @@ export default function SettingsScreen() {
           {saving && (
             <View style={[styles.saveBtn, styles.saveBtnDisabled]}>
               <ActivityIndicator size="small" color={n.colors.textPrimary} />
-              <Text style={[styles.saveBtnText, { marginLeft: 8 }]}>Auto-saving…</Text>
+              <LinearText style={[styles.saveBtnText, { marginLeft: 8 }]}>Auto-saving…</LinearText>
             </View>
           )}
 
-          <Text style={styles.footer}>Guru AI · v1.0.0</Text>
+          <LinearText style={styles.footer}>Guru AI · v1.0.0</LinearText>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -4596,14 +4627,14 @@ function PermissionRow({
   return (
     <View style={styles.permRow}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.permLabel}>{label}</Text>
-        <Text style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
+        <LinearText style={styles.permLabel}>{label}</LinearText>
+        <LinearText style={[styles.permStatus, isOk ? styles.permOk : styles.permError]}>
           {isOk ? '✓ Active' : status === 'denied' ? '✗ Disabled' : '○ Not Set'}
-        </Text>
+        </LinearText>
       </View>
       {!isOk && (
         <TouchableOpacity style={styles.fixBtn} onPress={onFix}>
-          <Text style={styles.fixBtnText}>Fix</Text>
+          <LinearText style={styles.fixBtnText}>Fix</LinearText>
         </TouchableOpacity>
       )}
     </View>
@@ -4611,7 +4642,7 @@ function PermissionRow({
 }
 
 function Label({ text }: { text: string }) {
-  return <Text style={styles.label}>{text}</Text>;
+  return <LinearText style={styles.label}>{text}</LinearText>;
 }
 
 /** Dropdown picker for model selection — replaces congested chip rows. */
@@ -4637,21 +4668,23 @@ function ModelDropdown({
         onPress={() => setOpen(true)}
         activeOpacity={0.8}
       >
-        <Text style={styles.dropdownValue} numberOfLines={2}>
+        <LinearText style={styles.dropdownValue} numberOfLines={2}>
           {selectedLabel}
-        </Text>
-        <Text style={styles.dropdownArrow}>▾</Text>
+        </LinearText>
+        <LinearText style={styles.dropdownArrow}>▾</LinearText>
       </TouchableOpacity>
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.dropdownBackdrop} onPress={() => setOpen(false)}>
           <LinearSurface padded={false} style={styles.dropdownSheet}>
-            <Text style={styles.dropdownSheetTitle}>{label}</Text>
+            <LinearText style={styles.dropdownSheetTitle}>{label}</LinearText>
             <ScrollView style={{ maxHeight: 400 }} showsVerticalScrollIndicator>
               {options.map((opt, idx) => {
                 const showGroup = opt.group && (idx === 0 || options[idx - 1]?.group !== opt.group);
                 return (
                   <React.Fragment key={opt.id}>
-                    {showGroup && <Text style={styles.dropdownGroupLabel}>{opt.group}</Text>}
+                    {showGroup && (
+                      <LinearText style={styles.dropdownGroupLabel}>{opt.group}</LinearText>
+                    )}
                     <TouchableOpacity
                       style={[styles.dropdownItem, value === opt.id && styles.dropdownItemActive]}
                       onPress={() => {
@@ -4660,7 +4693,7 @@ function ModelDropdown({
                       }}
                       activeOpacity={0.7}
                     >
-                      <Text
+                      <LinearText
                         style={[
                           styles.dropdownItemText,
                           value === opt.id && styles.dropdownItemTextActive,
@@ -4668,8 +4701,8 @@ function ModelDropdown({
                         numberOfLines={2}
                       >
                         {opt.label}
-                      </Text>
-                      {value === opt.id && <Text style={styles.dropdownCheck}>✓</Text>}
+                      </LinearText>
+                      {value === opt.id && <LinearText style={styles.dropdownCheck}>✓</LinearText>}
                     </TouchableOpacity>
                   </React.Fragment>
                 );

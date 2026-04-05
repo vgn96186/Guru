@@ -6,6 +6,8 @@ import {
   updateTopicProgress,
 } from '../db/queries/topics';
 import { setContentFlagged } from '../db/queries/aiCache';
+import { showDialog } from '../components/dialogService';
+import { showToast } from '../components/Toast';
 
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
@@ -220,6 +222,14 @@ jest.mock('react-native-safe-area-context', () => ({
 
 jest.mock('../hooks/useAppStateTransition', () => ({
   useAppStateTransition: jest.fn(),
+}));
+
+jest.mock('../components/dialogService', () => ({
+  showDialog: jest.fn(),
+}));
+
+jest.mock('../components/Toast', () => ({
+  showToast: jest.fn(),
 }));
 
 jest.mock('../components/LoadingOrb', () => 'LoadingOrb');
@@ -471,5 +481,59 @@ describe('SessionScreen', () => {
     await latestProps.onDone(4);
 
     expect(updateTopicProgress).toHaveBeenCalledWith(88, 'reviewed', 4, expect.any(Number));
+  });
+
+  it('uses themed dialog for mark-for-review confirmation and toast for success', async () => {
+    const { getCurrentAgendaItem } = jest.requireMock('../store/useSessionStore');
+    getCurrentAgendaItem.mockReturnValue({
+      topic: {
+        id: 77,
+        name: 'ACS',
+        progress: { status: 'reviewed' },
+      },
+      contentTypes: ['quiz'],
+    });
+    (showDialog as jest.Mock).mockResolvedValue('flag-topic');
+
+    sessionStoreState.sessionState = 'studying';
+    sessionStoreState.agenda = {
+      items: [
+        {
+          topic: { id: 77, name: 'ACS', subjectName: 'Medicine', progress: { status: 'reviewed' } },
+          contentTypes: ['quiz'],
+        },
+      ],
+      mode: 'normal',
+      focusNote: '',
+    };
+    sessionStoreState.currentContent = {
+      type: 'quiz',
+      topicName: 'ACS',
+      questions: [],
+    };
+
+    const SessionScreen = require('./SessionScreen').default;
+    const { getByLabelText, getByText } = render(<SessionScreen />);
+
+    fireEvent.press(getByLabelText('Session menu'));
+    fireEvent.press(getByText('Mark for Review'));
+
+    await waitFor(() => {
+      expect(showDialog).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Mark for Review?',
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(setContentFlagged).toHaveBeenCalledWith(77, 'quiz', true);
+      expect(showToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Flagged',
+          variant: 'success',
+        }),
+      );
+    });
   });
 });

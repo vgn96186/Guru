@@ -2,7 +2,6 @@ import LinearSurface from '../components/primitives/LinearSurface';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   TextInput,
@@ -13,6 +12,7 @@ import {
   Vibration,
   Animated,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -908,10 +908,10 @@ export default function LectureModeScreen() {
       return (
         <SafeAreaView style={styles.safe}>
           <ResponsiveContainer style={styles.resumeContainer}>
-            <Text style={styles.resumeTitle}>Ready to resume?</Text>
-            <Text style={styles.resumeTimer}>{resumeCountdown}</Text>
+            <LinearText style={styles.resumeTitle}>Ready to resume?</LinearText>
+            <LinearText style={styles.resumeTimer}>{resumeCountdown}</LinearText>
             <TouchableOpacity style={styles.resumeBtn} onPress={() => setResumeCountdown(0)}>
-              <Text style={styles.resumeBtnText}>Resume Now</Text>
+              <LinearText style={styles.resumeBtnText}>Resume Now</LinearText>
             </TouchableOpacity>
           </ResponsiveContainer>
         </SafeAreaView>
@@ -948,8 +948,8 @@ export default function LectureModeScreen() {
             padding: 40,
           }}
         >
-          <Text style={{ fontSize: 80, marginBottom: 20 }}>📱❌</Text>
-          <Text
+          <LinearText style={{ fontSize: 80, marginBottom: 20 }}>📱❌</LinearText>
+          <LinearText
             style={{
               color: n.colors.textPrimary,
               fontSize: 32,
@@ -959,8 +959,8 @@ export default function LectureModeScreen() {
             }}
           >
             PUT YOUR PHONE DOWN.
-          </Text>
-          <Text
+          </LinearText>
+          <LinearText
             style={{
               color: n.colors.textPrimary,
               fontSize: 20,
@@ -969,7 +969,7 @@ export default function LectureModeScreen() {
             }}
           >
             You are doomscrolling instead of watching this lecture!
-          </Text>
+          </LinearText>
         </View>
       )}
       <StatusBar
@@ -983,9 +983,9 @@ export default function LectureModeScreen() {
             style={styles.backBtn}
             testID="lecture-end-btn"
           >
-            <Text style={styles.backText}>← End</Text>
+            <LinearText style={styles.backText}>← End</LinearText>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>📺 Hostage Mode</Text>
+          <LinearText style={styles.headerTitle}>📺 Hostage Mode</LinearText>
           <FocusAudioPlayer />
         </View>
 
@@ -995,21 +995,21 @@ export default function LectureModeScreen() {
               padded={false}
               style={[styles.hostageInfo, { borderColor: n.colors.error }]}
             >
-              <Text style={styles.hostageEmoji}>👀</Text>
-              <Text style={[styles.hostageText, { color: n.colors.error }]}>
+              <LinearText style={styles.hostageEmoji}>👀</LinearText>
+              <LinearText style={[styles.hostageText, { color: n.colors.error }]}>
                 Face not detected or distracted! Look at your study materials!
-              </Text>
+              </LinearText>
             </LinearSurface>
           )}
 
           {/* Hostage Instructions */}
           {!proofOfLifeActive && elapsed < 60 && (
             <LinearSurface padded={false} style={styles.hostageInfo}>
-              <Text style={styles.hostageEmoji}>📱❌</Text>
-              <Text style={styles.hostageText}>
+              <LinearText style={styles.hostageEmoji}>📱❌</LinearText>
+              <LinearText style={styles.hostageText}>
                 Put this phone face up on your desk. Watch the lecture on your tablet. If you close
                 this app to doomscroll, your phone will scream at you.
-              </Text>
+              </LinearText>
             </LinearSurface>
           )}
 
@@ -1018,23 +1018,23 @@ export default function LectureModeScreen() {
             style={[styles.timerBox, proofOfLifeActive && styles.timerBoxWarn]}
             testID="lecture-timer"
           >
-            <Text style={styles.timerLabel}>Lecture Time</Text>
-            <Text
+            <LinearText style={styles.timerLabel}>Lecture Time</LinearText>
+            <LinearText
               style={[styles.timer, proofOfLifeActive && styles.timerWarn]}
               adjustsFontSizeToFit
               minimumFontScale={0.6}
               numberOfLines={1}
             >
               {mins}:{secs.toString().padStart(2, '0')}
-            </Text>
+            </LinearText>
           </LinearSurface>
 
           {/* Pre-warning 30s before proof of life */}
           {proofWarningActive && !proofOfLifeActive && (
             <LinearSurface padded={false} style={styles.proofWarnBanner}>
-              <Text style={styles.proofWarnText}>
+              <LinearText style={styles.proofWarnText}>
                 ⚠️ Listening check in 30s — get ready to type!
-              </Text>
+              </LinearText>
             </LinearSurface>
           )}
 
@@ -1051,7 +1051,7 @@ export default function LectureModeScreen() {
               ]}
             >
               <View style={styles.proofIconContainer}>
-                <Text style={styles.proofEmoji}>🚨</Text>
+                <LinearText style={styles.proofEmoji}>🚨</LinearText>
                 <Animated.View
                   style={[
                     styles.proofPulseRing,
@@ -1070,35 +1070,35 @@ export default function LectureModeScreen() {
                 />
               </View>
 
-              <Text style={styles.proofTitle}>ACTIVE LISTENING CHECK</Text>
-              <Text style={styles.proofSub}>
+              <LinearText style={styles.proofTitle}>ACTIVE LISTENING CHECK</LinearText>
+              <LinearText style={styles.proofSub}>
                 You have {proofOfLifeCountdown}s to type one thing the professor just said.
-              </Text>
+              </LinearText>
 
               <View style={styles.proofTimerContainer}>
                 <View style={styles.proofTimerCircle}>
-                  <Text
+                  <LinearText
                     style={[
                       styles.proofTimerText,
                       proofOfLifeCountdown <= 10 && styles.proofTimerTextUrgent,
                     ]}
                   >
                     {proofOfLifeCountdown}
-                  </Text>
+                  </LinearText>
                 </View>
-                <Text style={styles.proofTimerLabel}>seconds remaining</Text>
+                <LinearText style={styles.proofTimerLabel}>seconds remaining</LinearText>
               </View>
 
-              <Text style={styles.proofWarning}>
+              <LinearText style={styles.proofWarning}>
                 Are you zoning out? Type a note above to dismiss this alert.
-              </Text>
+              </LinearText>
             </Animated.View>
           )}
 
           {/* Subject selector */}
           {!selectedSubjectId ? (
             <View style={styles.subjectSection}>
-              <Text style={styles.sectionLabel}>What subject are you watching?</Text>
+              <LinearText style={styles.sectionLabel}>What subject are you watching?</LinearText>
               <View style={styles.subjectGrid}>
                 {subjects.map((s) => (
                   <TouchableOpacity
@@ -1107,20 +1107,20 @@ export default function LectureModeScreen() {
                     onPress={() => setSelectedSubjectId(s.id)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.subjectChipText, { color: s.colorHex }]}>
+                    <LinearText style={[styles.subjectChipText, { color: s.colorHex }]}>
                       {s.shortCode}
-                    </Text>
+                    </LinearText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
           ) : (
             <LinearSurface padded={false} style={styles.selectedSubject}>
-              <Text style={styles.selectedSubjectText}>
+              <LinearText style={styles.selectedSubjectText}>
                 {subjects.find((s) => s.id === selectedSubjectId)?.name}
-              </Text>
+              </LinearText>
               <TouchableOpacity onPress={() => setSelectedSubjectId(null)}>
-                <Text style={styles.changeBtn}>Change</Text>
+                <LinearText style={styles.changeBtn}>Change</LinearText>
               </TouchableOpacity>
             </LinearSurface>
           )}
@@ -1135,12 +1135,14 @@ export default function LectureModeScreen() {
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {isRecordingEnabled && <View style={styles.recordingDot} />}
-              <Text style={styles.transcribeBtnText}>
+              <LinearText style={styles.transcribeBtnText}>
                 {isRecordingEnabled ? 'AUTO-SCRIBE ACTIVE — Recording' : '🎙️ Enable Auto-Scribe'}
-              </Text>
+              </LinearText>
             </View>
             {isTranscribing && (
-              <Text style={{ color: n.colors.textInverse, fontSize: 11 }}>Processing chunk...</Text>
+              <LinearText style={{ color: n.colors.textInverse, fontSize: 11 }}>
+                Processing chunk...
+              </LinearText>
             )}
           </TouchableOpacity>
 
@@ -1150,7 +1152,7 @@ export default function LectureModeScreen() {
             activeOpacity={0.8}
             testID="import-transcribe-btn"
           >
-            <Text style={styles.transcribeBtnText}>📁 Import Audio & Transcribe</Text>
+            <LinearText style={styles.transcribeBtnText}>📁 Import Audio & Transcribe</LinearText>
           </TouchableOpacity>
 
           <View style={styles.noteSection}>
@@ -1181,24 +1183,24 @@ export default function LectureModeScreen() {
               activeOpacity={0.8}
               testID="save-note-btn"
             >
-              <Text style={styles.saveBtnText}>
+              <LinearText style={styles.saveBtnText}>
                 {proofOfLifeActive ? 'CONFIRM LISTENING' : 'Save Note'}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.breakTriggerBtn} onPress={startBreak}>
-              <Text style={styles.breakTriggerText}>☕ Take 5m Break</Text>
+              <LinearText style={styles.breakTriggerText}>☕ Take 5m Break</LinearText>
             </TouchableOpacity>
           </View>
 
           {/* Saved notes */}
           {notes.length > 0 && (
             <View style={styles.savedNotes}>
-              <Text style={styles.sectionLabel}>Proof of Focus ({notes.length})</Text>
+              <LinearText style={styles.sectionLabel}>Proof of Focus ({notes.length})</LinearText>
               {notes.map((n, i) => (
                 <View key={i} style={styles.noteRow}>
-                  <Text style={styles.noteDot}>·</Text>
-                  <Text style={styles.noteText}>{n}</Text>
+                  <LinearText style={styles.noteDot}>·</LinearText>
+                  <LinearText style={styles.noteText}>{n}</LinearText>
                 </View>
               ))}
             </View>

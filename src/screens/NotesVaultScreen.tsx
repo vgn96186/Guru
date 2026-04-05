@@ -8,7 +8,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
@@ -22,6 +21,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -98,10 +98,10 @@ function countWords(text: string): number {
 }
 
 const SUBJECT_COLORS: Record<string, string> = {
-  Physiology: '#4CAF50',
+  Physiology: n.colors.success,
   Anatomy: '#2196F3',
-  Biochemistry: '#FF9800',
-  Pathology: '#F44336',
+  Biochemistry: n.colors.warning,
+  Pathology: n.colors.error,
   Pharmacology: '#9C27B0',
   Microbiology: '#00BCD4',
   'Forensic Medicine': '#795548',
@@ -583,17 +583,17 @@ export default function NotesVaultScreen() {
           <SubjectChip
             subject={subjectLabel}
             color="#fff"
-            backgroundColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
-            borderColor={SUBJECT_COLORS[subjectLabel] ?? '#9E9E9E'}
+            backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
+            borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
             style={styles.subjectChip}
           />
         </View>
         <View style={styles.dateRow}>
-          <Text style={styles.dateText}>{formatDate(item.createdAt)}</Text>
+          <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
         </View>
-        <Text style={styles.titleText} numberOfLines={3}>
+        <LinearText style={styles.titleText} numberOfLines={3}>
           {getTitle(item)}
-        </Text>
+        </LinearText>
         {item.topics.length > 0 && (
           <TopicPillRow
             topics={item.topics}
@@ -606,7 +606,7 @@ export default function NotesVaultScreen() {
         )}
         <View style={styles.cardFooter}>
           {item.confidence > 0 && (
-            <Text
+            <LinearText
               style={[
                 styles.confidenceBadge,
                 item.confidence === 3
@@ -617,10 +617,14 @@ export default function NotesVaultScreen() {
               ]}
             >
               {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
-            </Text>
+            </LinearText>
           )}
-          <Text style={styles.wordCount}>{countWords(item.note).toLocaleString()} words</Text>
-          {item.appName ? <Text style={styles.appBadge}>via {item.appName}</Text> : null}
+          <LinearText style={styles.wordCount}>
+            {countWords(item.note).toLocaleString()} words
+          </LinearText>
+          {item.appName ? (
+            <LinearText style={styles.appBadge}>via {item.appName}</LinearText>
+          ) : null}
         </View>
       </TouchableOpacity>
     );
@@ -657,20 +661,19 @@ export default function NotesVaultScreen() {
               placeholder="Search notes, topics, subjects..."
             />
           }
-        >
-        </ScreenHeader>
+        ></ScreenHeader>
 
         {/* Selection banner */}
         {isSelectionMode && (
           <View style={styles.selectionBanner}>
-            <Text style={styles.selectionText}>{selectedIds.size} selected</Text>
+            <LinearText style={styles.selectionText}>{selectedIds.size} selected</LinearText>
             <View style={styles.selectionActions}>
               <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <Text style={styles.selectionCancelText}>Cancel</Text>
+                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
               </TouchableOpacity>
               <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
                 <Ionicons name="trash-outline" size={14} color="#fff" />
-                <Text style={styles.selectionDeleteText}>Delete</Text>
+                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
               </TouchableOpacity>
             </View>
           </View>
@@ -692,9 +695,9 @@ export default function NotesVaultScreen() {
                   accessibilityLabel="Ask Guru using current notes"
                 >
                   <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
-                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Ask Guru
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
@@ -710,9 +713,9 @@ export default function NotesVaultScreen() {
                     size={15}
                     color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
                   />
-                  <Text style={styles.quickActionText}>
-                    Sort <Text style={styles.quickActionValue}>{currentSortLabel}</Text>
-                  </Text>
+                  <LinearText style={styles.quickActionText}>
+                    Sort <LinearText style={styles.quickActionValue}>{currentSortLabel}</LinearText>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
@@ -736,8 +739,8 @@ export default function NotesVaultScreen() {
                         : n.colors.textSecondary
                     }
                   />
-                  <Text style={styles.quickActionText}>
-                    <Text
+                  <LinearText style={styles.quickActionText}>
+                    <LinearText
                       style={[
                         styles.quickActionText,
                         (subjectFilter !== 'all' || topicFilter !== 'all') &&
@@ -745,8 +748,8 @@ export default function NotesVaultScreen() {
                       ]}
                     >
                       {activeFilterSummary}
-                    </Text>
-                  </Text>
+                    </LinearText>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
@@ -756,9 +759,9 @@ export default function NotesVaultScreen() {
                   onPress={handleDeleteJunk}
                 >
                   <Ionicons name="trash-outline" size={15} color={n.colors.error} />
-                  <Text style={[styles.quickActionText, styles.quickActionTextError]}>
+                  <LinearText style={[styles.quickActionText, styles.quickActionTextError]}>
                     Clean {junkNotes.length}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
@@ -768,9 +771,9 @@ export default function NotesVaultScreen() {
                   onPress={handleDeleteDuplicates}
                 >
                   <Ionicons name="copy-outline" size={15} color={n.colors.warning} />
-                  <Text style={[styles.quickActionText, styles.quickActionTextWarning]}>
+                  <LinearText style={[styles.quickActionText, styles.quickActionTextWarning]}>
                     Duplicates {duplicateIds.size}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
@@ -780,9 +783,9 @@ export default function NotesVaultScreen() {
                   onPress={handleRelabel}
                 >
                   <Ionicons name="sparkles-outline" size={15} color={n.colors.accent} />
-                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Label {unlabeledNotes.length}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
@@ -792,18 +795,18 @@ export default function NotesVaultScreen() {
                   onPress={handleFixBadTitles}
                 >
                   <Ionicons name="create-outline" size={15} color={n.colors.accent} />
-                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Fix Titles {badTitleNotes.length}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               )}
 
               {relabelProgress && (
                 <View style={[styles.quickActionChip, styles.quickActionChipPrimary]}>
                   <ActivityIndicator size="small" color={n.colors.accent} />
-                  <Text style={[styles.quickActionText, styles.quickActionTextPrimary]}>
+                  <LinearText style={[styles.quickActionText, styles.quickActionTextPrimary]}>
                     Labeling {relabelProgress}
-                  </Text>
+                  </LinearText>
                 </View>
               )}
             </ScrollView>
@@ -822,14 +825,14 @@ export default function NotesVaultScreen() {
                     setIsSortMenuOpen(false);
                   }}
                 >
-                  <Text
+                  <LinearText
                     style={[
                       styles.sortOptionText,
                       sortBy === option.value && styles.sortOptionTextActive,
                     ]}
                   >
                     {option.label}
-                  </Text>
+                  </LinearText>
                   {sortBy === option.value ? (
                     <Ionicons name="checkmark" size={16} color={n.colors.accent} />
                   ) : null}
@@ -843,12 +846,14 @@ export default function NotesVaultScreen() {
         {visibleNotes.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="document-text-outline" size={48} color={n.colors.textMuted} />
-            <Text style={styles.emptyTitle}>{searchQuery ? 'No Results' : 'No Notes Yet'}</Text>
-            <Text style={styles.emptySubtitle}>
+            <LinearText style={styles.emptyTitle}>
+              {searchQuery ? 'No Results' : 'No Notes Yet'}
+            </LinearText>
+            <LinearText style={styles.emptySubtitle}>
               {searchQuery
                 ? `Nothing matches "${searchQuery}"`
                 : 'Process recordings, paste transcripts, or upload text to generate study notes.'}
-            </Text>
+            </LinearText>
           </View>
         ) : (
           <FlatList
@@ -879,8 +884,10 @@ export default function NotesVaultScreen() {
             <LinearSurface padded={false} style={styles.sheetCard}>
               <View style={styles.sheetHeader}>
                 <View style={styles.sheetHeaderCopy}>
-                  <Text style={styles.sheetTitle}>Filter Notes</Text>
-                  <Text style={styles.sheetSubtitle}>Narrow the vault by subject and topic.</Text>
+                  <LinearText style={styles.sheetTitle}>Filter Notes</LinearText>
+                  <LinearText style={styles.sheetSubtitle}>
+                    Narrow the vault by subject and topic.
+                  </LinearText>
                 </View>
                 <TouchableOpacity
                   style={styles.sheetCloseBtn}
@@ -898,7 +905,7 @@ export default function NotesVaultScreen() {
                   setIsFilterMenuOpen(false);
                 }}
               >
-                <Text style={styles.clearFiltersText}>Clear filters</Text>
+                <LinearText style={styles.clearFiltersText}>Clear filters</LinearText>
               </TouchableOpacity>
 
               <ScrollView
@@ -907,7 +914,7 @@ export default function NotesVaultScreen() {
                 showsVerticalScrollIndicator={false}
               >
                 <View style={styles.sheetSection}>
-                  <Text style={styles.sheetSectionTitle}>Subject</Text>
+                  <LinearText style={styles.sheetSectionTitle}>Subject</LinearText>
                   <View style={styles.sheetOptions}>
                     <TouchableOpacity
                       style={[
@@ -916,26 +923,18 @@ export default function NotesVaultScreen() {
                       ]}
                       onPress={() => setSubjectFilter('all')}
                     >
-                      <Text
+                      <LinearText
                         style={[
                           styles.sheetOptionText,
                           subjectFilter === 'all' && styles.sheetOptionTextActive,
                         ]}
                       >
                         All subjects
-                      </Text>
+                      </LinearText>
                       {subjectFilter === 'all' ? (
-                        <Ionicons
-                          name="radio-button-on"
-                          size={18}
-                          color={n.colors.accent}
-                        />
+                        <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
                       ) : (
-                        <Ionicons
-                          name="radio-button-off"
-                          size={18}
-                          color={n.colors.textMuted}
-                        />
+                        <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
                       )}
                     </TouchableOpacity>
                     {subjectOptions.map((subject) => (
@@ -947,26 +946,18 @@ export default function NotesVaultScreen() {
                         ]}
                         onPress={() => setSubjectFilter(subject)}
                       >
-                        <Text
+                        <LinearText
                           style={[
                             styles.sheetOptionText,
                             subjectFilter === subject && styles.sheetOptionTextActive,
                           ]}
                         >
                           {subject}
-                        </Text>
+                        </LinearText>
                         {subjectFilter === subject ? (
-                          <Ionicons
-                            name="radio-button-on"
-                            size={18}
-                            color={n.colors.accent}
-                          />
+                          <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
                         ) : (
-                          <Ionicons
-                            name="radio-button-off"
-                            size={18}
-                            color={n.colors.textMuted}
-                          />
+                          <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
                         )}
                       </TouchableOpacity>
                     ))}
@@ -974,7 +965,7 @@ export default function NotesVaultScreen() {
                 </View>
 
                 <View style={styles.sheetSection}>
-                  <Text style={styles.sheetSectionTitle}>Topic</Text>
+                  <LinearText style={styles.sheetSectionTitle}>Topic</LinearText>
                   <View style={styles.sheetOptions}>
                     <TouchableOpacity
                       style={[
@@ -983,26 +974,18 @@ export default function NotesVaultScreen() {
                       ]}
                       onPress={() => setTopicFilter('all')}
                     >
-                      <Text
+                      <LinearText
                         style={[
                           styles.sheetOptionText,
                           topicFilter === 'all' && styles.sheetOptionTextActive,
                         ]}
                       >
                         All topics
-                      </Text>
+                      </LinearText>
                       {topicFilter === 'all' ? (
-                        <Ionicons
-                          name="radio-button-on"
-                          size={18}
-                          color={n.colors.accent}
-                        />
+                        <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
                       ) : (
-                        <Ionicons
-                          name="radio-button-off"
-                          size={18}
-                          color={n.colors.textMuted}
-                        />
+                        <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
                       )}
                     </TouchableOpacity>
                     {topicOptions.map((topic) => (
@@ -1014,26 +997,18 @@ export default function NotesVaultScreen() {
                         ]}
                         onPress={() => setTopicFilter(topic)}
                       >
-                        <Text
+                        <LinearText
                           style={[
                             styles.sheetOptionText,
                             topicFilter === topic && styles.sheetOptionTextActive,
                           ]}
                         >
                           {topic}
-                        </Text>
+                        </LinearText>
                         {topicFilter === topic ? (
-                          <Ionicons
-                            name="radio-button-on"
-                            size={18}
-                            color={n.colors.accent}
-                          />
+                          <Ionicons name="radio-button-on" size={18} color={n.colors.accent} />
                         ) : (
-                          <Ionicons
-                            name="radio-button-off"
-                            size={18}
-                            color={n.colors.textMuted}
-                          />
+                          <Ionicons name="radio-button-off" size={18} color={n.colors.textMuted} />
                         )}
                       </TouchableOpacity>
                     ))}
@@ -1064,9 +1039,9 @@ export default function NotesVaultScreen() {
               >
                 <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
               </TouchableOpacity>
-              <Text style={styles.readerHeaderTitle} numberOfLines={3}>
+              <LinearText style={styles.readerHeaderTitle} numberOfLines={3}>
                 {readerTitle}
-              </Text>
+              </LinearText>
               <TouchableOpacity
                 onPress={() => {
                   if (readerContent) {
@@ -1088,7 +1063,7 @@ export default function NotesVaultScreen() {
                 accessibilityLabel="Ask Guru from this note"
               >
                 <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
-                <Text style={styles.readerAskGuruText}>Ask Guru From This Note</Text>
+                <LinearText style={styles.readerAskGuruText}>Ask Guru From This Note</LinearText>
               </TouchableOpacity>
             ) : null}
             <ScrollView
@@ -1356,7 +1331,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   dateText: {
-    color: '#888',
+    color: n.colors.textMuted,
     fontSize: 12,
     lineHeight: 16,
     textAlign: 'right',
@@ -1544,7 +1519,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
   },
-  selectionDeleteText: { color: '#fff', fontSize: 13, lineHeight: 18, fontWeight: '700' },
+  selectionDeleteText: {
+    color: n.colors.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '700',
+  },
   sheetOverlay: {
     flex: 1,
     justifyContent: 'flex-end',

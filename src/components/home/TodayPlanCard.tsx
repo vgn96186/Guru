@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: n.spacing.md,
   },
   startBtnText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 13,
     letterSpacing: 0.8,

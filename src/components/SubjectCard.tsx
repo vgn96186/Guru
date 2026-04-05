@@ -10,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import type { Subject } from '../types';
 import { linearTheme as n } from '../theme/linearTheme';
+import { cardPressTiming } from '../motion/presets';
+import { useReducedMotion } from '../motion/useReducedMotion';
 import AppText from './AppText';
 import LinearSurface from './primitives/LinearSurface';
 
@@ -34,10 +36,12 @@ export default React.memo(function SubjectCard({
   matchingTopicsCount,
   onPress,
 }: Props) {
+  const reducedMotion = useReducedMotion();
   // Press-scale runs entirely on the Reanimated UI thread.
   // JS side only sets the target value; Reanimated drives every frame natively.
   const pressScale = useSharedValue(1);
   const pressOpacity = useSharedValue(1);
+  const activeOpacity = reducedMotion ? 0.82 : 0.9;
   const pressAnimStyle = useAnimatedStyle(() => {
     'worklet';
     return {
@@ -48,14 +52,19 @@ export default React.memo(function SubjectCard({
 
   function handlePress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Softer timing curve feels smoother than spring snap on lower-end Android GPUs.
-    pressScale.value = withTiming(0.99, { duration: 110 }, () => {
+    if (reducedMotion) {
+      onPress();
+      return;
+    }
+
+    // Keep the press response short and consistent with the shared motion presets.
+    pressScale.value = withTiming(0.985, { duration: cardPressTiming.in }, () => {
       'worklet';
-      pressScale.value = withTiming(1, { duration: 180 });
+      pressScale.value = withTiming(1, { duration: cardPressTiming.out });
     });
-    pressOpacity.value = withTiming(0.9, { duration: 110 }, () => {
+    pressOpacity.value = withTiming(0.92, { duration: cardPressTiming.in }, () => {
       'worklet';
-      pressOpacity.value = withTiming(1, { duration: 180 });
+      pressOpacity.value = withTiming(1, { duration: cardPressTiming.out });
     });
     onPress();
   }
@@ -81,12 +90,12 @@ export default React.memo(function SubjectCard({
 
   return (
     // ReAnimated wrapper carries the UI-thread press-scale animation.
-    // When tapped, the card briefly shrinks (scale 0.96) then springs back
+    // When tapped, the card briefly shrinks (scale 0.985) then springs back
     // while the detail screen zooms open — together they read as "card expands".
     <ReAnimated.View style={pressAnimStyle}>
       <TouchableOpacity
         onPress={handlePress}
-        activeOpacity={0.7}
+        activeOpacity={activeOpacity}
         accessibilityRole="button"
         accessibilityLabel={`${subject.name} subject`}
         accessibilityHint={`Coverage: ${coverage.seen} of ${coverage.total} topics (${pct}%).`}

@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   FlatList,
@@ -10,6 +9,7 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -177,78 +177,86 @@ export default function QuestionBankScreen() {
           onPress={() => setExpandedId(isExpanded ? null : item.id)}
         >
           <LinearSurface padded={false} style={styles.card}>
-          <View style={styles.cardHeader}>
-            {item.subjectName ? (
-              <View style={[styles.subjectChip, { backgroundColor: '#E040FB22' }]}>
-                <Text style={styles.subjectChipText}>{item.subjectName}</Text>
-              </View>
-            ) : null}
-            {item.topicName ? (
-              <Text style={styles.topicLabel} numberOfLines={1}>
-                {item.topicName}
-              </Text>
-            ) : null}
-          </View>
-
-          <Text style={styles.questionText} numberOfLines={isExpanded ? undefined : 2}>
-            {item.question}
-          </Text>
-
-          {isExpanded && (
-            <View style={styles.expandedContent}>
-              {item.options.map((opt, i) => (
-                <View
-                  key={i}
-                  style={[styles.optionRow, i === item.correctIndex && styles.correctOption]}
-                >
-                  <Text style={styles.optionLetter}>{String.fromCharCode(65 + i)}.</Text>
-                  <Text
-                    style={[styles.optionText, i === item.correctIndex && styles.correctOptionText]}
-                  >
-                    {opt}
-                  </Text>
-                </View>
-              ))}
-              {item.explanation ? (
-                <View style={styles.explanationWrap}>
-                  <MarkdownRender content={emphasizeHighYieldMarkdown(item.explanation)} compact />
+            <View style={styles.cardHeader}>
+              {item.subjectName ? (
+                <View style={[styles.subjectChip, { backgroundColor: '#E040FB22' }]}>
+                  <LinearText style={styles.subjectChipText}>{item.subjectName}</LinearText>
                 </View>
               ) : null}
+              {item.topicName ? (
+                <LinearText style={styles.topicLabel} numberOfLines={1}>
+                  {item.topicName}
+                </LinearText>
+              ) : null}
             </View>
-          )}
 
-          <View style={styles.cardFooter}>
-            <View style={styles.statsRow}>
-              {accuracy !== null && (
-                <Text style={styles.statText}>
-                  {accuracy}% ({item.timesCorrect}/{item.timesSeen})
-                </Text>
-              )}
-              <Text style={styles.sourceChip}>{item.source.replace('_', ' ')}</Text>
+            <LinearText style={styles.questionText} numberOfLines={isExpanded ? undefined : 2}>
+              {item.question}
+            </LinearText>
+
+            {isExpanded && (
+              <View style={styles.expandedContent}>
+                {item.options.map((opt, i) => (
+                  <View
+                    key={i}
+                    style={[styles.optionRow, i === item.correctIndex && styles.correctOption]}
+                  >
+                    <LinearText style={styles.optionLetter}>
+                      {String.fromCharCode(65 + i)}.
+                    </LinearText>
+                    <LinearText
+                      style={[
+                        styles.optionText,
+                        i === item.correctIndex && styles.correctOptionText,
+                      ]}
+                    >
+                      {opt}
+                    </LinearText>
+                  </View>
+                ))}
+                {item.explanation ? (
+                  <View style={styles.explanationWrap}>
+                    <MarkdownRender
+                      content={emphasizeHighYieldMarkdown(item.explanation)}
+                      compact
+                    />
+                  </View>
+                ) : null}
+              </View>
+            )}
+
+            <View style={styles.cardFooter}>
+              <View style={styles.statsRow}>
+                {accuracy !== null && (
+                  <LinearText style={styles.statText}>
+                    {accuracy}% ({item.timesCorrect}/{item.timesSeen})
+                  </LinearText>
+                )}
+                <LinearText style={styles.sourceChip}>{item.source.replace('_', ' ')}</LinearText>
+              </View>
+              <View style={styles.actions}>
+                <TouchableOpacity onPress={() => handleToggleBookmark(item.id)} hitSlop={8}>
+                  <Ionicons
+                    name={item.isBookmarked ? 'star' : 'star-outline'}
+                    size={20}
+                    color={item.isBookmarked ? n.colors.warning : n.colors.textMuted}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleMarkMastered(item.id, !item.isMastered)}
+                  hitSlop={8}
+                >
+                  <Ionicons
+                    name={item.isMastered ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                    size={20}
+                    color={item.isMastered ? n.colors.success : n.colors.textMuted}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={8}>
+                  <Ionicons name="trash-outline" size={18} color={n.colors.textMuted} />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={() => handleToggleBookmark(item.id)} hitSlop={8}>
-                <Ionicons
-                  name={item.isBookmarked ? 'star' : 'star-outline'}
-                  size={20}
-                  color={item.isBookmarked ? '#FFD700' : n.colors.textMuted}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleMarkMastered(item.id, !item.isMastered)}
-                hitSlop={8}
-              >
-                <Ionicons
-                  name={item.isMastered ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                  size={20}
-                  color={item.isMastered ? n.colors.success : n.colors.textMuted}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDelete(item.id)} hitSlop={8}>
-                <Ionicons name="trash-outline" size={18} color={n.colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-          </View>
           </LinearSurface>
         </TouchableOpacity>
       );
@@ -273,20 +281,19 @@ export default function QuestionBankScreen() {
       {/* Stats + Filter bar */}
       <View style={styles.filterBar}>
         {filters.map((f) => (
-          <TouchableOpacity
-            key={f.mode}
-            onPress={() => setFilterMode(f.mode)}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity key={f.mode} onPress={() => setFilterMode(f.mode)} activeOpacity={0.8}>
             <LinearSurface
               padded={false}
               style={[styles.filterChip, filterMode === f.mode && styles.filterChipActive]}
             >
-              <Text
-                style={[styles.filterChipText, filterMode === f.mode && styles.filterChipTextActive]}
+              <LinearText
+                style={[
+                  styles.filterChipText,
+                  filterMode === f.mode && styles.filterChipTextActive,
+                ]}
               >
                 {f.label} ({f.count})
-              </Text>
+              </LinearText>
             </LinearSurface>
           </TouchableOpacity>
         ))}
@@ -310,10 +317,10 @@ export default function QuestionBankScreen() {
       ) : questions.length === 0 ? (
         <View style={styles.center}>
           <Ionicons name="help-circle-outline" size={48} color={n.colors.textMuted} />
-          <Text style={styles.emptyText}>No questions yet</Text>
-          <Text style={styles.emptyHint}>
+          <LinearText style={styles.emptyText}>No questions yet</LinearText>
+          <LinearText style={styles.emptyHint}>
             Study topics or take quizzes to auto-save questions here.
-          </Text>
+          </LinearText>
         </View>
       ) : (
         <FlatList
@@ -338,10 +345,10 @@ export default function QuestionBankScreen() {
             >
               <Ionicons name="close" size={28} color={n.colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.practiceProgress}>
+            <LinearText style={styles.practiceProgress}>
               {practiceIndex + 1} / {practiceQuestions.length}
-            </Text>
-            <Text style={styles.practiceScoreText}>{practiceScore} correct</Text>
+            </LinearText>
+            <LinearText style={styles.practiceScoreText}>{practiceScore} correct</LinearText>
           </View>
 
           {currentPracticeQ && (
@@ -350,11 +357,13 @@ export default function QuestionBankScreen() {
                 <View
                   style={[styles.subjectChip, { backgroundColor: '#E040FB22', marginBottom: 8 }]}
                 >
-                  <Text style={styles.subjectChipText}>{currentPracticeQ.subjectName}</Text>
+                  <LinearText style={styles.subjectChipText}>
+                    {currentPracticeQ.subjectName}
+                  </LinearText>
                 </View>
               ) : null}
 
-              <Text style={styles.practiceQuestion}>{currentPracticeQ.question}</Text>
+              <LinearText style={styles.practiceQuestion}>{currentPracticeQ.question}</LinearText>
 
               <View style={styles.practiceOptions}>
                 {currentPracticeQ.options.map((opt, i) => {
@@ -376,10 +385,10 @@ export default function QuestionBankScreen() {
                       disabled={practiceAnswer !== null}
                       activeOpacity={0.8}
                     >
-                      <Text style={styles.practiceOptionLetter}>
+                      <LinearText style={styles.practiceOptionLetter}>
                         {String.fromCharCode(65 + i)}.
-                      </Text>
-                      <Text style={styles.practiceOptionText}>{opt}</Text>
+                      </LinearText>
+                      <LinearText style={styles.practiceOptionText}>{opt}</LinearText>
                     </TouchableOpacity>
                   );
                 })}
@@ -396,9 +405,9 @@ export default function QuestionBankScreen() {
 
               {practiceAnswer !== null && (
                 <TouchableOpacity style={styles.nextBtn} onPress={handlePracticeNext}>
-                  <Text style={styles.nextBtnText}>
+                  <LinearText style={styles.nextBtnText}>
                     {practiceIndex + 1 >= practiceQuestions.length ? 'Finish' : 'Next'}
-                  </Text>
+                  </LinearText>
                   <Ionicons name="arrow-forward" size={18} color={n.colors.textPrimary} />
                 </TouchableOpacity>
               )}

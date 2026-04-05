@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, InteractionManager } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, Pressable, InteractionManager } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import LinearSurface from '../primitives/LinearSurface';
 import { linearTheme as n } from '../../theme/linearTheme';
@@ -37,12 +38,14 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
     }
   }, []);
 
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      void loadLectures();
-    });
-    return () => task.cancel();
-  }, [loadLectures]);
+  useFocusEffect(
+    useCallback(() => {
+      const task = InteractionManager.runAfterInteractions(() => {
+        void loadLectures();
+      });
+      return () => task.cancel();
+    }, [loadLectures]),
+  );
 
   const handleCardPress = useCallback((info: NextLectureInfo) => {
     const profile = useAppStore.getState().profile;
@@ -86,9 +89,9 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
         return (
           <View key={info.batchId} style={styles.sectionWrap}>
             <Text style={styles.sectionLabel}>{info.batchShortName} LECTURE</Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
+            <Pressable
               onPress={() => handleCardPress(info)}
+              style={({ pressed }) => [styles.cardPressable, pressed && styles.cardPressed]}
               accessibilityRole="button"
               accessibilityLabel={`Open ${info.batchShortName} lecture: ${info.lecture.title}`}
             >
@@ -105,14 +108,17 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
                       %)
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={[styles.doneBtn, isBusy && styles.doneBtnBusy]}
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.doneBtn,
+                      pressed && styles.doneBtnPressed,
+                      isBusy && styles.doneBtnBusy,
+                    ]}
                     onPress={(e) => {
                       e.stopPropagation();
                       void handleMarkDone(info);
                     }}
                     disabled={isBusy}
-                    activeOpacity={0.7}
                     accessibilityRole="button"
                     accessibilityLabel={`Mark ${info.lecture.title} as done`}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -122,7 +128,7 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
                       size={16}
                       color={isBusy ? n.colors.textMuted : n.colors.success}
                     />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 {/* Progress bar */}
@@ -135,7 +141,7 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
                   />
                 </View>
               </LinearSurface>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         );
       })}
@@ -146,6 +152,13 @@ export default function NextLectureSection({ onLectureCompleted }: NextLectureSe
 const styles = StyleSheet.create({
   container: {
     // empty container, styling pushed to sectionWrap
+  },
+  cardPressable: {
+    width: '100%',
+  },
+  cardPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.99 }],
   },
   sectionWrap: {
     marginBottom: n.spacing.md,
@@ -205,6 +218,9 @@ const styles = StyleSheet.create({
   doneBtnBusy: {
     backgroundColor: 'rgba(255,255,255,0.04)',
     borderColor: n.colors.border,
+  },
+  doneBtnPressed: {
+    opacity: 0.88,
   },
 
   progressBar: {

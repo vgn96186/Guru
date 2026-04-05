@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -9,6 +8,7 @@ import {
   Animated,
   Alert,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -216,9 +216,9 @@ export default function PunishmentMode() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.minimizedContainer}>
-          <Text style={styles.minimizedText}>😴 Punishment Mode Snoozed</Text>
+          <LinearText style={styles.minimizedText}>😴 Punishment Mode Snoozed</LinearText>
           <TouchableOpacity style={styles.wakeBtn} onPress={() => setShowGuiltScreen(true)}>
-            <Text style={styles.wakeBtnText}>Wake Me Up</Text>
+            <LinearText style={styles.wakeBtnText}>Wake Me Up</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -231,26 +231,28 @@ export default function PunishmentMode() {
       <ResponsiveContainer style={{ flex: 1 }}>
         <Animated.View style={[styles.container, { transform: [{ translateX: shakeAnim }] }]}>
           <Animated.View style={[styles.shameIcon, { transform: [{ scale: pulseAnim }] }]}>
-            <Text style={styles.shameEmoji}>😤</Text>
+            <LinearText style={styles.shameEmoji}>😤</LinearText>
           </Animated.View>
 
-          <Text style={[styles.title, { color: currentShame.color }]}>{currentShame.title}</Text>
+          <LinearText style={[styles.title, { color: currentShame.color }]}>
+            {currentShame.title}
+          </LinearText>
 
-          <Text style={styles.subtitle}>
+          <LinearText style={styles.subtitle}>
             {currentShame.subtitle
               .replace('{minutes}', String(lastStudyTime))
               .replace('{goal}', String(profile?.dailyGoalMinutes ?? 120))
               .replace('{idle}', String(minutesIdle))}
-          </Text>
+          </LinearText>
 
           <LinearSurface padded={false} borderColor={currentShame.color} style={styles.guiltBox}>
-            <Text style={[styles.quote, { color: currentShame.color }]}>
+            <LinearText style={[styles.quote, { color: currentShame.color }]}>
               "{currentShame.quote}"
-            </Text>
+            </LinearText>
           </LinearSurface>
 
           <View style={styles.progressContainer}>
-            <Text style={styles.progressLabel}>Daily Goal Progress</Text>
+            <LinearText style={styles.progressLabel}>Daily Goal Progress</LinearText>
             <View style={styles.progressBar}>
               <View
                 style={[
@@ -262,9 +264,9 @@ export default function PunishmentMode() {
                 ]}
               />
             </View>
-            <Text style={styles.progressText}>
+            <LinearText style={styles.progressText}>
               {lastStudyTime} / {profile?.dailyGoalMinutes ?? 120} min
-            </Text>
+            </LinearText>
           </View>
 
           <LinearButton
@@ -284,28 +286,28 @@ export default function PunishmentMode() {
 
           <View style={styles.bottomRow}>
             <TouchableOpacity style={styles.snoozeBtn} onPress={handleSnooze}>
-              <Text style={styles.snoozeBtnText}>😴 Snooze 10min</Text>
+              <LinearText style={styles.snoozeBtnText}>😴 Snooze 10min</LinearText>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.disableBtn} onPress={handleDisable}>
-              <Text style={styles.disableBtnText}>❌ Give Up</Text>
+              <LinearText style={styles.disableBtnText}>❌ Give Up</LinearText>
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.footerText}>
+          <LinearText style={styles.footerText}>
             Punishment Level {shameLevel}/3 • Idle: {minutesIdle}min
-          </Text>
+          </LinearText>
 
           {hasVibrated && !reducedIntensity && (
             <TouchableOpacity
               style={styles.reduceIntensityBtn}
               onPress={() => setReducedIntensity(true)}
             >
-              <Text style={styles.reduceIntensityText}>{'🔇 Reduce vibration'}</Text>
+              <LinearText style={styles.reduceIntensityText}>{'🔇 Reduce vibration'}</LinearText>
             </TouchableOpacity>
           )}
           {reducedIntensity && (
-            <Text style={styles.reduceIntensityText}>{'🔇 Vibration reduced'}</Text>
+            <LinearText style={styles.reduceIntensityText}>{'🔇 Vibration reduced'}</LinearText>
           )}
         </Animated.View>
       </ResponsiveContainer>

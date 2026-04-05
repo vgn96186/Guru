@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   StyleSheet,
@@ -40,6 +39,7 @@ import type { TopicWithProgress, TopicStatus } from '../types';
 import ScreenHeader from '../components/ScreenHeader';
 import BannerSearchBar from '../components/BannerSearchBar';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { linearTheme as n } from '../theme/linearTheme';
 import { MS_PER_DAY } from '../constants/time';
@@ -68,9 +68,9 @@ type Nav = NativeStackNavigationProp<SyllabusStackParamList, 'TopicDetail'>;
 
 const STATUS_COLORS: Record<TopicStatus, string> = {
   unseen: '#606080',
-  seen: '#2196F3',
+  seen: n.colors.accent,
   reviewed: n.colors.accent,
-  mastered: '#4CAF50',
+  mastered: n.colors.success,
 };
 
 type TopicFilter = 'all' | 'due' | 'unseen' | 'weak' | 'high_yield' | 'notes';
@@ -164,15 +164,21 @@ export default function TopicDetailScreen() {
       return;
     }
 
-    // Defer heavy fetch/list hydration until native transition interactions finish.
-    const task = InteractionManager.runAfterInteractions(() => {
+    let active = true;
+
+    // Defer heavy fetch/list hydration until after JS frame to avoid stutter.
+    setTimeout(() => {
+      if (!active) return;
       void getTopicsBySubject(subjectId).then((rows) => {
+        if (!active) return;
         setAllTopics(rows);
         setScreenHydrated(true);
       });
-    });
+    }, 150);
 
-    return () => task.cancel();
+    return () => {
+      active = false;
+    };
   }, [isFocused, subjectId]);
 
   useEffect(() => {
@@ -545,584 +551,636 @@ export default function TopicDetailScreen() {
   return (
     <View style={{ flex: 1 }}>
       <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
-      <ResponsiveContainer>
-        <ScreenHeader
-          title={subjectName}
-          titleNumberOfLines={1}
-          containerStyle={styles.screenHeader}
-          titleStyle={styles.screenHeaderTitle}
-          searchElement={
-            !isSingleTopicView ? (
-              <BannerSearchBar
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search topics..."
-              />
-            ) : undefined
-          }
-        >
-          <View style={styles.headerCenter}>
-            <View style={styles.progressRow}>
-              <Text style={styles.subtitle}>
-                {done}/{leafTopics.length} micro-topics
-              </Text>
-              <View
-                style={[
-                  styles.pctBadge,
-                  pct >= 50 && styles.pctBadgeGood,
-                  pct === 100 && styles.pctBadgeComplete,
-                ]}
-              >
-                <Text
+        <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
+        <ResponsiveContainer>
+          <ScreenHeader
+            title={subjectName}
+            titleNumberOfLines={1}
+            containerStyle={styles.screenHeader}
+            titleStyle={styles.screenHeaderTitle}
+            searchElement={
+              !isSingleTopicView ? (
+                <BannerSearchBar
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholder="Search topics..."
+                />
+              ) : undefined
+            }
+          >
+            <View style={styles.headerCenter}>
+              <View style={styles.progressRow}>
+                <LinearText variant="caption" tone="secondary" style={styles.subtitle}>
+                  {done}/{leafTopics.length} micro-topics
+                </LinearText>
+                <View
                   style={[
-                    styles.pctText,
-                    pct >= 50 && { color: '#4CAF50' },
-                    pct === 100 && { color: '#FFD700' },
+                    styles.pctBadge,
+                    pct >= 50 && styles.pctBadgeGood,
+                    pct === 100 && styles.pctBadgeComplete,
                   ]}
                 >
-                  {pct}%
-                </Text>
-              </View>
-            </View>
-            {milestoneText ? <Text style={styles.milestoneText}>{milestoneText}</Text> : null}
-            <View style={styles.progressTrack}>
-              <ReAnimated.View style={[styles.progressFill, progressStyle]} />
-            </View>
-          </View>
-        </ScreenHeader>
-
-        <View style={styles.controls}>
-          {isSingleTopicView ? (
-            <View style={styles.singleTopicBanner}>
-              <Text style={styles.singleTopicBannerTitle}>Topic page</Text>
-              <Text style={styles.singleTopicBannerText}>
-                Start a focused session for this topic or add notes below.
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.quickActionsSection}>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.quickActionsContent}
-                >
-                  <TouchableOpacity
+                  <LinearText
+                    variant="caption"
+                    tone="secondary"
                     style={[
-                      styles.quickActionChip,
-                      isSortMenuOpen && styles.quickActionChipPrimary,
+                      styles.pctText,
+                      pct >= 50 && { color: n.colors.success },
+                      pct === 100 && { color: n.colors.warning },
                     ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Sort topics"
-                    onPress={() => setIsSortMenuOpen((prev) => !prev)}
                   >
-                    <Ionicons
-                      name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
-                      size={15}
-                      color={
-                        isSortMenuOpen ? n.colors.accent : n.colors.textSecondary
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.quickActionText,
-                        isSortMenuOpen && styles.quickActionTextPrimary,
-                      ]}
-                    >
-                      Sort <Text style={styles.quickActionValue}>{currentSortLabel}</Text>
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.quickActionChip,
-                      (activeFilter !== 'all' || isFilterMenuOpen) && styles.quickActionChipPrimary,
-                    ]}
-                    onPress={() => setIsFilterMenuOpen(true)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Filter topics"
-                  >
-                    <Ionicons
-                      name="options-outline"
-                      size={15}
-                      color={
-                        activeFilter !== 'all' || isFilterMenuOpen
-                          ? n.colors.accent
-                          : n.colors.textSecondary
-                      }
-                    />
-                    <Text
-                      style={[
-                        styles.quickActionText,
-                        activeFilter !== 'all' && styles.quickActionTextPrimary,
-                      ]}
-                    >
-                      {activeFilterSummary}
-                    </Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </View>
-              {isSortMenuOpen ? (
-                <View style={styles.sortSection}>
-                  <LinearSurface padded={false} style={styles.sortMenu}>
-                    {SORT_OPTIONS.map((option) => (
-                      <TouchableOpacity
-                        key={option.value}
-                        style={[
-                          styles.sortOption,
-                          sortBy === option.value && styles.sortOptionActive,
-                        ]}
-                        onPress={() => {
-                          setSortBy(option.value);
-                          setIsSortMenuOpen(false);
-                        }}
-                      >
-                        <Text
-                          style={[
-                            styles.sortOptionText,
-                            sortBy === option.value && styles.sortOptionTextActive,
-                          ]}
-                        >
-                          {option.label}
-                        </Text>
-                        {sortBy === option.value ? (
-                          <Ionicons name="checkmark" size={16} color={n.colors.accent} />
-                        ) : null}
-                      </TouchableOpacity>
-                    ))}
-                  </LinearSurface>
+                    {pct}%
+                  </LinearText>
                 </View>
+              </View>
+              {milestoneText ? (
+                <LinearText style={styles.milestoneText}>{milestoneText}</LinearText>
               ) : null}
-              <View style={styles.bulkRow}>
-                <TouchableOpacity
-                  style={[styles.bulkChip, styles.bulkDueChip]}
-                  onPress={() => launchBatch(dueTopics, 'review')}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Review all due topics"
-                >
-                  <Text style={styles.bulkChipText}>Review all due</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.bulkChip, styles.bulkHighYieldChip]}
-                  onPress={() => launchBatch(highYieldTopics, 'study')}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Study high yield topics"
-                >
-                  <Text style={styles.bulkChipText}>Study high yield</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.bulkChip, styles.bulkWeakChip]}
-                  onPress={() => launchBatch(weakTopics, 'deep_dive')}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel="Review weak topics only"
-                >
-                  <Text style={styles.bulkChipText}>Review weak only</Text>
-                </TouchableOpacity>
+              <View style={styles.progressTrack}>
+                <ReAnimated.View style={[styles.progressFill, progressStyle]} />
               </View>
-            </>
-          )}
-        </View>
-
-        <FlatList
-          data={displayTopics}
-          keyExtractor={(t) => t.id.toString()}
-          keyboardDismissMode="on-drag"
-          removeClippedSubviews={true}
-          initialNumToRender={6}
-          maxToRenderPerBatch={8}
-          windowSize={4}
-          updateCellsBatchingPeriod={80}
-          contentContainerStyle={styles.list}
-          onRefresh={async () => {
-            setRefreshing(true);
-            await getTopicsBySubject(subjectId).then(setAllTopics);
-            setRefreshing(false);
-          }}
-          refreshing={refreshing}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No topics found. 🧐</Text>
             </View>
-          }
-          renderItem={({ item }) => {
-            const isParent = (childrenByParentId.get(item.id)?.length ?? 0) > 0;
-            const depth = topicDepthMap.get(item.id) ?? 0;
-            const isCollapsed = collapsedParents.has(item.id);
-            const isHighYield = item.inicetPriority >= 8;
-            const isDue =
-              item.progress.status !== 'unseen' &&
-              !!item.progress.fsrsDue &&
-              item.progress.fsrsDue.slice(0, 10) <= today;
-            const isWeak =
-              item.progress.timesStudied > 0 &&
-              item.progress.confidence > 0 &&
-              item.progress.confidence < 3;
-            const parentChildren = childrenByParentId.get(item.id) ?? [];
-            const parentCompleted = parentChildren.filter(
-              (child) => child.progress.status !== 'unseen',
-            ).length;
-            const parentDue = parentChildren.filter(
-              (child) =>
-                child.progress.status !== 'unseen' &&
-                !!child.progress.fsrsDue &&
-                child.progress.fsrsDue.slice(0, 10) <= today,
-            ).length;
-            const parentHighYield = parentChildren.filter(
-              (child) => child.inicetPriority >= 8,
-            ).length;
+          </ScreenHeader>
 
-            return (
-              <View>
-                <TouchableOpacity
-                  style={[
-                    styles.topicRow,
-                    isParent && styles.parentRow,
-                    depth > 0 && { marginLeft: Math.min(depth * 12, 48) },
-                  ]}
-                  onPress={() => handleTopicPress(item)}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={isParent ? `Topic group: ${item.name}` : item.name}
-                  accessibilityHint={
-                    isParent ? 'Double tap to expand or collapse' : 'Double tap to open topic'
-                  }
-                >
-                  <View
-                    style={[
-                      styles.statusBar,
-                      { backgroundColor: STATUS_COLORS[item.progress.status] },
-                    ]}
-                  />
-                  <View style={styles.topicInfo}>
-                    <View style={styles.nameRow}>
-                      {isParent && (
-                        <Text style={styles.folderIcon}>{isCollapsed ? '▶ ' : '▼ '}</Text>
-                      )}
-                      <Text
-                        style={[styles.topicName, isParent && styles.parentName]}
-                        numberOfLines={3}
-                        ellipsizeMode="tail"
-                      >
-                        {item.name}
-                      </Text>
-                    </View>
-                    {isParent && parentChildren.length > 0 && (
-                      <View style={styles.parentSummaryRow}>
-                        <Text style={styles.parentSummaryText}>
-                          {parentCompleted}/{parentChildren.length} micro-topics covered
-                        </Text>
-                        {parentDue > 0 && <Text style={styles.parentDueText}>{parentDue} due</Text>}
-                        {parentHighYield > 0 && (
-                          <Text style={styles.parentHighYieldText}>{parentHighYield} HY</Text>
-                        )}
-                      </View>
-                    )}
-                    {!isParent && (
-                      <View style={styles.topicMeta}>
-                        <Text style={styles.topicMetaText}>
-                          {item.estimatedMinutes}min · Priority {item.inicetPriority}/10
-                        </Text>
-                        {item.progress.timesStudied > 0 && (
-                          <Text style={styles.studiedText}>
-                            {' '}
-                            · Studied {item.progress.timesStudied}×
-                          </Text>
-                        )}
-                      </View>
-                    )}
-                    {!isParent && (
-                      <View style={styles.badgeRow}>
-                        {isHighYield && <Text style={styles.highYieldBadge}>HIGH YIELD</Text>}
-                        {isDue && <Text style={styles.dueBadge}>DUE</Text>}
-                        {isWeak && <Text style={styles.weakBadge}>WEAK</Text>}
-                      </View>
-                    )}
-                    {/* Review date indicator */}
-                    {item.progress.fsrsDue && !isParent && (
-                      <View
+          <View style={styles.controls}>
+            {!screenHydrated ? (
+              <View style={styles.singleTopicBanner}>
+                <LinearText variant="label" style={styles.singleTopicBannerTitle}>
+                  Topic page
+                </LinearText>
+                <LinearText variant="caption" tone="secondary" style={styles.singleTopicBannerText}>
+                  Start a focused session for this topic or add notes below.
+                </LinearText>
+              </View>
+            ) : (
+              <>
+                <View style={styles.quickActionsSection}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.quickActionsContent}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.quickActionChip,
+                        isSortMenuOpen && styles.quickActionChipPrimary,
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel="Sort topics"
+                      onPress={() => setIsSortMenuOpen((prev) => !prev)}
+                    >
+                      <Ionicons
+                        name={isSortMenuOpen ? 'swap-vertical' : 'swap-vertical-outline'}
+                        size={15}
+                        color={isSortMenuOpen ? n.colors.accent : n.colors.textSecondary}
+                      />
+                      <LinearText
+                        variant="caption"
                         style={[
-                          styles.reviewBadge,
-                          item.progress.fsrsDue.slice(0, 10) < today && styles.reviewOverdue,
+                          styles.quickActionText,
+                          isSortMenuOpen && styles.quickActionTextPrimary,
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.reviewText,
-                            item.progress.fsrsDue.slice(0, 10) < today && styles.reviewTextOverdue,
-                          ]}
-                        >
-                          {formatReviewDate(item.progress.fsrsDue.slice(0, 10))}
-                        </Text>
-                      </View>
-                    )}
-                    {item.progress.userNotes ? (
-                      <Text style={styles.notePreview} numberOfLines={3}>
-                        📝 {item.progress.userNotes}
-                      </Text>
-                    ) : null}
-                  </View>
-                  <View style={styles.topicRight}>
-                    {item.progress.confidence > 0 && (
-                      <View
-                        style={styles.confRow}
-                        accessibilityLabel={`Confidence: ${item.progress.confidence} of 5`}
-                        accessibilityRole="text"
-                      >
-                        <Text style={styles.confLabel}>{item.progress.confidence}/5</Text>
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <View
-                            key={i}
-                            style={[
-                              styles.confDot,
-                              {
-                                backgroundColor:
-                                  i <= item.progress.confidence
-                                    ? n.colors.warning
-                                    : n.colors.border,
-                              },
-                            ]}
-                          />
-                        ))}
-                      </View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-                {expandedId === item.id && (
-                  <View style={styles.notesExpanded}>
-                    <TopicImage topicName={item.name} />
-                    <TouchableOpacity
-                      style={styles.studyNowBtn}
-                      onPress={() => {
-                        navigation.getParent<NavigationProp<TabParamList>>()?.navigate('HomeTab', {
-                          screen: 'Session',
-                          params: {
-                            mood: 'good',
-                            focusTopicId: item.id,
-                            preferredActionType: 'study',
-                          },
-                        });
-                      }}
-                      activeOpacity={0.8}
-                      accessibilityRole="button"
-                      accessibilityLabel="Study this topic now"
-                    >
-                      <Text style={styles.studyNowText}>Study this topic now →</Text>
+                        Sort{' '}
+                        <LinearText variant="caption" style={styles.quickActionValue}>
+                          {currentSortLabel}
+                        </LinearText>
+                      </LinearText>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
-                        styles.studyNowBtn,
-                        { backgroundColor: n.colors.success, marginTop: 8 },
+                        styles.quickActionChip,
+                        (activeFilter !== 'all' || isFilterMenuOpen) &&
+                          styles.quickActionChipPrimary,
                       ]}
-                      onPress={() => markTopicMastered(item)}
-                      activeOpacity={0.8}
+                      onPress={() => setIsFilterMenuOpen(true)}
                       accessibilityRole="button"
-                      accessibilityLabel="Mark topic as mastered"
+                      accessibilityLabel="Filter topics"
                     >
-                      <Text style={[styles.studyNowText, { color: n.colors.textInverse }]}>
-                        Mark as Mastered ✓
-                      </Text>
-                    </TouchableOpacity>
-                    <Text style={styles.notesLabel}>Your Notes / Mnemonic</Text>
-                    <TextInput
-                      style={styles.notesInput}
-                      value={noteText}
-                      onChangeText={setNoteText}
-                      placeholder="Write your own notes..."
-                      placeholderTextColor={n.colors.textMuted}
-                      multiline
-                      autoFocus
-                    />
-                    <View style={styles.imageActionRow}>
-                      {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
-                        const isGenerating = imageJobKey === `${item.id}:${style}`;
-                        return (
-                          <TouchableOpacity
-                            key={`${item.id}-${style}`}
-                            style={[
-                              styles.imageActionBtn,
-                              isGenerating && styles.imageActionBtnBusy,
-                            ]}
-                            onPress={() => handleGenerateNoteImage(item, style)}
-                            disabled={!!imageJobKey}
-                            accessibilityRole="button"
-                            accessibilityLabel={
-                              style === 'illustration'
-                                ? 'Generate note illustration'
-                                : 'Generate note chart'
-                            }
-                          >
-                            <Text style={styles.imageActionBtnText}>
-                              {isGenerating
-                                ? 'Generating...'
-                                : style === 'illustration'
-                                  ? 'Illustration'
-                                  : 'Chart'}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                    {(noteImages[item.id] ?? []).length > 0 ? (
-                      <View style={styles.noteImagesWrap}>
-                        {(noteImages[item.id] ?? []).map((image) => (
-                          <Image
-                            key={`topic-note-image-${image.id}`}
-                            source={{ uri: image.localUri }}
-                            style={styles.noteGeneratedImage}
-                            resizeMode="cover"
-                          />
-                        ))}
-                      </View>
-                    ) : null}
-                    <View style={styles.notesActions}>
-                      <TouchableOpacity
-                        style={styles.notesSave}
-                        onPress={() => handleSaveNote(item.id)}
-                        accessibilityRole="button"
-                        accessibilityLabel="Save note"
+                      <Ionicons
+                        name="options-outline"
+                        size={15}
+                        color={
+                          activeFilter !== 'all' || isFilterMenuOpen
+                            ? n.colors.accent
+                            : n.colors.textSecondary
+                        }
+                      />
+                      <LinearText
+                        variant="caption"
+                        style={[
+                          styles.quickActionText,
+                          activeFilter !== 'all' && styles.quickActionTextPrimary,
+                        ]}
                       >
-                        <Text style={styles.notesSaveText}>Save Note</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.notesCancel}
-                        onPress={() => {
-                          const savedNote = item.progress.userNotes ?? '';
-                          if (noteText.trim() !== savedNote.trim()) {
-                            confirmDiscardUnsavedNotes(() => setExpandedId(null));
-                          } else {
-                            setExpandedId(null);
-                          }
-                        }}
-                        accessibilityRole="button"
-                        accessibilityLabel="Cancel"
-                      >
-                        <Text style={styles.notesCancelText}>Cancel</Text>
-                      </TouchableOpacity>
-                    </View>
-                    <TouchableOpacity
-                      style={[
-                        styles.notesCancel,
-                        { backgroundColor: n.colors.errorSurface, marginTop: 12 },
-                      ]}
-                      onPress={() => {
-                        Alert.alert(
-                          'Clear AI Cache?',
-                          'This will remove cached AI content for this topic. It will be regenerated next time you study it.',
-                          [
-                            { text: 'Cancel', style: 'cancel' },
-                            {
-                              text: 'Clear',
-                              style: 'destructive',
-                              onPress: async () => {
-                                await clearTopicCache(item.id);
-                                Alert.alert('Success', 'AI content cache cleared for this topic.');
-                              },
-                            },
-                          ],
-                        );
-                      }}
-                    >
-                      <Text style={[styles.notesCancelText, { color: n.colors.error }]}>
-                        Clear AI Cache
-                      </Text>
+                        {activeFilterSummary}
+                      </LinearText>
                     </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            );
-          }}
-        />
-        <Modal
-          visible={isFilterMenuOpen}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setIsFilterMenuOpen(false)}
-        >
-          <View style={styles.sheetOverlay}>
-            <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
-            <LinearSurface padded={false} style={styles.sheetCard}>
-              <View style={styles.sheetHeader}>
-                <View style={styles.sheetHeaderCopy}>
-                  <Text style={styles.sheetTitle}>Filter Topics</Text>
-                  <Text style={styles.sheetSubtitle}>
-                    Keep the current syllabus filters in one place.
-                  </Text>
+                  </ScrollView>
                 </View>
-                <TouchableOpacity
-                  style={styles.sheetCloseBtn}
-                  onPress={() => setIsFilterMenuOpen(false)}
-                >
-                  <Ionicons name="close" size={18} color={n.colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={styles.clearFiltersBtn}
-                onPress={() => {
-                  setActiveFilter('all');
-                  setIsFilterMenuOpen(false);
-                }}
-              >
-                <Text style={styles.clearFiltersText}>Clear filters</Text>
-              </TouchableOpacity>
-
-              <ScrollView
-                style={styles.sheetScroll}
-                contentContainerStyle={styles.sheetScrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={styles.sheetSection}>
-                  <Text style={styles.sheetSectionTitle}>Topic focus</Text>
-                  <View style={styles.sheetOptions}>
-                    {FILTER_OPTIONS.map((option) => (
-                      <LinearSurface
-                        key={option.key}
-                        padded={false}
-                        style={[
-                          styles.sheetOptionSurface,
-                          activeFilter === option.key && styles.sheetOptionActive,
-                        ]}
-                      >
+                {isSortMenuOpen ? (
+                  <View style={styles.sortSection}>
+                    <LinearSurface padded={false} style={styles.sortMenu}>
+                      {SORT_OPTIONS.map((option) => (
                         <TouchableOpacity
-                          style={styles.sheetOptionInner}
+                          key={option.value}
+                          style={[
+                            styles.sortOption,
+                            sortBy === option.value && styles.sortOptionActive,
+                          ]}
                           onPress={() => {
-                            setActiveFilter(option.key);
-                            setIsFilterMenuOpen(false);
+                            setSortBy(option.value);
+                            setIsSortMenuOpen(false);
                           }}
                         >
-                          <Text
+                          <LinearText
+                            variant="bodySmall"
                             style={[
-                              styles.sheetOptionText,
-                              activeFilter === option.key && styles.sheetOptionTextActive,
+                              styles.sortOptionText,
+                              sortBy === option.value && styles.sortOptionTextActive,
                             ]}
                           >
-                            {option.label} {filterCounts[option.key]}
-                          </Text>
-                          <Ionicons
-                            name={
-                              activeFilter === option.key ? 'radio-button-on' : 'radio-button-off'
-                            }
-                            size={18}
-                            color={
-                              activeFilter === option.key
-                                ? n.colors.accent
-                                : n.colors.textMuted
-                            }
-                          />
+                            {option.label}
+                          </LinearText>
+                          {sortBy === option.value ? (
+                            <Ionicons name="checkmark" size={16} color={n.colors.accent} />
+                          ) : null}
                         </TouchableOpacity>
-                      </LinearSurface>
-                    ))}
+                      ))}
+                    </LinearSurface>
                   </View>
+                ) : null}
+                <View style={styles.bulkRow}>
+                  <TouchableOpacity
+                    style={[styles.bulkChip, styles.bulkDueChip]}
+                    onPress={() => launchBatch(dueTopics, 'review')}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Review all due topics"
+                  >
+                    <LinearText variant="chip" style={styles.bulkChipText}>
+                      Review all due
+                    </LinearText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.bulkChip, styles.bulkHighYieldChip]}
+                    onPress={() => launchBatch(highYieldTopics, 'study')}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Study high yield topics"
+                  >
+                    <LinearText variant="chip" style={styles.bulkChipText}>
+                      Study high yield
+                    </LinearText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.bulkChip, styles.bulkWeakChip]}
+                    onPress={() => launchBatch(weakTopics, 'deep_dive')}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Review weak topics only"
+                  >
+                    <LinearText variant="chip" style={styles.bulkChipText}>
+                      Review weak only
+                    </LinearText>
+                  </TouchableOpacity>
                 </View>
-              </ScrollView>
-            </LinearSurface>
+              </>
+            )}
           </View>
-        </Modal>
-      </ResponsiveContainer>
-    </SafeAreaView>
+
+          <FlatList
+            data={displayTopics}
+            keyExtractor={(t) => t.id.toString()}
+            keyboardDismissMode="on-drag"
+            removeClippedSubviews={true}
+            initialNumToRender={6}
+            maxToRenderPerBatch={8}
+            windowSize={4}
+            updateCellsBatchingPeriod={80}
+            contentContainerStyle={styles.list}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await getTopicsBySubject(subjectId).then(setAllTopics);
+              setRefreshing(false);
+            }}
+            refreshing={refreshing}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <LinearText variant="body" centered style={styles.emptyText}>
+                  No topics found. 🧐
+                </LinearText>
+              </View>
+            }
+            renderItem={({ item }) => {
+              const isParent = (childrenByParentId.get(item.id)?.length ?? 0) > 0;
+              const depth = topicDepthMap.get(item.id) ?? 0;
+              const isCollapsed = collapsedParents.has(item.id);
+              const isHighYield = item.inicetPriority >= 8;
+              const isDue =
+                item.progress.status !== 'unseen' &&
+                !!item.progress.fsrsDue &&
+                item.progress.fsrsDue.slice(0, 10) <= today;
+              const isWeak =
+                item.progress.timesStudied > 0 &&
+                item.progress.confidence > 0 &&
+                item.progress.confidence < 3;
+              const parentChildren = childrenByParentId.get(item.id) ?? [];
+              const parentCompleted = parentChildren.filter(
+                (child) => child.progress.status !== 'unseen',
+              ).length;
+              const parentDue = parentChildren.filter(
+                (child) =>
+                  child.progress.status !== 'unseen' &&
+                  !!child.progress.fsrsDue &&
+                  child.progress.fsrsDue.slice(0, 10) <= today,
+              ).length;
+              const parentHighYield = parentChildren.filter(
+                (child) => child.inicetPriority >= 8,
+              ).length;
+
+              return (
+                <View>
+                  <TouchableOpacity
+                    style={[
+                      styles.topicRow,
+                      isParent && styles.parentRow,
+                      depth > 0 && { marginLeft: Math.min(depth * 12, 48) },
+                    ]}
+                    onPress={() => handleTopicPress(item)}
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel={isParent ? `Topic group: ${item.name}` : item.name}
+                    accessibilityHint={
+                      isParent ? 'Double tap to expand or collapse' : 'Double tap to open topic'
+                    }
+                  >
+                    <View
+                      style={[
+                        styles.statusBar,
+                        { backgroundColor: STATUS_COLORS[item.progress.status] },
+                      ]}
+                    />
+                    <View style={styles.topicInfo}>
+                      <View style={styles.nameRow}>
+                        {isParent && (
+                          <LinearText style={styles.folderIcon}>
+                            {isCollapsed ? '📁' : '📂'}
+                          </LinearText>
+                        )}
+                        <LinearText
+                          variant={isParent ? 'sectionTitle' : 'label'}
+                          style={[styles.topicName, isParent && styles.parentName]}
+                          truncate
+                        >
+                          {item.name}
+                        </LinearText>
+                      </View>
+                      {isParent && (
+                        <View style={styles.parentSummaryRow}>
+                          <LinearText
+                            variant="meta"
+                            tone="secondary"
+                            style={styles.parentSummaryText}
+                          >
+                            {parentCompleted}/{parentChildren.length} done
+                          </LinearText>
+                          {parentDue > 0 && (
+                            <LinearText variant="meta" style={styles.parentDueText}>
+                              {parentDue} due
+                            </LinearText>
+                          )}
+                          {parentHighYield > 0 && (
+                            <LinearText variant="meta" style={styles.parentHighYieldText}>
+                              {parentHighYield} HY
+                            </LinearText>
+                          )}
+                        </View>
+                      )}
+                      {!isParent && (
+                        <View style={styles.topicMeta}>
+                          <LinearText variant="meta" tone="muted" style={styles.topicMetaText}>
+                            Priority {item.inicetPriority}{' '}
+                          </LinearText>
+                          {item.progress.timesStudied > 0 && (
+                            <LinearText variant="meta" style={styles.studiedText}>
+                              · Studied {item.progress.timesStudied}x
+                            </LinearText>
+                          )}
+                        </View>
+                      )}
+                      {!isParent && item.progress.userNotes.trim().length > 0 && (
+                        <LinearText
+                          variant="meta"
+                          tone="accent"
+                          style={styles.notePreview}
+                          truncate
+                        >
+                          📝 {item.progress.userNotes.trim()}
+                        </LinearText>
+                      )}
+                      {!isParent && (
+                        <View style={styles.badgeRow}>
+                          {isHighYield && (
+                            <LinearText variant="chip" style={styles.highYieldBadge}>
+                              HY
+                            </LinearText>
+                          )}
+                          {isDue && (
+                            <LinearText variant="chip" style={styles.dueBadge}>
+                              DUE
+                            </LinearText>
+                          )}
+                          {isWeak && (
+                            <LinearText variant="chip" style={styles.weakBadge}>
+                              WEAK
+                            </LinearText>
+                          )}
+                        </View>
+                      )}
+                      {!isParent && item.progress.status !== 'unseen' && (
+                        <View style={[styles.reviewBadge, isDue && styles.reviewOverdue]}>
+                          <LinearText
+                            variant="meta"
+                            style={[styles.reviewText, isDue && styles.reviewTextOverdue]}
+                          >
+                            {formatReviewDate(item.progress.fsrsDue)}
+                          </LinearText>
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.topicRight}>
+                      {!isParent && (
+                        <View style={styles.confRow}>
+                          <LinearText variant="meta" tone="muted" style={styles.confLabel}>
+                            CONF
+                          </LinearText>
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <View
+                              key={i}
+                              style={[
+                                styles.confDot,
+                                {
+                                  backgroundColor:
+                                    i <= item.progress.confidence
+                                      ? STATUS_COLORS[item.progress.status]
+                                      : n.colors.border,
+                                },
+                              ]}
+                            />
+                          ))}
+                        </View>
+                      )}
+                      <Ionicons
+                        name={
+                          isParent
+                            ? isCollapsed
+                              ? 'chevron-down'
+                              : 'chevron-up'
+                            : 'chevron-forward'
+                        }
+                        size={18}
+                        color={n.colors.textMuted}
+                        style={{ alignSelf: 'flex-end', marginTop: isParent ? 0 : 4 }}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                  {expandedId === item.id && (
+                    <View style={styles.notesExpanded}>
+                      <TopicImage topicName={item.name} />
+                      <TouchableOpacity
+                        style={styles.studyNowBtn}
+                        onPress={() => {
+                          navigation
+                            .getParent<NavigationProp<TabParamList>>()
+                            ?.navigate('HomeTab', {
+                              screen: 'Session',
+                              params: {
+                                mood: 'good',
+                                focusTopicId: item.id,
+                                preferredActionType: 'study',
+                              },
+                            });
+                        }}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Study this topic now"
+                      >
+                        <LinearText style={styles.studyNowText}>Study this topic now →</LinearText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.studyNowBtn,
+                          { backgroundColor: n.colors.success, marginTop: 8 },
+                        ]}
+                        onPress={() => markTopicMastered(item)}
+                        activeOpacity={0.8}
+                        accessibilityRole="button"
+                        accessibilityLabel="Mark topic as mastered"
+                      >
+                        <LinearText style={[styles.studyNowText, { color: n.colors.textInverse }]}>
+                          Mark as Mastered ✓
+                        </LinearText>
+                      </TouchableOpacity>
+                      <LinearText style={styles.notesLabel}>Your Notes / Mnemonic</LinearText>
+                      <TextInput
+                        style={styles.notesInput}
+                        value={noteText}
+                        onChangeText={setNoteText}
+                        placeholder="Write your own notes..."
+                        placeholderTextColor={n.colors.textMuted}
+                        multiline
+                        autoFocus
+                      />
+                      <View style={styles.imageActionRow}>
+                        {(['illustration', 'chart'] as GeneratedStudyImageStyle[]).map((style) => {
+                          const isGenerating = imageJobKey === `${item.id}:${style}`;
+                          return (
+                            <TouchableOpacity
+                              key={`${item.id}-${style}`}
+                              style={[
+                                styles.imageActionBtn,
+                                isGenerating && styles.imageActionBtnBusy,
+                              ]}
+                              onPress={() => handleGenerateNoteImage(item, style)}
+                              disabled={!!imageJobKey}
+                              accessibilityRole="button"
+                              accessibilityLabel={
+                                style === 'illustration'
+                                  ? 'Generate note illustration'
+                                  : 'Generate note chart'
+                              }
+                            >
+                              <LinearText style={styles.imageActionBtnText}>
+                                {isGenerating
+                                  ? 'Generating...'
+                                  : style === 'illustration'
+                                    ? 'Illustration'
+                                    : 'Chart'}
+                              </LinearText>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                      {(noteImages[item.id] ?? []).length > 0 ? (
+                        <View style={styles.noteImagesWrap}>
+                          {(noteImages[item.id] ?? []).map((image) => (
+                            <Image
+                              key={`topic-note-image-${image.id}`}
+                              source={{ uri: image.localUri }}
+                              style={styles.noteGeneratedImage}
+                              resizeMode="cover"
+                            />
+                          ))}
+                        </View>
+                      ) : null}
+                      <View style={styles.notesActions}>
+                        <TouchableOpacity
+                          style={styles.notesSave}
+                          onPress={() => handleSaveNote(item.id)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Save note"
+                        >
+                          <LinearText style={styles.notesSaveText}>Save Note</LinearText>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.notesCancel}
+                          onPress={() => {
+                            const savedNote = item.progress.userNotes ?? '';
+                            if (noteText.trim() !== savedNote.trim()) {
+                              confirmDiscardUnsavedNotes(() => setExpandedId(null));
+                            } else {
+                              setExpandedId(null);
+                            }
+                          }}
+                          accessibilityRole="button"
+                          accessibilityLabel="Cancel"
+                        >
+                          <LinearText style={styles.notesCancelText}>Cancel</LinearText>
+                        </TouchableOpacity>
+                      </View>
+                      <TouchableOpacity
+                        style={[
+                          styles.notesCancel,
+                          { backgroundColor: n.colors.errorSurface, marginTop: 12 },
+                        ]}
+                        onPress={() => {
+                          Alert.alert(
+                            'Clear AI Cache?',
+                            'This will remove cached AI content for this topic. It will be regenerated next time you study it.',
+                            [
+                              { text: 'Cancel', style: 'cancel' },
+                              {
+                                text: 'Clear',
+                                style: 'destructive',
+                                onPress: async () => {
+                                  await clearTopicCache(item.id);
+                                  Alert.alert(
+                                    'Success',
+                                    'AI content cache cleared for this topic.',
+                                  );
+                                },
+                              },
+                            ],
+                          );
+                        }}
+                      >
+                        <LinearText style={[styles.notesCancelText, { color: n.colors.error }]}>
+                          Clear AI Cache
+                        </LinearText>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              );
+            }}
+          />
+          <Modal
+            visible={isFilterMenuOpen}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setIsFilterMenuOpen(false)}
+          >
+            <View style={styles.sheetOverlay}>
+              <Pressable style={styles.sheetBackdrop} onPress={() => setIsFilterMenuOpen(false)} />
+              <LinearSurface padded={false} style={styles.sheetCard}>
+                <View style={styles.sheetHeader}>
+                  <View style={styles.sheetHeaderCopy}>
+                    <LinearText style={styles.sheetTitle}>Filter Topics</LinearText>
+                    <LinearText style={styles.sheetSubtitle}>
+                      Keep the current syllabus filters in one place.
+                    </LinearText>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.sheetCloseBtn}
+                    onPress={() => setIsFilterMenuOpen(false)}
+                  >
+                    <Ionicons name="close" size={18} color={n.colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.clearFiltersBtn}
+                  onPress={() => {
+                    setActiveFilter('all');
+                    setIsFilterMenuOpen(false);
+                  }}
+                >
+                  <LinearText style={styles.clearFiltersText}>Clear filters</LinearText>
+                </TouchableOpacity>
+
+                <ScrollView
+                  style={styles.sheetScroll}
+                  contentContainerStyle={styles.sheetScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.sheetSection}>
+                    <LinearText style={styles.sheetSectionTitle}>Topic focus</LinearText>
+                    <View style={styles.sheetOptions}>
+                      {FILTER_OPTIONS.map((option) => (
+                        <LinearSurface
+                          key={option.key}
+                          padded={false}
+                          style={[
+                            styles.sheetOptionSurface,
+                            activeFilter === option.key && styles.sheetOptionActive,
+                          ]}
+                        >
+                          <TouchableOpacity
+                            style={styles.sheetOptionInner}
+                            onPress={() => {
+                              setActiveFilter(option.key);
+                              setIsFilterMenuOpen(false);
+                            }}
+                          >
+                            <LinearText
+                              style={[
+                                styles.sheetOptionText,
+                                activeFilter === option.key && styles.sheetOptionTextActive,
+                              ]}
+                            >
+                              {option.label} {filterCounts[option.key]}
+                            </LinearText>
+                            <Ionicons
+                              name={
+                                activeFilter === option.key ? 'radio-button-on' : 'radio-button-off'
+                              }
+                              size={18}
+                              color={
+                                activeFilter === option.key ? n.colors.accent : n.colors.textMuted
+                              }
+                            />
+                          </TouchableOpacity>
+                        </LinearSurface>
+                      ))}
+                    </View>
+                  </View>
+                </ScrollView>
+              </LinearSurface>
+            </View>
+          </Modal>
+        </ResponsiveContainer>
+      </SafeAreaView>
     </View>
   );
 }
@@ -1137,41 +1195,41 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 12,
     marginBottom: 12,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
   },
   progressRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginBottom: 8 },
   subtitle: { color: n.colors.textSecondary, fontSize: 13 },
-  milestoneText: { color: '#7CFFB2', fontSize: 12, fontWeight: '700', marginBottom: 8 },
+  milestoneText: { color: n.colors.success, fontSize: 12, fontWeight: '700', marginBottom: 8 },
   pctBadge: {
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.surface,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     marginLeft: 8,
   },
-  pctBadgeGood: { backgroundColor: '#1A2A1A' },
-  pctBadgeComplete: { backgroundColor: '#2A2A0A' },
-  pctText: { color: n.colors.textSecondary, fontWeight: '800', fontSize: 12 },
-  progressTrack: { height: 4, backgroundColor: '#2A2A38', borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', backgroundColor: '#6C63FF', borderRadius: 2 },
+  pctBadgeGood: { backgroundColor: n.colors.successSurface },
+  pctBadgeComplete: { backgroundColor: n.colors.accent + '22' },
+  pctText: { fontWeight: '800', fontSize: 12 },
+  progressTrack: {
+    height: 4,
+    backgroundColor: n.colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  progressFill: { height: '100%', backgroundColor: n.colors.accent, borderRadius: 2 },
   controls: { paddingHorizontal: 16, gap: 10, marginBottom: 10 },
   singleTopicBanner: {
-    backgroundColor: '#171722',
+    backgroundColor: n.colors.surface,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: n.colors.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
   singleTopicBannerTitle: {
-    color: '#ECE9FF',
-    fontSize: 14,
-    fontWeight: '800',
     marginBottom: 4,
   },
   singleTopicBannerText: {
-    color: n.colors.textSecondary,
-    fontSize: 12,
     lineHeight: 18,
   },
   quickActionsSection: {},
@@ -1244,74 +1302,80 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
-  bulkDueChip: { backgroundColor: '#472129' },
-  bulkHighYieldChip: { backgroundColor: '#4A3610' },
-  bulkWeakChip: { backgroundColor: '#2E244C' },
-  bulkChipText: { color: '#F3F4F8', fontSize: 12, fontWeight: '800' },
+  bulkDueChip: {
+    backgroundColor: `${n.colors.error}22`,
+    borderWidth: 1,
+    borderColor: `${n.colors.error}44`,
+  },
+  bulkHighYieldChip: {
+    backgroundColor: `${n.colors.warning}22`,
+    borderWidth: 1,
+    borderColor: `${n.colors.warning}44`,
+  },
+  bulkWeakChip: {
+    backgroundColor: `${n.colors.accent}22`,
+    borderWidth: 1,
+    borderColor: `${n.colors.accent}44`,
+  },
+  bulkChipText: { color: n.colors.textPrimary },
 
   list: { paddingHorizontal: 16, paddingBottom: 40 },
   topicRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.card,
     borderRadius: 12,
     marginBottom: 8,
     overflow: 'hidden',
   },
-  parentRow: { backgroundColor: '#1E1E2E', borderLeftWidth: 0 },
+  parentRow: { backgroundColor: n.colors.surface, borderLeftWidth: 0 },
   childRow: { marginLeft: 16, transform: [{ scale: 0.98 }] },
   statusBar: { width: 4, alignSelf: 'stretch' },
   topicInfo: { flex: 1, minWidth: 0, padding: 12 },
   nameRow: { flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0 },
-  folderIcon: { color: '#6C63FF', fontSize: 12, fontWeight: '900' },
-  topicName: { color: '#fff', fontWeight: '600', fontSize: 15, lineHeight: 21, flex: 1 },
-  parentName: { fontSize: 16, fontWeight: '800', color: '#6C63FF', flex: 1 },
+  folderIcon: { color: n.colors.accent, fontSize: 12, fontWeight: '900', marginRight: 8 },
+  topicName: { flex: 1 },
+  parentName: { color: n.colors.accent, flex: 1 },
   parentSummaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
-  parentSummaryText: { color: '#A3ACC2', fontSize: 12, fontWeight: '700' },
-  parentDueText: { color: '#FFB6BC', fontSize: 12, fontWeight: '800' },
-  parentHighYieldText: { color: '#FFD36C', fontSize: 12, fontWeight: '800' },
+  parentSummaryText: { fontWeight: '700' },
+  parentDueText: { color: n.colors.error, fontWeight: '800' },
+  parentHighYieldText: { color: n.colors.warning, fontWeight: '800' },
   topicMeta: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
   topicMetaText: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 18 },
-  studiedText: { color: '#6C63FF', fontSize: 12, lineHeight: 18 },
+  studiedText: { color: n.colors.accent, fontSize: 12, lineHeight: 18 },
   badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
   highYieldBadge: {
-    color: '#241600',
-    backgroundColor: '#FFC857',
-    fontSize: 11,
-    fontWeight: '900',
+    color: n.colors.textInverse,
+    backgroundColor: n.colors.warning,
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 999,
   },
   dueBadge: {
-    color: '#FFD8D8',
-    backgroundColor: '#4A2026',
-    fontSize: 11,
-    fontWeight: '900',
+    color: n.colors.textInverse,
+    backgroundColor: n.colors.error,
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 999,
   },
   weakBadge: {
-    color: '#FFE3C4',
-    backgroundColor: '#4A2D16',
-    fontSize: 11,
-    fontWeight: '900',
+    color: n.colors.textInverse,
+    backgroundColor: n.colors.accent,
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 999,
   },
   reviewBadge: {
-    backgroundColor: '#1A2A2A',
+    backgroundColor: n.colors.surface,
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
     marginTop: 4,
   },
-  reviewOverdue: { backgroundColor: '#2A1A1A' },
-  reviewText: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },
-  reviewTextOverdue: { color: '#F44336' },
+  reviewOverdue: { backgroundColor: n.colors.errorSurface },
+  reviewText: { color: n.colors.success, fontWeight: '600' },
+  reviewTextOverdue: { color: n.colors.error },
   topicRight: {
     paddingTop: 12,
     paddingRight: 14,
@@ -1326,14 +1390,11 @@ const styles = StyleSheet.create({
   confDot: { width: 6, height: 6, borderRadius: 3 },
 
   notePreview: {
-    color: '#6C63FF',
-    fontSize: 12,
-    lineHeight: 18,
     marginTop: 3,
     fontStyle: 'italic',
   },
   emptyContainer: { padding: 40, alignItems: 'center' },
-  emptyText: { color: '#fff', fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  emptyText: { textAlign: 'center' },
   sheetOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -1448,43 +1509,43 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   notesExpanded: {
-    backgroundColor: '#0F0F1E',
+    backgroundColor: n.colors.card,
     padding: 12,
     marginTop: -2,
     borderBottomLeftRadius: 12,
     borderBottomRightRadius: 12,
     borderWidth: 1,
-    borderColor: '#6C63FF44',
+    borderColor: `${n.colors.accent}44`,
     borderTopWidth: 0,
   },
-  notesLabel: { color: '#6C63FF', fontWeight: '700', fontSize: 12, marginBottom: 8 },
+  notesLabel: { color: n.colors.accent, fontWeight: '700', fontSize: 12, marginBottom: 8 },
   notesInput: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.background,
     borderRadius: 10,
     padding: 12,
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 14,
     minHeight: 80,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: n.colors.border,
     textAlignVertical: 'top',
     marginBottom: 10,
   },
   imageActionRow: { flexDirection: 'row', gap: 8, marginBottom: 10 },
   imageActionBtn: {
     flex: 1,
-    backgroundColor: '#171722',
+    backgroundColor: n.colors.surface,
     borderRadius: 10,
     padding: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: n.colors.border,
   },
   imageActionBtnBusy: {
     opacity: 0.7,
   },
   imageActionBtnText: {
-    color: '#6C63FF',
+    color: n.colors.accent,
     fontWeight: '700',
     fontSize: 13,
   },
@@ -1496,33 +1557,33 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 220,
     borderRadius: 12,
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     borderWidth: 1,
-    borderColor: '#2A2A38',
+    borderColor: n.colors.border,
   },
   notesActions: { flexDirection: 'row', gap: 8 },
   notesSave: {
     flex: 1,
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     borderRadius: 10,
     padding: 10,
     alignItems: 'center',
   },
-  notesSaveText: { color: '#fff', fontWeight: '700', fontSize: 13 },
+  notesSaveText: { color: n.colors.textInverse, fontWeight: '700', fontSize: 13 },
   notesCancel: {
     flex: 1,
-    backgroundColor: '#2A2A38',
+    backgroundColor: n.colors.border,
     borderRadius: 10,
     padding: 10,
     alignItems: 'center',
   },
   notesCancelText: { color: n.colors.textSecondary, fontWeight: '600', fontSize: 13 },
   studyNowBtn: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: n.colors.accent,
     borderRadius: 10,
     padding: 12,
     alignItems: 'center',
     marginBottom: 12,
   },
-  studyNowText: { color: '#fff', fontWeight: '800', fontSize: 14 },
+  studyNowText: { color: n.colors.textInverse, fontWeight: '800', fontSize: 14 },
 });

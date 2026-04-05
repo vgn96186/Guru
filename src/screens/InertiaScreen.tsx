@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -20,6 +19,8 @@ import { fetchWikipediaImage } from '../services/imageService';
 import { getAllTopicsWithProgress } from '../db/queries/topics';
 import LoadingOrb from '../components/LoadingOrb';
 import LinearSurface from '../components/primitives/LinearSurface';
+import LinearText from '../components/primitives/LinearText';
+import LinearButton from '../components/primitives/LinearButton';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { MarkdownRender } from '../components/MarkdownRender';
 import { linearTheme as n } from '../theme/linearTheme';
@@ -161,7 +162,7 @@ export default function InertiaScreen() {
     isSolved: boolean;
   }) => (
     <LinearSurface padded={false} style={styles.card}>
-      <Text style={styles.cardHeader}>CLINICAL MYSTERY</Text>
+      <LinearText style={styles.cardHeader}>CLINICAL MYSTERY</LinearText>
 
       {content.clues.slice(0, revealStep).map((clue, i) => (
         <LinearSurface
@@ -170,15 +171,15 @@ export default function InertiaScreen() {
           borderColor={n.colors.cardHover}
           style={[styles.clueBox, i === revealStep - 1 && styles.newClue]}
         >
-          <Text style={styles.clueLabel}>Visual / Sign {i + 1}</Text>
-          <Text style={styles.clueText}>{clue}</Text>
+          <LinearText style={styles.clueLabel}>Visual / Sign {i + 1}</LinearText>
+          <LinearText style={styles.clueText}>{clue}</LinearText>
         </LinearSurface>
       ))}
 
       {isSolved && (
         <Animated.View style={[styles.solutionBox, { opacity: revealStep > 0 ? 1 : 0 }]}>
-          <Text style={styles.solutionLabel}>Diagnosis:</Text>
-          <Text style={styles.solutionValue}>{content.answer}</Text>
+          <LinearText style={styles.solutionLabel}>Diagnosis:</LinearText>
+          <LinearText style={styles.solutionValue}>{content.answer}</LinearText>
           <View style={styles.divider} />
           <MarkdownRender content={content.explanation} compact />
         </Animated.View>
@@ -191,15 +192,23 @@ export default function InertiaScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={styles.center}>
-          <Text style={styles.breatheTitle}>Brain Fog?</Text>
-          <Text style={styles.breatheSub}>Let's reset. Breathe with the circle.</Text>
+          <LinearText variant="display" style={styles.breatheTitle}>
+            Brain Fog?
+          </LinearText>
+          <LinearText variant="body" tone="secondary" style={styles.breatheSub}>
+            Let&apos;s reset. Breathe with the circle.
+          </LinearText>
           <View style={styles.circleContainer}>
             <Animated.View style={[styles.pulseCircle, { transform: [{ scale: pulseAnim }] }]} />
-            <Text style={styles.breatheText}>{breatheText}</Text>
+            <LinearText variant="title" style={styles.breatheText}>
+              {breatheText}
+            </LinearText>
           </View>
           {showSkip && (
             <TouchableOpacity style={styles.skipBtn} onPress={() => setPhase('sit_up_prompt')}>
-              <Text style={styles.skipBtnText}>Skip breathing →</Text>
+              <LinearText variant="caption" tone="muted" style={styles.skipBtnText}>
+                Skip breathing →
+              </LinearText>
             </TouchableOpacity>
           )}
         </ResponsiveContainer>
@@ -222,19 +231,29 @@ export default function InertiaScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
-            <Text style={styles.sitUpEmoji}>🕵️</Text>
-            <Text style={styles.sitUpTitle}>One Minute Mystery</Text>
-            <Text style={styles.sitUpSub}>
-              Don't study yet. Just solve this one 3-clue clinical case.
-            </Text>
+            <LinearText style={styles.sitUpEmoji}>🕵️</LinearText>
+            <LinearText variant="display" centered style={styles.sitUpTitle}>
+              One Minute Mystery
+            </LinearText>
+            <LinearText variant="body" tone="secondary" centered style={styles.sitUpSub}>
+              Don&apos;t study yet. Just solve this one 3-clue clinical case.
+            </LinearText>
             <View style={styles.choiceBox}>
-              <TouchableOpacity style={styles.sitUpBtn} onPress={handlePositionConfirm}>
-                <Text style={styles.sitUpBtnText}>📱 I'm Ready (Sit Up)</Text>
-              </TouchableOpacity>
-              <Text style={styles.orText}>or</Text>
-              <TouchableOpacity style={styles.bedBtn} onPress={() => setPhase('micro_win_bed')}>
-                <Text style={styles.bedBtnText}>🛏️ Play from Bed (Lazy Mode)</Text>
-              </TouchableOpacity>
+              <LinearButton
+                label="📱 I'm Ready (Sit Up)"
+                variant="primary"
+                style={styles.sitUpBtn}
+                onPress={handlePositionConfirm}
+              />
+              <LinearText variant="caption" tone="muted" style={styles.orText}>
+                or
+              </LinearText>
+              <LinearButton
+                label="🛏️ Play from Bed (Lazy Mode)"
+                variant="glass"
+                style={styles.bedBtn}
+                onPress={() => setPhase('micro_win_bed')}
+              />
             </View>
           </Animated.View>
         </ResponsiveContainer>
@@ -248,8 +267,12 @@ export default function InertiaScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
-            <Text style={styles.winTitle}>Solve the Mystery</Text>
-            <Text style={styles.winTopic}>{content.topicName}</Text>
+            <LinearText variant="label" tone="accent" style={styles.winTitle}>
+              Solve the Mystery
+            </LinearText>
+            <LinearText variant="title" centered style={styles.winTopic}>
+              {content.topicName}
+            </LinearText>
 
             <TopicImage topicName={content.topicName} />
 
@@ -257,24 +280,36 @@ export default function InertiaScreen() {
 
             {!isSolved ? (
               <View style={{ width: '100%', gap: 12, marginTop: 20 }}>
-                <TouchableOpacity style={styles.doneBtn} onPress={handleNextClue}>
-                  <Text style={styles.doneBtnText}>
-                    {revealStep < content.clues.length ? 'Next Clue →' : 'I know the Diagnosis →'}
-                  </Text>
-                </TouchableOpacity>
+                <LinearButton
+                  label={
+                    revealStep < content.clues.length ? 'Next Clue →' : 'I know the Diagnosis →'
+                  }
+                  variant="primary"
+                  style={styles.doneBtn}
+                  onPress={handleNextClue}
+                />
                 {revealStep >= 2 && (
                   <TouchableOpacity style={styles.giveUpBtn} onPress={() => setIsSolved(true)}>
-                    <Text style={styles.giveUpText}>Just show me the answer</Text>
+                    <LinearText variant="caption" tone="muted" style={styles.giveUpText}>
+                      Just show me the answer
+                    </LinearText>
                   </TouchableOpacity>
                 )}
               </View>
             ) : (
-              <TouchableOpacity
-                style={[styles.doneBtn, { backgroundColor: n.colors.success, marginTop: 20 }]}
+              <LinearButton
+                label="Boom. I'm moving. →"
+                variant="primary"
+                style={[
+                  styles.doneBtn,
+                  {
+                    backgroundColor: n.colors.success,
+                    borderColor: n.colors.success,
+                    marginTop: 20,
+                  },
+                ]}
                 onPress={handleWinComplete}
-              >
-                <Text style={styles.doneBtnText}>Boom. I'm moving. →</Text>
-              </TouchableOpacity>
+              />
             )}
           </Animated.View>
         </ResponsiveContainer>
@@ -288,19 +323,28 @@ export default function InertiaScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer style={{ flex: 1 }}>
           <Animated.View style={[styles.center, { opacity: fadeAnim }]}>
-            <Text style={styles.emoji}>🔥</Text>
-            <Text style={styles.pivotTitle}>Brain Sparked!</Text>
-            <Text style={styles.pivotSub}>
+            <LinearText style={styles.emoji}>🔥</LinearText>
+            <LinearText variant="title" style={styles.pivotTitle}>
+              Brain Sparked!
+            </LinearText>
+            <LinearText variant="body" tone="secondary" centered style={styles.pivotSub}>
               You just diagnosed a case. The hardest part is over.
-            </Text>
-            <View style={styles.offerBox}>
-              <Text style={styles.offerText}>Keep this momentum for just 5 minutes?</Text>
-            </View>
-            <TouchableOpacity style={styles.sprintBtn} onPress={handleStartSprint}>
-              <Text style={styles.sprintBtnText}>🚀 Start 5-Min Sprint</Text>
-            </TouchableOpacity>
+            </LinearText>
+            <LinearSurface style={styles.offerBox}>
+              <LinearText variant="body" tone="accent" centered style={styles.offerText}>
+                Keep this momentum for just 5 minutes?
+              </LinearText>
+            </LinearSurface>
+            <LinearButton
+              label="🚀 Start 5-Min Sprint"
+              variant="primary"
+              style={styles.sprintBtn}
+              onPress={handleStartSprint}
+            />
             <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
-              <Text style={styles.closeBtnText}>I'll stop here for now.</Text>
+              <LinearText variant="bodySmall" tone="muted" style={styles.closeBtnText}>
+                I&apos;ll stop here for now.
+              </LinearText>
             </TouchableOpacity>
           </Animated.View>
         </ResponsiveContainer>
@@ -427,7 +471,13 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: 'center',
-    ...((c: string) => ({ shadowColor: c, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 8 }))(n.colors.accent),
+    ...((c: string) => ({
+      shadowColor: c,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 12,
+      elevation: 8,
+    }))(n.colors.accent),
   },
   doneBtnText: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '900' },
   giveUpBtn: { padding: 16, alignItems: 'center' },

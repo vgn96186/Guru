@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ScreenBannerFrame from './ScreenBannerFrame';
+import { linearTheme as n } from '../theme/linearTheme';
 
 export interface PersistentScreenBannerConfig {
   title: string;
@@ -118,6 +119,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    backgroundColor: '#000000',
+    backgroundColor: n.colors.background,
   },
 });

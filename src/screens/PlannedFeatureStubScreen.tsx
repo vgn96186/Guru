@@ -1,5 +1,6 @@
 import React from 'react';
-import { StatusBar, StyleSheet, Text, View } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../components/ScreenHeader';
@@ -28,12 +29,12 @@ export default function PlannedFeatureStubScreen({
           <View style={styles.iconWrap}>
             <Ionicons name={icon} size={28} color={n.colors.accent} />
           </View>
-          <Text style={styles.eyebrow}>PLANNED FEATURE</Text>
-          <Text style={styles.title}>{title} is parked here for now.</Text>
-          <Text style={styles.body}>
+          <LinearText style={styles.eyebrow}>PLANNED FEATURE</LinearText>
+          <LinearText style={styles.title}>{title} is parked here for now.</LinearText>
+          <LinearText style={styles.body}>
             This is a stub entry point so the menu flow is in place. The actual experience can be
             built on top of this route later.
-          </Text>
+          </LinearText>
         </LinearSurface>
       </ResponsiveContainer>
     </SafeAreaView>

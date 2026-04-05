@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   TextInput,
   TouchableOpacity,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   Alert,
   StatusBar,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -141,9 +141,9 @@ export default function ManualNoteCreationScreen(
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <View style={styles.header}>
           <TouchableOpacity onPress={() => setResult(null)} style={styles.backBtn}>
-            <Text style={styles.backText}>← Edit</Text>
+            <LinearText style={styles.backText}>← Edit</LinearText>
           </TouchableOpacity>
-          <Text style={styles.title}>Review Notes</Text>
+          <LinearText style={styles.title}>Review Notes</LinearText>
         </View>
         <ScrollView contentContainerStyle={styles.content}>
           {subjectSelectionRequired ? (
@@ -158,20 +158,20 @@ export default function ManualNoteCreationScreen(
 
           {analysis.topics.length > 0 && (
             <>
-              <Text style={styles.sectionLabel}>TOPICS DETECTED</Text>
+              <LinearText style={styles.sectionLabel}>TOPICS DETECTED</LinearText>
               <TopicPillRow topics={analysis.topics} wrap />
             </>
           )}
 
-          <Text style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</Text>
+          <LinearText style={styles.sectionLabel}>YOUR CONFIDENCE LEVEL</LinearText>
           <ConfidenceSelector
             value={confidence ?? (analysis.estimatedConfidence as 1 | 2 | 3)}
             onChange={setConfidence}
           />
 
-          <Text style={styles.sectionLabel}>GENERATED NOTES</Text>
+          <LinearText style={styles.sectionLabel}>GENERATED NOTES</LinearText>
           <LinearSurface padded={false} style={styles.noteCard}>
-            <Text style={styles.noteText}>{note}</Text>
+            <LinearText style={styles.noteText}>{note}</LinearText>
           </LinearSurface>
         </ScrollView>
 
@@ -200,11 +200,11 @@ export default function ManualNoteCreationScreen(
         />
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.label}>Paste your lecture transcript below:</Text>
-        <Text style={styles.formatHint}>
+        <LinearText style={styles.label}>Paste your lecture transcript below:</LinearText>
+        <LinearText style={styles.formatHint}>
           Works with any text — lecture transcripts, recorded audio text, textbook paragraphs,
           notes, or copied slides. Guru will extract topics, summarise, and rate your confidence.
-        </Text>
+        </LinearText>
         <TextInput
           style={styles.input}
           multiline
@@ -222,14 +222,16 @@ export default function ManualNoteCreationScreen(
           label={isProcessing ? 'Generating Notes…' : 'Generate Notes'}
         />
         {isProcessing && (
-          <Text style={styles.processingText}>Analyzing transcript and building notes...</Text>
+          <LinearText style={styles.processingText}>
+            Analyzing transcript and building notes...
+          </LinearText>
         )}
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.cancelInlineBtn}
           disabled={isProcessing}
         >
-          <Text style={styles.cancelInlineText}>Cancel</Text>
+          <LinearText style={styles.cancelInlineText}>Cancel</LinearText>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -247,10 +249,10 @@ const styles = StyleSheet.create({
   },
   backBtn: { marginRight: 16 },
   backText: { color: n.colors.accent, fontSize: 16 },
-  title: { color: '#FFF', fontSize: 18, fontWeight: '700' },
+  title: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '700' },
   content: { padding: 16, paddingBottom: 120, gap: 4 },
   screenHeaderWrap: { paddingHorizontal: 16, paddingTop: 8 },
-  label: { color: '#FFF', fontSize: 15, marginBottom: 6 },
+  label: { color: n.colors.textPrimary, fontSize: 15, marginBottom: 6 },
   formatHint: {
     color: n.colors.textMuted,
     fontSize: 12,
@@ -260,7 +262,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: n.colors.surface,
-    color: '#FFF',
+    color: n.colors.textPrimary,
     borderRadius: 10,
     padding: 16,
     height: 280,

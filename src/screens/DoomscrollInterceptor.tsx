@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   StatusBar,
@@ -10,6 +9,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -200,14 +200,14 @@ export default function DoomscrollInterceptor() {
         <ResponsiveContainer>
           <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
             <View style={styles.standbyIconContainer}>
-              <Text style={styles.standbyEmoji}>🛡️</Text>
+              <LinearText style={styles.standbyEmoji}>🛡️</LinearText>
             </View>
 
-            <Text style={styles.standbyTitle}>App Hijack Standby</Text>
-            <Text style={styles.standbySubtitle}>
+            <LinearText style={styles.standbyTitle}>App Hijack Standby</LinearText>
+            <LinearText style={styles.standbySubtitle}>
               Live app detection is not active yet on this device. Use App Hijack Setup to enable
               the guardrails, or go back to study now.
-            </Text>
+            </LinearText>
 
             <TouchableOpacity
               style={[styles.button, styles.primaryButton]}
@@ -220,19 +220,21 @@ export default function DoomscrollInterceptor() {
                 } as any)
               }
             >
-              <Text style={styles.primaryButtonText}>📚 GO BACK TO STUDYING</Text>
+              <LinearText style={styles.primaryButtonText}>📚 GO BACK TO STUDYING</LinearText>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
               onPress={() => navigation.goBack()}
             >
-              <Text style={styles.secondaryButtonText}>Close</Text>
+              <LinearText style={styles.secondaryButtonText}>Close</LinearText>
             </TouchableOpacity>
 
             <View style={styles.statsRow}>
-              <Text style={styles.statsText}>Doomscroll attempts today: {doomscrollAttempts}</Text>
-              <Text style={styles.statsSub}>Study sessions: {sessionCount}</Text>
+              <LinearText style={styles.statsText}>
+                Doomscroll attempts today: {doomscrollAttempts}
+              </LinearText>
+              <LinearText style={styles.statsSub}>Study sessions: {sessionCount}</LinearText>
             </View>
           </Animated.View>
         </ResponsiveContainer>
@@ -275,34 +277,34 @@ export default function DoomscrollInterceptor() {
               ]}
             />
             <View style={[styles.lockIcon, { borderColor: currentShame.color }]}>
-              <Text style={styles.lockEmoji}>🚫</Text>
+              <LinearText style={styles.lockEmoji}>🚫</LinearText>
             </View>
           </View>
 
           {/* Shame Message */}
-          <Text style={[styles.shameTitle, { color: currentShame.color }]}>
+          <LinearText style={[styles.shameTitle, { color: currentShame.color }]}>
             {currentShame.title}
-          </Text>
-          <Text style={styles.shameSubtitle}>
+          </LinearText>
+          <LinearText style={styles.shameSubtitle}>
             {currentShame.subtitle
               .replace('{app}', blockAppName)
               .replace('{count}', String(doomscrollAttempts))}
-          </Text>
+          </LinearText>
 
           {/* Quote Box */}
           <View style={[styles.quoteBox, { borderLeftColor: currentShame.color }]}>
-            <Text style={styles.quoteText}>"{currentShame.quote}"</Text>
+            <LinearText style={styles.quoteText}>"{currentShame.quote}"</LinearText>
           </View>
 
           {/* Countdown or Unlocked State */}
           {delayRemaining > 0 ? (
             <View style={styles.countdownContainer}>
-              <Text style={styles.countdownLabel}>⏳ Shame Delay</Text>
+              <LinearText style={styles.countdownLabel}>⏳ Shame Delay</LinearText>
               <View style={styles.countdownCircle}>
-                <Text style={[styles.countdownNumber, { color: currentShame.color }]}>
+                <LinearText style={[styles.countdownNumber, { color: currentShame.color }]}>
                   {delayRemaining}
-                </Text>
-                <Text style={styles.countdownUnit}>sec</Text>
+                </LinearText>
+                <LinearText style={styles.countdownUnit}>sec</LinearText>
               </View>
 
               {/* Progress Bar */}
@@ -321,13 +323,15 @@ export default function DoomscrollInterceptor() {
                 />
               </View>
 
-              <Text style={styles.countdownHint}>Think about your goals while you wait.</Text>
+              <LinearText style={styles.countdownHint}>
+                Think about your goals while you wait.
+              </LinearText>
             </View>
           ) : (
             <View style={styles.unlockedContainer}>
-              <Text style={styles.unlockedIcon}>🔓</Text>
-              <Text style={styles.unlockedText}>You can proceed now...</Text>
-              <Text style={styles.unlockedSubtext}>But should you?</Text>
+              <LinearText style={styles.unlockedIcon}>🔓</LinearText>
+              <LinearText style={styles.unlockedText}>You can proceed now...</LinearText>
+              <LinearText style={styles.unlockedSubtext}>But should you?</LinearText>
             </View>
           )}
 
@@ -341,11 +345,11 @@ export default function DoomscrollInterceptor() {
             onPress={handleGoBackToStudy}
             disabled={delayRemaining > 0}
           >
-            <Text
+            <LinearText
               style={[styles.primaryButtonText, delayRemaining > 0 && styles.disabledButtonText]}
             >
               {delayRemaining > 0 ? `⏳ Wait ${delayRemaining}s...` : '📚 GO BACK TO STUDYING'}
-            </Text>
+            </LinearText>
           </TouchableOpacity>
 
           {delayRemaining === 0 && (
@@ -353,20 +357,22 @@ export default function DoomscrollInterceptor() {
               style={[styles.button, styles.dangerButton]}
               onPress={handleForceProceed}
             >
-              <Text style={styles.dangerButtonText}>Open {blockAppName} Anyway (-50 XP)</Text>
+              <LinearText style={styles.dangerButtonText}>
+                Open {blockAppName} Anyway (-50 XP)
+              </LinearText>
             </TouchableOpacity>
           )}
 
           {/* Stats */}
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{doomscrollAttempts}</Text>
-              <Text style={styles.statLabel}>Doomscroll Attempts</Text>
+              <LinearText style={styles.statValue}>{doomscrollAttempts}</LinearText>
+              <LinearText style={styles.statLabel}>Doomscroll Attempts</LinearText>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{sessionCount}</Text>
-              <Text style={styles.statLabel}>Study Sessions</Text>
+              <LinearText style={styles.statValue}>{sessionCount}</LinearText>
+              <LinearText style={styles.statLabel}>Study Sessions</LinearText>
             </View>
           </View>
         </Animated.View>
@@ -586,7 +592,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   primaryButtonText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,
@@ -597,7 +603,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   dangerButtonText: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     letterSpacing: 0.5,

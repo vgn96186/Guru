@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   text: {
-    color: '#A9B2C6',
+    color: n.colors.textMuted,
     fontSize: 17,
     lineHeight: 28,
     includeFontPadding: false,
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bold: {
-    color: '#F3DF84',
+    color: n.colors.warning,
     fontWeight: '900',
   },
   italic: {

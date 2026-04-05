@@ -569,9 +569,7 @@ export default function LectureReturnSheet(props: Props) {
                           styles.explBox,
                           {
                             borderColor:
-                              selected === q.correctIndex
-                                ? n.colors.success
-                                : n.colors.error,
+                              selected === q.correctIndex ? n.colors.success : n.colors.error,
                           },
                         ]}
                       >
@@ -580,9 +578,7 @@ export default function LectureReturnSheet(props: Props) {
                             styles.explLabel,
                             {
                               color:
-                                selected === q.correctIndex
-                                  ? n.colors.success
-                                  : n.colors.error,
+                                selected === q.correctIndex ? n.colors.success : n.colors.error,
                             },
                           ]}
                         >
@@ -790,6 +786,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: 12,
     paddingBottom: 12,
+    backgroundColor: 'rgba(1, 2, 4, 0.64)',
   },
   bubbleDock: {
     position: 'absolute',
@@ -806,19 +803,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(8, 10, 14, 0.84)',
     borderWidth: 1,
-    borderColor: n.colors.border,
+    borderColor: 'rgba(255,255,255,0.14)',
     borderRadius: 28,
     paddingLeft: 6,
     paddingRight: 14,
-    paddingVertical: 6,
-    maxWidth: 288,
+    paddingVertical: 8,
+    maxWidth: 320,
     elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.18,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: n.colors.background,
+    shadowOpacity: 0.28,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
   },
   bubbleReady: {
     borderColor: n.colors.success + '66',
@@ -830,7 +827,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -846,6 +843,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     flexShrink: 1,
+    lineHeight: 17,
+    paddingBottom: 1,
   },
   bubbleSub: {
     color: n.colors.textMuted,
@@ -853,6 +852,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 1,
     flexShrink: 1,
+    lineHeight: 14,
+    paddingBottom: 1,
   },
   bubbleDismiss: {
     width: 20,
@@ -870,18 +871,20 @@ const styles = StyleSheet.create({
     marginTop: -1,
   },
   sheet: {
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(6, 8, 12, 0.94)',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    padding: 20,
+    paddingTop: 18,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
     maxHeight: '85%',
-    borderTopWidth: 1,
-    borderColor: n.colors.border,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
     elevation: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
+    shadowColor: n.colors.background,
+    shadowOpacity: 0.36,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 14 },
   },
   sheetTopRow: {
     alignItems: 'center',
@@ -891,7 +894,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: n.colors.border,
+    backgroundColor: 'rgba(255,255,255,0.22)',
     alignSelf: 'center',
   },
   minimizeBtn: {
@@ -901,9 +904,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
-    borderColor: n.colors.borderLight,
+    borderColor: 'rgba(255,255,255,0.16)',
   },
   minimizeBtnText: {
     color: n.colors.textSecondary,
@@ -917,8 +920,17 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '800',
     textAlign: 'center',
+    lineHeight: 26,
+    paddingBottom: 2,
   },
-  returnSub: { color: n.colors.textMuted, fontSize: 14, marginTop: 4, textAlign: 'center' },
+  returnSub: {
+    color: n.colors.textMuted,
+    fontSize: 14,
+    marginTop: 4,
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingBottom: 2,
+  },
   spinnerText: { color: n.colors.accent, fontSize: 13, flexShrink: 1 },
   processingCard: {
     width: '100%',
@@ -928,7 +940,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     borderColor: n.colors.border,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     gap: 8,
   },
@@ -954,7 +966,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 8,
     borderRadius: 999,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
   },
   progressBarFill: {
@@ -973,7 +985,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: n.colors.borderLight,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
@@ -1019,7 +1031,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
     borderColor: n.colors.borderLight,
   },
@@ -1033,7 +1045,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: n.colors.borderLight,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 10,
@@ -1089,7 +1101,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: n.colors.border,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     paddingHorizontal: 14,
     paddingVertical: 14,
     alignItems: 'center',
@@ -1117,7 +1129,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subjectChipText: { fontSize: 13, lineHeight: 18, fontWeight: '800' },
-  summaryText: { color: n.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  summaryText: {
+    color: n.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 20,
+    paddingBottom: 2,
+  },
   section: { marginBottom: 14 },
   sectionLabel: {
     color: n.colors.textMuted,
@@ -1136,9 +1153,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   topicPillEditable: {
-    backgroundColor: n.colors.primaryTintSoft,
+    backgroundColor: 'rgba(94,106,210,0.18)',
     borderWidth: 1,
-    borderColor: n.colors.borderHighlight,
+    borderColor: 'rgba(255,255,255,0.16)',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1157,6 +1174,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: '600',
     flexShrink: 1,
+    paddingBottom: 1,
   },
   conceptItem: { color: n.colors.textSecondary, fontSize: 12, lineHeight: 20 },
   confidenceBadgeRow: {
@@ -1176,7 +1194,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: n.colors.border,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
   },
   confidenceOptionText: {
@@ -1225,7 +1243,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryBtn: {
-    backgroundColor: n.colors.primaryTintSoft,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
     borderColor: n.colors.accent,
     borderRadius: 10,
@@ -1233,7 +1251,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 8,
   },
-  retryBtnText: { color: n.colors.accent, fontWeight: '700' },
+  retryBtnText: { color: n.colors.accent, fontWeight: '700', lineHeight: 18, paddingBottom: 1 },
 
   // Quiz
   quizProgress: {
@@ -1247,9 +1265,10 @@ const styles = StyleSheet.create({
   questionText: {
     color: n.colors.textPrimary,
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 23,
     fontWeight: '600',
     marginBottom: 14,
+    paddingBottom: 2,
   },
   optionsContainer: { gap: 8, marginBottom: 8 },
   optionBtn: {
@@ -1264,7 +1283,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 8,
     marginBottom: 4,
-    backgroundColor: n.colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   explLabel: { fontSize: 13, fontWeight: '800', marginBottom: 4 },
   explText: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
@@ -1272,7 +1291,7 @@ const styles = StyleSheet.create({
   // XP bonus
   xpBonusBox: {
     marginTop: 16,
-    backgroundColor: 'rgba(63,185,80,0.08)',
+    backgroundColor: 'rgba(63,185,80,0.12)',
     borderWidth: 1,
     borderColor: n.colors.success + '55',
     borderRadius: 12,
@@ -1286,6 +1305,8 @@ const styles = StyleSheet.create({
   primaryBtn: {
     backgroundColor: n.colors.accent,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
     paddingVertical: 14,
     paddingHorizontal: 14,
     alignItems: 'center',
@@ -1294,23 +1315,26 @@ const styles = StyleSheet.create({
     color: n.colors.textPrimary,
     fontWeight: '800',
     fontSize: 15,
+    lineHeight: 20,
     textAlign: 'center',
-    flexShrink: 1,
+    paddingBottom: 1,
   },
   outlineBtn: {
     borderWidth: 1.5,
-    borderColor: n.colors.accent,
+    borderColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 14,
     alignItems: 'center',
   },
   outlineBtnText: {
-    color: n.colors.accent,
+    color: n.colors.textPrimary,
     fontWeight: '700',
     fontSize: 14,
+    lineHeight: 19,
     textAlign: 'center',
-    flexShrink: 1,
+    paddingBottom: 1,
   },
   secondaryBtn: { alignItems: 'center', paddingVertical: 12 },
   secondaryBtnText: { color: n.colors.textMuted, fontSize: 14, fontWeight: '600' },

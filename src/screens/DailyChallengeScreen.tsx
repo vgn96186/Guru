@@ -192,7 +192,7 @@ export default function DailyChallengeScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#6C63FF" />
+            <ActivityIndicator size="large" color={n.colors.accent} />
             <LinearText variant="body" tone="secondary" centered style={styles.loadingText}>
               {loadingMsg}
             </LinearText>
@@ -226,7 +226,9 @@ export default function DailyChallengeScreen() {
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <ResponsiveContainer>
           <View style={styles.doneContainer}>
-            <Text style={styles.doneEmoji}>{pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '📚'}</Text>
+            <LinearText style={styles.doneEmoji}>
+              {pct >= 80 ? '🏆' : pct >= 60 ? '⭐' : '📚'}
+            </LinearText>
             <LinearText variant="title" centered style={styles.doneGrade}>
               {grade}
             </LinearText>
@@ -345,8 +347,8 @@ export default function DailyChallengeScreen() {
         {/* Options */}
         <View style={styles.optionsContainer}>
           {q.options.map((opt, idx) => {
-            let bg = '#1A1A24';
-            let border = '#2A2A38';
+            let bg: string = n.colors.surface;
+            let border: string = n.colors.border;
             if (selected !== null) {
               if (idx === q.correctIndex) {
                 bg = `${n.colors.success}18`;
@@ -392,9 +394,9 @@ export default function DailyChallengeScreen() {
               <TouchableOpacity onPress={handleNextQuestion} activeOpacity={0.8}>
                 <LinearText variant="bodySmall" style={styles.feedbackLabel}>
                   {isCorrect ? '✅ Correct!' : '❌ Wrong'}{' '}
-                  <Text style={{ color: '#9E9E9E', fontSize: 11, fontWeight: '500' }}>
+                  <LinearText variant="caption" tone="muted" style={{ fontWeight: '500' }}>
                     Tap to continue ➔
-                  </Text>
+                  </LinearText>
                 </LinearText>
                 <View style={{ marginTop: 8 }}>
                   <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />

@@ -154,6 +154,26 @@ export async function updateNodePosition(nodeId: number, x: number, y: number): 
   await db.runAsync('UPDATE mind_map_nodes SET x = ?, y = ? WHERE id = ?', [x, y, nodeId]);
 }
 
+export async function bulkUpdateNodePositions(
+  mapId: number,
+  positions: Array<{ id: number; x: number; y: number }>,
+): Promise<void> {
+  if (positions.length === 0) {
+    return;
+  }
+
+  const db = getDb();
+  for (const position of positions) {
+    await db.runAsync('UPDATE mind_map_nodes SET x = ?, y = ? WHERE id = ? AND map_id = ?', [
+      position.x,
+      position.y,
+      position.id,
+      mapId,
+    ]);
+  }
+  await touchMindMap(mapId);
+}
+
 export async function updateNodeLabel(nodeId: number, label: string): Promise<void> {
   const db = getDb();
   await db.runAsync('UPDATE mind_map_nodes SET label = ? WHERE id = ?', [label, nodeId]);

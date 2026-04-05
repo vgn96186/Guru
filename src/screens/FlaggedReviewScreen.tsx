@@ -1,13 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  Alert,
-} from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, StatusBar, Alert } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getFlaggedContent, setContentFlagged, type FlaggedItem } from '../db/queries/aiCache';
 import { MarkdownRender } from '../components/MarkdownRender';
@@ -23,17 +16,17 @@ function renderPreview(item: FlaggedItem) {
   switch (c.type) {
     case 'keypoints':
       return c.points.slice(0, 3).map((p, i) => (
-        <Text key={i} style={styles.previewLine}>
+        <LinearText key={i} style={styles.previewLine}>
           • {p}
-        </Text>
+        </LinearText>
       ));
     case 'quiz': {
       const q = c.questions?.[0];
       if (!q) return null;
       return (
         <>
-          <Text style={styles.previewLine}>Q: {q.question}</Text>
-          <Text style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</Text>
+          <LinearText style={styles.previewLine}>Q: {q.question}</LinearText>
+          <LinearText style={styles.previewCorrect}>✓ {q.options[q.correctIndex]}</LinearText>
           <View style={{ marginTop: 6 }}>
             <MarkdownRender content={emphasizeHighYieldMarkdown(q.explanation)} compact />
           </View>
@@ -43,26 +36,26 @@ function renderPreview(item: FlaggedItem) {
     case 'mnemonic':
       return (
         <>
-          <Text style={styles.previewLine}>{c.mnemonic}</Text>
+          <LinearText style={styles.previewLine}>{c.mnemonic}</LinearText>
           {c.expansion.slice(0, 3).map((e, i) => (
-            <Text key={i} style={styles.previewSub}>
+            <LinearText key={i} style={styles.previewSub}>
               {' '}
               {e}
-            </Text>
+            </LinearText>
           ))}
         </>
       );
     case 'story':
       return (
-        <Text style={styles.previewLine} numberOfLines={4}>
+        <LinearText style={styles.previewLine} numberOfLines={4}>
           {c.story}
-        </Text>
+        </LinearText>
       );
     case 'error_hunt':
       return c.errors.slice(0, 2).map((e, i) => (
-        <Text key={i} style={styles.previewLine}>
+        <LinearText key={i} style={styles.previewLine}>
           ✗ {e.wrong} → {e.correct}
-        </Text>
+        </LinearText>
       ));
     default:
       return null;
@@ -93,8 +86,8 @@ const FlaggedItemCard = React.memo(
               isExpanded ? `Collapse ${item.topicName}` : `Expand ${item.topicName}`
             }
           >
-            <Text style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</Text>
-            <Text style={styles.cardSubject}>{item.subjectName}</Text>
+            <LinearText style={styles.cardType}>{CONTENT_TYPE_LABELS[item.contentType]}</LinearText>
+            <LinearText style={styles.cardSubject}>{item.subjectName}</LinearText>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.unflagBtn}
@@ -104,7 +97,7 @@ const FlaggedItemCard = React.memo(
             accessibilityRole="button"
             accessibilityLabel={`Unflag ${item.topicName}`}
           >
-            <Text style={styles.unflagText}>✕</Text>
+            <LinearText style={styles.unflagText}>✕</LinearText>
           </TouchableOpacity>
         </View>
 
@@ -116,11 +109,13 @@ const FlaggedItemCard = React.memo(
             isExpanded ? `Collapse ${item.topicName}` : `Show preview of ${item.topicName}`
           }
         >
-          <Text style={styles.cardTopic}>{item.topicName}</Text>
-          <Text style={styles.cardModel}>Model: {item.modelUsed}</Text>
+          <LinearText style={styles.cardTopic}>{item.topicName}</LinearText>
+          <LinearText style={styles.cardModel}>Model: {item.modelUsed}</LinearText>
 
           {isExpanded && <View style={styles.preview}>{renderPreview(item)}</View>}
-          <Text style={styles.expandHint}>{isExpanded ? '▲ collapse' : '▼ show preview'}</Text>
+          <LinearText style={styles.expandHint}>
+            {isExpanded ? '▲ collapse' : '▼ show preview'}
+          </LinearText>
         </TouchableOpacity>
       </LinearSurface>
     );
@@ -175,23 +170,23 @@ export default function FlaggedReviewScreen() {
         <ScreenHeader
           title="Flagged for Review"
           subtitle="Recheck AI content you marked for a second look."
-          rightElement={<Text style={styles.count}>{items.length}</Text>}
+          rightElement={<LinearText style={styles.count}>{items.length}</LinearText>}
         />
 
         {items.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyEmoji}>✅</Text>
-            <Text style={styles.emptyTitle}>No flagged content</Text>
-            <Text style={styles.emptySub}>
+            <LinearText style={styles.emptyEmoji}>✅</LinearText>
+            <LinearText style={styles.emptyTitle}>No flagged content</LinearText>
+            <LinearText style={styles.emptySub}>
               Tap the 🏳 flag button on any content card to mark it for review here.
-            </Text>
+            </LinearText>
           </View>
         ) : (
           <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
-            <Text style={styles.hint}>
+            <LinearText style={styles.hint}>
               Tap a card to expand. These are AI-generated — verify against textbooks before relying
               on them for exams.
-            </Text>
+            </LinearText>
             {items.map((item) => {
               const key = `${item.topicId}-${item.contentType}`;
               return (
@@ -267,10 +262,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   previewLine: { color: '#D0C8FF', fontSize: 13, lineHeight: 20, marginBottom: 4 },
-  previewSub: { color: '#9E9E9E', fontSize: 12, lineHeight: 18 },
-  previewCorrect: { color: '#4CAF50', fontSize: 13, fontWeight: '600', marginBottom: 4 },
-  previewExplain: { color: '#9E9E9E', fontSize: 12, fontStyle: 'italic', lineHeight: 18 },
-  expandHint: { color: '#555', fontSize: 11, textAlign: 'center', marginTop: 4 },
+  previewSub: { color: n.colors.textMuted, fontSize: 12, lineHeight: 18 },
+  previewCorrect: { color: n.colors.success, fontSize: 13, fontWeight: '600', marginBottom: 4 },
+  previewExplain: { color: n.colors.textMuted, fontSize: 12, fontStyle: 'italic', lineHeight: 18 },
+  expandHint: { color: n.colors.textMuted, fontSize: 11, textAlign: 'center', marginTop: 4 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
   emptyEmoji: { fontSize: 48, marginBottom: 16 },
   emptyTitle: { color: n.colors.textPrimary, fontWeight: '700', fontSize: 20, marginBottom: 8 },

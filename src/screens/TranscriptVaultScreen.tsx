@@ -9,7 +9,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   Pressable,
   FlatList,
@@ -22,6 +21,7 @@ import {
   AppState,
   useWindowDimensions,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -739,18 +739,18 @@ export default function TranscriptVaultScreen() {
             </View>
           )}
           <View style={styles.cardBody}>
-            <Text style={styles.cardName} numberOfLines={3} ellipsizeMode="tail">
+            <LinearText style={styles.cardName} numberOfLines={3} ellipsizeMode="tail">
               {displayName(item.name, item.extractedTitle)}
-            </Text>
-            <Text style={styles.cardMeta}>
+            </LinearText>
+            <LinearText style={styles.cardMeta}>
               {item.wordCount.toLocaleString()} words · {item.folder}
               {item.sizeMB > 0 ? ` · ${item.sizeMB} KB` : ''}
-            </Text>
+            </LinearText>
           </View>
           {!isSelectionMode && (
             <View style={styles.cardActions}>
               <TouchableOpacity style={styles.actionBtn} onPress={() => handleProcess(item)}>
-                <Ionicons name="sparkles" size={20} color={n.colors.success ?? '#4CAF50'} />
+                <Ionicons name="sparkles" size={20} color={n.colors.success ?? n.colors.success} />
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtn} onPress={() => void handleRead(item)}>
                 <Ionicons name="book-outline" size={20} color={n.colors.accent} />
@@ -783,7 +783,9 @@ export default function TranscriptVaultScreen() {
                   size={18}
                   color={n.colors.accent}
                 />
-                <Text style={styles.sortLabel}>{sortBy === 'words' ? 'Words' : 'Name'}</Text>
+                <LinearText style={styles.sortLabel}>
+                  {sortBy === 'words' ? 'Words' : 'Name'}
+                </LinearText>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => void loadFiles()} style={styles.refreshBtn}>
                 <Ionicons name="refresh" size={20} color={n.colors.textMuted} />
@@ -847,11 +849,11 @@ export default function TranscriptVaultScreen() {
             }}
           >
             <Ionicons name="trash-outline" size={16} color={n.colors.error} />
-            <Text style={styles.cleanupText}>
+            <LinearText style={styles.cleanupText}>
               {files.filter((f) => f.wordCount < 10).length} junk transcript
               {files.filter((f) => f.wordCount < 10).length !== 1 ? 's' : ''} ({'<'}10 words)
-            </Text>
-            <Text style={styles.cleanupAction}>Clean up</Text>
+            </LinearText>
+            <LinearText style={styles.cleanupAction}>Clean up</LinearText>
           </TouchableOpacity>
         )}
 
@@ -884,10 +886,10 @@ export default function TranscriptVaultScreen() {
             }}
           >
             <Ionicons name="copy-outline" size={16} color={n.colors.warning} />
-            <Text style={styles.cleanupText}>
+            <LinearText style={styles.cleanupText}>
               {duplicatePaths.size} duplicate{duplicatePaths.size !== 1 ? 's' : ''} found
-            </Text>
-            <Text style={styles.dupeAction}>Remove</Text>
+            </LinearText>
+            <LinearText style={styles.dupeAction}>Remove</LinearText>
           </TouchableOpacity>
         )}
 
@@ -895,11 +897,11 @@ export default function TranscriptVaultScreen() {
         {!isSelectionMode && renamableFiles.length > 0 && !renameProgress && (
           <TouchableOpacity style={styles.renameBanner} onPress={handleSmartRename}>
             <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
-            <Text style={styles.cleanupText}>
+            <LinearText style={styles.cleanupText}>
               {renamableFiles.length} file{renamableFiles.length !== 1 ? 's' : ''} with unclear
               names
-            </Text>
-            <Text style={styles.renameAction}>AI Rename</Text>
+            </LinearText>
+            <LinearText style={styles.renameAction}>AI Rename</LinearText>
           </TouchableOpacity>
         )}
 
@@ -907,35 +909,37 @@ export default function TranscriptVaultScreen() {
         {renameProgress && (
           <View style={styles.renameBanner}>
             <ActivityIndicator size="small" color={n.colors.accent} />
-            <Text style={styles.cleanupText} numberOfLines={2}>
+            <LinearText style={styles.cleanupText} numberOfLines={2}>
               {renameProgress}
-            </Text>
+            </LinearText>
           </View>
         )}
 
         {/* Process progress */}
         {processProgress && (
           <View style={styles.processBanner}>
-            <ActivityIndicator size="small" color={n.colors.success ?? '#4CAF50'} />
-            <Text style={styles.cleanupText}>Processing transcript {processProgress}...</Text>
+            <ActivityIndicator size="small" color={n.colors.success ?? n.colors.success} />
+            <LinearText style={styles.cleanupText}>
+              Processing transcript {processProgress}...
+            </LinearText>
           </View>
         )}
 
         {/* Selection banner */}
         {isSelectionMode && (
           <View style={styles.selectionBanner}>
-            <Text style={styles.selectionText}>{selectedPaths.size} selected</Text>
+            <LinearText style={styles.selectionText}>{selectedPaths.size} selected</LinearText>
             <View style={styles.selectionActions}>
               <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <Text style={styles.selectionCancelText}>Cancel</Text>
+                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
               </TouchableOpacity>
               <TouchableOpacity style={styles.selectionProcessBtn} onPress={handleBatchProcess}>
                 <Ionicons name="sparkles" size={14} color="#fff" />
-                <Text style={styles.selectionDeleteText}>Process</Text>
+                <LinearText style={styles.selectionDeleteText}>Process</LinearText>
               </TouchableOpacity>
               <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
                 <Ionicons name="trash-outline" size={14} color="#fff" />
-                <Text style={styles.selectionDeleteText}>Delete</Text>
+                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
               </TouchableOpacity>
             </View>
           </View>
@@ -950,9 +954,9 @@ export default function TranscriptVaultScreen() {
             }}
           >
             <Ionicons name="lock-open-outline" size={18} color={n.colors.warning} />
-            <Text style={styles.permBannerText}>
+            <LinearText style={styles.permBannerText}>
               Grant file access to scan all transcript folders.
-            </Text>
+            </LinearText>
             <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
           </TouchableOpacity>
         )}
@@ -960,16 +964,16 @@ export default function TranscriptVaultScreen() {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={n.colors.accent} />
-            <Text style={styles.emptyText}>Scanning transcripts...</Text>
+            <LinearText style={styles.emptyText}>Scanning transcripts...</LinearText>
           </View>
         ) : files.length === 0 ? (
           <View style={styles.center}>
             <Ionicons name="document-text-outline" size={48} color={n.colors.textMuted} />
-            <Text style={styles.emptyTitle}>No transcripts found</Text>
-            <Text style={styles.emptyText}>
+            <LinearText style={styles.emptyTitle}>No transcripts found</LinearText>
+            <LinearText style={styles.emptyText}>
               Transcript files (.txt) appear here from your Documents/Guru folder and internal
               backups.
-            </Text>
+            </LinearText>
           </View>
         ) : (
           <FlatList
@@ -997,9 +1001,9 @@ export default function TranscriptVaultScreen() {
               >
                 <Ionicons name="arrow-back" size={22} color={n.colors.textPrimary} />
               </TouchableOpacity>
-              <Text style={styles.readerHeaderTitle} numberOfLines={2}>
+              <LinearText style={styles.readerHeaderTitle} numberOfLines={2}>
                 {readerTitle}
-              </Text>
+              </LinearText>
               <TouchableOpacity
                 onPress={() => {
                   if (readerContent) {
@@ -1016,7 +1020,7 @@ export default function TranscriptVaultScreen() {
               style={styles.readerScroll}
               contentContainerStyle={styles.readerScrollContent}
             >
-              <Text style={styles.readerText}>{readerContent}</Text>
+              <LinearText style={styles.readerText}>{readerContent}</LinearText>
             </ScrollView>
           </View>
         </Modal>
@@ -1130,7 +1134,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
   },
-  selectionDeleteText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  selectionDeleteText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   cleanupBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1197,7 +1201,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: n.colors.success ?? '#4CAF50',
+    backgroundColor: n.colors.success ?? n.colors.success,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,

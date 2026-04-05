@@ -2,19 +2,19 @@ export const linearTheme = {
   colors: {
     // Structural
     background: '#000000', // True black for the base
-    surface: 'rgba(255, 255, 255, 0.035)',
-    surfaceHover: 'rgba(255, 255, 255, 0.055)',
-    card: 'rgba(255, 255, 255, 0.045)',
-    cardHover: 'rgba(255, 255, 255, 0.07)',
-    border: 'rgba(255, 255, 255, 0.10)',
-    borderHighlight: 'rgba(255, 255, 255, 0.16)',
+    surface: 'rgba(5, 7, 12, 0.84)',
+    surfaceHover: 'rgba(8, 10, 16, 0.9)',
+    card: 'rgba(9, 12, 18, 0.9)',
+    cardHover: 'rgba(13, 16, 24, 0.95)',
+    border: 'rgba(255, 255, 255, 0.08)',
+    borderHighlight: 'rgba(255, 255, 255, 0.18)',
 
-    // Gradients (using opacity steps against the #111111 surface)
-    surfaceGradientStart: 'rgba(255, 255, 255, 0.06)',
-    surfaceGradientMid: 'rgba(255, 255, 255, 0.02)',
+    // Gradients tuned toward darker black glass, similar to the Action Hub sheet.
+    surfaceGradientStart: 'rgba(255, 255, 255, 0.05)',
+    surfaceGradientMid: 'rgba(255, 255, 255, 0.012)',
     surfaceGradientEnd: 'transparent',
-    surfaceInset: 'rgba(255, 255, 255, 0.018)',
-    surfaceTint: 'rgba(94, 106, 210, 0.08)',
+    surfaceInset: 'rgba(255, 255, 255, 0.008)',
+    surfaceTint: 'rgba(94, 106, 210, 0.055)',
 
     // Text
     textPrimary: '#F2F2F2',
@@ -30,7 +30,7 @@ export const linearTheme = {
     successSurface: 'rgba(63, 185, 80, 0.1)',
     errorSurface: 'rgba(241, 76, 76, 0.1)',
     borderLight: 'rgba(255, 255, 255, 0.15)',
-    primaryTintSoft: 'rgba(94, 106, 210, 0.12)',
+    primaryTintSoft: 'rgba(22, 29, 54, 0.9)',
   },
 
   spacing: {

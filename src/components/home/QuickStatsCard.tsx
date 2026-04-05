@@ -99,7 +99,7 @@ export default React.memo(function QuickStatsCard({
             {todayMinutes}
             <Text style={styles.minutesUnit}> min</Text>
           </Text>
-          <Pressable onPress={() => setShowGoalPicker((v) => !v)} hitSlop={8}>
+          <View style={styles.goalToggle}>
             {done ? (
               <View style={styles.doneRow}>
                 <Ionicons name="checkmark-circle" size={14} color={n.colors.success} />
@@ -109,7 +109,11 @@ export default React.memo(function QuickStatsCard({
               <View style={styles.goalInline}>
                 <Text style={styles.minutesLeft}>{minutesLeft} min left</Text>
                 <Pressable
-                  style={[styles.goalBadge, showGoalPicker && styles.goalBadgeActive]}
+                  style={({ pressed }) => [
+                    styles.goalBadge,
+                    pressed && styles.goalBadgePressed,
+                    showGoalPicker && styles.goalBadgeActive,
+                  ]}
                   onPress={() => setShowGoalPicker((v) => !v)}
                   hitSlop={6}
                 >
@@ -118,13 +122,17 @@ export default React.memo(function QuickStatsCard({
                 </Pressable>
                 {showGoalPicker &&
                   GOAL_PRESETS.filter((m) => m !== dailyGoal).map((m) => (
-                    <Pressable key={m} style={styles.goalChip} onPress={() => handleGoalChange(m)}>
+                    <Pressable
+                      key={m}
+                      style={({ pressed }) => [styles.goalChip, pressed && styles.goalChipPressed]}
+                      onPress={() => handleGoalChange(m)}
+                    >
                       <Text style={styles.goalChipText}>{m >= 60 ? `${m / 60}h` : `${m}m`}</Text>
                     </Pressable>
                   ))}
               </View>
             )}
-          </Pressable>
+          </View>
         </View>
       </View>
 
@@ -176,7 +184,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 0,
     marginBottom: n.spacing.lg,
-    flex: 1,
+    width: '100%',
     justifyContent: 'space-between',
   },
   cardDone: {
@@ -250,9 +258,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 4,
   },
+  goalToggle: {
+    alignSelf: 'flex-start',
+  },
   goalBadgeActive: {
     borderWidth: 1.5,
     borderColor: n.colors.accent,
+  },
+  goalBadgePressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   goalBadgeText: {
     color: n.colors.accent,
@@ -264,6 +279,10 @@ const styles = StyleSheet.create({
     borderRadius: n.radius.full,
     paddingHorizontal: 12,
     paddingVertical: 4,
+  },
+  goalChipPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   goalChipText: {
     color: n.colors.textSecondary,

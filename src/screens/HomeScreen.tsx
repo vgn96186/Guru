@@ -16,11 +16,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation, type NavigationProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList, TabParamList } from '../navigation/types';
+import ScreenMotion from '../motion/ScreenMotion';
+import StaggeredEntrance from '../motion/StaggeredEntrance';
 import { useAppStore } from '../store/useAppStore';
 import { useSessionStore } from '../store/useSessionStore';
 import AgendaItem from '../components/home/AgendaItem';
+import { AiStatusIndicator } from '../components/home/AiStatusIndicator';
+import CompactQuickStatsBar from '../components/home/CompactQuickStatsBar';
+import ExamCountdownChips from '../components/home/ExamCountdownChips';
 import LinearSurface from '../components/primitives/LinearSurface';
-import Svg, { Circle } from 'react-native-svg';
+import LinearText from '../components/primitives/LinearText';
 import StartButton from '../components/StartButton';
 import { profileRepository, dailyLogRepository, dailyAgendaRepository } from '../db/repositories';
 import { getDb } from '../db/database';
@@ -31,11 +36,8 @@ import type { DailyAgenda } from '../services/ai';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import { useHomeDashboardData } from '../hooks/useHomeDashboardData';
 import { linearTheme as n } from '../theme/linearTheme';
-import { BUNDLED_HF_TOKEN, DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
-import { getApiKeys } from '../services/ai/config';
-import { isLocalLlmUsable } from '../services/deviceMemory';
+import { DEFAULT_INICET_DATE, DEFAULT_NEET_DATE } from '../config/appConfig';
 import type { Mood, UserProfile, TopicWithProgress } from '../types';
-import { useAiRuntimeStatus } from '../hooks/useAiRuntimeStatus';
 import NextLectureSection from '../components/home/NextLectureSection';
 
 function isLeafTopicIdListValid(allIds: number[], validLeafIds: Set<number>): boolean {
@@ -106,65 +108,6 @@ function homeSelectionReasonFromTopic(
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
-/** Inline header countdown: pulse highlight on day digits (always on). */
-function ExamCountdownChips({
-  daysToInicet,
-  daysToNeetPg,
-}: {
-  daysToInicet: number;
-  daysToNeetPg: number;
-}) {
-  const pulseAnim = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    let animation: Animated.CompositeAnimation | null = null;
-    const task = InteractionManager.runAfterInteractions(() => {
-      animation = Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 0.4,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ]),
-      );
-      animation.start();
-    });
-    return () => {
-      task.cancel();
-      animation?.stop();
-    };
-  }, [pulseAnim]);
-
-  return (
-    <View
-      style={styles.examCountInline}
-      testID="inicet-countdown"
-      accessibilityRole="text"
-      accessibilityLabel={`INICET in ${daysToInicet} days, NEET-PG in ${daysToNeetPg} days.`}
-    >
-      <Text style={styles.examInlineLabel}>INICET </Text>
-      <Animated.Text
-        style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}
-      >
-        {daysToInicet}
-      </Animated.Text>
-      <Text style={styles.examInlineLabel}> days · NEET-PG </Text>
-      <Animated.Text
-        style={[styles.examInlineDays, { color: n.colors.warning, opacity: pulseAnim }]}
-      >
-        {daysToNeetPg}
-      </Animated.Text>
-      <Text style={styles.examInlineLabel}> days</Text>
-    </View>
-  );
-}
-
 /** Lightweight skeleton for Home to show during transitions */
 function HomeSkeleton() {
   return (
@@ -200,7 +143,7 @@ function HomeSkeleton() {
       </View>
 
       {/* Stats Bar Skeleton */}
-      <View style={[styles.statsBar, { opacity: 0.2 }]}>
+      <View style={{ opacity: 0.2, marginBottom: n.spacing.md }}>
         <View
           style={{ width: '100%', height: 60, backgroundColor: n.colors.border, borderRadius: 12 }}
         />
@@ -285,32 +228,15 @@ function HomeScreenContent() {
   const [mood, setMood] = useState<Mood>('good');
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [sessionResumeValid, setSessionResumeValid] = useState(false);
+  const [entryComplete, setEntryComplete] = useState(false);
   const moreAnim = useRef(new Animated.Value(0)).current;
-  const flameScale = useRef(new Animated.Value(1)).current;
   const lastHomeFocusReloadAtRef = useRef(0);
-
-  useEffect(() => {
-    let loop: Animated.CompositeAnimation | null = null;
-    const task = InteractionManager.runAfterInteractions(() => {
-      loop = Animated.loop(
-        Animated.sequence([
-          Animated.timing(flameScale, { toValue: 1.15, duration: 600, useNativeDriver: true }),
-          Animated.timing(flameScale, { toValue: 0.95, duration: 500, useNativeDriver: true }),
-          Animated.timing(flameScale, { toValue: 1, duration: 400, useNativeDriver: true }),
-        ]),
-      );
-      loop.start();
-    });
-    return () => {
-      task.cancel();
-      loop?.stop();
-    };
-  }, [flameScale]);
 
   // Added from UI-UX audit branch
 
   useFocusEffect(
     useCallback(() => {
+      setEntryComplete(false);
       const task = InteractionManager.runAfterInteractions(() => {
         const now = Date.now();
         if (now - lastHomeFocusReloadAtRef.current > HOME_FOCUS_RELOAD_THROTTLE_MS) {
@@ -328,7 +254,10 @@ function HomeScreenContent() {
           setSessionResumeValid(false);
         }
       });
-      return () => task.cancel();
+      return () => {
+        task.cancel();
+        setEntryComplete(false);
+      };
     }, [reloadHomeDashboard]),
   );
 
@@ -525,215 +454,210 @@ function HomeScreenContent() {
         contentContainerStyle={styles.scrollContent}
       >
         <ResponsiveContainer style={styles.content}>
-          {/* ── Header row: greeting + AI status ── */}
-          <View style={styles.headerRow}>
-            <View style={styles.headerLeft}>
-              <Text style={styles.greetingText}>
-                {greeting}, <Text style={styles.greetingName}>{firstName}</Text>
-              </Text>
-              <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} />
-            </View>
-            <View style={styles.headerRight}>
-              <AiStatusIndicator profile={profile} />
-              <TouchableOpacity
-                style={styles.settingsBtn}
-                onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'Settings' })}
-                accessibilityRole="button"
-                accessibilityLabel="Open settings"
-              >
-                <Ionicons name="settings-sharp" size={22} color={n.colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* ── Hero: Start button ── */}
-          <View style={styles.heroSection}>
-            <StartButton
-              ref={startButtonRef}
-              onPress={heroCta.onPress}
-              label={heroCta.label}
-              sublabel={heroCta.sublabel}
-              hidden={bootPhase !== 'done'}
-            />
-          </View>
-
-          {/* ── Unified stats bar ── */}
-          <LinearSurface compact style={styles.statsBar}>
-            <View style={styles.statsBarContent}>
-              {/* Today progress */}
-              <View style={styles.statsBarItemCenter}>
-                <View style={styles.statsRingWrap}>
-                  <Svg width={RING_SIZE} height={RING_SIZE}>
-                    <Circle
-                      cx={RING_SIZE / 2}
-                      cy={RING_SIZE / 2}
-                      r={RADIUS}
-                      stroke={n.colors.border}
-                      strokeWidth={STROKE_WIDTH}
-                      fill="none"
-                    />
-                    <Circle
-                      cx={RING_SIZE / 2}
-                      cy={RING_SIZE / 2}
-                      r={RADIUS}
-                      stroke={n.colors.accent}
-                      strokeWidth={STROKE_WIDTH}
-                      fill="none"
-                      strokeDasharray={`${CIRCUMFERENCE}`}
-                      strokeDashoffset={CIRCUMFERENCE - (CIRCUMFERENCE * progressClamped) / 100}
-                      strokeLinecap="round"
-                      rotation="-90"
-                      origin={`${RING_SIZE / 2}, ${RING_SIZE / 2}`}
-                    />
-                  </Svg>
-                  <Text style={styles.ringPercentText}>{progressClamped}%</Text>
+          <ScreenMotion style={styles.motionShell} isEntryComplete={() => setEntryComplete(true)}>
+            <StaggeredEntrance index={0}>
+              <View style={styles.headerRow}>
+                <View style={styles.headerLeft}>
+                  <LinearText variant="title" style={styles.greetingText}>
+                    {greeting},{' '}
+                    <LinearText variant="title" style={styles.greetingName}>
+                      {firstName}
+                    </LinearText>
+                  </LinearText>
+                  <ExamCountdownChips daysToInicet={daysToInicet} daysToNeetPg={daysToNeetPg} />
                 </View>
-                <Text style={styles.statsLabel}>
-                  {todayMinutes}/{profile.dailyGoalMinutes || 120}m
-                </Text>
-              </View>
-              <View style={styles.statsBarDivider} />
-              {/* Streak */}
-              <View style={styles.statsBarItemCenter}>
-                <View style={styles.flameWrap}>
-                  <Animated.View style={{ transform: [{ scale: flameScale }] }}>
-                    <Ionicons name="flame" size={30} color={n.colors.warning} />
-                  </Animated.View>
-                  <Text style={styles.flameNumber}>{profile.streakCurrent}</Text>
+                <View style={styles.headerRight}>
+                  <AiStatusIndicator profile={profile} />
+                  <TouchableOpacity
+                    style={styles.settingsBtn}
+                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'Settings' })}
+                    accessibilityRole="button"
+                    accessibilityLabel="Open settings"
+                  >
+                    <Ionicons name="settings-sharp" size={22} color={n.colors.textSecondary} />
+                  </TouchableOpacity>
                 </View>
-                <Text style={styles.statsLabel}>streak</Text>
               </View>
-              <View style={styles.statsBarDivider} />
-              {/* Level */}
-              <View style={styles.statsBarItemCenter}>
-                <Text style={styles.statsValue}>Level {levelInfo.level}</Text>
-                <Text style={styles.statsLabel}>{completedSessions} done</Text>
+            </StaggeredEntrance>
+
+            <StaggeredEntrance index={1}>
+              <View style={styles.heroSection}>
+                <StartButton
+                  ref={startButtonRef}
+                  onPress={heroCta.onPress}
+                  label={heroCta.label}
+                  sublabel={heroCta.sublabel}
+                  hidden={bootPhase !== 'done'}
+                />
               </View>
-            </View>
-          </LinearSurface>
+            </StaggeredEntrance>
 
-          {loadError && (
-            <View style={styles.loadErrorRow}>
-              <Text style={styles.loadErrorText}>Couldn&apos;t load agenda.</Text>
-              <TouchableOpacity
-                onPress={() => reloadHomeDashboard()}
-                style={styles.retryButton}
-                accessibilityRole="button"
-                accessibilityLabel="Retry loading"
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            <StaggeredEntrance index={2}>
+              <CompactQuickStatsBar
+                progressPercent={progressClamped}
+                todayMinutes={todayMinutes}
+                dailyGoal={profile.dailyGoalMinutes || 120}
+                streak={profile.streakCurrent}
+                level={levelInfo.level}
+                completedSessions={completedSessions}
+              />
+            </StaggeredEntrance>
 
-          <View style={[styles.gridLandscape, styles.twoColumnGrid]}>
-            <View style={styles.leftColumn}>
-              <NextLectureSection />
-            </View>
+            {loadError && (
+              <View style={styles.loadErrorRow}>
+                <LinearText variant="bodySmall" tone="error" style={styles.loadErrorText}>
+                  Couldn&apos;t load agenda.
+                </LinearText>
+                <TouchableOpacity
+                  onPress={() => reloadHomeDashboard()}
+                  style={styles.retryButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry loading"
+                >
+                  <LinearText variant="label" tone="error" style={styles.retryButtonText}>
+                    Retry
+                  </LinearText>
+                </TouchableOpacity>
+              </View>
+            )}
 
-            <View style={styles.rightColumn}>
-              <Section label="DO THIS NOW" accessibilityLabel="Do this now">
-                {weakTopics.length === 0 ? (
-                  <TouchableOpacity
-                    style={styles.emptySectionTouchable}
-                    onPress={() => navigation.navigate('Session', { mood })}
-                    accessibilityRole="button"
-                    accessibilityLabel="Start a session to get suggestions"
-                  >
-                    <Text style={styles.emptySectionText}>
-                      No weak topic highlighted — start a session or open Study Plan.
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  weakTopics.slice(0, 1).map((t) => (
-                    <LinearSurface compact key={t.id} style={styles.agendaItemWrap}>
-                      <AgendaItem
-                        time="Now"
-                        title={t.name}
-                        type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
-                        subjectName={t.subjectName}
-                        priority={t.inicetPriority}
-                        rationale={homeSelectionReasonFromTopic(
-                          t,
-                          t.progress.status === 'unseen' ? 'new' : 'deep_dive',
-                        )}
-                        onPress={() =>
-                          navigation.navigate('Session', {
-                            mood,
-                            focusTopicId: t.id,
-                            preferredActionType:
-                              t.progress.status === 'unseen' ? 'study' : 'deep_dive',
-                          })
-                        }
-                      />
-                    </LinearSurface>
-                  ))
-                )}
-              </Section>
-              <Section label="UP NEXT" accessibilityLabel="Up next">
-                {todayTasks.length === 0 ? (
-                  <TouchableOpacity
-                    onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
-                    activeOpacity={0.7}
-                    accessibilityRole="button"
-                    accessibilityLabel="Open Study Plan"
-                  >
-                    <LinearSurface compact style={styles.agendaItemWrap}>
-                      <Text style={styles.emptySectionText}>
-                        Nothing scheduled — tap to open Study Plan.
-                      </Text>
-                      <View style={styles.seeAllButton}>
-                        <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                        <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
-                      </View>
-                    </LinearSurface>
-                  </TouchableOpacity>
-                ) : (
-                  <>
-                    {todayTasks.slice(0, 2).map((t, i) => (
-                      <LinearSurface compact key={i} style={styles.agendaItemWrap}>
-                        <AgendaItem
-                          time={t.timeLabel.split(' ')[0]}
-                          title={t.topic.name}
-                          type={
-                            t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new')
-                          }
-                          subjectName={t.topic.subjectName}
-                          priority={t.topic.inicetPriority}
-                          rationale={homeSelectionReasonFromTopic(
-                            t.topic,
-                            t.type === 'study' ? 'new' : (t.type as 'review' | 'deep_dive' | 'new'),
-                          )}
-                          onPress={() =>
-                            navigation.navigate('Session', {
-                              mood,
-                              focusTopicId: t.topic.id,
-                              preferredActionType: t.type,
-                              forcedMinutes: t.duration,
-                            })
-                          }
-                        />
-                      </LinearSurface>
-                    ))}
-                    {todayTasks.length > 2 && (
+            <StaggeredEntrance index={3}>
+              <View style={[styles.gridLandscape, styles.twoColumnGrid]}>
+                <View style={styles.leftColumn}>
+                  <NextLectureSection />
+                </View>
+
+                <View style={styles.rightColumn}>
+                  <Section label="DO THIS NOW" accessibilityLabel="Do this now">
+                    {weakTopics.length === 0 ? (
                       <TouchableOpacity
-                        style={styles.seeAllButtonStandalone}
+                        style={styles.emptySectionTouchable}
+                        onPress={() => navigation.navigate('Session', { mood })}
+                        accessibilityRole="button"
+                        accessibilityLabel="Start a session to get suggestions"
+                      >
+                        <LinearText
+                          variant="bodySmall"
+                          tone="secondary"
+                          style={styles.emptySectionText}
+                        >
+                          No weak topic highlighted — start a session or open Study Plan.
+                        </LinearText>
+                      </TouchableOpacity>
+                    ) : (
+                      weakTopics.slice(0, 1).map((t) => (
+                        <LinearSurface compact key={t.id} style={styles.agendaItemWrap}>
+                          <AgendaItem
+                            time="Now"
+                            title={t.name}
+                            type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
+                            subjectName={t.subjectName}
+                            priority={t.inicetPriority}
+                            rationale={homeSelectionReasonFromTopic(
+                              t,
+                              t.progress.status === 'unseen' ? 'new' : 'deep_dive',
+                            )}
+                            onPress={() =>
+                              navigation.navigate('Session', {
+                                mood,
+                                focusTopicId: t.id,
+                                preferredActionType:
+                                  t.progress.status === 'unseen' ? 'study' : 'deep_dive',
+                              })
+                            }
+                          />
+                        </LinearSurface>
+                      ))
+                    )}
+                  </Section>
+                  <Section label="UP NEXT" accessibilityLabel="Up next">
+                    {todayTasks.length === 0 ? (
+                      <TouchableOpacity
                         onPress={() => tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })}
                         activeOpacity={0.7}
                         accessibilityRole="button"
-                        accessibilityLabel="See full study plan"
+                        accessibilityLabel="Open Study Plan"
                       >
-                        <View style={styles.seeAllButton}>
-                          <Text style={styles.seeAllButtonText}>Open study plan</Text>
-                          <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
-                        </View>
+                        <LinearSurface compact style={styles.agendaItemWrap}>
+                          <LinearText
+                            variant="bodySmall"
+                            tone="secondary"
+                            style={styles.emptySectionText}
+                          >
+                            Nothing scheduled — tap to open Study Plan.
+                          </LinearText>
+                          <View style={styles.seeAllButton}>
+                            <LinearText
+                              variant="label"
+                              tone="accent"
+                              style={styles.seeAllButtonText}
+                            >
+                              Open study plan
+                            </LinearText>
+                            <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
+                          </View>
+                        </LinearSurface>
                       </TouchableOpacity>
+                    ) : (
+                      <>
+                        {todayTasks.slice(0, 2).map((t, i) => (
+                          <LinearSurface compact key={i} style={styles.agendaItemWrap}>
+                            <AgendaItem
+                              time={t.timeLabel.split(' ')[0]}
+                              title={t.topic.name}
+                              type={
+                                t.type === 'study'
+                                  ? 'new'
+                                  : (t.type as 'review' | 'deep_dive' | 'new')
+                              }
+                              subjectName={t.topic.subjectName}
+                              priority={t.topic.inicetPriority}
+                              rationale={homeSelectionReasonFromTopic(
+                                t.topic,
+                                t.type === 'study'
+                                  ? 'new'
+                                  : (t.type as 'review' | 'deep_dive' | 'new'),
+                              )}
+                              onPress={() =>
+                                navigation.navigate('Session', {
+                                  mood,
+                                  focusTopicId: t.topic.id,
+                                  preferredActionType: t.type,
+                                  forcedMinutes: t.duration,
+                                })
+                              }
+                            />
+                          </LinearSurface>
+                        ))}
+                        {todayTasks.length > 2 && (
+                          <TouchableOpacity
+                            style={styles.seeAllButtonStandalone}
+                            onPress={() =>
+                              tabsNavigation?.navigate('MenuTab', { screen: 'StudyPlan' })
+                            }
+                            activeOpacity={0.7}
+                            accessibilityRole="button"
+                            accessibilityLabel="See full study plan"
+                          >
+                            <View style={styles.seeAllButton}>
+                              <LinearText
+                                variant="label"
+                                tone="accent"
+                                style={styles.seeAllButtonText}
+                              >
+                                Open study plan
+                              </LinearText>
+                              <Ionicons name="chevron-forward" size={14} color={n.colors.accent} />
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </Section>
-            </View>
-          </View>
+                  </Section>
+                </View>
+              </View>
+            </StaggeredEntrance>
+          </ScreenMotion>
 
           <TouchableOpacity
             testID="tools-library-header"
@@ -751,7 +675,9 @@ function HomeScreenContent() {
               moreExpanded ? 'Collapse Tools and Advanced' : 'Expand Tools and Advanced'
             }
           >
-            <Text style={styles.sectionLabel}>TOOLS & ADVANCED</Text>
+            <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
+              TOOLS & ADVANCED
+            </LinearText>
             <Animated.View
               style={{
                 transform: [
@@ -779,7 +705,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Study Plan"
                 >
                   <Ionicons name="calendar-outline" size={18} color={n.colors.accent} />
-                  <Text style={styles.toolRowText}>Study Plan</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Study Plan
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -791,7 +719,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Notes Vault"
                 >
                   <Ionicons name="library-outline" size={18} color={n.colors.success} />
-                  <Text style={styles.toolRowText}>Notes Vault</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Notes Vault
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -803,7 +733,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Inertia"
                 >
                   <Ionicons name="flash-outline" size={18} color={n.colors.warning} />
-                  <Text style={styles.toolRowText}>Inertia</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Inertia
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -815,7 +747,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Guru Chat"
                 >
                   <Ionicons name="chatbubbles-outline" size={18} color={n.colors.accent} />
-                  <Text style={styles.toolRowText}>Guru Chat</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Guru Chat
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -829,7 +763,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Task Paralysis helper"
                 >
                   <Ionicons name="flash-outline" size={18} color={n.colors.textMuted} />
-                  <Text style={styles.toolRowText}>Task Paralysis</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Task Paralysis
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -841,7 +777,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Harassment Mode"
                 >
                   <Ionicons name="alert-circle-outline" size={18} color={n.colors.textMuted} />
-                  <Text style={styles.toolRowText}>Harassment Mode</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Harassment Mode
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -853,7 +791,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Nightstand Mode"
                 >
                   <Ionicons name="moon-outline" size={18} color={n.colors.textMuted} />
-                  <Text style={styles.toolRowText}>Nightstand Mode</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Nightstand Mode
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -865,7 +805,9 @@ function HomeScreenContent() {
                   accessibilityLabel="Open Flagged Review"
                 >
                   <Ionicons name="flag-outline" size={18} color={n.colors.textMuted} />
-                  <Text style={styles.toolRowText}>Flagged Review</Text>
+                  <LinearText variant="bodySmall" style={styles.toolRowText}>
+                    Flagged Review
+                  </LinearText>
                   <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
               </LinearSurface>
@@ -876,183 +818,6 @@ function HomeScreenContent() {
     </SafeAreaView>
   );
 }
-
-function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfile | null> }) {
-  const runtime = useAiRuntimeStatus();
-  const pulseAnim = useRef(new Animated.Value(0)).current;
-  const [elapsed, setElapsed] = useState(0);
-  const isActive = runtime.activeCount > 0;
-
-  useEffect(() => {
-    let loop: Animated.CompositeAnimation | null = null;
-    const task = InteractionManager.runAfterInteractions(() => {
-      if (isActive) {
-        loop = Animated.loop(
-          Animated.sequence([
-            Animated.timing(pulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-            Animated.timing(pulseAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
-          ]),
-        );
-        loop.start();
-      } else {
-        pulseAnim.setValue(0);
-      }
-    });
-    return () => {
-      task.cancel();
-      loop?.stop();
-    };
-  }, [isActive, pulseAnim]);
-
-  useEffect(() => {
-    if (!isActive) {
-      setElapsed(0);
-      return;
-    }
-    const start = runtime.active[0]?.startedAt ?? Date.now();
-    setElapsed(Math.floor((Date.now() - start) / 1000));
-    const id = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000);
-    return () => clearInterval(id);
-  }, [isActive, runtime.active]);
-
-  // Same “available provider” rules as routing / Guru Chat (incl. OAuth flags + bundled keys).
-  const keys = getApiKeys(profile);
-  const providers: { name: string; on: boolean }[] = [
-    { name: 'ChatGPT', on: keys.chatgptConnected },
-    { name: 'Copilot', on: keys.githubCopilotConnected },
-    { name: 'GitLab', on: keys.gitlabDuoConnected },
-    { name: 'Poe', on: keys.poeConnected },
-    { name: 'Groq', on: !!keys.groqKey },
-    { name: 'Gemini', on: !!keys.geminiKey },
-    { name: 'OR', on: !!keys.orKey },
-    { name: 'DeepSeek', on: !!keys.deepseekKey },
-    { name: 'AgentR', on: !!keys.agentRouterKey },
-    { name: 'GitHub', on: !!keys.githubModelsPat },
-    { name: 'Local', on: isLocalLlmUsable(profile) },
-  ];
-  const onlineProviders = providers.filter((p) => p.on);
-  const hasAnyStt =
-    !!(profile.huggingFaceToken?.trim() || BUNDLED_HF_TOKEN) ||
-    !!(profile.useLocalWhisper && profile.localWhisperPath);
-
-  // Active request banner
-  const activeReq = runtime.active[0];
-  const activeBanner = isActive
-    ? `${activeReq?.modelUsed?.split('/').pop() ?? activeReq?.backend ?? 'AI'}${
-        elapsed > 0 ? ` ${elapsed}s` : ''
-      }`
-    : runtime.lastError
-      ? `Err: ${runtime.lastError.slice(0, 100)}`
-      : null;
-
-  const bannerColor = isActive ? n.colors.accent : n.colors.warning;
-  const glowOpacity = pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.4] });
-
-  return (
-    <View style={aiStyles.wrap}>
-      {/* Active / error banner */}
-      {activeBanner && (
-        <View style={[aiStyles.banner, { borderColor: bannerColor }]}>
-          {isActive && (
-            <Animated.View
-              style={[aiStyles.bannerGlow, { backgroundColor: bannerColor, opacity: glowOpacity }]}
-            />
-          )}
-          <View style={[aiStyles.bannerDot, { backgroundColor: bannerColor }]} />
-          <Text style={[aiStyles.bannerText, { color: bannerColor }]} numberOfLines={1}>
-            {activeBanner}
-          </Text>
-        </View>
-      )}
-      {/* Provider tags row */}
-      <View style={aiStyles.tagRow}>
-        {onlineProviders.length > 0 ? (
-          onlineProviders.map((p) => (
-            <View key={p.name} style={aiStyles.tag}>
-              <View style={[aiStyles.tagDot, { backgroundColor: n.colors.success }]} />
-              <Text style={aiStyles.tagText}>{p.name}</Text>
-            </View>
-          ))
-        ) : (
-          <View style={aiStyles.tag}>
-            <View
-              style={[
-                aiStyles.tagDot,
-                { backgroundColor: hasAnyStt ? n.colors.warning : n.colors.error },
-              ]}
-            />
-            <Text style={[aiStyles.tagText, { color: n.colors.error }]}>
-              {hasAnyStt ? 'STT only' : 'No AI'}
-            </Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
-
-const aiStyles = StyleSheet.create({
-  wrap: {
-    alignItems: 'flex-end',
-    gap: 4,
-    flexShrink: 1,
-  },
-  banner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: n.radius.sm,
-    backgroundColor: n.colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
-  },
-  bannerGlow: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    opacity: 0.12,
-  },
-  bannerDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  bannerText: {
-    ...n.typography.meta,
-    fontWeight: '700',
-  },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 3,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: n.radius.sm,
-    backgroundColor: n.colors.surface,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: n.colors.border,
-  },
-  tagDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-  },
-  tagText: {
-    ...n.typography.meta,
-    fontSize: 9,
-    color: n.colors.textMuted,
-  },
-});
 
 function Section({
   label,
@@ -1069,17 +834,13 @@ function Section({
       accessibilityRole="summary"
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Text style={styles.sectionLabel}>{label}</Text>
+      <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
+        {label}
+      </LinearText>
       {children}
     </View>
   );
 }
-
-// ── Progress ring constants ──
-const RING_SIZE = 36;
-const STROKE_WIDTH = 4;
-const RADIUS = (RING_SIZE - STROKE_WIDTH) / 2;
-const CIRCUMFERENCE = RADIUS * 2 * Math.PI;
 
 // ── Consistent spacing scale ──
 const HP = n.spacing.xl; // 24 — horizontal page padding
@@ -1090,6 +851,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
   scrollContent: { paddingBottom: 40 },
   content: { paddingHorizontal: HP, paddingTop: n.spacing.md },
+  motionShell: {
+    width: '100%',
+  },
 
   // ── Header ──
   headerRow: {
@@ -1114,91 +878,12 @@ const styles = StyleSheet.create({
     color: n.colors.textPrimary,
   },
 
-  // ── Exam countdown inline ──
-  examCountInline: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    marginTop: 6,
-    gap: 2,
-  },
-  examInlineLabel: {
-    color: n.colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-  },
-  examInlineDays: {
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: -0.3,
-  },
-
   // ── Hero section ──
   heroSection: {
     alignItems: 'center',
     marginTop: -8,
     paddingTop: 0,
     paddingBottom: n.spacing.lg,
-  },
-
-  // ── Stats bar ──
-  statsBar: {
-    marginBottom: n.spacing.md,
-    alignSelf: 'center',
-    width: '85%',
-    maxWidth: 360,
-  },
-  statsBarContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-  },
-  statsRingWrap: {
-    width: RING_SIZE,
-    height: RING_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ringPercentText: {
-    position: 'absolute',
-    color: n.colors.textPrimary,
-    fontSize: 10,
-    fontWeight: '800',
-  },
-  flameWrap: {
-    width: 32,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  flameNumber: {
-    position: 'absolute',
-    color: n.colors.textPrimary,
-    fontSize: 11,
-    fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-  },
-  statsBarItemCenter: {
-    alignItems: 'center',
-    gap: 2,
-    flex: 1,
-  },
-  statsValue: {
-    color: n.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  statsLabel: {
-    color: n.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  statsBarDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: 'rgba(255,255,255,0.06)',
   },
 
   // ── Agenda item wrapper ──

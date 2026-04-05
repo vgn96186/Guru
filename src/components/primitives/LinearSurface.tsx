@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     top: 0,
-    height: StyleSheet.hairlineWidth,
+    height: 1,
     backgroundColor: linearTheme.colors.borderHighlight,
   },
   frostLayer: {
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   tintLayer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: linearTheme.colors.surfaceTint,
-    opacity: 0.36,
+    opacity: 0.24,
   },
   content: {
     padding: 0,

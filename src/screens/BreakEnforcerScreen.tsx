@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Text, StyleSheet, BackHandler, TouchableOpacity, StatusBar } from 'react-native';
+import { StyleSheet, BackHandler, TouchableOpacity, StatusBar } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -87,19 +88,21 @@ export default function BreakEnforcerScreen() {
       <SafeAreaView style={styles.safeError}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.error} />
         <ResponsiveContainer style={styles.container}>
-          <Text style={styles.emoji}>🚨</Text>
-          <Text style={styles.titleError}>YOUR BREAK IS OVER</Text>
-          <Text style={styles.subError}>
+          <LinearText style={styles.emoji}>🚨</LinearText>
+          <LinearText style={styles.titleError}>YOUR BREAK IS OVER</LinearText>
+          <LinearText style={styles.subError}>
             Drop this phone. Walk back to your tablet. Press "Resume Now".
-          </Text>
-          <Text style={styles.warning}>
+          </LinearText>
+          <LinearText style={styles.warning}>
             I will keep sending you push notifications every 15 seconds until the tablet signals
             that you are watching the lecture.
-          </Text>
+          </LinearText>
 
           {showFallback && (
             <TouchableOpacity style={styles.fallbackBtn} onPress={handleReturnToLecture}>
-              <Text style={styles.fallbackBtnText}>Tablet isn't syncing? Resume Manually.</Text>
+              <LinearText style={styles.fallbackBtnText}>
+                Tablet isn't syncing? Resume Manually.
+              </LinearText>
             </TouchableOpacity>
           )}
         </ResponsiveContainer>
@@ -111,44 +114,50 @@ export default function BreakEnforcerScreen() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ResponsiveContainer style={styles.container}>
-        <Text style={styles.emoji}>☕</Text>
-        <Text style={styles.title}>Break Time</Text>
-        <Text style={styles.sub}>
+        <LinearText style={styles.emoji}>☕</LinearText>
+        <LinearText style={styles.title}>Break Time</LinearText>
+        <LinearText style={styles.sub}>
           Relax. When this timer hits zero, you'll get nudged to resume your lecture.
-        </Text>
+        </LinearText>
 
-        <Text style={styles.timer}>
+        <LinearText style={styles.timer}>
           {mins}:{secs.toString().padStart(2, '0')}
-        </Text>
+        </LinearText>
 
-        <Text style={styles.footerText}>Waiting for Tablet signal...</Text>
+        <LinearText style={styles.footerText}>Waiting for Tablet signal...</LinearText>
       </ResponsiveContainer>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F0F14' },
+  safe: { flex: 1, backgroundColor: n.colors.background },
   safeError: { flex: 1, backgroundColor: '#FF0000' },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emoji: { fontSize: 80, marginBottom: 24 },
   title: {
-    color: '#4CAF50',
+    color: n.colors.success,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 12,
     textAlign: 'center',
   },
   titleError: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 40,
     fontWeight: '900',
     marginBottom: 24,
     textAlign: 'center',
   },
-  sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 48, lineHeight: 24 },
+  sub: {
+    color: n.colors.textMuted,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 48,
+    lineHeight: 24,
+  },
   subError: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 24,
     textAlign: 'center',
     fontWeight: '800',
@@ -163,7 +172,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   timer: {
-    color: '#fff',
+    color: n.colors.textPrimary,
     fontSize: 80,
     fontWeight: '900',
     fontVariant: ['tabular-nums'],
@@ -178,7 +187,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4CAF5066',
   },
-  manualResumeBtnText: { color: '#4CAF50', fontSize: 15, fontWeight: '700' },
+  manualResumeBtnText: { color: n.colors.success, fontSize: 15, fontWeight: '700' },
   fallbackBtn: {
     marginTop: 32,
     paddingHorizontal: 24,
@@ -188,5 +197,10 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff44',
     backgroundColor: '#ffffff11',
   },
-  fallbackBtnText: { color: '#fff', fontSize: 14, fontWeight: '600', textAlign: 'center' },
+  fallbackBtnText: {
+    color: n.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });

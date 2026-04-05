@@ -1,6 +1,5 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Sharing from 'expo-sharing';
 import { Alert, Platform } from 'react-native';
 import { zip, unzip } from 'react-native-zip-archive';
 import { getDb, resetDbSingleton, walCheckpoint, closeDbGracefully } from '../db/database';
@@ -302,16 +301,14 @@ export async function exportUnifiedBackup(options?: Partial<RestoreOptions>): Pr
     // Clean up temp directory
     await FileSystem.deleteAsync(tempBackupDir, { idempotent: true });
 
-    // Share the backup file
-    if (await Sharing.isAvailableAsync()) {
-      await Sharing.shareAsync(backupPath, {
-        mimeType: 'application/octet-stream',
-        dialogTitle: 'Save Guru Backup',
-      });
-      return true;
-    }
-
-    Alert.alert('Backup Created', `Backup saved to:\n${backupPath}`);
+    await shareBackupFileOrAlert(backupPath, {
+      mimeType: 'application/octet-stream',
+      dialogTitle: 'Save Guru Backup',
+      unavailableAlert: {
+        title: 'Backup Created',
+        message: `Backup saved to:\n${backupPath}`,
+      },
+    });
     return true;
   } catch (err) {
     console.error('[Backup] Export failed:', err);

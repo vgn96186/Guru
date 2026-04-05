@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, StatusBar, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, StatusBar, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as FileSystem from 'expo-file-system/legacy';
 import { useAppStore } from '../store/useAppStore';
@@ -366,7 +366,7 @@ export default function LocalModelScreen() {
                     variant="glassTinted"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'llm')}
-                    leftIcon={<Text style={styles.buttonEmoji}>✅</Text>}
+                    leftIcon={<LinearText style={styles.buttonEmoji}>✅</LinearText>}
                   />
                 ) : (
                   <LinearButton
@@ -374,7 +374,7 @@ export default function LocalModelScreen() {
                     style={styles.downloadBtn}
                     variant="primary"
                     onPress={() => handleDownload(model, 'llm')}
-                    leftIcon={<Text style={styles.buttonEmoji}>⬇️</Text>}
+                    leftIcon={<LinearText style={styles.buttonEmoji}>⬇️</LinearText>}
                   />
                 )}
               </LinearSurface>
@@ -451,7 +451,7 @@ export default function LocalModelScreen() {
                     variant="glassTinted"
                     style={styles.downloadBtn}
                     onPress={() => handleDownload(model, 'whisper')}
-                    leftIcon={<Text style={styles.buttonEmoji}>✅</Text>}
+                    leftIcon={<LinearText style={styles.buttonEmoji}>✅</LinearText>}
                   />
                 ) : (
                   <LinearButton
@@ -459,7 +459,7 @@ export default function LocalModelScreen() {
                     style={styles.downloadBtn}
                     variant="primary"
                     onPress={() => handleDownload(model, 'whisper')}
-                    leftIcon={<Text style={styles.buttonEmoji}>⬇️</Text>}
+                    leftIcon={<LinearText style={styles.buttonEmoji}>⬇️</LinearText>}
                   />
                 )}
               </LinearSurface>

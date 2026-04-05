@@ -1,38 +1,65 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
+import { decorativeIdleDelayMs, useReducedMotion } from '../../motion';
 import { linearTheme as n } from '../../theme/linearTheme';
 
 interface HeroCardProps {
   daysToInicet: number;
   daysToNeetPg: number;
+  entryComplete?: boolean;
 }
 
-export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: HeroCardProps) {
+export default React.memo(function HeroCard({
+  daysToInicet,
+  daysToNeetPg,
+  entryComplete = false,
+}: HeroCardProps) {
   const pulseAnim = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+  const isInicetUrgent = daysToInicet <= 60;
+  const isNeetUrgent = daysToNeetPg <= 60;
+  const isAnyUrgent = isInicetUrgent || isNeetUrgent;
 
   useEffect(() => {
+    if (!entryComplete || !isAnyUrgent || reducedMotion) {
+      pulseAnim.stopAnimation();
+      pulseAnim.setValue(0);
+      return undefined;
+    }
+
     const animation = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 2000,
+          duration: 2200,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
         Animated.timing(pulseAnim, {
           toValue: 0,
-          duration: 2000,
+          duration: 2200,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: false,
         }),
       ]),
     );
-    animation.start();
-    return () => animation.stop();
-  }, [pulseAnim]);
+    const timer = setTimeout(() => animation.start(), decorativeIdleDelayMs);
+    return () => {
+      clearTimeout(timer);
+      animation.stop();
+    };
+  }, [entryComplete, isAnyUrgent, pulseAnim, reducedMotion]);
 
   const urgentColor = pulseAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [n.colors.textPrimary, n.colors.warning],
   });
+  const getUrgentDayStyle = (isUrgent: boolean) =>
+    isUrgent
+      ? entryComplete && !reducedMotion
+        ? { color: urgentColor }
+        : { color: n.colors.warning }
+      : undefined;
 
   return (
     <View
@@ -44,7 +71,7 @@ export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: Hero
       <View style={styles.row}>
         <View style={styles.examBlock}>
           <Text style={styles.examLabel}>INICET</Text>
-          <Animated.Text style={[styles.examDays, daysToInicet <= 60 && { color: urgentColor }]}>
+          <Animated.Text style={[styles.examDays, getUrgentDayStyle(isInicetUrgent)]}>
             {daysToInicet}
           </Animated.Text>
           <Text style={styles.examUnit}>days</Text>
@@ -52,7 +79,7 @@ export default React.memo(function HeroCard({ daysToInicet, daysToNeetPg }: Hero
         <View style={styles.divider} />
         <View style={styles.examBlock}>
           <Text style={styles.examLabel}>NEET-PG</Text>
-          <Animated.Text style={[styles.examDays, daysToNeetPg <= 60 && { color: urgentColor }]}>
+          <Animated.Text style={[styles.examDays, getUrgentDayStyle(isNeetUrgent)]}>
             {daysToNeetPg}
           </Animated.Text>
           <Text style={styles.examUnit}>days</Text>

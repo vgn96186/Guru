@@ -167,25 +167,57 @@ function repairTruncatedJson(raw: string): string {
 }
 
 export function normalizeRootForSchema<T>(value: unknown, schema: z.ZodType<T>): unknown {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  if (!value) return value;
+
+  // Pattern 0: Single-element array wrapping ([{ ... }])
+  if (Array.isArray(value) && value.length === 1) {
+    return normalizeRootForSchema(value[0], schema);
+  }
+
+  if (typeof value !== 'object' || Array.isArray(value)) return value;
 
   const v = value as Record<string, any>;
   const entries = Object.entries(v);
 
-  // Pattern 1: Single-key wrapping ({ "keypoints": { "type": "keypoints", ... } } or { "data": { ... } })
+  // Pattern 1: Single-key wrapping ({ "keypoints": { ... } } or { "subdural_hematoma": { ... } })
   if (entries.length === 1) {
     const [key, wrappedValue] = entries[0];
-
-    // If we're expecting an array but got { "items": [...] }, unwrap
-    if (schema instanceof z.ZodArray && Array.isArray(wrappedValue)) return wrappedValue;
 
     // If it's an object with a 'type' property inside, unwrap
     if (wrappedValue && typeof wrappedValue === 'object' && !Array.isArray(wrappedValue)) {
       if ('type' in (wrappedValue as any)) return wrappedValue;
+
+      // Heuristic: if the inner object has keys that we'd expect in medical responses, unwrap.
+      // This handles cases where the key is the topic name (e.g. { "subdural_hematoma": { "centerLabel": ... } })
+      const innerKeys = Object.keys(wrappedValue);
+      const isLikelyMindMap = innerKeys.some((k) =>
+        ['centerLabel', 'center_label', 'nodes'].includes(k),
+      );
+      const isLikelyQuiz = innerKeys.some((k) => ['questions', 'quiz'].includes(k.toLowerCase()));
+      const isLikelyContent = innerKeys.some((k) =>
+        ['paragraph', 'keypoints', 'mnemonics'].includes(k.toLowerCase()),
+      );
+
+      if (isLikelyMindMap || isLikelyQuiz || isLikelyContent) {
+        return wrappedValue;
+      }
     }
 
-    // Un-wrap common generic keys like "data", "result", "payload"
-    if (['data', 'result', 'payload', 'card', 'content'].includes(key.toLowerCase())) {
+    // Un-wrap common generic keys
+    const genericKeys = [
+      'data',
+      'result',
+      'payload',
+      'card',
+      'content',
+      'items',
+      'mind_map',
+      'mindmap',
+      'map',
+      'brain_map',
+      'response',
+    ];
+    if (genericKeys.includes(key.toLowerCase())) {
       return wrappedValue;
     }
   }
@@ -257,10 +289,20 @@ async function parseStructuredJsonWithTimeout<T>(
       for (const [candidateIndex, candidate] of candidates.entries()) {
         try {
           const json = JSON.parse(candidate);
-          const parsed = schema.parse(normalizeRootForSchema(json, schema));
+          const normalized = normalizeRootForSchema(json, schema);
+          if (__DEV__ && candidateIndex === 0) {
+            console.info(
+              '[AI_PARSE] candidate 0 normalized keys:',
+              Object.keys(normalized as object),
+            );
+          }
+          const parsed = schema.parse(normalized);
           logJsonParseSuccess({ candidateIndex, candidateLength: candidate.length });
           return parsed;
         } catch (err) {
+          if (err instanceof z.ZodError && (err as any).rawText === undefined) {
+            (err as any).rawText = raw; // Attach for the generator's trace.fail
+          }
           lastError = err as Error;
         }
       }

@@ -8,7 +8,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   Pressable,
   FlatList,
@@ -18,6 +17,7 @@ import {
   ActivityIndicator,
   AppState,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -368,12 +368,12 @@ export default function RecordingVaultScreen() {
             </View>
           )}
           <View style={styles.cardBody}>
-            <Text style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
+            <LinearText style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
               {item.name}
-            </Text>
-            <Text style={styles.cardMeta}>
+            </LinearText>
+            <LinearText style={styles.cardMeta}>
               {formatDate(item.date)} · {item.sizeMB} MB · {item.folder}
-            </Text>
+            </LinearText>
             {isProcessing && processingMsg ? (
               <View style={styles.statusRow}>
                 {processingState === 'transcribing' || processingState === 'saving' ? (
@@ -383,7 +383,7 @@ export default function RecordingVaultScreen() {
                     style={{ marginRight: 6 }}
                   />
                 ) : null}
-                <Text
+                <LinearText
                   style={[
                     styles.statusText,
                     isDone && { color: n.colors.success },
@@ -392,7 +392,7 @@ export default function RecordingVaultScreen() {
                   numberOfLines={2}
                 >
                   {processingMsg}
-                </Text>
+                </LinearText>
               </View>
             ) : null}
           </View>
@@ -552,14 +552,14 @@ export default function RecordingVaultScreen() {
         {/* Selection mode banner */}
         {isSelectionMode && (
           <View style={styles.selectionBanner}>
-            <Text style={styles.selectionText}>{selectedPaths.size} selected</Text>
+            <LinearText style={styles.selectionText}>{selectedPaths.size} selected</LinearText>
             <View style={styles.selectionActions}>
               <TouchableOpacity style={styles.selectionCancelBtn} onPress={cancelSelection}>
-                <Text style={styles.selectionCancelText}>Cancel</Text>
+                <LinearText style={styles.selectionCancelText}>Cancel</LinearText>
               </TouchableOpacity>
               <TouchableOpacity style={styles.selectionDeleteBtn} onPress={handleBatchDelete}>
                 <Ionicons name="trash-outline" size={14} color="#fff" />
-                <Text style={styles.selectionDeleteText}>Delete</Text>
+                <LinearText style={styles.selectionDeleteText}>Delete</LinearText>
               </TouchableOpacity>
             </View>
           </View>
@@ -575,9 +575,9 @@ export default function RecordingVaultScreen() {
             }}
           >
             <Ionicons name="lock-open-outline" size={18} color={n.colors.warning} />
-            <Text style={styles.permBannerText}>
+            <LinearText style={styles.permBannerText}>
               Grant "All files access" to scan all folders automatically.
-            </Text>
+            </LinearText>
             <Ionicons name="chevron-forward" size={16} color={n.colors.textMuted} />
           </TouchableOpacity>
         )}
@@ -592,9 +592,9 @@ export default function RecordingVaultScreen() {
                 onLongPress={() => handleRemoveFolder(f)}
               >
                 <Ionicons name="folder-outline" size={14} color={n.colors.accent} />
-                <Text style={styles.folderChipText} numberOfLines={2}>
+                <LinearText style={styles.folderChipText} numberOfLines={2}>
                   {f.label}
-                </Text>
+                </LinearText>
                 <TouchableOpacity onPress={() => handleRemoveFolder(f)} hitSlop={8}>
                   <Ionicons name="close-circle" size={16} color={n.colors.textMuted} />
                 </TouchableOpacity>
@@ -606,16 +606,16 @@ export default function RecordingVaultScreen() {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color={n.colors.accent} />
-            <Text style={styles.emptyText}>Scanning recordings...</Text>
+            <LinearText style={styles.emptyText}>Scanning recordings...</LinearText>
           </View>
         ) : recordings.length === 0 ? (
           <View style={styles.center}>
             <Ionicons name="mic-off-outline" size={48} color={n.colors.textMuted} />
-            <Text style={styles.emptyTitle}>No recordings found</Text>
-            <Text style={styles.emptyText}>
+            <LinearText style={styles.emptyTitle}>No recordings found</LinearText>
+            <LinearText style={styles.emptyText}>
               Lecture recordings appear here after you use the external app recording feature.
               {'\n\n'}Tap the folder icon above to browse for a folder.
-            </Text>
+            </LinearText>
           </View>
         ) : (
           <FlatList
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
   },
-  selectionDeleteText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  selectionDeleteText: { color: n.colors.textPrimary, fontSize: 13, fontWeight: '700' },
   permBanner: {
     flexDirection: 'row',
     alignItems: 'center',

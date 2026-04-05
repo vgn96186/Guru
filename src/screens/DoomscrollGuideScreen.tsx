@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
@@ -9,6 +8,7 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import LinearText from '../components/primitives/LinearText';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -77,23 +77,25 @@ export default function DoomscrollGuideScreen() {
       <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
       <ScrollView contentContainerStyle={styles.container}>
         <ResponsiveContainer style={{ alignItems: 'center' }}>
-          <Text style={styles.emoji}>📱</Text>
-          <Text style={styles.title}>The Ultimate Fix</Text>
-          <Text style={styles.sub}>
+          <LinearText style={styles.emoji}>📱</LinearText>
+          <LinearText style={styles.title}>The Ultimate Fix</LinearText>
+          <LinearText style={styles.sub}>
             If your brain refuses to open this app when you're procrastinating, you need to force
             the issue.
-          </Text>
+          </LinearText>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>🚨 Feature 1: Harassment Mode</Text>
-            <Text style={styles.cardText}>
+            <LinearText style={styles.cardTitle}>🚨 Feature 1: Harassment Mode</LinearText>
+            <LinearText style={styles.cardText}>
               About to open Instagram or YouTube? Tap the button below first. The app will schedule
               10 push notifications to fire every 3 minutes while you're scrolling.
-            </Text>
-            <Text style={styles.cardText}>Opening the app again cancels the bombardment.</Text>
+            </LinearText>
+            <LinearText style={styles.cardText}>
+              Opening the app again cancels the bombardment.
+            </LinearText>
 
             {/* Tone selector */}
-            <Text style={styles.toneLabel}>Notification Tone:</Text>
+            <LinearText style={styles.toneLabel}>Notification Tone:</LinearText>
             <View style={styles.toneRow}>
               {TONE_OPTIONS.map((opt) => (
                 <TouchableOpacity
@@ -105,15 +107,15 @@ export default function DoomscrollGuideScreen() {
                   accessibilityLabel={`Notification tone: ${opt.label}`}
                   accessibilityState={{ selected: selectedTone === opt.tone }}
                 >
-                  <Text style={styles.toneIcon}>{opt.icon}</Text>
-                  <Text
+                  <LinearText style={styles.toneIcon}>{opt.icon}</LinearText>
+                  <LinearText
                     style={[
                       styles.toneBtnText,
                       selectedTone === opt.tone && styles.toneBtnTextActive,
                     ]}
                   >
                     {opt.label}
-                  </Text>
+                  </LinearText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -128,9 +130,9 @@ export default function DoomscrollGuideScreen() {
               }
               accessibilityState={{ disabled: harassmentActive }}
             >
-              <Text style={styles.btnText}>
+              <LinearText style={styles.btnText}>
                 {harassmentActive ? '💣 Bombardment Armed' : 'Activate Harassment Mode'}
-              </Text>
+              </LinearText>
             </TouchableOpacity>
 
             {harassmentActive && (
@@ -140,51 +142,57 @@ export default function DoomscrollGuideScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Deactivate harassment mode"
               >
-                <Text style={styles.deactivateBtnText}>Deactivate Harassment Mode</Text>
+                <LinearText style={styles.deactivateBtnText}>Deactivate Harassment Mode</LinearText>
               </TouchableOpacity>
             )}
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>🔗 Feature 2: App Hijacking (OS Level)</Text>
-            <Text style={styles.cardText}>
+            <LinearText style={styles.cardTitle}>🔗 Feature 2: App Hijacking (OS Level)</LinearText>
+            <LinearText style={styles.cardText}>
               You can use your phone's built-in automation to automatically open this study app
               EVERY TIME you try to open a distraction app.
-            </Text>
+            </LinearText>
 
             {Platform.OS === 'ios' ? (
               <View style={styles.osBox}>
-                <Text style={styles.osTitle}>For iOS (Shortcuts App):</Text>
-                <Text style={styles.osStep}>1. Open the 'Shortcuts' app.</Text>
-                <Text style={styles.osStep}>2. Tap 'Automation' → '+' → 'App'.</Text>
-                <Text style={styles.osStep}>
+                <LinearText style={styles.osTitle}>For iOS (Shortcuts App):</LinearText>
+                <LinearText style={styles.osStep}>1. Open the 'Shortcuts' app.</LinearText>
+                <LinearText style={styles.osStep}>2. Tap 'Automation' → '+' → 'App'.</LinearText>
+                <LinearText style={styles.osStep}>
                   3. Choose 'Is Opened' and select Instagram, TikTok, etc.
-                </Text>
-                <Text style={styles.osStep}>4. Tap 'Next' → 'Add Action' → 'Open App'.</Text>
-                <Text style={styles.osStep}>5. Select 'NEET Study' as the app to open.</Text>
-                <Text style={styles.osStep}>6. Turn OFF 'Ask Before Running'.</Text>
+                </LinearText>
+                <LinearText style={styles.osStep}>
+                  4. Tap 'Next' → 'Add Action' → 'Open App'.
+                </LinearText>
+                <LinearText style={styles.osStep}>
+                  5. Select 'NEET Study' as the app to open.
+                </LinearText>
+                <LinearText style={styles.osStep}>6. Turn OFF 'Ask Before Running'.</LinearText>
               </View>
             ) : (
               <View style={styles.osBox}>
-                <Text style={styles.osTitle}>For Android (Modes & Routines):</Text>
-                <Text style={styles.osStep}>1. Go to Settings → 'Modes and Routines'.</Text>
-                <Text style={styles.osStep}>2. Create a new Routine (+).</Text>
-                <Text style={styles.osStep}>
+                <LinearText style={styles.osTitle}>For Android (Modes & Routines):</LinearText>
+                <LinearText style={styles.osStep}>
+                  1. Go to Settings → 'Modes and Routines'.
+                </LinearText>
+                <LinearText style={styles.osStep}>2. Create a new Routine (+).</LinearText>
+                <LinearText style={styles.osStep}>
                   3. If condition: 'App opened' (Select Instagram/YouTube).
-                </Text>
-                <Text style={styles.osStep}>
+                </LinearText>
+                <LinearText style={styles.osStep}>
                   4. Then action: 'Open an app or do an app action'.
-                </Text>
-                <Text style={styles.osStep}>5. Select this app ('NEET Study').</Text>
-                <Text style={styles.osStep}>
+                </LinearText>
+                <LinearText style={styles.osStep}>5. Select this app ('NEET Study').</LinearText>
+                <LinearText style={styles.osStep}>
                   Now you literally cannot open Instagram without passing through this app first.
-                </Text>
+                </LinearText>
               </View>
             )}
           </View>
 
           <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Text style={styles.backBtnText}>Got it, take me back</Text>
+            <LinearText style={styles.backBtnText}>Got it, take me back</LinearText>
           </TouchableOpacity>
         </ResponsiveContainer>
       </ScrollView>
@@ -197,28 +205,34 @@ const styles = StyleSheet.create({
   container: { padding: 24, paddingBottom: 40, alignItems: 'center' },
   emoji: { fontSize: 56, marginBottom: 16 },
   title: {
-    color: '#F44336',
+    color: n.colors.error,
     fontSize: 28,
     fontWeight: '900',
     marginBottom: 12,
     textAlign: 'center',
   },
-  sub: { color: '#9E9E9E', fontSize: 16, textAlign: 'center', marginBottom: 32, lineHeight: 24 },
+  sub: {
+    color: n.colors.textMuted,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 24,
+  },
 
   card: {
-    backgroundColor: '#1A1A24',
+    backgroundColor: n.colors.surface,
     width: '100%',
     padding: 20,
     borderRadius: 16,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: n.colors.border,
   },
-  cardTitle: { color: '#fff', fontSize: 18, fontWeight: '800', marginBottom: 12 },
-  cardText: { color: '#ccc', fontSize: 14, lineHeight: 22, marginBottom: 16 },
+  cardTitle: { color: n.colors.textPrimary, fontSize: 18, fontWeight: '800', marginBottom: 12 },
+  cardText: { color: n.colors.textMuted, fontSize: 14, lineHeight: 22, marginBottom: 16 },
 
   toneLabel: {
-    color: '#9E9E9E',
+    color: n.colors.textMuted,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 10,
@@ -232,17 +246,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#333',
-    backgroundColor: '#0F0F14',
+    borderColor: n.colors.border,
+    backgroundColor: n.colors.background,
   },
-  toneBtnActive: { borderColor: '#6C63FF', backgroundColor: '#6C63FF22' },
+  toneBtnActive: { borderColor: n.colors.accent, backgroundColor: '#6C63FF22' },
   toneIcon: { fontSize: 20, marginBottom: 4 },
   toneBtnText: { color: '#666', fontSize: 11, fontWeight: '700' },
-  toneBtnTextActive: { color: '#6C63FF' },
+  toneBtnTextActive: { color: n.colors.accent },
 
-  btn: { backgroundColor: '#F44336', padding: 16, borderRadius: 12, alignItems: 'center' },
-  btnActive: { backgroundColor: '#4CAF50' },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  btn: { backgroundColor: n.colors.error, padding: 16, borderRadius: 12, alignItems: 'center' },
+  btnActive: { backgroundColor: n.colors.success },
+  btnText: { color: n.colors.textPrimary, fontSize: 16, fontWeight: '800' },
   deactivateBtn: {
     marginTop: 12,
     padding: 16,
@@ -251,10 +265,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#F4433655',
   },
-  deactivateBtnText: { color: '#F44336', fontSize: 14, fontWeight: '700' },
+  deactivateBtnText: { color: n.colors.error, fontSize: 14, fontWeight: '700' },
 
-  osBox: { backgroundColor: '#2A2A38', padding: 16, borderRadius: 12 },
-  osTitle: { color: '#6C63FF', fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  osBox: { backgroundColor: n.colors.border, padding: 16, borderRadius: 12 },
+  osTitle: { color: n.colors.accent, fontSize: 16, fontWeight: '700', marginBottom: 8 },
   osStep: { color: '#E0E0E0', fontSize: 14, marginBottom: 6, lineHeight: 20 },
 
   backBtn: { marginTop: 16, padding: 16 },

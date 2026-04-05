@@ -20,7 +20,7 @@ describe('StudyGoalsSection', () => {
 
   it('renders correctly with default props', () => {
     const { getByText, getByDisplayValue } = render(<StudyGoalsSection {...defaultProps} />);
-    
+
     expect(getByText('STUDY GOALS')).toBeTruthy();
     expect(getByText('INICET Exam Date')).toBeTruthy();
     expect(getByText('NEET-PG Exam Date')).toBeTruthy();
@@ -63,37 +63,34 @@ describe('StudyGoalsSection', () => {
 
   it('renders error messages when provided', () => {
     const { getByText } = render(
-      <StudyGoalsSection 
-        {...defaultProps} 
-        errorInicet="Invalid INICET date" 
-        errorNeet="Invalid NEET date" 
-      />
+      <StudyGoalsSection
+        {...defaultProps}
+        errorInicet="Invalid INICET date"
+        errorNeet="Invalid NEET date"
+      />,
     );
-    
+
     expect(getByText('Invalid INICET date')).toBeTruthy();
     expect(getByText('Invalid NEET date')).toBeTruthy();
   });
 
   it('applies error styling when errors are present', () => {
     const { getByDisplayValue } = render(
-      <StudyGoalsSection 
-        {...defaultProps} 
-        errorInicet="Error" 
-      />
+      <StudyGoalsSection {...defaultProps} errorInicet="Error" />,
     );
-    
+
     const input = getByDisplayValue('2024-05-10');
     // Check if style includes inputError properties
     // In React Native testing library, we can check props.style
-    expect(input.props.style).toContainEqual({ borderColor: '#FF9800' }); // theme.colors.warning
+    expect(input.props.style).toContainEqual({ borderColor: '#D97706' });
   });
 
   it('uses number-pad keyboard for numeric inputs', () => {
     const { getByDisplayValue } = render(<StudyGoalsSection {...defaultProps} />);
-    
+
     const sessionInput = getByDisplayValue('45');
     const goalInput = getByDisplayValue('300');
-    
+
     expect(sessionInput.props.keyboardType).toBe('number-pad');
     expect(goalInput.props.keyboardType).toBe('number-pad');
   });

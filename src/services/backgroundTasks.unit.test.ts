@@ -109,8 +109,18 @@ describe('backgroundTasks', () => {
 
       expect(result).toBe(BackgroundFetch.BackgroundFetchResult.NewData);
       expect(prefetchTopicContent).toHaveBeenCalledTimes(2); // Topic 1 and Topic 2
-      expect(prefetchTopicContent).toHaveBeenCalledWith(mockTopics[1], expect.any(Array)); // Topic 2 has higher priority
-      expect(prefetchTopicContent).toHaveBeenCalledWith(mockTopics[0], expect.any(Array));
+      expect(prefetchTopicContent).toHaveBeenNthCalledWith(
+        1,
+        mockTopics[1],
+        expect.any(Array),
+        'groq',
+      );
+      expect(prefetchTopicContent).toHaveBeenNthCalledWith(
+        2,
+        mockTopics[0],
+        expect.any(Array),
+        'groq',
+      );
     });
 
     it('should return NoData if no candidates found', async () => {
@@ -146,6 +156,7 @@ describe('backgroundTasks', () => {
 
       const typesToFetch = (prefetchTopicContent as jest.Mock).mock.calls[0][1];
       expect(typesToFetch).not.toContain('keypoints');
+      expect((prefetchTopicContent as jest.Mock).mock.calls[0][2]).toBe('groq');
     });
   });
 

@@ -1,4 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
+import { Alert, Linking } from 'react-native';
 import { useAppBootstrap } from './useAppBootstrap';
 import { useAppStore } from '../store/useAppStore';
 
@@ -6,11 +7,12 @@ const mockLoadProfile = jest.fn();
 const mockRefreshProfile = jest.fn();
 const mockSetDailyAvailability = jest.fn();
 const mockAddNotificationResponseReceivedListener = jest.fn(() => ({ remove: jest.fn() }));
+const mockLinkingGetInitialUrl = jest.fn().mockResolvedValue(null);
+const mockLinkingAddEventListener = jest.fn(() => ({ remove: jest.fn() }));
 type StoreSelector = Parameters<typeof useAppStore>[0];
 
 jest.mock('expo-notifications', () => ({
-  addNotificationResponseReceivedListener: () =>
-    mockAddNotificationResponseReceivedListener(),
+  addNotificationResponseReceivedListener: () => mockAddNotificationResponseReceivedListener(),
 }));
 
 jest.mock('../store/useAppStore', () => {
@@ -68,10 +70,18 @@ jest.mock('../services/backgroundTasks', () => ({
   warmAiContentCache: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock('react-native-zip-archive', () => ({
+  zip: jest.fn(),
+  unzip: jest.fn(),
+}));
+
 describe('useAppBootstrap', () => {
   const mockedUseAppStore = useAppStore as jest.MockedFunction<typeof useAppStore> & {
     getState: jest.Mock;
   };
+  let originalGetInitialURL: typeof Linking.getInitialURL | undefined;
+  let originalAddEventListener: (typeof Linking)['addEventListener'] | undefined;
+  let alertSpy: jest.SpiedFunction<typeof Alert.alert>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -87,6 +97,32 @@ describe('useAppBootstrap', () => {
       profile: null,
     });
     mockAddNotificationResponseReceivedListener.mockImplementation(() => ({ remove: jest.fn() }));
+    mockLinkingGetInitialUrl.mockResolvedValue(null);
+    mockLinkingAddEventListener.mockImplementation(() => ({ remove: jest.fn() }));
+    originalGetInitialURL = Linking.getInitialURL;
+    originalAddEventListener = (Linking as typeof Linking & { addEventListener?: unknown })
+      .addEventListener as typeof Linking.addEventListener | undefined;
+    Object.defineProperty(Linking, 'getInitialURL', {
+      configurable: true,
+      value: () => mockLinkingGetInitialUrl(),
+    });
+    Object.defineProperty(Linking, 'addEventListener', {
+      configurable: true,
+      value: (...args: unknown[]) => mockLinkingAddEventListener(...args),
+    });
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(jest.fn());
+  });
+
+  afterEach(() => {
+    Object.defineProperty(Linking, 'getInitialURL', {
+      configurable: true,
+      value: originalGetInitialURL,
+    });
+    Object.defineProperty(Linking, 'addEventListener', {
+      configurable: true,
+      value: originalAddEventListener,
+    });
+    alertSpy.mockRestore();
   });
 
   it('reports fatal async bootstrap errors instead of letting them fail silently', async () => {

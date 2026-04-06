@@ -89,7 +89,11 @@ export default function BossBattleScreen() {
         return;
       }
       // Shuffle
-      subjectQs = subjectQs.sort(() => 0.5 - Math.random()).slice(0, 15);
+      for (let i = subjectQs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [subjectQs[i], subjectQs[j]] = [subjectQs[j], subjectQs[i]];
+      }
+      subjectQs = subjectQs.slice(0, 15);
 
       setSelectedSubject(subjectName);
       setQuestions(subjectQs);

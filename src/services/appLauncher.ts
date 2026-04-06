@@ -245,6 +245,11 @@ async function _launchMedicalAppInner(
         );
         logId = await startExternalAppSession(app.name, recordingPath);
       } catch (e) {
+        if (recordingPath) {
+          try {
+            await nativeStopRecording();
+          } catch {}
+        }
         console.warn('[AppLauncher] Recording start failed:', e);
         alertRecordingStartFailed();
         return false;
@@ -252,15 +257,22 @@ async function _launchMedicalAppInner(
 
       try {
         const { profile } = useAppStore.getState();
-        await showOverlay(
-          app.name,
-          faceTracking,
-          profile?.pomodoroEnabled ?? true,
-          profile?.pomodoroIntervalMinutes ?? 20,
+        const overlayTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Overlay start timed out')), 5000),
         );
+        await Promise.race([
+          showOverlay(
+            app.name,
+            faceTracking,
+            profile?.pomodoroEnabled ?? true,
+            profile?.pomodoroIntervalMinutes ?? 20,
+          ),
+          overlayTimeout,
+        ]);
         await new Promise((r) => setTimeout(r, OVERLAY_START_DELAY_MS));
-      } catch (overlayErr) {
+      } catch (overlayErr: any) {
         console.error('[AppLauncher] Overlay failed:', overlayErr);
+        throw new Error(`Overlay failed: ${overlayErr?.message || 'Unknown overlay error'}`);
       }
 
       const opened = await launchApp(targetPackage);

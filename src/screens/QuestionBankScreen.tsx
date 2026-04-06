@@ -147,10 +147,7 @@ export default function QuestionBankScreen() {
       // End of practice
       setPracticeActive(false);
       loadData();
-      Alert.alert(
-        'Practice Complete',
-        `Score: ${practiceScore + (practiceAnswer === currentPracticeQ?.correctIndex ? 0 : 0)}/${practiceQuestions.length}`,
-      );
+      Alert.alert('Practice Complete', `Score: ${practiceScore}/${practiceQuestions.length}`);
       return;
     }
     setPracticeIndex((i) => i + 1);

@@ -62,11 +62,11 @@ export default function GuruChatOverlay({
 
   // Track if component is mounted to prevent state updates after unmount
   useEffect(() => {
-    isMountedRef.current = visible;
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };
-  }, [visible]);
+  }, []);
 
   // Cleanup animations and abort controller on unmount
   useEffect(() => {
@@ -148,6 +148,9 @@ export default function GuruChatOverlay({
     const userMsg: ChatMessage = { role: 'user', text: q };
     const next = [...messages, userMsg];
 
+    // Create new abort controller BEFORE setting loading state to avoid race with visibility effect
+    abortControllerRef.current = new AbortController();
+
     // Update state immediately
     setMessages(next);
     setInput('');
@@ -155,9 +158,6 @@ export default function GuruChatOverlay({
     setError(null);
 
     scrollToEnd();
-
-    // Create new abort controller for this request
-    abortControllerRef.current = new AbortController();
 
     try {
       const dbStudy = await buildBoundedGuruChatStudyContext(profile, syllabusTopicId);
@@ -306,7 +306,7 @@ export default function GuruChatOverlay({
 
             {messages.map((msg, i) => (
               <View
-                key={i}
+                key={`${msg.role}-${i}-${msg.text.slice(0, 20)}`}
                 style={[s.bubbleContainer, msg.role === 'user' ? s.userContainer : s.guruContainer]}
               >
                 {msg.role === 'guru' && (

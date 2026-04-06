@@ -1,4 +1,5 @@
 import { dateStr, getDb, runInTransaction, nowTs, todayStr } from '../database';
+import { MS_PER_DAY } from '../../constants/time';
 import type { StudySession, Mood, SessionMode } from '../../types';
 
 /** Safe JSON.parse with a typed fallback — prevents one bad row from crashing a query. */
@@ -65,6 +66,13 @@ export async function endSession(
   notes?: string,
 ): Promise<void> {
   await runInTransaction(async (tx) => {
+    // Guard: skip if already finalized to prevent daily_log double-count on retry
+    const row = await tx.getFirstAsync<{ ended_at: number | null }>(
+      'SELECT ended_at FROM sessions WHERE id = ?',
+      [sessionId],
+    );
+    if (row?.ended_at != null) return;
+
     await tx.runAsync(
       `UPDATE sessions
        SET ended_at = ?, completed_topics = ?, total_xp_earned = ?, duration_minutes = ?, notes = ?
@@ -247,7 +255,7 @@ export async function getWeeklyComparison(): Promise<{
 }> {
   const db = getDb();
   const now = Date.now();
-  const dayMs = 86_400_000;
+  const dayMs = MS_PER_DAY;
 
   const today = new Date(now);
   const dayOfWeek = today.getDay();
@@ -315,7 +323,7 @@ export async function getWeeklyComparison(): Promise<{
 export async function calculateCurrentStreak(): Promise<number> {
   const db = getDb();
   const today = todayStr();
-  const yesterday = dateStr(new Date(Date.now() - 86_400_000));
+  const yesterday = dateStr(new Date(Date.now() - MS_PER_DAY));
   const result = await db.getFirstAsync<{ streak: number }>(
     `WITH RECURSIVE
        anchor(day) AS (

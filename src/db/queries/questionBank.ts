@@ -1,4 +1,4 @@
-import { getDb, nowTs } from '../database';
+import { getDb, nowTs, runInTransaction } from '../database';
 import type { QuestionBankItem, SaveQuestionInput, QuestionFilters } from '../../types';
 
 // ── Spaced-repetition intervals (ms) ──────────────────────────────────────────
@@ -69,29 +69,30 @@ export async function saveQuestion(q: SaveQuestionInput): Promise<number> {
 /** Batch insert, returns count of newly saved questions (skips duplicates). */
 export async function saveBulkQuestions(questions: SaveQuestionInput[]): Promise<number> {
   if (questions.length === 0) return 0;
-  const db = getDb();
   let saved = 0;
-  for (const q of questions) {
-    const result = await db.runAsync(
-      `INSERT OR IGNORE INTO question_bank
-         (question, options, correct_index, explanation, topic_id, topic_name, subject_name, source, source_id, image_url, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        q.question,
-        JSON.stringify(q.options),
-        q.correctIndex,
-        q.explanation,
-        q.topicId ?? null,
-        q.topicName ?? '',
-        q.subjectName ?? '',
-        q.source,
-        q.sourceId ?? null,
-        q.imageUrl ?? null,
-        nowTs(),
-      ],
-    );
-    if (result.changes > 0) saved++;
-  }
+  await runInTransaction(async (db) => {
+    for (const q of questions) {
+      const result = await db.runAsync(
+        `INSERT OR IGNORE INTO question_bank
+           (question, options, correct_index, explanation, topic_id, topic_name, subject_name, source, source_id, image_url, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          q.question,
+          JSON.stringify(q.options),
+          q.correctIndex,
+          q.explanation,
+          q.topicId ?? null,
+          q.topicName ?? '',
+          q.subjectName ?? '',
+          q.source,
+          q.sourceId ?? null,
+          q.imageUrl ?? null,
+          nowTs(),
+        ],
+      );
+      if (result.changes > 0) saved++;
+    }
+  });
   return saved;
 }
 
@@ -116,51 +117,50 @@ export async function markMastered(id: number, mastered: boolean): Promise<void>
   ]);
 }
 
-/** Record an attempt: increment counters, update SR schedule. */
+/** Record an attempt: increment counters, update SR schedule. Wrapped in a transaction to prevent race conditions. */
 export async function recordAttempt(id: number, correct: boolean): Promise<void> {
-  const db = getDb();
   const now = nowTs();
 
-  // Read current state
-  const row = await db.getFirstAsync<{
-    times_seen: number;
-    times_correct: number;
-    difficulty: number;
-    is_mastered: number;
-  }>('SELECT times_seen, times_correct, difficulty, is_mastered FROM question_bank WHERE id = ?', [
-    id,
-  ]);
-  if (!row) return;
+  await runInTransaction(async (tx) => {
+    const row = await tx.getFirstAsync<{
+      times_seen: number;
+      times_correct: number;
+      difficulty: number;
+      is_mastered: number;
+    }>(
+      'SELECT times_seen, times_correct, difficulty, is_mastered FROM question_bank WHERE id = ?',
+      [id],
+    );
+    if (!row) return;
 
-  const timesSeen = row.times_seen + 1;
-  const timesCorrect = row.times_correct + (correct ? 1 : 0);
+    const timesSeen = row.times_seen + 1;
+    const timesCorrect = row.times_correct + (correct ? 1 : 0);
 
-  let difficulty = row.difficulty;
-  let consecutiveCorrect: number;
+    let difficulty = row.difficulty;
+    let consecutiveCorrect: number;
 
-  if (correct) {
-    difficulty = Math.max(0, difficulty - 0.05);
-    // Estimate consecutive correct from recent accuracy (simplified)
-    consecutiveCorrect = Math.floor(timesCorrect / Math.max(1, timesSeen) * 5);
-  } else {
-    difficulty = Math.min(1, difficulty + 0.1);
-    consecutiveCorrect = 0;
-  }
+    if (correct) {
+      difficulty = Math.max(0, difficulty - 0.05);
+      consecutiveCorrect = Math.floor((timesCorrect / Math.max(1, timesSeen)) * 5);
+    } else {
+      difficulty = Math.min(1, difficulty + 0.1);
+      consecutiveCorrect = 0;
+    }
 
-  const interval = correct ? nextReviewInterval(consecutiveCorrect) : SR_INTERVALS[0];
-  const nextReviewAt = now + interval;
+    const interval = correct ? nextReviewInterval(consecutiveCorrect) : SR_INTERVALS[0];
+    const nextReviewAt = now + interval;
 
-  // Auto-mastered: 3+ consecutive correct equivalent and interval >= 14d
-  const autoMastered =
-    correct && consecutiveCorrect >= 3 && interval >= 14 * 86_400_000 ? 1 : row.is_mastered;
+    const autoMastered =
+      correct && consecutiveCorrect >= 3 && interval >= 14 * 86_400_000 ? 1 : row.is_mastered;
 
-  await db.runAsync(
-    `UPDATE question_bank
-     SET times_seen = ?, times_correct = ?, last_seen_at = ?, next_review_at = ?,
-         difficulty = ?, is_mastered = ?
-     WHERE id = ?`,
-    [timesSeen, timesCorrect, now, nextReviewAt, difficulty, autoMastered, id],
-  );
+    await tx.runAsync(
+      `UPDATE question_bank
+       SET times_seen = ?, times_correct = ?, last_seen_at = ?, next_review_at = ?,
+           difficulty = ?, is_mastered = ?
+       WHERE id = ?`,
+      [timesSeen, timesCorrect, now, nextReviewAt, difficulty, autoMastered, id],
+    );
+  });
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────

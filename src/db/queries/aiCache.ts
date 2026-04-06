@@ -1,4 +1,4 @@
-import { getDb, nowTs, SQL_AI_CACHE } from '../database';
+import { getDb, nowTs, runInTransaction, SQL_AI_CACHE } from '../database';
 import { getAiCacheDb } from '../aiCacheDatabase';
 import type { AIContent, ContentType } from '../../types';
 import { embeddingToBlob } from '../../services/ai/embeddingService';
@@ -813,17 +813,19 @@ export async function renameGuruChatThread(threadId: number, title: string): Pro
   const db = getDb();
   const normalized = title.trim();
   if (!normalized) return;
-  await db.runAsync(
-    'UPDATE guru_chat_threads SET title = ?, updated_at = ? WHERE id = ?',
-    [normalized, nowTs(), threadId],
-  );
+  await db.runAsync('UPDATE guru_chat_threads SET title = ?, updated_at = ? WHERE id = ?', [
+    normalized,
+    nowTs(),
+    threadId,
+  ]);
 }
 
 export async function deleteGuruChatThread(threadId: number): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM chat_history WHERE thread_id = ?', [threadId]);
-  await db.runAsync('DELETE FROM guru_chat_session_memory WHERE thread_id = ?', [threadId]);
-  await db.runAsync('DELETE FROM guru_chat_threads WHERE id = ?', [threadId]);
+  await runInTransaction(async (db) => {
+    await db.runAsync('DELETE FROM chat_history WHERE thread_id = ?', [threadId]);
+    await db.runAsync('DELETE FROM guru_chat_session_memory WHERE thread_id = ?', [threadId]);
+    await db.runAsync('DELETE FROM guru_chat_threads WHERE id = ?', [threadId]);
+  });
 }
 
 export async function saveChatMessage(
@@ -897,8 +899,9 @@ export async function getChatHistory(threadId: number, limit = 20): Promise<Chat
 }
 
 export async function clearChatHistory(topicName: string): Promise<void> {
-  const db = getDb();
-  await db.runAsync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
-  await db.runAsync('DELETE FROM guru_chat_session_memory WHERE topic_name = ?', [topicName]);
-  await db.runAsync('DELETE FROM guru_chat_threads WHERE topic_name = ?', [topicName]);
+  await runInTransaction(async (db) => {
+    await db.runAsync('DELETE FROM chat_history WHERE topic_name = ?', [topicName]);
+    await db.runAsync('DELETE FROM guru_chat_session_memory WHERE topic_name = ?', [topicName]);
+    await db.runAsync('DELETE FROM guru_chat_threads WHERE topic_name = ?', [topicName]);
+  });
 }

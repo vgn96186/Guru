@@ -273,8 +273,8 @@ export default function ReviewScreen() {
       <ResponsiveContainer>
         <View style={styles.header}>
           <LinearText variant="caption" tone="secondary" style={styles.progress}>
-            Card {currentIdx + 1} / {queue.length} · ~{Math.ceil((queue.length - currentIdx) * 0.5)}{' '}
-            min left
+            Card {currentIdx + 1} / {queue.length} · ~
+            {Math.ceil((queue.length - currentIdx - 1) * 0.5)} min left
           </LinearText>
           {currentTopic.progress.isNemesis && (
             <LinearBadge label="NEMESIS (+50 XP)" variant="error" />

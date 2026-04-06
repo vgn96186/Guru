@@ -73,14 +73,18 @@ export default function CheckInScreen() {
   const daysToNeet = profile ? profileRepository.getDaysToExam(profile.neetDate) : 0;
 
   useEffect(() => {
+    let mounted = true;
     Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }).start();
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yStr = yesterday.toISOString().slice(0, 10);
     dailyLogRepository.getDailyLog(yStr).then((yLog) => {
-      if (yLog?.mood) setYesterdayMood(yLog.mood);
+      if (mounted && yLog?.mood) setYesterdayMood(yLog.mood);
     });
+    return () => {
+      mounted = false;
+    };
   }, [fadeIn]);
 
   function handleMoodSelect(mood: Mood) {

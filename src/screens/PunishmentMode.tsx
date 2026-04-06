@@ -38,6 +38,7 @@ export default function PunishmentMode() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
   const snoozeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const vibrationPendingRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -78,24 +79,35 @@ export default function PunishmentMode() {
   useEffect(() => {
     if (!isActive || shameLevel === 0) return;
 
+    const fullPatterns = [
+      [0, 500, 200, 500], // Level 1
+      [0, 1000, 300, 1000, 300, 1000], // Level 2
+      [0, 1500, 500, 1500, 500, 1500, 500, 1500], // Level 3
+    ];
+    const reducedPatterns = [
+      [0, 200], // Level 1
+      [0, 300, 100, 300], // Level 2
+      [0, 500, 200, 500], // Level 3
+    ];
+
+    const patterns = reducedIntensity ? reducedPatterns : fullPatterns;
+    const pattern = patterns[Math.min(shameLevel - 1, patterns.length - 1)];
+    // Sum the pattern durations to know when vibration finishes
+    const patternDurationMs = pattern.reduce((sum, ms) => sum + ms, 0);
+
     const harassmentTimer = setInterval(
       () => {
-        // Intense vibration pattern based on shame level
-        const fullPatterns = [
-          [0, 500, 200, 500], // Level 1
-          [0, 1000, 300, 1000, 300, 1000], // Level 2
-          [0, 1500, 500, 1500, 500, 1500, 500, 1500], // Level 3
-        ];
-        const reducedPatterns = [
-          [0, 200], // Level 1
-          [0, 300, 100, 300], // Level 2
-          [0, 500, 200, 500], // Level 3
-        ];
+        // Guard: skip if a previous vibration pattern is still playing
+        if (vibrationPendingRef.current) return;
 
-        const patterns = reducedIntensity ? reducedPatterns : fullPatterns;
-        const pattern = patterns[Math.min(shameLevel - 1, patterns.length - 1)];
+        vibrationPendingRef.current = true;
         Vibration.vibrate(pattern);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+        // Clear the guard after the pattern finishes
+        setTimeout(() => {
+          vibrationPendingRef.current = false;
+        }, patternDurationMs);
 
         setHasVibrated(true);
         // Show guilt screen again
@@ -104,7 +116,10 @@ export default function PunishmentMode() {
       HARASSMENT_INTERVAL / Math.max(1, shameLevel),
     ); // More frequent for higher shame
 
-    return () => clearInterval(harassmentTimer);
+    return () => {
+      clearInterval(harassmentTimer);
+      vibrationPendingRef.current = false;
+    };
   }, [isActive, shameLevel, reducedIntensity]);
 
   // Idle time tracking

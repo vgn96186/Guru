@@ -822,8 +822,13 @@ export default function LectureModeScreen() {
         }
       }
 
-      if (matchedTopicIds.size > 0 && __DEV__) {
-        console.log(`[LectureMode] Marked ${matchedTopicIds.size} topics as studied from lecture`);
+      if (matchedTopicIds.size > 0) {
+        if (__DEV__) {
+          console.log(
+            `[LectureMode] Marked ${matchedTopicIds.size} topics as studied from lecture`,
+          );
+        }
+        await refreshProfile();
       }
     } catch (err) {
       console.error('[LectureMode] Failed to update topic progress:', err);

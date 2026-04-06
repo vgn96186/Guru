@@ -84,10 +84,7 @@ export type AutoBackupFrequency = 'off' | 'daily' | '3days' | 'weekly' | 'monthl
 // ─────────────────────────────────────────────────────────────────────────────
 
 function generateDeviceId(): string {
-  // Generate a stable device ID based on platform and timestamp
-  const timestamp = Date.now().toString(36);
-  const platform = Platform.OS;
-  return `${platform}_${timestamp}`;
+  return `${Platform.OS}_guru`;
 }
 
 function getDeviceName(): string {
@@ -472,52 +469,71 @@ async function _importUnifiedBackup(
       await FileSystem.copyAsync({ from: importedDbPath, to: DB_PATH });
     }
 
+    // Restore assets with error collection (DB is already committed at this point)
+    const assetErrors: string[] = [];
+
     // Restore transcripts
     if (manifest.includedAssets.transcripts && (options?.transcripts ?? true)) {
-      const importedTranscriptsDir = `${tempDir}assets/transcripts/`;
-      const dirInfo = await FileSystem.getInfoAsync(importedTranscriptsDir);
-      if (dirInfo.exists) {
-        await ensureDirectoryExists(TRANSCRIPTS_DIR);
-        const files = await FileSystem.readDirectoryAsync(importedTranscriptsDir);
-        for (const file of files) {
-          await FileSystem.copyAsync({
-            from: `${importedTranscriptsDir}${file}`,
-            to: `${TRANSCRIPTS_DIR}${file}`,
-          });
+      try {
+        const importedTranscriptsDir = `${tempDir}assets/transcripts/`;
+        const dirInfo = await FileSystem.getInfoAsync(importedTranscriptsDir);
+        if (dirInfo.exists) {
+          await ensureDirectoryExists(TRANSCRIPTS_DIR);
+          const files = await FileSystem.readDirectoryAsync(importedTranscriptsDir);
+          for (const file of files) {
+            await FileSystem.copyAsync({
+              from: `${importedTranscriptsDir}${file}`,
+              to: `${TRANSCRIPTS_DIR}${file}`,
+            });
+          }
         }
+      } catch (err) {
+        assetErrors.push(`Transcripts: ${err}`);
       }
     }
 
     // Restore images
     if (manifest.includedAssets.images && (options?.images ?? true)) {
-      const importedImagesDir = `${tempDir}assets/images/`;
-      const dirInfo = await FileSystem.getInfoAsync(importedImagesDir);
-      if (dirInfo.exists) {
-        await ensureDirectoryExists(IMAGES_DIR);
-        const files = await FileSystem.readDirectoryAsync(importedImagesDir);
-        for (const file of files) {
-          await FileSystem.copyAsync({
-            from: `${importedImagesDir}${file}`,
-            to: `${IMAGES_DIR}${file}`,
-          });
+      try {
+        const importedImagesDir = `${tempDir}assets/images/`;
+        const dirInfo = await FileSystem.getInfoAsync(importedImagesDir);
+        if (dirInfo.exists) {
+          await ensureDirectoryExists(IMAGES_DIR);
+          const files = await FileSystem.readDirectoryAsync(importedImagesDir);
+          for (const file of files) {
+            await FileSystem.copyAsync({
+              from: `${importedImagesDir}${file}`,
+              to: `${IMAGES_DIR}${file}`,
+            });
+          }
         }
+      } catch (err) {
+        assetErrors.push(`Images: ${err}`);
       }
     }
 
     // Restore recordings
     if (manifest.includedAssets.recordings && (options?.recordings ?? true)) {
-      const importedRecordingsDir = `${tempDir}assets/recordings/`;
-      const dirInfo = await FileSystem.getInfoAsync(importedRecordingsDir);
-      if (dirInfo.exists) {
-        await ensureDirectoryExists(RECORDINGS_DIR);
-        const files = await FileSystem.readDirectoryAsync(importedRecordingsDir);
-        for (const file of files) {
-          await FileSystem.copyAsync({
-            from: `${importedRecordingsDir}${file}`,
-            to: `${RECORDINGS_DIR}${file}`,
-          });
+      try {
+        const importedRecordingsDir = `${tempDir}assets/recordings/`;
+        const dirInfo = await FileSystem.getInfoAsync(importedRecordingsDir);
+        if (dirInfo.exists) {
+          await ensureDirectoryExists(RECORDINGS_DIR);
+          const files = await FileSystem.readDirectoryAsync(importedRecordingsDir);
+          for (const file of files) {
+            await FileSystem.copyAsync({
+              from: `${importedRecordingsDir}${file}`,
+              to: `${RECORDINGS_DIR}${file}`,
+            });
+          }
         }
+      } catch (err) {
+        assetErrors.push(`Recordings: ${err}`);
       }
+    }
+
+    if (assetErrors.length > 0) {
+      console.warn('[Restore] Some assets failed to restore:', assetErrors);
     }
 
     // Verify restored database

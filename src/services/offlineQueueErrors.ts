@@ -8,8 +8,15 @@ export function isTransientNetworkError(err: unknown): boolean {
     'json',
     'invalid',
     'malformed',
+    '400',
+    '401',
+    '403',
+    '404',
+    '405',
+    '409',
+    '422',
   ];
-  if (nonRetryableMarkers.some(marker => message.includes(marker))) {
+  if (nonRetryableMarkers.some((marker) => message.includes(marker))) {
     return false;
   }
 
@@ -25,5 +32,5 @@ export function isTransientNetworkError(err: unknown): boolean {
     '502',
     '500',
   ];
-  return transientMarkers.some(marker => message.includes(marker));
+  return transientMarkers.some((marker) => message.includes(marker));
 }

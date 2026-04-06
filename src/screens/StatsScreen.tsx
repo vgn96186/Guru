@@ -319,6 +319,7 @@ function StatsScreenContent() {
                         ? 100
                         : 0;
                   const isUp = diff >= 0;
+                  if (pct === 0) return null;
                   return (
                     <View
                       style={[

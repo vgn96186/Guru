@@ -269,7 +269,7 @@ function HomeScreenContent() {
         .catch((err) => console.warn('[Home] Failed to load daily log:', err));
 
       // Load daily agenda on mount — auto-generate if missing
-      const date = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+      const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       dailyAgendaRepository
         .getDailyAgenda(date)
         .then(async (plan) => {

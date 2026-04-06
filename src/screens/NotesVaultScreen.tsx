@@ -549,86 +549,97 @@ export default function NotesVaultScreen() {
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
   };
 
-  const renderNote = ({ item }: { item: NoteItem }) => {
-    const subjectLabel = getSubjectLabel(item);
-    const isSelected = selectedIds.has(item.id);
+  const wordCountMap = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const note of visibleNotes) {
+      map.set(note.id, countWords(note.note));
+    }
+    return map;
+  }, [visibleNotes]);
 
-    return (
-      <TouchableOpacity
-        style={[styles.card, isSelected && styles.cardSelected]}
-        activeOpacity={0.7}
-        onLongPress={() => handleLongPress(item.id)}
-        delayLongPress={220}
-        onPress={() => {
-          if (isSelectionMode) {
-            Haptics.selectionAsync();
-            toggleSelection(item.id);
-            return;
-          }
-          setReaderTitle(getTitle(item));
-          setReaderContent(item.note);
-          setReaderNote(item);
-        }}
-      >
-        {isSelectionMode && (
-          <View style={styles.selectIcon}>
-            <Ionicons
-              name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-              size={22}
-              color={isSelected ? n.colors.accent : n.colors.textMuted}
+  const renderNote = useCallback(
+    ({ item }: { item: NoteItem }) => {
+      const subjectLabel = getSubjectLabel(item);
+      const isSelected = selectedIds.has(item.id);
+
+      return (
+        <TouchableOpacity
+          style={[styles.card, isSelected && styles.cardSelected]}
+          activeOpacity={0.7}
+          onLongPress={() => handleLongPress(item.id)}
+          delayLongPress={220}
+          onPress={() => {
+            if (isSelectionMode) {
+              Haptics.selectionAsync();
+              toggleSelection(item.id);
+              return;
+            }
+            setReaderTitle(getTitle(item));
+            setReaderContent(item.note);
+            setReaderNote(item);
+          }}
+        >
+          {isSelectionMode && (
+            <View style={styles.selectIcon}>
+              <Ionicons
+                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                size={22}
+                color={isSelected ? n.colors.accent : n.colors.textMuted}
+              />
+            </View>
+          )}
+          <View style={styles.cardHeader}>
+            <SubjectChip
+              subject={subjectLabel}
+              color="#fff"
+              backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
+              borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
+              style={styles.subjectChip}
             />
           </View>
-        )}
-        <View style={styles.cardHeader}>
-          <SubjectChip
-            subject={subjectLabel}
-            color="#fff"
-            backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
-            borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
-            style={styles.subjectChip}
-          />
-        </View>
-        <View style={styles.dateRow}>
-          <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
-        </View>
-        <LinearText style={styles.titleText} numberOfLines={3}>
-          {getTitle(item)}
-        </LinearText>
-        {item.topics.length > 0 && (
-          <TopicPillRow
-            topics={item.topics}
-            wrap
-            maxVisible={4}
-            rowStyle={styles.topicsRow}
-            pillStyle={styles.topicPill}
-            moreBadgeStyle={styles.moreBadge}
-          />
-        )}
-        <View style={styles.cardFooter}>
-          {item.confidence > 0 && (
-            <LinearText
-              style={[
-                styles.confidenceBadge,
-                item.confidence === 3
-                  ? styles.confidenceBadgeStrong
-                  : item.confidence === 2
-                    ? styles.confidenceBadgeMid
-                    : styles.confidenceBadgeLight,
-              ]}
-            >
-              {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
-            </LinearText>
-          )}
-          <LinearText style={styles.wordCount}>
-            {countWords(item.note).toLocaleString()} words
+          <View style={styles.dateRow}>
+            <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
+          </View>
+          <LinearText style={styles.titleText} numberOfLines={3}>
+            {getTitle(item)}
           </LinearText>
-          {item.appName ? (
-            <LinearText style={styles.appBadge}>via {item.appName}</LinearText>
-          ) : null}
-        </View>
-      </TouchableOpacity>
-    );
-  };
+          {item.topics.length > 0 && (
+            <TopicPillRow
+              topics={item.topics}
+              wrap
+              maxVisible={4}
+              rowStyle={styles.topicsRow}
+              pillStyle={styles.topicPill}
+              moreBadgeStyle={styles.moreBadge}
+            />
+          )}
+          <View style={styles.cardFooter}>
+            {item.confidence > 0 && (
+              <LinearText
+                style={[
+                  styles.confidenceBadge,
+                  item.confidence === 3
+                    ? styles.confidenceBadgeStrong
+                    : item.confidence === 2
+                      ? styles.confidenceBadgeMid
+                      : styles.confidenceBadgeLight,
+                ]}
+              >
+                {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
+              </LinearText>
+            )}
+            <LinearText style={styles.wordCount}>
+              {(wordCountMap.get(item.id) ?? countWords(item.note)).toLocaleString()} words
+            </LinearText>
+            {item.appName ? (
+              <LinearText style={styles.appBadge}>via {item.appName}</LinearText>
+            ) : null}
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [selectedIds, isSelectionMode, handleLongPress, toggleSelection, wordCountMap],
+  );
 
   const currentSortLabel =
     SORT_OPTIONS.find((option) => option.value === sortBy)?.label ?? 'Newest';

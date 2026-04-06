@@ -25,6 +25,9 @@ export interface AppBackup {
   topic_progress: BackupRow[];
   daily_log: BackupRow[];
   lecture_notes: BackupRow[];
+  sessions?: BackupRow[];
+  ai_cache?: BackupRow[];
+  brain_dumps?: BackupRow[];
 }
 
 export type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave';

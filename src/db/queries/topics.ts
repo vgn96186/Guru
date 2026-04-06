@@ -320,7 +320,7 @@ export async function updateTopicProgressInTx(
   );
 
   let card: Card;
-  if (existing && existing.fsrs_last_review) {
+  if (existing && existing.fsrs_last_review && existing.fsrs_due) {
     card = {
       due: new Date(existing.fsrs_due),
       stability: existing.fsrs_stability,
@@ -425,7 +425,7 @@ export async function updateTopicsProgressBatch(updates: TopicProgressUpdate[]):
       );
 
       let card: Card;
-      if (existing && existing.fsrs_last_review) {
+      if (existing && existing.fsrs_last_review && existing.fsrs_due) {
         card = {
           due: new Date(existing.fsrs_due),
           stability: existing.fsrs_stability,
@@ -731,13 +731,10 @@ export async function markTopicNeedsAttention(topicId: number): Promise<void> {
       `INSERT INTO topic_progress (topic_id, status, confidence, last_studied_at, times_studied)
        VALUES (?, 'seen', 1, ?, 1)
        ON CONFLICT(topic_id) DO UPDATE SET
-         status = CASE
-           WHEN topic_progress.status IN ('reviewed', 'mastered') THEN 'seen'
-           ELSE topic_progress.status
-         END,
+         status = topic_progress.status,
          confidence = MIN(topic_progress.confidence, 1),
          last_studied_at = ?,
-         times_studied = MAX(topic_progress.times_studied, 1)`,
+         times_studied = topic_progress.times_studied + 1`,
       [topicId, now, now],
     );
     await db.execAsync(`RELEASE ${sp}`);

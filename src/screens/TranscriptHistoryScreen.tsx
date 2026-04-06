@@ -556,110 +556,113 @@ export default function TranscriptHistoryScreen() {
     return `${Math.floor(mins / 60)}h ${mins % 60}m`;
   };
 
-  const renderNote = ({ item }: { item: LectureHistoryItem }) => {
-    const isSelected = selectedIds.includes(item.id);
-    const subjectLabel = resolveLectureSubjectLabel(item);
-    return (
-      <TouchableOpacity
-        onLongPress={() => handleLongPressItem(item.id)}
-        delayLongPress={220}
-        onPress={() => {
-          if (isSelectionMode) {
+  const renderNote = useCallback(
+    ({ item }: { item: LectureHistoryItem }) => {
+      const isSelected = selectedIds.includes(item.id);
+      const subjectLabel = resolveLectureSubjectLabel(item);
+      return (
+        <TouchableOpacity
+          onLongPress={() => handleLongPressItem(item.id)}
+          delayLongPress={220}
+          onPress={() => {
+            if (isSelectionMode) {
+              Haptics.selectionAsync();
+              toggleSelection(item.id);
+              return;
+            }
             Haptics.selectionAsync();
-            toggleSelection(item.id);
-            return;
-          }
-          Haptics.selectionAsync();
-          setSelectedNote(item);
-        }}
-        activeOpacity={0.7}
-      >
-        <LinearSurface
-          padded={false}
-          style={[styles.noteCard, isSelected && styles.noteCardSelected]}
+            setSelectedNote(item);
+          }}
+          activeOpacity={0.7}
         >
-          {isSelectionMode && (
-            <View style={styles.selectionTickWrap}>
-              <Ionicons
-                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-                size={22}
-                color={isSelected ? n.colors.accent : n.colors.textMuted}
-              />
-            </View>
-          )}
-          <View style={styles.noteHeader}>
-            <SubjectChip
-              subject={subjectLabel}
-              color="#fff"
-              backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
-              borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
-              style={styles.subjectChip}
-            />
-            <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
-          </View>
-
-          {item.appName && <LinearText style={styles.appBadge}>via {item.appName}</LinearText>}
-
-          <LinearText style={styles.summaryText} numberOfLines={3}>
-            {getLectureTitle(item)}
-          </LinearText>
-          <LinearText style={styles.summaryPreviewText} numberOfLines={3}>
-            {item.summary || extractFirstLine(item.note)}
-          </LinearText>
-          <View style={styles.statusRow}>
-            {item.recordingPath ? (
-              <LinearText style={styles.statusBadge}>Recording</LinearText>
-            ) : null}
-            {item.transcript ? (
-              <LinearText style={styles.statusBadge}>Transcript</LinearText>
-            ) : null}
-            {lectureNeedsAiNote(item) ? (
-              <LinearText style={styles.statusBadgeWarn}>Needs AI Note</LinearText>
-            ) : null}
-            {lectureNeedsReview(item) ? (
-              <LinearText style={styles.statusBadgeWarn}>Needs Review</LinearText>
-            ) : null}
-          </View>
-
-          <View style={styles.noteFooter}>
-            {item.topics.length > 0 && (
-              <TopicPillRow
-                topics={item.topics}
-                wrap
-                maxVisible={3}
-                rowStyle={styles.topicsRow}
-                pillStyle={styles.topicPill}
-                moreBadgeStyle={styles.moreBadge}
-              />
+          <LinearSurface
+            padded={false}
+            style={[styles.noteCard, isSelected && styles.noteCardSelected]}
+          >
+            {isSelectionMode && (
+              <View style={styles.selectionTickWrap}>
+                <Ionicons
+                  name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={22}
+                  color={isSelected ? n.colors.accent : n.colors.textMuted}
+                />
+              </View>
             )}
-            <View style={styles.metaRow}>
-              {item.durationMinutes ? (
-                <LinearText style={styles.metaText}>
-                  <Ionicons name="time-outline" size={12} color={n.colors.textMuted} />{' '}
-                  {formatDuration(item.durationMinutes)}
-                </LinearText>
-              ) : null}
-              <LinearText
-                style={[
-                  styles.confidenceBadge,
-                  {
-                    backgroundColor:
-                      item.confidence === 3
-                        ? n.colors.success
-                        : item.confidence === 2
-                          ? n.colors.warning
-                          : n.colors.error,
-                  },
-                ]}
-              >
-                {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
-              </LinearText>
+            <View style={styles.noteHeader}>
+              <SubjectChip
+                subject={subjectLabel}
+                color="#fff"
+                backgroundColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
+                borderColor={SUBJECT_COLORS[subjectLabel] ?? n.colors.textMuted}
+                style={styles.subjectChip}
+              />
+              <LinearText style={styles.dateText}>{formatDate(item.createdAt)}</LinearText>
             </View>
-          </View>
-        </LinearSurface>
-      </TouchableOpacity>
-    );
-  };
+
+            {item.appName && <LinearText style={styles.appBadge}>via {item.appName}</LinearText>}
+
+            <LinearText style={styles.summaryText} numberOfLines={3}>
+              {getLectureTitle(item)}
+            </LinearText>
+            <LinearText style={styles.summaryPreviewText} numberOfLines={3}>
+              {item.summary || extractFirstLine(item.note)}
+            </LinearText>
+            <View style={styles.statusRow}>
+              {item.recordingPath ? (
+                <LinearText style={styles.statusBadge}>Recording</LinearText>
+              ) : null}
+              {item.transcript ? (
+                <LinearText style={styles.statusBadge}>Transcript</LinearText>
+              ) : null}
+              {lectureNeedsAiNote(item) ? (
+                <LinearText style={styles.statusBadgeWarn}>Needs AI Note</LinearText>
+              ) : null}
+              {lectureNeedsReview(item) ? (
+                <LinearText style={styles.statusBadgeWarn}>Needs Review</LinearText>
+              ) : null}
+            </View>
+
+            <View style={styles.noteFooter}>
+              {item.topics.length > 0 && (
+                <TopicPillRow
+                  topics={item.topics}
+                  wrap
+                  maxVisible={3}
+                  rowStyle={styles.topicsRow}
+                  pillStyle={styles.topicPill}
+                  moreBadgeStyle={styles.moreBadge}
+                />
+              )}
+              <View style={styles.metaRow}>
+                {item.durationMinutes ? (
+                  <LinearText style={styles.metaText}>
+                    <Ionicons name="time-outline" size={12} color={n.colors.textMuted} />{' '}
+                    {formatDuration(item.durationMinutes)}
+                  </LinearText>
+                ) : null}
+                <LinearText
+                  style={[
+                    styles.confidenceBadge,
+                    {
+                      backgroundColor:
+                        item.confidence === 3
+                          ? n.colors.success
+                          : item.confidence === 2
+                            ? n.colors.warning
+                            : n.colors.error,
+                    },
+                  ]}
+                >
+                  {CONFIDENCE_LABELS[item.confidence as 1 | 2 | 3]}
+                </LinearText>
+              </View>
+            </View>
+          </LinearSurface>
+        </TouchableOpacity>
+      );
+    },
+    [selectedIds, isSelectionMode, handleLongPressItem, toggleSelection, setSelectedNote],
+  );
 
   return (
     <SafeAreaView style={styles.container}>

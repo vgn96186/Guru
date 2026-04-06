@@ -37,7 +37,9 @@ function scoreTopicForSession(
     const dueTime = new Date(topic.progress.fsrsDue).getTime();
     const nowTime = Date.now();
 
-    if (nowTime > dueTime) {
+    if (isNaN(dueTime)) {
+      // Invalid date string — skip FSRS scoring
+    } else if (nowTime > dueTime) {
       // Overdue cards get a massive boost based on how overdue they are, capped
       const daysOverdue = (nowTime - dueTime) / MS_PER_DAY;
       score += 10 + Math.min(daysOverdue * 2, 10);

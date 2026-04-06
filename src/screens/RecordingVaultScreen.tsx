@@ -315,118 +315,132 @@ export default function RecordingVaultScreen() {
     });
   };
 
-  const renderItem = ({ item }: { item: RecordingFile }) => {
-    const isProcessing = processingFile === item.path;
-    const isDone = isProcessing && processingState === 'done';
-    const isError = isProcessing && processingState === 'error';
-    const isSelected = selectedPaths.has(item.path);
+  const renderItem = useCallback(
+    ({ item }: { item: RecordingFile }) => {
+      const isProcessing = processingFile === item.path;
+      const isDone = isProcessing && processingState === 'done';
+      const isError = isProcessing && processingState === 'error';
+      const isSelected = selectedPaths.has(item.path);
 
-    return (
-      <Pressable
-        onLongPress={() => handleLongPress(item.path)}
-        onPress={() => {
-          if (isSelectionMode) {
-            Haptics.selectionAsync();
-            toggleSelection(item.path);
-          }
-        }}
-        delayLongPress={220}
-      >
-        <LinearSurface
-          padded={false}
-          borderColor={
-            isSelected
-              ? n.colors.accent
-              : isError
-                ? n.colors.error
-                : isDone
-                  ? n.colors.success
-                  : n.colors.border
-          }
-          style={[
-            styles.card,
-            isDone && styles.cardDone,
-            isError && styles.cardError,
-            isSelected && styles.cardSelected,
-          ]}
+      return (
+        <Pressable
+          onLongPress={() => handleLongPress(item.path)}
+          onPress={() => {
+            if (isSelectionMode) {
+              Haptics.selectionAsync();
+              toggleSelection(item.path);
+            }
+          }}
+          delayLongPress={220}
         >
-          {isSelectionMode ? (
-            <View style={styles.cardIcon}>
-              <Ionicons
-                name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
-                size={24}
-                color={isSelected ? n.colors.accent : n.colors.textMuted}
-              />
-            </View>
-          ) : (
-            <View style={styles.cardIcon}>
-              <Ionicons
-                name={isDone ? 'checkmark-circle' : 'mic-outline'}
-                size={24}
-                color={isDone ? n.colors.success : n.colors.accent}
-              />
-            </View>
-          )}
-          <View style={styles.cardBody}>
-            <LinearText style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
-              {item.name}
-            </LinearText>
-            <LinearText style={styles.cardMeta}>
-              {formatDate(item.date)} · {item.sizeMB} MB · {item.folder}
-            </LinearText>
-            {isProcessing && processingMsg ? (
-              <View style={styles.statusRow}>
-                {processingState === 'transcribing' || processingState === 'saving' ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={n.colors.accent}
-                    style={{ marginRight: 6 }}
-                  />
-                ) : null}
-                <LinearText
-                  style={[
-                    styles.statusText,
-                    isDone && { color: n.colors.success },
-                    isError && { color: n.colors.error },
-                  ]}
-                  numberOfLines={2}
-                >
-                  {processingMsg}
-                </LinearText>
+          <LinearSurface
+            padded={false}
+            borderColor={
+              isSelected
+                ? n.colors.accent
+                : isError
+                  ? n.colors.error
+                  : isDone
+                    ? n.colors.success
+                    : n.colors.border
+            }
+            style={[
+              styles.card,
+              isDone && styles.cardDone,
+              isError && styles.cardError,
+              isSelected && styles.cardSelected,
+            ]}
+          >
+            {isSelectionMode ? (
+              <View style={styles.cardIcon}>
+                <Ionicons
+                  name={isSelected ? 'checkmark-circle' : 'ellipse-outline'}
+                  size={24}
+                  color={isSelected ? n.colors.accent : n.colors.textMuted}
+                />
               </View>
-            ) : null}
-          </View>
-          {!isSelectionMode && (
-            <View style={styles.cardActions}>
-              {!isProcessing || isDone || isError ? (
-                <>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => {
-                      if (isDone || isError) resetProcessing();
-                      void handleProcess(item);
-                    }}
-                    disabled={isProcessing && !isDone && !isError}
+            ) : (
+              <View style={styles.cardIcon}>
+                <Ionicons
+                  name={isDone ? 'checkmark-circle' : 'mic-outline'}
+                  size={24}
+                  color={isDone ? n.colors.success : n.colors.accent}
+                />
+              </View>
+            )}
+            <View style={styles.cardBody}>
+              <LinearText style={styles.cardName} numberOfLines={2} ellipsizeMode="tail">
+                {item.name}
+              </LinearText>
+              <LinearText style={styles.cardMeta}>
+                {formatDate(item.date)} · {item.sizeMB} MB · {item.folder}
+              </LinearText>
+              {isProcessing && processingMsg ? (
+                <View style={styles.statusRow}>
+                  {processingState === 'transcribing' || processingState === 'saving' ? (
+                    <ActivityIndicator
+                      size="small"
+                      color={n.colors.accent}
+                      style={{ marginRight: 6 }}
+                    />
+                  ) : null}
+                  <LinearText
+                    style={[
+                      styles.statusText,
+                      isDone && { color: n.colors.success },
+                      isError && { color: n.colors.error },
+                    ]}
+                    numberOfLines={2}
                   >
-                    <Ionicons name="cloud-upload-outline" size={20} color={n.colors.accent} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionBtn}
-                    onPress={() => handleDelete(item)}
-                    disabled={isProcessing && !isDone && !isError}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={n.colors.error} />
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <ActivityIndicator size="small" color={n.colors.accent} />
-              )}
+                    {processingMsg}
+                  </LinearText>
+                </View>
+              ) : null}
             </View>
-          )}
-        </LinearSurface>
-      </Pressable>
-    );
-  };
+            {!isSelectionMode && (
+              <View style={styles.cardActions}>
+                {!isProcessing || isDone || isError ? (
+                  <>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={() => {
+                        if (isDone || isError) resetProcessing();
+                        void handleProcess(item);
+                      }}
+                      disabled={isProcessing && !isDone && !isError}
+                    >
+                      <Ionicons name="cloud-upload-outline" size={20} color={n.colors.accent} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.actionBtn}
+                      onPress={() => handleDelete(item)}
+                      disabled={isProcessing && !isDone && !isError}
+                    >
+                      <Ionicons name="trash-outline" size={20} color={n.colors.error} />
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <ActivityIndicator size="small" color={n.colors.accent} />
+                )}
+              </View>
+            )}
+          </LinearSurface>
+        </Pressable>
+      );
+    },
+    [
+      processingFile,
+      processingState,
+      processingMsg,
+      selectedPaths,
+      isSelectionMode,
+      handleLongPress,
+      toggleSelection,
+      resetProcessing,
+      handleProcess,
+      handleDelete,
+    ],
+  );
 
   const handlePickFolder = useCallback(async () => {
     try {

@@ -9,12 +9,16 @@ import { asNullableString, asNumber, asString, yieldToUi } from './utils';
 
 export async function exportBackup(): Promise<boolean> {
   const db = getDb();
-  const [profile, topicProgress, dailyLog, lectureNotes] = await Promise.all([
-    db.getFirstAsync<BackupRow>('SELECT * FROM user_profile WHERE id = 1'),
-    db.getAllAsync<BackupRow>('SELECT * FROM topic_progress'),
-    db.getAllAsync<BackupRow>('SELECT * FROM daily_log ORDER BY date DESC LIMIT 90'),
-    db.getAllAsync<BackupRow>('SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 500'),
-  ]);
+  const [profile, topicProgress, dailyLog, lectureNotes, sessions, aiCache, brainDumps] =
+    await Promise.all([
+      db.getFirstAsync<BackupRow>('SELECT * FROM user_profile WHERE id = 1'),
+      db.getAllAsync<BackupRow>('SELECT * FROM topic_progress'),
+      db.getAllAsync<BackupRow>('SELECT * FROM daily_log ORDER BY date DESC LIMIT 365'),
+      db.getAllAsync<BackupRow>('SELECT * FROM lecture_notes ORDER BY created_at DESC LIMIT 5000'),
+      db.getAllAsync<BackupRow>('SELECT * FROM sessions'),
+      db.getAllAsync<BackupRow>('SELECT * FROM ai_cache'),
+      db.getAllAsync<BackupRow>('SELECT * FROM brain_dumps'),
+    ]);
 
   const backup: AppBackup = {
     version: BACKUP_VERSION,
@@ -23,6 +27,9 @@ export async function exportBackup(): Promise<boolean> {
     topic_progress: topicProgress,
     daily_log: dailyLog,
     lecture_notes: lectureNotes,
+    sessions,
+    ai_cache: aiCache,
+    brain_dumps: brainDumps,
   };
 
   const json = JSON.stringify(backup, null, 2);

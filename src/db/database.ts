@@ -382,6 +382,8 @@ async function seedVaultTopics(db: SQLite.SQLiteDatabase): Promise<void> {
         );
         if (existingTopic) {
           topicId = existingTopic.id;
+        } else {
+          continue; // Neither inserted nor found — skip to avoid pushing undefined
         }
       }
 
@@ -548,15 +550,18 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
     try {
       // Check if table exists before adding columns
       const tableCheck = await db.getFirstAsync<{ count: number }>(
-        `SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='${tableName}'`,
+        `SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name=?`,
+        [tableName],
       );
       if (!tableCheck || tableCheck.count === 0) continue;
 
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) continue;
       const cols = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName})`);
       const existing = new Set(cols.map((c) => c.name));
 
       for (const [col, def] of expectedCols) {
         if (!existing.has(col)) {
+          if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(col)) continue;
           try {
             await db.execAsync(`ALTER TABLE ${tableName} ADD COLUMN ${col} ${def}`);
             totalAdded++;

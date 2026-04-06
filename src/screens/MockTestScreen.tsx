@@ -148,6 +148,26 @@ export default function MockTestScreen() {
     return { correct, wrong, skipped, score, maxScore, pct };
   }, [answers, questions]);
 
+  // Pre-sorted review entries with original indices — avoids O(n) indexOf per FlatList item
+  const sortedReviewEntries = useMemo(() => {
+    const indexed = questions.map((q, i) => ({ q, origIdx: i }));
+    indexed.sort((a, b) => {
+      const aAns = answers[a.origIdx];
+      const bAns = answers[b.origIdx];
+      const aCorrect = aAns === a.q.correctIndex;
+      const bCorrect = bAns === b.q.correctIndex;
+      const aSkipped = aAns === null || aAns === -1;
+      const bSkipped = bAns === null || bAns === -1;
+      // Wrong first, then skipped, then correct
+      if (!aCorrect && !aSkipped && (bCorrect || bSkipped)) return -1;
+      if (!bCorrect && !bSkipped && (aCorrect || aSkipped)) return 1;
+      if (aSkipped && bCorrect) return -1;
+      if (bSkipped && aCorrect) return 1;
+      return a.origIdx - b.origIdx;
+    });
+    return indexed;
+  }, [questions, answers]);
+
   const renderReviewItem = useCallback(
     ({ item, index }: { item: MockQuestion; index: number }) => {
       const ans = answers[index];
@@ -297,24 +317,11 @@ export default function MockTestScreen() {
       <SafeAreaView style={styles.safe}>
         <StatusBar barStyle="light-content" backgroundColor={n.colors.background} />
         <FlatList
-          data={[...questions].sort((a, b) => {
-            const aIdx = questions.indexOf(a);
-            const bIdx = questions.indexOf(b);
-            const aAns = answers[aIdx];
-            const bAns = answers[bIdx];
-            const aCorrect = aAns === a.correctIndex;
-            const bCorrect = bAns === b.correctIndex;
-            const aSkipped = aAns === null || aAns === -1;
-            const bSkipped = bAns === null || bAns === -1;
-            // Wrong first, then skipped, then correct
-            if (!aCorrect && !aSkipped && (bCorrect || bSkipped)) return -1;
-            if (!bCorrect && !bSkipped && (aCorrect || aSkipped)) return 1;
-            if (aSkipped && bCorrect) return -1;
-            if (bSkipped && aCorrect) return 1;
-            return aIdx - bIdx;
-          })}
-          keyExtractor={(item) => `review-${questions.indexOf(item)}`}
-          renderItem={({ item }) => renderReviewItem({ item, index: questions.indexOf(item) })}
+          data={sortedReviewEntries}
+          keyExtractor={(entry) => `review-${entry.origIdx}`}
+          renderItem={({ item: entry }) =>
+            renderReviewItem({ item: entry.q, index: entry.origIdx })
+          }
           contentContainerStyle={styles.resultsContent}
           initialNumToRender={8}
           windowSize={8}

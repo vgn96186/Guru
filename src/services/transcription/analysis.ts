@@ -237,7 +237,10 @@ Segment ${i + 1}:
           .map((a: LectureAnalysis) => a.lectureSummary)
           .join(' ')
           .slice(0, 200) + '...',
-      estimatedConfidence: (analyses[0]?.estimatedConfidence ?? 2) as 1 | 2 | 3,
+      estimatedConfidence: Math.max(
+        1,
+        Math.min(3, Math.round(analyses[0]?.estimatedConfidence ?? 2)),
+      ) as 1 | 2 | 3,
     };
   }
 }
@@ -263,6 +266,9 @@ function mapParsedAnalysis(parsed: ParsedAnalysis): LectureAnalysis {
       ? parsed.high_yield_highlights.slice(0, 5)
       : [],
     lectureSummary,
-    estimatedConfidence: (parsed.estimated_confidence ?? 2) as 1 | 2 | 3,
+    estimatedConfidence: Math.max(1, Math.min(3, Math.round(parsed.estimated_confidence ?? 2))) as
+      | 1
+      | 2
+      | 3,
   };
 }

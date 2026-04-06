@@ -627,11 +627,13 @@ export async function generateStudyPlan(
       continue;
     }
 
+    const MAX_DAY_MINUTES = 1440;
+
     // 1. Must-do: Future Scheduled Reviews (SRS simulation)
     const scheduledToday = futureReviews.get(i) || [];
     futureReviews.delete(i);
     for (const item of scheduledToday) {
-      if (dayMinutes + item.duration <= dailyGoal * 1.2) {
+      if (dayMinutes + item.duration <= Math.min(dailyGoal * 1.2, MAX_DAY_MINUTES)) {
         // Allow slight overflow for reviews
         dayItems.push(item);
         dayMinutes += item.duration;
@@ -645,7 +647,7 @@ export async function generateStudyPlan(
     }
 
     // 2. Backlog Reviews
-    while (queueReviews.length > 0 && dayMinutes < dailyGoal) {
+    while (queueReviews.length > 0 && dayMinutes < dailyGoal && dayMinutes < MAX_DAY_MINUTES) {
       const item = queueReviews.shift()!;
       dayItems.push(item);
       dayMinutes += item.duration;
@@ -659,7 +661,7 @@ export async function generateStudyPlan(
         dailyGoal * resourceProfile.deepDiveDailyBudgetMultiplier * examIntelligence.deepDiveBias,
       ),
     );
-    while (queueDeep.length > 0 && dayMinutes < deepDiveBudget) {
+    while (queueDeep.length > 0 && dayMinutes < deepDiveBudget && dayMinutes < MAX_DAY_MINUTES) {
       const diveLimit = mode === 'exam_crunch' ? 2 : 1;
       const deepThreshold = mode === 'high_yield' ? deepDiveBudget * 0.85 : deepDiveBudget * 0.7;
       if (divesToday >= diveLimit && dayMinutes > deepThreshold) break; // Balance
@@ -693,7 +695,7 @@ export async function generateStudyPlan(
     const newTopicBudgetMultiplier =
       mode === 'exam_crunch' ? 0.55 : mode === 'high_yield' ? 0.8 : 1;
     const backlogGateFactor = newTopicsGated
-      ? Math.max(0.1, 1 - (overdueBacklogDays - 4) * 0.15) // ramp down as backlog grows
+      ? Math.max(0.25, 1 - Math.log2(Math.max(1, overdueBacklogDays - 3)) * 0.2) // logarithmic decay as backlog grows
       : 1;
     const foundationalGapGateFactor = foundationalGapsNeedPriority
       ? Math.max(0.2, 1 - Math.max(0, foundationalGapDays - 2) * 0.18)
@@ -704,7 +706,7 @@ export async function generateStudyPlan(
       examIntelligence.newTopicBias *
       backlogGateFactor *
       foundationalGapGateFactor;
-    while (queueNew.length > 0 && dayMinutes < newTopicBudget) {
+    while (queueNew.length > 0 && dayMinutes < newTopicBudget && dayMinutes < MAX_DAY_MINUTES) {
       const item = queueNew.shift()!;
       dayItems.push(item);
       dayMinutes += item.duration;

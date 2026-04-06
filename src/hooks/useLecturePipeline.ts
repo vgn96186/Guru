@@ -225,6 +225,11 @@ Summary: ${result.lectureSummary}`;
       detail: 'Checking the recording and selecting the transcription path',
       percent: 4,
     });
+    // Clear any existing stall-check interval before creating a new one
+    if (stallCheckIntervalRef.current) {
+      clearInterval(stallCheckIntervalRef.current);
+      stallCheckIntervalRef.current = null;
+    }
     stallCheckIntervalRef.current = setInterval(() => {
       if (runId !== transcriptionRunIdRef.current || cancelRequestedRef.current) {
         clearInterval(stallCheckIntervalRef.current!);
@@ -609,6 +614,16 @@ Summary: ${result.lectureSummary}`;
       }
     }
   }, [visible]);
+
+  // Cleanup stall-check interval on unmount to prevent leaks
+  useEffect(() => {
+    return () => {
+      if (stallCheckIntervalRef.current) {
+        clearInterval(stallCheckIntervalRef.current);
+        stallCheckIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!visible) return;

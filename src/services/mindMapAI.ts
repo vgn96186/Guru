@@ -224,7 +224,7 @@ function layoutFromAIResponse(resp: MindMapAIResponse): MindMapLayout {
 
     const branchIdx = nodes.length;
     nodes.push({ label: branch.label, x, y, isCenter: false });
-    labelToIndex.set(branch.label, branchIdx);
+    if (!labelToIndex.has(branch.label)) labelToIndex.set(branch.label, branchIdx);
     edges.push({ sourceIndex: 0, targetIndex: branchIdx });
 
     if (branch.children?.length) {
@@ -237,7 +237,7 @@ function layoutFromAIResponse(resp: MindMapAIResponse): MindMapLayout {
 
         const childIdx = nodes.length;
         nodes.push({ label: child.label, x: cx, y: cy, isCenter: false });
-        labelToIndex.set(child.label, childIdx);
+        if (!labelToIndex.has(child.label)) labelToIndex.set(child.label, childIdx);
         edges.push({
           sourceIndex: branchIdx,
           targetIndex: childIdx,
@@ -254,7 +254,7 @@ function layoutFromAIResponse(resp: MindMapAIResponse): MindMapLayout {
             const ly = leafStartY + k * VERTICAL_SPACING_L3;
 
             nodes.push({ label: leaf.label, x: lx, y: ly, isCenter: false });
-            labelToIndex.set(leaf.label, leafIdx);
+            if (!labelToIndex.has(leaf.label)) labelToIndex.set(leaf.label, leafIdx);
             edges.push({
               sourceIndex: childIdx,
               targetIndex: leafIdx,

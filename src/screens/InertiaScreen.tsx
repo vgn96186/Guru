@@ -101,7 +101,7 @@ export default function InertiaScreen() {
       clearTimeout(t3);
       clearTimeout(t4);
     };
-  }, []);
+  }, [phase]);
 
   function fadeIn() {
     fadeAnim.setValue(0);
@@ -120,6 +120,10 @@ export default function InertiaScreen() {
         )
         .slice(0, 50);
       const selected = pool[Math.floor(Math.random() * pool.length)] || topics[0];
+      if (!selected) {
+        setPhase('sit_up_prompt');
+        return;
+      }
       setTopic(selected);
 
       const res = await fetchContent(selected, 'detective');

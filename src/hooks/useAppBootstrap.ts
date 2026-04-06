@@ -24,6 +24,9 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
   const loadProfile = useAppStore((s) => s.loadProfile);
   const refreshProfile = useAppStore((s) => s.refreshProfile);
   const initialized = useRef(false);
+  const backupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warmCacheTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const validateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleUrl = (url: string | null) => {
@@ -108,7 +111,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       );
 
       // 4. Auto-backup check (deferred, non-blocking)
-      setTimeout(() => {
+      backupTimerRef.current = setTimeout(() => {
         shouldRunAutoBackup()
           .then((shouldRun) => {
             if (shouldRun) {
@@ -124,14 +127,14 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
       }, 6000);
 
       // 5. Deferred Recovery (10s delay to stay out of critical path)
-      setTimeout(() => {
+      warmCacheTimerRef.current = setTimeout(() => {
         warmAiContentCache({ topicLimit: 2, refreshNotifications: false }).catch((e) =>
           console.warn('[AIWarmup] Startup prefetch failed:', e),
         );
       }, 4000);
 
       // 6. Background provider validation (non-blocking)
-      setTimeout(() => {
+      validateTimerRef.current = setTimeout(() => {
         validateAiProvidersOnBoot().catch((e) =>
           console.warn('[AI_BOOT] Provider validation failed:', e instanceof Error ? e.message : e),
         );
@@ -148,6 +151,7 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
 
     void bootstrap().catch((e) => {
       console.error('[AppBootstrap] Fatal startup error:', e);
+      initialized.current = false; // Allow retry on next mount
       onFatalError?.(e instanceof Error ? e.message : 'App startup failed');
     });
 
@@ -160,6 +164,9 @@ export function useAppBootstrap(onFatalError?: (message: string) => void): void 
 
     return () => {
       sub.remove();
+      if (backupTimerRef.current) clearTimeout(backupTimerRef.current);
+      if (warmCacheTimerRef.current) clearTimeout(warmCacheTimerRef.current);
+      if (validateTimerRef.current) clearTimeout(validateTimerRef.current);
     };
   }, [loadProfile, onFatalError, refreshProfile]);
 }

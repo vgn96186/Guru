@@ -28,10 +28,10 @@ import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
 
 const RATINGS = [
-  { label: 'Again', confidence: 1, color: n.colors.error },
-  { label: 'Hard', confidence: 2, color: n.colors.warning },
-  { label: 'Good', confidence: 3, color: n.colors.success },
-  { label: 'Easy', confidence: 4, color: n.colors.accent },
+  { label: 'Again', confidence: 0, color: n.colors.error },
+  { label: 'Hard', confidence: 1, color: n.colors.warning },
+  { label: 'Good', confidence: 2, color: n.colors.success },
+  { label: 'Easy', confidence: 3, color: n.colors.accent },
 ];
 
 export default function FlashcardsScreen() {
@@ -48,6 +48,7 @@ export default function FlashcardsScreen() {
   const flipAnim = useRef(new Animated.Value(0)).current;
   const panXY = useRef(new Animated.ValueXY()).current;
   const isFlippedRef = useRef(false);
+  const isAnimatingRef = useRef(false);
 
   useEffect(() => {
     async function loadQueue() {
@@ -88,7 +89,7 @@ export default function FlashcardsScreen() {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gs) => {
-        if (!isFlippedRef.current) return false;
+        if (!isFlippedRef.current || isAnimatingRef.current) return false;
         return Math.abs(gs.dx) > 10;
       },
       onPanResponderMove: Animated.event([null, { dx: panXY.x }], { useNativeDriver: false }),
@@ -119,14 +120,18 @@ export default function FlashcardsScreen() {
   ).current;
 
   function handleFlip() {
+    const newValue = isFlippedRef.current ? 0 : 180;
+    isAnimatingRef.current = true;
     Animated.spring(flipAnim, {
-      toValue: 180,
+      toValue: newValue,
       friction: 8,
       tension: 10,
       useNativeDriver: true,
-    }).start();
-    setIsFlipped(true);
-    isFlippedRef.current = true;
+    }).start(() => {
+      isAnimatingRef.current = false;
+    });
+    setIsFlipped(!isFlippedRef.current);
+    isFlippedRef.current = !isFlippedRef.current;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
@@ -145,11 +150,11 @@ export default function FlashcardsScreen() {
     if (!currentTopic) return;
 
     const newConf = rating.confidence;
-    const xp = 10 * newConf + (currentTopic.progress.isNemesis ? 50 : 0);
+    const xp = 10 * (newConf + 1) + (currentTopic.progress.isNemesis ? 50 : 0);
 
     await updateTopicProgress(
       currentTopic.id,
-      newConf >= 4 ? 'mastered' : newConf >= 2 ? 'reviewed' : 'seen',
+      newConf >= 3 ? 'mastered' : newConf >= 2 ? 'reviewed' : 'seen',
       newConf,
       xp,
     );
@@ -180,6 +185,21 @@ export default function FlashcardsScreen() {
   }
 
   const currentCard = cards[cardIdx];
+  if (!currentCard) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" />
+        <ResponsiveContainer>
+          <ScreenHeader title="Flashcards" />
+          <View style={styles.cardArea}>
+            <LinearText style={{ textAlign: 'center', marginTop: 40 }}>
+              No cards available
+            </LinearText>
+          </View>
+        </ResponsiveContainer>
+      </SafeAreaView>
+    );
+  }
   const isLastCard = cardIdx === cards.length - 1;
 
   const frontAnimatedStyle = {
@@ -211,7 +231,7 @@ export default function FlashcardsScreen() {
           subtitle={currentTopic?.subjectName}
           rightElement={
             <LinearText style={styles.progressText}>
-              {currentIdx + 1}/{queue.length}
+              {cardIdx + 1}/{cards.length} · Topic {currentIdx + 1}/{queue.length}
             </LinearText>
           }
         />

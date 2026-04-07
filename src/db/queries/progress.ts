@@ -178,6 +178,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     dbmci_class_start_date?: string | null;
     btr_start_date?: string | null;
     home_novelty_cooldown_hours?: number | null;
+    disabled_providers?: string;
   }>('SELECT * FROM user_profile WHERE id = 1');
 
   if (!r) {
@@ -412,6 +413,14 @@ export async function getUserProfile(): Promise<UserProfile> {
     dbmciClassStartDate: r.dbmci_class_start_date ?? null,
     btrStartDate: r.btr_start_date ?? null,
     homeNoveltyCooldownHours: Math.min(24, Math.max(1, r.home_novelty_cooldown_hours ?? 6)),
+    disabledProviders: (() => {
+      try {
+        const parsed = JSON.parse(r.disabled_providers ?? '[]');
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    })(),
   };
 }
 
@@ -528,6 +537,10 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
   if ('providerOrder' in updates) {
     setClauses.push('provider_order = ?');
     values.push(JSON.stringify(updates.providerOrder ?? []));
+  }
+  if ('disabledProviders' in updates) {
+    setClauses.push('disabled_providers = ?');
+    values.push(JSON.stringify(updates.disabledProviders ?? []));
   }
   if ('apiValidation' in updates) {
     setClauses.push('api_validation_json = ?');

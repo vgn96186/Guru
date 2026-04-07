@@ -37,20 +37,23 @@ function getBackendAttemptOrder(profile: UserProfile) {
     poeConnected,
   } = getApiKeys(profile);
   const hasLocal = isLocalLlmUsable(profile);
+  const disabled = new Set(profile.disabledProviders ?? []);
+  const d = (id: ProviderId) => disabled.has(id);
+
   const hasCloud =
-    !!orKey ||
-    !!groqKey ||
-    !!geminiKey ||
-    !!geminiFallbackKey ||
-    (!!cfAccountId && !!cfApiToken) ||
-    !!deepseekKey ||
-    !!githubModelsPat ||
-    !!kiloApiKey ||
-    !!agentRouterKey ||
-    chatgptConnected ||
-    githubCopilotConnected ||
-    gitlabDuoConnected ||
-    poeConnected;
+    (!d('openrouter') && !!orKey) ||
+    (!d('groq') && !!groqKey) ||
+    (!d('gemini') && !!geminiKey) ||
+    (!d('gemini_fallback') && !!geminiFallbackKey) ||
+    (!d('cloudflare') && !!cfAccountId && !!cfApiToken) ||
+    (!d('deepseek') && !!deepseekKey) ||
+    (!d('github') && !!githubModelsPat) ||
+    (!d('kilo') && !!kiloApiKey) ||
+    (!d('agentrouter') && !!agentRouterKey) ||
+    (!d('chatgpt') && chatgptConnected) ||
+    (!d('github_copilot') && githubCopilotConnected) ||
+    (!d('gitlab_duo') && gitlabDuoConnected) ||
+    (!d('poe') && poeConnected);
 
   const attempts: ('local' | 'cloud')[] = [];
   const chatgptSlots: ChatGptAccountSlot[] = [];
@@ -73,22 +76,24 @@ function getBackendAttemptOrder(profile: UserProfile) {
 
   return {
     attempts,
-    orKey,
-    groqKey,
-    geminiKey,
-    geminiFallbackKey,
-    cfAccountId,
-    cfApiToken,
-    deepseekKey,
-    githubModelsPat,
-    kiloApiKey,
-    agentRouterKey,
-    chatgptConnected,
-    chatgptSlots,
-    githubCopilotConnected,
-    gitlabDuoConnected,
-    poeConnected,
-    providerOrder: sanitizeProviderOrder(profile.providerOrder ?? []),
+    orKey: d('openrouter') ? '' : orKey,
+    groqKey: d('groq') ? '' : groqKey,
+    geminiKey: d('gemini') ? '' : geminiKey,
+    geminiFallbackKey: d('gemini_fallback') ? '' : geminiFallbackKey,
+    cfAccountId: d('cloudflare') ? '' : cfAccountId,
+    cfApiToken: d('cloudflare') ? '' : cfApiToken,
+    deepseekKey: d('deepseek') ? '' : deepseekKey,
+    githubModelsPat: d('github') ? '' : githubModelsPat,
+    kiloApiKey: d('kilo') ? '' : kiloApiKey,
+    agentRouterKey: d('agentrouter') ? '' : agentRouterKey,
+    chatgptConnected: d('chatgpt') ? false : chatgptConnected,
+    chatgptSlots: d('chatgpt') ? [] : chatgptSlots,
+    githubCopilotConnected: d('github_copilot') ? false : githubCopilotConnected,
+    gitlabDuoConnected: d('gitlab_duo') ? false : gitlabDuoConnected,
+    poeConnected: d('poe') ? false : poeConnected,
+    providerOrder: sanitizeProviderOrder(profile.providerOrder ?? []).filter(
+      (p) => !disabled.has(p),
+    ),
   };
 }
 

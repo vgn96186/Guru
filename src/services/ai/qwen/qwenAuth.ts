@@ -412,6 +412,15 @@ export async function isQwenAuthenticated(): Promise<boolean> {
   return tokens.expiresAt > Date.now() && !!(tokens.accessToken || tokens.apiKey);
 }
 
+/** Exponential cooldown after consecutive refresh failures. */
+let qwenRefreshFailCount = 0;
+let qwenRefreshCooldownUntil = 0;
+const REFRESH_COOLDOWN_MS = [
+  2 * 60_000, // 1st fail: 2 min
+  10 * 60_000, // 2nd fail: 10 min
+  30 * 60_000, // 3rd+ fail: 30 min
+];
+
 export async function getQwenAccessToken(): Promise<{
   accessToken: string;
   apiKey?: string;
@@ -421,6 +430,16 @@ export async function getQwenAccessToken(): Promise<{
   if (!tokens || tokens.expiresAt <= Date.now()) {
     // Try refresh
     if (tokens?.refreshToken) {
+      // Respect cooldown after previous refresh failures
+      const now = Date.now();
+      if (qwenRefreshCooldownUntil > now) {
+        if (__DEV__) {
+          const secsLeft = Math.ceil((qwenRefreshCooldownUntil - now) / 1000);
+          console.warn(`[Qwen OAuth] Token refresh on cooldown (${secsLeft}s remaining)`);
+        }
+        return null;
+      }
+
       if (__DEV__) console.log(`[Qwen OAuth] Token expired or missing, attempting refresh...`);
       try {
         const refreshed = await refreshQwenToken(tokens.refreshToken);
@@ -432,13 +451,23 @@ export async function getQwenAccessToken(): Promise<{
           apiKey: refreshed.api_key,
           resourceUrl: refreshed.resource_url || tokens.resourceUrl,
         });
+        qwenRefreshFailCount = 0;
+        qwenRefreshCooldownUntil = 0;
         return {
           accessToken: refreshed.access_token,
           apiKey: refreshed.api_key,
           resourceUrl: refreshed.resource_url || tokens.resourceUrl,
         };
       } catch (err) {
-        if (__DEV__) console.error(`[Qwen OAuth] Token refresh failed:`, (err as Error).message);
+        qwenRefreshFailCount++;
+        const idx = Math.min(qwenRefreshFailCount - 1, REFRESH_COOLDOWN_MS.length - 1);
+        qwenRefreshCooldownUntil = Date.now() + REFRESH_COOLDOWN_MS[idx];
+        if (__DEV__) {
+          console.error(
+            `[Qwen OAuth] Token refresh failed (attempt ${qwenRefreshFailCount}), cooldown ${REFRESH_COOLDOWN_MS[idx] / 1000}s:`,
+            (err as Error).message,
+          );
+        }
         await clearQwenTokens();
         return null;
       }

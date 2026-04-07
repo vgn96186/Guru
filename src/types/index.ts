@@ -235,6 +235,8 @@ export interface UserProfile {
   btrStartDate?: string | null;
   /** Home anti-repeat cooldown in hours (controls novelty rotation aggressiveness). */
   homeNoveltyCooldownHours?: number;
+  /** Providers the user has explicitly disabled (skipped during routing even if keys exist). */
+  disabledProviders?: ProviderId[];
 }
 
 export type ProviderId =

@@ -220,6 +220,7 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , dbmci_class_start_date TEXT
   , btr_start_date TEXT
   , home_novelty_cooldown_hours INTEGER NOT NULL DEFAULT 6
+  , disabled_providers TEXT NOT NULL DEFAULT '[]'
 )`;
 
 export const CREATE_GURU_CHAT_SESSION_MEMORY = `

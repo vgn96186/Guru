@@ -642,6 +642,9 @@ export default function SettingsScreen() {
   const [guruMemoryNotes, setGuruMemoryNotes] = useState('');
   const [preferGeminiStructuredJson, setPreferGeminiStructuredJson] = useState(true);
   const [providerOrder, setProviderOrder] = useState<import('../types').ProviderId[]>([]);
+  const [disabledProviders, setDisabledProviders] = useState<Set<import('../types').ProviderId>>(
+    new Set(),
+  );
   const profileHydrationSignatureRef = useRef<string | null>(null);
 
   const markProviderValidated = useCallback((provider: ValidationProviderId, secret: string) => {
@@ -1400,6 +1403,7 @@ export default function SettingsScreen() {
         deepseekKey: currentProfile.deepseekKey ?? '',
         agentRouterKey: currentProfile.agentRouterKey ?? '',
         providerOrder: sanitizeProviderOrder(currentProfile.providerOrder),
+        disabledProviders: currentProfile.disabledProviders ?? [],
         openrouterKey: currentProfile.openrouterKey ?? '',
         geminiKey: currentProfile.geminiKey ?? '',
         deepgramApiKey: (currentProfile as any).deepgramApiKey ?? '',
@@ -1469,6 +1473,7 @@ export default function SettingsScreen() {
       setDeepseekKey(profile.deepseekKey ?? '');
       setAgentRouterKey(profile.agentRouterKey ?? '');
       setProviderOrder(sanitizeProviderOrder(profile.providerOrder));
+      setDisabledProviders(new Set(profile.disabledProviders ?? []));
       // Auto-inject 'qwen' into provider order if missing (new provider)
       setProviderOrder((prev) => {
         if (prev.includes('qwen')) return prev;
@@ -1556,6 +1561,7 @@ export default function SettingsScreen() {
         deepseekKey: deepseekKey.trim(),
         agentRouterKey: agentRouterKey.trim(),
         providerOrder: sanitizeProviderOrder(providerOrder),
+        disabledProviders: [...disabledProviders],
         openrouterKey: orKey.trim(),
         geminiKey: geminiKey.trim(),
         cloudflareAccountId: cfAccountId.trim(),
@@ -1625,6 +1631,7 @@ export default function SettingsScreen() {
     deepseekKey,
     agentRouterKey,
     providerOrder,
+    disabledProviders,
     orKey,
     geminiKey,
     cfAccountId,
@@ -3611,21 +3618,61 @@ export default function SettingsScreen() {
                       return false;
                   }
                 })();
+                const isDisabled = disabledProviders.has(id);
                 return (
                   <LinearSurface
                     padded={false}
                     key={id}
-                    style={[styles.providerRow, !hasKey && { opacity: 0.45 }]}
+                    style={[styles.providerRow, (!hasKey || isDisabled) && { opacity: 0.45 }]}
                   >
+                    <Pressable
+                      onPress={() => {
+                        setDisabledProviders((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(id)) next.delete(id);
+                          else next.add(id);
+                          void updateUserProfile({ disabledProviders: [...next] })
+                            .then(() => refreshProfile())
+                            .catch((err) => {
+                              if (__DEV__)
+                                console.warn('[Settings] Failed to toggle provider:', err);
+                            });
+                          return next;
+                        });
+                      }}
+                      style={({ pressed }) => [
+                        styles.providerActionBtn,
+                        pressed && styles.providerActionBtnPressed,
+                      ]}
+                      accessibilityRole="switch"
+                      accessibilityState={{ checked: !isDisabled }}
+                      accessibilityLabel={`${isDisabled ? 'Enable' : 'Disable'} ${PROVIDER_DISPLAY_NAMES[id]}`}
+                    >
+                      <Ionicons
+                        name={isDisabled ? 'power' : 'power'}
+                        size={18}
+                        color={isDisabled ? n.colors.error : n.colors.success}
+                      />
+                    </Pressable>
                     <LinearText style={styles.providerIndex}>{index + 1}</LinearText>
                     <View
                       style={[
                         styles.providerDot,
-                        { backgroundColor: hasKey ? n.colors.success : n.colors.textMuted },
+                        {
+                          backgroundColor: isDisabled
+                            ? n.colors.error
+                            : hasKey
+                              ? n.colors.success
+                              : n.colors.textMuted,
+                        },
                       ]}
                     />
                     <LinearText
-                      style={[styles.providerName, { color: n.colors.textPrimary }]}
+                      style={[
+                        styles.providerName,
+                        { color: n.colors.textPrimary },
+                        isDisabled && { textDecorationLine: 'line-through' },
+                      ]}
                       numberOfLines={2}
                     >
                       {PROVIDER_DISPLAY_NAMES[id]}
@@ -3690,7 +3737,11 @@ export default function SettingsScreen() {
                 onPress={() => {
                   const reset = [...DEFAULT_PROVIDER_ORDER];
                   setProviderOrder(reset);
-                  void updateUserProfile({ providerOrder: sanitizeProviderOrder(reset) })
+                  setDisabledProviders(new Set());
+                  void updateUserProfile({
+                    providerOrder: sanitizeProviderOrder(reset),
+                    disabledProviders: [],
+                  })
                     .then(() => refreshProfile())
                     .catch((err) => {
                       if (__DEV__) console.warn('[Settings] Failed to reset provider order:', err);

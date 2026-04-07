@@ -1041,7 +1041,12 @@ DROP TABLE ai_cache_old;`,
     sql: `ALTER TABLE user_profile ADD COLUMN qwen_connected INTEGER NOT NULL DEFAULT 0`,
     description: 'Add Qwen OAuth connection flag',
   },
+  {
+    version: 158,
+    sql: `ALTER TABLE user_profile ADD COLUMN disabled_providers TEXT NOT NULL DEFAULT '[]'`,
+    description: 'Add per-provider disable toggles',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 157;
+export const LATEST_VERSION = 158;

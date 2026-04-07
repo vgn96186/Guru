@@ -23,6 +23,15 @@ const SECONDARY_KEYS = {
 
 const refreshMutex: Partial<Record<ChatGptAccountSlot, Promise<string>>> = {};
 
+/** Exponential cooldown after consecutive refresh failures per slot. */
+const refreshFailCount: Partial<Record<ChatGptAccountSlot, number>> = {};
+const refreshCooldownUntil: Partial<Record<ChatGptAccountSlot, number>> = {};
+const COOLDOWN_SCHEDULE_MS = [
+  2 * 60_000, // 1st fail: 2 min
+  10 * 60_000, // 2nd fail: 10 min
+  30 * 60_000, // 3rd+ fail: 30 min
+];
+
 function getSlotKeys(slot: ChatGptAccountSlot) {
   return slot === 'secondary' ? SECONDARY_KEYS : PRIMARY_KEYS;
 }
@@ -40,6 +49,9 @@ export async function saveTokens(
     SecureStore.setItemAsync(keys.expiresAt, expiresAt),
     SecureStore.setItemAsync(keys.accountId, accountId),
   ]);
+  // Fresh tokens → clear any refresh cooldown for this slot
+  delete refreshFailCount[slot];
+  delete refreshCooldownUntil[slot];
 }
 
 export async function getAccessToken(slot: ChatGptAccountSlot = 'primary'): Promise<string | null> {
@@ -76,12 +88,24 @@ function isExpiringSoon(slot: ChatGptAccountSlot): Promise<boolean> {
 /**
  * Returns a valid access token, refreshing if needed.
  * The mutex prevents concurrent refreshes (single-use refresh token safety).
+ * Backs off exponentially after consecutive refresh failures.
  */
 export async function getValidAccessToken(slot: ChatGptAccountSlot = 'primary'): Promise<string> {
   const expiring = await isExpiringSoon(slot);
   if (!expiring) {
     const token = await getAccessToken(slot);
     if (token) return token;
+  }
+
+  // Respect cooldown after previous refresh failures
+  const now = Date.now();
+  const cooldownEnd = refreshCooldownUntil[slot] ?? 0;
+  if (cooldownEnd > now) {
+    const secsLeft = Math.ceil((cooldownEnd - now) / 1000);
+    const fails = refreshFailCount[slot] ?? 0;
+    throw new Error(
+      `ChatGPT (${slot}) token refresh on cooldown (${secsLeft}s remaining after ${fails} failed attempt${fails > 1 ? 's' : ''}). Will retry automatically.`,
+    );
   }
 
   // If a refresh is already in flight, wait for it
@@ -95,6 +119,18 @@ export async function getValidAccessToken(slot: ChatGptAccountSlot = 'primary'):
       const tokens = await refreshAccessToken(refreshToken);
       await saveTokens(tokens, slot);
       return tokens.access_token;
+    } catch (err) {
+      const fails = (refreshFailCount[slot] ?? 0) + 1;
+      refreshFailCount[slot] = fails;
+      const idx = Math.min(fails - 1, COOLDOWN_SCHEDULE_MS.length - 1);
+      refreshCooldownUntil[slot] = Date.now() + COOLDOWN_SCHEDULE_MS[idx];
+      if (__DEV__) {
+        console.warn(
+          `[ChatGPT/${slot}] Token refresh failed (attempt ${fails}), cooldown ${COOLDOWN_SCHEDULE_MS[idx] / 1000}s`,
+          err,
+        );
+      }
+      throw err;
     } finally {
       delete refreshMutex[slot];
     }

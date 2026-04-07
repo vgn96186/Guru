@@ -100,7 +100,7 @@ describe('aiService routing policy', () => {
     expect(fetchMock).toHaveBeenCalled();
   });
 
-  it('uses Groq before OpenRouter when both keys are available', async () => {
+  it('uses Groq after OpenRouter fails when both keys are available', async () => {
     const { aiService } = await loadAiService();
     let groqCalls = 0;
     let openRouterCalls = 0;
@@ -130,7 +130,7 @@ describe('aiService routing policy', () => {
 
     expect(result.text).toBe('groq-success');
     expect(groqCalls).toBeGreaterThanOrEqual(1);
-    expect(openRouterCalls).toBe(0);
+    expect(openRouterCalls).toBeGreaterThanOrEqual(1);
     expect(fetchMock).toHaveBeenCalled();
   });
 

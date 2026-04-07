@@ -107,6 +107,7 @@ describe('generateJSONWithRouting', () => {
       githubCopilotConnected: false,
       gitlabDuoConnected: false,
       poeConnected: false,
+      qwenConnected: false,
     });
     jest.mocked(profileRepository.getProfile).mockResolvedValue(minimalProfile);
     jest.mocked(geminiGenerateStructuredJsonSdk).mockReset();

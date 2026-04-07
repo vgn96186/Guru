@@ -178,6 +178,7 @@ export async function renameRecordingToLectureIdentity(
   if (targetUri === sourceUri) return recordingPath;
 
   try {
+    await FileSystemLegacy.deleteAsync(targetUri, { idempotent: true });
     await FileSystemLegacy.moveAsync({ from: sourceUri, to: targetUri });
     return fromFileUri(targetUri, preserveRawPath);
   } catch (err) {

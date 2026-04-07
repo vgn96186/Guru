@@ -68,10 +68,39 @@ const TutorStateSchema = z.object({
   tangentParkingLot: z.array(z.string()).max(5).default([]),
 });
 
-const SummaryPayloadSchema = z.object({
-  summaryBullets: z.array(z.string()).min(1).max(6),
-  state: TutorStateSchema,
-});
+/** Known keys that belong inside the `state` object. */
+const STATE_KEYS = new Set<string>(TutorStateSchema.keyof().options);
+
+/**
+ * Some models (e.g. Qwen) return all state fields flat at the top level instead
+ * of nested under a `state` key. This preprocessor normalises both shapes into
+ * the canonical `{ summaryBullets, state: { … } }` form.
+ */
+const SummaryPayloadSchema = z.preprocess(
+  (raw) => {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return raw;
+    const obj = raw as Record<string, unknown>;
+    if (obj.state !== undefined) return obj; // already nested — pass through
+
+    const state: Record<string, unknown> = {};
+    const rest: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (STATE_KEYS.has(k)) {
+        state[k] = v;
+      } else {
+        rest[k] = v;
+      }
+    }
+    if (Object.keys(state).length > 0) {
+      rest.state = state;
+    }
+    return rest;
+  },
+  z.object({
+    summaryBullets: z.array(z.string()).min(1).max(6),
+    state: TutorStateSchema,
+  }),
+);
 
 const SUMMARY_SYSTEM = `You compress NEET-PG/INICET tutoring chats into compact memory.
 Return strict JSON only.

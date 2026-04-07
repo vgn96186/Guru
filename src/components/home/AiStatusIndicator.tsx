@@ -58,6 +58,7 @@ export function AiStatusIndicator({ profile }: { profile: NonNullable<UserProfil
     { name: 'Copilot', on: keys.githubCopilotConnected },
     { name: 'GitLab', on: keys.gitlabDuoConnected },
     { name: 'Poe', on: keys.poeConnected },
+    { name: 'Qwen', on: !!profile?.qwenConnected },
     { name: 'Groq', on: !!keys.groqKey },
     { name: 'Gemini', on: !!keys.geminiKey },
     { name: 'OR', on: !!keys.orKey },

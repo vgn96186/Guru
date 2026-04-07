@@ -86,8 +86,8 @@ Style: Extended clinical vignettes, highly rigorous, INICET standard difficulty.
 Explanation formatting is mandatory: use markdown headings and bullet points exactly as shown so it renders cleanly in-app. Avoid a single paragraph block.
 Use markdown bolding (**text**) only for the 3-5 most testable clues, discriminators, mechanisms, or takeaways in each explanation.
 
-IMAGE-BASED QUESTIONS (optional):
-For topics involving visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology), include an "imageSearchQuery" field in 1-2 questions with a precise medical image search query (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma"). The question text should reference the image: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" for non-visual questions.`;
+IMAGE-BASED QUESTIONS (IMPORTANT — include when relevant):
+If the topic involves visual diagnosis (radiology, dermatology, histopathology, ophthalmoscopy, ECG, peripheral smear, gross pathology, anatomical diagrams), you MUST include an "imageSearchQuery" field in 1-2 questions. The imageSearchQuery should be a concise, precise search phrase that would find a relevant medical image (e.g., "chest X-ray miliary tuberculosis", "histology renal cell carcinoma H&E stain", "dermoscopy melanoma", "ECG atrial fibrillation", "gross pathology cirrhosis liver"). The question text should reference the image context: "Based on the image shown...", "The following imaging study demonstrates...", etc. Omit "imageSearchQuery" only for questions where no visual element exists.`;
 }
 
 export function buildStoryPrompt(topicName: string, subjectName: string): string {
@@ -198,14 +198,14 @@ Rules:
 - Front: Short, direct (e.g., "Most common cause of...", "Drug of choice for...", "Classic triad of...").
 - Back: Concise, high-yield fact. Use **markdown bolding** for the single most important word or value.
 - Focus on: Named signs, gold standard tests, first-line treatments, and unique associations.
-- For visual topics (radiology, dermatology, pathology specimens, histology, ophthalmoscopy, ECG, peripheral smear, anatomy diagrams), add an "imageSearchQuery" field to 1-2 relevant cards with a precise medical image query. Omit it for non-visual cards.
+- For visual topics (radiology, dermatology, pathology specimens, histology, ophthalmoscopy, ECG, peripheral smear, anatomy diagrams), you MUST add an "imageSearchQuery" field to 2-3 relevant cards with a precise medical image query (e.g., "chest X-ray pneumonia consolidation", "dermoscopy basal cell carcinoma", "histology adenocarcinoma colon"). Omit it for non-visual cards.
 
 Return JSON:
 {
   "type": "flashcards",
   "topicName": "${topicName}",
   "cards": [
-    { "front": "...", "back": "...", "imageSearchQuery": "optional precise medical image query" }
+    { "front": "...", "back": "...", "imageSearchQuery": "precise medical image query for visual cards" }
   ]
 }
 
@@ -456,18 +456,18 @@ export const CONTENT_PROMPT_MAP: Record<ContentType, (topic: string, subject: st
 export function getMoodContentTypes(mood: Mood): ContentType[] {
   switch (mood) {
     case 'energetic':
-      return ['quiz', 'error_hunt', 'detective', 'keypoints', 'must_know', 'flashcards'];
+      return ['quiz', 'error_hunt', 'detective', 'keypoints', 'must_know'];
     case 'good':
-      return ['socratic', 'keypoints', 'must_know', 'quiz', 'detective', 'flashcards'];
+      return ['socratic', 'keypoints', 'must_know', 'quiz', 'detective'];
     case 'okay':
-      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz', 'flashcards'];
+      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz'];
     case 'tired':
-      return ['socratic', 'story', 'keypoints', 'must_know', 'flashcards'];
+      return ['socratic', 'story', 'keypoints', 'must_know'];
     case 'stressed':
-      return ['socratic', 'story', 'keypoints', 'must_know', 'flashcards'];
+      return ['socratic', 'story', 'keypoints', 'must_know'];
     case 'distracted':
-      return ['socratic', 'keypoints', 'must_know', 'flashcards'];
+      return ['socratic', 'keypoints', 'must_know'];
     default:
-      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz', 'flashcards'];
+      return ['socratic', 'keypoints', 'must_know', 'detective', 'quiz'];
   }
 }

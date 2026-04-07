@@ -17,6 +17,7 @@ import {
   getCopilotSessionToken,
 } from './github/githubCopilotClient';
 import { testGeminiConnectionSdk } from './google/geminiHealth';
+import { resolveQwenBaseUrl } from './qwen/qwenAuth';
 
 export interface ProviderHealthResult {
   ok: boolean;
@@ -379,6 +380,99 @@ export async function testPoeConnection(accessToken: string): Promise<ProviderHe
     });
     return toHealthResult(res);
   } catch (error) {
+    return {
+      ok: false,
+      status: 0,
+      message: error instanceof Error ? error.message : 'Unknown connection error',
+    };
+  }
+}
+
+export async function testQwenConnection(
+  accessToken: string | undefined,
+  apiKey?: string,
+  resourceUrl?: string,
+): Promise<ProviderHealthResult> {
+  try {
+    // Qwen OAuth returns access_token which IS the API key
+    const authKey = apiKey || accessToken;
+    if (!authKey) {
+      return { ok: false, status: 0, message: 'No auth key available' };
+    }
+
+    // Resolve the correct API base URL from the OAuth resource_url
+    const apiBaseUrl = resolveQwenBaseUrl(resourceUrl);
+
+    if (__DEV__) {
+      console.log(`[Qwen Validation] === HEALTH CHECK ===`);
+      console.log(`[Qwen Validation] Auth key length: ${authKey.length} chars`);
+      console.log(`[Qwen Validation] Resource URL: ${resourceUrl || '(none)'}`);
+      console.log(`[Qwen Validation] Resolved base URL: ${apiBaseUrl}`);
+    }
+
+    const userAgent = 'QwenCode/0.14.0 (Windows_NT; x64)';
+    const payload = {
+      model: 'qwen3-coder-plus',
+      messages: [
+        {
+          role: 'system',
+          content: [
+            {
+              type: 'text',
+              text:
+                'You are Qwen Code, an interactive CLI agent developed by Alibaba Group, ' +
+                'specializing in software engineering tasks. Your primary goal is to help ' +
+                'users safely and efficiently, adhering strictly to the following instructions ' +
+                'and utilizing your available tools.',
+              cache_control: { type: 'ephemeral' },
+            },
+          ],
+        },
+        { role: 'user', content: 'hi' },
+      ],
+      max_tokens: 5,
+    };
+    const jsonBody = JSON.stringify(payload);
+
+    if (__DEV__) {
+      console.log(`[Qwen Validation] --- Sending test request ---`);
+    }
+
+    const res = await fetch(`${apiBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authKey}`,
+        'User-Agent': userAgent,
+        'X-DashScope-CacheControl': 'enable',
+        'X-DashScope-UserAgent': userAgent,
+        'X-DashScope-AuthType': 'qwen-oauth',
+      },
+      body: jsonBody,
+    });
+
+    if (__DEV__) {
+      const text = await res.text().catch(() => '');
+      console.log(`[Qwen Validation] status=${res.status}`);
+      if (!res.ok) {
+        console.log(`[Qwen Validation] error response=${text.slice(0, 300)}`);
+        return { ok: false, status: res.status, message: text.slice(0, 200) };
+      }
+      return { ok: true, status: res.status, message: 'ok' };
+    }
+
+    if (res.ok) {
+      return { ok: true, status: res.status, message: 'ok' };
+    }
+
+    return toHealthResult(res);
+  } catch (error) {
+    if (__DEV__) {
+      console.error(
+        `[Qwen Validation] Network error:`,
+        error instanceof Error ? error.message : String(error),
+      );
+    }
     return {
       ok: false,
       status: 0,

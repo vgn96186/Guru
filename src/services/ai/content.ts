@@ -12,7 +12,8 @@ import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
 import { AIContentSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
-import { searchMedicalImages } from './medicalSearch';
+import { searchMedicalImages, generateVisualSearchQueries } from './medicalSearch';
+import type { MedicalGroundingSource } from './types';
 
 const inFlightContentRequests = new Map<string, Promise<AIContent>>();
 
@@ -195,7 +196,7 @@ export async function fetchContent(
     }
     if (cached.type === 'flashcards') {
       const hydrated = (await resolveFlashcardImages(
-          cached as FlashcardsContent & { modelUsed?: string },
+        cached as FlashcardsContent & { modelUsed?: string },
       )) as AIContent & { modelUsed?: string };
       const beforeCards = JSON.stringify((cached as { cards: unknown }).cards);
       const afterCards = JSON.stringify((hydrated as { cards: unknown }).cards);
@@ -239,6 +240,17 @@ export async function fetchContent(
       );
       modelUsed = generated.modelUsed;
       contentWithMeta = { ...generated.parsed, modelUsed } as AIContent;
+
+      if (contentWithMeta.type !== contentType) {
+        if (__DEV__) {
+          console.warn(
+            `[AIContent] Hallucinated wrong content type. Expected ${contentType}, got ${contentWithMeta.type}. Retrying.`,
+          );
+        }
+        contentWithMeta = null;
+        continue;
+      }
+
       if (contentWithMeta.type === 'quiz') {
         contentWithMeta = (await resolveQuizImages(
           contentWithMeta as QuizContent & { modelUsed?: string },
@@ -384,6 +396,26 @@ async function resolveQuizImages<T extends QuizContent>(quiz: T): Promise<T> {
     }
   });
 
+  // For questions without imageSearchQuery, try smart visual queries
+  for (let qi = 0; qi < updatedQuestions.length; qi++) {
+    const q = updatedQuestions[qi];
+    if (isRenderableQuizImageUrl(q.imageUrl ?? null)) continue; // already has image
+
+    const visualQueries = await generateVisualSearchQueries(q.question);
+    const smartResults = await Promise.allSettled(
+      visualQueries.map((vq) => searchMedicalImages(vq, 1)),
+    );
+    const smartUrl = smartResults
+      .filter(
+        (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> => r.status === 'fulfilled',
+      )
+      .flatMap((r) => r.value)
+      .find((r) => isRenderableQuizImageUrl(r.imageUrl))?.imageUrl;
+    if (smartUrl) {
+      updatedQuestions[qi] = { ...q, imageUrl: smartUrl };
+    }
+  }
+
   return { ...sanitized, questions: updatedQuestions };
 }
 
@@ -431,6 +463,26 @@ async function resolveFlashcardImages<T extends Extract<AIContent, { type: 'flas
       imageSearchQuery: undefined,
     };
   });
+
+  // For cards without imageSearchQuery, try smart visual queries
+  for (let ci = 0; ci < updatedCards.length; ci++) {
+    const card = updatedCards[ci];
+    if (isRenderableQuizImageUrl(card.imageUrl ?? null)) continue;
+
+    const visualQueries = await generateVisualSearchQueries(card.front);
+    const smartResults = await Promise.allSettled(
+      visualQueries.map((vq) => searchMedicalImages(vq, 1)),
+    );
+    const smartUrl = smartResults
+      .filter(
+        (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> => r.status === 'fulfilled',
+      )
+      .flatMap((r) => r.value)
+      .find((r) => isRenderableQuizImageUrl(r.imageUrl))?.imageUrl;
+    if (smartUrl) {
+      updatedCards[ci] = { ...card, imageUrl: smartUrl };
+    }
+  }
 
   return { ...sanitized, cards: updatedCards };
 }

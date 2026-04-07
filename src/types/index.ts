@@ -162,6 +162,7 @@ export interface UserProfile {
   cloudflareApiToken?: string;
   falApiKey?: string;
   braveSearchApiKey?: string;
+  googleCustomSearchApiKey?: string;
   /** Guru Chat default model id: `auto`, `local`, `groq/...`, OpenRouter model id, `gemini/...`, `cf/...`. */
   guruChatDefaultModel?: string;
   /**
@@ -218,6 +219,8 @@ export interface UserProfile {
   gitlabDuoPreferredModel?: string;
   /** True when Poe OAuth tokens are stored in secure store. */
   poeConnected?: boolean;
+  /** True when Qwen OAuth token is stored in secure store. */
+  qwenConnected?: boolean;
   /** Google OAuth Web Client ID for Drive sync; overrides build-time config when set. */
   gdriveWebClientId?: string;
   /** Google Drive backup connection state. */
@@ -247,21 +250,23 @@ export type ProviderId =
   | 'chatgpt'
   | 'github_copilot'
   | 'gitlab_duo'
-  | 'poe';
+  | 'poe'
+  | 'qwen';
 
 export const DEFAULT_PROVIDER_ORDER: ProviderId[] = [
   'chatgpt',
   'github_copilot',
   'gitlab_duo',
   'poe',
+  'openrouter',
   'groq',
+  'qwen',
   'agentrouter',
   'github',
   'kilo',
   'deepseek',
   'gemini',
   'gemini_fallback',
-  'openrouter',
   'cloudflare',
 ];
 
@@ -270,6 +275,7 @@ export const NON_STUDY_PROVIDER_ORDER: ProviderId[] = [
   'gitlab_duo',
   'poe',
   'groq',
+  'qwen',
   'agentrouter',
   'github',
   'kilo',
@@ -294,6 +300,7 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
   gemini_fallback: 'Gemini (Free)',
   openrouter: 'OpenRouter',
   cloudflare: 'Cloudflare',
+  qwen: 'Qwen (Free OAuth)',
 };
 
 // AI Content shapes

@@ -3,6 +3,10 @@
 # dependencies
 node_modules/
 
+# Temporary reverse-engineering / research files
+tmp_qwen/
+tmp_qwen_src/
+
 # Expo
 .expo/
 dist/

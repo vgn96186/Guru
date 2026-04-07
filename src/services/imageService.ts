@@ -4,6 +4,27 @@ const WIKI_API_HEADERS = {
   Accept: 'application/json',
 } as const;
 
+// In-memory image cache with TTL (5 minutes). Prevents redundant network calls
+// when the same topic is shown across multiple content cards in a session.
+const IMAGE_CACHE_TTL_MS = 5 * 60 * 1000;
+const imageCache = new Map<string, { url: string | null; expiresAt: number }>();
+
+/** Get cached image URL or null (cache miss / expired). */
+function getCachedImage(key: string): string | null | undefined {
+  const entry = imageCache.get(key);
+  if (!entry) return undefined;
+  if (Date.now() > entry.expiresAt) {
+    imageCache.delete(key);
+    return undefined;
+  }
+  return entry.url;
+}
+
+/** Store image URL in cache (including null for "not found" to avoid repeated misses). */
+function setCachedImage(key: string, url: string | null): void {
+  imageCache.set(key, { url, expiresAt: Date.now() + IMAGE_CACHE_TTL_MS });
+}
+
 // #region agent log
 function dbgImageService(
   hypothesisId: string,
@@ -60,6 +81,10 @@ async function wikiApiJson(res: Response, step: string): Promise<unknown | null>
 }
 
 export async function fetchWikipediaImage(topicName: string): Promise<string | null> {
+  const cacheKey = `wiki:${topicName}`;
+  const cached = getCachedImage(cacheKey);
+  if (cached !== undefined) return cached;
+
   const cleaned = topicName
     .replace(
       /^(Anatomy of|Physiology of|Pathology of|Mechanism of|Management of|Treatment of|Introduction to|Overview of)\s+/i,
@@ -87,11 +112,17 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
 
   // 1. Try exact match & cleaned match
   let url = await searchWiki(topicName);
-  if (url) return url;
+  if (url) {
+    setCachedImage(cacheKey, url);
+    return url;
+  }
 
   if (cleaned !== topicName) {
     url = await searchWiki(cleaned);
-    if (url) return url;
+    if (url) {
+      setCachedImage(cacheKey, url);
+      return url;
+    }
   }
 
   // 2. Wikipedia Search Match
@@ -107,7 +138,10 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
     const firstResult = searchData?.query?.search?.[0]?.title;
     if (firstResult) {
       url = await searchWiki(firstResult);
-      if (url) return url;
+      if (url) {
+        setCachedImage(cacheKey, url);
+        return url;
+      }
     }
   } catch (e) {
     if (__DEV__) console.debug('[imageService] Wikipedia list search failed:', e);
@@ -138,7 +172,9 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
       if (pages) {
         const pageId = Object.keys(pages)[0];
         if (pageId !== '-1') {
-          return pages[pageId]?.imageinfo?.[0]?.thumburl || null;
+          const thumbUrl = pages[pageId]?.imageinfo?.[0]?.thumburl || null;
+          if (thumbUrl) setCachedImage(cacheKey, thumbUrl);
+          return thumbUrl;
         }
       }
     }
@@ -147,5 +183,6 @@ export async function fetchWikipediaImage(topicName: string): Promise<string | n
   }
 
   // 4. Ultimate Fallback: Return null to avoid rendering random irrelevant images.
+  setCachedImage(cacheKey, null);
   return null;
 }

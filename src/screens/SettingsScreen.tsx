@@ -62,7 +62,9 @@ import {
   testGitLabDuoConnection,
   testKiloConnection,
   testDeepgramConnection,
+  testQwenConnection,
 } from '../services/ai/providerHealth';
+import { getQwenAccessToken } from '../services/ai/qwen';
 import type { ChatGptAccountSlot, ContentType, ProviderId, Subject, UserProfile } from '../types';
 import { DEFAULT_PROVIDER_ORDER, PROVIDER_DISPLAY_NAMES } from '../types';
 import { sanitizeProviderOrder } from '../utils/providerOrder';
@@ -104,6 +106,14 @@ import {
   VERIFICATION_URL as POE_VERIFICATION_URL,
   isPoeConnected,
 } from '../services/ai/poe';
+import {
+  requestDeviceCode as requestQwenDeviceCode,
+  pollForToken as pollQwenToken,
+  saveQwenTokens,
+  clearQwenTokens,
+  loadQwenTokens,
+  isQwenAuthenticated,
+} from '../services/ai/qwen';
 import { linearTheme as n } from '../theme/linearTheme';
 import {
   DEFAULT_HF_TRANSCRIPTION_MODEL,
@@ -171,7 +181,7 @@ interface AppBackup {
   lecture_notes: BackupRow[];
 }
 
-type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave';
+type ValidationProviderId = ProviderId | 'deepgram' | 'fal' | 'brave' | 'google';
 type ApiValidationEntry = { verified: boolean; verifiedAt: number; fingerprint: string };
 type ApiValidationState = Partial<Record<ValidationProviderId, ApiValidationEntry>>;
 type ChatGptAccountSettings = {
@@ -542,6 +552,8 @@ export default function SettingsScreen() {
   const [fetchDatesMsg, setFetchDatesMsg] = useState('');
   const [testingGroqKey, setTestingGroqKey] = useState(false);
   const [groqKeyTestResult, setGroqKeyTestResult] = useState<'ok' | 'fail' | null>(null);
+  const [testingQwenKey, setTestingQwenKey] = useState(false);
+  const [qwenKeyTestResult, setQwenKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [githubModelsPat, setGithubModelsPat] = useState('');
   const [testingGithubPat, setTestingGithubPat] = useState(false);
   const [githubPatTestResult, setGithubPatTestResult] = useState<'ok' | 'fail' | null>(null);
@@ -558,6 +570,7 @@ export default function SettingsScreen() {
   const [cfApiToken, setCfApiToken] = useState('');
   const [falApiKey, setFalApiKey] = useState('');
   const [braveSearchApiKey, setBraveSearchApiKey] = useState('');
+  const [googleCustomSearchApiKey, setGoogleCustomSearchApiKey] = useState('');
   const [testingGeminiKey, setTestingGeminiKey] = useState(false);
   const [geminiKeyTestResult, setGeminiKeyTestResult] = useState<'ok' | 'fail' | null>(null);
   const [testingCloudflare, setTestingCloudflare] = useState(false);
@@ -568,6 +581,10 @@ export default function SettingsScreen() {
   const [braveSearchKeyTestResult, setBraveSearchKeyTestResult] = useState<'ok' | 'fail' | null>(
     null,
   );
+  const [testingGoogleCustomSearchKey, setTestingGoogleCustomSearchKey] = useState(false);
+  const [googleCustomSearchKeyTestResult, setGoogleCustomSearchKeyTestResult] = useState<
+    'ok' | 'fail' | null
+  >(null);
   const [kiloApiKey, setKiloApiKey] = useState('');
   const [testingKiloKey, setTestingKiloKey] = useState(false);
   const [kiloKeyTestResult, setKiloKeyTestResult] = useState<'ok' | 'fail' | null>(null);
@@ -614,6 +631,9 @@ export default function SettingsScreen() {
   const [poeConnecting, setPoeConnecting] = useState(false);
   const [poeDeviceCode, setPoeDeviceCode] = useState<any>(null);
   const [poeConnected, setPoeConnected] = useState(false);
+  const [qwenConnecting, setQwenConnecting] = useState(false);
+  const [qwenDeviceCode, setQwenDeviceCode] = useState<any>(null);
+  const [qwenConnected, setQwenConnected] = useState(false);
   const [gdriveWebClientId, setGdriveWebClientId] = useState('');
   const [guruChatDefaultModel, setGuruChatDefaultModel] = useState('auto');
   const [imageGenerationModel, setImageGenerationModel] = useState<string>(
@@ -695,6 +715,39 @@ export default function SettingsScreen() {
     if (res.ok) markProviderValidated('groq', key);
     else clearProviderValidated('groq');
     setTestingGroqKey(false);
+  }
+
+  async function testQwenKey() {
+    if (!profile?.qwenConnected && !qwenConnected) {
+      Alert.alert('Not connected', 'Connect Qwen OAuth first to validate the connection.');
+      return;
+    }
+    setTestingQwenKey(true);
+    setQwenKeyTestResult(null);
+    try {
+      const tokenResult = await getQwenAccessToken();
+      if (!tokenResult || !tokenResult.accessToken) {
+        setQwenKeyTestResult('fail');
+        Alert.alert('Validation failed', 'No OAuth token available. Try reconnecting Qwen.');
+        setTestingQwenKey(false);
+        return;
+      }
+      const res = await testQwenConnection(
+        tokenResult.accessToken,
+        tokenResult.apiKey,
+        tokenResult.resourceUrl,
+      );
+      setQwenKeyTestResult(res.ok ? 'ok' : 'fail');
+      if (res.ok) markProviderValidated('qwen', tokenResult.accessToken);
+      else clearProviderValidated('qwen');
+      if (!res.ok) {
+        Alert.alert('Validation failed', res.message || 'Qwen API returned an error.');
+      }
+    } catch (err: any) {
+      setQwenKeyTestResult('fail');
+      Alert.alert('Validation failed', err.message || 'Unknown error');
+    }
+    setTestingQwenKey(false);
   }
 
   async function testGithubModelsPat() {
@@ -1145,6 +1198,60 @@ export default function SettingsScreen() {
     ]);
   }
 
+  async function connectQwen() {
+    setQwenConnecting(true);
+    setQwenDeviceCode(null);
+    try {
+      const dc = await requestQwenDeviceCode();
+      setQwenDeviceCode(dc);
+      // Open browser automatically
+      await Linking.openURL(dc.verification_uri_complete || dc.verification_uri);
+      // Poll for token
+      const result = await pollQwenToken(
+        dc.device_code,
+        dc.code_verifier,
+        dc.interval,
+        dc.expires_in,
+        () => {},
+      );
+      if (result.access_token) {
+        const expiresAt = Date.now() + (result.expires_in || 3600) * 1000;
+        await saveQwenTokens({
+          accessToken: result.access_token,
+          refreshToken: result.refresh_token,
+          expiresAt,
+          apiKey: result.api_key,
+          resourceUrl: result.resource_url,
+        });
+        await updateUserProfile({ qwenConnected: true });
+        setQwenConnected(true);
+        setQwenDeviceCode(null);
+        refreshProfile();
+        Alert.alert('Connected', 'Qwen OAuth is now active. Free tier: 1,000 requests/day.');
+      }
+    } catch (err: any) {
+      Alert.alert('Connection failed', err.message ?? 'Unknown error');
+      setQwenDeviceCode(null);
+      setQwenConnecting(false);
+    }
+  }
+
+  async function disconnectQwen() {
+    Alert.alert('Disconnect Qwen?', 'This will remove stored tokens.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          await clearQwenTokens();
+          await updateUserProfile({ qwenConnected: false });
+          setQwenConnected(false);
+          refreshProfile();
+        },
+      },
+    ]);
+  }
+
   async function testGeminiKey() {
     const key = geminiKey.trim() || profile?.geminiKey || '';
     if (!key) {
@@ -1207,6 +1314,33 @@ export default function SettingsScreen() {
     if (res.ok) markProviderValidated('brave', key);
     else clearProviderValidated('brave');
     setTestingBraveSearchKey(false);
+  }
+
+  async function testGoogleCustomSearchKey() {
+    const key = googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '';
+    if (!key) {
+      Alert.alert('No key', 'Enter a Google Custom Search API key first.');
+      return;
+    }
+    setTestingGoogleCustomSearchKey(true);
+    setGoogleCustomSearchKeyTestResult(null);
+    // Test by making a simple image search request
+    try {
+      const cx = '5085c21a1fd974c13';
+      const url = `https://www.googleapis.com/customsearch/v1?key=${encodeURIComponent(key)}&cx=${cx}&q=test&searchType=image&num=1`;
+      const res = await fetch(url);
+      if (res.ok) {
+        setGoogleCustomSearchKeyTestResult('ok');
+        markProviderValidated('google', key);
+      } else {
+        setGoogleCustomSearchKeyTestResult('fail');
+        clearProviderValidated('google');
+      }
+    } catch {
+      setGoogleCustomSearchKeyTestResult('fail');
+      clearProviderValidated('google');
+    }
+    setTestingGoogleCustomSearchKey(false);
   }
 
   async function handleAutoFetchDates() {
@@ -1335,12 +1469,22 @@ export default function SettingsScreen() {
       setDeepseekKey(profile.deepseekKey ?? '');
       setAgentRouterKey(profile.agentRouterKey ?? '');
       setProviderOrder(sanitizeProviderOrder(profile.providerOrder));
+      // Auto-inject 'qwen' into provider order if missing (new provider)
+      setProviderOrder((prev) => {
+        if (prev.includes('qwen')) return prev;
+        const next = [...prev];
+        const groqIdx = next.indexOf('groq');
+        const insertIdx = groqIdx >= 0 ? groqIdx + 1 : Math.max(0, next.indexOf('agentrouter'));
+        next.splice(insertIdx, 0, 'qwen');
+        return sanitizeProviderOrder(next);
+      });
       setOrKey(profile.openrouterKey ?? '');
       setGeminiKey(profile.geminiKey ?? '');
       setCfAccountId(profile.cloudflareAccountId ?? '');
       setCfApiToken(profile.cloudflareApiToken ?? '');
       setFalApiKey(profile.falApiKey ?? '');
       setBraveSearchApiKey(profile.braveSearchApiKey ?? '');
+      setGoogleCustomSearchApiKey(profile.googleCustomSearchApiKey ?? '');
       setApiValidation(sanitizeApiValidationState((profile as UserProfile).apiValidation));
       setGuruChatDefaultModel(profile.guruChatDefaultModel ?? 'auto');
       setImageGenerationModel(profile.imageGenerationModel ?? DEFAULT_IMAGE_GENERATION_MODEL);
@@ -1370,6 +1514,7 @@ export default function SettingsScreen() {
       setGitlabDuoConnected(!!profile.gitlabDuoConnected);
       setGitlabOauthClientId(profile.gitlabOauthClientId ?? '');
       setPoeConnected(!!profile.poeConnected);
+      setQwenConnected(!!profile.qwenConnected);
       setGdriveWebClientId(profile.gdriveWebClientId ?? '');
       setTranscriptionProvider(profile.transcriptionProvider ?? 'auto');
       setName(profile.displayName);
@@ -1417,6 +1562,7 @@ export default function SettingsScreen() {
         cloudflareApiToken: cfApiToken.trim(),
         falApiKey: falApiKey.trim(),
         braveSearchApiKey: braveSearchApiKey.trim(),
+        googleCustomSearchApiKey: googleCustomSearchApiKey.trim(),
         apiValidation: sanitizeApiValidationState(apiValidation),
         chatgptAccounts: sanitizeChatGptAccountSettings(chatgptAccounts),
         chatgptConnected: isChatGptEnabled(chatgptAccounts),
@@ -1485,6 +1631,7 @@ export default function SettingsScreen() {
     cfApiToken,
     falApiKey,
     braveSearchApiKey,
+    googleCustomSearchApiKey,
     guruChatDefaultModel,
     imageGenerationModel,
     guruMemoryNotes,
@@ -1682,6 +1829,11 @@ export default function SettingsScreen() {
     braveSearchKeyTestResult,
     braveSearchApiKey.trim() || profile?.braveSearchApiKey || '',
   );
+  const googleValidationStatus = resolveValidationStatus(
+    'google',
+    googleCustomSearchKeyTestResult,
+    googleCustomSearchApiKey.trim() || profile?.googleCustomSearchApiKey || '',
+  );
   const localLlmPath = profile?.localModelPath ?? '';
   const localLlmReady = Boolean(localLlmPath);
   const localWhisperPath = profile?.localWhisperPath ?? '';
@@ -1798,6 +1950,15 @@ export default function SettingsScreen() {
                     label: formatGuruChatModelChipLabel(`poe/${m}`),
                     group: 'Poe',
                   })),
+                  ...(qwenConnected
+                    ? [
+                        {
+                          id: 'qwen/qwen3-coder-plus',
+                          label: 'Qwen Coder Plus',
+                          group: 'Qwen (Free)',
+                        },
+                      ]
+                    : []),
                   ...liveGuruChatModels.kilo.map((m) => ({
                     id: `kilo/${m}`,
                     label: formatGuruChatModelChipLabel(`kilo/${m}`),
@@ -2689,6 +2850,196 @@ export default function SettingsScreen() {
               </View>
             </SubSectionToggle>
 
+            {/* ── Qwen OAuth ─────────────────────────────── */}
+            <View style={styles.subSectionDivider} />
+            <SubSectionToggle id="qwen_oauth" title="QWEN (FREE OAUTH)">
+              <LinearText style={styles.hint}>
+                Connect your Qwen.ai account for free access to qwen-coder-plus, qwen-coder-flash,
+                and qwen-vl-plus. 1,000 requests/day, 60 req/min. No API key needed.
+              </LinearText>
+              {qwenConnecting && qwenDeviceCode ? (
+                <View style={{ marginTop: 8 }}>
+                  <LinearText style={[styles.label, { textAlign: 'center', marginBottom: 4 }]}>
+                    Enter this code at chat.qwen.ai:
+                  </LinearText>
+                  <LinearText
+                    style={{
+                      fontSize: 28,
+                      fontWeight: '700',
+                      textAlign: 'center',
+                      color: n.colors.accent,
+                      letterSpacing: 4,
+                      marginVertical: 8,
+                      fontFamily: 'Inter_400Regular',
+                    }}
+                    selectable
+                  >
+                    {qwenDeviceCode.user_code}
+                  </LinearText>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginTop: 4,
+                    }}
+                  >
+                    <ActivityIndicator size="small" color={n.colors.accent} />
+                    <LinearText style={[styles.hint, { marginTop: 0 }]}>
+                      Waiting for authorization...
+                    </LinearText>
+                  </View>
+                  <TouchableOpacity
+                    style={{ marginTop: 12, alignSelf: 'center' }}
+                    onPress={() =>
+                      Linking.openURL(
+                        qwenDeviceCode.verification_uri_complete || qwenDeviceCode.verification_uri,
+                      )
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <LinearText
+                      style={{
+                        color: n.colors.accent,
+                        textDecorationLine: 'underline',
+                        fontSize: 13,
+                      }}
+                    >
+                      Open login page again
+                    </LinearText>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+              <View
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: n.colors.border,
+                  borderRadius: 12,
+                  backgroundColor: n.colors.background,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons
+                    name={qwenConnected ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={20}
+                    color={qwenConnected ? n.colors.success : n.colors.textMuted}
+                  />
+                  <LinearText
+                    style={[
+                      styles.label,
+                      {
+                        flex: 1,
+                        color: qwenConnected ? n.colors.success : n.colors.textMuted,
+                      },
+                    ]}
+                  >
+                    {qwenConnected ? 'Connected' : 'Not connected'}
+                  </LinearText>
+                  {qwenConnected ? (
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        { backgroundColor: n.colors.error + '22', paddingHorizontal: 16 },
+                      ]}
+                      onPress={disconnectQwen}
+                      activeOpacity={0.8}
+                    >
+                      <LinearText
+                        style={{ color: n.colors.error, fontWeight: '600', fontSize: 13 }}
+                      >
+                        Disconnect
+                      </LinearText>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        { paddingHorizontal: 16, backgroundColor: n.colors.accent + '22' },
+                      ]}
+                      onPress={connectQwen}
+                      disabled={qwenConnecting}
+                      activeOpacity={0.8}
+                    >
+                      {qwenConnecting ? (
+                        <ActivityIndicator size="small" color={n.colors.accent} />
+                      ) : (
+                        <LinearText
+                          style={{ color: n.colors.accent, fontWeight: '600', fontSize: 13 }}
+                        >
+                          Connect
+                        </LinearText>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                </View>
+                {qwenConnected && (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 8,
+                      marginTop: 10,
+                      paddingTop: 10,
+                      borderTopWidth: StyleSheet.hairlineWidth,
+                      borderTopColor: n.colors.border,
+                    }}
+                  >
+                    <TouchableOpacity
+                      style={[
+                        styles.validateBtn,
+                        qwenKeyTestResult === 'ok' && styles.validateBtnOk,
+                        qwenKeyTestResult === 'fail' && styles.validateBtnFail,
+                        testingQwenKey && { opacity: 0.6 },
+                      ]}
+                      onPress={testQwenKey}
+                      disabled={testingQwenKey}
+                      activeOpacity={0.8}
+                    >
+                      {testingQwenKey ? (
+                        <ActivityIndicator size="small" color={n.colors.accent} />
+                      ) : (
+                        <Ionicons
+                          name={
+                            qwenKeyTestResult === 'ok'
+                              ? 'checkmark-circle'
+                              : qwenKeyTestResult === 'fail'
+                                ? 'close-circle'
+                                : 'cloud-outline'
+                          }
+                          size={20}
+                          color={
+                            qwenKeyTestResult === 'ok'
+                              ? n.colors.success
+                              : qwenKeyTestResult === 'fail'
+                                ? n.colors.error
+                                : n.colors.accent
+                          }
+                        />
+                      )}
+                    </TouchableOpacity>
+                    <LinearText style={[styles.hint, { flex: 1 }]}>
+                      {testingQwenKey
+                        ? 'Validating Qwen connection...'
+                        : qwenKeyTestResult === 'ok'
+                          ? 'Connection OK'
+                          : qwenKeyTestResult === 'fail'
+                            ? 'Connection failed'
+                            : 'Tap to validate connection'}
+                    </LinearText>
+                  </View>
+                )}
+              </View>
+            </SubSectionToggle>
+
             {/* ── API Keys ─────────────────────────────── */}
             <View style={styles.subSectionDivider} />
             <SubSectionToggle id="ai_api_keys" title="API KEYS">
@@ -3248,6 +3599,8 @@ export default function SettingsScreen() {
                         (cfAccountId.trim() || profile?.cloudflareAccountId) &&
                         (cfApiToken.trim() || profile?.cloudflareApiToken)
                       );
+                    case 'qwen':
+                      return !!profile?.qwenConnected || qwenConnected;
                     case 'github_copilot':
                       return !!profile?.githubCopilotConnected;
                     case 'gitlab_duo':
@@ -3470,6 +3823,59 @@ export default function SettingsScreen() {
               <LinearText style={styles.hint}>
                 Optional fallback for image search when MedPix, Open-i, and Wikimedia return
                 nothing.
+              </LinearText>
+              <LinearText style={styles.label}>Google Custom Search API Key</LinearText>
+              <View style={styles.apiKeyRow}>
+                <TextInput
+                  style={[
+                    styles.input,
+                    styles.apiKeyInput,
+                    googleValidationStatus === 'ok' && styles.inputSuccess,
+                    googleValidationStatus === 'fail' && styles.inputError,
+                  ]}
+                  placeholder="Google API key"
+                  placeholderTextColor={n.colors.textMuted}
+                  value={googleCustomSearchApiKey}
+                  onChangeText={(value: string) => {
+                    setGoogleCustomSearchApiKey(value);
+                    clearProviderValidated('google');
+                  }}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                <TouchableOpacity
+                  style={styles.validateBtn}
+                  onPress={testGoogleCustomSearchKey}
+                  disabled={testingGoogleCustomSearchKey}
+                  activeOpacity={0.8}
+                >
+                  {testingGoogleCustomSearchKey ? (
+                    <ActivityIndicator size="small" color={n.colors.accent} />
+                  ) : (
+                    <Ionicons
+                      name={
+                        googleCustomSearchKeyTestResult === 'ok'
+                          ? 'checkmark-circle'
+                          : googleCustomSearchKeyTestResult === 'fail'
+                            ? 'close-circle'
+                            : 'search-outline'
+                      }
+                      size={20}
+                      color={
+                        googleCustomSearchKeyTestResult === 'ok'
+                          ? n.colors.success
+                          : googleCustomSearchKeyTestResult === 'fail'
+                            ? n.colors.error
+                            : n.colors.accent
+                      }
+                    />
+                  )}
+                </TouchableOpacity>
+              </View>
+              <LinearText style={styles.hint}>
+                Uses search engine ID 5085c21a1fd974c13 (medical sites). Enables high-quality image
+                search for quizzes, flashcards, and chat.
               </LinearText>
               <View style={styles.modelChipRow}>
                 {imageGenerationOptions.map((opt) => (
@@ -4596,6 +5002,34 @@ export default function SettingsScreen() {
                 <ActivityIndicator size="small" color={n.colors.textPrimary} />
               ) : (
                 <LinearText style={styles.maintenanceBtnText}>Recover orphan recordings</LinearText>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
+              disabled={maintenanceBusy !== null}
+              activeOpacity={0.8}
+              onPress={() =>
+                runMaintenanceTask(
+                  'cleanup_artifacts',
+                  async () => {
+                    const { cleanupFailedArtifacts } =
+                      await import('../services/lecture/lectureSessionMonitor');
+                    return cleanupFailedArtifacts();
+                  },
+                  {
+                    done: 'Failed artifacts cleaned up',
+                    none: 'No failed artifacts found',
+                    failed: 'Artifact cleanup failed',
+                  },
+                )
+              }
+            >
+              {maintenanceBusy === 'cleanup_artifacts' ? (
+                <ActivityIndicator size="small" color={n.colors.textPrimary} />
+              ) : (
+                <LinearText style={styles.maintenanceBtnText}>
+                  Clean up failed AI artifacts
+                </LinearText>
               )}
             </TouchableOpacity>
           </SectionToggle>

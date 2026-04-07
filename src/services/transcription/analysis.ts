@@ -254,17 +254,26 @@ interface ParsedAnalysis {
   estimated_confidence?: number;
 }
 
+function parseArrayOrString(val: any, limit: number): string[] {
+  if (Array.isArray(val)) return val.slice(0, limit);
+  if (typeof val === 'string')
+    return val
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, limit);
+  return [];
+}
+
 function mapParsedAnalysis(parsed: ParsedAnalysis): LectureAnalysis {
   const lectureSummary = hasMeaningfulSummary(parsed.lecture_summary)
     ? parsed.lecture_summary!.trim()
     : buildLectureFallbackTitle(parsed);
   return {
     subject: parsed.subject ?? 'Unknown',
-    topics: Array.isArray(parsed.topics) ? parsed.topics.slice(0, 5) : [],
-    keyConcepts: Array.isArray(parsed.key_concepts) ? parsed.key_concepts.slice(0, 8) : [],
-    highYieldPoints: Array.isArray(parsed.high_yield_highlights)
-      ? parsed.high_yield_highlights.slice(0, 5)
-      : [],
+    topics: parseArrayOrString(parsed.topics, 5),
+    keyConcepts: parseArrayOrString(parsed.key_concepts, 8),
+    highYieldPoints: parseArrayOrString(parsed.high_yield_highlights, 5),
     lectureSummary,
     estimatedConfidence: Math.max(1, Math.min(3, Math.round(parsed.estimated_confidence ?? 2))) as
       | 1

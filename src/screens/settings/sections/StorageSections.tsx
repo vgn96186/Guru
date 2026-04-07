@@ -575,6 +575,32 @@ export default function StorageSections(props: any) {
             <Text style={styles.maintenanceBtnText}>Recover orphan recordings</Text>
           )}
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.maintenanceBtn, maintenanceBusy !== null && styles.saveBtnDisabled]}
+          disabled={maintenanceBusy !== null}
+          activeOpacity={0.8}
+          onPress={() =>
+            runMaintenanceTask(
+              'cleanup_artifacts',
+              async () => {
+                const { cleanupFailedArtifacts } =
+                  await import('../../../services/lecture/lectureSessionMonitor');
+                return cleanupFailedArtifacts();
+              },
+              {
+                done: 'Failed artifacts cleaned up',
+                none: 'No failed artifacts found',
+                failed: 'Artifact cleanup failed',
+              },
+            )
+          }
+        >
+          {maintenanceBusy === 'cleanup_artifacts' ? (
+            <ActivityIndicator size="small" color={linearTheme.colors.textPrimary} />
+          ) : (
+            <Text style={styles.maintenanceBtnText}>Clean up failed AI artifacts</Text>
+          )}
+        </TouchableOpacity>
       </SectionToggle>
     </>
   );

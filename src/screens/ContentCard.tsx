@@ -29,6 +29,7 @@ import type {
   DetectiveContent,
   ManualContent,
   SocraticContent,
+  FlashcardsContent,
 } from '../types';
 
 import { askGuru, explainMostTestedRationale, explainTopicDeeper } from '../services/aiService';
@@ -49,9 +50,11 @@ interface TopicImageProps {
 
 const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
+    setFailed(false);
     fetchWikipediaImage(topicName).then((url) => {
       if (active) setImageUrl(url);
     });
@@ -61,8 +64,16 @@ const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps
   }, [topicName]);
 
   if (!imageUrl) return null;
+  if (failed) return null;
 
-  return <Image source={{ uri: imageUrl }} style={s.topicImage} resizeMode="contain" />;
+  return (
+    <Image
+      source={{ uri: imageUrl }}
+      style={s.topicImage}
+      resizeMode="contain"
+      onError={() => setFailed(true)}
+    />
+  );
 });
 
 function isQuizImageHttpUrl(url: string | null | undefined): boolean {
@@ -74,13 +85,21 @@ function isQuizImageHttpUrl(url: string | null | undefined): boolean {
 /** Per-question medical image with tap-to-enlarge lightbox. */
 const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [failed, setFailed] = useState(false);
   const screenW = Dimensions.get('window').width;
   const screenH = Dimensions.get('window').height;
+
+  if (failed) return null;
 
   return (
     <>
       <TouchableOpacity activeOpacity={0.85} onPress={() => setLightboxOpen(true)}>
-        <Image source={{ uri: url }} style={s.questionImage} resizeMode="contain" />
+        <Image
+          source={{ uri: url }}
+          style={s.questionImage}
+          resizeMode="contain"
+          onError={() => setFailed(true)}
+        />
         <LinearText style={s.tapToEnlarge}>Tap to enlarge</LinearText>
       </TouchableOpacity>
       <Modal
@@ -353,6 +372,8 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
             onContextChange={setLiveGuruContext}
           />
         );
+      case 'flashcards':
+        return <FlashcardCard content={content} onDone={onDone} onSkip={onSkip} />;
       default:
         return null;
     }
@@ -1442,6 +1463,16 @@ function DetectiveCard({
           <TouchableOpacity style={s.doneBtn} onPress={() => setSolved(true)} activeOpacity={0.8}>
             <LinearText style={s.doneBtnText}>I know the answer →</LinearText>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={s.iDontKnowBtn}
+            onPress={() => {
+              setRevealedClues(content.clues.length);
+              setSolved(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearText style={s.iDontKnowText}>I don't know</LinearText>
+          </TouchableOpacity>
         </View>
       ) : (
         <>
@@ -2123,7 +2154,145 @@ const s = StyleSheet.create({
     lineHeight: 20,
     fontStyle: 'italic' as const,
   },
+  flashcardContainer: { flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  flashcardHeader: { alignSelf: 'flex-start', marginBottom: 12 },
+  flashcardEmpty: { textAlign: 'center', marginTop: 16, marginBottom: 24 },
+  flashcardBody: {
+    width: '100%',
+    minHeight: 200,
+    backgroundColor: n.colors.surface,
+    borderRadius: 20,
+    padding: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: n.colors.border,
+  },
+  flashcardLabel: {
+    fontSize: 12,
+    fontWeight: '900' as const,
+    letterSpacing: 2,
+    color: n.colors.textMuted,
+    marginBottom: 20,
+  },
+  flashcardText: {
+    color: n.colors.textPrimary,
+    fontSize: 20,
+    fontWeight: '700' as const,
+    textAlign: 'center',
+    lineHeight: 30,
+  },
+  flashcardHint: { marginTop: 20 },
+  flashcardActions: { marginTop: 20, width: '100%', alignItems: 'center' },
+  flashcardFlipBtn: {
+    backgroundColor: n.colors.accent,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  flashcardFlipText: {
+    color: n.colors.textPrimary,
+    fontWeight: '800' as const,
+    fontSize: 16,
+  },
+  flashcardDoneBtn: {
+    backgroundColor: n.colors.surface,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  flashcardDoneText: { color: n.colors.textPrimary, fontWeight: '700' as const, fontSize: 16 },
+  flashcardNextBtn: {
+    backgroundColor: n.colors.accent,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 16,
+  },
+  flashcardNextText: {
+    color: n.colors.textPrimary,
+    fontWeight: '800' as const,
+    fontSize: 16,
+  },
 });
+
+function FlashcardCard({
+  content,
+  onDone,
+  onSkip,
+}: {
+  content: FlashcardsContent;
+  onDone: (confidence: number) => void;
+  onSkip: () => void;
+}) {
+  const [cardIdx, setCardIdx] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const card = content.cards[cardIdx];
+  if (!card) {
+    return (
+      <View style={s.flashcardContainer}>
+        <Ionicons name="alert-circle-outline" size={48} color={n.colors.textMuted} />
+        <LinearText style={s.flashcardEmpty} variant="body" tone="muted">
+          No flashcards available
+        </LinearText>
+        <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onDone(2)}>
+          <LinearText style={s.flashcardDoneText}>Skip</LinearText>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const isLastCard = cardIdx === content.cards.length - 1;
+
+  return (
+    <View style={s.flashcardContainer}>
+      <View style={s.flashcardHeader}>
+        <LinearText variant="chip" tone="muted">
+          Card {cardIdx + 1}/{content.cards.length}
+        </LinearText>
+      </View>
+
+      <TouchableOpacity
+        style={s.flashcardBody}
+        onPress={() => setIsFlipped(!isFlipped)}
+        activeOpacity={0.7}
+      >
+        <LinearText style={s.flashcardLabel}>{isFlipped ? 'ANSWER' : 'QUESTION'}</LinearText>
+        {card.imageUrl && !isFlipped && <QuestionImage url={card.imageUrl} />}
+        <LinearText style={s.flashcardText} variant="body">
+          {isFlipped ? card.back : card.front}
+        </LinearText>
+        <LinearText style={s.flashcardHint} variant="meta" tone="muted">
+          {isFlipped ? 'Tap to go back' : 'Tap to reveal'}
+        </LinearText>
+      </TouchableOpacity>
+
+      <View style={s.flashcardActions}>
+        {!isFlipped ? (
+          <TouchableOpacity style={s.flashcardFlipBtn} onPress={() => setIsFlipped(true)}>
+            <LinearText style={s.flashcardFlipText}>Reveal Answer</LinearText>
+          </TouchableOpacity>
+        ) : isLastCard ? (
+          <TouchableOpacity style={s.flashcardDoneBtn} onPress={() => onDone(2)}>
+            <LinearText style={s.flashcardDoneText}>Done</LinearText>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={s.flashcardNextBtn}
+            onPress={() => {
+              setCardIdx((i) => i + 1);
+              setIsFlipped(false);
+            }}
+          >
+            <LinearText style={s.flashcardNextText}>Next Card →</LinearText>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+}
 
 function useCardScrollPaddingBottom(extraBottom = 0) {
   const { width, height } = useWindowDimensions();

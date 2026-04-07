@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import type { ImageStyle } from 'react-native';
 import {
   Image,
   View,
@@ -16,7 +17,12 @@ import * as Haptics from 'expo-haptics';
 import { useRoute, useNavigation, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MenuStackParamList } from '../navigation/types';
-import { getTopicById, getTopicsDueForReview, updateTopicProgress } from '../db/queries/topics';
+import {
+  getTopicById,
+  getTopicsDueForReview,
+  updateTopicProgress,
+  getAllTopicsWithProgress,
+} from '../db/queries/topics';
 import { profileRepository } from '../db/repositories';
 import { fetchContent } from '../services/aiService';
 import { useAppStore } from '../store/useAppStore';
@@ -26,6 +32,26 @@ import { linearTheme as n } from '../theme/linearTheme';
 import LinearSurface from '../components/primitives/LinearSurface';
 import { ResponsiveContainer } from '../hooks/useResponsive';
 import ScreenHeader from '../components/ScreenHeader';
+
+/** Flashcard image that hides gracefully when loading fails */
+const FlashcardImage = React.memo(function FlashcardImage({
+  url,
+  style,
+}: {
+  url: string;
+  style: ImageStyle;
+}) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <Image
+      source={{ uri: url }}
+      style={style}
+      resizeMode="contain"
+      onError={() => setFailed(true)}
+    />
+  );
+});
 
 const RATINGS = [
   { label: 'Again', confidence: 0, color: n.colors.error },
@@ -44,6 +70,8 @@ export default function FlashcardsScreen() {
   const [cardIdx, setCardIdx] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [noDueTopics, setNoDueTopics] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const flipAnim = useRef(new Animated.Value(0)).current;
   const panXY = useRef(new Animated.ValueXY()).current;
@@ -56,20 +84,54 @@ export default function FlashcardsScreen() {
         const topic = await getTopicById(route.params.topicId);
         if (topic) {
           setQueue([topic]);
+          setNoDueTopics(false);
           return;
         }
       }
-      const due = await getTopicsDueForReview(10);
+      let due = await getTopicsDueForReview(10);
+      if (due.length === 0) {
+        const all = await getAllTopicsWithProgress();
+        // Filter out mastered/nemesis if we just want random practice, or just take the first 10 available
+        due = all.filter((t) => t.progress.status !== 'unseen').slice(0, 10);
+        if (due.length === 0) {
+          due = all.slice(0, 10);
+        }
+        if (due.length === 0) {
+          setNoDueTopics(true);
+          setQueue([]);
+          return;
+        }
+      }
+      setNoDueTopics(false);
       setQueue(due);
     }
     loadQueue();
   }, [route.params?.topicId]);
+
+  async function loadPracticeAnything() {
+    setLoading(true);
+    try {
+      const all = await getAllTopicsWithProgress();
+      // Shuffle and pick 10
+      const shuffled = all.sort(() => Math.random() - 0.5);
+      const picked = shuffled.slice(0, 10);
+      if (picked.length > 0) {
+        setNoDueTopics(false);
+        setQueue(picked);
+        setCurrentIdx(0);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const currentTopic = queue[currentIdx];
 
   useEffect(() => {
     if (!currentTopic) return;
     setLoading(true);
+    setLoadError(null);
+    setCards([]);
     setCardIdx(0);
     setIsFlipped(false);
     isFlippedRef.current = false;
@@ -78,12 +140,25 @@ export default function FlashcardsScreen() {
     // fetchContent handles the cache check internally, but we'll re-verify it's reused.
     fetchContent(currentTopic, 'flashcards')
       .then((c) => {
-        if (c.type === 'flashcards') {
+        if (c.type === 'flashcards' && c.cards && c.cards.length > 0) {
           setCards(c.cards);
+        } else {
+          // Content generated but not flashcards, or empty cards array
+          setLoadError(
+            c.type !== 'flashcards'
+              ? `AI returned ${c.type} instead of flashcards.`
+              : 'AI generated 0 flashcards for this topic.',
+          );
+          setCards([]);
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((e) => {
+        console.error('[Flashcards] Failed to load cards:', e);
+        setLoadError(e?.message ?? 'Failed to load cards. Check your connection and try again.');
+        setCards([]);
+        setLoading(false);
+      });
   }, [currentTopic?.id]);
 
   const panResponder = useRef(
@@ -173,12 +248,30 @@ export default function FlashcardsScreen() {
     return (
       <SafeAreaView style={styles.safe}>
         <ResponsiveContainer style={styles.center}>
-          <Ionicons name="sparkles" size={60} color={n.colors.accent} />
-          <LinearText style={styles.title}>All Caught Up!</LinearText>
-          <LinearText style={styles.sub}>Finished all reviews for now</LinearText>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
-            <LinearText style={styles.btnText}>Back to Menu</LinearText>
-          </TouchableOpacity>
+          <Ionicons name="book-outline" size={60} color={n.colors.accent} />
+          <LinearText style={styles.title}>
+            {noDueTopics ? 'No Topics Yet' : 'All Caught Up!'}
+          </LinearText>
+          <LinearText style={styles.sub}>
+            {noDueTopics
+              ? "You haven't studied any topics yet. Start studying to unlock flashcards."
+              : 'Finished all reviews for now. Want to practice random topics?'}
+          </LinearText>
+          <View style={styles.btnRow}>
+            <TouchableOpacity
+              onPress={loadPracticeAnything}
+              style={[styles.btn, styles.btnPrimary]}
+            >
+              <Ionicons name="shuffle" size={18} color={n.colors.accent} />
+              <LinearText style={[styles.btnText, styles.btnTextPrimary]}>
+                Practice Anything
+              </LinearText>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.btn}>
+              <LinearText style={styles.btnText}>Back to Menu</LinearText>
+            </TouchableOpacity>
+          </View>
+          {loading && <LinearText style={styles.loadingText}>Loading topics...</LinearText>}
         </ResponsiveContainer>
       </SafeAreaView>
     );
@@ -192,9 +285,67 @@ export default function FlashcardsScreen() {
         <ResponsiveContainer>
           <ScreenHeader title="Flashcards" />
           <View style={styles.cardArea}>
-            <LinearText style={{ textAlign: 'center', marginTop: 40 }}>
-              No cards available
+            <Ionicons
+              name={loadError ? 'alert-circle-outline' : 'card-outline'}
+              size={60}
+              color={loadError ? n.colors.error : n.colors.textMuted}
+            />
+            <LinearText
+              style={{
+                textAlign: 'center',
+                marginTop: 16,
+                fontSize: 18,
+                fontWeight: '700',
+                color: n.colors.textPrimary,
+              }}
+            >
+              {loadError ? 'Failed to Load Cards' : 'No Flashcards Available'}
             </LinearText>
+            <LinearText
+              style={{
+                textAlign: 'center',
+                marginTop: 8,
+                color: n.colors.textSecondary,
+                paddingHorizontal: 20,
+              }}
+            >
+              {loadError ||
+                "AI couldn't generate flashcards for this topic. Try a different topic or check back later."}
+            </LinearText>
+            <View style={styles.cardActions}>
+              <TouchableOpacity
+                onPress={() => {
+                  // Retry loading cards for this topic
+                  setCards([]);
+                  setLoadError(null);
+                  setLoading(true);
+                  fetchContent(currentTopic, 'flashcards')
+                    .then((c) => {
+                      if (c.type === 'flashcards' && c.cards && c.cards.length > 0) {
+                        setCards(c.cards);
+                      } else {
+                        setLoadError(
+                          c.type !== 'flashcards'
+                            ? `AI returned ${c.type} instead of flashcards.`
+                            : 'AI generated 0 flashcards for this topic.',
+                        );
+                      }
+                      setLoading(false);
+                    })
+                    .catch((e) => {
+                      setLoadError(e?.message ?? 'Failed to load cards.');
+                      setLoading(false);
+                    });
+                }}
+                style={styles.cardActionBtn}
+              >
+                <Ionicons name="refresh" size={18} color={n.colors.accent} />
+                <LinearText style={styles.cardActionText}>Retry</LinearText>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.goBack()} style={styles.cardActionBtn}>
+                <LinearText style={styles.cardActionText}>Back to Menu</LinearText>
+              </TouchableOpacity>
+            </View>
           </View>
         </ResponsiveContainer>
       </SafeAreaView>
@@ -246,11 +397,7 @@ export default function FlashcardsScreen() {
                 <Animated.View style={[styles.card, frontAnimatedStyle]}>
                   <LinearText style={styles.cardLabel}>QUESTION</LinearText>
                   {currentCard.imageUrl ? (
-                    <Image
-                      source={{ uri: currentCard.imageUrl }}
-                      style={styles.cardImage}
-                      resizeMode="contain"
-                    />
+                    <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
                   ) : null}
                   <LinearText style={styles.cardContent}>{currentCard.front}</LinearText>
                   <TouchableOpacity style={styles.tapToReveal} onPress={handleFlip}>
@@ -265,11 +412,7 @@ export default function FlashcardsScreen() {
                   </LinearText>
                   <ScrollView showsVerticalScrollIndicator={false} centerContent>
                     {currentCard.imageUrl ? (
-                      <Image
-                        source={{ uri: currentCard.imageUrl }}
-                        style={styles.cardImage}
-                        resizeMode="contain"
-                      />
+                      <FlashcardImage url={currentCard.imageUrl} style={styles.cardImage} />
                     ) : null}
                     <LinearText style={styles.cardContent}>{currentCard.back}</LinearText>
                   </ScrollView>
@@ -426,7 +569,46 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  btnPrimary: {
+    borderColor: n.colors.accent,
+    backgroundColor: n.colors.accent + '18',
   },
   btnText: { color: n.colors.textPrimary, fontWeight: '700' },
+  btnTextPrimary: { color: n.colors.accent },
+  btnRow: {
+    marginTop: 20,
+    gap: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  loadingText: {
+    color: n.colors.textMuted,
+    fontSize: 14,
+    marginTop: 12,
+  },
+  cardActions: {
+    marginTop: 24,
+    gap: 12,
+    alignItems: 'center',
+  },
+  cardActionBtn: {
+    backgroundColor: n.colors.surface,
+    borderWidth: 1,
+    borderColor: n.colors.border,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardActionText: {
+    color: n.colors.textPrimary,
+    fontWeight: '700',
+  },
   errorText: { color: n.colors.error, textAlign: 'center' },
 });

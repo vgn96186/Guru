@@ -898,3 +898,64 @@ async function _scanAndRecoverOrphanedTranscripts_DISABLED(): Promise<number> {
     useAppStore.getState().setRecoveringBackground(false);
   }
 }
+
+export async function cleanupFailedArtifacts(): Promise<number> {
+  let cleaned = 0;
+  try {
+    const db = (await import('../../db/database')).getDb();
+    const FileSystem = await import('expo-file-system/legacy');
+    const { toFileUri } = await import('../fileUri');
+
+    // 1. Delete external_app_logs where transcription failed or recording_path is null/invalid but marked as failed
+    const logs = await db.getAllAsync<{ id: number; recording_path: string | null }>(
+      `SELECT id, recording_path FROM external_app_logs WHERE transcription_status IN ('failed', 'no_audio')`,
+    );
+
+    for (const log of logs) {
+      if (log.recording_path) {
+        try {
+          await FileSystem.deleteAsync(toFileUri(log.recording_path), { idempotent: true });
+        } catch (e) {}
+      }
+      await db.runAsync(`DELETE FROM external_app_logs WHERE id = ?`, [log.id]);
+      cleaned++;
+    }
+
+    // 2. Delete empty lecture notes — but PRESERVE notes that have a valid transcript
+    // (the transcript IS the content even if the formatted note is empty)
+    const notes = await db.getAllAsync<{
+      id: number;
+      transcript: string | null;
+      recording_path: string | null;
+    }>(
+      `SELECT id, transcript, recording_path FROM lecture_notes WHERE note IS NULL OR length(trim(note)) = 0`,
+    );
+
+    for (const note of notes) {
+      // Skip notes that have meaningful transcript content — the content is there,
+      // just the formatted note field is empty. Deleting would lose valid data.
+      if (note.transcript && note.transcript.trim().length > 20) {
+        console.log(
+          `[Cleanup] Skipping note ${note.id} — has valid transcript (${note.transcript.length} chars)`,
+        );
+        continue;
+      }
+
+      if (note.transcript && note.transcript.startsWith('file://')) {
+        try {
+          await FileSystem.deleteAsync(note.transcript, { idempotent: true });
+        } catch (e) {}
+      }
+      if (note.recording_path) {
+        try {
+          await FileSystem.deleteAsync(toFileUri(note.recording_path), { idempotent: true });
+        } catch (e) {}
+      }
+      await db.runAsync(`DELETE FROM lecture_notes WHERE id = ?`, [note.id]);
+      cleaned++;
+    }
+  } catch (e) {
+    console.error('[Cleanup] Failed to clean up artifacts:', e);
+  }
+  return cleaned;
+}

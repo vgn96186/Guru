@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
-  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -13,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { showToast } from './Toast';
 import { saveImageToDeviceGallery } from '../utils/saveImageToGallery';
+import { ResilientImage } from './ResilientImage';
 
 type Props = {
   visible: boolean;
@@ -76,8 +76,8 @@ export function ImageLightbox({ visible, uri, onClose, imageStyle }: Props) {
           <Ionicons name="close" size={28} color="#fff" />
         </Pressable>
         <View style={styles.imageWrap} pointerEvents="box-none">
-          <Image
-            source={{ uri }}
+          <ResilientImage
+            uri={uri}
             style={[styles.image, imageStyle]}
             resizeMode="contain"
             accessibilityLabel="Enlarged image"

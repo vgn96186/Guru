@@ -459,6 +459,8 @@ async function ensureCriticalColumns(db: SQLite.SQLiteDatabase): Promise<void> {
       ['cloudflare_api_token', "TEXT NOT NULL DEFAULT ''"],
       ['fal_api_key', "TEXT NOT NULL DEFAULT ''"],
       ['brave_search_api_key', "TEXT NOT NULL DEFAULT ''"],
+      ['google_custom_search_api_key', "TEXT NOT NULL DEFAULT ''"],
+      ['qwen_connected', 'INTEGER NOT NULL DEFAULT 0'],
       ['gemini_key', "TEXT NOT NULL DEFAULT ''"],
       ['guru_chat_default_model', "TEXT NOT NULL DEFAULT 'auto'"],
       ['guru_memory_notes', "TEXT NOT NULL DEFAULT ''"],

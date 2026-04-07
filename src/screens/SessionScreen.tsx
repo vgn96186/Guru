@@ -480,7 +480,7 @@ export default function SessionScreen() {
       const state = useSessionStore.getState();
       const isStudyingState =
         state.sessionState === 'studying' || state.sessionState === 'topic_done';
-      if (!isPausedRef.current && !state.isOnBreak && isStudyingState) {
+      if (!isPausedRef.current && !state.isOnBreak && !state.isLoadingContent && isStudyingState) {
         setActiveElapsedSeconds((prev) => prev + 1);
         incrementActiveStudyDuration(1);
       }
@@ -1302,92 +1302,101 @@ export default function SessionScreen() {
           </Animated.View>
         )}
 
-        <View style={styles.tabRowWrapper}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
-            <View style={styles.contentTypeTabs}>
-              {curItem.contentTypes.map((ct, idx) => {
-                const isActive = idx === currentContentIndex;
-                const isUnlocked = idx <= maxUnlockedContentIndex;
-                return (
-                  <TouchableOpacity
-                    key={ct}
-                    onPress={() => {
-                      if (!isUnlocked || isActive) return;
-                      jumpToContent(idx);
-                    }}
-                    disabled={!isUnlocked || isActive}
-                    accessibilityRole="button"
-                    accessibilityState={{ disabled: !isUnlocked, selected: isActive }}
-                    style={[
-                      styles.contentTab,
-                      isActive && styles.contentTabActive,
-                      !isActive && isUnlocked && styles.contentTabDone,
-                      !isUnlocked && styles.contentTabLocked,
-                    ]}
-                  >
-                    <LinearText variant="chip" style={styles.contentTabText}>
-                      {CONTENT_TYPE_LABELS[ct]}
-                    </LinearText>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </ScrollView>
-          <LinearText variant="meta" tone="muted" style={styles.cardCountText}>
-            {currentContentIndex + 1}/{curItem.contentTypes.length}
-          </LinearText>
-        </View>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.tabRowWrapper}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+              <View style={styles.contentTypeTabs}>
+                {curItem.contentTypes.map((ct, idx) => {
+                  const isActive = idx === currentContentIndex;
+                  const isUnlocked = idx <= maxUnlockedContentIndex;
+                  return (
+                    <TouchableOpacity
+                      key={ct}
+                      onPress={() => {
+                        if (!isUnlocked || isActive) return;
+                        jumpToContent(idx);
+                      }}
+                      disabled={!isUnlocked || isActive}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: !isUnlocked, selected: isActive }}
+                      style={[
+                        styles.contentTab,
+                        isActive && styles.contentTabActive,
+                        !isActive && isUnlocked && styles.contentTabDone,
+                        !isUnlocked && styles.contentTabLocked,
+                      ]}
+                    >
+                      <LinearText variant="chip" style={styles.contentTabText}>
+                        {CONTENT_TYPE_LABELS[ct]}
+                      </LinearText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+            <LinearText variant="meta" tone="muted" style={styles.cardCountText}>
+              {currentContentIndex + 1}/{curItem.contentTypes.length}
+            </LinearText>
+          </View>
 
-        <View style={styles.contentArea} {...panHandlers}>
-          {isLoadingContent ? (
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-              <LoadingOrb message="Fetching content..." />
-            </View>
-          ) : currentContent ? (
-            <ErrorBoundary>
-              <ContentCard
-                key={`${curItem.topic.id}-${currentContentIndex}-${curContentType}`}
-                content={currentContent}
-                topicId={curItem.topic.id}
-                onDone={handleConfidenceRating}
-                onSkip={handleContentDone}
-                onQuizAnswered={(c) => {
-                  triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
-                  if (!c && curItem.topic.id) {
-                    void Promise.allSettled([
-                      incrementWrongCount(curItem.topic.id),
-                      markTopicNeedsAttention(curItem.topic.id),
-                      setContentFlagged(curItem.topic.id, 'quiz', true),
-                    ]);
+          <View style={styles.contentArea} {...panHandlers}>
+            {isLoadingContent ? (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <LoadingOrb message="Fetching content..." />
+              </View>
+            ) : currentContent ? (
+              <ErrorBoundary>
+                <ContentCard
+                  key={`${curItem.topic.id}-${currentContentIndex}-${curContentType}`}
+                  content={currentContent}
+                  topicId={curItem.topic.id}
+                  onDone={handleConfidenceRating}
+                  onSkip={handleContentDone}
+                  onQuizAnswered={(c) => {
+                    triggerEvent(c ? 'quiz_correct' : 'quiz_wrong');
+                    if (!c && curItem.topic.id) {
+                      void Promise.allSettled([
+                        incrementWrongCount(curItem.topic.id),
+                        markTopicNeedsAttention(curItem.topic.id),
+                        setContentFlagged(curItem.topic.id, 'quiz', true),
+                      ]);
+                    }
+                  }}
+                  onQuizComplete={(correct, total) =>
+                    addQuizResult({ topicId: curItem.topic.id, correct, total })
                   }
-                }}
-                onQuizComplete={(correct, total) =>
-                  addQuizResult({ topicId: curItem.topic.id, correct, total })
-                }
-              />
-            </ErrorBoundary>
-          ) : (
-            <LoadingOrb message="Loading..." />
-          )}
+                />
+              </ErrorBoundary>
+            ) : (
+              <LoadingOrb message="Loading..." />
+            )}
 
-          <Animated.View
-            style={[
-              styles.xpPop,
-              {
-                opacity: xpAnim,
-                transform: [
-                  { translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }) },
-                ],
-              },
-            ]}
-          >
-            <LinearSurface style={styles.xpPopSurface} padded={false}>
-              <LinearText variant="label" style={styles.xpPopText}>
-                +{showXp} XP
-              </LinearText>
-            </LinearSurface>
-          </Animated.View>
-        </View>
+            <Animated.View
+              style={[
+                styles.xpPop,
+                {
+                  opacity: xpAnim,
+                  transform: [
+                    {
+                      translateY: xpAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40] }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <LinearSurface style={styles.xpPopSurface} padded={false}>
+                <LinearText variant="label" style={styles.xpPopText}>
+                  +{showXp} XP
+                </LinearText>
+              </LinearSurface>
+            </Animated.View>
+          </View>
+        </ScrollView>
 
         {showPausedOverlay && (
           <View style={styles.pausedOverlay}>
@@ -1642,7 +1651,7 @@ function SessionDoneScreen({
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: n.colors.background },
-  contentArea: { flex: 1, minHeight: 0 },
+  contentArea: { flex: 1, minHeight: 300 },
   storyBarContainer: { height: 3, backgroundColor: n.colors.border },
   storyBarFill: { height: '100%', backgroundColor: n.colors.accent, borderRadius: 0 },
   topicProgressSection: { paddingHorizontal: n.spacing.lg, marginBottom: 8 },
@@ -2009,13 +2018,10 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   guruToast: {
-    position: 'absolute',
-    top: 130,
-    left: n.spacing.lg,
-    right: n.spacing.lg,
     borderRadius: 12,
     padding: 12,
-    zIndex: 50,
+    marginHorizontal: n.spacing.lg,
+    marginBottom: 10,
   },
   guruToastText: {},
   pausedOverlay: {

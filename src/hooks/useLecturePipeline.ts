@@ -341,13 +341,26 @@ Summary: ${result.lectureSummary}`;
         return;
       }
       console.error('[Transcription] Error:', e);
-      const message = e?.message ?? 'Transcription failed';
+
+      // Handle Metro bundler disconnect (dev mode only) — not a real transcription failure
+      const isMetroDisconnect =
+        e?.name === 'LoadBundleFromServerRequestError' ||
+        e?.message?.includes('Could not load bundle');
+
+      const message = isMetroDisconnect
+        ? 'Connection to dev server lost. Audio preserved — retry when reconnected.'
+        : (e?.message ?? 'Transcription failed');
+
       setActiveStage(null);
       setStageMessage('');
       setStageDetail('');
       setErrorMsg(`${message}. Audio has been preserved for auto-retry on next launch.`);
-      await updateSessionTranscriptionStatus(logId, 'failed', message);
-      setPhase('error');
+      await updateSessionTranscriptionStatus(
+        logId,
+        isMetroDisconnect ? 'pending' : 'failed',
+        message,
+      );
+      setPhase(isMetroDisconnect ? 'intro' : 'error');
     }
   }, [
     appName,
@@ -395,6 +408,17 @@ Summary: ${result.lectureSummary}`;
       } catch (e) {
         console.warn('[LectureReturn] ADHD note generation failed, using quick note:', e);
         noteToSave = buildQuickLectureNote(analysisToSave);
+      }
+
+      // If the note is still empty/very short, fall back to summary or transcript content
+      if (!noteToSave || noteToSave.trim().length < 10) {
+        console.warn('[LectureReturn] Note is too short, falling back to summary/transcript.');
+        if (analysisToSave.lectureSummary && analysisToSave.lectureSummary.trim().length >= 10) {
+          noteToSave = analysisToSave.lectureSummary.trim();
+        } else if (analysisToSave.transcript && analysisToSave.transcript.trim().length >= 10) {
+          // Use first 500 chars of transcript as a last resort
+          noteToSave = analysisToSave.transcript.trim().slice(0, 500);
+        }
       }
 
       handlePipelineProgress({

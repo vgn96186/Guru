@@ -13,6 +13,7 @@ import {
   testGeminiConnection,
   testKiloConnection,
   testPoeConnection,
+  testQwenConnection,
 } from './providerHealth';
 import {
   clearTokens as clearGitHubCopilotTokens,
@@ -27,6 +28,7 @@ import {
 } from './gitlab/gitlabTokenStore';
 import { getValidAccessToken as getPoeToken } from './poe/poeTokenStore';
 import { callChatGpt } from './chatgpt/chatgptApi';
+import { getQwenAccessToken } from './qwen/qwenAuth';
 
 type BootCheck = {
   id: ProviderId;
@@ -287,6 +289,28 @@ export async function validateAiProvidersOnBoot(): Promise<void> {
     checks.push(Promise.resolve({ id: 'chatgpt', ok: false, status: 0, ms: 0, skipped: true }));
   }
 
+  // Qwen OAuth: validate token is usable
+  if (profile?.qwenConnected) {
+    checks.push(
+      safeCheck(
+        'qwen',
+        timed(async () => {
+          const tokenResult = await getQwenAccessToken();
+          if (!tokenResult || !tokenResult.accessToken) {
+            return { ok: false, status: 0, message: 'Qwen OAuth token not available' };
+          }
+          return testQwenConnection(
+            tokenResult.accessToken,
+            tokenResult.apiKey,
+            tokenResult.resourceUrl,
+          );
+        }).then(({ result, ms }) => ({ id: 'qwen' as ProviderId, ...result, ms })),
+      ),
+    );
+  } else {
+    checks.push(Promise.resolve({ id: 'qwen', ok: false, status: 0, ms: 0, skipped: true }));
+  }
+
   const settled = await Promise.allSettled(checks);
   const results: BootCheck[] = settled.map((s) => {
     if (s.status === 'fulfilled') return s.value;
@@ -308,6 +332,7 @@ export async function validateAiProvidersOnBoot(): Promise<void> {
     'gitlab_duo',
     'poe',
     'groq',
+    'qwen',
     'github',
     'kilo',
     'deepseek',

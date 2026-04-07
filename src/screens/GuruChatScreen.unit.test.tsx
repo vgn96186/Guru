@@ -34,6 +34,10 @@ jest.mock('../components/ImageLightbox', () => ({
   ImageLightbox: () => null,
 }));
 
+jest.mock('../components/ResilientImage', () => ({
+  ResilientImage: () => null,
+}));
+
 jest.mock('../components/primitives/LinearSurface', () => {
   const ReactNative = require('react-native');
   return ({ children, ...props }: { children?: React.ReactNode }) => (

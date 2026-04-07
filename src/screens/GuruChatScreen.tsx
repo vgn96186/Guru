@@ -5,7 +5,6 @@ import {
   Animated,
   Easing,
   FlatList,
-  Image,
   InteractionManager,
   Keyboard,
   KeyboardAvoidingView,
@@ -21,6 +20,7 @@ import {
   type ListRenderItemInfo,
 } from 'react-native';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { ResilientImage } from '../components/ResilientImage';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -115,7 +115,8 @@ type ModelOption = {
     | 'GitLab Duo'
     | 'Poe'
     | 'Kilo'
-    | 'AgentRouter';
+    | 'AgentRouter'
+    | 'Qwen (Free)';
 };
 
 type ChatItem =
@@ -128,6 +129,7 @@ const GURU_CHAT_SCREEN_MOTION_TRIGGER = 'first-mount' as const;
 const MODEL_GROUP_ORDER: ModelOption['group'][] = [
   'Local',
   'ChatGPT Codex',
+  'Qwen (Free)',
   'Groq',
   'OpenRouter',
   'Gemini',
@@ -477,20 +479,19 @@ function ChatImagePreview({
   onLongPress?: () => void;
   accessibilityLabel: string;
 }) {
-  const [failed, setFailed] = useState(false);
-
-  if (!uri || failed) return null;
+  const safeUri = typeof uri === 'string' ? uri.trim() : '';
+  if (!safeUri || !/^https?:\/\//i.test(safeUri)) return null;
 
   return (
-    <Pressable
+    <ResilientImage
+      uri={safeUri}
+      style={style}
+      resizeMode="contain"
       onPress={onPress}
       onLongPress={onLongPress}
-      delayLongPress={250}
-      accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-    >
-      <Image source={{ uri }} style={style} resizeMode="cover" onError={() => setFailed(true)} />
-    </Pressable>
+      showRetry
+    />
   );
 }
 
@@ -534,7 +535,12 @@ function MessageSources({
               accessibilityRole="button"
               accessibilityLabel="Enlarge source thumbnail"
             >
-              <Image source={{ uri: source.imageUrl }} style={styles.sourceImage} />
+              <ResilientImage
+                uri={source.imageUrl}
+                style={styles.sourceImage}
+                resizeMode="cover"
+                showRetry={false}
+              />
             </Pressable>
           ) : null}
           <Pressable
@@ -830,6 +836,7 @@ function GuruChatScreenContent() {
       githubCopilotConnected,
       gitlabDuoConnected,
       poeConnected,
+      qwenConnected,
     } = getApiKeys(profile ?? undefined);
     const list: ModelOption[] = [{ id: 'auto', name: 'Auto Route (Smart)', group: 'Local' }];
 
@@ -843,6 +850,18 @@ function GuruChatScreenContent() {
           id: `chatgpt/${model}`,
           name: model,
           group: 'ChatGPT Codex',
+        });
+      });
+    }
+
+    // Qwen models - only show when OAuth is connected
+    // Based on official Qwen OAuth implementation (Cline, RooCode)
+    if (qwenConnected || profile?.qwenConnected) {
+      [{ id: 'qwen3-coder-plus', name: 'Qwen Coder Plus' }].forEach((m) => {
+        list.push({
+          id: `qwen/${m.id}`,
+          name: m.name,
+          group: 'Qwen (Free)',
         });
       });
     }
@@ -1498,8 +1517,9 @@ function GuruChatScreenContent() {
         message.role === 'guru'
           ? (message.referenceImages ?? []).filter(isDisplayableReferenceImage)
           : [];
+
       const hasGuruImages = guruGeneratedImages.length > 0 || guruReferenceImages.length > 0;
-      const showInlineGuruImages = hasGuruImages && isLandscape;
+      const showInlineGuruImages = hasGuruImages;
       return (
         <View
           style={[styles.msgRow, message.role === 'user' ? styles.msgRowUser : styles.msgRowGuru]}
@@ -1546,7 +1566,7 @@ function GuruChatScreenContent() {
                 ) : null}
               </View>
               {showInlineGuruImages ? (
-                <View style={styles.guruBubbleMediaRow}>
+                <View style={{ width: '100%' }}>
                   <Pressable
                     style={[styles.bubbleWrap, styles.bubbleWrapGuru]}
                     onLongPress={() => copyMessage(message.text)}
@@ -1556,12 +1576,16 @@ function GuruChatScreenContent() {
                       <FormattedGuruMessage text={message.text} />
                     </View>
                   </Pressable>
-                  <View style={styles.generatedImagesInlineWrap}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 4, paddingVertical: 6, gap: 8 }}
+                  >
                     {guruReferenceImages.map((image) => (
                       <ChatImagePreview
                         key={`${message.id}-reference-${image.id}`}
                         uri={image.imageUrl!}
-                        style={[styles.generatedImage, styles.generatedImageInline]}
+                        style={[styles.generatedImage, { width: 160, height: 160 }]}
                         onPress={() => setLightboxUri(image.imageUrl!)}
                         onLongPress={() => openSource(image.url)}
                         accessibilityLabel="View reference image"
@@ -1571,12 +1595,12 @@ function GuruChatScreenContent() {
                       <ChatImagePreview
                         key={`${message.id}-image-${image.id}`}
                         uri={image.localUri}
-                        style={[styles.generatedImage, styles.generatedImageInline]}
+                        style={[styles.generatedImage, { width: 160, height: 160 }]}
                         onPress={() => setLightboxUri(image.localUri)}
                         accessibilityLabel="View enlarged image"
                       />
                     ))}
-                  </View>
+                  </ScrollView>
                 </View>
               ) : (
                 <Pressable

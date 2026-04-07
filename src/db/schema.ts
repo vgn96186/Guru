@@ -110,7 +110,7 @@ CREATE TABLE IF NOT EXISTS ai_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   topic_id INTEGER NOT NULL,
   content_type TEXT NOT NULL
-    CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
+    CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic','flashcards')),
   content_json TEXT NOT NULL,
   model_used TEXT NOT NULL,
   created_at INTEGER NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE IF NOT EXISTS guru_aicache.ai_cache (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   topic_id INTEGER NOT NULL,
   content_type TEXT NOT NULL
-    CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic')),
+    CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic','flashcards')),
   content_json TEXT NOT NULL,
   model_used TEXT NOT NULL,
   created_at INTEGER NOT NULL,
@@ -188,6 +188,8 @@ CREATE TABLE IF NOT EXISTS user_profile (
   , cloudflare_api_token TEXT NOT NULL DEFAULT ''
   , fal_api_key TEXT NOT NULL DEFAULT ''
   , brave_search_api_key TEXT NOT NULL DEFAULT ''
+  , google_custom_search_api_key TEXT NOT NULL DEFAULT ''
+  , qwen_connected INTEGER NOT NULL DEFAULT 0
   , guru_chat_default_model TEXT NOT NULL DEFAULT 'auto'
   , guru_memory_notes TEXT NOT NULL DEFAULT ''
   , image_generation_model TEXT NOT NULL DEFAULT 'auto'

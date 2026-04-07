@@ -107,6 +107,7 @@ export function getApiKeys(
     cloudflareApiToken?: string;
     falApiKey?: string;
     braveSearchApiKey?: string;
+    googleCustomSearchApiKey?: string;
     deepseekKey?: string;
     githubModelsPat?: string;
     kiloApiKey?: string;
@@ -120,6 +121,7 @@ export function getApiKeys(
     githubCopilotConnected?: boolean;
     gitlabDuoConnected?: boolean;
     poeConnected?: boolean;
+    qwenConnected?: boolean;
   } | null,
 ): {
   orKey: string | undefined;
@@ -131,6 +133,7 @@ export function getApiKeys(
   cfApiToken: string | undefined;
   falKey?: string | undefined;
   braveSearchKey?: string | undefined;
+  googleCustomSearchKey?: string | undefined;
   deepseekKey: string | undefined;
   githubModelsPat: string | undefined;
   kiloApiKey: string | undefined;
@@ -140,6 +143,7 @@ export function getApiKeys(
   githubCopilotConnected: boolean;
   gitlabDuoConnected: boolean;
   poeConnected: boolean;
+  qwenConnected: boolean;
 } {
   if (!profile) {
     return {
@@ -152,6 +156,7 @@ export function getApiKeys(
       cfApiToken: BUNDLED_CF_API_TOKEN || undefined,
       falKey: BUNDLED_FAL_KEY || undefined,
       braveSearchKey: BUNDLED_BRAVE_SEARCH_KEY || undefined,
+      googleCustomSearchKey: undefined,
       deepseekKey: BUNDLED_DEEPSEEK_KEY || undefined,
       githubModelsPat: BUNDLED_GITHUB_MODELS_PAT || undefined,
       kiloApiKey: undefined,
@@ -161,6 +166,7 @@ export function getApiKeys(
       githubCopilotConnected: false,
       gitlabDuoConnected: false,
       poeConnected: false,
+      qwenConnected: false,
     };
   }
   return {
@@ -173,6 +179,7 @@ export function getApiKeys(
     cfApiToken: profile.cloudflareApiToken?.trim() || BUNDLED_CF_API_TOKEN || undefined,
     falKey: profile.falApiKey?.trim() || BUNDLED_FAL_KEY || undefined,
     braveSearchKey: profile.braveSearchApiKey?.trim() || BUNDLED_BRAVE_SEARCH_KEY || undefined,
+    googleCustomSearchKey: profile.googleCustomSearchApiKey?.trim() || undefined,
     deepseekKey: profile.deepseekKey?.trim() || BUNDLED_DEEPSEEK_KEY || undefined,
     githubModelsPat: profile.githubModelsPat?.trim() || BUNDLED_GITHUB_MODELS_PAT || undefined,
     kiloApiKey: profile.kiloApiKey?.trim() || undefined,
@@ -182,5 +189,6 @@ export function getApiKeys(
     githubCopilotConnected: !!profile.githubCopilotConnected,
     gitlabDuoConnected: !!profile.gitlabDuoConnected,
     poeConnected: !!profile.poeConnected,
+    qwenConnected: !!profile.qwenConnected,
   };
 }

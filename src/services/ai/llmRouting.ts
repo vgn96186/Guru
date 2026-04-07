@@ -1705,6 +1705,7 @@ interface ProviderKeys {
   /** When set, GitLab Duo auto-routing tries this model id first (must be in {@link GITLAB_DUO_MODELS}). */
   gitlabDuoPreferredModel?: string;
   poeConnected?: boolean;
+  qwenConnected?: boolean;
 }
 
 /** Ensure chatgpt is in the provider order (old saved orders won't have it). */
@@ -1742,6 +1743,8 @@ function providerHasKey(provider: ProviderId, keys: ProviderKeys): boolean {
       return !!keys.orKey;
     case 'cloudflare':
       return !!(keys.cfAccountId && keys.cfApiToken);
+    case 'qwen':
+      return !!keys.qwenConnected;
     default:
       return false;
   }
@@ -1936,6 +1939,9 @@ async function tryStreamProvider(
         },
         'poe',
       );
+    case 'qwen':
+      if (!keys.qwenConnected) return null;
+      return tryQwenProviderStream(messages, onDelta);
     case 'groq':
       if (!keys.groqKey) return null;
       return tryModels(
@@ -2004,6 +2010,46 @@ async function tryStreamProvider(
   }
 }
 
+// ─── Qwen OAuth Provider ─────────────────────────────────────────────────────
+
+const QWEN_MODELS = ['qwen3-coder-plus'] as const;
+
+async function tryQwenProvider(
+  messages: Message[],
+  json: boolean,
+): Promise<{ text: string; modelUsed: string } | null> {
+  const { callQwenOauth } = await import('./qwen/qwenApi');
+  for (const model of QWEN_MODELS) {
+    try {
+      if (__DEV__) console.log(`[AI] trying qwen/${model}...`);
+      const text = await callQwenOauth(messages, model, json);
+      return { text, modelUsed: `qwen/${model}` };
+    } catch (err) {
+      if (__DEV__) console.warn(`[AI] qwen/${model} failed:`, (err as Error).message);
+      continue;
+    }
+  }
+  return null;
+}
+
+async function tryQwenProviderStream(
+  messages: Message[],
+  onDelta: (delta: string) => void,
+): Promise<{ text: string; modelUsed: string } | null> {
+  const { streamQwenOauth } = await import('./qwen/qwenApi');
+  for (const model of QWEN_MODELS) {
+    try {
+      if (__DEV__) console.log(`[AI] streaming qwen/${model}...`);
+      const text = await streamQwenOauth(messages, model, onDelta);
+      if (text) return { text, modelUsed: `qwen/${model}` };
+    } catch (err) {
+      if (__DEV__) console.warn(`[AI] qwen/${model} stream failed:`, (err as Error).message);
+      continue;
+    }
+  }
+  return null;
+}
+
 /** Try all models for a single provider (non-streaming). Returns result, or null if none succeeded. */
 async function tryProvider(
   provider: ProviderId,
@@ -2011,6 +2057,7 @@ async function tryProvider(
   textMode: boolean,
   skipModel: string | undefined,
   keys: ProviderKeys,
+  groqPrimaryOnly?: boolean,
 ): Promise<{ text: string; modelUsed: string } | null> {
   const tryModels = async (
     models: readonly string[],
@@ -2076,8 +2123,28 @@ async function tryProvider(
         },
         'poe',
       );
+    case 'qwen':
+      // Always attempt Qwen - the API client checks SecureStore for tokens
+      return tryQwenProvider(messages, json);
     case 'groq':
       if (!keys.groqKey) return null;
+      // When forceProvider === 'groq' (groqPrimaryOnly=true), only try the primary
+      // model (gpt-oss-120b) for speed — no silent Llama fallback.
+      // When Groq is reached naturally (user's preferred provider), try all
+      // GROQ_MODELS so Llama fallbacks work as the user expects.
+      if (groqPrimaryOnly) {
+        const primaryGroqModel = GROQ_MODELS[0];
+        if (!primaryGroqModel) return null;
+        try {
+          if (__DEV__) console.log(`[AI] trying groq/${primaryGroqModel}...`);
+          const text = await callGroq(messages, keys.groqKey!, primaryGroqModel, json);
+          return { text, modelUsed: `groq/${primaryGroqModel}` };
+        } catch (err) {
+          if (__DEV__)
+            console.warn(`[AI] groq/${primaryGroqModel} failed:`, (err as Error).message);
+          return null;
+        }
+      }
       return tryModels(GROQ_MODELS, (m) => callGroq(messages, keys.groqKey!, m, json), 'groq');
     case 'github':
       if (!keys.githubModelsPat) return null;
@@ -2162,6 +2229,7 @@ export async function attemptCloudLLMStream(
   poeConnected?: boolean,
   githubCopilotPreferredModel?: string,
   gitlabDuoPreferredModel?: string,
+  groqPrimaryOnly?: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -2196,6 +2264,9 @@ export async function attemptCloudLLMStream(
   const preferredPoeModel = chosenModel?.startsWith('poe/')
     ? chosenModel.replace('poe/', '')
     : undefined;
+  const preferredQwenModel = chosenModel?.startsWith('qwen/')
+    ? chosenModel.replace('qwen/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -2209,6 +2280,7 @@ export async function attemptCloudLLMStream(
     !preferredGithubCopilotModel &&
     !preferredGitlabDuoModel &&
     !preferredPoeModel &&
+    !preferredQwenModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -2379,6 +2451,16 @@ export async function attemptCloudLLMStream(
     }
   }
 
+  if (preferredQwenModel) {
+    try {
+      const { streamQwenOauth } = await import('./qwen/qwenApi');
+      const text = await streamQwenOauth(messages, preferredQwenModel, onDelta);
+      return { text, modelUsed: `qwen/${preferredQwenModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   const userPickedSpecificModel =
     !!chosenModel && chosenModel !== 'auto' && chosenModel !== 'local';
   if (userPickedSpecificModel) {
@@ -2427,6 +2509,7 @@ export async function attemptCloudLLMStream(
     gitlabDuoConnected,
     gitlabDuoPreferredModel: (gitlabDuoPreferredModel ?? '').trim() || undefined,
     poeConnected,
+    qwenConnected: true, // Qwen uses SecureStore, not a simple key
   };
   const skipModels: Record<string, string | undefined> = {
     chatgpt: preferredChatGptModel,
@@ -2442,6 +2525,7 @@ export async function attemptCloudLLMStream(
     github_copilot: preferredGithubCopilotModel,
     gitlab_duo: preferredGitlabDuoModel,
     poe: preferredPoeModel,
+    qwen: preferredQwenModel,
   };
 
   if (__DEV__) {
@@ -2540,6 +2624,7 @@ export async function attemptCloudLLM(
   poeConnected?: boolean,
   githubCopilotPreferredModel?: string,
   gitlabDuoPreferredModel?: string,
+  groqPrimaryOnly?: boolean,
 ): Promise<{ text: string; modelUsed: string }> {
   const preferredGroqModel = chosenModel?.startsWith('groq/')
     ? chosenModel.replace('groq/', '')
@@ -2574,6 +2659,9 @@ export async function attemptCloudLLM(
   const preferredPoeModel = chosenModel?.startsWith('poe/')
     ? chosenModel.replace('poe/', '')
     : undefined;
+  const preferredQwenModel = chosenModel?.startsWith('qwen/')
+    ? chosenModel.replace('qwen/', '')
+    : undefined;
   const preferredOpenRouterModel =
     chosenModel &&
     !preferredGroqModel &&
@@ -2587,6 +2675,7 @@ export async function attemptCloudLLM(
     !preferredGithubCopilotModel &&
     !preferredGitlabDuoModel &&
     !preferredPoeModel &&
+    !preferredQwenModel &&
     chosenModel !== 'local' &&
     chosenModel !== 'auto'
       ? chosenModel
@@ -2727,6 +2816,16 @@ export async function attemptCloudLLM(
     }
   }
 
+  if (preferredQwenModel) {
+    try {
+      const { callQwenOauth } = await import('./qwen/qwenApi');
+      const text = await callQwenOauth(messages, preferredQwenModel, textMode);
+      return { text, modelUsed: `qwen/${preferredQwenModel}` };
+    } catch (err) {
+      lastCloudError = err as Error;
+    }
+  }
+
   // 2. Default Routing — iterate providers in user-defined (or default) order
   const order = ensureChatGptInOrder(
     providerOrder?.length ? providerOrder : DEFAULT_PROVIDER_ORDER,
@@ -2749,6 +2848,7 @@ export async function attemptCloudLLM(
     gitlabDuoConnected,
     gitlabDuoPreferredModel: (gitlabDuoPreferredModel ?? '').trim() || undefined,
     poeConnected,
+    qwenConnected: true, // Qwen uses SecureStore, not a simple key
   };
   const skipModels: Record<string, string | undefined> = {
     chatgpt: preferredChatGptModel,
@@ -2764,6 +2864,7 @@ export async function attemptCloudLLM(
     github_copilot: preferredGithubCopilotModel,
     gitlab_duo: preferredGitlabDuoModel,
     poe: preferredPoeModel,
+    qwen: preferredQwenModel,
   };
 
   if (__DEV__) {
@@ -2779,7 +2880,7 @@ export async function attemptCloudLLM(
   for (const provider of order) {
     if (!providerHasKey(provider, keys2)) continue;
     const skip = skipModels[provider];
-    const result = await tryProvider(provider, messages, textMode, skip, keys2);
+    const result = await tryProvider(provider, messages, textMode, skip, keys2, groqPrimaryOnly);
     if (result) return result;
   }
 

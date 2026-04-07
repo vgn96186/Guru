@@ -161,6 +161,8 @@ export async function getUserProfile(): Promise<UserProfile> {
     chatgpt_accounts_json: string;
     fal_api_key: string;
     brave_search_api_key: string;
+    google_custom_search_api_key: string;
+    qwen_connected: number;
     deepgram_api_key: string;
     github_copilot_connected?: number;
     github_copilot_preferred_model?: string;
@@ -228,6 +230,7 @@ export async function getUserProfile(): Promise<UserProfile> {
       cloudflareApiToken: '',
       falApiKey: '',
       braveSearchApiKey: '',
+      googleCustomSearchApiKey: '',
       guruChatDefaultModel: 'auto',
       imageGenerationModel: DEFAULT_IMAGE_GENERATION_MODEL,
       guruMemoryNotes: '',
@@ -363,6 +366,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     cloudflareApiToken: r.cloudflare_api_token ?? '',
     falApiKey: r.fal_api_key ?? '',
     braveSearchApiKey: r.brave_search_api_key ?? '',
+    googleCustomSearchApiKey: r.google_custom_search_api_key ?? '',
     guruChatDefaultModel: r.guru_chat_default_model ?? 'auto',
     imageGenerationModel: r.image_generation_model ?? DEFAULT_IMAGE_GENERATION_MODEL,
     guruMemoryNotes: r.guru_memory_notes ?? '',
@@ -399,6 +403,7 @@ export async function getUserProfile(): Promise<UserProfile> {
     gitlabOauthClientId: (r.gitlab_oauth_client_id ?? '').trim(),
     gitlabDuoPreferredModel: (r.gitlab_duo_preferred_model ?? '').trim(),
     poeConnected: (r.poe_connected ?? 0) === 1,
+    qwenConnected: (r.qwen_connected ?? 0) === 1,
     gdriveWebClientId: (r.gdrive_web_client_id ?? '').trim(),
     gdriveConnected: (r.gdrive_connected ?? 0) === 1,
     gdriveEmail: (r.gdrive_email ?? '').trim(),
@@ -458,6 +463,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     cloudflareApiToken: 'cloudflare_api_token',
     falApiKey: 'fal_api_key',
     braveSearchApiKey: 'brave_search_api_key',
+    googleCustomSearchApiKey: 'google_custom_search_api_key',
     guruChatDefaultModel: 'guru_chat_default_model',
     imageGenerationModel: 'image_generation_model',
     guruMemoryNotes: 'guru_memory_notes',
@@ -476,6 +482,7 @@ export async function updateUserProfile(updates: Partial<UserProfile>): Promise<
     gitlabOauthClientId: 'gitlab_oauth_client_id',
     gitlabDuoPreferredModel: 'gitlab_duo_preferred_model',
     poeConnected: 'poe_connected',
+    qwenConnected: 'qwen_connected',
     gdriveWebClientId: 'gdrive_web_client_id',
     gdriveConnected: 'gdrive_connected',
     gdriveEmail: 'gdrive_email',

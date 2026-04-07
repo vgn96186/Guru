@@ -905,6 +905,45 @@ export default function TranscriptVaultScreen() {
           </TouchableOpacity>
         )}
 
+        {/* Clean up failed AI artifacts */}
+        {!isSelectionMode && (
+          <TouchableOpacity
+            style={styles.artifactCleanupBanner}
+            onPress={() => {
+              Alert.alert(
+                'Clean up failed AI artifacts?',
+                'This will delete failed transcription recordings, empty lecture notes, and their orphaned files.',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Clean Up',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        const { cleanupFailedArtifacts } =
+                          await import('../services/lecture/lectureSessionMonitor');
+                        const cleaned = await cleanupFailedArtifacts();
+                        Alert.alert(
+                          'Done',
+                          cleaned > 0
+                            ? `Cleaned up ${cleaned} failed artifact${cleaned !== 1 ? 's' : ''}.`
+                            : 'No failed artifacts found.',
+                        );
+                      } catch (e) {
+                        Alert.alert('Error', 'Failed to clean up artifacts.');
+                      }
+                    },
+                  },
+                ],
+              );
+            }}
+          >
+            <Ionicons name="construct-outline" size={16} color={n.colors.warning} />
+            <LinearText style={styles.cleanupText}>Failed transcriptions & empty notes</LinearText>
+            <LinearText style={styles.cleanupAction}>Clean up</LinearText>
+          </TouchableOpacity>
+        )}
+
         {/* Rename progress */}
         {renameProgress && (
           <View style={styles.renameBanner}>
@@ -1184,6 +1223,19 @@ const styles = StyleSheet.create({
     borderColor: n.colors.accent + '30',
   },
   renameAction: { color: n.colors.accent, fontSize: 13, fontWeight: '800' },
+  artifactCleanupBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: n.colors.warning + '12',
+    marginHorizontal: n.spacing.lg,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: n.colors.warning + '44',
+  },
   processBanner: {
     flexDirection: 'row',
     alignItems: 'center',

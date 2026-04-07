@@ -116,7 +116,7 @@ export async function generateJSONWithRouting<T>(
     providerOrderOverride: providerOrderOverride?.join(' -> ') ?? 'default',
   });
   const profile = await profileRepository.getProfile();
-  let {
+  const {
     attempts,
     orKey,
     groqKey,
@@ -138,32 +138,17 @@ export async function generateJSONWithRouting<T>(
   let providerOrder = resolveProviderOrderOverride(providerOrderOverride) ?? profileProviderOrder;
 
   if (forceProvider === 'groq') {
-    attempts = ['cloud'];
-    orKey = undefined;
-    geminiKey = undefined;
-    geminiFallbackKey = undefined;
-    cfAccountId = undefined;
-    cfApiToken = undefined;
-    deepseekKey = undefined;
-    githubModelsPat = undefined;
-    kiloApiKey = undefined;
-    agentRouterKey = undefined;
-    // Try Groq first (e.g. gpt-oss-120b) for low latency, then full user/default order for fallbacks.
+    // First card: only try the primary Groq model (gpt-oss-120b) for speed.
+    // No silent fallback to Llama — if it fails, fall through to next provider.
     const base =
       providerOrder && providerOrder.length > 0 ? providerOrder : [...DEFAULT_PROVIDER_ORDER];
     const rest = base.filter((p) => p !== 'groq');
     providerOrder = ['groq', ...rest];
   } else if (forceProvider === 'gemini') {
-    attempts = ['cloud'];
-    orKey = undefined;
-    groqKey = undefined;
-    cfAccountId = undefined;
-    cfApiToken = undefined;
-    deepseekKey = undefined;
-    githubModelsPat = undefined;
-    kiloApiKey = undefined;
-    agentRouterKey = undefined;
-    providerOrder = ['gemini', 'gemini_fallback'];
+    const base =
+      providerOrder && providerOrder.length > 0 ? providerOrder : [...DEFAULT_PROVIDER_ORDER];
+    const rest = base.filter((p) => p !== 'gemini' && p !== 'gemini_fallback');
+    providerOrder = ['gemini', 'gemini_fallback', ...rest];
   }
 
   let lastError: Error | null = null;
@@ -204,6 +189,7 @@ export async function generateJSONWithRouting<T>(
         poeConnected,
         profile.githubCopilotPreferredModel,
         profile.gitlabDuoPreferredModel,
+        forceProvider === 'groq',
       );
       const parsed = await parseStructuredJson(text, schema);
       trace.success({
@@ -323,6 +309,7 @@ export async function generateTextWithRouting(
               poeConnected,
               profile.githubCopilotPreferredModel,
               profile.gitlabDuoPreferredModel,
+              false, // groqPrimaryOnly — only true for forceProvider==='groq' in generateJSON
             );
       if (__DEV__) console.log(`[AI] ✓ Text via ${modelUsed}`);
       trace.success({

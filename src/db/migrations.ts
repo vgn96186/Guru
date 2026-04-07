@@ -1011,7 +1011,37 @@ CREATE INDEX IF NOT EXISTS idx_mind_map_edges_source ON mind_map_edges(source_no
 CREATE INDEX IF NOT EXISTS idx_mind_map_edges_target ON mind_map_edges(target_node_id)`,
     description: 'Add indexes for mind map lookups',
   },
+  {
+    version: 155,
+    sql: `
+-- Add 'flashcards' to ai_cache CHECK constraint (SQLite requires table recreation)
+ALTER TABLE ai_cache RENAME TO ai_cache_old;
+CREATE TABLE ai_cache (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  topic_id INTEGER NOT NULL,
+  content_type TEXT NOT NULL
+    CHECK(content_type IN ('keypoints','must_know','quiz','story','mnemonic','teach_back','error_hunt','detective','manual','socratic','flashcards')),
+  content_json TEXT NOT NULL,
+  model_used TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  is_flagged INTEGER NOT NULL DEFAULT 0,
+  UNIQUE(topic_id, content_type)
+);
+INSERT INTO ai_cache SELECT * FROM ai_cache_old;
+DROP TABLE ai_cache_old;`,
+    description: "Add 'flashcards' to ai_cache content_type CHECK constraint",
+  },
+  {
+    version: 156,
+    sql: `ALTER TABLE user_profile ADD COLUMN google_custom_search_api_key TEXT NOT NULL DEFAULT ''`,
+    description: 'Add Google Custom Search API key for image search',
+  },
+  {
+    version: 157,
+    sql: `ALTER TABLE user_profile ADD COLUMN qwen_connected INTEGER NOT NULL DEFAULT 0`,
+    description: 'Add Qwen OAuth connection flag',
+  },
 ];
 
 /** Latest schema version. Bump when adding new migrations. */
-export const LATEST_VERSION = 154;
+export const LATEST_VERSION = 157;

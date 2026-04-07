@@ -258,9 +258,13 @@ export default function NotesSearchScreen() {
                 {extractPreview(lecture.note)}
               </LinearText>
               {lecture.topics.length > 0 && (
-                <LinearText style={styles.topicsPreview}>
-                  {lecture.topics.slice(0, 3).join(' · ')}
-                </LinearText>
+                <View style={styles.topicsRow}>
+                  {lecture.topics.slice(0, 3).map((topic, idx) => (
+                    <View key={idx} style={styles.topicPill}>
+                      <LinearText style={styles.topicPillText}>{topic}</LinearText>
+                    </View>
+                  ))}
+                </View>
               )}
               <LinearText style={styles.tapHint}>Tap to view lecture notes →</LinearText>
             </TouchableOpacity>
@@ -443,7 +447,14 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   appName: { color: n.colors.textMuted, fontSize: 11 },
-  topicsPreview: { color: n.colors.accent, fontSize: 12, marginTop: 4 },
+  topicsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  topicPill: {
+    backgroundColor: n.colors.accent + '18',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  topicPillText: { color: n.colors.accent, fontSize: 11, fontWeight: '600' },
   selectionBar: {
     marginHorizontal: 16,
     marginTop: 12,

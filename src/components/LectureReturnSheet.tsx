@@ -86,6 +86,23 @@ export default function LectureReturnSheet(props: Props) {
     cleanupAndClose,
   } = useLecturePipeline(props);
   const [nowTick, setNowTick] = React.useState(() => Date.now());
+  const [generatingTopics, setGeneratingTopics] = React.useState(false);
+
+  async function handleGenerateTopics() {
+    if (!analysis || !analysis.transcript) return;
+    setGeneratingTopics(true);
+    try {
+      const { analyzeTranscript } = await import('../services/transcription/analysis');
+      const newAnalysis = await analyzeTranscript(analysis.transcript);
+      if (newAnalysis.topics.length > 0) {
+        setAnalysis({ ...analysis, topics: newAnalysis.topics });
+      }
+    } catch (e) {
+      console.warn('[LectureReturnSheet] Generate topics failed:', e);
+    } finally {
+      setGeneratingTopics(false);
+    }
+  }
 
   React.useEffect(() => {
     if (!activeStage || !stageStartedAt) return;
@@ -516,8 +533,25 @@ export default function LectureReturnSheet(props: Props) {
                     <Text style={styles.noTopicsTitle}>No topics detected</Text>
                     <Text style={styles.noTopicsHint}>
                       The audio may have been inaudible, too short, or mostly silent. You can skip
-                      this session or check your microphone settings.
+                      this session or try to extract topics from the transcript.
                     </Text>
+                    {analysis.transcript && analysis.transcript.length > 20 && (
+                      <TouchableOpacity
+                        style={styles.generateTopicsBtn}
+                        onPress={handleGenerateTopics}
+                        disabled={generatingTopics}
+                        activeOpacity={0.8}
+                      >
+                        {generatingTopics ? (
+                          <ActivityIndicator color={n.colors.accent} size="small" />
+                        ) : (
+                          <>
+                            <Ionicons name="sparkles-outline" size={16} color={n.colors.accent} />
+                            <Text style={styles.generateTopicsBtnText}>Generate Topics</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               </ScrollView>
@@ -1234,6 +1268,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  generateTopicsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 16,
+    backgroundColor: n.colors.accent + '18',
+    borderColor: n.colors.accent,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    alignSelf: 'center',
+  },
+  generateTopicsBtnText: {
+    color: n.colors.accent,
+    fontSize: 14,
+    fontWeight: '700',
   },
   errorDetail: {
     color: n.colors.error,

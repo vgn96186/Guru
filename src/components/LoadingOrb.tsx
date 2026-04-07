@@ -247,7 +247,14 @@ export default React.memo(function LoadingOrb({
         </Animated.View>
       </View>
       {displayMessage && (
-        <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
+        <View
+          style={{
+            marginTop: 24,
+            paddingHorizontal: 16,
+            minHeight: 40,
+            justifyContent: 'flex-start',
+          }}
+        >
           <LinearText variant="caption" tone="muted" centered style={{ letterSpacing: 0.5 }}>
             {displayMessage}
           </LinearText>

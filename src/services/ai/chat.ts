@@ -10,6 +10,7 @@ import {
   searchLatestMedicalSources,
   searchMedicalImages,
   generateImageSearchQuery,
+  generateVisualSearchQueries,
   dedupeGroundingSources,
   renderSourcesForPrompt,
   clipText,
@@ -96,6 +97,7 @@ function isLowInformationImagePrompt(text: string): boolean {
   if (!normalized) return true;
   const tokens = normalized.split(/\s+/).filter(Boolean);
   if (normalized.length <= 3) return true;
+  // Filter out directional-only or yes/no questions
   if (
     tokens.length <= 2 &&
     tokens.every((token) =>
@@ -121,19 +123,11 @@ function isLowInformationImagePrompt(text: string): boolean {
   ) {
     return true;
   }
-  return [
-    "don't know",
-    'dont know',
-    'do not know',
-    'explain',
-    'continue',
-    'quiz me',
-    'change topic',
-    'ok',
-    'okay',
-    'yes',
-    'no',
-  ].includes(normalized);
+  // Only filter out very short single-word acknowledgments
+  if (tokens.length === 1 && ['ok', 'okay', 'thanks', 'thank'].includes(normalized)) {
+    return true;
+  }
+  return false;
 }
 
 function buildImageSearchSeed(
@@ -193,6 +187,13 @@ function buildImageSearchSeed(
             260,
           )}\nLatest student message: ${clipText(trimmedQuestion, 160)}`
         : `Topic: ${topicName.trim()}\nLatest student message: ${clipText(trimmedQuestion, 160)}`,
+    };
+  }
+
+  // Fallback: use the question itself if it's substantive
+  if (trimmedQuestion.length >= 6) {
+    return {
+      topic: trimmedQuestion.slice(0, 120),
     };
   }
 
@@ -862,11 +863,32 @@ export async function chatWithGuruGroundedStreaming(
   const imageResult = imageQuery
     ? await Promise.allSettled([searchMedicalImages(imageQuery, 3)]).then(([result]) => result)
     : ({ status: 'fulfilled', value: [] } as PromiseFulfilledResult<MedicalGroundingSource[]>);
+
+  // If single query returned no results, try smart visual queries
+  const initialImages = imageResult.status === 'fulfilled' ? imageResult.value : [];
+  let finalImageResult = imageResult;
+  if (initialImages.length === 0 && imageSeed) {
+    const visualQueries = await generateVisualSearchQueries(imageSeed.topic);
+    const smartResults = await Promise.allSettled(
+      visualQueries.map((vq) => searchMedicalImages(vq, 2)),
+    );
+    const smartImages = dedupeGroundingSources(
+      smartResults
+        .filter(
+          (r): r is PromiseFulfilledResult<MedicalGroundingSource[]> => r.status === 'fulfilled',
+        )
+        .flatMap((r) => r.value),
+    );
+    if (smartImages.length > 0) {
+      finalImageResult = { status: 'fulfilled', value: smartImages };
+    }
+  }
+
   const sources =
     textResult.status === 'fulfilled' ? dedupeGroundingSources(textResult.value).slice(0, 8) : [];
   const referenceImages =
-    imageResult.status === 'fulfilled'
-      ? dedupeGroundingSources(imageResult.value)
+    finalImageResult.status === 'fulfilled'
+      ? dedupeGroundingSources(finalImageResult.value)
           .filter((image) => isRenderableReferenceImageUrl(image.imageUrl))
           .slice(0, 3)
       : [];
@@ -894,10 +916,26 @@ export async function chatWithGuruGroundedStreaming(
         : undefined,
   });
 
+  // Image search status is already logged via logGroundingEvent above.
+
   const sourcesBlock =
     sources.length > 0
       ? renderSourcesForPrompt(sources)
       : 'No live web sources were retrieved for this query.';
+
+  // Add reference images to the LLM prompt so it knows images are available
+  const imagesBlock =
+    referenceImages.length > 0
+      ? `Reference images found (these are available to the student):\n${referenceImages
+          .slice(0, 3)
+          .map(
+            (img, i) =>
+              `[Image ${i + 1}] ${img.title}\nURL: ${img.imageUrl}\nSource: ${img.source}${img.snippet ? `\nContext: ${img.snippet}` : ''}`,
+          )
+          .join(
+            '\n\n',
+          )}\nYou can reference these images in your reply (e.g., "see image 1 above"). Do NOT say you cannot show images — the system displays them inline below your reply.`
+      : '';
 
   const profileBlock =
     memoryContext?.profileNotes?.trim() &&
@@ -942,6 +980,7 @@ ${
     : ''
 }
 ${sources.length > 0 ? `\nSUPPLEMENTARY REFERENCES (use only if relevant):\n${sourcesBlock}` : ''}
+${imagesBlock ? `\n${imagesBlock}` : ''}
 Respond using your medical knowledge. Reference the sources only if they are directly relevant.
 If the student may not know prerequisites, explain prerequisite basics first and define jargon briefly.`;
 

@@ -13,10 +13,11 @@ import {
   Animated,
   StatusBar,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { chatWithGuru } from '../services/aiService';
+import { chatWithGuru, fetchChatRelevantImage } from '../services/aiService';
 import { markTopicDiscussedInChat } from '../db/queries/topics';
 import { useAppStore } from '../store/useAppStore';
 import { buildBoundedGuruChatStudyContext } from '../services/guruChatStudyContext';
@@ -50,6 +51,8 @@ export default function GuruChatOverlay({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  // imageUrls[msgIndex] = resolved image URL for that Guru message (fetched fresh from Brave)
+  const [chatImages, setChatImages] = useState<Record<number, string>>({});
 
   const scrollRef = useRef<ScrollView>(null);
   const isMountedRef = useRef(false);
@@ -173,10 +176,17 @@ export default function GuruChatOverlay({
       );
 
       if (isMountedRef.current) {
+        const guruMsgIndex = next.length; // index of the Guru reply about to be added
         setMessages((prev) => [...prev, { role: 'guru', text: reply }]);
         setRetryCount(0);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         scrollToEnd();
+        // Fire-and-forget: fetch a relevant image fresh from Brave for this response
+        fetchChatRelevantImage(topicName, reply).then((url) => {
+          if (url && isMountedRef.current) {
+            setChatImages((prev) => ({ ...prev, [guruMsgIndex]: url }));
+          }
+        }).catch(() => {});
       }
       if (syllabusTopicId != null && !hasPersistedTopicProgressRef.current) {
         try {
@@ -226,6 +236,7 @@ export default function GuruChatOverlay({
     if (!visible) {
       setInput('');
       setError(null);
+      setChatImages({});
       hasPersistedTopicProgressRef.current = false;
     }
   }, [visible]);
@@ -322,7 +333,17 @@ export default function GuruChatOverlay({
                   ]}
                 >
                   {msg.role === 'guru' ? (
-                    <MarkdownRender content={msg.text} />
+                    <>
+                      <MarkdownRender content={msg.text} />
+                      {chatImages[i] ? (
+                        <Image
+                          source={{ uri: chatImages[i] }}
+                          style={s.chatImage}
+                          resizeMode="contain"
+                          accessibilityLabel="Relevant medical image"
+                        />
+                      ) : null}
+                    </>
                   ) : (
                     <Text style={s.userBubbleText}>{msg.text}</Text>
                   )}
@@ -612,6 +633,13 @@ const s = StyleSheet.create({
   },
   userBubbleTail: {},
   guruBubbleTail: {},
+  chatImage: {
+    width: '100%',
+    height: 180,
+    borderRadius: 10,
+    marginTop: 10,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
   userBubbleText: {
     color: n.colors.textPrimary,
     fontSize: 15,

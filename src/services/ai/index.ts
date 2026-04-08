@@ -62,6 +62,7 @@ export {
   explainMostTestedRationale,
   explainTopicDeeper,
   explainQuizConcept,
+  fetchChatRelevantImage,
   type GuruChatMemoryContext,
 } from './chat';
 

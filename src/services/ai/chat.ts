@@ -1217,3 +1217,28 @@ Keep it under 60 words total. Bold only the 1-2 most testable values or terms.`,
   const { text } = await generateTextWithRouting(messages, {});
   return text.trim();
 }
+
+/**
+ * Fetch a single relevant medical image for a Guru chat response.
+ * Uses Brave Search (via searchMedicalImages) for fresh results — not DB-cached.
+ * Returns the first valid image URL, or null if none found.
+ */
+export async function fetchChatRelevantImage(
+  topicName: string,
+  responseText: string,
+): Promise<string | null> {
+  // Extract the first bolded medical term from Guru's reply as a query refinement
+  const boldMatch = responseText.match(/\*\*([^*]{3,50})\*\*/);
+  const refinement = boldMatch?.[1]?.trim();
+  const query = refinement ? `${refinement} ${topicName}` : topicName;
+  try {
+    const results = await searchMedicalImages(query, 2);
+    for (const r of results) {
+      const url = (r.imageUrl ?? r.url)?.trim();
+      if (url && /^https?:\/\//i.test(url)) return url;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}

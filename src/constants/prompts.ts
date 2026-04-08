@@ -25,16 +25,24 @@ ADHD-friendly rules — the student has short attention span:
 - Use simple, punchy language. Avoid filler words.
 - If there's a classic number/value, put it in bold.
 - Think "flashcard back" not "textbook paragraph".
+- Cover a RANGE across: definition/pathophysiology, key clinical features, investigation of choice, treatment of choice, classic exam discriminator.
+- At least 2 points must include a clinical correlate or "this beats X because..." discriminator.
+
+MEMORY HOOK RULES (critical — do NOT generate a random forced mnemonic):
+- Only use an acronym/mnemonic if the letters GENUINELY map to the key points above.
+- If a mnemonic doesn't fit naturally, use a vivid analogy or 1-sentence story instead.
+- The hook must directly connect to at least 3 of the 6 points — not a standalone random fact.
+- Bad example: "ABCDE mnemonic" where letters are forced. Good example: an analogy that links pathophysiology → symptom → treatment in one image.
 
 Return JSON:
 {
   "type": "keypoints",
   "topicName": "${topicName}",
   "points": ["**Keyword** — short punchy fact", "**Keyword** — short punchy fact", ...6 total],
-  "memoryHook": "one catchy mnemonic or analogy to remember this topic"
+  "memoryHook": "A memory hook that DIRECTLY connects the points above — analogy, story, or genuine mnemonic"
 }
 
-Focus on: frequently tested numbers, classic associations, clinical correlates.`;
+Focus on: frequently tested numbers, classic associations, clinical discriminators, exam traps.`;
 }
 
 export function buildMustKnowPrompt(topicName: string, subjectName: string): string {
@@ -210,6 +218,49 @@ Return JSON:
 }
 
 Hard rule: "cards" must be an array where every item is only an object with string fields "front" and "back", plus optional string fields "imageSearchQuery" or "imageUrl". No bare strings, nulls, or commas between objects.`;
+}
+
+export function buildEscalatingQuizPrompt(
+  topicName: string,
+  subjectName: string,
+  round: number,
+  previouslyWrong: string[],
+): string {
+  const difficulty =
+    round === 1
+      ? 'harder than the previous set — add more ambiguous distractors and require an extra reasoning step'
+      : round === 2
+        ? 'significantly harder — use rare but exam-tested associations, multi-step deduction, and tricky "exception" scenarios'
+        : 'expert-level — test the most obscure but repeatedly asked NEET-PG/INICET facts, edge cases, and management nuances';
+
+  const wrongContext =
+    previouslyWrong.length > 0
+      ? `The student previously got these WRONG — test them again from a different angle: ${previouslyWrong.slice(0, 3).join('; ')}.`
+      : '';
+
+  return `Create 4 MCQs on "${topicName}" (${subjectName}) — Round ${round + 1} / escalating difficulty.
+
+Difficulty level: ${difficulty}.
+${wrongContext}
+
+Rules:
+- Clinical vignette-based, multi-step reasoning required. No direct one-liner recall.
+- Each question must test a DIFFERENT aspect than the previous round.
+- Distractors must represent correct answers for closely related conditions.
+
+Return JSON:
+{
+  "type": "quiz",
+  "topicName": "${topicName}",
+  "questions": [
+    {
+      "question": "...",
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+      "correctIndex": 0,
+      "explanation": "### Correct answer\\n**[Letter]. [Option]**\\n\\n### Why this is correct\\n- [reason]\\n\\n### Why other options are wrong\\n- **A:** ...\\n- **B:** ...\\n- **C:** ...\\n- **D:** ..."
+    }
+  ]
+}`;
 }
 
 export function buildManualPrompt(topicName: string, subjectName: string): string {

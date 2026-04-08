@@ -88,8 +88,8 @@ export function useGuruPresence({
       setCurrentMessage(text);
       Animated.sequence([
         Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-        Animated.delay(3500),
-        Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.delay(7000),
+        Animated.timing(toastOpacity, { toValue: 0, duration: 500, useNativeDriver: true }),
       ]).start(() => {
         setCurrentMessage(null);
         isShowingRef.current = false;

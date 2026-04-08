@@ -32,7 +32,7 @@ import type {
   FlashcardsContent,
 } from '../types';
 
-import { askGuru, explainMostTestedRationale, explainTopicDeeper } from '../services/aiService';
+import { askGuru, explainMostTestedRationale, explainTopicDeeper, generateEscalatingQuiz, explainQuizConcept } from '../services/aiService';
 import { fetchWikipediaImage } from '../services/imageService';
 import { isContentFlagged, setContentFlagged } from '../db/queries/aiCache';
 import GuruChatOverlay from '../components/GuruChatOverlay';
@@ -168,8 +168,10 @@ function buildGuruContext(content: AIContent): string | undefined {
     case 'quiz':
       return compactLines([
         'Card type: Quiz',
+        `Topic: ${content.topicName}`,
         `Total questions: ${content.questions.length}`,
-        'Use the current study step for the active question, options, and explanation state.',
+        'The live study step below contains the active question, all options, correct answer, and explanation.',
+        'When answering student questions, first explain the broader concept being tested, then address the specific question.',
       ]);
     case 'story':
       return compactLines([
@@ -676,6 +678,211 @@ function MustKnowCard({
   );
 }
 
+// ── Concept Chip (inline tap-to-explain) ─────────────────────────
+
+/**
+ * Extracts likely medical concepts worth explaining from a quiz question + options.
+ * Looks for: lab values (Na, K, Hb...), named signs/tests, drug names, and specific measurements.
+ */
+function extractMedicalConcepts(question: string, options: string[], correctAnswer: string): string[] {
+  const combined = `${question} ${options.join(' ')}`;
+  const found: string[] = [];
+
+  // Lab values / named signs patterns
+  const patterns = [
+    /\b(serum\s+\w+|\w+\s+level)\b/gi,
+    /\b([A-Z][a-z]+\s+(sign|test|syndrome|disease|law|index|score|criteria|classification|reflex|phenomenon|reaction))\b/g,
+    /\b(pH\s*[\d.]+|pO2|pCO2|HbA1c|INR|PT|APTT|ESR|CRP|AST|ALT|ALP|GFR|creatinine)\b/gi,
+    /\b(\d+\s*(mg|g|mmol|mEq|IU|U\/L|μmol|nmol|pmol)\/[dLlmgk]+)\b/gi,
+  ];
+
+  for (const pattern of patterns) {
+    const matches = combined.match(pattern) ?? [];
+    for (const m of matches) {
+      const clean = m.trim();
+      if (clean.length > 3 && !found.includes(clean)) found.push(clean);
+    }
+  }
+
+  // Also extract the correct answer text (without option prefix)
+  const answerText = correctAnswer.replace(/^[A-D][.)]\s*/,'').trim();
+  if (answerText.length > 5 && answerText.length < 60 && !found.includes(answerText)) {
+    found.unshift(answerText); // correct answer concept is highest priority
+  }
+
+  return found.slice(0, 3); // max 3 chips to avoid clutter
+}
+
+function ConceptChip({ concept, topicName }: { concept: string; topicName: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleExpand() {
+    if (expanded) {
+      setExpanded(false);
+      return;
+    }
+    setExpanded(true);
+    if (explanation) return;
+    setLoading(true);
+    try {
+      const result = await explainQuizConcept(concept, topicName);
+      setExplanation(result);
+    } catch {
+      setExplanation('Could not load explanation.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <View style={{ marginBottom: 6 }}>
+      <TouchableOpacity
+        onPress={handleExpand}
+        activeOpacity={0.8}
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          backgroundColor: expanded ? `${n.colors.accent}22` : n.colors.surface,
+          borderRadius: 20,
+          paddingHorizontal: 12,
+          paddingVertical: 7,
+          borderWidth: 1,
+          borderColor: expanded ? `${n.colors.accent}66` : n.colors.border,
+          alignSelf: 'flex-start',
+        }}
+      >
+        <Ionicons name="information-circle-outline" size={13} color={n.colors.accent} />
+        <LinearText style={{ color: n.colors.textPrimary, fontSize: 12, fontWeight: '600' }}>
+          {concept.length > 35 ? `${concept.slice(0, 33)}…` : concept}
+        </LinearText>
+        <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={12} color={n.colors.textSecondary} />
+      </TouchableOpacity>
+      {expanded && (
+        <View
+          style={{
+            backgroundColor: n.colors.surface,
+            borderRadius: 10,
+            padding: 12,
+            marginTop: 4,
+            borderWidth: 1,
+            borderColor: `${n.colors.accent}33`,
+          }}
+        >
+          {loading ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <ActivityIndicator size="small" color={n.colors.accent} />
+              <LinearText style={{ color: n.colors.textSecondary, fontSize: 12 }}>
+                Explaining...
+              </LinearText>
+            </View>
+          ) : explanation ? (
+            <StudyMarkdown content={emphasizeHighYieldMarkdown(explanation)} compact />
+          ) : null}
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ── Deep Explanation with Reveal ─────────────────────────────────
+
+/** Parses ||answer|| reveal blocks from deep explanation text and renders them as tap-to-reveal. */
+function DeepExplanationBlock({ explanation }: { explanation: string }) {
+  // Split on the "Quick check:" line to separate main body from check question
+  const quickCheckMatch = explanation.match(/^([\s\S]*?)(Quick check:[\s\S]*)$/im);
+  const mainBody = quickCheckMatch ? quickCheckMatch[1].trim() : explanation.trim();
+  const checkLine = quickCheckMatch ? quickCheckMatch[2].trim() : null;
+
+  // Parse ||answer|| from the check line
+  const revealMatch = checkLine?.match(/^(Quick check:.*?)\|\|(.+?)\|\|(.*)$/is);
+  const checkQuestion = revealMatch ? revealMatch[1].trim() : checkLine;
+  const revealAnswer = revealMatch ? revealMatch[2].trim() : null;
+  const checkRemainder = revealMatch ? revealMatch[3].trim() : null;
+
+  const [answerRevealed, setAnswerRevealed] = useState(false);
+
+  return (
+    <View
+      style={[
+        s.explBox,
+        s.explBoxDeep,
+        { borderLeftWidth: 3, borderLeftColor: n.colors.accent },
+      ]}
+    >
+      <View style={s.inlineLabelRow}>
+        <Ionicons name="school-outline" size={14} color={n.colors.accent} />
+        <LinearText style={s.explSectionTitle}>Deeper Explanation</LinearText>
+      </View>
+      <StudyMarkdown content={emphasizeHighYieldMarkdown(mainBody)} />
+
+      {checkQuestion && (
+        <View
+          style={{
+            marginTop: 14,
+            backgroundColor: n.colors.surface,
+            borderRadius: 12,
+            padding: 14,
+            borderWidth: 1,
+            borderColor: n.colors.borderHighlight,
+          }}
+        >
+          <View style={[s.inlineLabelRow, { marginBottom: 8 }]}>
+            <Ionicons name="help-circle-outline" size={14} color={n.colors.warning} />
+            <LinearText style={[s.explSectionTitle, { color: n.colors.warning }]}>
+              Check Your Understanding
+            </LinearText>
+          </View>
+          <LinearText style={{ color: n.colors.textPrimary, fontSize: 14, lineHeight: 20 }}>
+            {checkQuestion.replace(/^Quick check:\s*/i, '')}
+          </LinearText>
+          {checkRemainder ? (
+            <LinearText style={{ color: n.colors.textSecondary, fontSize: 13, marginTop: 4 }}>
+              {checkRemainder}
+            </LinearText>
+          ) : null}
+          {revealAnswer && !answerRevealed && (
+            <TouchableOpacity
+              style={{
+                marginTop: 10,
+                backgroundColor: `${n.colors.warning}22`,
+                borderRadius: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 14,
+                borderWidth: 1,
+                borderColor: `${n.colors.warning}55`,
+                alignItems: 'center',
+              }}
+              onPress={() => setAnswerRevealed(true)}
+              activeOpacity={0.8}
+            >
+              <LinearText style={{ color: n.colors.warning, fontWeight: '700', fontSize: 13 }}>
+                Reveal Answer
+              </LinearText>
+            </TouchableOpacity>
+          )}
+          {revealAnswer && answerRevealed && (
+            <View
+              style={{
+                marginTop: 10,
+                backgroundColor: `${n.colors.success}11`,
+                borderRadius: 10,
+                padding: 12,
+                borderWidth: 1,
+                borderColor: `${n.colors.success}33`,
+              }}
+            >
+              <StudyMarkdown content={emphasizeHighYieldMarkdown(revealAnswer)} compact />
+            </View>
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
 // ── Quiz ──────────────────────────────────────────────────────────
 
 function formatQuizExplanation(
@@ -783,11 +990,20 @@ function QuizCard({
   const [score, setScore] = useState(0);
   const [deepExplanation, setDeepExplanation] = useState<string | null>(null);
   const [isLoadingDeepExpl, setIsLoadingDeepExpl] = useState(false);
+  // Keep Quizzing state
+  const [keepQuizzing, setKeepQuizzing] = useState(false);
+  const [escalatedContent, setEscalatedContent] = useState<QuizContent | null>(null);
+  const [escalatingRound, setEscalatingRound] = useState(0);
+  const [isLoadingEscalated, setIsLoadingEscalated] = useState(false);
+  const [wrongQuestions, setWrongQuestions] = useState<string[]>([]);
+
+  // Use escalated questions when available, otherwise original
+  const activeQuestions = escalatedContent ? escalatedContent.questions : content.questions;
 
   // Filter out incomplete questions (truncated AI output)
   const validQuestions = useMemo(
     () =>
-      content.questions.filter(
+      activeQuestions.filter(
         (question) =>
           question.question?.trim() &&
           Array.isArray(question.options) &&
@@ -797,7 +1013,8 @@ function QuizCard({
           question.correctIndex >= 0 &&
           question.correctIndex < question.options.length,
       ),
-    [content.questions],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeQuestions],
   );
 
   const q = validQuestions[currentQ];
@@ -825,19 +1042,21 @@ function QuizCard({
     onContextChange?.(
       compactLines(
         [
-          `Card type: Quiz`,
+          `Card type: Quiz — Topic: ${content.topicName}`,
           `Active Question (${currentQ + 1}/${validQuestions.length}): ${q.question}`,
-          `Options: ${q.options.map((opt, i) => `${i}: ${opt}`).join(' | ')}`,
-          `Correct Answer Index: ${q.correctIndex} (${q.options[q.correctIndex]})`,
+          `Options: ${q.options.map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`).join(' | ')}`,
+          `Correct Answer: ${String.fromCharCode(65 + q.correctIndex)}. ${q.options[q.correctIndex]}`,
           selected !== null
-            ? `Student choice: ${selected === -1 ? "I don't know" : q.options[selected]}`
+            ? `Student chose: ${selected === -1 ? "I don't know (revealed answer)" : `${String.fromCharCode(65 + selected)}. ${q.options[selected]} — ${selected === q.correctIndex ? 'CORRECT' : 'INCORRECT'}`}`
             : 'Student has not answered yet.',
-          `Full Explanation: ${formattedExplanation}`,
+          `Explanation: ${formattedExplanation}`,
+          deepExplanation ? `Deeper explanation visible: ${deepExplanation.slice(0, 200)}...` : '',
         ],
-        7,
+        8,
       ),
     );
   }, [
+    content.topicName,
     validQuestions.length,
     currentQ,
     onContextChange,
@@ -845,6 +1064,7 @@ function QuizCard({
     selected,
     showExpl,
     formattedExplanation,
+    deepExplanation,
   ]);
 
   const scoreRef = React.useRef(score);
@@ -864,17 +1084,18 @@ function QuizCard({
         scoreRef.current = next;
         return next;
       });
+    } else {
+      setWrongQuestions((prev) => [...prev, q.question]);
     }
     onQuizAnswered?.(correct);
   }
 
   function handleIDontKnow() {
     if (selected !== null) return;
-    // Reveal the correct answer, mark as incorrect
-    setSelected(-1); // -1 = "I don't know" (no option selected)
+    setSelected(-1);
     setShowExpl(true);
+    setWrongQuestions((prev) => [...prev, q.question]);
     onQuizAnswered?.(false);
-    // Auto-fetch deeper explanation
     fetchDeepExplanation();
   }
 
@@ -906,11 +1127,46 @@ function QuizCard({
       setDeepExplanation(null);
       setIsLoadingDeepExpl(false);
     } else {
-      // Ref is updated synchronously in handleSelect on last correct; fallback to state.
       const finalScore = Math.max(scoreRef.current, score);
       onQuizComplete?.(finalScore, validQuestions.length);
-      const confidence = Math.round((finalScore / validQuestions.length) * 4) + 1;
-      onDone(Math.min(5, confidence));
+      setKeepQuizzing(true); // show Keep Quizzing / Done choice
+    }
+  }
+
+  function handleFinishQuiz() {
+    const finalScore = Math.max(scoreRef.current, score);
+    const confidence = Math.round((finalScore / validQuestions.length) * 4) + 1;
+    onDone(Math.min(5, confidence));
+  }
+
+  async function handleKeepQuizzing() {
+    setIsLoadingEscalated(true);
+    setKeepQuizzing(false);
+    try {
+      const nextRound = escalatingRound + 1;
+      const result = await generateEscalatingQuiz(
+        content.topicName,
+        // subjectName not available in content — pass empty string, prompt is robust
+        '',
+        escalatingRound,
+        wrongQuestions,
+      );
+      setEscalatedContent(result);
+      setEscalatingRound(nextRound);
+      // Reset quiz state for new round
+      setCurrentQ(0);
+      setSelected(null);
+      setShowExpl(false);
+      setDeepExplanation(null);
+      setIsLoadingDeepExpl(false);
+      setScore(0);
+      scoreRef.current = 0;
+      setWrongQuestions([]);
+    } catch {
+      // On failure just finish normally
+      handleFinishQuiz();
+    } finally {
+      setIsLoadingEscalated(false);
     }
   }
 
@@ -1011,6 +1267,25 @@ function QuizCard({
           </View>
         </View>
       )}
+      {/* Inline concept chips — tap to explain key terms */}
+      {showExpl && (() => {
+        const concepts = extractMedicalConcepts(q.question, q.options, q.options[q.correctIndex] ?? '');
+        if (concepts.length === 0) return null;
+        return (
+          <View style={{ marginTop: 12, marginBottom: 4 }}>
+            <View style={[s.inlineLabelRow, { marginBottom: 8 }]}>
+              <Ionicons name="bulb-outline" size={13} color={n.colors.textMuted} />
+              <LinearText style={[s.explSectionTitle, { color: n.colors.textMuted }]}>
+                KEY CONCEPTS
+              </LinearText>
+            </View>
+            {concepts.map((c, i) => (
+              <ConceptChip key={i} concept={c} topicName={content.topicName} />
+            ))}
+          </View>
+        );
+      })()}
+
       {/* Deep AI explanation */}
       {showExpl && !deepExplanation && !isLoadingDeepExpl && (
         <TouchableOpacity
@@ -1031,21 +1306,52 @@ function QuizCard({
         </View>
       )}
       {deepExplanation && (
-        <View
-          style={[
-            s.explBox,
-            s.explBoxDeep,
-            { borderLeftWidth: 3, borderLeftColor: n.colors.accent },
-          ]}
-        >
-          <View style={s.inlineLabelRow}>
-            <Ionicons name="school-outline" size={14} color={n.colors.accent} />
-            <LinearText style={s.explSectionTitle}>Deeper Explanation</LinearText>
-          </View>
-          <StudyMarkdown content={emphasizeHighYieldMarkdown(deepExplanation)} />
+        <DeepExplanationBlock explanation={deepExplanation} />
+      )}
+      {isLoadingEscalated && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, gap: 8 }}>
+          <ActivityIndicator size="small" color={n.colors.accent} />
+          <LinearText style={{ color: n.colors.textSecondary, fontSize: 13 }}>
+            Loading harder questions...
+          </LinearText>
         </View>
       )}
-      {showExpl && (
+      {keepQuizzing && !isLoadingEscalated && (
+        <View
+          style={{
+            marginTop: 16,
+            backgroundColor: n.colors.surface,
+            borderRadius: 14,
+            padding: 18,
+            borderWidth: 1,
+            borderColor: n.colors.borderHighlight,
+            gap: 12,
+          }}
+        >
+          <LinearText style={{ color: n.colors.textPrimary, fontWeight: '700', fontSize: 15, textAlign: 'center' }}>
+            Round {escalatingRound + 1} complete — {score}/{validQuestions.length} correct
+          </LinearText>
+          <TouchableOpacity
+            style={[s.doneBtn, { backgroundColor: n.colors.accent }]}
+            onPress={handleKeepQuizzing}
+            activeOpacity={0.8}
+          >
+            <LinearText style={[s.doneBtnText, { color: n.colors.textInverse }]}>
+              Keep Quizzing — Harder ↑
+            </LinearText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.doneBtn, { backgroundColor: n.colors.card, borderWidth: 1, borderColor: n.colors.border }]}
+            onPress={handleFinishQuiz}
+            activeOpacity={0.8}
+          >
+            <LinearText style={[s.doneBtnText, { color: n.colors.textPrimary }]}>
+              Done with this topic
+            </LinearText>
+          </TouchableOpacity>
+        </View>
+      )}
+      {showExpl && !keepQuizzing && !isLoadingEscalated && (
         <TouchableOpacity style={s.doneBtn} onPress={handleNext} activeOpacity={0.8}>
           <LinearText style={s.doneBtnText}>
             {currentQ < validQuestions.length - 1

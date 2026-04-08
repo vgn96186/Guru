@@ -229,6 +229,16 @@ function HomeScreenContent() {
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [sessionResumeValid, setSessionResumeValid] = useState(false);
   const [entryComplete, setEntryComplete] = useState(false);
+  const [weakTopicOffset, setWeakTopicOffset] = useState(0);
+  // Reset offset when the topic list changes (e.g. after a session)
+  const prevWeakIdsRef = useRef<string>('');
+  useEffect(() => {
+    const ids = weakTopics.map((t) => t.id).join(',');
+    if (ids !== prevWeakIdsRef.current) {
+      prevWeakIdsRef.current = ids;
+      setWeakTopicOffset(0);
+    }
+  }, [weakTopics]);
   const moreAnim = useRef(new Animated.Value(0)).current;
   const lastHomeFocusReloadAtRef = useRef(0);
 
@@ -528,7 +538,27 @@ function HomeScreenContent() {
                 </View>
 
                 <View style={styles.rightColumn}>
-                  <Section label="DO THIS NOW" accessibilityLabel="Do this now">
+                  {/* DO THIS NOW with shuffle */}
+                  <View style={styles.section} accessibilityRole="summary" accessibilityLabel="Do this now">
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <LinearText variant="label" tone="muted" style={styles.sectionLabel}>
+                        DO THIS NOW
+                      </LinearText>
+                      {weakTopics.length > 1 && (
+                        <TouchableOpacity
+                          onPress={() => setWeakTopicOffset((o) => (o + 1) % weakTopics.length)}
+                          activeOpacity={0.7}
+                          style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 2, paddingHorizontal: 6 }}
+                          accessibilityRole="button"
+                          accessibilityLabel="Shuffle topic suggestion"
+                        >
+                          <Ionicons name="shuffle" size={14} color={n.colors.accent} />
+                          <LinearText variant="meta" tone="accent" style={{ fontSize: 11, fontWeight: '700' }}>
+                            Shuffle
+                          </LinearText>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                     {weakTopics.length === 0 ? (
                       <TouchableOpacity
                         style={styles.emptySectionTouchable}
@@ -544,32 +574,34 @@ function HomeScreenContent() {
                           No weak topic highlighted — start a session or open Study Plan.
                         </LinearText>
                       </TouchableOpacity>
-                    ) : (
-                      weakTopics.slice(0, 1).map((t) => (
-                        <LinearSurface compact key={t.id} style={styles.agendaItemWrap}>
-                          <AgendaItem
-                            time="Now"
-                            title={t.name}
-                            type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
-                            subjectName={t.subjectName}
-                            priority={t.inicetPriority}
-                            rationale={homeSelectionReasonFromTopic(
-                              t,
-                              t.progress.status === 'unseen' ? 'new' : 'deep_dive',
-                            )}
-                            onPress={() =>
-                              navigation.navigate('Session', {
-                                mood,
-                                focusTopicId: t.id,
-                                preferredActionType:
-                                  t.progress.status === 'unseen' ? 'study' : 'deep_dive',
-                              })
-                            }
-                          />
-                        </LinearSurface>
-                      ))
-                    )}
-                  </Section>
+                    ) : (() => {
+                        const t = weakTopics[weakTopicOffset % weakTopics.length];
+                        return (
+                          <LinearSurface compact key={t.id} style={styles.agendaItemWrap}>
+                            <AgendaItem
+                              time="Now"
+                              title={t.name}
+                              type={t.progress.status === 'unseen' ? 'new' : 'deep_dive'}
+                              subjectName={t.subjectName}
+                              priority={t.inicetPriority}
+                              rationale={homeSelectionReasonFromTopic(
+                                t,
+                                t.progress.status === 'unseen' ? 'new' : 'deep_dive',
+                              )}
+                              onPress={() =>
+                                navigation.navigate('Session', {
+                                  mood,
+                                  focusTopicId: t.id,
+                                  preferredActionType:
+                                    t.progress.status === 'unseen' ? 'study' : 'deep_dive',
+                                })
+                              }
+                            />
+                          </LinearSurface>
+                        );
+                      })()
+                    }
+                  </View>
                   <Section label="UP NEXT" accessibilityLabel="Up next">
                     {todayTasks.length === 0 ? (
                       <TouchableOpacity

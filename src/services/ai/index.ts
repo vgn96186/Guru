@@ -42,7 +42,7 @@ export {
 } from './medicalSearch';
 
 // ContentGeneration — quizzes, mnemonics, keypoints, etc.
-export { fetchContent, prefetchTopicContent } from './content';
+export { fetchContent, prefetchTopicContent, generateEscalatingQuiz } from './content';
 
 // Planning
 export {
@@ -61,6 +61,7 @@ export {
   askGuru,
   explainMostTestedRationale,
   explainTopicDeeper,
+  explainQuizConcept,
   type GuruChatMemoryContext,
 } from './chat';
 

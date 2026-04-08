@@ -27,9 +27,8 @@ function showNotificationSchedulingFailedToast(): void {
 try {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowAlert: true,
       shouldPlaySound: true,
-      shouldSetBadge: true, // enabled badge
+      shouldSetBadge: true,
       shouldShowBanner: true,
       shouldShowList: true,
     }),

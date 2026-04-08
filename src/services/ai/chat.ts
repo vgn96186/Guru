@@ -1140,7 +1140,7 @@ Never use raw escape characters like \\n in your output.`,
     },
     {
       role: 'user',
-      content: `The student doesn't understand a quiz question about "${topicName}". Your TOP priority is to teach the broader underlying concept the question is testing (not just justify the correct option).
+      content: `The student doesn’t understand a quiz question about “${topicName}”. Your TOP priority is to teach the broader underlying concept the question is testing (not just justify the correct option).
 
 **Question:** ${question}
 **Correct answer:** ${correctAnswer}
@@ -1170,12 +1170,48 @@ Write the answer using this structure (use real facts, no placeholders). Spend M
 
 6) **Treatment / management implication** (1-3 short bullets, only what’s exam-relevant)
 
-7) **One-liner memory hook** (one line)
+7) **Key Takeaways** (exactly 3 bullet points)
+- The single most important fact an examiner wants you to know.
+- The most common wrong answer and why students choose it.
+- One sentence connecting pathophysiology → presentation → management.
+
+8) **Check your understanding** (one line — a simple question the student should be able to answer now)
+Format exactly as: “Quick check: [question]? ||[answer]||”
+The answer goes between || markers so it can be revealed on tap.
 
 Constraints:
 - No tables.
-- Keep it under ~350 words.
+- Keep it under ~400 words.
 - Bold only the most important 4-6 terms total.`,
+    },
+  ];
+  const { text } = await generateTextWithRouting(messages, {});
+  return text.trim();
+}
+
+/**
+ * Explain a specific medical concept, sign, or lab value mentioned in a quiz question.
+ * Returns 2-3 short markdown bullet points — ideal for inline tap-to-expand explanations.
+ */
+export async function explainQuizConcept(
+  concept: string,
+  topicContext: string,
+): Promise<string> {
+  const messages: Message[] = [
+    {
+      role: 'system',
+      content: `You are Guru, a concise NEET-PG medical tutor. Give sharp, exam-focused facts only.
+Use markdown bolding for key values and terms. No tables. No intro/outro phrases.`,
+    },
+    {
+      role: 'user',
+      content: `Explain "${concept}" in the context of "${topicContext}" for a NEET-PG student in exactly 2-3 short bullet points.
+Cover:
+- What it is / normal range or definition
+- Clinical significance / when it is abnormal
+- Exam-relevant implication or most-tested fact
+
+Keep it under 60 words total. Bold only the 1-2 most testable values or terms.`,
     },
   ];
   const { text } = await generateTextWithRouting(messages, {});

@@ -6,7 +6,7 @@ import type {
   SaveQuestionInput,
   FlashcardsContent,
 } from '../../types';
-import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP } from '../../constants/prompts';
+import { SYSTEM_PROMPT, CONTENT_PROMPT_MAP, buildEscalatingQuizPrompt } from '../../constants/prompts';
 import { getCachedContent, setCachedContent } from '../../db/queries/aiCache';
 import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
@@ -485,6 +485,29 @@ async function resolveFlashcardImages<T extends Extract<AIContent, { type: 'flas
   }
 
   return { ...sanitized, cards: updatedCards };
+}
+
+/**
+ * Generate a harder set of quiz questions on the same topic.
+ * round=0 → first escalation (harder), round=1 → harder still, etc.
+ * previouslyWrong: question strings the student got wrong to reinforce.
+ */
+export async function generateEscalatingQuiz(
+  topicName: string,
+  subjectName: string,
+  round: number,
+  previouslyWrong: string[] = [],
+): Promise<QuizContent> {
+  const userPrompt = buildEscalatingQuizPrompt(topicName, subjectName, round, previouslyWrong);
+  const messages: Message[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ];
+  const generated = await generateJSONWithRouting(messages, AIContentSchema, 'low', true);
+  const parsed = { ...generated.parsed, modelUsed: generated.modelUsed } as AIContent;
+  if (parsed.type !== 'quiz') throw new Error('AI returned wrong content type for escalating quiz');
+  const withImages = await resolveQuizImages(parsed as QuizContent & { modelUsed?: string });
+  return withImages as QuizContent;
 }
 
 export async function prefetchTopicContent(

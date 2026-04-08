@@ -12,7 +12,12 @@ import { saveBulkQuestions } from '../../db/queries/questionBank';
 import type { Message } from './types';
 import { AIContentSchema } from './schemas';
 import { generateJSONWithRouting } from './generate';
-import { searchMedicalImages, generateVisualSearchQueries } from './medicalSearch';
+import {
+  searchMedicalImages,
+  generateVisualSearchQueries,
+  searchLatestMedicalSources,
+  renderSourcesForPrompt,
+} from './medicalSearch';
 import type { MedicalGroundingSource } from './types';
 
 const inFlightContentRequests = new Map<string, Promise<AIContent>>();
@@ -219,7 +224,26 @@ export async function fetchContent(
 
   const request = (async () => {
     const promptFn = CONTENT_PROMPT_MAP[contentType];
-    const userPrompt = `${promptFn(topic.name, topic.subjectName)}${buildMasteryAdaptivePromptContext(topic)}`;
+
+    // Best-effort grounding for fact-sensitive content types
+    let groundingBlock = '';
+    if (contentType === 'quiz' || contentType === 'keypoints' || contentType === 'must_know') {
+      try {
+        const sources = await searchLatestMedicalSources(
+          `${topic.name} ${topic.subjectName}`,
+          4,
+        );
+        if (sources.length > 0) {
+          groundingBlock =
+            `\n\nSUPPLEMENTARY REFERENCES (use only to verify clinical accuracy — do not copy verbatim):\n` +
+            renderSourcesForPrompt(sources);
+        }
+      } catch {
+        // Non-blocking — proceed without grounding if search fails
+      }
+    }
+
+    const userPrompt = `${promptFn(topic.name, topic.subjectName)}${buildMasteryAdaptivePromptContext(topic)}${groundingBlock}`;
     const messages: Message[] = [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: userPrompt },
@@ -326,17 +350,68 @@ export async function fetchContent(
   }
 }
 
+const IMAGE_VISUAL_TYPES =
+  'image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide|smear|specimen|scan|film';
+
 function stripImageFramingFromStem(text: string): string {
   return text
+    // "Based on / Referring to / Looking at / In the <type> (shown|provided|above|…)"
     .replace(
-      /\b(Based on|Referring to|Looking at|In) the (image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide) (shown|displayed|provided|above|below)[.,]?\s*/gi,
+      new RegExp(
+        `\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_VISUAL_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`,
+        'gi',
+      ),
       '',
     )
+    // "Based on the provided / given <type>"
     .replace(
-      /The following (imaging study|image|photograph|radiograph|micrograph) (demonstrates|shows|reveals)[.:]\s*/gi,
+      new RegExp(
+        `\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
+        'gi',
+      ),
       '',
     )
-    .replace(/^\s*[.,]\s*/, '');
+    // "The following <type> demonstrates / shows / reveals"
+    .replace(
+      new RegExp(
+        `The following (${IMAGE_VISUAL_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    // "As shown in / As seen in / As depicted in the <type>"
+    .replace(
+      new RegExp(
+        `As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_VISUAL_TYPES})[.,]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    // "The image / The X-ray / The ECG shows / reveals"
+    .replace(
+      new RegExp(
+        `The (${IMAGE_VISUAL_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    // "Consider the following <type>"
+    .replace(
+      new RegExp(`Consider the following (${IMAGE_VISUAL_TYPES})[.:]?\\s*`, 'gi'),
+      '',
+    )
+    // "A <type> of this patient shows / reveals"
+    .replace(
+      new RegExp(
+        `A (${IMAGE_VISUAL_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`,
+        'gi',
+      ),
+      '',
+    )
+    // Trim any leading punctuation/whitespace left after stripping
+    .replace(/^\s*[,.:;]\s*/, '')
+    // Capitalize first letter if stripping lowercased the question start
+    .replace(/^([a-z])/, (c) => c.toUpperCase());
 }
 
 /**

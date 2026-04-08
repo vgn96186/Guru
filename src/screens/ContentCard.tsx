@@ -76,6 +76,21 @@ const TopicImage = React.memo(function TopicImage({ topicName }: TopicImageProps
   );
 });
 
+/** Client-side framing strip for when a resolved image URL fails to load in the UI. */
+function stripImageFraming(text: string): string {
+  const IMAGE_TYPES = 'image|imaging study|photograph|micrograph|radiograph|X-ray|CT scan|MRI|ECG|histology|slide|smear|specimen|scan|film';
+  return text
+    .replace(new RegExp(`\\b(Based on|Referring to|Looking at|In|From|Examining) the (${IMAGE_TYPES}) (shown|displayed|provided|above|below|here|given)[.,]?\\s*`, 'gi'), '')
+    .replace(new RegExp(`\\b(Based on|Referring to|Looking at|In) the (provided|given|following) (${IMAGE_TYPES})[.,]?\\s*`, 'gi'), '')
+    .replace(new RegExp(`The following (${IMAGE_TYPES}) (demonstrates|shows|reveals|depicts|illustrates)[.:]?\\s*`, 'gi'), '')
+    .replace(new RegExp(`As (shown|seen|depicted|demonstrated|illustrated) in the (${IMAGE_TYPES})[.,]?\\s*`, 'gi'), '')
+    .replace(new RegExp(`The (${IMAGE_TYPES}) (shows|reveals|demonstrates|depicts|illustrates)[.:]?\\s*`, 'gi'), '')
+    .replace(new RegExp(`Consider the following (${IMAGE_TYPES})[.:]?\\s*`, 'gi'), '')
+    .replace(new RegExp(`A (${IMAGE_TYPES}) (of this patient|of the patient)? ?(shows|reveals|demonstrates|depicts)[.:]?\\s*`, 'gi'), '')
+    .replace(/^\s*[,.:;]\s*/, '')
+    .replace(/^([a-z])/, (c) => c.toUpperCase());
+}
+
 function isQuizImageHttpUrl(url: string | null | undefined): boolean {
   const t = url?.trim();
   if (!t) return false;
@@ -83,13 +98,46 @@ function isQuizImageHttpUrl(url: string | null | undefined): boolean {
 }
 
 /** Per-question medical image with tap-to-enlarge lightbox. */
-const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }) {
+const QuestionImage = React.memo(function QuestionImage({
+  url,
+  onFailed,
+}: {
+  url: string;
+  onFailed?: () => void;
+}) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [failed, setFailed] = useState(false);
   const screenW = Dimensions.get('window').width;
   const screenH = Dimensions.get('window').height;
 
-  if (failed) return null;
+  function handleError() {
+    setFailed(true);
+    onFailed?.();
+  }
+
+  if (failed) {
+    return (
+      <View
+        style={{
+          backgroundColor: `${n.colors.border}55`,
+          borderRadius: 10,
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          marginBottom: 12,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+          borderWidth: 1,
+          borderColor: n.colors.border,
+        }}
+      >
+        <Ionicons name="image-outline" size={16} color={n.colors.textMuted} />
+        <LinearText style={{ color: n.colors.textMuted, fontSize: 12, fontStyle: 'italic' }}>
+          Image could not be loaded
+        </LinearText>
+      </View>
+    );
+  }
 
   return (
     <>
@@ -98,7 +146,7 @@ const QuestionImage = React.memo(function QuestionImage({ url }: { url: string }
           source={{ uri: url }}
           style={s.questionImage}
           resizeMode="contain"
-          onError={() => setFailed(true)}
+          onError={handleError}
         />
         <LinearText style={s.tapToEnlarge}>Tap to enlarge</LinearText>
       </TouchableOpacity>
@@ -990,6 +1038,9 @@ function QuizCard({
   const [score, setScore] = useState(0);
   const [deepExplanation, setDeepExplanation] = useState<string | null>(null);
   const [isLoadingDeepExpl, setIsLoadingDeepExpl] = useState(false);
+  // Track image load failures per question index so we can strip framing text at render time
+  const [failedImageIndices, setFailedImageIndices] = useState<Set<number>>(new Set());
+
   // Keep Quizzing state
   const [keepQuizzing, setKeepQuizzing] = useState(false);
   const [escalatedContent, setEscalatedContent] = useState<QuizContent | null>(null);
@@ -1126,6 +1177,7 @@ function QuizCard({
       setShowExpl(false);
       setDeepExplanation(null);
       setIsLoadingDeepExpl(false);
+      // failedImageIndices intentionally kept — per-question failures persist for the round
     } else {
       const finalScore = Math.max(scoreRef.current, score);
       onQuizComplete?.(finalScore, validQuestions.length);
@@ -1188,8 +1240,15 @@ function QuizCard({
       <LinearText style={s.cardTitle} numberOfLines={3} ellipsizeMode="tail">
         {content.topicName}
       </LinearText>
-      {isQuizImageHttpUrl(q.imageUrl) ? <QuestionImage url={q.imageUrl!.trim()} /> : null}
-      <LinearText style={s.questionText}>{q.question}</LinearText>
+      {isQuizImageHttpUrl(q.imageUrl) ? (
+        <QuestionImage
+          url={q.imageUrl!.trim()}
+          onFailed={() => setFailedImageIndices(prev => new Set([...prev, currentQ]))}
+        />
+      ) : null}
+      <LinearText style={s.questionText}>
+        {failedImageIndices.has(currentQ) ? stripImageFraming(q.question) : q.question}
+      </LinearText>
       <View style={s.optionsContainer}>
         {q.options.map((opt, idx) => {
           let bgColor = n.colors.surface as string;

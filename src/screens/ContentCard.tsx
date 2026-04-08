@@ -446,16 +446,17 @@ function ContentCard({ content, topicId, onDone, onSkip, onQuizAnswered, onQuizC
         ) : (
           <View />
         )}
-        <TouchableOpacity
-          style={s.askGuruBtn}
-          onPress={() => setChatOpen(true)}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Ask Guru about this topic"
-        >
-          <LinearText style={s.askGuruText}>Ask Guru</LinearText>
-        </TouchableOpacity>
       </View>
+      {/* Floating Ask Guru FAB */}
+      <TouchableOpacity
+        style={s.askGuruFab}
+        onPress={() => setChatOpen(true)}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Ask Guru about this topic"
+      >
+        <Ionicons name="sparkles" size={20} color={n.colors.textPrimary} />
+      </TouchableOpacity>
       <GuruChatOverlay
         visible={chatOpen}
         topicName={content.topicName}
@@ -2447,16 +2448,23 @@ const s = StyleSheet.create({
   },
   flagBtnActive: { backgroundColor: `${n.colors.warning}22`, borderColor: n.colors.warning },
   flagBtnText: { color: n.colors.warning, fontWeight: '600', fontSize: 12 },
-  askGuruBtn: {
-    backgroundColor: n.colors.surface,
-    borderColor: `${n.colors.accent}66`,
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    elevation: 4,
+  askGuruFab: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: n.colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: n.colors.accent,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    zIndex: 10,
   },
-  askGuruText: { color: n.colors.accent, fontWeight: '700', fontSize: 13 },
   offlineBox: {
     backgroundColor: n.colors.surface,
     borderRadius: 16,

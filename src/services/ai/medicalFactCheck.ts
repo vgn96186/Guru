@@ -1,8 +1,11 @@
 import type { AIContent, ContentType } from '../../types';
+import { InteractionManager } from 'react-native';
 import { extractMedicalEntities, extractClaims } from './medicalEntities';
 import { getLectureHistory } from '../../db/queries/aiCache';
 import { searchLatestMedicalSources } from './medicalSearch';
 import { setContentFlagged, isContentFlagged } from '../../db/queries/aiCache';
+// NOTE: logFactCheckResult is a stub until Task 3 (contentFlags.ts) is implemented.
+// Fact-checking runs but results are not persisted yet.
 import { logFactCheckResult } from '../../db/queries/contentFlags';
 
 const SIMILARITY_THRESHOLD = 0.3;
@@ -245,7 +248,7 @@ export function scheduleBackgroundFactCheck(
   content: AIContent,
   subjectName: string = '',
 ): void {
-  setTimeout(async () => {
+  InteractionManager.runAfterInteractions(async () => {
     try {
       await runMedicalFactCheck(topicId, contentType, content, subjectName);
     } catch (err) {
@@ -253,5 +256,5 @@ export function scheduleBackgroundFactCheck(
         console.warn('[FactCheck] Background check failed:', err);
       }
     }
-  }, 0);
+  });
 }

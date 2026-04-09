@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   showDialog,
   showError,
@@ -18,6 +19,7 @@ export default function StorageSections(props: any) {
   const {
     styles,
     SectionToggle,
+    navigation,
     profile,
     backupBusy,
     setBackupBusy,
@@ -129,6 +131,20 @@ export default function StorageSections(props: any) {
         </TouchableOpacity>
         <LinearText variant="body" tone="muted" style={styles.hint}>
           Wipes XP, streaks, topic statuses, and daily logs. API keys are kept.
+        </LinearText>
+        <TouchableOpacity
+          style={styles.settingRow}
+          onPress={() => navigation.navigate('FlaggedContent' as never)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.settingRowLeft}>
+            <Ionicons name="flag" size={18} color={linearTheme.colors.error} />
+            <LinearText variant="body">Flagged Content Review</LinearText>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={linearTheme.colors.textMuted} />
+        </TouchableOpacity>
+        <LinearText variant="body" tone="muted" style={styles.hint}>
+          Review topics flagged during lectures for targeted revision.
         </LinearText>
       </SectionToggle>
 

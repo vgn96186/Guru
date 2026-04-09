@@ -48,6 +48,7 @@ import ManualLogScreen from '../screens/ManualLogScreen';
 import StudyPlanScreen from '../screens/StudyPlanScreen';
 import DailyChallengeScreen from '../screens/DailyChallengeScreen';
 import FlaggedReviewScreen from '../screens/FlaggedReviewScreen';
+import FlaggedContentScreen from '../screens/FlaggedContentScreen';
 import TranscriptHistoryScreen from '../screens/TranscriptHistoryScreen';
 import QuestionBankScreen from '../screens/QuestionBankScreen';
 import MenuScreen from '../screens/MenuScreen';
@@ -204,6 +205,7 @@ function MenuStackNav() {
       <MenuStack.Screen name="ManualNoteCreation" component={ManualNoteCreationScreen} />
       <MenuStack.Screen name="TranscriptHistory" component={TranscriptHistoryScreen} />
       <MenuStack.Screen name="QuestionBank" component={QuestionBankScreen} />
+      <MenuStack.Screen name="FlaggedContent" component={FlaggedContentScreen} />
       <MenuStack.Screen name="RecordingVault" component={RecordingVaultScreen} />
       <MenuStack.Screen name="ImageVault" component={ImageVaultScreen} />
       <MenuStack.Screen name="NotesVault" component={NotesVaultScreen} />

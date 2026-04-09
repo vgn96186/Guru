@@ -2132,6 +2132,7 @@ export default function SettingsScreen() {
           <StorageSections
             styles={styles}
             SectionToggle={SectionToggle}
+            navigation={navigation}
             profile={profile}
             backupBusy={backupBusy}
             setBackupBusy={setBackupBusy}
@@ -2786,4 +2787,18 @@ const styles = StyleSheet.create({
   dropdownItemText: { color: n.colors.textPrimary, fontSize: 14, lineHeight: 20, flex: 1 },
   dropdownItemTextActive: { color: n.colors.accent, fontWeight: '700' },
   dropdownCheck: { color: n.colors.accent, fontSize: 16, fontWeight: '700', marginLeft: 8 },
+  // Flagged content row
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    marginTop: 4,
+  },
+  settingRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: n.spacing.md,
+    flex: 1,
+  },
 });

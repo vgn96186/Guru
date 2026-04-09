@@ -98,6 +98,7 @@ export type MenuStackParamList = {
   NotesVault: undefined;
   TranscriptVault: undefined;
   QuestionBank: undefined;
+  FlaggedContent: undefined;
 };
 
 export type TabParamList = {
